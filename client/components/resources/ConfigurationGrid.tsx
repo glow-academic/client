@@ -11,6 +11,7 @@ import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { getPersonaIconComponent } from "@/utils/persona-icons";
 import { cn } from "@/lib/utils";
 import { Check, Power } from "lucide-react";
+import { useMemo } from "react";
 
 export interface ConfigurationItem {
   key: string;
@@ -25,17 +26,27 @@ export interface ConfigurationGridProps {
   items: ConfigurationItem[];
   disabled?: boolean;
   onToggle: (key: string, flagId: string | null) => void;
+  // AI diff view props
+  aiSuggestedKeys?: string[] | null;
 }
 
 export function ConfigurationGrid({
   items,
   disabled = false,
   onToggle,
+  aiSuggestedKeys,
 }: ConfigurationGridProps) {
   // Get selected flag IDs for multi-select mode
   const selectedIds = items
     .filter((item) => item.flagId !== null)
     .map((item) => item.key);
+
+  // AI suggestion state
+  const showDiff = !!aiSuggestedKeys?.length;
+  const aiSuggestedSet = useMemo(
+    () => new Set(aiSuggestedKeys ?? []),
+    [aiSuggestedKeys]
+  );
 
   const handleSelect = (key: string) => {
     const item = items.find((i) => i.key === key);
@@ -59,6 +70,7 @@ export function ConfigurationGrid({
           ? getPersonaIconComponent(item.iconId)
           : null;
         const Icon = IconComponent || Power;
+        const isAiSuggested = showDiff && aiSuggestedSet.has(item.key);
 
         return (
           <div
@@ -66,13 +78,20 @@ export function ConfigurationGrid({
               "relative flex flex-col p-3 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left h-[88px]",
               "hover:shadow-md hover:bg-accent/50",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-              isSelected && "ring-2 ring-primary bg-accent"
+              isSelected && "ring-2 ring-primary bg-accent",
+              isAiSuggested && !isSelected && "ring-2 ring-success bg-success/10"
             )}
           >
             {/* Check icon - top right when selected */}
             {isSelected && (
               <div className="absolute top-2 right-2 z-10 h-5 w-5 bg-primary rounded-full flex items-center justify-center">
                 <Check className="h-3 w-3 text-primary-foreground" />
+              </div>
+            )}
+            {/* AI suggested badge - top right */}
+            {isAiSuggested && !isSelected && (
+              <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
+                AI Suggested
               </div>
             )}
 

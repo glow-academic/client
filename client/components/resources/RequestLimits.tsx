@@ -86,6 +86,10 @@ export interface RequestLimitsProps {
   } | null;
   requestLimitId?: string | null;
   suggestions?: string[];
+  // AI diff view props
+  aiRequestLimitResources?: Array<{ id?: string | null; requests_per_day?: number | null }> | null;
+  onAccept?: () => void;
+  onReject?: () => void;
 }
 
 export function RequestLimits({
@@ -110,6 +114,10 @@ export function RequestLimits({
   // Legacy props for backward compatibility
   requestLimitResource,
   requestLimitId: _requestLimitId,
+  // AI diff view props
+  aiRequestLimitResources,
+  onAccept,
+  onReject,
 }: RequestLimitsProps) {
   // Use standardized props with fallback to legacy props
   const resource = request_limit_resource ?? requestLimitResource ?? null;
@@ -280,6 +288,28 @@ export function RequestLimits({
     return resource?.generated ?? false;
   }, [resource]);
 
+  // AI suggestion state
+  const showDiff = !!aiRequestLimitResources?.length;
+  const aiSuggestedIds = useMemo(
+    () => new Set(aiRequestLimitResources?.map((r) => r.id).filter(Boolean) as string[]),
+    [aiRequestLimitResources]
+  );
+
+  // Accept AI suggestion - set AI-suggested request limit
+  const handleAccept = useCallback(() => {
+    if (!aiRequestLimitResources?.length) return;
+    const firstSuggested = aiRequestLimitResources[0];
+    if (firstSuggested?.id) {
+      onRequestLimitIdChange(firstSuggested.id);
+    }
+    onAccept?.();
+  }, [aiRequestLimitResources, onRequestLimitIdChange, onAccept]);
+
+  // Reject AI suggestion - just clear the pending state
+  const handleReject = useCallback(() => {
+    onReject?.();
+  }, [onReject]);
+
   // Don't render if show_request_limit is false (AFTER all hooks)
   if (!show) {
     return null;
@@ -309,7 +339,7 @@ export function RequestLimits({
                       size="icon"
                       className="h-6 w-6"
                       onClick={onGenerate}
-                      disabled={disabled || isGenerating}
+                      disabled={disabled || isGenerating || showDiff}
                     >
                       {isGenerating ? (
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -323,6 +353,42 @@ export function RequestLimits({
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
+            )}
+            {showDiff && (
+              <>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 text-success hover:text-success"
+                        onClick={handleAccept}
+                      >
+                        <Check className="h-3.5 w-3.5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Accept</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 text-destructive hover:text-destructive"
+                        onClick={handleReject}
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Reject</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </>
             )}
           </div>
           <GenericPicker<RequestLimitPickerItem>
@@ -354,6 +420,27 @@ export function RequestLimits({
           />
         </div>
       )}
+      {/* AI-suggested request limits preview */}
+      {showDiff && aiRequestLimitResources && aiRequestLimitResources.length > 0 && (
+        <div className="mb-4 space-y-2">
+          <p className="text-sm font-medium text-success">AI Suggested Request Limit</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            {aiRequestLimitResources.map((item, idx) => (
+              <div
+                key={item.id || idx}
+                className={cn(
+                  "p-3 rounded-lg border-2 border-success bg-success/10",
+                  "text-sm"
+                )}
+              >
+                {item.requests_per_day !== null && item.requests_per_day !== undefined
+                  ? `${item.requests_per_day} requests/day`
+                  : "Unlimited"}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {selectedRequestLimit.requests_per_day === null ? (
           <div
@@ -373,6 +460,7 @@ export function RequestLimits({
               "relative flex items-start gap-3 rounded-xl border bg-card px-4 py-3 shadow-sm transition-all",
               "hover:shadow-md hover:bg-accent/50",
               !resourceId && "ring-2 ring-primary bg-accent",
+              aiSuggestedIds.has(resourceId ?? "") && "ring-2 ring-success bg-success/10",
               disabled && "opacity-60 cursor-not-allowed"
             )}
           >
@@ -408,9 +496,15 @@ export function RequestLimits({
               "relative flex items-start gap-3 rounded-xl border bg-card px-4 py-3 shadow-sm transition-all",
               "hover:shadow-md hover:bg-accent/50",
               "ring-2 ring-primary bg-accent",
+              aiSuggestedIds.has(selectedRequestLimit.id) && "ring-2 ring-success bg-success/10",
               disabled && "opacity-60 cursor-not-allowed"
             )}
           >
+            {aiSuggestedIds.has(selectedRequestLimit.id) && (
+              <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success text-success-foreground text-xs rounded">
+                AI Suggested
+              </div>
+            )}
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium">
                 {selectedRequestLimit.requests_per_day} requests/day
@@ -419,7 +513,9 @@ export function RequestLimits({
                 {selectedRequestLimit.requests_per_day} requests per day
               </p>
             </div>
-            <Check className="absolute right-3 top-3 h-4 w-4 opacity-100" />
+            {!aiSuggestedIds.has(selectedRequestLimit.id) && (
+              <Check className="absolute right-3 top-3 h-4 w-4 opacity-100" />
+            )}
           </div>
         )}
       </div>

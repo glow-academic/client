@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
-import { Check, Loader2, Sparkles } from "lucide-react";
+import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
 type CreateDraftStandardGroupsIn = InputOf<
@@ -88,6 +88,10 @@ export interface StandardGroupsProps {
   isGenerating?: boolean;
   // Legacy props for backward compatibility
   standardGroupIds?: string[];
+  // AI diff view props
+  aiStandardGroupResources?: Array<{ id?: string | null; name?: string | null }> | null;
+  onAccept?: () => void;
+  onReject?: () => void;
 }
 
 export function StandardGroups({
@@ -112,6 +116,10 @@ export function StandardGroups({
   isGenerating = false,
   // Legacy props for backward compatibility
   standardGroupIds,
+  // AI diff view props
+  aiStandardGroupResources,
+  onAccept,
+  onReject,
 }: StandardGroupsProps) {
   // Use standardized props with fallback to legacy props
   const ids = useMemo(
@@ -265,6 +273,31 @@ export function StandardGroups({
     return standard_group_resources?.some((sg) => sg.generated) ?? false;
   }, [standard_group_resources]);
 
+  // AI suggestion state
+  const showDiff = !!aiStandardGroupResources?.length;
+  const aiSuggestedIds = useMemo(
+    () => new Set(aiStandardGroupResources?.map((r) => r.id).filter(Boolean) as string[]),
+    [aiStandardGroupResources]
+  );
+
+  // Accept AI suggestion - add AI-suggested standard groups to selection
+  const handleAccept = useCallback(() => {
+    if (!aiStandardGroupResources?.length) return;
+    const newIds = aiStandardGroupResources
+      .map((r) => r.id)
+      .filter((id): id is string => !!id);
+    if (newIds.length > 0) {
+      const mergedIds = [...new Set([...ids, ...newIds])];
+      onChange(mergedIds);
+    }
+    onAccept?.();
+  }, [aiStandardGroupResources, ids, onChange, onAccept]);
+
+  // Reject AI suggestion - just clear the pending state
+  const handleReject = useCallback(() => {
+    onReject?.();
+  }, [onReject]);
+
   // Don't render if show_standard_groups is false (AFTER all hooks)
   if (!show) {
     return null;
@@ -293,7 +326,7 @@ export function StandardGroups({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating}
+                    disabled={disabled || isGenerating || showDiff}
                   >
                     {isGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -308,6 +341,61 @@ export function StandardGroups({
               </Tooltip>
             </TooltipProvider>
           )}
+          {showDiff && (
+            <>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-success hover:text-success"
+                      onClick={handleAccept}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Accept</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-destructive hover:text-destructive"
+                      onClick={handleReject}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Reject</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </>
+          )}
+        </div>
+      )}
+      {/* AI-suggested standard groups preview */}
+      {showDiff && aiStandardGroupResources && aiStandardGroupResources.length > 0 && (
+        <div className="mb-4 space-y-2">
+          <p className="text-sm font-medium text-success">AI Suggested Standard Groups</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            {aiStandardGroupResources.map((item, idx) => (
+              <div
+                key={item.id || idx}
+                className={cn(
+                  "p-3 rounded-lg border-2 border-success bg-success/10",
+                  "text-sm"
+                )}
+              >
+                {item.name || ""}
+              </div>
+            ))}
+          </div>
         </div>
       )}
       <SelectableGrid<StandardGroupItem>
@@ -323,15 +411,21 @@ export function StandardGroups({
               "relative flex flex-col gap-2 rounded-xl border bg-card p-4 text-left shadow-sm transition-all",
               "hover:shadow-md hover:bg-accent/50",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-              isSelected && "ring-2 ring-primary bg-accent"
+              isSelected && "ring-2 ring-primary bg-accent",
+              aiSuggestedIds.has(item.id) && "ring-2 ring-success bg-success/10"
             )}
           >
-            {isSelected && (
+            {isSelected && !aiSuggestedIds.has(item.id) && (
               <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
                 <Check className="h-3.5 w-3.5 text-primary-foreground" />
               </div>
             )}
-            {!isSelected && isSuggested(item.id) && (
+            {aiSuggestedIds.has(item.id) && (
+              <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success text-success-foreground text-xs rounded">
+                AI Suggested
+              </div>
+            )}
+            {!isSelected && !aiSuggestedIds.has(item.id) && isSuggested(item.id) && (
               <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded">
                 Suggested
               </div>

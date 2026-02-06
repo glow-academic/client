@@ -17,7 +17,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { Check, Loader2, Sparkles } from "lucide-react";
+import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
 export interface CohortItem {
@@ -57,6 +57,13 @@ export interface CohortsProps {
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
   cohortIds?: string[];
+  // AI diff view props
+  aiCohortResources?: Array<{
+    cohort_id?: string | null;
+    name?: string | null;
+  }> | null;
+  onAccept?: () => void;
+  onReject?: () => void;
 }
 
 export function Cohorts({
@@ -80,6 +87,10 @@ export function Cohorts({
   onGenerate,
   isGenerating = false,
   cohortIds,
+  // AI diff view props
+  aiCohortResources,
+  onAccept,
+  onReject,
 }: CohortsProps) {
   const ids = useMemo(
     () => cohort_ids ?? cohortIds ?? [],
@@ -90,6 +101,18 @@ export function Cohorts({
   const suggestionsList = useMemo(
     () => cohort_suggestions ?? [],
     [cohort_suggestions]
+  );
+
+  // AI suggestion state
+  const showDiff = !!aiCohortResources?.length;
+  const aiSuggestedIds = useMemo(
+    () =>
+      new Set(
+        aiCohortResources
+          ?.map((c) => c.cohort_id)
+          .filter(Boolean) as string[]
+      ),
+    [aiCohortResources]
   );
 
   const cohortItems = useMemo(() => {
@@ -148,6 +171,23 @@ export function Cohorts({
     return cohort_resources?.some((c) => c.generated) ?? false;
   }, [cohort_resources]);
 
+  // Accept AI suggestion - add AI-suggested cohorts to selection
+  const handleAccept = useCallback(() => {
+    if (!aiCohortResources?.length) return;
+    const newIds = aiCohortResources
+      .map((c) => c.cohort_id)
+      .filter((id): id is string => !!id && !ids.includes(id));
+    if (newIds.length > 0) {
+      onChange([...ids, ...newIds]);
+    }
+    onAccept?.();
+  }, [aiCohortResources, ids, onChange, onAccept]);
+
+  // Reject AI suggestion - just clear the pending state
+  const handleReject = useCallback(() => {
+    onReject?.();
+  }, [onReject]);
+
   if (!show) {
     return null;
   }
@@ -175,7 +215,7 @@ export function Cohorts({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating}
+                    disabled={disabled || isGenerating || showDiff}
                   >
                     {isGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -190,6 +230,42 @@ export function Cohorts({
               </Tooltip>
             </TooltipProvider>
           )}
+          {showDiff && (
+            <>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-success hover:text-success"
+                      onClick={handleAccept}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Accept</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-destructive hover:text-destructive"
+                      onClick={handleReject}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Reject</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </>
+          )}
         </div>
       )}
       <SelectableGrid<CohortItem>
@@ -199,28 +275,39 @@ export function Cohorts({
         selectedIds={ids}
         onSelect={handleSelect}
         getId={(item) => item.id}
-        renderItem={(item, isSelected) => (
-          <div
-            className={cn(
-              "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
-              "hover:shadow-md hover:bg-accent/50",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-              isSelected && "ring-2 ring-primary bg-accent"
-            )}
-          >
-            {isSelected && (
-              <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
-                <Check className="h-3.5 w-3.5 text-primary-foreground" />
-              </div>
-            )}
+        renderItem={(item, isSelected) => {
+          const isAiSuggested = showDiff && aiSuggestedIds.has(item.id);
 
-            {isSuggested(item.id) && !isSelected && (
-              <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded">
-                Suggested
-              </div>
-            )}
+          return (
+            <div
+              className={cn(
+                "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
+                "hover:shadow-md hover:bg-accent/50",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                isSelected && "ring-2 ring-primary bg-accent",
+                isAiSuggested && !isSelected && "ring-2 ring-success bg-success/10"
+              )}
+            >
+              {isSelected && (
+                <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
+                  <Check className="h-3.5 w-3.5 text-primary-foreground" />
+                </div>
+              )}
 
-            <div className="flex-1 min-w-0">
+              {/* AI Suggested badge - top right */}
+              {isAiSuggested && !isSelected && (
+                <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
+                  AI Suggested
+                </div>
+              )}
+
+              {isSuggested(item.id) && !isSelected && !isAiSuggested && (
+                <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded">
+                  Suggested
+                </div>
+              )}
+
+              <div className="flex-1 min-w-0">
               <h3 className="font-medium text-sm leading-tight">{item.name}</h3>
               {item.description && (
                 <p className="text-xs text-muted-foreground mt-0.5 truncate">
@@ -229,7 +316,8 @@ export function Cohorts({
               )}
             </div>
           </div>
-        )}
+        );
+        }}
         emptyMessage={emptyMessage}
         disabled={disabled}
       />

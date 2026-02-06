@@ -16,8 +16,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Loader2, Sparkles } from "lucide-react";
-import { useMemo } from "react";
+import { cn } from "@/lib/utils";
+import { Check, Loader2, Sparkles, X } from "lucide-react";
+import { useCallback, useMemo } from "react";
 
 export interface ReasoningLevelItem {
   id: string;
@@ -54,6 +55,13 @@ export interface ReasoningLevelsProps {
   onSearchChange?: (term: string) => void;
   group_id?: string | null; // Group ID for linking resources
   link_tool_id?: string | null; // Tool ID for AI link suggestions
+  // AI diff view props
+  aiReasoningLevelResources?: Array<{
+    reasoning_level_id?: string | null;
+    reasoning_level?: string | null;
+  }> | null;
+  onAccept?: () => void;
+  onReject?: () => void;
 }
 
 export function ReasoningLevels({
@@ -76,6 +84,10 @@ export function ReasoningLevels({
   onSearchChange,
   group_id,
   link_tool_id,
+  // AI diff view props
+  aiReasoningLevelResources,
+  onAccept,
+  onReject,
 }: ReasoningLevelsProps) {
   const resource = reasoning_level_resource ?? null;
   const resourceId = reasoning_level_id ?? null;
@@ -84,6 +96,19 @@ export function ReasoningLevels({
     () => reasoning_level_suggestions ?? [],
     [reasoning_level_suggestions]
   );
+
+  // AI suggestion state
+  const showDiff = !!aiReasoningLevelResources?.length;
+  const aiSuggestedIds = useMemo(
+    () =>
+      new Set(
+        aiReasoningLevelResources
+          ?.map((r) => r.reasoning_level_id)
+          .filter(Boolean) as string[]
+      ),
+    [aiReasoningLevelResources]
+  );
+
   const filteredReasoningLevels = useMemo(() => {
     if (!searchTerm?.trim()) {
       return reasoning_levels ?? [];
@@ -108,6 +133,21 @@ export function ReasoningLevels({
     return [];
   }, [filteredReasoningLevels]);
 
+  // Accept AI suggestion - set the AI-suggested reasoning level
+  const handleAccept = useCallback(() => {
+    if (!aiReasoningLevelResources?.length) return;
+    const suggestedId = aiReasoningLevelResources[0]?.reasoning_level_id;
+    if (suggestedId && suggestedId !== resourceId) {
+      onReasoningLevelIdChange(suggestedId);
+    }
+    onAccept?.();
+  }, [aiReasoningLevelResources, resourceId, onReasoningLevelIdChange, onAccept]);
+
+  // Reject AI suggestion - just clear the pending state
+  const handleReject = useCallback(() => {
+    onReject?.();
+  }, [onReject]);
+
   // Don't render if show_reasoning_levels is false (AFTER all hooks)
   if (!show) {
     return null;
@@ -131,7 +171,7 @@ export function ReasoningLevels({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating}
+                    disabled={disabled || isGenerating || showDiff}
                   >
                     {isGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -146,6 +186,42 @@ export function ReasoningLevels({
               </Tooltip>
             </TooltipProvider>
           )}
+          {showDiff && (
+            <>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-success hover:text-success"
+                      onClick={handleAccept}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Accept</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-destructive hover:text-destructive"
+                      onClick={handleReject}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Reject</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </>
+          )}
         </div>
       </div>
       <GenericPicker<ReasoningLevelItem>
@@ -159,6 +235,34 @@ export function ReasoningLevels({
           item.reasoning_level.slice(1)
         }
         getSearchText={(item) => item.reasoning_level}
+        renderItem={(item, isSelected) => {
+          const isAiSuggested = showDiff && aiSuggestedIds.has(item.id);
+
+          return (
+            <div className={cn(
+              "flex items-center justify-between w-full",
+              isAiSuggested && !isSelected && "ring-2 ring-success bg-success/10 rounded px-2 py-1 -mx-2 -my-1"
+            )}>
+              <div className="flex items-center gap-2">
+                {isAiSuggested && !isSelected && (
+                  <span className="px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
+                    AI Suggested
+                  </span>
+                )}
+                <span>
+                  {item.reasoning_level.charAt(0).toUpperCase() +
+                    item.reasoning_level.slice(1)}
+                </span>
+              </div>
+              <Check
+                className={cn(
+                  "ml-auto flex-shrink-0 h-4 w-4",
+                  isSelected ? "opacity-100" : "opacity-0"
+                )}
+              />
+            </div>
+          );
+        }}
         renderPreview={(item) => (
           <div className="space-y-1">
             <div className="font-medium">

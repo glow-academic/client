@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
-import { Check, Loader2, Sparkles } from "lucide-react";
+import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type CreateDraftScenarioRubricsIn = InputOf<
@@ -86,6 +86,14 @@ export interface ScenarioRubricsProps {
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created IDs */
   registerFlush?: (flush: () => Promise<{ scenario_rubric_ids: string[] } | void>) => void;
+  // AI diff view props
+  aiScenarioRubricResources?: Array<{
+    id?: string | null;
+    scenario_id?: string | null;
+    rubric_id?: string | null;
+  }> | null;
+  onAccept?: () => void;
+  onReject?: () => void;
 }
 
 const NONE_OPTION = "__none__";
@@ -121,6 +129,10 @@ export function ScenarioRubrics({
   isGenerating = false,
   isAutosaveEnabled = true,
   registerFlush,
+  // AI diff view props
+  aiScenarioRubricResources,
+  onAccept,
+  onReject,
 }: ScenarioRubricsProps) {
   const show = show_scenario_rubrics ?? false;
   const currentResources = useMemo(
@@ -364,6 +376,36 @@ export function ScenarioRubrics({
     return currentResources.some((resource) => resource.generated);
   }, [currentResources]);
 
+  // AI suggestion state
+  const showDiff = !!aiScenarioRubricResources?.length;
+
+  // Set of AI-suggested scenario IDs for styling
+  const aiSuggestedScenarioIds = useMemo(
+    () =>
+      new Set(
+        aiScenarioRubricResources
+          ?.map((r) => r.scenario_id)
+          .filter(Boolean) as string[]
+      ),
+    [aiScenarioRubricResources]
+  );
+
+  // Accept AI suggestion - apply AI-suggested rubric assignments
+  const handleAccept = useCallback(() => {
+    if (!aiScenarioRubricResources?.length) return;
+    aiScenarioRubricResources.forEach((r) => {
+      if (r.scenario_id && r.rubric_id) {
+        handleSelect(r.scenario_id, r.rubric_id);
+      }
+    });
+    onAccept?.();
+  }, [aiScenarioRubricResources, handleSelect, onAccept]);
+
+  // Reject AI suggestion - just clear the pending state
+  const handleReject = useCallback(() => {
+    onReject?.();
+  }, [onReject]);
+
   if (!show || scenario_ids.length === 0) {
     return null;
   }
@@ -391,7 +433,7 @@ export function ScenarioRubrics({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating}
+                    disabled={disabled || isGenerating || showDiff}
                   >
                     {isGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -406,10 +448,71 @@ export function ScenarioRubrics({
               </Tooltip>
             </TooltipProvider>
           )}
+          {showDiff && (
+            <>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-success hover:text-success"
+                      onClick={handleAccept}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Accept</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-destructive hover:text-destructive"
+                      onClick={handleReject}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Reject</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </>
+          )}
+        </div>
+      )}
+      {/* AI-suggested scenario rubrics preview */}
+      {showDiff && aiScenarioRubricResources && aiScenarioRubricResources.length > 0 && (
+        <div className="mb-4 space-y-2">
+          <p className="text-sm font-medium text-success">AI Suggested Scenario Rubrics</p>
+          <div className="space-y-2">
+            {aiScenarioRubricResources.map((item, idx) => {
+              const scenarioLabel = scenarioLabelMap.get(item.scenario_id || "") ?? "Unknown scenario";
+              const rubricLabel = rubricOptions.find((r) => r.id === item.rubric_id)?.name ?? "Unknown rubric";
+              return (
+                <div
+                  key={item.id || `${item.scenario_id}-${item.rubric_id}` || idx}
+                  className={cn(
+                    "flex items-center gap-2 p-3 rounded-lg border-2 border-success bg-success/10",
+                    "text-sm"
+                  )}
+                >
+                  <span className="font-medium">{scenarioLabel}:</span>
+                  <span>{rubricLabel}</span>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
       <div className="space-y-4 pl-4">
         {scenario_ids.map((scenarioId) => {
+          const isAiSuggested = aiSuggestedScenarioIds.has(scenarioId);
           const labelText =
             scenarioLabelMap.get(scenarioId) ?? scenarioId.slice(0, 8);
           const selectedRubricId = rubricIdByScenario.get(scenarioId) ?? null;
@@ -418,7 +521,10 @@ export function ScenarioRubrics({
           return (
             <div
               key={scenarioId}
-              className="space-y-2"
+              className={cn(
+                "space-y-2",
+                isAiSuggested && "ring-2 ring-success bg-success/5 rounded-lg p-2"
+              )}
             >
               <Label className="text-sm font-medium" title={labelText}>
                 {labelText}

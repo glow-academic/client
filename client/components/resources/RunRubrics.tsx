@@ -7,9 +7,16 @@
 "use client";
 
 import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { Check } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
 export interface RunRubricOption {
@@ -30,6 +37,14 @@ export interface RunRubricsProps {
   required?: boolean;
   selected_rubric_ids?: string[];
   onChange: (runId: string, rubricIds: string[]) => void;
+  // AI diff view props
+  aiRubricResources?: Array<{
+    id?: string | null;
+    rubric_id?: string | null;
+    name?: string | null;
+  }> | null;
+  onAccept?: () => void;
+  onReject?: () => void;
 }
 
 export function RunRubrics({
@@ -42,6 +57,10 @@ export function RunRubrics({
   required = false,
   selected_rubric_ids,
   onChange,
+  // AI diff view props
+  aiRubricResources,
+  onAccept,
+  onReject,
 }: RunRubricsProps) {
   const selectedIds = useMemo(() => selected_rubric_ids ?? [], [
     selected_rubric_ids,
@@ -62,6 +81,36 @@ export function RunRubrics({
     [onChange, run_id, selectedIds]
   );
 
+  // AI suggestion state
+  const showDiff = !!aiRubricResources?.length;
+
+  // Set of AI-suggested rubric IDs for styling
+  const aiSuggestedIds = useMemo(
+    () =>
+      new Set(
+        aiRubricResources
+          ?.map((r) => r.rubric_id)
+          .filter(Boolean) as string[]
+      ),
+    [aiRubricResources]
+  );
+
+  // Accept AI suggestion - add AI-suggested rubrics to selection
+  const handleAccept = useCallback(() => {
+    if (!aiRubricResources?.length) return;
+    const newIds = aiRubricResources
+      .map((r) => r.rubric_id)
+      .filter((id): id is string => !!id);
+    const merged = [...new Set([...selectedIds, ...newIds])];
+    onChange(run_id, merged);
+    onAccept?.();
+  }, [aiRubricResources, selectedIds, onChange, run_id, onAccept]);
+
+  // Reject AI suggestion - just clear the pending state
+  const handleReject = useCallback(() => {
+    onReject?.();
+  }, [onReject]);
+
   if (!show_rubrics) {
     return null;
   }
@@ -79,6 +128,42 @@ export function RunRubrics({
               {selectedIds.length} selected
             </span>
           )}
+          {showDiff && (
+            <>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-success hover:text-success"
+                      onClick={handleAccept}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Accept</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-destructive hover:text-destructive"
+                      onClick={handleReject}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Reject</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </>
+          )}
         </div>
         {run_description && (
           <p className="text-xs text-muted-foreground line-clamp-2">
@@ -86,6 +171,25 @@ export function RunRubrics({
           </p>
         )}
       </div>
+      {/* AI-suggested rubrics preview */}
+      {showDiff && aiRubricResources && aiRubricResources.length > 0 && (
+        <div className="mb-4 space-y-2">
+          <p className="text-sm font-medium text-success">AI Suggested Rubrics</p>
+          <div className="flex flex-wrap gap-2">
+            {aiRubricResources.map((item, idx) => (
+              <div
+                key={item.id || item.rubric_id || idx}
+                className={cn(
+                  "px-3 py-2 rounded-lg border-2 border-success bg-success/10",
+                  "text-sm font-medium"
+                )}
+              >
+                {item.name || "Unnamed rubric"}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       <SelectableGrid
         horizontal
         items={filteredRubrics}
@@ -93,13 +197,16 @@ export function RunRubrics({
         selectedIds={selectedIds}
         onSelect={handleSelect}
         getId={(item) => item.rubric_id ?? ""}
-        renderItem={(item, isSelected) => (
+        renderItem={(item, isSelected) => {
+          const isAiSuggested = aiSuggestedIds.has(item.rubric_id ?? "");
+          return (
           <div
             className={cn(
               "w-full rounded-lg border p-3 transition-colors",
               isSelected
                 ? "border-primary bg-primary/10"
-                : "border-muted/60 hover:border-muted-foreground/50"
+                : "border-muted/60 hover:border-muted-foreground/50",
+              isAiSuggested && "ring-2 ring-success bg-success/5"
             )}
           >
             <div className="flex items-start justify-between gap-2">
@@ -132,7 +239,7 @@ export function RunRubrics({
               </div>
             </div>
           </div>
-        )}
+        );}}
         emptyMessage="No rubrics available."
         disabled={disabled}
       />

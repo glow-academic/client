@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
-import { Check, Loader2, Sparkles } from "lucide-react";
+import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
 type CreateDraftProtocolsIn = InputOf<"/api/v4/resources/protocols", "post">;
@@ -58,6 +58,10 @@ export interface ProtocolsProps {
     | undefined;
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
+  // AI diff view props
+  aiProtocolResources?: Array<{ id?: string | null; value?: string | null }> | null;
+  onAccept?: () => void;
+  onReject?: () => void;
 }
 
 export function Protocols({
@@ -79,6 +83,10 @@ export function Protocols({
   createProtocolsAction,
   onGenerate,
   isGenerating = false,
+  // AI diff view props
+  aiProtocolResources,
+  onAccept,
+  onReject,
 }: ProtocolsProps) {
   const ids = useMemo(() => protocol_ids ?? [], [protocol_ids]);
   const show = show_protocols ?? false;
@@ -158,6 +166,32 @@ export function Protocols({
     return protocol_resources?.some((p) => p.generated) ?? false;
   }, [protocol_resources]);
 
+  // AI suggestion state
+  const showDiff = !!aiProtocolResources?.length;
+
+  // Get AI-suggested IDs (kept for potential future use)
+  const _aiSuggestedIds = useMemo(
+    () => new Set(aiProtocolResources?.map((r) => r.id).filter(Boolean) as string[]),
+    [aiProtocolResources]
+  );
+
+  // Accept AI suggestion - add AI-suggested protocols to selection
+  const handleAccept = useCallback(() => {
+    if (!aiProtocolResources?.length) return;
+    const newIds = aiProtocolResources
+      .map((p) => p.id)
+      .filter((id): id is string => !!id);
+    if (newIds.length > 0) {
+      onChange([...ids, ...newIds]);
+    }
+    onAccept?.();
+  }, [aiProtocolResources, ids, onChange, onAccept]);
+
+  // Reject AI suggestion - just clear the pending state
+  const handleReject = useCallback(() => {
+    onReject?.();
+  }, [onReject]);
+
   // Don't render if show_protocols is false (AFTER all hooks)
   if (!show) {
     return null;
@@ -186,7 +220,7 @@ export function Protocols({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating}
+                    disabled={disabled || isGenerating || showDiff}
                   >
                     {isGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -201,6 +235,61 @@ export function Protocols({
               </Tooltip>
             </TooltipProvider>
           )}
+          {showDiff && (
+            <>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-success hover:text-success"
+                      onClick={handleAccept}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Accept</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-destructive hover:text-destructive"
+                      onClick={handleReject}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Reject</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </>
+          )}
+        </div>
+      )}
+      {/* AI-suggested protocols preview */}
+      {showDiff && aiProtocolResources && aiProtocolResources.length > 0 && (
+        <div className="mb-4 space-y-2">
+          <p className="text-sm font-medium text-success">AI Suggested Protocols</p>
+          <div className="space-y-2">
+            {aiProtocolResources.map((item, idx) => (
+              <div
+                key={item.id || idx}
+                className={cn(
+                  "p-3 rounded-lg border-2 border-success bg-success/10",
+                  "text-sm"
+                )}
+              >
+                {item.value || ""}
+              </div>
+            ))}
+          </div>
         </div>
       )}
       <GenericPicker<ProtocolItem>

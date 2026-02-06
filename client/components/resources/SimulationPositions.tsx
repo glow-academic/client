@@ -14,7 +14,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { ArrowDown, ArrowUp, GripVertical, Loader2, Sparkles } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { ArrowDown, ArrowUp, Check, GripVertical, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 export interface SimulationPositionItem {
@@ -60,6 +61,14 @@ export interface SimulationPositionsProps {
         body: { group_id: string; simulation_id: string; value: number; mcp: boolean };
       }) => Promise<unknown>)
     | undefined;
+  // AI diff view props
+  aiSimulationPositionResources?: Array<{
+    id?: string | null;
+    simulation_id?: string | null;
+    value?: number | null;
+  }> | null;
+  onAccept?: () => void;
+  onReject?: () => void;
 }
 
 export function SimulationPositions({
@@ -80,6 +89,10 @@ export function SimulationPositions({
   onGenerate,
   isGenerating = false,
   createSimulationPositionsAction,
+  // AI diff view props
+  aiSimulationPositionResources,
+  onAccept,
+  onReject,
 }: SimulationPositionsProps) {
   const show = show_simulation_positions ?? false;
   const selectedSimulationIds = useMemo(
@@ -260,6 +273,46 @@ export function SimulationPositions({
       .map(([simulationId]) => simulationId);
   }, [localPositions]);
 
+  // AI suggestion state
+  const showDiff = !!aiSimulationPositionResources?.length;
+
+  // Set of AI-suggested simulation IDs for styling
+  const aiSuggestedIds = useMemo(
+    () =>
+      new Set(
+        aiSimulationPositionResources
+          ?.map((r) => r.simulation_id)
+          .filter(Boolean) as string[]
+      ),
+    [aiSimulationPositionResources]
+  );
+
+  // Accept AI suggestion - apply AI-suggested positions
+  const handleAccept = useCallback(() => {
+    if (!aiSimulationPositionResources?.length) return;
+    const newPositions = new Map<string, number>();
+    aiSimulationPositionResources.forEach((r) => {
+      if (r.simulation_id && r.value != null) {
+        newPositions.set(r.simulation_id, r.value);
+      }
+    });
+    // Merge with existing positions
+    setLocalPositions((prev) => {
+      const merged = new Map(prev);
+      newPositions.forEach((value, simId) => {
+        merged.set(simId, value);
+      });
+      emitPositions(merged);
+      return merged;
+    });
+    onAccept?.();
+  }, [aiSimulationPositionResources, emitPositions, onAccept]);
+
+  // Reject AI suggestion - just clear the pending state
+  const handleReject = useCallback(() => {
+    onReject?.();
+  }, [onReject]);
+
   if (!show) {
     return null;
   }
@@ -287,7 +340,7 @@ export function SimulationPositions({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating}
+                    disabled={disabled || isGenerating || showDiff}
                   >
                     {isGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -300,6 +353,65 @@ export function SimulationPositions({
               </Tooltip>
             </TooltipProvider>
           )}
+          {showDiff && (
+            <>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-success hover:text-success"
+                      onClick={handleAccept}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Accept</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-destructive hover:text-destructive"
+                      onClick={handleReject}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Reject</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </>
+          )}
+        </div>
+      )}
+      {/* AI-suggested positions preview */}
+      {showDiff && aiSimulationPositionResources && aiSimulationPositionResources.length > 0 && (
+        <div className="mb-4 space-y-2">
+          <p className="text-sm font-medium text-success">AI Suggested Positions</p>
+          <div className="space-y-2">
+            {aiSimulationPositionResources.map((item, idx) => (
+              <div
+                key={item.id || item.simulation_id || idx}
+                className={cn(
+                  "flex items-center gap-2 p-2 rounded-lg border-2 border-success bg-success/10"
+                )}
+              >
+                <GripVertical className="h-4 w-4 text-muted-foreground" />
+                <Label className="text-sm w-56 truncate">
+                  {simulationLabels.get(item.simulation_id || "") ?? "Untitled simulation"}
+                </Label>
+                <Label className="text-sm w-20">Position:</Label>
+                <span className="text-sm font-medium">{item.value ?? "-"}</span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
       <div className="space-y-2">
@@ -308,10 +420,14 @@ export function SimulationPositions({
           const maxPos = Math.max(...Array.from(localPositions.values()));
           const labelText =
             simulationLabels.get(simulationId) ?? "Untitled simulation";
+          const isAiSuggested = aiSuggestedIds.has(simulationId);
           return (
             <div
               key={simulationId}
-              className="flex items-center gap-2 p-2 border rounded-md"
+              className={cn(
+                "flex items-center gap-2 p-2 border rounded-md",
+                isAiSuggested && "ring-2 ring-success bg-success/5"
+              )}
             >
               <GripVertical className="h-4 w-4 text-muted-foreground" />
               <Label className="text-sm w-56 truncate" title={labelText}>

@@ -21,10 +21,16 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { PERSONA_ICON_MAP, PERSONA_ICONS } from "@/utils/persona-icons";
 import { Check, Pencil, Plus, User, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 export interface RolesProps {
   role?: string | null;
@@ -59,6 +65,13 @@ export interface RolesProps {
       color_hex: string;
     }
   ) => void;
+  // AI diff view props
+  aiRoleResources?: Array<{
+    role_id?: string | null;
+    name?: string | null;
+  }> | null;
+  onAccept?: () => void;
+  onReject?: () => void;
 }
 
 type RoleItem = {
@@ -228,7 +241,23 @@ export function Roles({
   showSelectedFilter = false,
   emptyMessage = "No roles found. Try adjusting your search.",
   onRoleResourceChange,
+  // AI diff view props
+  aiRoleResources,
+  onAccept,
+  onReject,
 }: RolesProps) {
+  // AI suggestion state
+  const showDiff = multiSelect && !!aiRoleResources?.length;
+  const aiSuggestedIds = useMemo(
+    () =>
+      new Set(
+        aiRoleResources
+          ?.map((r) => r.role_id)
+          .filter(Boolean) as string[]
+      ),
+    [aiRoleResources]
+  );
+
   const [roleOverrides, setRoleOverrides] = useState<
     Record<string, RoleDraft>
   >({});
@@ -366,6 +395,24 @@ export function Roles({
     return [...roles];
   }, [availableRoles, searchTerm, showSelectedFilter, role]);
 
+  // Accept AI suggestion - add AI-suggested roles to selection (multi-select only)
+  const handleAccept = useCallback(() => {
+    if (!aiRoleResources?.length || !multiSelect || !onRolesChange) return;
+    const currentIds = role_ids ?? [];
+    const newIds = aiRoleResources
+      .map((r) => r.role_id)
+      .filter((id): id is string => !!id && !currentIds.includes(id));
+    if (newIds.length > 0) {
+      onRolesChange([...currentIds, ...newIds]);
+    }
+    onAccept?.();
+  }, [aiRoleResources, role_ids, onRolesChange, onAccept, multiSelect]);
+
+  // Reject AI suggestion - just clear the pending state
+  const handleReject = useCallback(() => {
+    onReject?.();
+  }, [onReject]);
+
   if (!show_roles) {
     return null;
   }
@@ -373,10 +420,48 @@ export function Roles({
   return (
     <div className="space-y-2">
       {label && (
-        <Label htmlFor={id} className="flex items-center gap-1">
-          {label}
-          {required && <span className="text-destructive">*</span>}
-        </Label>
+        <div className="flex items-center gap-2">
+          <Label htmlFor={id} className="flex items-center gap-1">
+            {label}
+            {required && <span className="text-destructive">*</span>}
+          </Label>
+          {showDiff && (
+            <>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-success hover:text-success"
+                      onClick={handleAccept}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Accept</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-destructive hover:text-destructive"
+                      onClick={handleReject}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Reject</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </>
+          )}
+        </div>
       )}
       <SelectableGrid
         horizontal
@@ -400,6 +485,7 @@ export function Roles({
           const IconComponent = item.icon;
           const gradientStyle = generateGradientFromHex(item.color);
           const isEditing = editingRoleId === item.id;
+          const isAiSuggested = showDiff && aiSuggestedIds.has(item.id);
 
           return (
             <div
@@ -407,7 +493,8 @@ export function Roles({
                 "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
                 "hover:shadow-md hover:bg-accent/50",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                isSelected && "ring-2 ring-primary bg-accent"
+                isSelected && "ring-2 ring-primary bg-accent",
+                isAiSuggested && !isSelected && "ring-2 ring-success bg-success/10"
               )}
             >
               {!disabled && editable && (
@@ -509,6 +596,11 @@ export function Roles({
               {isSelected && (
                 <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
                   <Check className="h-3.5 w-3.5 text-primary-foreground" />
+                </div>
+              )}
+              {isAiSuggested && !isSelected && (
+                <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
+                  AI Suggested
                 </div>
               )}
               <div className="flex items-start gap-3">

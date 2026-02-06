@@ -18,7 +18,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { Loader2, Sparkles } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type CreateDraftPointsIn = InputOf<"/api/v4/resources/points", "post">;
@@ -63,6 +64,10 @@ export interface PointsProps {
   } | null;
   pointsId?: string | null;
   suggestions?: string[];
+  // AI diff view props
+  aiPointsResources?: Array<{ id?: string | null; value?: number | null }> | null;
+  onAccept?: () => void;
+  onReject?: () => void;
 }
 
 export function Points({
@@ -90,6 +95,10 @@ export function Points({
   pointsResource,
   pointsId: _pointsId,
   suggestions,
+  // AI diff view props
+  aiPointsResources,
+  onAccept,
+  onReject,
 }: PointsProps) {
   // Use standardized props with fallback to legacy props
   const resource = points_resource ?? pointsResource ?? null;
@@ -272,6 +281,28 @@ export function Points({
     return filteredPoints.filter((point) => point.id === resourceId);
   }, [filteredPoints, showSelectedFilter, resourceId]);
 
+  // AI suggestion state
+  const showDiff = !!aiPointsResources?.length;
+
+  // Accept AI suggestion - select the first AI-suggested points
+  const handleAccept = useCallback(() => {
+    if (!aiPointsResources?.length) return;
+    const firstAiPoints = aiPointsResources[0];
+    if (firstAiPoints?.id) {
+      onPointsIdChange(firstAiPoints.id);
+      if (firstAiPoints.value !== null && firstAiPoints.value !== undefined) {
+        setInternalValue(String(firstAiPoints.value));
+        lastSavedValueRef.current = String(firstAiPoints.value);
+      }
+    }
+    onAccept?.();
+  }, [aiPointsResources, onPointsIdChange, onAccept]);
+
+  // Reject AI suggestion - just clear the pending state
+  const handleReject = useCallback(() => {
+    onReject?.();
+  }, [onReject]);
+
   // Don't render if show_points is false (AFTER all hooks)
   if (!show) {
     return null;
@@ -296,7 +327,7 @@ export function Points({
                   size="icon"
                   className="h-6 w-6"
                   onClick={onGenerate}
-                  disabled={disabled || isGenerating}
+                  disabled={disabled || isGenerating || showDiff}
                 >
                   {isGenerating ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -311,7 +342,64 @@ export function Points({
             </Tooltip>
           </TooltipProvider>
         )}
+        {showDiff && (
+          <>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 text-success hover:text-success"
+                    onClick={handleAccept}
+                  >
+                    <Check className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Accept</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 text-destructive hover:text-destructive"
+                    onClick={handleReject}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Reject</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </>
+        )}
       </div>
+      {/* AI-suggested points preview */}
+      {showDiff && aiPointsResources && aiPointsResources.length > 0 && (
+        <div className="mb-4 space-y-2">
+          <p className="text-sm font-medium text-success">AI Suggested Points</p>
+          <div className="space-y-2">
+            {aiPointsResources.map((item, idx) => (
+              <div
+                key={item.id || idx}
+                className={cn(
+                  "p-3 rounded-lg border-2 border-success bg-success/10",
+                  "text-sm"
+                )}
+              >
+                {item.value !== null && item.value !== undefined
+                  ? item.value
+                  : "Unknown"}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       <SelectableGrid<{
         id: string | null;
         value: number | null;

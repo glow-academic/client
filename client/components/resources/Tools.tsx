@@ -8,10 +8,17 @@
 "use client";
 
 import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
-import { Check } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
 type CreateDraftToolsIn = InputOf<"/api/v4/resources/tools", "post">;
@@ -54,6 +61,13 @@ export interface ToolsProps {
   onSearchChange?: (term: string) => void; // Callback when search term changes
   showSelectedFilter?: boolean; // Whether to show only selected tools
   onShowSelectedChange?: (value: boolean) => void; // Callback when show selected filter changes
+  // AI diff view props
+  aiToolResources?: Array<{
+    tool_id?: string | null;
+    name?: string | null;
+  }> | null;
+  onAccept?: () => void;
+  onReject?: () => void;
 }
 
 export function Tools({
@@ -77,10 +91,44 @@ export function Tools({
   onSearchChange,
   showSelectedFilter = false,
   onShowSelectedChange,
+  // AI diff view props
+  aiToolResources,
+  onAccept,
+  onReject,
 }: ToolsProps) {
   const ids = useMemo(() => tool_ids ?? [], [tool_ids]);
   const show = show_tools ?? false;
   const allTools = useMemo(() => tools ?? [], [tools]);
+
+  // AI suggestion state
+  const showDiff = !!aiToolResources?.length;
+  const aiSuggestedIds = useMemo(
+    () =>
+      new Set(
+        aiToolResources
+          ?.map((t) => t.tool_id)
+          .filter(Boolean) as string[]
+      ),
+    [aiToolResources]
+  );
+
+  // Accept AI suggestion - add AI-suggested tools to selection
+  const handleAccept = useCallback(() => {
+    if (!aiToolResources?.length) return;
+    const newIds = aiToolResources
+      .map((t) => t.tool_id)
+      .filter((id): id is string => !!id && !ids.includes(id));
+    if (newIds.length > 0) {
+      onChange([...ids, ...newIds]);
+    }
+    onAccept?.();
+  }, [aiToolResources, ids, onChange, onAccept]);
+
+  // Reject AI suggestion - just clear the pending state
+  const handleReject = useCallback(() => {
+    onReject?.();
+  }, [onReject]);
+
   const suggestionsList = useMemo(
     () => tool_suggestions ?? [],
     [tool_suggestions]
@@ -166,10 +214,48 @@ export function Tools({
 
   return (
     <div className="space-y-4">
-      <Label htmlFor={id} className="flex items-center gap-1">
-        {label}
-        {required && <span className="text-destructive">*</span>}
-      </Label>
+      <div className="flex items-center gap-2">
+        <Label htmlFor={id} className="flex items-center gap-1">
+          {label}
+          {required && <span className="text-destructive">*</span>}
+        </Label>
+        {showDiff && (
+          <>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 text-success hover:text-success"
+                    onClick={handleAccept}
+                  >
+                    <Check className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Accept</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 text-destructive hover:text-destructive"
+                    onClick={handleReject}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Reject</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </>
+        )}
+      </div>
       <SelectableGrid<ToolsItem>
         horizontal
         items={displayTools}
@@ -177,39 +263,51 @@ export function Tools({
         selectedIds={ids}
         onSelect={handleSelect}
         getId={(item) => item.id}
-        renderItem={(item, isSelected) => (
-          <div
-            className={cn(
-              "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
-              "hover:shadow-md hover:bg-accent/50",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-              isSelected && "ring-2 ring-primary bg-accent"
-            )}
-          >
-            {/* Check icon - top right */}
-            {isSelected && (
-              <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
-                <Check className="h-3.5 w-3.5 text-primary-foreground" />
-              </div>
-            )}
+        renderItem={(item, isSelected) => {
+          const isAiSuggested = showDiff && aiSuggestedIds.has(item.id);
 
-            {/* Suggested badge - top right */}
-            {isSuggested(item.id) && !isSelected && (
-              <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded">
-                Suggested
-              </div>
-            )}
-
-            <div className="flex-1 min-w-0">
-              <h3 className="font-medium text-sm leading-tight">{item.name}</h3>
-              {item.description && (
-                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                  {item.description}
-                </p>
+          return (
+            <div
+              className={cn(
+                "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
+                "hover:shadow-md hover:bg-accent/50",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                isSelected && "ring-2 ring-primary bg-accent",
+                isAiSuggested && !isSelected && "ring-2 ring-success bg-success/10"
               )}
+            >
+              {/* Check icon - top right */}
+              {isSelected && (
+                <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
+                  <Check className="h-3.5 w-3.5 text-primary-foreground" />
+                </div>
+              )}
+
+              {/* AI Suggested badge - top right */}
+              {isAiSuggested && !isSelected && (
+                <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
+                  AI Suggested
+                </div>
+              )}
+
+              {/* Suggested badge - top right */}
+              {isSuggested(item.id) && !isSelected && !isAiSuggested && (
+                <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded">
+                  Suggested
+                </div>
+              )}
+
+              <div className="flex-1 min-w-0">
+                <h3 className="font-medium text-sm leading-tight">{item.name}</h3>
+                {item.description && (
+                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                    {item.description}
+                  </p>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          );
+        }}
         emptyMessage="No tools found."
         disabled={disabled}
       />

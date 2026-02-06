@@ -9,7 +9,15 @@
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { Label } from "@/components/ui/label";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { Check } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
+import { Check, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
 type CreateDraftVoicesIn = InputOf<"/api/v4/resources/voices", "post">;
@@ -48,6 +56,10 @@ export interface VoicesProps {
   createVoicesAction?:
     | ((input: CreateDraftVoicesIn) => Promise<CreateDraftVoicesOut>)
     | undefined;
+  // AI diff view props
+  aiVoiceResources?: Array<{ id?: string | null; voice?: string | null }> | null;
+  onAccept?: () => void;
+  onReject?: () => void;
 }
 
 export function Voices({
@@ -68,6 +80,10 @@ export function Voices({
   create_tool_id,
   link_tool_id,
   createVoicesAction,
+  // AI diff view props
+  aiVoiceResources,
+  onAccept,
+  onReject,
 }: VoicesProps) {
   const ids = useMemo(() => voice_ids ?? [], [voice_ids]);
   const show = show_voices ?? false;
@@ -103,6 +119,32 @@ export function Voices({
     [suggestionsList]
   );
 
+  // AI suggestion state
+  const showDiff = !!aiVoiceResources?.length;
+
+  // Get AI-suggested IDs (kept for potential future use)
+  const _aiSuggestedIds = useMemo(
+    () => new Set(aiVoiceResources?.map((r) => r.id).filter(Boolean) as string[]),
+    [aiVoiceResources]
+  );
+
+  // Accept AI suggestion - add AI-suggested voices to selection
+  const handleAccept = useCallback(() => {
+    if (!aiVoiceResources?.length) return;
+    const newIds = aiVoiceResources
+      .map((v) => v.id)
+      .filter((id): id is string => !!id);
+    if (newIds.length > 0) {
+      onVoiceIdsChange([...ids, ...newIds]);
+    }
+    onAccept?.();
+  }, [aiVoiceResources, ids, onVoiceIdsChange, onAccept]);
+
+  // Reject AI suggestion - just clear the pending state
+  const handleReject = useCallback(() => {
+    onReject?.();
+  }, [onReject]);
+
   // Don't render if show_voices is false (AFTER all hooks)
   if (!show) {
     return null;
@@ -110,10 +152,67 @@ export function Voices({
 
   return (
     <div className="space-y-2">
-      <Label htmlFor={id} className="flex items-center gap-1">
-        {label}
-        {required && <span className="text-destructive">*</span>}
-      </Label>
+      <div className="flex items-center gap-2">
+        <Label htmlFor={id} className="flex items-center gap-1">
+          {label}
+          {required && <span className="text-destructive">*</span>}
+        </Label>
+        {showDiff && (
+          <>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 text-success hover:text-success"
+                    onClick={handleAccept}
+                  >
+                    <Check className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Accept</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 text-destructive hover:text-destructive"
+                    onClick={handleReject}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Reject</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </>
+        )}
+      </div>
+      {/* AI-suggested voices preview */}
+      {showDiff && aiVoiceResources && aiVoiceResources.length > 0 && (
+        <div className="mb-4 space-y-2">
+          <p className="text-sm font-medium text-success">AI Suggested Voices</p>
+          <div className="space-y-2">
+            {aiVoiceResources.map((item, idx) => (
+              <div
+                key={item.id || idx}
+                className={cn(
+                  "p-3 rounded-lg border-2 border-success bg-success/10",
+                  "text-sm"
+                )}
+              >
+                {item.voice || ""}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <GenericPicker<VoiceItem>
         items={voiceItems}

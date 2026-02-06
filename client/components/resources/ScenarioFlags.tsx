@@ -17,7 +17,8 @@ import {
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { getPersonaIconComponent } from "@/utils/persona-icons";
-import { Loader2, Power, Sparkles } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Check, Loader2, Power, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type CreateDraftSimulationScenarioFlagsIn = InputOf<
@@ -94,6 +95,10 @@ export interface ScenarioFlagsProps {
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created IDs */
   registerFlush?: (flush: () => Promise<{ scenario_flag_ids: string[] } | void>) => void;
+  // AI diff view props
+  aiFlagResources?: Array<{ id?: string | null; key?: string | null }> | null;
+  onAccept?: () => void;
+  onReject?: () => void;
 }
 
 type ScenarioFlagOption = {
@@ -125,6 +130,9 @@ export function ScenarioFlags({
   isGenerating = false,
   isAutosaveEnabled = true,
   registerFlush,
+  aiFlagResources,
+  onAccept,
+  onReject,
 }: ScenarioFlagsProps) {
   const show = show_scenario_flags ?? false;
   const allFlags = useMemo(() => scenario_flags ?? [], [scenario_flags]);
@@ -422,6 +430,40 @@ export function ScenarioFlags({
     return currentResources.some((flag) => flag.generated);
   }, [currentResources]);
 
+  // AI suggestion state
+  const showDiff = !!aiFlagResources?.length;
+  const aiSuggestedFlagIds = useMemo(
+    () =>
+      new Set(
+        aiFlagResources?.map((f) => f.id).filter(Boolean) as string[]
+      ),
+    [aiFlagResources]
+  );
+
+  // Accept AI suggestion - apply all AI-suggested flags
+  const handleAccept = useCallback(() => {
+    if (!aiFlagResources?.length) return;
+
+    for (const aiFlag of aiFlagResources) {
+      if (!aiFlag.id) continue;
+      // Find which scenario and flag this applies to
+      // For ScenarioFlags, the AI returns flag_ids that correspond to flag options
+      // We need to find the scenario and toggle that flag on
+      for (const [scenarioId, flagOptions] of filteredFlagOptionsByScenario) {
+        const matchingOption = flagOptions.find((opt) => opt.id === aiFlag.id);
+        if (matchingOption) {
+          handleToggle(scenarioId, matchingOption.id, true);
+        }
+      }
+    }
+    onAccept?.();
+  }, [aiFlagResources, filteredFlagOptionsByScenario, handleToggle, onAccept]);
+
+  // Reject AI suggestion - just clear the pending state
+  const handleReject = useCallback(() => {
+    onReject?.();
+  }, [onReject]);
+
   if (!show || scenario_ids.length === 0) {
     return null;
   }
@@ -449,7 +491,7 @@ export function ScenarioFlags({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating}
+                    disabled={disabled || isGenerating || showDiff}
                   >
                     {isGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -463,6 +505,42 @@ export function ScenarioFlags({
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
+          )}
+          {showDiff && (
+            <>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-success hover:text-success"
+                      onClick={handleAccept}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Accept</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-destructive hover:text-destructive"
+                      onClick={handleReject}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Reject</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </>
           )}
         </div>
       )}
@@ -487,10 +565,16 @@ export function ScenarioFlags({
                   const IconComponent = option.icon
                     ? getPersonaIconComponent(option.icon)
                     : null;
+                  const isAiSuggested =
+                    showDiff && aiSuggestedFlagIds.has(option.id);
+                  const wouldChange = isAiSuggested && !isSelected; // AI wants to turn this ON
                   return (
                     <div
                       key={option.id}
-                      className="space-y-1 p-2 rounded-lg transition-all"
+                      className={cn(
+                        "space-y-1 p-2 rounded-lg transition-all",
+                        isAiSuggested && "ring-2 ring-success bg-success/10"
+                      )}
                     >
                       <div className="flex items-center gap-2">
                         <Label
@@ -503,6 +587,11 @@ export function ScenarioFlags({
                             <Power className="h-3.5 w-3.5 text-muted-foreground" />
                           )}
                           {option.name}
+                          {isAiSuggested && (
+                            <span className="ml-2 text-xs text-success font-medium">
+                              → {wouldChange ? "ON" : "OFF"} (AI)
+                            </span>
+                          )}
                         </Label>
                         <Switch
                           id={`flag-${scenarioId}-${option.id}`}

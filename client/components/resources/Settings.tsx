@@ -17,7 +17,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { Check, Loader2, Sparkles } from "lucide-react";
+import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
 export interface SettingItem {
@@ -57,6 +57,13 @@ export interface SettingsProps {
   isGenerating?: boolean;
   // Legacy props for backward compatibility
   settingsIds?: string[];
+  // AI diff view props
+  aiSettingsResources?: Array<{
+    settings_id?: string | null;
+    name?: string | null;
+  }> | null;
+  onAccept?: () => void;
+  onReject?: () => void;
 }
 
 export function Settings({
@@ -78,6 +85,10 @@ export function Settings({
   isGenerating = false,
   // Legacy props for backward compatibility
   settingsIds,
+  // AI diff view props
+  aiSettingsResources,
+  onAccept,
+  onReject,
 }: SettingsProps) {
   // Use standardized props with fallback to legacy props
   const ids = useMemo(
@@ -86,6 +97,36 @@ export function Settings({
   );
   const show = show_settings ?? false;
   const allSettings = useMemo(() => settings ?? [], [settings]);
+
+  // AI suggestion state
+  const showDiff = !!aiSettingsResources?.length;
+  const aiSuggestedIds = useMemo(
+    () =>
+      new Set(
+        aiSettingsResources
+          ?.map((s) => s.settings_id)
+          .filter(Boolean) as string[]
+      ),
+    [aiSettingsResources]
+  );
+
+  // Accept AI suggestion - add AI-suggested settings to selection
+  const handleAccept = useCallback(() => {
+    if (!aiSettingsResources?.length) return;
+    const newIds = aiSettingsResources
+      .map((s) => s.settings_id)
+      .filter((id): id is string => !!id && !ids.includes(id));
+    if (newIds.length > 0) {
+      onChange([...ids, ...newIds]);
+    }
+    onAccept?.();
+  }, [aiSettingsResources, ids, onChange, onAccept]);
+
+  // Reject AI suggestion - just clear the pending state
+  const handleReject = useCallback(() => {
+    onReject?.();
+  }, [onReject]);
+
   const suggestionsList = useMemo(
     () => settings_suggestions ?? [],
     [settings_suggestions]
@@ -151,7 +192,7 @@ export function Settings({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating}
+                    disabled={disabled || isGenerating || showDiff}
                   >
                     {isGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -166,6 +207,42 @@ export function Settings({
               </Tooltip>
             </TooltipProvider>
           )}
+          {showDiff && (
+            <>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-success hover:text-success"
+                      onClick={handleAccept}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Accept</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-destructive hover:text-destructive"
+                      onClick={handleReject}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Reject</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </>
+          )}
         </div>
       )}
       <GenericPicker<SettingItem>
@@ -179,31 +256,43 @@ export function Settings({
         multiSelect={true}
         getId={(item) => item.id}
         getLabel={(item) => item.name}
-        renderItem={(item, isSelected) => (
-          <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              {isSuggested(item.id) && !isSelected && (
-                <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded shrink-0">
-                  Suggested
-                </span>
-              )}
-              <div className="flex-1 min-w-0">
-                <div className="truncate">{item.name}</div>
-                {item.description && (
-                  <div className="text-xs text-muted-foreground truncate">
-                    {item.description}
-                  </div>
+        renderItem={(item, isSelected) => {
+          const isAiSuggested = showDiff && aiSuggestedIds.has(item.id);
+
+          return (
+            <div className={cn(
+              "flex items-center justify-between w-full",
+              isAiSuggested && !isSelected && "ring-2 ring-success bg-success/10 rounded"
+            )}>
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                {isAiSuggested && !isSelected && (
+                  <span className="px-1.5 py-0.5 bg-success/20 text-success text-xs rounded shrink-0">
+                    AI Suggested
+                  </span>
                 )}
+                {isSuggested(item.id) && !isSelected && !isAiSuggested && (
+                  <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded shrink-0">
+                    Suggested
+                  </span>
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="truncate">{item.name}</div>
+                  {item.description && (
+                    <div className="text-xs text-muted-foreground truncate">
+                      {item.description}
+                    </div>
+                  )}
+                </div>
               </div>
+              <Check
+                className={cn(
+                  "ml-auto flex-shrink-0 h-4 w-4",
+                  isSelected ? "opacity-100" : "opacity-0"
+                )}
+              />
             </div>
-            <Check
-              className={cn(
-                "ml-auto flex-shrink-0 h-4 w-4",
-                isSelected ? "opacity-100" : "opacity-0"
-              )}
-            />
-          </div>
-        )}
+          );
+        }}
         placeholder={placeholder}
         disabled={disabled}
         showLabel={false}

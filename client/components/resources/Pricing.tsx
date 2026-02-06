@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
-import { Check, Loader2, Sparkles } from "lucide-react";
+import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
 type CreateDraftPricingIn = InputOf<"/api/v4/resources/pricing", "post">;
@@ -63,6 +63,10 @@ export interface PricingProps {
     | undefined;
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
+  // AI diff view props
+  aiPricingResources?: Array<{ id?: string | null; name?: string | null }> | null;
+  onAccept?: () => void;
+  onReject?: () => void;
 }
 
 export function Pricing({
@@ -86,6 +90,10 @@ export function Pricing({
   createPricingAction,
   onGenerate,
   isGenerating = false,
+  // AI diff view props
+  aiPricingResources,
+  onAccept,
+  onReject,
 }: PricingProps) {
   const ids = useMemo(() => pricing_ids ?? [], [pricing_ids]);
   const show = show_pricing ?? false;
@@ -145,6 +153,31 @@ export function Pricing({
     return pricing_resources?.some((m) => m.generated) ?? false;
   }, [pricing_resources]);
 
+  // AI suggestion state
+  const showDiff = !!aiPricingResources?.length;
+  const aiSuggestedIds = useMemo(
+    () => new Set(aiPricingResources?.map((r) => r.id).filter(Boolean) as string[]),
+    [aiPricingResources]
+  );
+
+  // Accept AI suggestion - add AI-suggested pricing to selection
+  const handleAccept = useCallback(() => {
+    if (!aiPricingResources?.length) return;
+    const newIds = aiPricingResources
+      .map((r) => r.id)
+      .filter((id): id is string => !!id);
+    if (newIds.length > 0) {
+      const mergedIds = [...new Set([...ids, ...newIds])];
+      onChange(mergedIds);
+    }
+    onAccept?.();
+  }, [aiPricingResources, ids, onChange, onAccept]);
+
+  // Reject AI suggestion - just clear the pending state
+  const handleReject = useCallback(() => {
+    onReject?.();
+  }, [onReject]);
+
   // Don't render if show_pricing is false (AFTER all hooks)
   if (!show) {
     return null;
@@ -173,7 +206,7 @@ export function Pricing({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating}
+                    disabled={disabled || isGenerating || showDiff}
                   >
                     {isGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -188,6 +221,61 @@ export function Pricing({
               </Tooltip>
             </TooltipProvider>
           )}
+          {showDiff && (
+            <>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-success hover:text-success"
+                      onClick={handleAccept}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Accept</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-destructive hover:text-destructive"
+                      onClick={handleReject}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Reject</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </>
+          )}
+        </div>
+      )}
+      {/* AI-suggested pricing preview */}
+      {showDiff && aiPricingResources && aiPricingResources.length > 0 && (
+        <div className="mb-4 space-y-2">
+          <p className="text-sm font-medium text-success">AI Suggested Pricing</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            {aiPricingResources.map((item, idx) => (
+              <div
+                key={item.id || idx}
+                className={cn(
+                  "p-3 rounded-lg border-2 border-success bg-success/10",
+                  "text-sm"
+                )}
+              >
+                {item.name || ""}
+              </div>
+            ))}
+          </div>
         </div>
       )}
       <GenericPicker<PricingItem>
@@ -203,7 +291,12 @@ export function Pricing({
         renderItem={(item, isSelected) => (
           <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-2 flex-1 min-w-0">
-              {isSuggested(item.id) && !isSelected && (
+              {aiSuggestedIds.has(item.id) && (
+                <span className="px-1.5 py-0.5 bg-success text-success-foreground text-xs rounded shrink-0">
+                  AI Suggested
+                </span>
+              )}
+              {!aiSuggestedIds.has(item.id) && isSuggested(item.id) && !isSelected && (
                 <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded shrink-0">
                   Suggested
                 </span>

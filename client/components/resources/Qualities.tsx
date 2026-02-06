@@ -17,7 +17,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { Check, Loader2, Sparkles } from "lucide-react";
+import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
 export interface QualitiesItem {
@@ -55,6 +55,13 @@ export interface QualitiesProps {
   link_tool_id?: string | null; // Tool ID for AI link suggestions
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
+  // AI diff view props
+  aiQualityResources?: Array<{
+    quality_id?: string | null;
+    name?: string | null;
+  }> | null;
+  onAccept?: () => void;
+  onReject?: () => void;
 }
 
 export function Qualities({
@@ -76,6 +83,10 @@ export function Qualities({
   link_tool_id,
   onGenerate,
   isGenerating = false,
+  // AI diff view props
+  aiQualityResources,
+  onAccept,
+  onReject,
 }: QualitiesProps) {
   const ids = useMemo(() => quality_ids ?? [], [quality_ids]);
   const show = show_qualities ?? false;
@@ -84,6 +95,19 @@ export function Qualities({
     () => quality_suggestions ?? [],
     [quality_suggestions]
   );
+
+  // AI suggestion state
+  const showDiff = !!aiQualityResources?.length;
+  const aiSuggestedIds = useMemo(
+    () =>
+      new Set(
+        aiQualityResources
+          ?.map((q) => q.quality_id)
+          .filter(Boolean) as string[]
+      ),
+    [aiQualityResources]
+  );
+
   const filteredQualities = useMemo(() => {
     if (!searchTerm?.trim()) {
       return allQualities;
@@ -127,6 +151,23 @@ export function Qualities({
     return quality_resources?.some((m) => m.generated) ?? false;
   }, [quality_resources]);
 
+  // Accept AI suggestion - add AI-suggested qualities to selection
+  const handleAccept = useCallback(() => {
+    if (!aiQualityResources?.length) return;
+    const newIds = aiQualityResources
+      .map((q) => q.quality_id)
+      .filter((id): id is string => !!id && !ids.includes(id));
+    if (newIds.length > 0) {
+      onChange([...ids, ...newIds]);
+    }
+    onAccept?.();
+  }, [aiQualityResources, ids, onChange, onAccept]);
+
+  // Reject AI suggestion - just clear the pending state
+  const handleReject = useCallback(() => {
+    onReject?.();
+  }, [onReject]);
+
   // Don't render if show_qualities is false (AFTER all hooks)
   if (!show) {
     return null;
@@ -155,7 +196,7 @@ export function Qualities({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating}
+                    disabled={disabled || isGenerating || showDiff}
                   >
                     {isGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -170,6 +211,42 @@ export function Qualities({
               </Tooltip>
             </TooltipProvider>
           )}
+          {showDiff && (
+            <>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-success hover:text-success"
+                      onClick={handleAccept}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Accept</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-destructive hover:text-destructive"
+                      onClick={handleReject}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Reject</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </>
+          )}
         </div>
       )}
       <GenericPicker<QualitiesItem>
@@ -182,31 +259,43 @@ export function Qualities({
         multiSelect={true}
         getId={(item) => item.id}
         getLabel={(item) => item.name}
-        renderItem={(item, isSelected) => (
-          <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              {isSuggested(item.id) && !isSelected && (
-                <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded shrink-0">
-                  Suggested
-                </span>
-              )}
-              <div className="flex-1 min-w-0">
-                <div className="truncate">{item.name}</div>
-                {item.description && (
-                  <div className="text-xs text-muted-foreground truncate">
-                    {item.description}
-                  </div>
+        renderItem={(item, isSelected) => {
+          const isAiSuggested = showDiff && aiSuggestedIds.has(item.id);
+
+          return (
+            <div className={cn(
+              "flex items-center justify-between w-full",
+              isAiSuggested && !isSelected && "ring-2 ring-success bg-success/10 rounded px-2 py-1 -mx-2 -my-1"
+            )}>
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                {isAiSuggested && !isSelected && (
+                  <span className="px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium shrink-0">
+                    AI Suggested
+                  </span>
                 )}
+                {isSuggested(item.id) && !isSelected && !isAiSuggested && (
+                  <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded shrink-0">
+                    Suggested
+                  </span>
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="truncate">{item.name}</div>
+                  {item.description && (
+                    <div className="text-xs text-muted-foreground truncate">
+                      {item.description}
+                    </div>
+                  )}
+                </div>
               </div>
+              <Check
+                className={cn(
+                  "ml-auto flex-shrink-0 h-4 w-4",
+                  isSelected ? "opacity-100" : "opacity-0"
+                )}
+              />
             </div>
-            <Check
-              className={cn(
-                "ml-auto flex-shrink-0 h-4 w-4",
-                isSelected ? "opacity-100" : "opacity-0"
-              )}
-            />
-          </div>
-        )}
+          );
+        }}
         {...(searchTerm !== undefined ? { initialSearchTerm: searchTerm } : {})}
         {...(onSearchChange ? { onSearchChange } : {})}
         placeholder={placeholder}

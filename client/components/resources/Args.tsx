@@ -6,9 +6,18 @@
 
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
+import { Check, X } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -48,6 +57,10 @@ export interface ArgsProps {
   link_tool_id?: string | null; // Tool ID for AI link suggestions
   // Component handles field changes internally and calls createArgsAction
   // No onChange callback needed - component manages its own state like SchemaInput
+  // AI diff view props
+  aiArgsResources?: Array<{ id?: string | null; name?: string | null }> | null;
+  onAccept?: () => void;
+  onReject?: () => void;
 }
 
 export function Args({
@@ -58,6 +71,10 @@ export function Args({
   group_id,
   create_tool_id,
   link_tool_id,
+  // AI diff view props
+  aiArgsResources,
+  onAccept,
+  onReject,
 }: ArgsProps) {
   // Sort fields by position
   const sortedFields = useMemo(() => {
@@ -218,6 +235,31 @@ export function Args({
     };
   }, []);
 
+  // AI suggestion state
+  const showDiff = !!aiArgsResources?.length;
+
+  // Accept AI suggestion - add AI-suggested args field values
+  const handleAccept = useCallback(() => {
+    if (!aiArgsResources?.length) return;
+    // For Args, we accept the suggested field values by updating internal state
+    const newFieldValues: Record<string, Partial<ArgsFieldDetail>> = { ...fieldValues };
+    aiArgsResources.forEach((aiArg) => {
+      if (aiArg.id && aiArg.name) {
+        newFieldValues[aiArg.id] = {
+          ...newFieldValues[aiArg.id],
+          name: aiArg.name,
+        };
+      }
+    });
+    setFieldValues(newFieldValues);
+    onAccept?.();
+  }, [aiArgsResources, fieldValues, onAccept]);
+
+  // Reject AI suggestion - just clear the pending state
+  const handleReject = useCallback(() => {
+    onReject?.();
+  }, [onReject]);
+
   // Don't render if no args selected
   if (args_ids.length === 0) {
     return (
@@ -238,6 +280,65 @@ export function Args({
 
   return (
     <div className="space-y-6">
+      {/* Header with AI diff controls */}
+      {showDiff && (
+        <div className="flex items-center gap-2">
+          <Label className="flex items-center gap-1">Args Fields</Label>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 text-success hover:text-success"
+                  onClick={handleAccept}
+                >
+                  <Check className="h-3.5 w-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Accept</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 text-destructive hover:text-destructive"
+                  onClick={handleReject}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Reject</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      )}
+
+      {/* AI-suggested args preview */}
+      {showDiff && aiArgsResources && aiArgsResources.length > 0 && (
+        <div className="mb-4 space-y-2">
+          <p className="text-sm font-medium text-success">AI Suggested Args</p>
+          <div className="space-y-2">
+            {aiArgsResources.map((item, idx) => (
+              <div
+                key={item.id || idx}
+                className={cn(
+                  "p-3 rounded-lg border-2 border-success bg-success/10",
+                  "text-sm"
+                )}
+              >
+                {item.name || ""}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Fields */}
       {sortedFields.map((field) => {
         const fieldValue = fieldValues[field.args_id] ?? {};

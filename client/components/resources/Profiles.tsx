@@ -17,7 +17,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { Check, Loader2, Sparkles } from "lucide-react";
+import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
 export interface ProfilesItem {
@@ -53,6 +53,13 @@ export interface ProfilesProps {
   link_tool_id?: string | null; // Tool ID for AI link suggestions
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
+  // AI diff view props
+  aiProfileResources?: Array<{
+    profile_id?: string | null;
+    name?: string | null;
+  }> | null;
+  onAccept?: () => void;
+  onReject?: () => void;
 }
 
 export function Profiles({
@@ -72,10 +79,44 @@ export function Profiles({
   link_tool_id,
   onGenerate,
   isGenerating = false,
+  // AI diff view props
+  aiProfileResources,
+  onAccept,
+  onReject,
 }: ProfilesProps) {
   const ids = useMemo(() => profile_ids ?? [], [profile_ids]);
   const show = show_profiles ?? false;
   const allProfiles = useMemo(() => profiles ?? [], [profiles]);
+
+  // AI suggestion state
+  const showDiff = !!aiProfileResources?.length;
+  const aiSuggestedIds = useMemo(
+    () =>
+      new Set(
+        aiProfileResources
+          ?.map((p) => p.profile_id)
+          .filter(Boolean) as string[]
+      ),
+    [aiProfileResources]
+  );
+
+  // Accept AI suggestion - add AI-suggested profiles to selection
+  const handleAccept = useCallback(() => {
+    if (!aiProfileResources?.length) return;
+    const newIds = aiProfileResources
+      .map((p) => p.profile_id)
+      .filter((id): id is string => !!id && !ids.includes(id));
+    if (newIds.length > 0) {
+      onChange([...ids, ...newIds]);
+    }
+    onAccept?.();
+  }, [aiProfileResources, ids, onChange, onAccept]);
+
+  // Reject AI suggestion - just clear the pending state
+  const handleReject = useCallback(() => {
+    onReject?.();
+  }, [onReject]);
+
   const suggestionsList = useMemo(
     () => profile_suggestions ?? [],
     [profile_suggestions]
@@ -139,7 +180,7 @@ export function Profiles({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating}
+                    disabled={disabled || isGenerating || showDiff}
                   >
                     {isGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -154,6 +195,42 @@ export function Profiles({
               </Tooltip>
             </TooltipProvider>
           )}
+          {showDiff && (
+            <>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-success hover:text-success"
+                      onClick={handleAccept}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Accept</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-destructive hover:text-destructive"
+                      onClick={handleReject}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Reject</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </>
+          )}
         </div>
       )}
       <GenericPicker<ProfilesItem>
@@ -166,31 +243,43 @@ export function Profiles({
         multiSelect={true}
         getId={(item) => item.id}
         getLabel={(item) => item.name}
-        renderItem={(item, isSelected) => (
-          <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              {isSuggested(item.id) && !isSelected && (
-                <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded shrink-0">
-                  Suggested
-                </span>
-              )}
-              <div className="flex-1 min-w-0">
-                <div className="truncate">{item.name}</div>
-                {item.description && (
-                  <div className="text-xs text-muted-foreground truncate">
-                    {item.description}
-                  </div>
+        renderItem={(item, isSelected) => {
+          const isAiSuggested = showDiff && aiSuggestedIds.has(item.id);
+
+          return (
+            <div className={cn(
+              "flex items-center justify-between w-full",
+              isAiSuggested && !isSelected && "ring-2 ring-success bg-success/10 rounded"
+            )}>
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                {isAiSuggested && !isSelected && (
+                  <span className="px-1.5 py-0.5 bg-success/20 text-success text-xs rounded shrink-0">
+                    AI Suggested
+                  </span>
                 )}
+                {isSuggested(item.id) && !isSelected && !isAiSuggested && (
+                  <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded shrink-0">
+                    Suggested
+                  </span>
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="truncate">{item.name}</div>
+                  {item.description && (
+                    <div className="text-xs text-muted-foreground truncate">
+                      {item.description}
+                    </div>
+                  )}
+                </div>
               </div>
+              <Check
+                className={cn(
+                  "ml-auto flex-shrink-0 h-4 w-4",
+                  isSelected ? "opacity-100" : "opacity-0"
+                )}
+              />
             </div>
-            <Check
-              className={cn(
-                "ml-auto flex-shrink-0 h-4 w-4",
-                isSelected ? "opacity-100" : "opacity-0"
-              )}
-            />
-          </div>
-        )}
+          );
+        }}
         placeholder={placeholder}
         disabled={disabled}
         showLabel={false}

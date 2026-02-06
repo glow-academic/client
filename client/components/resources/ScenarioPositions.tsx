@@ -15,7 +15,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { ChevronLeft, ChevronRight, GripVertical, Loader2, Sparkles } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Check, ChevronLeft, ChevronRight, GripVertical, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type CreateDraftScenarioPositionsIn = InputOf<
@@ -37,6 +38,7 @@ export interface ScenarioPositionItem {
 export interface ScenarioPositionsProps {
   scenario_position_ids?: string[]; // Current scenario position resource IDs (composite keys represented as UUIDs)
   scenario_position_resources?: Array<{
+    id?: string | null;
     simulation_id: string | null;
     scenario_id: string | null;
     value: number | null;
@@ -88,6 +90,14 @@ export interface ScenarioPositionsProps {
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created IDs */
   registerFlush?: (flush: () => Promise<{ scenario_position_ids: string[] } | void>) => void;
+  // AI diff view props
+  aiScenarioPositionResources?: Array<{
+    id?: string | null;
+    scenario_id?: string | null;
+    value?: number | null;
+  }> | null;
+  onAccept?: () => void;
+  onReject?: () => void;
 }
 
 export function ScenarioPositions({
@@ -115,6 +125,10 @@ export function ScenarioPositions({
   isGenerating = false,
   isAutosaveEnabled = true,
   registerFlush,
+  // AI diff view props
+  aiScenarioPositionResources,
+  onAccept,
+  onReject,
 }: ScenarioPositionsProps) {
   const show = show_scenario_positions ?? false;
   const allPositions = useMemo(() => scenario_positions ?? [], [scenario_positions]);
@@ -392,6 +406,47 @@ export function ScenarioPositions({
       .map(([scenarioId]) => scenarioId);
   }, [localPositions]);
 
+  // AI suggestion state
+  const showDiff = !!aiScenarioPositionResources?.length;
+  const aiSuggestedIds = useMemo(
+    () =>
+      new Set(
+        aiScenarioPositionResources
+          ?.map((r) => r.scenario_id)
+          .filter(Boolean) as string[]
+      ),
+    [aiScenarioPositionResources]
+  );
+
+  // Accept AI suggestion - apply AI-suggested positions
+  const handleAccept = useCallback(() => {
+    if (!aiScenarioPositionResources?.length) return;
+    // Apply AI positions to local state
+    const newPositions = new Map(localPositions);
+    aiScenarioPositionResources.forEach((pos) => {
+      if (pos.scenario_id && pos.value !== null && pos.value !== undefined) {
+        newPositions.set(pos.scenario_id, pos.value);
+      }
+    });
+    setLocalPositions(newPositions);
+    // Emit changes
+    const positionsArray: ScenarioPositionItem[] = Array.from(
+      newPositions.entries()
+    ).map(([sid, value]) => ({
+      simulation_id: simulation_id || "",
+      scenario_id: sid,
+      value,
+      generated: false,
+    }));
+    onChange(positionsArray);
+    onAccept?.();
+  }, [aiScenarioPositionResources, localPositions, simulation_id, onChange, onAccept]);
+
+  // Reject AI suggestion - just clear the pending state
+  const handleReject = useCallback(() => {
+    onReject?.();
+  }, [onReject]);
+
   // Don't render if show_scenario_positions is false or no scenarios (AFTER all hooks)
   if (!show || scenario_ids.length === 0) {
     return null;
@@ -420,7 +475,7 @@ export function ScenarioPositions({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating}
+                    disabled={disabled || isGenerating || showDiff}
                   >
                     {isGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -433,6 +488,69 @@ export function ScenarioPositions({
               </Tooltip>
             </TooltipProvider>
           )}
+          {showDiff && (
+            <>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-success hover:text-success"
+                      onClick={handleAccept}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Accept</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-destructive hover:text-destructive"
+                      onClick={handleReject}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Reject</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </>
+          )}
+        </div>
+      )}
+      {/* AI-suggested positions preview */}
+      {showDiff && aiScenarioPositionResources && aiScenarioPositionResources.length > 0 && (
+        <div className="mb-4 space-y-2">
+          <p className="text-sm font-medium text-success">AI Suggested Positions</p>
+          <div className="flex gap-3 overflow-x-auto py-2 pb-3 px-2">
+            {aiScenarioPositionResources.map((item, idx) => {
+              const labelText = item.scenario_id
+                ? scenarioLabelMap.get(item.scenario_id) ?? "Untitled scenario"
+                : "Untitled scenario";
+              return (
+                <div
+                  key={item.id || item.scenario_id || idx}
+                  className={cn(
+                    "p-3 rounded-lg border-2 border-success bg-success/10",
+                    "text-sm h-[88px] w-[180px] flex-shrink-0"
+                  )}
+                >
+                  <div className="font-medium">{labelText}</div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    Position: {item.value ?? "N/A"}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
       <div className="pl-4">
@@ -441,14 +559,24 @@ export function ScenarioPositions({
             const position = localPositions.get(scenarioId) || 1;
             const maxPos = Math.max(...Array.from(localPositions.values()));
             const labelText = scenarioLabelMap.get(scenarioId) ?? "Untitled scenario";
+            const isAiSuggested = showDiff && aiSuggestedIds.has(scenarioId);
             return (
               <div
                 key={scenarioId}
-                className="relative flex flex-col justify-between p-3 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left h-[88px] w-[180px] flex-shrink-0 hover:shadow-md hover:bg-accent/50"
+                className={cn(
+                  "relative flex flex-col justify-between p-3 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left h-[88px] w-[180px] flex-shrink-0 hover:shadow-md hover:bg-accent/50",
+                  isAiSuggested && "ring-2 ring-success bg-success/10"
+                )}
               >
+                {/* AI suggested badge */}
+                {isAiSuggested && (
+                  <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
+                    AI Suggested
+                  </div>
+                )}
                 <div className="flex items-start gap-2">
                   <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab flex-shrink-0 mt-0.5" />
-                  <h3 className="font-medium text-sm leading-tight line-clamp-2" title={labelText}>
+                  <h3 className="font-medium text-sm leading-tight line-clamp-2 pr-16" title={labelText}>
                     {labelText}
                   </h3>
                 </div>

@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
-import { Check, Loader2, Sparkles } from "lucide-react";
+import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
 type CreateDraftValuesIn = InputOf<"/api/v4/resources/values", "post">;
@@ -63,6 +63,10 @@ export interface ValuesProps {
     | undefined;
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
+  // AI diff view props
+  aiValueResources?: Array<{ id?: string | null; name?: string | null }> | null;
+  onAccept?: () => void;
+  onReject?: () => void;
 }
 
 export function Values({
@@ -86,6 +90,10 @@ export function Values({
   createValuesAction,
   onGenerate,
   isGenerating = false,
+  // AI diff view props
+  aiValueResources,
+  onAccept,
+  onReject,
 }: ValuesProps) {
   const ids = useMemo(() => value_ids ?? [], [value_ids]);
   const show = show_values ?? false;
@@ -145,6 +153,26 @@ export function Values({
     return value_resources?.some((m) => m.generated) ?? false;
   }, [value_resources]);
 
+  // AI suggestion state
+  const showDiff = !!aiValueResources?.length;
+
+  // Accept AI suggestion - add AI-suggested values to selection
+  const handleAccept = useCallback(() => {
+    if (!aiValueResources?.length) return;
+    const aiIds = aiValueResources
+      .map((r) => r.id)
+      .filter((id): id is string => !!id);
+    // Add AI-suggested IDs to existing selection
+    const newIds = [...ids, ...aiIds.filter((id) => !ids.includes(id))];
+    onChange(newIds);
+    onAccept?.();
+  }, [aiValueResources, ids, onChange, onAccept]);
+
+  // Reject AI suggestion - just clear the pending state
+  const handleReject = useCallback(() => {
+    onReject?.();
+  }, [onReject]);
+
   // Don't render if show_values is false (AFTER all hooks)
   if (!show) {
     return null;
@@ -173,7 +201,7 @@ export function Values({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating}
+                    disabled={disabled || isGenerating || showDiff}
                   >
                     {isGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -188,6 +216,61 @@ export function Values({
               </Tooltip>
             </TooltipProvider>
           )}
+          {showDiff && (
+            <>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-success hover:text-success"
+                      onClick={handleAccept}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Accept</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-destructive hover:text-destructive"
+                      onClick={handleReject}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Reject</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </>
+          )}
+        </div>
+      )}
+      {/* AI-suggested values preview */}
+      {showDiff && aiValueResources && aiValueResources.length > 0 && (
+        <div className="mb-4 space-y-2">
+          <p className="text-sm font-medium text-success">AI Suggested Values</p>
+          <div className="space-y-2">
+            {aiValueResources.map((item, idx) => (
+              <div
+                key={item.id || idx}
+                className={cn(
+                  "p-3 rounded-lg border-2 border-success bg-success/10",
+                  "text-sm"
+                )}
+              >
+                {item.name || ""}
+              </div>
+            ))}
+          </div>
         </div>
       )}
       <GenericPicker<ValuesItem>

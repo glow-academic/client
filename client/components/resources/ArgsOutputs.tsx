@@ -6,9 +6,18 @@
 
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
+import { Check, X } from "lucide-react";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -52,6 +61,10 @@ export interface ArgsOutputsProps {
   link_tool_id?: string | null; // Tool ID for AI link suggestions
   // Component handles args_outputs changes internally and calls createArgsOutputsAction
   // No onChange callback needed - component manages its own state like SchemaOutput
+  // AI diff view props
+  aiArgsOutputsResources?: Array<{ id?: string | null; name?: string | null }> | null;
+  onAccept?: () => void;
+  onReject?: () => void;
 }
 
 export function ArgsOutputs({
@@ -63,6 +76,10 @@ export function ArgsOutputs({
   group_id,
   create_tool_id,
   link_tool_id,
+  // AI diff view props
+  aiArgsOutputsResources,
+  onAccept,
+  onReject,
 }: ArgsOutputsProps) {
   // Get available Jinja variables from input args fields
   const availableVariables = useMemo(() => {
@@ -313,6 +330,28 @@ export function ArgsOutputs({
     };
   }, []);
 
+  // AI suggestion state
+  const showDiff = !!aiArgsOutputsResources?.length;
+
+  // Accept AI suggestion - add AI-suggested args_outputs names
+  const handleAccept = useCallback(() => {
+    if (!aiArgsOutputsResources?.length) return;
+    // For ArgsOutputs, we accept the suggested output names by updating internal state
+    const newOutputNames: Record<string, string> = { ...outputNames };
+    aiArgsOutputsResources.forEach((aiOutput) => {
+      if (aiOutput.id && aiOutput.name) {
+        newOutputNames[aiOutput.id] = aiOutput.name;
+      }
+    });
+    setOutputNames(newOutputNames);
+    onAccept?.();
+  }, [aiArgsOutputsResources, outputNames, onAccept]);
+
+  // Reject AI suggestion - just clear the pending state
+  const handleReject = useCallback(() => {
+    onReject?.();
+  }, [onReject]);
+
   // Don't render if no args_outputs selected
   if (args_outputs_ids.length === 0) {
     return (
@@ -334,6 +373,65 @@ export function ArgsOutputs({
 
   return (
     <div className="space-y-6">
+      {/* Header with AI diff controls */}
+      {showDiff && (
+        <div className="flex items-center gap-2">
+          <Label className="flex items-center gap-1">Args Outputs</Label>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 text-success hover:text-success"
+                  onClick={handleAccept}
+                >
+                  <Check className="h-3.5 w-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Accept</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 text-destructive hover:text-destructive"
+                  onClick={handleReject}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Reject</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      )}
+
+      {/* AI-suggested args_outputs preview */}
+      {showDiff && aiArgsOutputsResources && aiArgsOutputsResources.length > 0 && (
+        <div className="mb-4 space-y-2">
+          <p className="text-sm font-medium text-success">AI Suggested Args Outputs</p>
+          <div className="space-y-2">
+            {aiArgsOutputsResources.map((item, idx) => (
+              <div
+                key={item.id || idx}
+                className={cn(
+                  "p-3 rounded-lg border-2 border-success bg-success/10",
+                  "text-sm"
+                )}
+              >
+                {item.name || ""}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Available variables reference */}
       {availableVariables.length > 0 && (
         <div className="rounded-md border p-4 bg-muted/50">

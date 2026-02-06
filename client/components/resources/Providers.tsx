@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
-import { Check, Loader2, Sparkles } from "lucide-react";
+import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
 type CreateDraftProvidersIn = InputOf<"/api/v4/resources/providers", "post">;
@@ -66,6 +66,13 @@ export interface ProvidersProps {
   placeholder?: string;
   group_id?: string | null; // Group ID for linking resources
   link_tool_id?: string | null; // Tool ID for AI link suggestions
+  // AI diff view props (for multi-select mode)
+  aiProviderResources?: Array<{
+    provider_id?: string | null;
+    name?: string | null;
+  }> | null;
+  onAccept?: () => void;
+  onReject?: () => void;
 }
 
 export function Providers({
@@ -88,6 +95,10 @@ export function Providers({
   placeholder = "Select a provider...",
   group_id,
   link_tool_id,
+  // AI diff view props (for multi-select mode)
+  aiProviderResources,
+  onAccept,
+  onReject,
 }: ProvidersProps) {
   const resource = provider_resource ?? null;
   const resourceId = provider_id ?? null;
@@ -110,6 +121,18 @@ export function Providers({
   const hasGenerated = useMemo(() => {
     return provider_resources?.some((p) => p.generated) ?? false;
   }, [provider_resources]);
+
+  // AI suggestion state (for multi-select mode)
+  const showDiff = multiSelect && !!aiProviderResources?.length;
+  const aiSuggestedIds = useMemo(
+    () =>
+      new Set(
+        aiProviderResources
+          ?.map((p) => p.provider_id)
+          .filter(Boolean) as string[]
+      ),
+    [aiProviderResources]
+  );
 
   // Convert providers array from API format to ProviderItem format
   const providerItems = useMemo(() => {
@@ -151,6 +174,23 @@ export function Providers({
     [onChange]
   );
 
+  // Accept AI suggestion - add AI-suggested providers to selection (multi-select only)
+  const handleAccept = useCallback(() => {
+    if (!aiProviderResources?.length || !multiSelect) return;
+    const newIds = aiProviderResources
+      .map((p) => p.provider_id)
+      .filter((id): id is string => !!id && !ids.includes(id));
+    if (newIds.length > 0 && onChange) {
+      onChange([...ids, ...newIds]);
+    }
+    onAccept?.();
+  }, [aiProviderResources, ids, onChange, onAccept, multiSelect]);
+
+  // Reject AI suggestion - just clear the pending state
+  const handleReject = useCallback(() => {
+    onReject?.();
+  }, [onReject]);
+
   // Don't render if show_provider is false (AFTER all hooks)
   if (!show) {
     return null;
@@ -174,7 +214,7 @@ export function Providers({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating}
+                    disabled={disabled || isGenerating || showDiff}
                   >
                     {isGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -188,6 +228,42 @@ export function Providers({
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
+          )}
+          {showDiff && (
+            <>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-success hover:text-success"
+                      onClick={handleAccept}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Accept</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-destructive hover:text-destructive"
+                      onClick={handleReject}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Reject</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </>
           )}
         </div>
       )}
@@ -208,36 +284,48 @@ export function Providers({
         multiSelect={multiSelect}
         getId={(item) => item.id}
         getLabel={(item) => item.name}
-        renderItem={(item, isSelected) => (
-          <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              {isSuggested(item.id) && !isSelected && (
-                <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded shrink-0">
-                  Suggested
-                </span>
-              )}
-              <div className="flex-1 min-w-0">
-                <div className="truncate">{item.name}</div>
-                {item.description && (
-                  <div className="text-xs text-muted-foreground truncate">
-                    {item.description}
-                  </div>
+        renderItem={(item, isSelected) => {
+          const isAiSuggested = showDiff && aiSuggestedIds.has(item.id);
+
+          return (
+            <div className={cn(
+              "flex items-center justify-between w-full",
+              isAiSuggested && !isSelected && "bg-success/10 -mx-2 px-2 -my-1 py-1 rounded ring-1 ring-success"
+            )}>
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                {isAiSuggested && !isSelected && (
+                  <span className="px-1.5 py-0.5 bg-success/20 text-success text-xs rounded shrink-0 font-medium">
+                    AI Suggested
+                  </span>
                 )}
-                {(item as { value?: string }).value && (
-                  <div className="text-xs text-muted-foreground truncate">
-                    {(item as { value?: string }).value}
-                  </div>
+                {isSuggested(item.id) && !isSelected && !isAiSuggested && (
+                  <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded shrink-0">
+                    Suggested
+                  </span>
                 )}
+                <div className="flex-1 min-w-0">
+                  <div className="truncate">{item.name}</div>
+                  {item.description && (
+                    <div className="text-xs text-muted-foreground truncate">
+                      {item.description}
+                    </div>
+                  )}
+                  {(item as { value?: string }).value && (
+                    <div className="text-xs text-muted-foreground truncate">
+                      {(item as { value?: string }).value}
+                    </div>
+                  )}
+                </div>
               </div>
+              <Check
+                className={cn(
+                  "ml-auto flex-shrink-0 h-4 w-4",
+                  isSelected ? "opacity-100" : "opacity-0"
+                )}
+              />
             </div>
-            <Check
-              className={cn(
-                "ml-auto flex-shrink-0 h-4 w-4",
-                isSelected ? "opacity-100" : "opacity-0"
-              )}
-            />
-          </div>
-        )}
+          );
+        }}
         emptyMessage="No providers available."
         disabled={disabled}
         placeholder={placeholder}

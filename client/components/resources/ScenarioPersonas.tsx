@@ -22,7 +22,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { Loader2, Sparkles } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type CreateDraftScenarioPersonasIn = InputOf<
@@ -109,6 +110,15 @@ export interface ScenarioPersonasProps {
   registerFlush?: (
     flush: () => Promise<{ scenario_persona_ids: string[] } | void>
   ) => void;
+  // AI diff view props
+  aiScenarioPersonaResources?: Array<{
+    id?: string | null;
+    scenario_id?: string | null;
+    persona_id?: string | null;
+    persona_name?: string | null;
+  }> | null;
+  onAccept?: () => void;
+  onReject?: () => void;
 }
 
 export function ScenarioPersonas({
@@ -136,6 +146,10 @@ export function ScenarioPersonas({
   isGenerating = false,
   isAutosaveEnabled = true,
   registerFlush,
+  // AI diff view props
+  aiScenarioPersonaResources,
+  onAccept,
+  onReject,
 }: ScenarioPersonasProps) {
   const show = show_scenario_personas ?? false;
   const allPersonas = useMemo(() => scenario_personas ?? [], [scenario_personas]);
@@ -372,6 +386,36 @@ export function ScenarioPersonas({
     ]
   );
 
+  // AI suggestion state
+  const showDiff = !!aiScenarioPersonaResources?.length;
+
+  // Set of AI-suggested scenario IDs for styling
+  const aiSuggestedScenarioIds = useMemo(
+    () =>
+      new Set(
+        aiScenarioPersonaResources
+          ?.map((r) => r.scenario_id)
+          .filter(Boolean) as string[]
+      ),
+    [aiScenarioPersonaResources]
+  );
+
+  // Accept AI suggestion - apply AI-suggested persona assignments
+  const handleAccept = useCallback(() => {
+    if (!aiScenarioPersonaResources?.length) return;
+    aiScenarioPersonaResources.forEach((r) => {
+      if (r.scenario_id && r.persona_id) {
+        handlePersonaChange(r.scenario_id, r.persona_id);
+      }
+    });
+    onAccept?.();
+  }, [aiScenarioPersonaResources, handlePersonaChange, onAccept]);
+
+  // Reject AI suggestion - just clear the pending state
+  const handleReject = useCallback(() => {
+    onReject?.();
+  }, [onReject]);
+
   // Don't render if show_scenario_personas is false or no scenarios
   if (!show || scenario_ids.length === 0) {
     return null;
@@ -400,7 +444,7 @@ export function ScenarioPersonas({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating}
+                    disabled={disabled || isGenerating || showDiff}
                   >
                     {isGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -413,10 +457,71 @@ export function ScenarioPersonas({
               </Tooltip>
             </TooltipProvider>
           )}
+          {showDiff && (
+            <>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-success hover:text-success"
+                      onClick={handleAccept}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Accept</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-destructive hover:text-destructive"
+                      onClick={handleReject}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Reject</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </>
+          )}
+        </div>
+      )}
+      {/* AI-suggested persona assignments preview */}
+      {showDiff && aiScenarioPersonaResources && aiScenarioPersonaResources.length > 0 && (
+        <div className="mb-4 space-y-2">
+          <p className="text-sm font-medium text-success">AI Suggested Persona Assignments</p>
+          <div className="space-y-2">
+            {aiScenarioPersonaResources.map((item, idx) => {
+              const scenarioLabel = scenarioLabelMap.get(item.scenario_id || "") ?? "Unknown scenario";
+              const personaLabel = item.persona_name || "Unknown persona";
+              return (
+                <div
+                  key={item.id || `${item.scenario_id}-${item.persona_id}` || idx}
+                  className={cn(
+                    "flex items-center gap-2 p-3 rounded-lg border-2 border-success bg-success/10",
+                    "text-sm"
+                  )}
+                >
+                  <span className="font-medium">{scenarioLabel}:</span>
+                  <span>{personaLabel}</span>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
       <div className="pl-4 space-y-3">
         {scenario_ids.map((scenarioId) => {
+          const isAiSuggested = aiSuggestedScenarioIds.has(scenarioId);
           const scenarioLabel =
             scenarioLabelMap.get(scenarioId) ?? "Untitled scenario";
           const availablePersonas = personasByScenario.get(scenarioId) || [];
@@ -428,7 +533,13 @@ export function ScenarioPersonas({
           }
 
           return (
-            <div key={scenarioId} className="flex items-center gap-3">
+            <div
+              key={scenarioId}
+              className={cn(
+                "flex items-center gap-3",
+                isAiSuggested && "ring-2 ring-success bg-success/5 rounded-lg p-2"
+              )}
+            >
               <span
                 className="text-sm font-medium min-w-[140px] truncate"
                 title={scenarioLabel}

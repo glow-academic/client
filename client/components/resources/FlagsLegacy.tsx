@@ -18,7 +18,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { getPersonaIconComponent } from "@/utils/persona-icons";
-import { Loader2, Power, Sparkles } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Check, Loader2, Power, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
 export interface FlagItem {
@@ -45,6 +46,10 @@ export interface FlagsProps {
   link_tool_id?: string | null; // Tool ID for AI link suggestions
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
+  // AI diff view props
+  aiFlagResources?: Array<{ id?: string | null; key?: string | null }> | null;
+  onAccept?: () => void;
+  onReject?: () => void;
   // Legacy props for backward compatibility
   flagResource?: FlagItem | null;
   flagId?: string | null;
@@ -64,6 +69,9 @@ export function Flags({
   icon,
   onGenerate,
   isGenerating = false,
+  aiFlagResources,
+  onAccept,
+  onReject,
   // Legacy props for backward compatibility
   flagResource,
   flagId,
@@ -113,6 +121,38 @@ export function Flags({
   // Check if generated (from resource or first flag)
   const hasGenerated = resource?.generated ?? (flags && flags[0]?.generated) ?? false;
 
+  // AI suggestion state
+  const showDiff = !!aiFlagResources?.length;
+  const aiSuggestedFlagIds = useMemo(
+    () =>
+      new Set(
+        aiFlagResources?.map((f) => f.id).filter(Boolean) as string[]
+      ),
+    [aiFlagResources]
+  );
+
+  // Accept AI suggestion - apply all AI-suggested flags
+  const handleAccept = useCallback(() => {
+    if (!aiFlagResources?.length) return;
+
+    for (const aiFlag of aiFlagResources) {
+      if (!aiFlag.id) continue;
+      // In single mode, only apply the first flag suggestion
+      onFlagIdChange(aiFlag.id);
+      break;
+    }
+    onAccept?.();
+  }, [aiFlagResources, onFlagIdChange, onAccept]);
+
+  // Reject AI suggestion - just clear the pending state
+  const handleReject = useCallback(() => {
+    onReject?.();
+  }, [onReject]);
+
+  // Check if AI is suggesting this flag
+  const isAiSuggested = showDiff && !!flagOptionId && aiSuggestedFlagIds.has(flagOptionId);
+  const wouldChange = isAiSuggested && !isChecked; // AI wants to turn this ON
+
   // Don't render if show_flag is false (AFTER all hooks)
   if (!show) {
     return null;
@@ -120,7 +160,12 @@ export function Flags({
 
   return (
     <div className="space-y-2 pt-2">
-      <div className="space-y-1">
+      <div
+        className={cn(
+          "space-y-1 p-2 rounded-lg transition-all",
+          isAiSuggested && "ring-2 ring-success bg-success/10"
+        )}
+      >
         <div className="flex items-center gap-2">
           <Label htmlFor={id} className="text-sm flex items-center gap-1">
             {resolvedIcon || (
@@ -128,6 +173,11 @@ export function Flags({
             )}
             {label}
             {required && <span className="text-destructive">*</span>}
+            {isAiSuggested && (
+              <span className="ml-2 text-xs text-success font-medium">
+                → {wouldChange ? "ON" : "OFF"} (AI)
+              </span>
+            )}
           </Label>
           <Switch
             id={id}
@@ -145,7 +195,7 @@ export function Flags({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating}
+                    disabled={disabled || isGenerating || showDiff}
                   >
                     {isGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -159,6 +209,42 @@ export function Flags({
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
+          )}
+          {showDiff && (
+            <>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-success hover:text-success"
+                      onClick={handleAccept}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Accept</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-destructive hover:text-destructive"
+                      onClick={handleReject}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Reject</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </>
           )}
         </div>
         {helpText && (

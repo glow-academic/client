@@ -7,10 +7,18 @@
 
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Check, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 export interface RoleRoutesProps {
   role_route_ids?: string[];
@@ -50,6 +58,10 @@ export interface RoleRoutesProps {
   description?: string;
   group_id?: string | null;
   link_tool_id?: string | null; // Tool ID for AI link suggestions
+  // AI diff view props
+  aiRoleRouteResources?: Array<{ id?: string | null; role_id?: string | null; route_id?: string | null }> | null;
+  onAccept?: () => void;
+  onReject?: () => void;
 }
 
 export function RoleRoutes({
@@ -68,6 +80,10 @@ export function RoleRoutes({
   description,
   group_id,
   link_tool_id,
+  // AI diff view props
+  aiRoleRouteResources,
+  onAccept,
+  onReject,
 }: RoleRoutesProps) {
   const show = show_role_routes ?? false;
   const currentResources = useMemo(
@@ -158,7 +174,7 @@ export function RoleRoutes({
         });
       }
     },
-    [createRoleRoute]
+    []
   );
 
   const routeItems = useMemo(() => {
@@ -170,6 +186,58 @@ export function RoleRoutes({
       }))
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [allRoutes]);
+
+  // AI suggestion state
+  const showDiff = !!aiRoleRouteResources?.length;
+  const _aiSuggestedIds = useMemo(
+    () => new Set(aiRoleRouteResources?.map((r) => r.id).filter(Boolean) as string[]),
+    [aiRoleRouteResources]
+  );
+  // Note: _aiSuggestedIds available for future use
+
+  // Build a set of AI-suggested role:route keys for highlighting
+  const aiSuggestedKeys = useMemo(() => {
+    return new Set(
+      aiRoleRouteResources
+        ?.filter((r) => r.role_id && r.route_id)
+        .map((r) => `${r.role_id}:${r.route_id}`) ?? []
+    );
+  }, [aiRoleRouteResources]);
+
+  // Accept AI suggestion - add AI-suggested role routes to selection
+  const handleAccept = useCallback(() => {
+    if (!aiRoleRouteResources?.length) return;
+    // Add AI-suggested routes to the routesByRole state
+    setRoutesByRole((prev) => {
+      const next = new Map(prev);
+      aiRoleRouteResources.forEach((r) => {
+        if (r.role_id && r.route_id) {
+          if (!next.has(r.role_id)) {
+            next.set(r.role_id, new Set());
+          }
+          next.get(r.role_id)!.add(r.route_id);
+        }
+      });
+      return next;
+    });
+    // Add AI-suggested IDs to the roleRouteIdMap
+    setRoleRouteIdMap((prev) => {
+      const next = new Map(prev);
+      aiRoleRouteResources.forEach((r) => {
+        if (r.role_id && r.route_id && r.id) {
+          const key = `${r.role_id}:${r.route_id}`;
+          next.set(key, r.id);
+        }
+      });
+      return next;
+    });
+    onAccept?.();
+  }, [aiRoleRouteResources, onAccept]);
+
+  // Reject AI suggestion - just clear the pending state
+  const handleReject = useCallback(() => {
+    onReject?.();
+  }, [onReject]);
 
   if (!show) {
     return null;
@@ -188,6 +256,67 @@ export function RoleRoutes({
               </span>
             )}
           </Label>
+          {showDiff && (
+            <>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-success hover:text-success"
+                      onClick={handleAccept}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Accept</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-destructive hover:text-destructive"
+                      onClick={handleReject}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Reject</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </>
+          )}
+        </div>
+      )}
+      {/* AI-suggested role routes preview */}
+      {showDiff && aiRoleRouteResources && aiRoleRouteResources.length > 0 && (
+        <div className="mb-4 space-y-2">
+          <p className="text-sm font-medium text-success">AI Suggested Role Routes</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            {aiRoleRouteResources.map((item, idx) => {
+              const roleLabel = item.role_id ? (roleLabelMap.get(item.role_id) ?? item.role_id.slice(0, 8)) : "";
+              const routeLabel = item.route_id ? (allRoutes.find((r) => r.route_id === item.route_id)?.route ?? item.route_id.slice(0, 8)) : "";
+              return (
+                <div
+                  key={item.id || idx}
+                  className={cn(
+                    "p-3 rounded-lg border-2 border-success bg-success/10",
+                    "text-sm"
+                  )}
+                >
+                  <span className="font-medium">{roleLabel}</span>
+                  <span className="mx-1">-</span>
+                  <span>{routeLabel}</span>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
       <div className="space-y-2">
@@ -205,16 +334,25 @@ export function RoleRoutes({
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">
                 {routeItems.map((route) => {
                   const isEnabled = enabledRoutes.has(route.id);
+                  const routeKey = `${roleId}:${route.id}`;
+                  const isAiSuggested = showDiff && aiSuggestedKeys.has(routeKey);
+
                   return (
                     <div
                       key={route.id}
                       className={cn(
                         "flex items-start justify-between gap-2 rounded-md border px-2 py-1.5",
-                        isEnabled && "border-primary/50 bg-accent/40"
+                        isEnabled && "border-primary/50 bg-accent/40",
+                        isAiSuggested && !isEnabled && "ring-2 ring-success bg-success/10"
                       )}
                     >
                       <div className="space-y-0.5">
                         <div className="text-xs font-medium">{route.name}</div>
+                        {isAiSuggested && !isEnabled && (
+                          <div className="text-[10px] text-success font-medium">
+                            AI Suggested
+                          </div>
+                        )}
                       </div>
                       <Switch
                         checked={isEnabled}

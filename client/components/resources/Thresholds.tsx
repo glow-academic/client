@@ -14,8 +14,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Loader2, Sparkles } from "lucide-react";
-import { useMemo } from "react";
+import { Check, Loader2, Sparkles, X } from "lucide-react";
+import { useCallback, useMemo } from "react";
 
 export interface ThresholdsProps {
   threshold_ids?: string[];
@@ -35,6 +35,13 @@ export interface ThresholdsProps {
   link_tool_id?: string | null; // Tool ID for AI link suggestions
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
+  // AI diff view props
+  aiThresholdResources?: Array<{
+    threshold_id?: string | null;
+    name?: string | null;
+  }> | null;
+  onAccept?: () => void;
+  onReject?: () => void;
 }
 
 export function Thresholds({
@@ -50,8 +57,44 @@ export function Thresholds({
   link_tool_id,
   onGenerate,
   isGenerating = false,
+  // AI diff view props
+  aiThresholdResources,
+  onAccept,
+  onReject,
 }: ThresholdsProps) {
   const show = show_thresholds ?? false;
+  const ids = useMemo(() => threshold_ids ?? [], [threshold_ids]);
+
+  // AI suggestion state
+  const showDiff = !!aiThresholdResources?.length;
+  const _aiSuggestedIds = useMemo(
+    () =>
+      new Set(
+        aiThresholdResources
+          ?.map((t) => t.threshold_id)
+          .filter(Boolean) as string[]
+      ),
+    [aiThresholdResources]
+  );
+  // Note: _aiSuggestedIds available for future use in highlighting suggested items
+
+  // Accept AI suggestion - add AI-suggested thresholds to selection
+  const handleAccept = useCallback(() => {
+    if (!aiThresholdResources?.length) return;
+    const newIds = aiThresholdResources
+      .map((t) => t.threshold_id)
+      .filter((id): id is string => !!id && !ids.includes(id));
+    if (newIds.length > 0) {
+      onChange([...ids, ...newIds]);
+    }
+    onAccept?.();
+  }, [aiThresholdResources, ids, onChange, onAccept]);
+
+  // Reject AI suggestion - just clear the pending state
+  const handleReject = useCallback(() => {
+    onReject?.();
+  }, [onReject]);
+
   const hasGenerated = useMemo(() => {
     return threshold_resources?.some((t) => t.generated) ?? false;
   }, [threshold_resources]);
@@ -83,7 +126,7 @@ export function Thresholds({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating}
+                    disabled={disabled || isGenerating || showDiff}
                   >
                     {isGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -97,6 +140,42 @@ export function Thresholds({
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
+          )}
+          {showDiff && (
+            <>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-success hover:text-success"
+                      onClick={handleAccept}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Accept</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-destructive hover:text-destructive"
+                      onClick={handleReject}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Reject</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </>
           )}
         </div>
       )}

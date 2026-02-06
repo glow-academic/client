@@ -17,8 +17,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Loader2, Sparkles } from "lucide-react";
-import { useMemo } from "react";
+import { Check, Loader2, Sparkles, X } from "lucide-react";
+import { useCallback, useMemo } from "react";
 
 export interface TemperatureLevelItem {
   id: string;
@@ -61,6 +61,13 @@ export interface TemperatureLevelsProps {
   showSlider?: boolean; // Whether to show slider for visual feedback
   group_id?: string | null; // Group ID for linking resources
   link_tool_id?: string | null; // Tool ID for AI link suggestions
+  // AI diff view props
+  aiTemperatureLevelResources?: Array<{
+    temperature_level_id?: string | null;
+    name?: string | null;
+  }> | null;
+  onAccept?: () => void;
+  onReject?: () => void;
 }
 
 export function TemperatureLevels({
@@ -86,14 +93,48 @@ export function TemperatureLevels({
   showSlider = false,
   group_id,
   link_tool_id,
+  // AI diff view props
+  aiTemperatureLevelResources,
+  onAccept,
+  onReject,
 }: TemperatureLevelsProps) {
   const resource = temperature_level_resource ?? null;
   const resourceId = temperature_level_id ?? null;
   const show = show_temperature_levels ?? true;
-  const suggestionsList = useMemo(
+
+  // AI suggestion state
+  const showDiff = !!aiTemperatureLevelResources?.length;
+  const _aiSuggestedIds = useMemo(
+    () =>
+      new Set(
+        aiTemperatureLevelResources
+          ?.map((t) => t.temperature_level_id)
+          .filter(Boolean) as string[]
+      ),
+    [aiTemperatureLevelResources]
+  );
+  // Note: _aiSuggestedIds available for future use in highlighting suggested items
+
+  // Accept AI suggestion - select AI-suggested temperature level
+  const handleAccept = useCallback(() => {
+    if (!aiTemperatureLevelResources?.length) return;
+    const firstSuggested = aiTemperatureLevelResources[0]?.temperature_level_id;
+    if (firstSuggested) {
+      onTemperatureLevelIdChange(firstSuggested);
+    }
+    onAccept?.();
+  }, [aiTemperatureLevelResources, onTemperatureLevelIdChange, onAccept]);
+
+  // Reject AI suggestion - just clear the pending state
+  const handleReject = useCallback(() => {
+    onReject?.();
+  }, [onReject]);
+
+  const _suggestionsList = useMemo(
     () => temperature_level_suggestions ?? [],
     [temperature_level_suggestions]
   );
+  // Note: _suggestionsList available for future use
   const filteredTemperatureLevels = useMemo(() => {
     if (!searchTerm?.trim()) {
       return temperature_levels ?? [];
@@ -169,7 +210,7 @@ export function TemperatureLevels({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating}
+                    disabled={disabled || isGenerating || showDiff}
                   >
                     {isGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -183,6 +224,42 @@ export function TemperatureLevels({
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
+          )}
+          {showDiff && (
+            <>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-success hover:text-success"
+                      onClick={handleAccept}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Accept</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-destructive hover:text-destructive"
+                      onClick={handleReject}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Reject</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </>
           )}
         </div>
       </div>

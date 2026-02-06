@@ -17,8 +17,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { Eye } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Check, Eye, Loader2, Sparkles, X } from "lucide-react";
 import dynamic from "next/dynamic";
+import { useMemo } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 // Dynamically import Monaco to avoid SSR issues
@@ -33,6 +35,102 @@ const Monaco = dynamic(() => import("@monaco-editor/react"), {
 
 type CreateDraftPromptsIn = InputOf<"/api/v4/resources/prompts", "post">;
 type CreateDraftPromptsOut = OutputOf<"/api/v4/resources/prompts", "post">;
+
+// Word-based diff types and utilities
+type DiffSegment = { type: "same" | "removed" | "added"; text: string };
+
+function computeDiff(oldText: string, newText: string): DiffSegment[] {
+  const splitWords = (text: string): string[] => {
+    const result: string[] = [];
+    let current = "";
+    for (const char of text) {
+      if (/\s/.test(char)) {
+        if (current) {
+          result.push(current);
+          current = "";
+        }
+        result.push(char);
+      } else {
+        current += char;
+      }
+    }
+    if (current) result.push(current);
+    return result;
+  };
+
+  const oldWords = splitWords(oldText);
+  const newWords = splitWords(newText);
+  const m = oldWords.length;
+  const n = newWords.length;
+
+  const dp: number[][] = Array(m + 1)
+    .fill(null)
+    .map(() => Array(n + 1).fill(0));
+
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      if (oldWords[i - 1] === newWords[j - 1]) {
+        dp[i]![j] = dp[i - 1]![j - 1]! + 1;
+      } else {
+        dp[i]![j] = Math.max(dp[i - 1]![j]!, dp[i]![j - 1]!);
+      }
+    }
+  }
+
+  const segments: DiffSegment[] = [];
+  let i = m, j = n;
+  const tempSegments: DiffSegment[] = [];
+
+  while (i > 0 || j > 0) {
+    if (i > 0 && j > 0 && oldWords[i - 1] === newWords[j - 1]) {
+      tempSegments.push({ type: "same", text: oldWords[i - 1]! });
+      i--;
+      j--;
+    } else if (j > 0 && (i === 0 || dp[i]![j - 1]! >= dp[i - 1]![j]!)) {
+      tempSegments.push({ type: "added", text: newWords[j - 1]! });
+      j--;
+    } else {
+      tempSegments.push({ type: "removed", text: oldWords[i - 1]! });
+      i--;
+    }
+  }
+
+  tempSegments.reverse();
+  for (const seg of tempSegments) {
+    if (segments.length > 0 && segments[segments.length - 1]!.type === seg.type) {
+      segments[segments.length - 1]!.text += seg.text;
+    } else {
+      segments.push({ ...seg });
+    }
+  }
+
+  return segments;
+}
+
+function DiffView({ current, proposed }: { current: string; proposed: string }) {
+  const segments = useMemo(() => computeDiff(current, proposed), [current, proposed]);
+
+  return (
+    <div
+      className={cn(
+        "min-h-[500px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background",
+        "whitespace-pre-wrap overflow-auto font-mono"
+      )}
+    >
+      {segments.map((seg, i) => (
+        <span
+          key={i}
+          className={cn(
+            seg.type === "removed" && "bg-destructive/20 text-destructive line-through",
+            seg.type === "added" && "bg-success/20 text-success"
+          )}
+        >
+          {seg.text}
+        </span>
+      ))}
+    </div>
+  );
+}
 
 export interface PromptsProps {
   prompt_id?: string | null; // Current prompt_id (standardized prop name)
@@ -82,6 +180,17 @@ export interface PromptsProps {
   } | null;
   promptId?: string | null;
   suggestions?: string[];
+  showAiGenerate?: boolean;
+  onGenerate?: () => void | Promise<void>;
+  isGenerating?: boolean;
+  // AI diff view props
+  aiResource?: {
+    prompt_id?: string | null;
+    system_prompt?: string | null;
+    name?: string | null;
+  } | null;
+  onAccept?: () => void;
+  onReject?: () => void;
 }
 
 export function Prompts({
@@ -108,6 +217,13 @@ export function Prompts({
   promptResource,
   promptId: _promptId,
   suggestions: _suggestions,
+  showAiGenerate = false,
+  onGenerate,
+  isGenerating = false,
+  // AI diff view props
+  aiResource,
+  onAccept,
+  onReject,
 }: PromptsProps) {
   // Use standardized props with fallback to legacy props
   const resource = prompt_resource ?? promptResource ?? null;
@@ -120,6 +236,26 @@ export function Prompts({
     }
     return [];
   }, [prompts]);
+
+  // AI diff view state
+  const showDiff = !!aiResource?.system_prompt;
+  const aiText = aiResource?.system_prompt || "";
+
+  // Accept AI suggestion - update prompt content and notify parent
+  const handleAccept = useCallback(() => {
+    if (!aiResource?.prompt_id) return;
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    const text = aiResource.system_prompt || "";
+    setPromptContent(text);
+    lastSavedContentRef.current = text;
+    onPromptIdChange(aiResource.prompt_id);
+    onAccept?.();
+  }, [aiResource, onPromptIdChange, onAccept]);
+
+  // Reject AI suggestion - just clear the pending state
+  const handleReject = useCallback(() => {
+    onReject?.();
+  }, [onReject]);
 
   // Track prompt content in local state
   const [promptContent, setPromptContent] = useState<string>(
@@ -328,6 +464,67 @@ export function Prompts({
             {label}
             {required && <span className="text-destructive">*</span>}
           </Label>
+          {onGenerate && showAiGenerate && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={onGenerate}
+                    disabled={disabled || isGenerating || showDiff}
+                  >
+                    {isGenerating ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-3.5 w-3.5" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {resource?.generated ? "Regenerate" : "Generate"}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+          {showDiff && (
+            <>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-success hover:text-success"
+                      onClick={handleAccept}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Accept</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-destructive hover:text-destructive"
+                      onClick={handleReject}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Reject</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </>
+          )}
         </div>
         {/* Preview button and GenericPicker */}
         <div className="flex items-center gap-2">
@@ -406,7 +603,11 @@ export function Prompts({
       {/* Prompt Editor */}
       <div className="space-y-2">
         <div className="h-[500px]" data-testid={`${dataTestId || id}-editor`}>
-          {renderEditorContent()}
+          {showDiff ? (
+            <DiffView current={promptContent} proposed={aiText} />
+          ) : (
+            renderEditorContent()
+          )}
         </div>
         {helpText && (
           <p className="text-sm text-muted-foreground">{helpText}</p>

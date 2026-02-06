@@ -17,7 +17,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { Check, Loader2, Sparkles } from "lucide-react";
+import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
 export interface FieldItem {
@@ -59,6 +59,13 @@ export interface FieldsProps {
   showSelectedFilter?: boolean; // Whether to show only selected fields
   // Legacy props for backward compatibility
   fieldIds?: string[];
+  // AI diff view props
+  aiFieldResources?: Array<{
+    field_id?: string | null;
+    name?: string | null;
+  }> | null;
+  onAccept?: () => void;
+  onReject?: () => void;
 }
 
 export function Fields({
@@ -83,6 +90,10 @@ export function Fields({
   showSelectedFilter = false,
   // Legacy props for backward compatibility
   fieldIds,
+  // AI diff view props
+  aiFieldResources,
+  onAccept,
+  onReject,
 }: FieldsProps) {
   // Use standardized props with fallback to legacy props
   const ids = useMemo(() => field_ids ?? fieldIds ?? [], [field_ids, fieldIds]);
@@ -91,6 +102,18 @@ export function Fields({
   const suggestionsList = useMemo(
     () => _field_suggestions ?? [],
     [_field_suggestions]
+  );
+
+  // AI suggestion state
+  const showDiff = !!aiFieldResources?.length;
+  const aiSuggestedIds = useMemo(
+    () =>
+      new Set(
+        aiFieldResources
+          ?.map((f) => f.field_id)
+          .filter(Boolean) as string[]
+      ),
+    [aiFieldResources]
   );
 
   // Convert fields array to FieldItem format for SelectableGrid
@@ -157,6 +180,23 @@ export function Fields({
     return _field_resources?.some((f) => f.generated) ?? false;
   }, [_field_resources]);
 
+  // Accept AI suggestion - add AI-suggested fields to selection
+  const handleAccept = useCallback(() => {
+    if (!aiFieldResources?.length) return;
+    const newIds = aiFieldResources
+      .map((f) => f.field_id)
+      .filter((id): id is string => !!id && !ids.includes(id));
+    if (newIds.length > 0) {
+      onChange([...ids, ...newIds]);
+    }
+    onAccept?.();
+  }, [aiFieldResources, ids, onChange, onAccept]);
+
+  // Reject AI suggestion - just clear the pending state
+  const handleReject = useCallback(() => {
+    onReject?.();
+  }, [onReject]);
+
   // Don't render if show_fields is false (AFTER all hooks)
   if (!show) {
     return null;
@@ -185,7 +225,7 @@ export function Fields({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating}
+                    disabled={disabled || isGenerating || showDiff}
                   >
                     {isGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -200,6 +240,42 @@ export function Fields({
               </Tooltip>
             </TooltipProvider>
           )}
+          {showDiff && (
+            <>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-success hover:text-success"
+                      onClick={handleAccept}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Accept</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-destructive hover:text-destructive"
+                      onClick={handleReject}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Reject</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </>
+          )}
         </div>
       )}
       <SelectableGrid<FieldItem>
@@ -208,39 +284,49 @@ export function Fields({
         selectedIds={ids}
         onSelect={handleSelect}
         getId={(item) => item.id}
-        renderItem={(item, isSelected) => (
-          <div
-            className={cn(
-              "relative flex flex-col p-3 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left h-[88px]",
-              "hover:shadow-md hover:bg-accent/50",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-              isSelected && "ring-2 ring-primary bg-accent"
-            )}
-          >
-            {/* Check icon - top right */}
-            {isSelected && (
-              <div className="absolute top-2 right-2 z-10 h-5 w-5 bg-primary rounded-full flex items-center justify-center">
-                <Check className="h-3 w-3 text-primary-foreground" />
-              </div>
-            )}
+        renderItem={(item, isSelected) => {
+          const isAiSuggested = showDiff && aiSuggestedIds.has(item.id);
 
-            {/* Suggested badge - top right */}
-            {isSuggested(item.id) && !isSelected && (
-              <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-primary/10 text-primary text-[10px] rounded">
-                Suggested
-              </div>
-            )}
-
-            <div className="flex-1 min-w-0 overflow-hidden">
-              <h3 className="font-medium text-sm leading-tight truncate pr-16">{item.name}</h3>
-              {item.description && (
-                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                  {item.description}
-                </p>
+          return (
+            <div
+              className={cn(
+                "relative flex flex-col p-3 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left h-[88px]",
+                "hover:shadow-md hover:bg-accent/50",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                isSelected && "ring-2 ring-primary bg-accent",
+                isAiSuggested && !isSelected && "ring-2 ring-success bg-success/10"
               )}
+            >
+              {/* Check icon - top right */}
+              {isSelected && (
+                <div className="absolute top-2 right-2 z-10 h-5 w-5 bg-primary rounded-full flex items-center justify-center">
+                  <Check className="h-3 w-3 text-primary-foreground" />
+                </div>
+              )}
+              {/* AI Suggested badge - top right */}
+              {isAiSuggested && !isSelected && (
+                <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
+                  AI Suggested
+                </div>
+              )}
+              {/* Suggested badge - top right */}
+              {isSuggested(item.id) && !isSelected && !isAiSuggested && (
+                <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-primary/10 text-primary text-[10px] rounded">
+                  Suggested
+                </div>
+              )}
+
+              <div className="flex-1 min-w-0 overflow-hidden">
+                <h3 className="font-medium text-sm leading-tight truncate pr-16">{item.name}</h3>
+                {item.description && (
+                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                    {item.description}
+                  </p>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          );
+        }}
         emptyMessage="No fields found."
         disabled={disabled}
         horizontal

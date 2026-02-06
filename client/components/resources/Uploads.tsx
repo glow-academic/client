@@ -19,7 +19,7 @@ import {
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { inferMimeFromName } from "@/utils/mime-map";
-import { Check, Loader2, Sparkles, UploadCloud } from "lucide-react";
+import { Check, Loader2, Sparkles, UploadCloud, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
@@ -69,6 +69,10 @@ export interface UploadsProps {
     message?: string;
   }>;
   searchTerm?: string;
+  // AI diff view props
+  aiUploadResources?: Array<{ id?: string | null; file_path?: string | null }> | null;
+  onAccept?: () => void;
+  onReject?: () => void;
 }
 
 export function Uploads({
@@ -91,6 +95,10 @@ export function Uploads({
   isGenerating = false,
   finalizeUploadAction,
   searchTerm = "",
+  // AI diff view props
+  aiUploadResources,
+  onAccept,
+  onReject,
 }: UploadsProps) {
   const ids = useMemo(() => upload_ids ?? [], [upload_ids]);
   const show = show_uploads ?? true;
@@ -383,6 +391,32 @@ export function Uploads({
     [ids, createUploadsAction, uploads_agent_id, group_id, onChange]
   );
 
+  // AI suggestion state
+  const showDiff = !!aiUploadResources?.length;
+
+  // Get AI-suggested IDs (kept for potential future use)
+  const _aiSuggestedIds = useMemo(
+    () => new Set(aiUploadResources?.map((r) => r.id).filter(Boolean) as string[]),
+    [aiUploadResources]
+  );
+
+  // Accept AI suggestion - add AI-suggested uploads to selection
+  const handleAccept = useCallback(() => {
+    if (!aiUploadResources?.length) return;
+    const newIds = aiUploadResources
+      .map((u) => u.id)
+      .filter((id): id is string => !!id);
+    if (newIds.length > 0) {
+      onChange([...ids, ...newIds]);
+    }
+    onAccept?.();
+  }, [aiUploadResources, ids, onChange, onAccept]);
+
+  // Reject AI suggestion - just clear the pending state
+  const handleReject = useCallback(() => {
+    onReject?.();
+  }, [onReject]);
+
   if (!show) {
     return null;
   }
@@ -415,30 +449,88 @@ export function Uploads({
             </TooltipProvider>
           )}
         </div>
-        {onGenerate && uploads_agent_id && (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={onGenerate}
-                  disabled={disabled || isGenerating}
-                  className="h-8 w-8 p-0"
-                >
-                  {isGenerating ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Sparkles className="h-4 w-4" />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Generate files with AI</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        )}
+        <div className="flex items-center gap-2">
+          {onGenerate && uploads_agent_id && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={onGenerate}
+                    disabled={disabled || isGenerating || showDiff}
+                    className="h-8 w-8 p-0"
+                  >
+                    {isGenerating ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-4 w-4" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Generate files with AI</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+          {showDiff && (
+            <>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-success hover:text-success"
+                      onClick={handleAccept}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Accept</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-destructive hover:text-destructive"
+                      onClick={handleReject}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Reject</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </>
+          )}
+        </div>
       </div>
+
+      {/* AI-suggested uploads preview */}
+      {showDiff && aiUploadResources && aiUploadResources.length > 0 && (
+        <div className="mb-4 space-y-2">
+          <p className="text-sm font-medium text-success">AI Suggested Files</p>
+          <div className="space-y-2">
+            {aiUploadResources.map((item, idx) => (
+              <div
+                key={item.id || idx}
+                className={cn(
+                  "p-3 rounded-lg border-2 border-success bg-success/10",
+                  "text-sm"
+                )}
+              >
+                {item.file_path?.split("/").pop() || item.file_path || ""}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* File upload dropzone */}
       <div

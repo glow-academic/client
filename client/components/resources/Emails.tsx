@@ -68,6 +68,13 @@ export interface EmailsProps {
     | undefined;
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
+  // AI diff view props
+  aiEmailResources?: Array<{
+    id?: string | null;
+    email?: string | null;
+  }> | null;
+  onAccept?: () => void;
+  onReject?: () => void;
 }
 
 export function Emails({
@@ -90,6 +97,10 @@ export function Emails({
   createEmailsAction,
   onGenerate,
   isGenerating = false,
+  // AI diff view props
+  aiEmailResources,
+  onAccept,
+  onReject,
 }: EmailsProps) {
   const ids = useMemo(() => email_ids ?? [], [email_ids]);
   const show = show_emails ?? true;
@@ -339,6 +350,37 @@ export function Emails({
     return email_resources?.some((e) => e.generated) ?? false;
   }, [email_resources]);
 
+  // AI suggestion state
+  const showDiff = !!aiEmailResources?.length;
+  const aiSuggestedIds = useMemo(
+    () =>
+      new Set(
+        aiEmailResources
+          ?.map((e) => e.id)
+          .filter(Boolean) as string[]
+      ),
+    [aiEmailResources]
+  );
+
+  // Accept AI suggestion - add AI-suggested emails to selection
+  const handleAccept = useCallback(() => {
+    if (!aiEmailResources?.length) return;
+    const newIds = aiEmailResources
+      .map((e) => e.id)
+      .filter((id): id is string => !!id && !ids.includes(id));
+    if (newIds.length > 0) {
+      const nextIds = [...ids, ...newIds];
+      const nextPrimaryIndex = ids.length === 0 ? 0 : primaryIndex;
+      onChange(nextIds, nextPrimaryIndex);
+    }
+    onAccept?.();
+  }, [aiEmailResources, ids, onChange, primaryIndex, onAccept]);
+
+  // Reject AI suggestion - just clear the pending state
+  const handleRejectAi = useCallback(() => {
+    onReject?.();
+  }, [onReject]);
+
   // Don't render if show_emails is false (AFTER all hooks)
   if (!show) {
     return null;
@@ -368,7 +410,7 @@ export function Emails({
                       size="icon"
                       className="h-6 w-6"
                       onClick={onGenerate}
-                      disabled={disabled || isGenerating}
+                      disabled={disabled || isGenerating || showDiff}
                     >
                       {isGenerating ? (
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -382,6 +424,42 @@ export function Emails({
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
+            )}
+            {showDiff && (
+              <>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 text-success hover:text-success"
+                        onClick={handleAccept}
+                      >
+                        <Check className="h-3.5 w-3.5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Accept</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 text-destructive hover:text-destructive"
+                        onClick={handleRejectAi}
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Reject</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </>
             )}
           </div>
           <GenericPicker<EmailItem>
@@ -412,6 +490,7 @@ export function Emails({
           {selectedEmails.map((item, index) => {
             const isPrimary = index === primaryIndex;
             const isSuggestedItem = isSuggested(item.id);
+            const isAiSuggested = showDiff && aiSuggestedIds.has(item.id);
             const emailLabel =
               item.email || `Email ${item.id.slice(0, 8)}...`;
             const isEditing = editingEmailId === item.id;
@@ -422,7 +501,8 @@ export function Emails({
                 className={cn(
                   "relative flex items-start gap-3 rounded-xl border bg-card px-4 py-3 shadow-sm transition-all",
                   "hover:shadow-md hover:bg-accent/50",
-                  isPrimary && "ring-2 ring-primary bg-accent"
+                  isPrimary && "ring-2 ring-primary bg-accent",
+                  isAiSuggested && !isPrimary && "ring-2 ring-success bg-success/10"
                 )}
                 onClick={() => {
                   if (disabled) return;
@@ -465,7 +545,12 @@ export function Emails({
                         {emailLabel}
                       </button>
                     )}
-                    {isSuggestedItem && (
+                    {isAiSuggested && (
+                      <span className="px-1.5 py-0.5 bg-success/20 text-success text-xs rounded font-medium">
+                        AI Suggested
+                      </span>
+                    )}
+                    {isSuggestedItem && !isAiSuggested && (
                       <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded">
                         Suggested
                       </span>

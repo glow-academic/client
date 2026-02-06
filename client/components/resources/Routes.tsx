@@ -8,8 +8,15 @@
 
 import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { Check } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
 export interface RoutesProps {
@@ -36,6 +43,13 @@ export interface RoutesProps {
   description?: string;
   searchTerm?: string;
   searchPlaceholder?: string;
+  // AI diff view props
+  aiRouteResources?: Array<{
+    route_id?: string | null;
+    name?: string | null;
+  }> | null;
+  onAccept?: () => void;
+  onReject?: () => void;
 }
 
 export function Routes({
@@ -54,6 +68,10 @@ export function Routes({
   description,
   searchTerm,
   searchPlaceholder = "Search routes...",
+  // AI diff view props
+  aiRouteResources,
+  onAccept,
+  onReject,
 }: RoutesProps) {
   const ids = useMemo(() => route_ids ?? [], [route_ids]);
   const show = show_routes ?? false;
@@ -61,6 +79,18 @@ export function Routes({
   const suggestionsList = useMemo(
     () => route_suggestions ?? [],
     [route_suggestions]
+  );
+
+  // AI suggestion state
+  const showDiff = !!aiRouteResources?.length;
+  const aiSuggestedIds = useMemo(
+    () =>
+      new Set(
+        aiRouteResources
+          ?.map((r) => r.route_id)
+          .filter(Boolean) as string[]
+      ),
+    [aiRouteResources]
   );
 
   const routesItems = useMemo(() => {
@@ -101,6 +131,23 @@ export function Routes({
     [disabled, ids, onChange]
   );
 
+  // Accept AI suggestion - add AI-suggested routes to selection
+  const handleAccept = useCallback(() => {
+    if (!aiRouteResources?.length) return;
+    const newIds = aiRouteResources
+      .map((r) => r.route_id)
+      .filter((id): id is string => !!id && !ids.includes(id));
+    if (newIds.length > 0) {
+      onChange([...ids, ...newIds]);
+    }
+    onAccept?.();
+  }, [aiRouteResources, ids, onChange, onAccept]);
+
+  // Reject AI suggestion - just clear the pending state
+  const handleReject = useCallback(() => {
+    onReject?.();
+  }, [onReject]);
+
   if (!show) {
     return null;
   }
@@ -118,6 +165,42 @@ export function Routes({
               </span>
             )}
           </Label>
+          {showDiff && (
+            <>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-success hover:text-success"
+                      onClick={handleAccept}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Accept</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-destructive hover:text-destructive"
+                      onClick={handleReject}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Reject</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </>
+          )}
         </div>
       )}
       <SelectableGrid
@@ -127,28 +210,38 @@ export function Routes({
         selectedIds={ids}
         onSelect={handleToggleRoute}
         getId={(route) => route.id}
-        renderItem={(route, isSelected) => (
-          <div
-            className={cn(
-              "relative flex flex-col gap-2 rounded-xl border bg-card text-card-foreground px-4 py-3 shadow-sm transition-all",
-              "hover:shadow-md hover:bg-accent/50",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-              isSelected && "ring-2 ring-primary bg-accent"
-            )}
-          >
-            {isSelected && (
-              <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
-                <Check className="h-3.5 w-3.5 text-primary-foreground" />
-              </div>
-            )}
-            <span className="text-sm font-medium leading-snug">
-              {route.name}
-            </span>
-            {isSuggested(route.id) && (
-              <span className="text-xs text-muted-foreground">Suggested</span>
-            )}
-          </div>
-        )}
+        renderItem={(route, isSelected) => {
+          const isAiSuggested = showDiff && aiSuggestedIds.has(route.id);
+
+          return (
+            <div
+              className={cn(
+                "relative flex flex-col gap-2 rounded-xl border bg-card text-card-foreground px-4 py-3 shadow-sm transition-all",
+                "hover:shadow-md hover:bg-accent/50",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                isSelected && "ring-2 ring-primary bg-accent",
+                isAiSuggested && !isSelected && "ring-2 ring-success bg-success/10"
+              )}
+            >
+              {isSelected && (
+                <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
+                  <Check className="h-3.5 w-3.5 text-primary-foreground" />
+                </div>
+              )}
+              {isAiSuggested && !isSelected && (
+                <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
+                  AI Suggested
+                </div>
+              )}
+              <span className="text-sm font-medium leading-snug">
+                {route.name}
+              </span>
+              {isSuggested(route.id) && !isAiSuggested && (
+                <span className="text-xs text-muted-foreground">Suggested</span>
+              )}
+            </div>
+          );
+        }}
         emptyMessage={
           searchTerm ? "No routes match your search." : placeholder
         }

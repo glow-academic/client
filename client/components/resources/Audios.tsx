@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
-import { Check, Loader2, Sparkles } from "lucide-react";
+import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
 type CreateDraftAudiosIn = InputOf<"/api/v4/resources/audios", "post">;
@@ -57,6 +57,10 @@ export interface AudiosProps {
   link_tool_id?: string | null; // Tool ID for AI link suggestions
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
+  // AI diff view props
+  aiResource?: { id?: string | null; name?: string | null } | null;
+  onAccept?: () => void;
+  onReject?: () => void;
 }
 
 export function Audios({
@@ -76,6 +80,10 @@ export function Audios({
   link_tool_id,
   onGenerate,
   isGenerating = false,
+  // AI diff view props
+  aiResource,
+  onAccept,
+  onReject,
 }: AudiosProps) {
   const ids = useMemo(() => audio_ids ?? [], [audio_ids]);
   const show = show_audios ?? false;
@@ -109,6 +117,25 @@ export function Audios({
     (audiosId: string) => suggestionsList.includes(audiosId),
     [suggestionsList]
   );
+
+  // AI suggestion state
+  const showDiff = !!aiResource?.id;
+  const aiSuggestedId = aiResource?.id || null;
+
+  // Accept AI suggestion - update audio selection
+  const handleAccept = useCallback(() => {
+    if (!aiResource?.id) return;
+    // Add the AI suggested audio to the selection
+    if (!ids.includes(aiResource.id)) {
+      onChange([...ids, aiResource.id]);
+    }
+    onAccept?.();
+  }, [aiResource, ids, onChange, onAccept]);
+
+  // Reject AI suggestion - just clear the pending state
+  const handleReject = useCallback(() => {
+    onReject?.();
+  }, [onReject]);
 
   const handleSelect = useCallback(
     async (selectedIds: string[]) => {
@@ -152,7 +179,7 @@ export function Audios({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating}
+                    disabled={disabled || isGenerating || showDiff}
                   >
                     {isGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -167,6 +194,42 @@ export function Audios({
               </Tooltip>
             </TooltipProvider>
           )}
+          {showDiff && (
+            <>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-success hover:text-success"
+                      onClick={handleAccept}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Accept</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-destructive hover:text-destructive"
+                      onClick={handleReject}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Reject</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </>
+          )}
         </div>
       )}
       <GenericPicker<AudiosItem>
@@ -179,31 +242,42 @@ export function Audios({
         multiSelect={true}
         getId={(item) => item.id}
         getLabel={(item) => item.name}
-        renderItem={(item, isSelected) => (
-          <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              {isSuggested(item.id) && !isSelected && (
-                <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded shrink-0">
-                  Suggested
-                </span>
-              )}
-              <div className="flex-1 min-w-0">
-                <div className="truncate">{item.name}</div>
-                {item.description && (
-                  <div className="text-xs text-muted-foreground truncate">
-                    {item.description}
-                  </div>
+        renderItem={(item, isSelected) => {
+          const isAiSuggested = showDiff && item.id === aiSuggestedId;
+          return (
+            <div className={cn(
+              "flex items-center justify-between w-full",
+              isAiSuggested && !isSelected && "ring-2 ring-success bg-success/10 rounded-md p-1"
+            )}>
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                {isAiSuggested && !isSelected && (
+                  <span className="px-1.5 py-0.5 bg-success/20 text-success text-xs rounded shrink-0 font-medium">
+                    AI Suggested
+                  </span>
                 )}
+                {isSuggested(item.id) && !isSelected && !isAiSuggested && (
+                  <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded shrink-0">
+                    Suggested
+                  </span>
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="truncate">{item.name}</div>
+                  {item.description && (
+                    <div className="text-xs text-muted-foreground truncate">
+                      {item.description}
+                    </div>
+                  )}
+                </div>
               </div>
+              <Check
+                className={cn(
+                  "ml-auto flex-shrink-0 h-4 w-4",
+                  isSelected ? "opacity-100" : "opacity-0"
+                )}
+              />
             </div>
-            <Check
-              className={cn(
-                "ml-auto flex-shrink-0 h-4 w-4",
-                isSelected ? "opacity-100" : "opacity-0"
-              )}
-            />
-          </div>
-        )}
+          );
+        }}
         placeholder={placeholder}
         disabled={disabled}
         showLabel={false}

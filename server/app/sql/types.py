@@ -23402,7 +23402,30 @@ class QGetDraftResourcesViewV4Item(BaseModel):
     generated: bool | None
     mcp: bool | None
     active: bool | None
-    group_id: UUID | None
+    names_group_id: UUID | None
+    descriptions_group_id: UUID | None
+    flags_group_id: UUID | None
+    colors_group_id: UUID | None
+    icons_group_id: UUID | None
+    auths_group_id: UUID | None
+    tools_group_id: UUID | None
+    instructions_group_id: UUID | None
+    documents_group_id: UUID | None
+    departments_group_id: UUID | None
+    parameters_group_id: UUID | None
+    parameter_fields_group_id: UUID | None
+    fields_group_id: UUID | None
+    examples_group_id: UUID | None
+    questions_group_id: UUID | None
+    templates_group_id: UUID | None
+    texts_group_id: UUID | None
+    run_rubrics_group_id: UUID | None
+    group_rubrics_group_id: UUID | None
+    bindings_group_id: UUID | None
+    conditional_parameters_group_id: UUID | None
+    personas_group_id: UUID | None
+    scenarios_group_id: UUID | None
+    simulations_group_id: UUID | None
     resource_types: list[Any] | None
     resource_ids: list[UUID] | None
     name_ids: list[UUID] | None
