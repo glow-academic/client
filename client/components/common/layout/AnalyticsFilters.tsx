@@ -14,6 +14,7 @@ import {
 } from "@/components/common/forms/profile-roles";
 import { Button } from "@/components/ui/button";
 import { DatePickerWithRange } from "@/components/ui/date-picker-range";
+import { useFilterOptions } from "@/contexts/filter-options-context";
 import { useProfile } from "@/contexts/profile-context";
 import {
   type SimulationFilter,
@@ -87,6 +88,7 @@ export function AnalyticsFilters({
 
   const { cohorts, cohortMemberCounts, departments, scopedRoles } =
     useProfile();
+  const { options: sectionFilterOptions } = useFilterOptions();
   const getCohortMemberCount = (cohortId: string) =>
     cohortMemberCounts[cohortId] ?? 0;
 
@@ -203,9 +205,10 @@ export function AnalyticsFilters({
   };
 
   // Filter to only active cohorts and convert to the format expected by CohortPicker
+  // Prefer section-specific options (MV-backed) when available, fall back to ProfileContext
   const activeCohorts = cohorts.filter((cohort) => cohort.active);
 
-  const cohortOptions = activeCohorts.map((cohort) => {
+  const profileCohortOptions = activeCohorts.map((cohort) => {
     const cohortId = "cohort_id" in cohort ? cohort.cohort_id : null;
     return {
       id: cohortId || "",
@@ -216,6 +219,15 @@ export function AnalyticsFilters({
       memberCount: cohortId ? getCohortMemberCount(cohortId) : 0,
     };
   }).filter((cohort) => cohort.id);
+
+  const cohortOptions = sectionFilterOptions?.cohortOptions
+    ? sectionFilterOptions.cohortOptions.map((o) => ({
+        id: o.value,
+        title: o.label || o.value,
+        description: o.count != null ? `${o.count} attempts` : "",
+        memberCount: 0,
+      }))
+    : profileCohortOptions;
 
   // Get selected cohorts for the picker
   const selectedCohorts = cohortOptions.filter((cohort) =>
@@ -242,9 +254,10 @@ export function AnalyticsFilters({
   };
 
   // Filter to only active departments and convert to the format expected by DepartmentSelector
+  // Prefer section-specific options (MV-backed) when available, fall back to ProfileContext
   const activeDepartments = departments.filter((department) => department.active);
 
-  const departmentOptions = activeDepartments
+  const profileDepartmentOptions = activeDepartments
     .filter((department) => {
       const departmentId = "department_id" in department ? department.department_id : null;
       const departmentName = "title" in department ? department.title : null;
@@ -259,6 +272,13 @@ export function AnalyticsFilters({
         ...(("description" in department && department.description) && { description: department.description }),
       };
     });
+
+  const departmentOptions = sectionFilterOptions?.departmentOptions
+    ? sectionFilterOptions.departmentOptions.map((o) => ({
+        id: o.value,
+        title: o.label || o.value,
+      }))
+    : profileDepartmentOptions;
 
   // Get selected departments for the picker
   const selectedDepartments = departmentOptions.filter((department) =>
@@ -389,7 +409,7 @@ export function AnalyticsFilters({
             )}
 
             {/* Cohort Picker - hide on benchmark, pricing, activity, and health pages */}
-            {!benchmarkPage && !isPricingPage && !isActivityPage && !healthPage && activeCohorts.length > 1 && (
+            {!benchmarkPage && !isPricingPage && !isActivityPage && !healthPage && cohortOptions.length > 0 && (
               <CohortSelector
                 cohorts={cohortOptions}
                 selectedCohorts={selectedCohorts}
@@ -399,8 +419,8 @@ export function AnalyticsFilters({
               />
             )}
 
-            {/* Department Picker - hide on health page, only show if more than 1 department */}
-            {!healthPage && departments.length > 1 && (
+            {/* Department Picker - hide on health page */}
+            {!healthPage && departmentOptions.length > 0 && (
               <DepartmentSelector
                 departments={departmentOptions}
                 selectedDepartments={selectedDepartments}

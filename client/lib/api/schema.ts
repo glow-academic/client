@@ -10487,6 +10487,14 @@ export interface components {
             insights?: components["schemas"]["DashboardInsights"] | null;
             /** Simulation Options */
             simulation_options?: components["schemas"]["app__api__v4__artifacts__types__FilterOption"][];
+            /** Cohort Options */
+            cohort_options?: components["schemas"]["app__api__v4__artifacts__types__FilterOption"][];
+            /** Department Options */
+            department_options?: components["schemas"]["app__api__v4__artifacts__types__FilterOption"][];
+            /** Date Range Earliest */
+            date_range_earliest?: string | null;
+            /** Date Range Latest */
+            date_range_latest?: string | null;
             /** Profile Name */
             profile_name?: string | null;
             /** Profile Emails */
@@ -10634,6 +10642,10 @@ export interface components {
              * @default 0
              */
             page_offset: number;
+            /** Accessible Cohort Ids */
+            accessible_cohort_ids?: string[];
+            /** Accessible Department Ids */
+            accessible_department_ids?: string[];
         };
         /** DashboardRubricMeta */
         DashboardRubricMeta: {

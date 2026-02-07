@@ -115,6 +115,12 @@ export const ROUTE_PERMISSIONS: SectionPermission[] = [
         redirectTo: "/analytics/activity",
       },
       {
+        path: "/analytics/activity/s/[sessionId]",
+        roles: ["instructional", "admin", "superadmin"],
+        title: "Session",
+        redirectTo: "/analytics/activity",
+      },
+      {
         path: "/analytics/pricing",
         roles: ["instructional", "admin", "superadmin"],
         title: "Pricing",

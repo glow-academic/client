@@ -26,6 +26,8 @@ class DashboardRequest(BaseModel):
     target_profile_id: UUID | None = None
     page_limit: int = Field(default=50, ge=1, le=200)
     page_offset: int = Field(default=0, ge=0)
+    accessible_cohort_ids: list[str] = Field(default_factory=list)
+    accessible_department_ids: list[str] = Field(default_factory=list)
 
 
 # ============================================================================
@@ -471,6 +473,10 @@ class DashboardBundleResponse(BaseModel):
     insights: DashboardInsights | None = None
 
     simulation_options: list[FilterOption] = Field(default_factory=list)
+    cohort_options: list[FilterOption] = Field(default_factory=list)
+    department_options: list[FilterOption] = Field(default_factory=list)
+    date_range_earliest: str | None = None
+    date_range_latest: str | None = None
 
     # Profile metadata (populated when target_profile_id is provided)
     profile_name: str | None = None

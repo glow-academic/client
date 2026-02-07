@@ -1,0 +1,308 @@
+/**
+ * SessionTimeline.tsx
+ * Chat-style timeline interleaving audits and pricing groups chronologically.
+ * @AshokSaravanan222
+ * 02/06/2026
+ */
+"use client";
+
+import type { SessionDetailOut } from "@/app/(main)/analytics/activity/s/[sessionId]/page";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
+import { formatDistanceToNow } from "date-fns";
+import { AlertCircle, Layers, ScrollText } from "lucide-react";
+import Link from "next/link";
+import { useMemo } from "react";
+
+export interface SessionTimelineProps {
+  sessionDetail: SessionDetailOut;
+}
+
+type TimelineItem =
+  | { kind: "audit"; data: AuditItem }
+  | { kind: "group"; data: GroupItem };
+
+type AuditItem = {
+  id: string;
+  created_at?: string | null;
+  message?: string | null;
+  endpoint?: string | null;
+  error: boolean;
+};
+
+type GroupItem = {
+  group_id: string;
+  group_name?: string | null;
+  trace_id?: string | null;
+  first_run_at?: string | null;
+  last_run_at?: string | null;
+  run_count: number;
+  total_tokens: number;
+  total_cost: string;
+};
+
+const formatDate = (dateString: string): string => {
+  try {
+    return formatDistanceToNow(new Date(dateString), { addSuffix: true });
+  } catch {
+    return dateString;
+  }
+};
+
+const formatNumber = (num: number): string => {
+  return new Intl.NumberFormat("en-US").format(num);
+};
+
+const formatCost = (cost: string): string => {
+  const num = parseFloat(cost);
+  if (isNaN(num)) return "$0.000000";
+  return `$${num.toFixed(6)}`;
+};
+
+export default function SessionTimeline({
+  sessionDetail,
+}: SessionTimelineProps) {
+  const audits = (sessionDetail.audits ?? []) as AuditItem[];
+  const groups = (sessionDetail.groups ?? []) as GroupItem[];
+
+  // Merge and sort chronologically
+  const timeline = useMemo<TimelineItem[]>(() => {
+    const items: TimelineItem[] = [];
+
+    for (const a of audits) {
+      items.push({ kind: "audit", data: a });
+    }
+    for (const g of groups) {
+      items.push({ kind: "group", data: g });
+    }
+
+    items.sort((a, b) => {
+      const dateA =
+        a.kind === "audit"
+          ? a.data.created_at
+          : a.data.first_run_at;
+      const dateB =
+        b.kind === "audit"
+          ? b.data.created_at
+          : b.data.first_run_at;
+      if (!dateA && !dateB) return 0;
+      if (!dateA) return -1;
+      if (!dateB) return 1;
+      return new Date(dateA).getTime() - new Date(dateB).getTime();
+    });
+
+    return items;
+  }, [audits, groups]);
+
+  if (!sessionDetail.session_exists) {
+    return (
+      <div className="flex items-center justify-center h-64 text-muted-foreground">
+        Session not found.
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-4 min-h-0 flex-1">
+      {/* Header card — session metadata */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg">Session Detail</CardTitle>
+            <Badge variant={sessionDetail.active ? "default" : "secondary"}>
+              {sessionDetail.active ? "Active" : "Inactive"}
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+            <div>
+              <span className="text-muted-foreground">Profile: </span>
+              <span className="font-medium">
+                {sessionDetail.profile_name ?? "Unknown"}
+              </span>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Created: </span>
+              <span className="font-medium">
+                {sessionDetail.session_created_at
+                  ? formatDate(sessionDetail.session_created_at)
+                  : "—"}
+              </span>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Audits: </span>
+              <span className="font-medium">
+                {formatNumber(sessionDetail.audit_total_count ?? 0)}
+              </span>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Groups: </span>
+              <span className="font-medium">{formatNumber(groups.length)}</span>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Session: </span>
+              <span className="font-medium font-mono text-xs">
+                {sessionDetail.session_id
+                  ? sessionDetail.session_id.substring(0, 8) + "..."
+                  : "—"}
+              </span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Interleaved timeline */}
+      <div className="border rounded-lg flex-1 min-h-0 overflow-hidden flex flex-col bg-card">
+        <div className="px-4 py-3 border-b">
+          <h3 className="text-sm font-semibold">Timeline</h3>
+        </div>
+        <ScrollArea className="flex-1 h-[500px]">
+          <TooltipProvider>
+            <div className="space-y-3 p-4">
+              {timeline.length === 0 ? (
+                <div className="flex flex-col items-center justify-center min-h-[200px] text-muted-foreground">
+                  <ScrollText className="h-12 w-12 mb-4 opacity-50" />
+                  <p className="text-sm">
+                    No activity recorded for this session
+                  </p>
+                </div>
+              ) : (
+                timeline.map((item, idx) =>
+                  item.kind === "audit" ? (
+                    <AuditBubble key={`audit-${item.data.id}`} audit={item.data} />
+                  ) : (
+                    <GroupBubble
+                      key={`group-${item.data.group_id}`}
+                      group={item.data}
+                    />
+                  )
+                )
+              )}
+            </div>
+          </TooltipProvider>
+        </ScrollArea>
+      </div>
+    </div>
+  );
+}
+
+/* ---- Audit bubble (left-aligned, muted bg) ---- */
+function AuditBubble({ audit }: { audit: AuditItem }) {
+  const isError = audit.error;
+
+  return (
+    <div className="flex gap-3 justify-start">
+      <div className="flex-shrink-0 pt-0.5">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div
+              className={cn(
+                "w-8 h-8 rounded-md flex items-center justify-center",
+                isError
+                  ? "bg-destructive/10 text-destructive"
+                  : "bg-muted"
+              )}
+            >
+              {isError ? (
+                <AlertCircle className="h-4 w-4" />
+              ) : (
+                <ScrollText className="h-4 w-4" />
+              )}
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{isError ? "Error Audit" : "Audit"}</p>
+          </TooltipContent>
+        </Tooltip>
+      </div>
+      <div className="flex flex-col gap-1 max-w-[80%]">
+        <div
+          className={cn(
+            "rounded-lg p-3",
+            isError ? "bg-destructive/5 border border-destructive/20" : "bg-muted"
+          )}
+        >
+          <p className="text-sm">{audit.message || "No message"}</p>
+          {audit.endpoint && (
+            <Badge variant="outline" className="mt-2 text-xs">
+              {audit.endpoint}
+            </Badge>
+          )}
+        </div>
+        {audit.created_at && (
+          <span className="text-xs text-muted-foreground">
+            {formatDate(audit.created_at)}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ---- Group bubble (right-aligned, primary bg) ---- */
+function GroupBubble({ group }: { group: GroupItem }) {
+  return (
+    <div className="flex gap-3 justify-end">
+      <div className="flex flex-col gap-1 max-w-[80%] items-end">
+        <Link
+          href={`/analytics/pricing/g/${group.group_id}`}
+          className="block"
+        >
+          <div className="rounded-lg p-3 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
+            <p className="text-sm font-medium">
+              {group.group_name || "Unnamed Group"}
+            </p>
+            <Separator className="my-2 bg-primary-foreground/20" />
+            <div className="grid grid-cols-3 gap-3 text-xs">
+              <div>
+                <div className="opacity-70">Runs</div>
+                <div className="font-semibold">
+                  {formatNumber(group.run_count)}
+                </div>
+              </div>
+              <div>
+                <div className="opacity-70">Tokens</div>
+                <div className="font-semibold">
+                  {formatNumber(group.total_tokens)}
+                </div>
+              </div>
+              <div>
+                <div className="opacity-70">Cost</div>
+                <div className="font-semibold">
+                  {formatCost(group.total_cost)}
+                </div>
+              </div>
+            </div>
+          </div>
+        </Link>
+        {group.first_run_at && (
+          <span className="text-xs text-muted-foreground">
+            {formatDate(group.first_run_at)}
+          </span>
+        )}
+      </div>
+      <div className="flex-shrink-0 pt-0.5">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center">
+              <Layers className="h-4 w-4 text-primary-foreground" />
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Pricing Group</p>
+          </TooltipContent>
+        </Tooltip>
+      </div>
+    </div>
+  );
+}

@@ -56,10 +56,10 @@ async def get_artifact_session_detail_internal(
             return GetArtifactSessionDetailResponse.model_validate(cached)
 
     params = GetArtifactSessionDetailSqlParams(
-        session_id=session_id,
-        profile_id=profile_id,
-        audit_limit=audit_limit,
-        audit_offset=audit_offset,
+        p_session_id=session_id,
+        p_profile_id=profile_id,
+        p_audit_limit=audit_limit,
+        p_audit_offset=audit_offset,
     )
 
     result = cast(

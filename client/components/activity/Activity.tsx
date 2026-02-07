@@ -409,6 +409,12 @@ export default function Activity({
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() =>
+                      router.push(
+                        `/analytics/activity/s/${row.original.session_id}`
+                      )
+                    }
                   >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id}>

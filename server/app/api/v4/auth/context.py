@@ -405,24 +405,17 @@ async def get_profile_context(
                 return await get_roles_internal(c, bypass_cache)
 
         async def fetch_earliest_attempt_date():
-            """Fetch earliest attempt date across all departments the profile belongs to."""
-            if not profile_id:
+            """Fetch earliest attempt date from MV (cheap index scan)."""
+            if not department_ids:
                 return None
             async with pool.acquire() as c:
                 return await c.fetchval(
                     """
-                    SELECT MIN(sa.created_at)
-                    FROM profile_departments_junction pd_effective
-                    JOIN profile_departments_junction pd_all
-                        ON pd_all.department_id = pd_effective.department_id
-                        AND pd_all.active = true
-                    JOIN profile_profiles_junction ppj ON ppj.profile_id = pd_all.profile_id
-                    JOIN simulation_attempts_profiles_connection sapc ON sapc.profiles_id = ppj.profiles_id
-                    JOIN view_simulation_attempts_entry sa ON sa.id = sapc.attempt_id
-                    WHERE pd_effective.profile_id = $1
-                      AND pd_effective.active = true
+                    SELECT MIN(attempt_created_at)
+                    FROM mv_attempt_facts
+                    WHERE department_id = ANY($1::uuid[])
                     """,
-                    profile_id,
+                    department_ids,
                 )
 
         # Execute all fetches in parallel

@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
+import { useFilterOptions } from "@/contexts/filter-options-context";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { HistorySkeleton } from "../common/history/SimulationHistory";
@@ -72,6 +73,25 @@ export default function Dashboard({
   const [isRightFooterHovered, setIsRightFooterHovered] = useState(false);
 
   const bundle = dashboardData;
+
+  // Set section-specific filter options in context
+  const { setOptions } = useFilterOptions();
+  useEffect(() => {
+    setOptions({
+      cohortOptions: (bundle.cohort_options || []).map((o) => ({
+        value: o.value || "",
+        label: o.label ?? null,
+        count: o.count ?? null,
+      })),
+      departmentOptions: (bundle.department_options || []).map((o) => ({
+        value: o.value || "",
+        label: o.label ?? null,
+        count: o.count ?? null,
+      })),
+      dateRangeEarliest: bundle.date_range_earliest ?? null,
+      dateRangeLatest: bundle.date_range_latest ?? null,
+    });
+  }, [bundle, setOptions]);
 
   // API returns arrays directly (simulations, rubrics, parameters, fields)
   // Components receive arrays and do lookups internally if needed

@@ -25,6 +25,10 @@ import {
   BreadcrumbProvider,
   useBreadcrumbContext,
 } from "@/contexts/breadcrumb-context";
+import {
+  FilterOptionsProvider,
+  useFilterOptions,
+} from "@/contexts/filter-options-context";
 import { GenerationProvider } from "@/contexts/generation-context";
 import { ProfileProviderClient, useProfile } from "@/contexts/profile-context";
 import { SaveProvider } from "@/contexts/save-context";
@@ -73,6 +77,14 @@ function MainLayoutContent({
   const router = useRouter();
   const { profile } = useProfile();
   const { getEntityName } = useBreadcrumbContext();
+  const { clearOptions } = useFilterOptions();
+
+  // Clear section-specific filter options when navigating away from analytics
+  useEffect(() => {
+    if (!pathname.startsWith("/analytics")) {
+      clearOptions();
+    }
+  }, [pathname, clearOptions]);
 
   // Check if we're on the staff management pages (but not on /new page)
   const isStaffManagementPage = pathname === "/management/staff";
@@ -548,21 +560,23 @@ export function MainLayoutClient({
         sessionSnapshot={sessionSnapshot}
       >
         <BreadcrumbProvider>
-          <GenerationProvider>
-            <SaveProvider initialAutosave={initialAutosave}>
-              <MainLayoutContent
-                attemptData={attemptData}
-                switchEffectiveProfileAction={switchEffectiveProfileAction}
-                createFeedbackAction={createFeedbackAction}
-                refreshPageAction={refreshPageAction}
-                searchSimulatableProfilesAction={
-                  searchSimulatableProfilesAction
-                }
-              >
-                {children}
-              </MainLayoutContent>
-            </SaveProvider>
-          </GenerationProvider>
+          <FilterOptionsProvider>
+            <GenerationProvider>
+              <SaveProvider initialAutosave={initialAutosave}>
+                <MainLayoutContent
+                  attemptData={attemptData}
+                  switchEffectiveProfileAction={switchEffectiveProfileAction}
+                  createFeedbackAction={createFeedbackAction}
+                  refreshPageAction={refreshPageAction}
+                  searchSimulatableProfilesAction={
+                    searchSimulatableProfilesAction
+                  }
+                >
+                  {children}
+                </MainLayoutContent>
+              </SaveProvider>
+            </GenerationProvider>
+          </FilterOptionsProvider>
         </BreadcrumbProvider>
       </ProfileProviderClient>
     </>

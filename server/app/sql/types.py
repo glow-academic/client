@@ -1383,6 +1383,80 @@ class MarkCallCompletedApiResponse(BaseModel):
 
 
 
+# Generated from: get_artifact_session_detail
+
+class GetArtifactSessionDetailSqlParams(BaseModel):
+
+    p_session_id: UUID
+    p_profile_id: UUID
+    p_audit_limit: int | None = 50
+    p_audit_offset: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_session_id,
+            self.p_profile_id,
+            self.p_audit_limit,
+            self.p_audit_offset,
+        )
+
+class QGetArtifactSessionDetailV4Audit(BaseModel):
+
+    id: UUID | None
+    created_at: datetime | None
+    message: str | None
+    endpoint: str | None
+    error: bool | None
+
+
+
+
+class QGetArtifactSessionDetailV4Group(BaseModel):
+
+    group_id: UUID | None
+    group_name: str | None
+    trace_id: str | None
+    first_run_at: datetime | None
+    last_run_at: datetime | None
+    run_count: int | None
+    total_tokens: int | None
+    total_cost: float | None
+
+class GetArtifactSessionDetailSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    session_exists: bool | None = None
+    session_id: UUID | None = None
+    profile_id: UUID | None = None
+    profile_name: str | None = None
+    session_created_at: datetime | None = None
+    active: bool | None = None
+    audit_total_count: int | None = None
+    audits: list[QGetArtifactSessionDetailV4Audit] | None = None
+    groups: list[QGetArtifactSessionDetailV4Group] | None = None
+
+class GetArtifactSessionDetailApiRequest(BaseModel):
+
+    p_session_id: UUID
+    p_profile_id: UUID
+    p_audit_limit: int | None = 50
+    p_audit_offset: int | None = 0
+
+class GetArtifactSessionDetailApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    session_exists: bool | None = None
+    session_id: UUID | None = None
+    profile_id: UUID | None = None
+    profile_name: str | None = None
+    session_created_at: datetime | None = None
+    active: bool | None = None
+    audit_total_count: int | None = None
+    audits: list[QGetArtifactSessionDetailV4Audit] | None = None
+    groups: list[QGetArtifactSessionDetailV4Group] | None = None
+
+
+
 # Generated from: bulk_archive_attempts
 
 class BulkArchiveAttemptsSqlParams(BaseModel):
@@ -23951,6 +24025,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "MarkCallCompletedApiRequest",
         "MarkCallCompletedApiResponse",
     ),
+    "app/sql/v4/queries/artifacts/session/get_artifact_session_detail_complete.sql": (
+        "GetArtifactSessionDetailSqlParams",
+        "GetArtifactSessionDetailSqlRow",
+        "GetArtifactSessionDetailApiRequest",
+        "GetArtifactSessionDetailApiResponse",
+    ),
     "app/sql/v4/queries/attempts/bulk_archive_attempts_complete.sql": (
         "BulkArchiveAttemptsSqlParams",
         "BulkArchiveAttemptsSqlRow",
@@ -26658,6 +26738,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/artifacts/progress/mark_call_completed_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/artifacts/session/get_artifact_session_detail_complete.sql"]
     ) -> SqlString: ...
 
     @overload
