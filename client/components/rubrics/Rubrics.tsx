@@ -25,13 +25,13 @@ import {
 } from "@tanstack/react-table";
 
 import type {
-  CreateRubricIn,
-  CreateRubricOut,
   DeleteRubricIn,
   DeleteRubricOut,
   DuplicateRubricIn,
   DuplicateRubricOut,
   RubricsListOut,
+  SaveRubricIn,
+  SaveRubricOut,
 } from "@/app/(main)/intelligence/rubrics/page";
 import TableRubric from "@/components/common/rubric/TableRubric";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
@@ -314,7 +314,7 @@ export default function Rubrics({
     try {
       await duplicateRubricAction({
         body: {
-          original_rubric_id: rubric.rubric_id ?? "",
+          rubric_id: rubric.rubric_id ?? "",
         },
       });
       toast.success(`Rubric "${rubric.name}" duplicated successfully`);

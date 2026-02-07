@@ -53,8 +53,6 @@ type CreateDraftDepartmentsOut = OutputOf<
   "/api/v4/resources/departments",
   "post"
 >;
-type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
-type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
 type CreateDraftPointsIn = InputOf<"/api/v4/resources/points", "post">;
 type CreateDraftPointsOut = OutputOf<"/api/v4/resources/points", "post">;
 type CreateDraftStandardGroupsIn = InputOf<
@@ -65,9 +63,6 @@ type CreateDraftStandardGroupsOut = OutputOf<
   "/api/v4/resources/standard_groups",
   "post"
 >;
-type CreateDraftStandardsIn = InputOf<"/api/v4/resources/standards", "post">;
-type CreateDraftStandardsOut = OutputOf<"/api/v4/resources/standards", "post">;
-
 type RubricData = OutputOf<"/api/v4/rubrics/get", "post">;
 
 export interface RubricProps {
@@ -89,18 +84,12 @@ export interface RubricProps {
   createDepartmentsAction?: (
     input: CreateDraftDepartmentsIn
   ) => Promise<CreateDraftDepartmentsOut>;
-  createFlagsAction?: (
-    input: CreateDraftFlagsIn
-  ) => Promise<CreateDraftFlagsOut>;
   createPointsAction?: (
     input: CreateDraftPointsIn
   ) => Promise<CreateDraftPointsOut>;
   createStandardGroupsAction?: (
     input: CreateDraftStandardGroupsIn
   ) => Promise<CreateDraftStandardGroupsOut>;
-  createStandardsAction?: (
-    input: CreateDraftStandardsIn
-  ) => Promise<CreateDraftStandardsOut>;
 }
 
 function RubricComponent({
@@ -111,10 +100,8 @@ function RubricComponent({
   createNamesAction,
   createDescriptionsAction,
   createDepartmentsAction,
-  createFlagsAction,
   createPointsAction,
   createStandardGroupsAction,
-  createStandardsAction,
 }: RubricProps) {
   const router = useRouter();
   const isEditMode = !!rubricId;
@@ -162,62 +149,86 @@ function RubricComponent({
   // Memoize rubricData fields used in renderStep to prevent callback recreation
   const stableRubricDataFields = React.useMemo(() => {
     if (!rubricData) return null;
+    const resources = rubricData.resources?.resources;
+    const current = rubricData.resources?.current;
     return {
       group_id: rubricData.group_id,
-      name_id: rubricData.name_id,
-      name_resource: rubricData.name_resource,
+      // Name
+      name_resource: current?.names?.[0] ?? null,
+      names: resources?.names ?? [],
       show_name: rubricData.show_name,
       name_suggestions: rubricData.name_suggestions,
-      names: rubricData.names,
       name_required: rubricData.name_required,
-      name_agent_id: rubricData.name_agent_id,
-      description_id: rubricData.description_id,
-      description_resource: rubricData.description_resource,
+      name_show_ai_generate: rubricData.name_show_ai_generate,
+      name_create_tool_id: rubricData.name_create_tool_id,
+      name_link_tool_id: rubricData.name_link_tool_id,
+      // Description
+      description_resource: current?.descriptions?.[0] ?? null,
+      descriptions: resources?.descriptions ?? [],
       show_description: rubricData.show_description,
       description_suggestions: rubricData.description_suggestions,
       description_required: rubricData.description_required,
-      description_agent_id: rubricData.description_agent_id,
-      descriptions: rubricData.descriptions,
-      department_ids: rubricData.department_ids,
-      department_resources: rubricData.department_resources,
+      description_show_ai_generate: rubricData.description_show_ai_generate,
+      description_create_tool_id: rubricData.description_create_tool_id,
+      description_link_tool_id: rubricData.description_link_tool_id,
+      // Departments
+      department_resources: current?.departments ?? [],
+      departments: resources?.departments ?? [],
       show_departments: rubricData.show_departments,
       department_suggestions: rubricData.department_suggestions,
       departments_required: rubricData.departments_required,
-      departments_agent_id: rubricData.departments_agent_id,
-      departments: rubricData.departments,
-      active_flag_id: rubricData.active_flag_id,
-      flag_resource: rubricData.flag_resource,
+      departments_show_ai_generate: rubricData.departments_show_ai_generate,
+      departments_link_tool_id: rubricData.departments_link_tool_id,
+      // Flag (map RubricFlagConfig to FlagItem shape)
+      flag_resource: current?.flags?.[0]
+        ? {
+            id: current.flags[0].flag_option_id ?? null,
+            name: current.flags[0].label ?? null,
+            description: current.flags[0].description ?? null,
+            icon: current.flags[0].icon_id ?? null,
+            generated: current.flags[0].generated ?? null,
+          }
+        : null,
       show_flag: rubricData.show_flag,
       flag_required: rubricData.flag_required,
-      flag_agent_id: rubricData.flag_agent_id,
-      total_points_id: rubricData.total_points_id,
-      total_points_resource: rubricData.total_points_resource,
+      flag_show_ai_generate: rubricData.flag_show_ai_generate,
+      flag_link_tool_id: rubricData.flag_link_tool_id,
+      // Points (total)
+      total_points_resource: current?.points?.[0] ?? null,
       show_points: rubricData.show_points,
-      points_agent_id: rubricData.points_agent_id,
       points_required: rubricData.points_required,
       points_suggestions: rubricData.points_suggestions,
-      points: rubricData.points,
-      pass_points_id: rubricData.pass_points_id,
-      pass_points_resource: rubricData.pass_points_resource,
+      points: resources?.points ?? [],
+      points_show_ai_generate: rubricData.points_show_ai_generate,
+      points_create_tool_id: rubricData.points_create_tool_id,
+      points_link_tool_id: rubricData.points_link_tool_id,
+      // Pass points
+      pass_points_resource: current?.pass_points?.[0] ?? null,
       show_pass_points: rubricData.show_pass_points,
-      pass_points_agent_id: rubricData.pass_points_agent_id,
       pass_points_required: rubricData.pass_points_required,
       pass_points_suggestions: rubricData.pass_points_suggestions,
-      pass_points: rubricData.pass_points,
-      standard_group_ids: rubricData.standard_group_ids,
-      standard_group_resources: rubricData.standard_group_resources,
+      pass_points: resources?.pass_points ?? [],
+      pass_points_show_ai_generate: rubricData.pass_points_show_ai_generate,
+      pass_points_create_tool_id: rubricData.pass_points_create_tool_id,
+      pass_points_link_tool_id: rubricData.pass_points_link_tool_id,
+      // Standard groups
+      standard_group_resources: current?.standard_groups ?? [],
+      standard_groups: resources?.standard_groups ?? [],
       show_standard_groups: rubricData.show_standard_groups,
-      standard_groups_agent_id: rubricData.standard_groups_agent_id,
-      standard_groups_required: rubricData.standard_groups_required,
       standard_group_suggestions: rubricData.standard_group_suggestions,
-      standard_groups: rubricData.standard_groups,
-      standard_ids: rubricData.standard_ids,
-      standard_resources: rubricData.standard_resources,
+      standard_groups_required: rubricData.standard_groups_required,
+      standard_groups_show_ai_generate:
+        rubricData.standard_groups_show_ai_generate,
+      standard_groups_create_tool_id: rubricData.standard_groups_create_tool_id,
+      standard_groups_link_tool_id: rubricData.standard_groups_link_tool_id,
+      // Standards
+      standard_resources: current?.standards ?? [],
+      standards: resources?.standards ?? [],
       show_standards: rubricData.show_standards,
-      standards_agent_id: rubricData.standards_agent_id,
-      standards_required: rubricData.standards_required,
       standard_suggestions: rubricData.standard_suggestions,
-      standards: rubricData.standards,
+      standards_required: rubricData.standards_required,
+      standards_show_ai_generate: rubricData.standards_show_ai_generate,
+      standards_link_tool_id: rubricData.standards_link_tool_id,
     };
   }, [rubricData]);
 
@@ -235,16 +246,23 @@ function RubricComponent({
         standard_ids: [] as string[],
       };
     }
-    // Extract resource IDs from server data
+    // Extract resource IDs from resources bucket
+    const current = data.resources?.current;
     return {
-      name_id: data.name_id ?? null,
-      description_id: data.description_id ?? null,
-      department_ids: data.department_ids ?? [],
-      active_flag_id: data.active_flag_id ?? null,
-      total_points_id: data.total_points_id ?? null,
-      pass_points_id: data.pass_points_id ?? null,
-      standard_group_ids: data.standard_group_ids ?? [],
-      standard_ids: data.standard_ids ?? [],
+      name_id: current?.names?.[0]?.id ?? null,
+      description_id: current?.descriptions?.[0]?.id ?? null,
+      department_ids: (current?.departments ?? [])
+        .map((d) => d.department_id)
+        .filter((id): id is string => id != null),
+      active_flag_id: current?.flags?.[0]?.flag_option_id ?? null,
+      total_points_id: current?.points?.[0]?.id ?? null,
+      pass_points_id: current?.pass_points?.[0]?.id ?? null,
+      standard_group_ids: (current?.standard_groups ?? [])
+        .map((sg) => sg.standard_group_id)
+        .filter((id): id is string => id != null),
+      standard_ids: (current?.standards ?? [])
+        .map((s) => s.standard_id)
+        .filter((id): id is string => id != null),
     };
   }, []);
 
@@ -254,18 +272,39 @@ function RubricComponent({
     formStateRef.current = formState;
   }, [formState]);
 
-  // Memoize stringified array dependencies
+  // Memoize stringified array dependencies (extracted from resources bucket)
+  const currentDepartmentIds = React.useMemo(
+    () =>
+      (rubricData?.resources?.current?.departments ?? [])
+        .map((d) => d.department_id)
+        .filter(Boolean),
+    [rubricData?.resources?.current?.departments]
+  );
   const departmentIdsStr = React.useMemo(
-    () => JSON.stringify(rubricData?.department_ids ?? []),
-    [rubricData?.department_ids]
+    () => JSON.stringify(currentDepartmentIds),
+    [currentDepartmentIds]
+  );
+  const currentStandardGroupIds = React.useMemo(
+    () =>
+      (rubricData?.resources?.current?.standard_groups ?? [])
+        .map((sg) => sg.standard_group_id)
+        .filter(Boolean),
+    [rubricData?.resources?.current?.standard_groups]
   );
   const standardGroupIdsStr = React.useMemo(
-    () => JSON.stringify(rubricData?.standard_group_ids ?? []),
-    [rubricData?.standard_group_ids]
+    () => JSON.stringify(currentStandardGroupIds),
+    [currentStandardGroupIds]
+  );
+  const currentStandardIds = React.useMemo(
+    () =>
+      (rubricData?.resources?.current?.standards ?? [])
+        .map((s) => s.standard_id)
+        .filter(Boolean),
+    [rubricData?.resources?.current?.standards]
   );
   const standardIdsStr = React.useMemo(
-    () => JSON.stringify(rubricData?.standard_ids ?? []),
-    [rubricData?.standard_ids]
+    () => JSON.stringify(currentStandardIds),
+    [currentStandardIds]
   );
 
   // Update form state when server data changes
@@ -291,11 +330,11 @@ function RubricComponent({
       return prev;
     });
   }, [
-    rubricData?.name_id,
-    rubricData?.description_id,
-    rubricData?.active_flag_id,
-    rubricData?.total_points_id,
-    rubricData?.pass_points_id,
+    rubricData?.resources?.current?.names,
+    rubricData?.resources?.current?.descriptions,
+    rubricData?.resources?.current?.flags,
+    rubricData?.resources?.current?.points,
+    rubricData?.resources?.current?.pass_points,
     departmentIdsStr,
     standardGroupIdsStr,
     standardIdsStr,
@@ -350,17 +389,14 @@ function RubricComponent({
 
   // Build a stable key for "what would we patch"
   const draftPatchKey = React.useMemo(() => {
-    const pointIds = [
-      formState.total_points_id,
-      formState.pass_points_id,
-    ].filter((id): id is string => id !== null);
     return JSON.stringify({
       draftId: draftId || null,
       name_id: formState.name_id,
       description_id: formState.description_id,
       department_ids: formState.department_ids,
       active_flag_id: formState.active_flag_id,
-      point_ids: pointIds,
+      total_points_id: formState.total_points_id,
+      pass_points_id: formState.pass_points_id,
       standard_group_ids: formState.standard_group_ids,
       standard_ids: formState.standard_ids,
     });
@@ -401,10 +437,6 @@ function RubricComponent({
     const timer = setTimeout(async () => {
       try {
         if (!patchRubricDraftActionRef.current) return;
-        const pointIds = [
-          formState.total_points_id,
-          formState.pass_points_id,
-        ].filter((id): id is string => id !== null);
         const result = await patchRubricDraftActionRef.current({
           body: {
             input_draft_id: draftId || null,
@@ -412,7 +444,8 @@ function RubricComponent({
             description_id: formState.description_id,
             department_ids: formState.department_ids,
             active_flag_id: formState.active_flag_id,
-            point_ids: pointIds.length > 0 ? pointIds : null,
+            total_points_id: formState.total_points_id,
+            pass_points_id: formState.pass_points_id,
             standard_group_ids: formState.standard_group_ids,
             standard_ids: formState.standard_ids,
             expected_version: lastSavedVersionRef.current,
@@ -598,33 +631,29 @@ function RubricComponent({
     };
   }, [socket, isConnected, rubricData?.group_id]);
 
-  // Helper function to determine agent_type from resource types
-  const determineAgentType = useCallback(
-    (resourceTypes: string[]): string | null => {
-      if (resourceTypes.length === 1) {
-        const agentTypeMap: Partial<Record<string, string>> = {
-          names: "name",
-          descriptions: "description",
-          departments: "departments",
-          flags: "flags",
-          points: "points",
-          standard_groups: "standard_groups",
-          standards: "standards",
-        };
-        const firstType = resourceTypes[0];
-        if (firstType && firstType in agentTypeMap) {
-          return agentTypeMap[firstType] ?? null;
-        }
-      }
-      return null;
+  // Map resource types to domain IDs from server response
+  const getDomainIds = useCallback(
+    (resourceTypes: ResourceType[]): string[] => {
+      if (!rubricData) return [];
+      const domainIdMap: Partial<Record<ResourceType, string | null | undefined>> = {
+        names: rubricData.name_domain_id,
+        descriptions: rubricData.description_domain_id,
+        departments: rubricData.departments_domain_id,
+        flags: rubricData.flag_domain_id,
+        points: rubricData.points_domain_id,
+        standard_groups: rubricData.standard_groups_domain_id,
+        standards: rubricData.standards_domain_id,
+      };
+      return resourceTypes
+        .map((rt) => domainIdMap[rt])
+        .filter((id): id is string => id != null);
     },
-    []
+    [rubricData]
   );
 
   const handleGenerateResources = useCallback(
     async (
-      resourceTypes: string[],
-      agentType: string | null,
+      resourceTypes: ResourceType[],
       userInstructions?: string
     ) => {
       if (!socket || !isConnected) {
@@ -632,9 +661,15 @@ function RubricComponent({
         return;
       }
 
+      const domainIds = getDomainIds(resourceTypes);
+      if (domainIds.length === 0) {
+        toast.error("No AI generation configured for this resource");
+        return;
+      }
+
       setGeneratingResources((prev) => {
         const next = new Set(prev);
-        resourceTypes.forEach((rt) => next.add(rt as ResourceType));
+        resourceTypes.forEach((rt) => next.add(rt));
         return next;
       });
 
@@ -642,67 +677,49 @@ function RubricComponent({
       const draftId = (formData["draftId"] as string | undefined) ?? null;
 
       socket.emit("rubric_generate", {
-        resource_types: resourceTypes,
-        agent_type: agentType,
+        domain_ids: domainIds,
         user_instructions: userInstructions ? [userInstructions] : null,
         draft_id: draftId || null,
-        mcp: false,
         rubric_id: rubricId || null,
       });
     },
-    [socket, isConnected, rubricId]
+    [socket, isConnected, rubricId, getDomainIds]
   );
 
   // Individual generation handlers
   const handleGenerateName = useCallback(
-    async () =>
-      handleGenerateResources(["names"], determineAgentType(["names"])),
-    [handleGenerateResources, determineAgentType]
+    async () => handleGenerateResources(["names"]),
+    [handleGenerateResources]
   );
 
   const handleGenerateDescription = useCallback(
-    async () =>
-      handleGenerateResources(
-        ["descriptions"],
-        determineAgentType(["descriptions"])
-      ),
-    [handleGenerateResources, determineAgentType]
+    async () => handleGenerateResources(["descriptions"]),
+    [handleGenerateResources]
   );
 
   const handleGenerateDepartments = useCallback(
-    async () =>
-      handleGenerateResources(
-        ["departments"],
-        determineAgentType(["departments"])
-      ),
-    [handleGenerateResources, determineAgentType]
+    async () => handleGenerateResources(["departments"]),
+    [handleGenerateResources]
   );
 
   const handleGenerateFlags = useCallback(
-    async () =>
-      handleGenerateResources(["flags"], determineAgentType(["flags"])),
-    [handleGenerateResources, determineAgentType]
+    async () => handleGenerateResources(["flags"]),
+    [handleGenerateResources]
   );
 
   const handleGeneratePoints = useCallback(
-    async () =>
-      handleGenerateResources(["points"], determineAgentType(["points"])),
-    [handleGenerateResources, determineAgentType]
+    async () => handleGenerateResources(["points"]),
+    [handleGenerateResources]
   );
 
   const handleGenerateStandardGroups = useCallback(
-    async () =>
-      handleGenerateResources(
-        ["standard_groups"],
-        determineAgentType(["standard_groups"])
-      ),
-    [handleGenerateResources, determineAgentType]
+    async () => handleGenerateResources(["standard_groups"]),
+    [handleGenerateResources]
   );
 
   const handleGenerateStandards = useCallback(
-    async () =>
-      handleGenerateResources(["standards"], determineAgentType(["standards"])),
-    [handleGenerateResources, determineAgentType]
+    async () => handleGenerateResources(["standards"]),
+    [handleGenerateResources]
   );
 
   // Disabled logic based on can_edit flag
@@ -713,7 +730,7 @@ function RubricComponent({
 
   // Set breadcrumb context when rubric data is loaded
   useEffect(() => {
-    const rubricName = rubricData?.name_resource?.name;
+    const rubricName = rubricData?.resources?.current?.names?.[0]?.name;
     if (rubricName && rubricId && isEditMode) {
       setEntityMetadata({
         entityId: rubricId,
@@ -779,9 +796,15 @@ function RubricComponent({
         throw new Error("Required fields are missing");
       }
 
+      if (!rubricData?.group_id) {
+        toast.error("Missing group context. Please refresh the page.");
+        throw new Error("Missing group_id");
+      }
+
       try {
         await saveRubricAction({
           body: {
+            group_id: rubricData.group_id,
             input_rubric_id: isEditMode && rubricId ? rubricId : null,
             name_id: formState.name_id,
             description_id: formState.description_id || null,
@@ -813,6 +836,7 @@ function RubricComponent({
       profile?.id,
       saveRubricAction,
       router,
+      rubricData?.group_id,
       rubricData?.name_required,
       rubricData?.departments_required,
       rubricData?.standard_groups_required,
@@ -1042,7 +1066,9 @@ function RubricComponent({
                   required={currentRubricData?.name_required ?? false}
                   hideDescription={true}
                   group_id={currentRubricData?.group_id ?? null}
-                  agent_id={currentRubricData?.name_agent_id ?? null}
+                  showAiGenerate={currentRubricData?.name_show_ai_generate ?? false}
+                  create_tool_id={currentRubricData?.name_create_tool_id ?? null}
+                  link_tool_id={currentRubricData?.name_link_tool_id ?? null}
                   createNamesAction={createNamesAction}
                 />
               }
@@ -1076,7 +1102,9 @@ function RubricComponent({
                   rows={3}
                   data-testid="input-rubric-description"
                   group_id={currentRubricData?.group_id ?? null}
-                  agent_id={currentRubricData?.description_agent_id ?? null}
+                  showAiGenerate={currentRubricData?.description_show_ai_generate ?? false}
+                  create_tool_id={currentRubricData?.description_create_tool_id ?? null}
+                  link_tool_id={currentRubricData?.description_link_tool_id ?? null}
                   createDescriptionsAction={createDescriptionsAction}
                   searchTerm={descriptionSearch}
                   onSearchChange={(term) =>
@@ -1106,7 +1134,8 @@ function RubricComponent({
                   isGenerating={isGenerating("departments")}
                   required={currentRubricData?.departments_required ?? false}
                   group_id={currentRubricData?.group_id ?? null}
-                  agent_id={currentRubricData?.departments_agent_id ?? null}
+                  showAiGenerate={currentRubricData?.departments_show_ai_generate ?? false}
+                  link_tool_id={currentRubricData?.departments_link_tool_id ?? null}
                   createDepartmentsAction={createDepartmentsAction}
                 />
 
@@ -1127,8 +1156,8 @@ function RubricComponent({
                   helpText="Inactive rubrics will not be available for simulations"
                   required={currentRubricData?.flag_required ?? false}
                   group_id={currentRubricData?.group_id ?? null}
-                  agent_id={currentRubricData?.flag_agent_id ?? null}
-                  createFlagsAction={createFlagsAction}
+                  showAiGenerate={currentRubricData?.flag_show_ai_generate ?? false}
+                  link_tool_id={currentRubricData?.flag_link_tool_id ?? null}
                 />
               </div>
             </StepCard>
@@ -1203,7 +1232,9 @@ function RubricComponent({
                   label="Pass Points"
                   required={currentRubricData?.pass_points_required ?? false}
                   group_id={currentRubricData?.group_id ?? null}
-                  agent_id={currentRubricData?.pass_points_agent_id ?? null}
+                  showAiGenerate={currentRubricData?.pass_points_show_ai_generate ?? false}
+                  create_tool_id={currentRubricData?.pass_points_create_tool_id ?? null}
+                  link_tool_id={currentRubricData?.pass_points_link_tool_id ?? null}
                   createPointsAction={createPointsAction}
                   searchTerm={pointsSearch}
                   showSelectedFilter={pointsShowSelected}
@@ -1267,7 +1298,9 @@ function RubricComponent({
                 isGenerating={isGenerating("standard_groups")}
                 required={currentRubricData?.standard_groups_required ?? false}
                 group_id={currentRubricData?.group_id ?? null}
-                agent_id={currentRubricData?.standard_groups_agent_id ?? null}
+                showAiGenerate={currentRubricData?.standard_groups_show_ai_generate ?? false}
+                create_tool_id={currentRubricData?.standard_groups_create_tool_id ?? null}
+                link_tool_id={currentRubricData?.standard_groups_link_tool_id ?? null}
                 createStandardGroupsAction={createStandardGroupsAction}
                 searchTerm={standardGroupSearch}
                 showSelectedFilter={standardGroupShowSelected}
@@ -1307,8 +1340,8 @@ function RubricComponent({
                 isGenerating={isGenerating("standards")}
                 required={currentRubricData?.standards_required ?? false}
                 group_id={currentRubricData?.group_id ?? null}
-                agent_id={currentRubricData?.standards_agent_id ?? null}
-                createStandardsAction={createStandardsAction}
+                showAiGenerate={currentRubricData?.standards_show_ai_generate ?? false}
+                link_tool_id={currentRubricData?.standards_link_tool_id ?? null}
               />
             </StepCard>
           );
@@ -1333,10 +1366,8 @@ function RubricComponent({
       createNamesAction,
       createDescriptionsAction,
       createDepartmentsAction,
-      createFlagsAction,
       createPointsAction,
       createStandardGroupsAction,
-      createStandardsAction,
     ]
   );
 
@@ -1399,27 +1430,25 @@ function RubricComponent({
 }
 
 export default React.memo(RubricComponent, (prevProps, nextProps) => {
-  // Compare rubricData by resource IDs, not object reference
-  const prevIds = {
-    name_id: prevProps.rubricData?.name_id,
-    description_id: prevProps.rubricData?.description_id,
-    department_ids: prevProps.rubricData?.department_ids,
-    active_flag_id: prevProps.rubricData?.active_flag_id,
-    total_points_id: prevProps.rubricData?.total_points_id,
-    pass_points_id: prevProps.rubricData?.pass_points_id,
-    standard_group_ids: prevProps.rubricData?.standard_group_ids,
-    standard_ids: prevProps.rubricData?.standard_ids,
+  // Compare rubricData by resource IDs extracted from resources bucket
+  const extractIds = (data: RubricData | undefined) => {
+    const current = data?.resources?.current;
+    return {
+      name_id: current?.names?.[0]?.id,
+      description_id: current?.descriptions?.[0]?.id,
+      department_ids: (current?.departments ?? []).map((d) => d.department_id),
+      active_flag_id: current?.flags?.[0]?.flag_option_id,
+      total_points_id: current?.points?.[0]?.id,
+      pass_points_id: current?.pass_points?.[0]?.id,
+      standard_group_ids: (current?.standard_groups ?? []).map(
+        (sg) => sg.standard_group_id
+      ),
+      standard_ids: (current?.standards ?? []).map((s) => s.standard_id),
+    };
   };
-  const nextIds = {
-    name_id: nextProps.rubricData?.name_id,
-    description_id: nextProps.rubricData?.description_id,
-    department_ids: nextProps.rubricData?.department_ids,
-    active_flag_id: nextProps.rubricData?.active_flag_id,
-    total_points_id: nextProps.rubricData?.total_points_id,
-    pass_points_id: nextProps.rubricData?.pass_points_id,
-    standard_group_ids: nextProps.rubricData?.standard_group_ids,
-    standard_ids: nextProps.rubricData?.standard_ids,
-  };
+
+  const prevIds = extractIds(prevProps.rubricData);
+  const nextIds = extractIds(nextProps.rubricData);
 
   if (
     prevProps.rubricId !== nextProps.rubricId ||

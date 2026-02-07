@@ -1,22 +1,30 @@
 """Model completion handler - emits model-specific generation complete events."""
 
 import uuid
-from typing import Any, cast
+from typing import Any
 
 from fastapi import APIRouter
 
+from app.api.v4.resources.departments.get import get_departments_internal
+from app.api.v4.resources.descriptions.get import get_descriptions_internal
+from app.api.v4.resources.endpoints.get import get_endpoints_internal
+from app.api.v4.resources.flags.get import get_flags_internal
+from app.api.v4.resources.keys.get import get_keys_internal
+from app.api.v4.resources.names.get import get_names_internal
+from app.api.v4.resources.pricing.get import get_pricing_internal
+from app.api.v4.resources.reasoning_levels.get import get_reasoning_levels_internal
+from app.api.v4.resources.temperature_levels.get import get_temperature_levels_internal
+from app.api.v4.resources.values.get import get_values_internal
+from app.api.v4.resources.voices.get import get_voices_internal
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
-from app.sql.types import GetModelApiRequest, GetModelSqlParams, GetModelSqlRow
-from app.utils.sql_helper import execute_sql_typed
+from app.socket.v4.artifacts.model.types import ModelGenerationCompleteEvent
 
 internal_sio = get_internal_sio()
 
 client_router = APIRouter()
 server_router = APIRouter()
-
-SQL_PATH = "app/sql/v4/queries/models/get_model_complete.sql"
 
 
 @internal_sio.on("generate_call_complete")  # type: ignore
@@ -40,99 +48,108 @@ async def handle_model_artifact_complete(data: dict[str, Any]) -> None:
         tool_result = tool_results[0]
 
     resource_type = data.get("resource_type")
-    generated_resource_id = tool_result.get("resource_id")
+    resource_id_str = tool_result.get("resource_id")
 
-    artifact_id_str = data.get("resource_id")
+    group_id_str = data.get("group_id")
     profile_id_str = await find_profile_by_socket(sid)
-    if not artifact_id_str or not profile_id_str:
+    if not group_id_str or not profile_id_str or not resource_type:
         return
+
+    if not resource_id_str:
+        # Check if this was a tool failure
+        tool_success = tool_result.get("success", True)
+        if not tool_success:
+            return
+        await sio.emit(
+            "model_generation_error",
+            {
+                "artifact_type": "model",
+                "resource_type": resource_type,
+                "group_id": group_id_str,
+                "success": False,
+                "message": f"Missing resource_id for {resource_type} tool result",
+            },
+            room=sid,
+        )
+        return
+
+    resource_id = uuid.UUID(resource_id_str)
+
+    # Build the typed event with the appropriate resource field populated
+    event = ModelGenerationCompleteEvent(
+        artifact_type="model",
+        group_id=group_id_str,
+        resource_type=resource_type,
+        run_id=data.get("run_id"),
+        success=True,
+        message=f"{resource_type} generation completed successfully",
+    )
 
     try:
         async with get_db_connection() as conn:
-            request_payload = GetModelApiRequest.model_validate(
-                {"model_id": uuid.UUID(artifact_id_str)}
-            )
-            params = GetModelSqlParams(
-                profile_id=uuid.UUID(profile_id_str),
-                **request_payload.model_dump(),
-            )
-            result = cast(
-                GetModelSqlRow,
-                await execute_sql_typed(conn, SQL_PATH, params=params),
-            )
+            # Fetch the resource using the appropriate internal function
+            if resource_type == "names":
+                items = await get_names_internal(conn, [resource_id])
+                event.name_resource = items[0] if items else None
+            elif resource_type == "descriptions":
+                items = await get_descriptions_internal(conn, [resource_id])
+                event.description_resource = items[0] if items else None
+            elif resource_type == "values":
+                items = await get_values_internal(conn, [resource_id])
+                event.value_resource = items[0] if items else None
+            elif resource_type == "endpoints":
+                items = await get_endpoints_internal(conn, [resource_id])
+                event.endpoint_resource = items[0] if items else None
+            elif resource_type == "keys":
+                items = await get_keys_internal(conn, [resource_id])
+                event.key_resource = items[0] if items else None
+            elif resource_type == "flags":
+                items = await get_flags_internal(conn, [resource_id])
+                event.flag_resource = items[0] if items else None
+            elif resource_type == "departments":
+                items = await get_departments_internal(conn, [resource_id])
+                event.department_resources = items if items else None
+            elif resource_type == "temperature_levels":
+                items = await get_temperature_levels_internal(conn, [resource_id])
+                event.temperature_level_resources = items if items else None
+            elif resource_type == "pricing":
+                items = await get_pricing_internal(conn, [resource_id])
+                event.pricing_resources = items if items else None
+            elif resource_type == "reasoning_levels":
+                items = await get_reasoning_levels_internal(conn, [resource_id])
+                event.reasoning_level_resources = items if items else None
+            elif resource_type == "voices":
+                items = await get_voices_internal(conn, [resource_id])
+                event.voice_resources = items if items else None
     except Exception as e:
         await sio.emit(
             "model_generation_error",
             {
                 "artifact_type": "model",
                 "resource_type": resource_type,
-                "group_id": data.get("group_id"),
-                "message": str(e),
+                "group_id": group_id_str,
                 "success": False,
+                "message": str(e),
             },
             room=sid,
         )
         return
 
-    payload: dict[str, Any] = {
-        "artifact_type": "model",
-        "group_id": str(getattr(result, "group_id", None))
-        if getattr(result, "group_id", None)
-        else data.get("group_id"),
-        "resource_type": resource_type,
-        "run_id": data.get("run_id"),
-        "success": bool(generated_resource_id),
-        "message": f"{resource_type} generation completed"
-        if generated_resource_id
-        else "Missing resource_id in tool result",
-        "type": data.get("type", "complete"),
-    }
-
-    value = getattr(result, "name_id", None)
-    payload["name_id"] = str(value) if value else None
-    value = getattr(result, "description_id", None)
-    payload["description_id"] = str(value) if value else None
-    value = getattr(result, "value_id", None)
-    payload["value_id"] = str(value) if value else None
-    value = getattr(result, "endpoint_id", None)
-    payload["endpoint_id"] = str(value) if value else None
-    value = getattr(result, "active_flag_id", None)
-    payload["active_flag_id"] = str(value) if value else None
-    value = getattr(result, "modalities_enabled_flag_id", None)
-    payload["modalities_enabled_flag_id"] = str(value) if value else None
-    value = getattr(result, "temperature_enabled_flag_id", None)
-    payload["temperature_enabled_flag_id"] = str(value) if value else None
-    value = getattr(result, "pricing_enabled_flag_id", None)
-    payload["pricing_enabled_flag_id"] = str(value) if value else None
-    value = getattr(result, "voices_enabled_flag_id", None)
-    payload["voices_enabled_flag_id"] = str(value) if value else None
-    value = getattr(result, "reasoning_levels_enabled_flag_id", None)
-    payload["reasoning_levels_enabled_flag_id"] = str(value) if value else None
-    value = getattr(result, "qualities_enabled_flag_id", None)
-    payload["qualities_enabled_flag_id"] = str(value) if value else None
-    values = getattr(result, "input_modality_ids", None) or []
-    payload["input_modality_ids"] = [str(v) for v in values if v]
-    values = getattr(result, "output_modality_ids", None) or []
-    payload["output_modality_ids"] = [str(v) for v in values if v]
-    values = getattr(result, "temperature_level_ids", None) or []
-    payload["temperature_level_ids"] = [str(v) for v in values if v]
-    values = getattr(result, "reasoning_level_ids", None) or []
-    payload["reasoning_level_ids"] = [str(v) for v in values if v]
-    values = getattr(result, "quality_ids", None) or []
-    payload["quality_ids"] = [str(v) for v in values if v]
-    values = getattr(result, "pricing_ids", None) or []
-    payload["pricing_ids"] = [str(v) for v in values if v]
-    values = getattr(result, "voice_ids", None) or []
-    payload["voice_ids"] = [str(v) for v in values if v]
-
+    # Emit the typed event
     await sio.emit(
         "model_generation_complete",
-        payload,
+        event.model_dump(mode="json"),
         room=sid,
     )
 
 
 @server_router.post("/model_generation_complete")
-async def model_generation_complete_api(request: dict[str, Any]) -> dict[str, bool]:
-    _ = request
-    return {"ok": True}
+async def model_generation_complete_api(
+    request: ModelGenerationCompleteEvent,
+) -> dict[str, bool]:
+    """Server-to-client event: Model generation completed.
+
+    Emitted when a model resource is successfully generated.
+    Contains full resource objects for immediate frontend use.
+    """
+    return {"success": True}

@@ -1104,12 +1104,11 @@ export interface paths {
         put?: never;
         /**
          * Get Rubric
-         * @description Get rubric information - handles both new (rubric_id = NULL) and detail (rubric_id provided).
+         * @description Get rubric information using two-pass architecture.
          *
-         *     Validation Logic:
-         *     - Tools are REQUIRED for resources - error if no tools exist (via missing_tools_check CTE)
-         *     - Agents are OPTIONAL - NULL agent_id means manual entry only (no generate button shown)
-         *     - Frontend components check agent_id before showing generate button
+         *     Query 1: Access check (user role, departments, rubric state)
+         *     Query 2: ID fetching (resource IDs, suggestions, agents)
+         *     Pass 2: Parallel resource fetching (each resource type has own cache)
          */
         post: operations["get_rubric_api_v4_rubrics_get_post"];
         delete?: never;
@@ -1388,12 +1387,7 @@ export interface paths {
         put?: never;
         /**
          * Get Agent
-         * @description Get agent information - handles both new (agent_id = NULL) and detail (agent_id provided).
-         *
-         *     Validation Logic:
-         *     - Tools are REQUIRED for resources - error if no tools exist (via missing_tools_check CTE)
-         *     - Agents are OPTIONAL - NULL agent_id means manual entry only (no generate button shown)
-         *     - Frontend components check agent_id before showing generate button
+         * @description Get agent information using two-pass architecture.
          */
         post: operations["get_agent_api_v4_agents_get_post"];
         delete?: never;
@@ -1530,12 +1524,9 @@ export interface paths {
         put?: never;
         /**
          * Get Model
-         * @description Get model information - handles both new (model_id = NULL) and detail (model_id provided).
+         * @description Get model information using two-pass architecture.
          *
-         *     Validation Logic:
-         *     - Tools are REQUIRED for resources - error if no tools exist (via missing_tools_check CTE)
-         *     - Agents are OPTIONAL - NULL agent_id means manual entry only (no generate button shown)
-         *     - Frontend components check agent_id before showing generate button
+         *     This is a thin HTTP wrapper around get_model_internal().
          */
         post: operations["get_model_api_v4_models_get_post"];
         delete?: never;
@@ -1575,7 +1566,7 @@ export interface paths {
         put?: never;
         /**
          * Save Model
-         * @description Save model - handles both create (model_id = NULL) and update (model_id provided).
+         * @description Save model - create (model_id=NULL) or update.
          */
         post: operations["save_model_api_v4_models_save_post"];
         delete?: never;
@@ -2467,12 +2458,7 @@ export interface paths {
         put?: never;
         /**
          * Get Tool
-         * @description Get tool information - handles both new (tool_id = NULL) and detail (tool_id provided).
-         *
-         *     Validation Logic:
-         *     - Tools are REQUIRED for resources - error if no tools exist (via missing_tools_check CTE)
-         *     - Agents are OPTIONAL - NULL agent_id means manual entry only (no generate button shown)
-         *     - Frontend components check agent_id before showing generate button
+         * @description Get tool information using two-pass architecture.
          */
         post: operations["get_tool_api_v4_tools_get_post"];
         delete?: never;
@@ -2492,7 +2478,7 @@ export interface paths {
         put?: never;
         /**
          * Save Tool
-         * @description Save tool - handles both create (tool_id = NULL) and update (tool_id provided) (skeleton).
+         * @description Save tool - handles both create (tool_id = NULL) and update (tool_id provided).
          */
         post: operations["save_tool_api_v4_tools_save_post"];
         delete?: never;
@@ -3450,6 +3436,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/args/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Args
+         * @description Search args resources.
+         */
+        post: operations["search_args_api_v4_resources_args_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/args_outputs": {
         parameters: {
             query?: never;
@@ -3484,6 +3490,26 @@ export interface paths {
          * @description Get args_outputs resources by IDs.
          */
         post: operations["get_args_outputs_api_v4_resources_args_outputs_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/args_outputs/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Args Outputs
+         * @description Search args_outputs resources.
+         */
+        post: operations["search_args_outputs_api_v4_resources_args_outputs_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4328,6 +4354,88 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/modalities/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Modalities
+         * @description Get modalities resources by IDs.
+         */
+        post: operations["get_modalities_api_v4_resources_modalities_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/modalities/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Modalities
+         * @description Search modalities resources.
+         */
+        post: operations["search_modalities_api_v4_resources_modalities_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/models/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Models
+         * @description Get models resources by IDs.
+         *
+         *     HTTP wrapper that delegates to internal function for caching and data fetching.
+         */
+        post: operations["get_models_api_v4_resources_models_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/models/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Models
+         * @description Search models resources.
+         */
+        post: operations["search_models_api_v4_resources_models_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/names": {
         parameters: {
             query?: never;
@@ -4689,6 +4797,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/prompts/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Prompts
+         * @description Search prompts resources.
+         */
+        post: operations["search_prompts_api_v4_resources_prompts_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/protocols": {
         parameters: {
             query?: never;
@@ -4729,6 +4857,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/qualities/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Qualities
+         * @description Get qualities resources by IDs.
+         */
+        post: operations["get_qualities_api_v4_resources_qualities_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/qualities/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Qualities
+         * @description Search qualities resources.
+         */
+        post: operations["search_qualities_api_v4_resources_qualities_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/questions": {
         parameters: {
             query?: never;
@@ -4763,6 +4931,48 @@ export interface paths {
          * @description Get question by ID.
          */
         post: operations["get_question_api_v4_resources_questions_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/reasoning_levels/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Reasoning Levels
+         * @description Get reasoning_levels resources by IDs.
+         *
+         *     HTTP wrapper that delegates to internal function for caching and data fetching.
+         */
+        post: operations["get_reasoning_levels_api_v4_resources_reasoning_levels_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/reasoning_levels/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Reasoning Levels
+         * @description Search reasoning_levels resources.
+         */
+        post: operations["search_reasoning_levels_api_v4_resources_reasoning_levels_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5496,6 +5706,48 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/temperature_levels/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Temperature Levels
+         * @description Get temperature_levels resources by IDs.
+         *
+         *     HTTP wrapper that delegates to internal function for caching and data fetching.
+         */
+        post: operations["get_temperature_levels_api_v4_resources_temperature_levels_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/temperature_levels/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Temperature Levels
+         * @description Search temperature_levels resources.
+         */
+        post: operations["search_temperature_levels_api_v4_resources_temperature_levels_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/templates": {
         parameters: {
             query?: never;
@@ -5567,6 +5819,48 @@ export interface paths {
         put?: never;
         /** Search Templates */
         post: operations["search_templates_api_v4_resources_templates_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/tools/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Tools
+         * @description Get tools resources by IDs.
+         *
+         *     HTTP wrapper that delegates to internal function for caching and data fetching.
+         */
+        post: operations["get_tools_api_v4_resources_tools_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/tools/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Tools
+         * @description Search tools resources.
+         */
+        post: operations["search_tools_api_v4_resources_tools_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5687,6 +5981,26 @@ export interface paths {
          * @description Get voices resources by IDs.
          */
         post: operations["get_voices_api_v4_resources_voices_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/voices/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Voices
+         * @description Search voices resources.
+         */
+        post: operations["search_voices_api_v4_resources_voices_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8659,7 +8973,13 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Model Generation Complete Api */
+        /**
+         * Model Generation Complete Api
+         * @description Server-to-client event: Model generation completed.
+         *
+         *     Emitted when a model resource is successfully generated.
+         *     Contains full resource objects for immediate frontend use.
+         */
         post: operations["model_generation_complete_api_socket_v4_server_model_generation_complete_post"];
         delete?: never;
         options?: never;
@@ -8693,7 +9013,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Tool Generation Progress Api */
+        /**
+         * Tool Generation Progress Api
+         * @description Server-to-client event: Tool generation progress.
+         *
+         *     Emitted during tool resource generation to show progress.
+         */
         post: operations["tool_generation_progress_api_socket_v4_server_tool_generation_progress_post"];
         delete?: never;
         options?: never;
@@ -8710,7 +9035,13 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Tool Generation Complete Api */
+        /**
+         * Tool Generation Complete Api
+         * @description Server-to-client event: Tool generation completed.
+         *
+         *     Emitted when a tool resource is successfully generated.
+         *     Contains full resource objects for immediate frontend use.
+         */
         post: operations["tool_generation_complete_api_socket_v4_server_tool_generation_complete_post"];
         delete?: never;
         options?: never;
@@ -8727,7 +9058,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Tool Generation Error Api */
+        /**
+         * Tool Generation Error Api
+         * @description Server-to-client event: Tool generation error.
+         *
+         *     Emitted when tool resource generation fails.
+         */
         post: operations["tool_generation_error_api_socket_v4_server_tool_generation_error_post"];
         delete?: never;
         options?: never;
@@ -9517,6 +9853,72 @@ export interface components {
             audits?: components["schemas"]["ActivityAuditItem"][];
             /** Feedbacks */
             feedbacks?: components["schemas"]["ActivityFeedbackItem"][];
+        };
+        /**
+         * AgentFlagConfig
+         * @description Enriched flag config for direct client consumption.
+         */
+        AgentFlagConfig: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Description */
+            description?: string | null;
+            /** Icon Id */
+            icon_id?: string | null;
+            /** Flag Option Id */
+            flag_option_id?: string | null;
+            /**
+             * Show
+             * @default true
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Domain Id */
+            domain_id?: string | null;
+            /** Generated */
+            generated?: boolean | null;
+        };
+        /**
+         * AgentResourceBucket
+         * @description Generic resources bucket with full objects (always plural lists).
+         */
+        AgentResourceBucket: {
+            /** Names */
+            names?: components["schemas"]["QGetNamesV4Item"][] | null;
+            /** Descriptions */
+            descriptions?: components["schemas"]["QGetDescriptionsV4Item"][] | null;
+            /** Models */
+            models?: components["schemas"]["QGetModelsV4Item"][] | null;
+            /** Prompts */
+            prompts?: components["schemas"]["QGetPromptsV4Item"][] | null;
+            /** Instructions */
+            instructions?: components["schemas"]["QGetInstructionsV4Item"][] | null;
+            /** Flags */
+            flags?: components["schemas"]["AgentFlagConfig"][] | null;
+            /** Departments */
+            departments?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
+            /** Tools */
+            tools?: components["schemas"]["QGetToolsV4Item"][] | null;
+            /** Temperature Levels */
+            temperature_levels?: components["schemas"]["QGetTemperatureLevelsV4Item"][] | null;
+            /** Reasoning Levels */
+            reasoning_levels?: components["schemas"]["QGetReasoningLevelsV4Item"][] | null;
+            /** Voices */
+            voices?: components["schemas"]["QGetVoicesV4Item"][] | null;
+        };
+        /**
+         * AgentResources
+         * @description Full resources + current selections.
+         */
+        AgentResources: {
+            resources?: components["schemas"]["AgentResourceBucket"] | null;
+            current?: components["schemas"]["AgentResourceBucket"] | null;
         };
         /**
          * AggregatedResults
@@ -12202,7 +12604,10 @@ export interface components {
             /** Message */
             message: string;
         };
-        /** DeleteModelApiRequest */
+        /**
+         * DeleteModelApiRequest
+         * @description Request model for delete model endpoint.
+         */
         DeleteModelApiRequest: {
             /**
              * Model Id
@@ -12210,20 +12615,15 @@ export interface components {
              */
             model_id: string;
         };
-        /** DeleteModelApiResponse */
+        /**
+         * DeleteModelApiResponse
+         * @description Response model for delete model endpoint.
+         */
         DeleteModelApiResponse: {
-            /** Model Exists */
-            model_exists?: boolean | null;
-            /** Deleted */
-            deleted?: boolean | null;
-            /** Name */
-            name?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Personas Usage Count */
-            personas_usage_count?: number | null;
-            /** Agents Usage Count */
-            agents_usage_count?: number | null;
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
         };
         /**
          * DeleteParameterApiRequest
@@ -12309,7 +12709,10 @@ export interface components {
             /** Deleted */
             deleted?: boolean | null;
         };
-        /** DeleteRubricApiRequest */
+        /**
+         * DeleteRubricApiRequest
+         * @description Request model for delete rubric endpoint.
+         */
         DeleteRubricApiRequest: {
             /**
              * Rubric Id
@@ -12317,18 +12720,15 @@ export interface components {
              */
             rubric_id: string;
         };
-        /** DeleteRubricApiResponse */
+        /**
+         * DeleteRubricApiResponse
+         * @description Response model for delete rubric endpoint.
+         */
         DeleteRubricApiResponse: {
-            /** Rubric Id */
-            rubric_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Usage Count */
-            usage_count?: number | null;
-            /** Deleted */
-            deleted?: boolean | null;
-            /** Actor Name */
-            actor_name?: string | null;
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
         };
         /**
          * DeleteScenarioApiRequest
@@ -12399,7 +12799,10 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
-        /** DeleteToolApiRequest */
+        /**
+         * DeleteToolApiRequest
+         * @description Request model for delete tool endpoint.
+         */
         DeleteToolApiRequest: {
             /**
              * Tool Id
@@ -12407,16 +12810,15 @@ export interface components {
              */
             tool_id: string;
         };
-        /** DeleteToolApiResponse */
+        /**
+         * DeleteToolApiResponse
+         * @description Response model for delete tool endpoint.
+         */
         DeleteToolApiResponse: {
-            /** Usage Count */
-            usage_count?: number | null;
-            /** Name */
-            name?: string | null;
-            /** Deleted */
-            deleted?: boolean | null;
-            /** Actor Name */
-            actor_name?: string | null;
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
         };
         /** DescriptionsApiRequest */
         DescriptionsApiRequest: {
@@ -12849,7 +13251,10 @@ export interface components {
             /** Message */
             message: string;
         };
-        /** DuplicateModelApiRequest */
+        /**
+         * DuplicateModelApiRequest
+         * @description Request model for duplicate model endpoint.
+         */
         DuplicateModelApiRequest: {
             /**
              * Model Id
@@ -12857,16 +13262,20 @@ export interface components {
              */
             model_id: string;
         };
-        /** DuplicateModelApiResponse */
+        /**
+         * DuplicateModelApiResponse
+         * @description Response model for duplicate model endpoint.
+         */
         DuplicateModelApiResponse: {
-            /** Model Exists */
-            model_exists?: boolean | null;
-            /** Model Id */
-            model_id?: string | null;
-            /** Original Name */
-            original_name?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
+            /** Success */
+            success: boolean;
+            /**
+             * Model Id
+             * Format: uuid
+             */
+            model_id: string;
+            /** Message */
+            message: string;
         };
         /**
          * DuplicateParameterApiRequest
@@ -12963,22 +13372,31 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
-        /** DuplicateRubricApiRequest */
+        /**
+         * DuplicateRubricApiRequest
+         * @description Request model for duplicate rubric endpoint.
+         */
         DuplicateRubricApiRequest: {
             /**
-             * Original Rubric Id
+             * Rubric Id
              * Format: uuid
              */
-            original_rubric_id: string;
+            rubric_id: string;
         };
-        /** DuplicateRubricApiResponse */
+        /**
+         * DuplicateRubricApiResponse
+         * @description Response model for duplicate rubric endpoint.
+         */
         DuplicateRubricApiResponse: {
-            /** Rubric Id */
-            rubric_id?: string | null;
-            /** Original Name */
-            original_name?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
+            /** Success */
+            success: boolean;
+            /**
+             * Rubric Id
+             * Format: uuid
+             */
+            rubric_id: string;
+            /** Message */
+            message: string;
         };
         /**
          * DuplicateScenarioApiRequest
@@ -13039,7 +13457,10 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
-        /** DuplicateToolApiRequest */
+        /**
+         * DuplicateToolApiRequest
+         * @description Request model for duplicate tool endpoint.
+         */
         DuplicateToolApiRequest: {
             /**
              * Tool Id
@@ -13047,14 +13468,20 @@ export interface components {
              */
             tool_id: string;
         };
-        /** DuplicateToolApiResponse */
+        /**
+         * DuplicateToolApiResponse
+         * @description Response model for duplicate tool endpoint.
+         */
         DuplicateToolApiResponse: {
-            /** New Tool Id */
-            new_tool_id?: string | null;
-            /** Original Name */
-            original_name?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
+            /** Success */
+            success: boolean;
+            /**
+             * Tool Id
+             * Format: uuid
+             */
+            tool_id: string;
+            /** Message */
+            message: string;
         };
         /**
          * DynamicRubricData
@@ -13817,25 +14244,20 @@ export interface components {
         GetActivitySummaryResponse: {
             summary?: components["schemas"]["ActivitySummaryItem"] | null;
         };
-        /** GetAgentApiRequest */
+        /**
+         * GetAgentApiRequest
+         * @description Request model for get agent endpoint.
+         */
         GetAgentApiRequest: {
             /** Agent Id */
             agent_id?: string | null;
-            /** Descriptions Search */
-            descriptions_search?: string | null;
-            /** Prompts Search */
-            prompts_search?: string | null;
-            /** Instructions Search */
-            instructions_search?: string | null;
             /** Draft Id */
             draft_id?: string | null;
-            /**
-             * Mcp
-             * @default false
-             */
-            mcp: boolean | null;
         };
-        /** GetAgentApiResponse */
+        /**
+         * GetAgentApiResponse
+         * @description Response model for get agent endpoint.
+         */
         GetAgentApiResponse: {
             /** Actor Name */
             actor_name?: string | null;
@@ -13849,148 +14271,175 @@ export interface components {
             draft_version?: number | null;
             /** Group Id */
             group_id?: string | null;
-            /** Name Id */
-            name_id?: string | null;
-            name_resource?: components["schemas"]["QGetAgentV4NameResource"] | null;
+            /** Names Group Id */
+            names_group_id?: string | null;
+            /** Descriptions Group Id */
+            descriptions_group_id?: string | null;
+            /** Models Group Id */
+            models_group_id?: string | null;
+            /** Prompts Group Id */
+            prompts_group_id?: string | null;
+            /** Instructions Group Id */
+            instructions_group_id?: string | null;
+            /** Flags Group Id */
+            flags_group_id?: string | null;
+            /** Departments Group Id */
+            departments_group_id?: string | null;
+            /** Tools Group Id */
+            tools_group_id?: string | null;
+            /** Temperature Levels Group Id */
+            temperature_levels_group_id?: string | null;
+            /** Reasoning Levels Group Id */
+            reasoning_levels_group_id?: string | null;
+            /** Voices Group Id */
+            voices_group_id?: string | null;
             /** Show Name */
             show_name?: boolean | null;
-            /** Name Agent Id */
-            name_agent_id?: string | null;
+            /** Name Domain Id */
+            name_domain_id?: string | null;
             /** Name Required */
             name_required?: boolean | null;
             /** Name Suggestions */
             name_suggestions?: string[] | null;
-            /** Names */
-            names?: components["schemas"]["QGetAgentV4NameResource"][] | null;
-            /** Description Id */
-            description_id?: string | null;
-            description_resource?: components["schemas"]["QGetAgentV4DescriptionResource"] | null;
+            /** Name Show Ai Generate */
+            name_show_ai_generate?: boolean | null;
             /** Show Description */
             show_description?: boolean | null;
-            /** Description Agent Id */
-            description_agent_id?: string | null;
+            /** Descriptions Domain Id */
+            descriptions_domain_id?: string | null;
             /** Description Required */
             description_required?: boolean | null;
             /** Description Suggestions */
             description_suggestions?: string[] | null;
-            /** Descriptions */
-            descriptions?: components["schemas"]["QGetAgentV4DescriptionResource"][] | null;
-            /** Model Id */
-            model_id?: string | null;
-            model_resource?: components["schemas"]["QGetAgentV4ModelResource"] | null;
+            /** Descriptions Show Ai Generate */
+            descriptions_show_ai_generate?: boolean | null;
             /** Show Models */
             show_models?: boolean | null;
-            /** Models Agent Id */
-            models_agent_id?: string | null;
+            /** Models Domain Id */
+            models_domain_id?: string | null;
             /** Models Required */
             models_required?: boolean | null;
             /** Model Suggestions */
             model_suggestions?: string[] | null;
-            /** Models */
-            models?: components["schemas"]["QGetAgentV4Model"][] | null;
-            /** Prompt Id */
-            prompt_id?: string | null;
-            prompt_resource?: components["schemas"]["QGetAgentV4PromptResource"] | null;
+            /** Models Show Ai Generate */
+            models_show_ai_generate?: boolean | null;
             /** Show Prompts */
             show_prompts?: boolean | null;
-            /** Prompts Agent Id */
-            prompts_agent_id?: string | null;
+            /** Prompts Domain Id */
+            prompts_domain_id?: string | null;
             /** Prompts Required */
             prompts_required?: boolean | null;
             /** Prompt Suggestions */
             prompt_suggestions?: string[] | null;
-            /** Prompts */
-            prompts?: components["schemas"]["QGetAgentV4Prompt"][] | null;
-            /** Instructions Id */
-            instructions_id?: string | null;
-            instructions_resource?: components["schemas"]["QGetAgentV4InstructionsResource"] | null;
+            /** Prompts Show Ai Generate */
+            prompts_show_ai_generate?: boolean | null;
             /** Show Instructions */
             show_instructions?: boolean | null;
-            /** Instructions Agent Id */
-            instructions_agent_id?: string | null;
+            /** Instructions Domain Id */
+            instructions_domain_id?: string | null;
             /** Instructions Required */
             instructions_required?: boolean | null;
             /** Instructions Suggestions */
             instructions_suggestions?: string[] | null;
-            /** Instructions */
-            instructions?: components["schemas"]["QGetAgentV4InstructionsResource"][] | null;
-            /** Active Flag Id */
-            active_flag_id?: string | null;
-            flag_resource?: components["schemas"]["QGetAgentV4FlagResource"] | null;
+            /** Instructions Show Ai Generate */
+            instructions_show_ai_generate?: boolean | null;
             /** Show Flag */
             show_flag?: boolean | null;
-            /** Flag Agent Id */
-            flag_agent_id?: string | null;
+            /** Flag Domain Id */
+            flag_domain_id?: string | null;
             /** Flag Required */
             flag_required?: boolean | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Department Resources */
-            department_resources?: components["schemas"]["QGetAgentV4Department"][] | null;
+            /** Flag Show Ai Generate */
+            flag_show_ai_generate?: boolean | null;
             /** Show Departments */
             show_departments?: boolean | null;
-            /** Departments Agent Id */
-            departments_agent_id?: string | null;
+            /** Departments Domain Id */
+            departments_domain_id?: string | null;
             /** Departments Required */
             departments_required?: boolean | null;
             /** Department Suggestions */
             department_suggestions?: string[] | null;
-            /** Departments */
-            departments?: components["schemas"]["QGetAgentV4Department"][] | null;
-            /** Reasoning Level Id */
-            reasoning_level_id?: string | null;
-            reasoning_level_resource?: components["schemas"]["QGetAgentV4ReasoningLevelResource"] | null;
-            /** Show Reasoning Levels */
-            show_reasoning_levels?: boolean | null;
-            /** Reasoning Levels Agent Id */
-            reasoning_levels_agent_id?: string | null;
-            /** Reasoning Levels Required */
-            reasoning_levels_required?: boolean | null;
-            /** Reasoning Level Suggestions */
-            reasoning_level_suggestions?: string[] | null;
-            /** Reasoning Levels */
-            reasoning_levels?: components["schemas"]["QGetAgentV4ReasoningLevelResource"][] | null;
-            /** Temperature Level Id */
-            temperature_level_id?: string | null;
-            temperature_level_resource?: components["schemas"]["QGetAgentV4TemperatureLevelResource"] | null;
-            /** Show Temperature Levels */
-            show_temperature_levels?: boolean | null;
-            /** Temperature Levels Agent Id */
-            temperature_levels_agent_id?: string | null;
-            /** Temperature Levels Required */
-            temperature_levels_required?: boolean | null;
-            /** Temperature Level Suggestions */
-            temperature_level_suggestions?: string[] | null;
-            /** Temperature Levels */
-            temperature_levels?: components["schemas"]["QGetAgentV4TemperatureLevelResource"][] | null;
-            /** Voice Ids */
-            voice_ids?: string[] | null;
-            /** Voice Resources */
-            voice_resources?: components["schemas"]["QGetAgentV4VoiceResource"][] | null;
-            /** Show Voices */
-            show_voices?: boolean | null;
-            /** Voices Agent Id */
-            voices_agent_id?: string | null;
-            /** Voices Required */
-            voices_required?: boolean | null;
-            /** Voice Suggestions */
-            voice_suggestions?: string[] | null;
-            /** Voices */
-            voices?: components["schemas"]["QGetAgentV4VoiceResource"][] | null;
-            /** Tool Ids */
-            tool_ids?: string[] | null;
-            /** Tool Resources */
-            tool_resources?: components["schemas"]["QGetAgentV4Tool"][] | null;
+            /** Departments Show Ai Generate */
+            departments_show_ai_generate?: boolean | null;
             /** Show Tools */
             show_tools?: boolean | null;
-            /** Tools Agent Id */
-            tools_agent_id?: string | null;
+            /** Tools Domain Id */
+            tools_domain_id?: string | null;
             /** Tools Required */
             tools_required?: boolean | null;
             /** Tool Suggestions */
             tool_suggestions?: string[] | null;
-            /** Tools */
-            tools?: components["schemas"]["QGetAgentV4Tool"][] | null;
+            /** Tools Show Ai Generate */
+            tools_show_ai_generate?: boolean | null;
+            /** Show Temperature Levels */
+            show_temperature_levels?: boolean | null;
+            /** Temperature Levels Domain Id */
+            temperature_levels_domain_id?: string | null;
+            /** Temperature Levels Required */
+            temperature_levels_required?: boolean | null;
+            /** Temperature Level Suggestions */
+            temperature_level_suggestions?: string[] | null;
+            /** Temperature Levels Show Ai Generate */
+            temperature_levels_show_ai_generate?: boolean | null;
+            /** Show Reasoning Levels */
+            show_reasoning_levels?: boolean | null;
+            /** Reasoning Levels Domain Id */
+            reasoning_levels_domain_id?: string | null;
+            /** Reasoning Levels Required */
+            reasoning_levels_required?: boolean | null;
+            /** Reasoning Level Suggestions */
+            reasoning_level_suggestions?: string[] | null;
+            /** Reasoning Levels Show Ai Generate */
+            reasoning_levels_show_ai_generate?: boolean | null;
+            /** Show Voices */
+            show_voices?: boolean | null;
+            /** Voices Domain Id */
+            voices_domain_id?: string | null;
+            /** Voices Required */
+            voices_required?: boolean | null;
+            /** Voice Suggestions */
+            voice_suggestions?: string[] | null;
+            /** Voices Show Ai Generate */
+            voices_show_ai_generate?: boolean | null;
+            /** Basic Show Ai Generate */
+            basic_show_ai_generate?: boolean | null;
+            /** General Show Ai Generate */
+            general_show_ai_generate?: boolean | null;
+            /** Name Create Tool Id */
+            name_create_tool_id?: string | null;
+            /** Descriptions Create Tool Id */
+            descriptions_create_tool_id?: string | null;
+            /** Models Create Tool Id */
+            models_create_tool_id?: string | null;
+            /** Prompts Create Tool Id */
+            prompts_create_tool_id?: string | null;
+            /** Instructions Create Tool Id */
+            instructions_create_tool_id?: string | null;
+            /** Name Link Tool Id */
+            name_link_tool_id?: string | null;
+            /** Descriptions Link Tool Id */
+            descriptions_link_tool_id?: string | null;
+            /** Models Link Tool Id */
+            models_link_tool_id?: string | null;
+            /** Prompts Link Tool Id */
+            prompts_link_tool_id?: string | null;
+            /** Instructions Link Tool Id */
+            instructions_link_tool_id?: string | null;
+            /** Flag Link Tool Id */
+            flag_link_tool_id?: string | null;
+            /** Departments Link Tool Id */
+            departments_link_tool_id?: string | null;
+            /** Tools Link Tool Id */
+            tools_link_tool_id?: string | null;
+            /** Temperature Levels Link Tool Id */
+            temperature_levels_link_tool_id?: string | null;
+            /** Reasoning Levels Link Tool Id */
+            reasoning_levels_link_tool_id?: string | null;
+            /** Voices Link Tool Id */
+            voices_link_tool_id?: string | null;
+            /** Domain Data */
+            domain_data?: components["schemas"]["DomainData"][] | null;
+            resources?: components["schemas"]["AgentResources"] | null;
         };
         /** GetAgentsListApiRequest */
         GetAgentsListApiRequest: Record<string, never>;
@@ -16096,19 +16545,42 @@ export interface components {
              */
             items?: components["schemas"]["MessageViewItem"][];
         };
-        /** GetModelApiRequest */
+        /** GetModalitiesApiRequest */
+        GetModalitiesApiRequest: {
+            /** Ids */
+            ids?: string[] | null;
+        };
+        /** GetModalitiesApiResponse */
+        GetModalitiesApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetModalitiesV4Item"][] | null;
+        };
+        /**
+         * GetModelApiRequest
+         * @description Request model for get model endpoint.
+         */
         GetModelApiRequest: {
             /** Model Id */
             model_id?: string | null;
             /** Draft Id */
             draft_id?: string | null;
-            /**
-             * Mcp
-             * @default false
-             */
-            mcp: boolean | null;
+            /** Value Search */
+            value_search?: string | null;
+            /** Endpoint Search */
+            endpoint_search?: string | null;
+            /** Key Search */
+            key_search?: string | null;
+            /** Value Show Selected */
+            value_show_selected?: boolean | null;
+            /** Endpoint Show Selected */
+            endpoint_show_selected?: boolean | null;
+            /** Key Show Selected */
+            key_show_selected?: boolean | null;
         };
-        /** GetModelApiResponse */
+        /**
+         * GetModelApiResponse
+         * @description Response model for get model endpoint.
+         */
         GetModelApiResponse: {
             /** Actor Name */
             actor_name?: string | null;
@@ -16118,261 +16590,233 @@ export interface components {
             can_edit?: boolean | null;
             /** Disabled Reason */
             disabled_reason?: string | null;
+            /** Draft Version */
+            draft_version?: number | null;
             /** Group Id */
             group_id?: string | null;
-            /** Name Id */
-            name_id?: string | null;
-            name_resource?: components["schemas"]["QGetModelV4NameResource"] | null;
+            /** Names Group Id */
+            names_group_id?: string | null;
+            /** Descriptions Group Id */
+            descriptions_group_id?: string | null;
+            /** Values Group Id */
+            values_group_id?: string | null;
+            /** Endpoints Group Id */
+            endpoints_group_id?: string | null;
+            /** Providers Group Id */
+            providers_group_id?: string | null;
+            /** Keys Group Id */
+            keys_group_id?: string | null;
+            /** Flags Group Id */
+            flags_group_id?: string | null;
+            /** Departments Group Id */
+            departments_group_id?: string | null;
+            /** Modalities Group Id */
+            modalities_group_id?: string | null;
+            /** Temperature Levels Group Id */
+            temperature_levels_group_id?: string | null;
+            /** Pricing Group Id */
+            pricing_group_id?: string | null;
+            /** Reasoning Levels Group Id */
+            reasoning_levels_group_id?: string | null;
+            /** Qualities Group Id */
+            qualities_group_id?: string | null;
+            /** Voices Group Id */
+            voices_group_id?: string | null;
             /** Show Name */
             show_name?: boolean | null;
-            /** Name Agent Id */
-            name_agent_id?: string | null;
+            /** Name Domain Id */
+            name_domain_id?: string | null;
             /** Name Required */
             name_required?: boolean | null;
             /** Name Suggestions */
             name_suggestions?: string[] | null;
-            /** Names */
-            names?: components["schemas"]["QGetModelV4NameOption"][] | null;
-            /** Description Id */
-            description_id?: string | null;
-            description_resource?: components["schemas"]["QGetModelV4DescriptionResource"] | null;
+            /** Name Show Ai Generate */
+            name_show_ai_generate?: boolean | null;
             /** Show Description */
             show_description?: boolean | null;
-            /** Description Agent Id */
-            description_agent_id?: string | null;
+            /** Description Domain Id */
+            description_domain_id?: string | null;
             /** Description Required */
             description_required?: boolean | null;
             /** Description Suggestions */
             description_suggestions?: string[] | null;
-            /** Descriptions */
-            descriptions?: components["schemas"]["QGetModelV4DescriptionOption"][] | null;
-            /** Active Flag Id */
-            active_flag_id?: string | null;
-            flag_resource?: components["schemas"]["QGetModelV4FlagResource"] | null;
-            /** Show Flag */
-            show_flag?: boolean | null;
-            /** Flag Agent Id */
-            flag_agent_id?: string | null;
-            /** Flag Required */
-            flag_required?: boolean | null;
-            /** Flags */
-            flags?: components["schemas"]["QGetModelV4FlagOption"][] | null;
-            /** Modalities Enabled Flag Id */
-            modalities_enabled_flag_id?: string | null;
-            modalities_enabled_flag_resource?: components["schemas"]["QGetModelV4FlagResource"] | null;
-            /** Show Modalities Enabled Flag */
-            show_modalities_enabled_flag?: boolean | null;
-            /** Modalities Enabled Flag Agent Id */
-            modalities_enabled_flag_agent_id?: string | null;
-            /** Modalities Enabled Flag Required */
-            modalities_enabled_flag_required?: boolean | null;
-            /** Temperature Enabled Flag Id */
-            temperature_enabled_flag_id?: string | null;
-            temperature_enabled_flag_resource?: components["schemas"]["QGetModelV4FlagResource"] | null;
-            /** Show Temperature Enabled Flag */
-            show_temperature_enabled_flag?: boolean | null;
-            /** Temperature Enabled Flag Agent Id */
-            temperature_enabled_flag_agent_id?: string | null;
-            /** Temperature Enabled Flag Required */
-            temperature_enabled_flag_required?: boolean | null;
-            /** Pricing Enabled Flag Id */
-            pricing_enabled_flag_id?: string | null;
-            pricing_enabled_flag_resource?: components["schemas"]["QGetModelV4FlagResource"] | null;
-            /** Show Pricing Enabled Flag */
-            show_pricing_enabled_flag?: boolean | null;
-            /** Pricing Enabled Flag Agent Id */
-            pricing_enabled_flag_agent_id?: string | null;
-            /** Pricing Enabled Flag Required */
-            pricing_enabled_flag_required?: boolean | null;
-            /** Voices Enabled Flag Id */
-            voices_enabled_flag_id?: string | null;
-            voices_enabled_flag_resource?: components["schemas"]["QGetModelV4FlagResource"] | null;
-            /** Show Voices Enabled Flag */
-            show_voices_enabled_flag?: boolean | null;
-            /** Voices Enabled Flag Agent Id */
-            voices_enabled_flag_agent_id?: string | null;
-            /** Voices Enabled Flag Required */
-            voices_enabled_flag_required?: boolean | null;
-            /** Reasoning Levels Enabled Flag Id */
-            reasoning_levels_enabled_flag_id?: string | null;
-            reasoning_levels_enabled_flag_resource?: components["schemas"]["QGetModelV4FlagResource"] | null;
-            /** Show Reasoning Levels Enabled Flag */
-            show_reasoning_levels_enabled_flag?: boolean | null;
-            /** Reasoning Levels Enabled Flag Agent Id */
-            reasoning_levels_enabled_flag_agent_id?: string | null;
-            /** Reasoning Levels Enabled Flag Required */
-            reasoning_levels_enabled_flag_required?: boolean | null;
-            /** Qualities Enabled Flag Id */
-            qualities_enabled_flag_id?: string | null;
-            qualities_enabled_flag_resource?: components["schemas"]["QGetModelV4FlagResource"] | null;
-            /** Show Qualities Enabled Flag */
-            show_qualities_enabled_flag?: boolean | null;
-            /** Qualities Enabled Flag Agent Id */
-            qualities_enabled_flag_agent_id?: string | null;
-            /** Qualities Enabled Flag Required */
-            qualities_enabled_flag_required?: boolean | null;
-            /** Value Id */
-            value_id?: string | null;
-            value_resource?: components["schemas"]["QGetModelV4ValueResource"] | null;
+            /** Description Show Ai Generate */
+            description_show_ai_generate?: boolean | null;
             /** Show Value */
             show_value?: boolean | null;
-            /** Value Agent Id */
-            value_agent_id?: string | null;
+            /** Value Domain Id */
+            value_domain_id?: string | null;
             /** Value Required */
             value_required?: boolean | null;
             /** Value Suggestions */
             value_suggestions?: string[] | null;
-            /** Endpoint Id */
-            endpoint_id?: string | null;
-            endpoint_resource?: components["schemas"]["QGetModelV4EndpointResource"] | null;
+            /** Value Show Ai Generate */
+            value_show_ai_generate?: boolean | null;
             /** Show Endpoint */
             show_endpoint?: boolean | null;
-            /** Endpoint Agent Id */
-            endpoint_agent_id?: string | null;
+            /** Endpoint Domain Id */
+            endpoint_domain_id?: string | null;
             /** Endpoint Required */
             endpoint_required?: boolean | null;
             /** Endpoint Suggestions */
             endpoint_suggestions?: string[] | null;
-            /** Endpoints */
-            endpoints?: components["schemas"]["QGetModelV4EndpointOption"][] | null;
-            /** Provider Id */
-            provider_id?: string | null;
-            provider_resource?: components["schemas"]["QGetModelV4ProviderResource"] | null;
+            /** Endpoint Show Ai Generate */
+            endpoint_show_ai_generate?: boolean | null;
             /** Show Provider */
             show_provider?: boolean | null;
-            /** Provider Agent Id */
-            provider_agent_id?: string | null;
+            /** Provider Domain Id */
+            provider_domain_id?: string | null;
             /** Provider Required */
             provider_required?: boolean | null;
             /** Provider Suggestions */
             provider_suggestions?: string[] | null;
-            /** Providers */
-            providers?: components["schemas"]["QGetModelV4ProviderOption"][] | null;
-            /** Key Id */
-            key_id?: string | null;
-            key_resource?: components["schemas"]["QGetModelV4KeyResource"] | null;
+            /** Provider Show Ai Generate */
+            provider_show_ai_generate?: boolean | null;
             /** Show Key */
             show_key?: boolean | null;
-            /** Key Agent Id */
-            key_agent_id?: string | null;
+            /** Key Domain Id */
+            key_domain_id?: string | null;
             /** Key Required */
             key_required?: boolean | null;
             /** Key Suggestions */
             key_suggestions?: string[] | null;
-            /** Keys */
-            keys?: components["schemas"]["QGetModelV4KeyOption"][] | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Department Resources */
-            department_resources?: components["schemas"]["QGetModelV4Department"][] | null;
+            /** Key Show Ai Generate */
+            key_show_ai_generate?: boolean | null;
+            /** Show Flag */
+            show_flag?: boolean | null;
+            /** Flag Domain Id */
+            flag_domain_id?: string | null;
+            /** Flag Required */
+            flag_required?: boolean | null;
+            /** Flag Show Ai Generate */
+            flag_show_ai_generate?: boolean | null;
             /** Show Departments */
             show_departments?: boolean | null;
-            /** Departments Agent Id */
-            departments_agent_id?: string | null;
+            /** Departments Domain Id */
+            departments_domain_id?: string | null;
             /** Departments Required */
             departments_required?: boolean | null;
             /** Department Suggestions */
             department_suggestions?: string[] | null;
-            /** Departments */
-            departments?: components["schemas"]["QGetModelV4Department"][] | null;
-            /** Input Modality Ids */
-            input_modality_ids?: string[] | null;
-            /** Input Modality Resources */
-            input_modality_resources?: components["schemas"]["QGetModelV4ModalityResource"][] | null;
-            /** Show Input Modalities */
-            show_input_modalities?: boolean | null;
-            /** Input Modalities Agent Id */
-            input_modalities_agent_id?: string | null;
-            /** Input Modalities Required */
-            input_modalities_required?: boolean | null;
+            /** Departments Show Ai Generate */
+            departments_show_ai_generate?: boolean | null;
+            /** Show Modalities */
+            show_modalities?: boolean | null;
+            /** Modalities Domain Id */
+            modalities_domain_id?: string | null;
+            /** Modalities Required */
+            modalities_required?: boolean | null;
             /** Input Modality Suggestions */
             input_modality_suggestions?: string[] | null;
-            /** Input Modalities */
-            input_modalities?: components["schemas"]["QGetModelV4ModalityOption"][] | null;
-            /** Output Modality Ids */
-            output_modality_ids?: string[] | null;
-            /** Output Modality Resources */
-            output_modality_resources?: components["schemas"]["QGetModelV4ModalityResource"][] | null;
-            /** Show Output Modalities */
-            show_output_modalities?: boolean | null;
-            /** Output Modalities Agent Id */
-            output_modalities_agent_id?: string | null;
-            /** Output Modalities Required */
-            output_modalities_required?: boolean | null;
             /** Output Modality Suggestions */
             output_modality_suggestions?: string[] | null;
-            /** Output Modalities */
-            output_modalities?: components["schemas"]["QGetModelV4ModalityOption"][] | null;
-            /** Temperature Level Ids */
-            temperature_level_ids?: string[] | null;
-            /** Temperature Level Resources */
-            temperature_level_resources?: components["schemas"]["QGetModelV4TemperatureLevelResource"][] | null;
+            /** Modalities Show Ai Generate */
+            modalities_show_ai_generate?: boolean | null;
             /** Show Temperature Levels */
             show_temperature_levels?: boolean | null;
-            /** Temperature Levels Agent Id */
-            temperature_levels_agent_id?: string | null;
+            /** Temperature Levels Domain Id */
+            temperature_levels_domain_id?: string | null;
             /** Temperature Levels Required */
             temperature_levels_required?: boolean | null;
             /** Temperature Level Suggestions */
             temperature_level_suggestions?: string[] | null;
-            /** Temperature Levels */
-            temperature_levels?: components["schemas"]["QGetModelV4TemperatureLevelOption"][] | null;
-            /** Reasoning Level Ids */
-            reasoning_level_ids?: string[] | null;
-            /** Reasoning Level Resources */
-            reasoning_level_resources?: components["schemas"]["QGetModelV4ReasoningLevelResource"][] | null;
-            /** Show Reasoning Levels */
-            show_reasoning_levels?: boolean | null;
-            /** Reasoning Levels Agent Id */
-            reasoning_levels_agent_id?: string | null;
-            /** Reasoning Levels Required */
-            reasoning_levels_required?: boolean | null;
-            /** Reasoning Level Suggestions */
-            reasoning_level_suggestions?: string[] | null;
-            /** Reasoning Levels */
-            reasoning_levels?: components["schemas"]["QGetModelV4ReasoningLevelOption"][] | null;
-            /** Quality Ids */
-            quality_ids?: string[] | null;
-            /** Quality Resources */
-            quality_resources?: components["schemas"]["QGetModelV4QualityResource"][] | null;
-            /** Show Qualities */
-            show_qualities?: boolean | null;
-            /** Qualities Agent Id */
-            qualities_agent_id?: string | null;
-            /** Qualities Required */
-            qualities_required?: boolean | null;
-            /** Quality Suggestions */
-            quality_suggestions?: string[] | null;
-            /** Qualities */
-            qualities?: components["schemas"]["QGetModelV4QualityOption"][] | null;
-            /** Pricing Ids */
-            pricing_ids?: string[] | null;
-            /** Pricing Resources */
-            pricing_resources?: components["schemas"]["QGetModelV4PricingResource"][] | null;
+            /** Temperature Levels Show Ai Generate */
+            temperature_levels_show_ai_generate?: boolean | null;
             /** Show Pricing */
             show_pricing?: boolean | null;
-            /** Pricing Agent Id */
-            pricing_agent_id?: string | null;
+            /** Pricing Domain Id */
+            pricing_domain_id?: string | null;
             /** Pricing Required */
             pricing_required?: boolean | null;
             /** Pricing Suggestions */
             pricing_suggestions?: string[] | null;
-            /** Pricings */
-            pricings?: components["schemas"]["QGetModelV4PricingOption"][] | null;
-            /** Voice Ids */
-            voice_ids?: string[] | null;
-            /** Voice Resources */
-            voice_resources?: components["schemas"]["QGetModelV4VoiceResource"][] | null;
+            /** Pricing Show Ai Generate */
+            pricing_show_ai_generate?: boolean | null;
+            /** Show Reasoning Levels */
+            show_reasoning_levels?: boolean | null;
+            /** Reasoning Levels Domain Id */
+            reasoning_levels_domain_id?: string | null;
+            /** Reasoning Levels Required */
+            reasoning_levels_required?: boolean | null;
+            /** Reasoning Level Suggestions */
+            reasoning_level_suggestions?: string[] | null;
+            /** Reasoning Levels Show Ai Generate */
+            reasoning_levels_show_ai_generate?: boolean | null;
+            /** Show Qualities */
+            show_qualities?: boolean | null;
+            /** Qualities Domain Id */
+            qualities_domain_id?: string | null;
+            /** Qualities Required */
+            qualities_required?: boolean | null;
+            /** Quality Suggestions */
+            quality_suggestions?: string[] | null;
+            /** Qualities Show Ai Generate */
+            qualities_show_ai_generate?: boolean | null;
             /** Show Voices */
             show_voices?: boolean | null;
-            /** Voices Agent Id */
-            voices_agent_id?: string | null;
+            /** Voices Domain Id */
+            voices_domain_id?: string | null;
             /** Voices Required */
             voices_required?: boolean | null;
             /** Voice Suggestions */
             voice_suggestions?: string[] | null;
-            /** Voices */
-            voices?: components["schemas"]["QGetModelV4VoiceOption"][] | null;
+            /** Voices Show Ai Generate */
+            voices_show_ai_generate?: boolean | null;
+            /** Basic Show Ai Generate */
+            basic_show_ai_generate?: boolean | null;
+            /** Features Show Ai Generate */
+            features_show_ai_generate?: boolean | null;
+            /** Name Create Tool Id */
+            name_create_tool_id?: string | null;
+            /** Description Create Tool Id */
+            description_create_tool_id?: string | null;
+            /** Value Create Tool Id */
+            value_create_tool_id?: string | null;
+            /** Endpoint Create Tool Id */
+            endpoint_create_tool_id?: string | null;
+            /** Key Create Tool Id */
+            key_create_tool_id?: string | null;
+            /** Name Link Tool Id */
+            name_link_tool_id?: string | null;
+            /** Description Link Tool Id */
+            description_link_tool_id?: string | null;
+            /** Value Link Tool Id */
+            value_link_tool_id?: string | null;
+            /** Endpoint Link Tool Id */
+            endpoint_link_tool_id?: string | null;
+            /** Provider Link Tool Id */
+            provider_link_tool_id?: string | null;
+            /** Key Link Tool Id */
+            key_link_tool_id?: string | null;
+            /** Flag Link Tool Id */
+            flag_link_tool_id?: string | null;
+            /** Departments Link Tool Id */
+            departments_link_tool_id?: string | null;
+            /** Modalities Link Tool Id */
+            modalities_link_tool_id?: string | null;
+            /** Temperature Levels Link Tool Id */
+            temperature_levels_link_tool_id?: string | null;
+            /** Pricing Link Tool Id */
+            pricing_link_tool_id?: string | null;
+            /** Reasoning Levels Link Tool Id */
+            reasoning_levels_link_tool_id?: string | null;
+            /** Qualities Link Tool Id */
+            qualities_link_tool_id?: string | null;
+            /** Voices Link Tool Id */
+            voices_link_tool_id?: string | null;
+            /** Domain Data */
+            domain_data?: components["schemas"]["DomainData"][] | null;
+            resources?: components["schemas"]["ModelResources"] | null;
+        };
+        /** GetModelsApiRequest */
+        GetModelsApiRequest: {
+            /** Ids */
+            ids?: string[] | null;
+        };
+        /** GetModelsApiResponse */
+        GetModelsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetModelsV4Item"][] | null;
         };
         /** GetNamesApiRequest */
         GetNamesApiRequest: {
@@ -17620,6 +18064,16 @@ export interface components {
             /** Status Options */
             status_options?: components["schemas"]["QListProvidersV4StatusOption"][] | null;
         };
+        /** GetQualitiesApiRequest */
+        GetQualitiesApiRequest: {
+            /** Ids */
+            ids?: string[] | null;
+        };
+        /** GetQualitiesApiResponse */
+        GetQualitiesApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetQualitiesV4Item"][] | null;
+        };
         /**
          * GetQuestionApiRequest
          * @description Request for getting a question by ID.
@@ -17652,6 +18106,16 @@ export interface components {
             /** Generated */
             generated?: boolean | null;
         };
+        /** GetReasoningLevelsApiRequest */
+        GetReasoningLevelsApiRequest: {
+            /** Ids */
+            ids?: string[] | null;
+        };
+        /** GetReasoningLevelsApiResponse */
+        GetReasoningLevelsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetReasoningLevelsV4Item"][] | null;
+        };
         /** GetRequestLimitsApiRequest */
         GetRequestLimitsApiRequest: {
             /** Ids */
@@ -17675,7 +18139,10 @@ export interface components {
             /** Items */
             items?: components["schemas"]["QGetRolesV4Item"][] | null;
         };
-        /** GetRubricApiRequest */
+        /**
+         * GetRubricApiRequest
+         * @description Request model for get rubric endpoint.
+         */
         GetRubricApiRequest: {
             /** Rubric Id */
             rubric_id?: string | null;
@@ -17685,13 +18152,11 @@ export interface components {
             description_search?: string | null;
             /** Standard Group Search */
             standard_group_search?: string | null;
-            /**
-             * Mcp
-             * @default false
-             */
-            mcp: boolean | null;
         };
-        /** GetRubricApiResponse */
+        /**
+         * GetRubricApiResponse
+         * @description Response model for get rubric endpoint.
+         */
         GetRubricApiResponse: {
             /** Actor Name */
             actor_name?: string | null;
@@ -17705,111 +18170,135 @@ export interface components {
             draft_version?: number | null;
             /** Group Id */
             group_id?: string | null;
-            /** Name Id */
-            name_id?: string | null;
-            name_resource?: components["schemas"]["QGetRubricV4NameResource"] | null;
+            /** Names Group Id */
+            names_group_id?: string | null;
+            /** Descriptions Group Id */
+            descriptions_group_id?: string | null;
+            /** Flags Group Id */
+            flags_group_id?: string | null;
+            /** Departments Group Id */
+            departments_group_id?: string | null;
+            /** Points Group Id */
+            points_group_id?: string | null;
+            /** Pass Points Group Id */
+            pass_points_group_id?: string | null;
+            /** Standard Groups Group Id */
+            standard_groups_group_id?: string | null;
+            /** Standards Group Id */
+            standards_group_id?: string | null;
             /** Show Name */
             show_name?: boolean | null;
-            /** Name Agent Id */
-            name_agent_id?: string | null;
+            /** Name Domain Id */
+            name_domain_id?: string | null;
             /** Name Required */
             name_required?: boolean | null;
             /** Name Suggestions */
             name_suggestions?: string[] | null;
-            /** Names */
-            names?: components["schemas"]["QGetRubricV4NameResource"][] | null;
-            /** Description Id */
-            description_id?: string | null;
-            description_resource?: components["schemas"]["QGetRubricV4DescriptionResource"] | null;
+            /** Name Show Ai Generate */
+            name_show_ai_generate?: boolean | null;
             /** Show Description */
             show_description?: boolean | null;
-            /** Description Agent Id */
-            description_agent_id?: string | null;
+            /** Description Domain Id */
+            description_domain_id?: string | null;
             /** Description Required */
             description_required?: boolean | null;
             /** Description Suggestions */
             description_suggestions?: string[] | null;
-            /** Descriptions */
-            descriptions?: components["schemas"]["QGetRubricV4DescriptionResource"][] | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Department Resources */
-            department_resources?: components["schemas"]["QGetRubricV4Department"][] | null;
+            /** Description Show Ai Generate */
+            description_show_ai_generate?: boolean | null;
+            /** Show Flag */
+            show_flag?: boolean | null;
+            /** Flag Domain Id */
+            flag_domain_id?: string | null;
+            /** Flag Required */
+            flag_required?: boolean | null;
+            /** Flag Show Ai Generate */
+            flag_show_ai_generate?: boolean | null;
             /** Show Departments */
             show_departments?: boolean | null;
-            /** Departments Agent Id */
-            departments_agent_id?: string | null;
+            /** Departments Domain Id */
+            departments_domain_id?: string | null;
             /** Departments Required */
             departments_required?: boolean | null;
             /** Department Suggestions */
             department_suggestions?: string[] | null;
-            /** Departments */
-            departments?: components["schemas"]["QGetRubricV4Department"][] | null;
-            /** Active Flag Id */
-            active_flag_id?: string | null;
-            flag_resource?: components["schemas"]["QGetRubricV4FlagResource"] | null;
-            /** Show Flag */
-            show_flag?: boolean | null;
-            /** Flag Agent Id */
-            flag_agent_id?: string | null;
-            /** Flag Required */
-            flag_required?: boolean | null;
-            /** Flags */
-            flags?: components["schemas"]["QGetRubricV4FlagResource"][] | null;
-            /** Total Points Id */
-            total_points_id?: string | null;
-            total_points_resource?: components["schemas"]["QGetRubricV4PointsResource"] | null;
+            /** Departments Show Ai Generate */
+            departments_show_ai_generate?: boolean | null;
             /** Show Points */
             show_points?: boolean | null;
-            /** Points Agent Id */
-            points_agent_id?: string | null;
+            /** Points Domain Id */
+            points_domain_id?: string | null;
             /** Points Required */
             points_required?: boolean | null;
             /** Points Suggestions */
             points_suggestions?: string[] | null;
-            /** Points */
-            points?: components["schemas"]["QGetRubricV4PointsOption"][] | null;
-            /** Pass Points Id */
-            pass_points_id?: string | null;
-            pass_points_resource?: components["schemas"]["QGetRubricV4PointsResource"] | null;
+            /** Points Show Ai Generate */
+            points_show_ai_generate?: boolean | null;
             /** Show Pass Points */
             show_pass_points?: boolean | null;
-            /** Pass Points Agent Id */
-            pass_points_agent_id?: string | null;
+            /** Pass Points Domain Id */
+            pass_points_domain_id?: string | null;
             /** Pass Points Required */
             pass_points_required?: boolean | null;
             /** Pass Points Suggestions */
             pass_points_suggestions?: string[] | null;
-            /** Pass Points */
-            pass_points?: components["schemas"]["QGetRubricV4PointsOption"][] | null;
-            /** Standard Group Ids */
-            standard_group_ids?: string[] | null;
-            /** Standard Group Resources */
-            standard_group_resources?: components["schemas"]["QGetRubricV4StandardGroupResource"][] | null;
+            /** Pass Points Show Ai Generate */
+            pass_points_show_ai_generate?: boolean | null;
             /** Show Standard Groups */
             show_standard_groups?: boolean | null;
-            /** Standard Groups Agent Id */
-            standard_groups_agent_id?: string | null;
+            /** Standard Groups Domain Id */
+            standard_groups_domain_id?: string | null;
             /** Standard Groups Required */
             standard_groups_required?: boolean | null;
             /** Standard Group Suggestions */
             standard_group_suggestions?: string[] | null;
-            /** Standard Groups */
-            standard_groups?: components["schemas"]["QGetRubricV4StandardGroupResource"][] | null;
-            /** Standard Ids */
-            standard_ids?: string[] | null;
-            /** Standard Resources */
-            standard_resources?: components["schemas"]["QGetRubricV4StandardResource"][] | null;
+            /** Standard Groups Show Ai Generate */
+            standard_groups_show_ai_generate?: boolean | null;
             /** Show Standards */
             show_standards?: boolean | null;
-            /** Standards Agent Id */
-            standards_agent_id?: string | null;
+            /** Standards Domain Id */
+            standards_domain_id?: string | null;
             /** Standards Required */
             standards_required?: boolean | null;
             /** Standard Suggestions */
             standard_suggestions?: string[] | null;
-            /** Standards */
-            standards?: components["schemas"]["QGetRubricV4StandardResource"][] | null;
+            /** Standards Show Ai Generate */
+            standards_show_ai_generate?: boolean | null;
+            /** Basic Show Ai Generate */
+            basic_show_ai_generate?: boolean | null;
+            /** Content Show Ai Generate */
+            content_show_ai_generate?: boolean | null;
+            /** Name Create Tool Id */
+            name_create_tool_id?: string | null;
+            /** Description Create Tool Id */
+            description_create_tool_id?: string | null;
+            /** Points Create Tool Id */
+            points_create_tool_id?: string | null;
+            /** Pass Points Create Tool Id */
+            pass_points_create_tool_id?: string | null;
+            /** Standard Groups Create Tool Id */
+            standard_groups_create_tool_id?: string | null;
+            /** Standards Create Tool Id */
+            standards_create_tool_id?: string | null;
+            /** Name Link Tool Id */
+            name_link_tool_id?: string | null;
+            /** Description Link Tool Id */
+            description_link_tool_id?: string | null;
+            /** Flag Link Tool Id */
+            flag_link_tool_id?: string | null;
+            /** Departments Link Tool Id */
+            departments_link_tool_id?: string | null;
+            /** Points Link Tool Id */
+            points_link_tool_id?: string | null;
+            /** Pass Points Link Tool Id */
+            pass_points_link_tool_id?: string | null;
+            /** Standard Groups Link Tool Id */
+            standard_groups_link_tool_id?: string | null;
+            /** Standards Link Tool Id */
+            standards_link_tool_id?: string | null;
+            /** Domain Data */
+            domain_data?: components["schemas"]["DomainData"][] | null;
+            resources?: components["schemas"]["RubricResources"] | null;
         };
         /** GetRubricsApiRequest */
         GetRubricsApiRequest: {
@@ -18970,6 +19459,16 @@ export interface components {
             /** Departments */
             departments?: components["schemas"]["QSearchStaffV4Department"][] | null;
         };
+        /** GetTemperatureLevelsApiRequest */
+        GetTemperatureLevelsApiRequest: {
+            /** Ids */
+            ids?: string[] | null;
+        };
+        /** GetTemperatureLevelsApiResponse */
+        GetTemperatureLevelsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetTemperatureLevelsV4Item"][] | null;
+        };
         /**
          * GetTemplateApiRequest
          * @description Request for getting a template by ID.
@@ -19123,19 +19622,20 @@ export interface components {
             /** Eval Options */
             eval_options?: components["schemas"]["TestListFilterOption"][];
         };
-        /** GetToolApiRequest */
+        /**
+         * GetToolApiRequest
+         * @description Request model for get tool endpoint.
+         */
         GetToolApiRequest: {
             /** Tool Id */
             tool_id?: string | null;
             /** Draft Id */
             draft_id?: string | null;
-            /**
-             * Mcp
-             * @default false
-             */
-            mcp: boolean | null;
         };
-        /** GetToolApiResponse */
+        /**
+         * GetToolApiResponse
+         * @description Response model for get tool endpoint.
+         */
         GetToolApiResponse: {
             /** Actor Name */
             actor_name?: string | null;
@@ -19149,85 +19649,95 @@ export interface components {
             draft_version?: number | null;
             /** Group Id */
             group_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Active */
-            active?: boolean | null;
-            /** Updated At */
-            updated_at?: string | null;
-            /** Name Id */
-            name_id?: string | null;
-            name_resource?: components["schemas"]["QGetToolV4NameResource"] | null;
+            /** Names Group Id */
+            names_group_id?: string | null;
+            /** Descriptions Group Id */
+            descriptions_group_id?: string | null;
+            /** Args Group Id */
+            args_group_id?: string | null;
+            /** Args Outputs Group Id */
+            args_outputs_group_id?: string | null;
+            /** Flags Group Id */
+            flags_group_id?: string | null;
             /** Show Name */
             show_name?: boolean | null;
-            /** Name Agent Id */
-            name_agent_id?: string | null;
+            /** Name Domain Id */
+            name_domain_id?: string | null;
             /** Name Required */
             name_required?: boolean | null;
             /** Name Suggestions */
             name_suggestions?: string[] | null;
-            /** Names */
-            names?: components["schemas"]["QGetToolV4NameResource"][] | null;
-            /** Description Id */
-            description_id?: string | null;
-            description_resource?: components["schemas"]["QGetToolV4DescriptionResource"] | null;
+            /** Name Show Ai Generate */
+            name_show_ai_generate?: boolean | null;
             /** Show Description */
             show_description?: boolean | null;
-            /** Description Agent Id */
-            description_agent_id?: string | null;
+            /** Description Domain Id */
+            description_domain_id?: string | null;
             /** Description Required */
             description_required?: boolean | null;
             /** Description Suggestions */
             description_suggestions?: string[] | null;
-            /** Descriptions */
-            descriptions?: components["schemas"]["QGetToolV4DescriptionResource"][] | null;
-            /** Domain Ids */
-            domain_ids?: string[] | null;
-            /** Domain Resources */
-            domain_resources?: components["schemas"]["QGetToolV4Domain"][] | null;
-            /** Args Ids */
-            args_ids?: string[] | null;
-            /** Args Resources */
-            args_resources?: components["schemas"]["QGetToolV4ArgsResource"][] | null;
+            /** Description Show Ai Generate */
+            description_show_ai_generate?: boolean | null;
+            /** Show Flag */
+            show_flag?: boolean | null;
+            /** Flag Domain Id */
+            flag_domain_id?: string | null;
+            /** Flag Required */
+            flag_required?: boolean | null;
+            /** Flag Show Ai Generate */
+            flag_show_ai_generate?: boolean | null;
             /** Show Args */
             show_args?: boolean | null;
-            /** Args Agent Id */
-            args_agent_id?: string | null;
+            /** Args Domain Id */
+            args_domain_id?: string | null;
             /** Args Required */
             args_required?: boolean | null;
             /** Args Suggestions */
             args_suggestions?: string[] | null;
-            /** Args */
-            args?: components["schemas"]["QGetToolV4ArgsResource"][] | null;
-            /** Args Outputs Ids */
-            args_outputs_ids?: string[] | null;
-            /** Args Outputs Resources */
-            args_outputs_resources?: components["schemas"]["QGetToolV4ArgsOutputsResource"][] | null;
+            /** Args Show Ai Generate */
+            args_show_ai_generate?: boolean | null;
             /** Show Args Outputs */
             show_args_outputs?: boolean | null;
-            /** Args Outputs Agent Id */
-            args_outputs_agent_id?: string | null;
+            /** Args Outputs Domain Id */
+            args_outputs_domain_id?: string | null;
             /** Args Outputs Required */
             args_outputs_required?: boolean | null;
             /** Args Outputs Suggestions */
             args_outputs_suggestions?: string[] | null;
-            /** Args Outputs */
-            args_outputs?: components["schemas"]["QGetToolV4ArgsOutputsResource"][] | null;
-            /** Input Args Fields */
-            input_args_fields?: components["schemas"]["QGetToolV4ArgsFieldDetail"][] | null;
-            /** Output Args Outputs */
-            output_args_outputs?: components["schemas"]["QGetToolV4ArgsOutputsDetail"][] | null;
+            /** Args Outputs Show Ai Generate */
+            args_outputs_show_ai_generate?: boolean | null;
+            /** Name Create Tool Id */
+            name_create_tool_id?: string | null;
+            /** Description Create Tool Id */
+            description_create_tool_id?: string | null;
+            /** Args Create Tool Id */
+            args_create_tool_id?: string | null;
+            /** Args Outputs Create Tool Id */
+            args_outputs_create_tool_id?: string | null;
+            /** Name Link Tool Id */
+            name_link_tool_id?: string | null;
+            /** Description Link Tool Id */
+            description_link_tool_id?: string | null;
+            /** Flag Link Tool Id */
+            flag_link_tool_id?: string | null;
+            /** Args Link Tool Id */
+            args_link_tool_id?: string | null;
+            /** Args Outputs Link Tool Id */
+            args_outputs_link_tool_id?: string | null;
+            /** Domain Data */
+            domain_data?: components["schemas"]["DomainData"][] | null;
+            resources?: components["schemas"]["ToolResources"] | null;
         };
-        /** GetToolsListApiRequest */
-        GetToolsListApiRequest: Record<string, never>;
-        /** GetToolsListApiResponse */
-        GetToolsListApiResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Tools */
-            tools?: components["schemas"]["QGetToolsListV4Tool"][] | null;
+        /** GetToolsApiRequest */
+        GetToolsApiRequest: {
+            /** Ids */
+            ids?: string[] | null;
+        };
+        /** GetToolsApiResponse */
+        GetToolsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetToolsV4Item"][] | null;
         };
         /**
          * GetTrainingGetRequest
@@ -21078,6 +21588,40 @@ export interface components {
             department_ids?: string[] | null;
         };
         /**
+         * ListToolApiResponse
+         * @description Response model for list tool endpoint with computed permissions.
+         */
+        ListToolApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Tools */
+            tools?: components["schemas"]["ListToolApiTool"][] | null;
+            /** Total Count */
+            total_count?: number | null;
+        };
+        /**
+         * ListToolApiTool
+         * @description Tool type for list endpoint with computed permissions.
+         */
+        ListToolApiTool: {
+            /** Tool Id */
+            tool_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Active */
+            active?: boolean | null;
+            /** Updated At */
+            updated_at?: string | null;
+            /** Can Edit */
+            can_edit?: boolean | null;
+            /** Can Duplicate */
+            can_duplicate?: boolean | null;
+            /** Can Delete */
+            can_delete?: boolean | null;
+        };
+        /**
          * MessageData
          * @description Message with contents, feedbacks, and hints.
          *
@@ -21165,6 +21709,122 @@ export interface components {
             improvements?: components["schemas"]["ImprovementItem"][] | null;
             /** Hints */
             hints?: components["schemas"]["HintItem"][] | null;
+        };
+        /**
+         * ModelFlagConfig
+         * @description Enriched flag config for direct client consumption.
+         */
+        ModelFlagConfig: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Description */
+            description?: string | null;
+            /** Icon Id */
+            icon_id?: string | null;
+            /** Flag Option Id */
+            flag_option_id?: string | null;
+            /**
+             * Show
+             * @default true
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Domain Id */
+            domain_id?: string | null;
+            /** Generated */
+            generated?: boolean | null;
+        };
+        /**
+         * ModelGenerationCompleteEvent
+         * @description Server-to-client event: model_generation_complete.
+         *
+         *     Emitted when a model resource generation completes successfully.
+         *     Contains full resource objects (not just IDs) for immediate frontend use.
+         */
+        ModelGenerationCompleteEvent: {
+            /**
+             * Artifact Type
+             * @default model
+             */
+            artifact_type: string;
+            /** Group Id */
+            group_id: string;
+            /** Resource Type */
+            resource_type: string;
+            /** Run Id */
+            run_id?: string | null;
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Type */
+            type?: string | null;
+            name_resource?: components["schemas"]["QGetNamesV4Item"] | null;
+            description_resource?: components["schemas"]["QGetDescriptionsV4Item"] | null;
+            value_resource?: components["schemas"]["QGetValuesV4Item"] | null;
+            endpoint_resource?: components["schemas"]["QGetEndpointsV4Item"] | null;
+            key_resource?: components["schemas"]["QGetKeysV4Item"] | null;
+            flag_resource?: components["schemas"]["QGetFlagsV4Item"] | null;
+            /** Department Resources */
+            department_resources?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
+            /** Temperature Level Resources */
+            temperature_level_resources?: components["schemas"]["QGetTemperatureLevelsV4Item"][] | null;
+            /** Pricing Resources */
+            pricing_resources?: components["schemas"]["QGetPricingV4Item"][] | null;
+            /** Reasoning Level Resources */
+            reasoning_level_resources?: components["schemas"]["QGetReasoningLevelsV4Item"][] | null;
+            /** Voice Resources */
+            voice_resources?: components["schemas"]["QGetVoicesV4Item"][] | null;
+        };
+        /**
+         * ModelResourceBucket
+         * @description Generic resources bucket with full objects (always plural lists).
+         */
+        ModelResourceBucket: {
+            /** Names */
+            names?: components["schemas"]["QGetNamesV4Item"][] | null;
+            /** Descriptions */
+            descriptions?: components["schemas"]["QGetDescriptionsV4Item"][] | null;
+            /** Values */
+            values?: components["schemas"]["QGetValuesV4Item"][] | null;
+            /** Endpoints */
+            endpoints?: components["schemas"]["QGetEndpointsV4Item"][] | null;
+            /** Providers */
+            providers?: components["schemas"]["QGetProvidersV4Item"][] | null;
+            /** Keys */
+            keys?: components["schemas"]["QGetKeysV4Item"][] | null;
+            /** Flags */
+            flags?: components["schemas"]["ModelFlagConfig"][] | null;
+            /** Departments */
+            departments?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
+            /** Input Modalities */
+            input_modalities?: components["schemas"]["QGetModalitiesV4Item"][] | null;
+            /** Output Modalities */
+            output_modalities?: components["schemas"]["QGetModalitiesV4Item"][] | null;
+            /** Temperature Levels */
+            temperature_levels?: components["schemas"]["QGetTemperatureLevelsV4Item"][] | null;
+            /** Pricing */
+            pricing?: components["schemas"]["QGetPricingV4Item"][] | null;
+            /** Reasoning Levels */
+            reasoning_levels?: components["schemas"]["QGetReasoningLevelsV4Item"][] | null;
+            /** Qualities */
+            qualities?: components["schemas"]["QGetQualitiesV4Item"][] | null;
+            /** Voices */
+            voices?: components["schemas"]["QGetVoicesV4Item"][] | null;
+        };
+        /**
+         * ModelResources
+         * @description Full resources + current selections.
+         */
+        ModelResources: {
+            resources?: components["schemas"]["ModelResourceBucket"] | null;
+            current?: components["schemas"]["ModelResourceBucket"] | null;
         };
         /** NamesApiRequest */
         NamesApiRequest: {
@@ -21826,7 +22486,10 @@ export interface components {
             /** Draft Exists */
             draft_exists?: boolean | null;
         };
-        /** PatchRubricDraftApiRequest */
+        /**
+         * PatchRubricDraftApiRequest
+         * @description Request model for patch rubric draft endpoint.
+         */
         PatchRubricDraftApiRequest: {
             /** Input Draft Id */
             input_draft_id?: string | null;
@@ -21836,10 +22499,12 @@ export interface components {
             description_id?: string | null;
             /** Active Flag Id */
             active_flag_id?: string | null;
+            /** Total Points Id */
+            total_points_id?: string | null;
+            /** Pass Points Id */
+            pass_points_id?: string | null;
             /** Department Ids */
             department_ids?: string[] | null;
-            /** Point Ids */
-            point_ids?: string[] | null;
             /** Standard Group Ids */
             standard_group_ids?: string[] | null;
             /** Standard Ids */
@@ -21848,16 +22513,24 @@ export interface components {
              * Expected Version
              * @default 0
              */
-            expected_version: number | null;
+            expected_version: number;
         };
-        /** PatchRubricDraftApiResponse */
+        /**
+         * PatchRubricDraftApiResponse
+         * @description Response model for patch rubric draft endpoint.
+         */
         PatchRubricDraftApiResponse: {
-            /** Draft Id */
-            draft_id?: string | null;
+            /** Success */
+            success: boolean;
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
             /** New Version */
-            new_version?: number | null;
-            /** Draft Exists */
-            draft_exists?: boolean | null;
+            new_version: number;
+            /** Message */
+            message: string;
         };
         /**
          * PatchScenarioDraftApiRequest
@@ -22006,10 +22679,19 @@ export interface components {
             /** Draft Exists */
             draft_exists?: boolean | null;
         };
-        /** PatchToolDraftApiRequest */
+        /**
+         * PatchToolDraftApiRequest
+         * @description Request model for patch tool draft endpoint.
+         */
         PatchToolDraftApiRequest: {
             /** Input Draft Id */
             input_draft_id?: string | null;
+            /** Name Id */
+            name_id?: string | null;
+            /** Description Id */
+            description_id?: string | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
             /** Args Ids */
             args_ids?: string[] | null;
             /** Args Outputs Ids */
@@ -22018,16 +22700,24 @@ export interface components {
              * Expected Version
              * @default 0
              */
-            expected_version: number | null;
+            expected_version: number;
         };
-        /** PatchToolDraftApiResponse */
+        /**
+         * PatchToolDraftApiResponse
+         * @description Response model for patch tool draft endpoint.
+         */
         PatchToolDraftApiResponse: {
-            /** Draft Id */
-            draft_id?: string | null;
+            /** Success */
+            success: boolean;
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
             /** New Version */
-            new_version?: number | null;
-            /** Draft Exists */
-            draft_exists?: boolean | null;
+            new_version: number;
+            /** Message */
+            message: string;
         };
         /** PersonaChartRow */
         PersonaChartRow: {
@@ -23256,171 +23946,6 @@ export interface components {
             /** Protocols Id */
             protocols_id?: string | null;
         };
-        /** QGetAgentV4Department */
-        QGetAgentV4Department: {
-            /** Department Id */
-            department_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetAgentV4DescriptionResource */
-        QGetAgentV4DescriptionResource: {
-            /** Id */
-            id: string | null;
-            /** Description */
-            description: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetAgentV4FlagResource */
-        QGetAgentV4FlagResource: {
-            /** Id */
-            id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Icon */
-            icon: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetAgentV4InstructionsResource */
-        QGetAgentV4InstructionsResource: {
-            /** Id */
-            id: string | null;
-            /** Template */
-            template: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetAgentV4Model */
-        QGetAgentV4Model: {
-            /** Model Id */
-            model_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Active */
-            active: boolean | null;
-            /** Temperature Lower */
-            temperature_lower: number | null;
-            /** Temperature Upper */
-            temperature_upper: number | null;
-            /** Input Modalities */
-            input_modalities: string[] | null;
-            /** Output Modalities */
-            output_modalities: string[] | null;
-            /** Temperature Levels */
-            temperature_levels: unknown | null;
-            /** Reasoning Options */
-            reasoning_options: unknown | null;
-            /** Available Voices */
-            available_voices: unknown | null;
-        };
-        /** QGetAgentV4ModelResource */
-        QGetAgentV4ModelResource: {
-            /** Id */
-            id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Active */
-            active: boolean | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetAgentV4NameResource */
-        QGetAgentV4NameResource: {
-            /** Id */
-            id: string | null;
-            /** Name */
-            name: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetAgentV4Prompt */
-        QGetAgentV4Prompt: {
-            /** Prompt Id */
-            prompt_id: string | null;
-            /** System Prompt */
-            system_prompt: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Created At */
-            created_at: string | null;
-            /** Updated At */
-            updated_at: string | null;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Can Delete */
-            can_delete: boolean | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetAgentV4PromptResource */
-        QGetAgentV4PromptResource: {
-            /** Id */
-            id: string | null;
-            /** System Prompt */
-            system_prompt: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetAgentV4ReasoningLevelResource */
-        QGetAgentV4ReasoningLevelResource: {
-            /** Id */
-            id: string | null;
-            /** Reasoning Level */
-            reasoning_level: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetAgentV4TemperatureLevelResource */
-        QGetAgentV4TemperatureLevelResource: {
-            /** Id */
-            id: string | null;
-            /** Temperature */
-            temperature: number | null;
-            /** Is Upper */
-            is_upper: boolean | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetAgentV4Tool */
-        QGetAgentV4Tool: {
-            /** Tool Id */
-            tool_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Generated */
-            generated: boolean | null;
-            /** Group Id */
-            group_id: string | null;
-        };
-        /** QGetAgentV4VoiceResource */
-        QGetAgentV4VoiceResource: {
-            /** Id */
-            id: string | null;
-            /** Voice */
-            voice: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
         /** QGetArgsOutputsV4Item */
         QGetArgsOutputsV4Item: {
             /** Id */
@@ -24015,287 +24540,25 @@ export interface components {
             /** Is Default */
             is_default: boolean | null;
         };
-        /** QGetModelV4Department */
-        QGetModelV4Department: {
-            /** Department Id */
-            department_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetModelV4DescriptionOption */
-        QGetModelV4DescriptionOption: {
+        /** QGetModalitiesV4Item */
+        QGetModalitiesV4Item: {
             /** Id */
             id: string | null;
-            /** Description */
-            description: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetModelV4DescriptionResource */
-        QGetModelV4DescriptionResource: {
-            /** Id */
-            id: string | null;
-            /** Description */
-            description: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetModelV4EndpointOption */
-        QGetModelV4EndpointOption: {
-            /** Id */
-            id: string | null;
-            /** Base Url */
-            base_url: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetModelV4EndpointResource */
-        QGetModelV4EndpointResource: {
-            /** Id */
-            id: string | null;
-            /** Base Url */
-            base_url: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetModelV4FlagOption */
-        QGetModelV4FlagOption: {
-            /** Id */
-            id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Icon */
-            icon: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetModelV4FlagResource */
-        QGetModelV4FlagResource: {
-            /** Id */
-            id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Icon */
-            icon: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetModelV4KeyOption */
-        QGetModelV4KeyOption: {
-            /** Id */
-            id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Key Masked */
-            key_masked: string | null;
-            /** Active */
-            active: boolean | null;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetModelV4KeyResource */
-        QGetModelV4KeyResource: {
-            /** Id */
-            id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Key Masked */
-            key_masked: string | null;
-            /** Active */
-            active: boolean | null;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetModelV4ModalityOption */
-        QGetModelV4ModalityOption: {
-            /** Modality Id */
-            modality_id: string | null;
             /** Modality */
             modality: string | null;
             /** Generated */
             generated: boolean | null;
         };
-        /** QGetModelV4ModalityResource */
-        QGetModelV4ModalityResource: {
-            /** Modality Id */
-            modality_id: string | null;
-            /** Modality */
-            modality: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetModelV4NameOption */
-        QGetModelV4NameOption: {
-            /** Id */
-            id: string | null;
-            /** Name */
-            name: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetModelV4NameResource */
-        QGetModelV4NameResource: {
-            /** Id */
-            id: string | null;
-            /** Name */
-            name: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetModelV4PricingOption */
-        QGetModelV4PricingOption: {
-            /** Pricing Id */
-            pricing_id: string | null;
-            /** Pricing Type */
-            pricing_type: string | null;
-            /** Unit Id */
-            unit_id: string | null;
-            /** Unit Name */
-            unit_name: string | null;
-            /** Unit Category */
-            unit_category: string | null;
-            /** Price */
-            price: number | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetModelV4PricingResource */
-        QGetModelV4PricingResource: {
-            /** Pricing Id */
-            pricing_id: string | null;
-            /** Pricing Type */
-            pricing_type: string | null;
-            /** Unit Id */
-            unit_id: string | null;
-            /** Unit Name */
-            unit_name: string | null;
-            /** Unit Category */
-            unit_category: string | null;
-            /** Price */
-            price: number | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetModelV4ProviderOption */
-        QGetModelV4ProviderOption: {
+        /** QGetModelsV4Item */
+        QGetModelsV4Item: {
             /** Id */
             id: string | null;
             /** Name */
             name: string | null;
             /** Description */
             description: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetModelV4ProviderResource */
-        QGetModelV4ProviderResource: {
-            /** Id */
-            id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetModelV4QualityOption */
-        QGetModelV4QualityOption: {
-            /** Quality Id */
-            quality_id: string | null;
-            /** Quality */
-            quality: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetModelV4QualityResource */
-        QGetModelV4QualityResource: {
-            /** Quality Id */
-            quality_id: string | null;
-            /** Quality */
-            quality: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetModelV4ReasoningLevelOption */
-        QGetModelV4ReasoningLevelOption: {
-            /** Reasoning Level Id */
-            reasoning_level_id: string | null;
-            /** Reasoning Level */
-            reasoning_level: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetModelV4ReasoningLevelResource */
-        QGetModelV4ReasoningLevelResource: {
-            /** Reasoning Level Id */
-            reasoning_level_id: string | null;
-            /** Reasoning Level */
-            reasoning_level: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetModelV4TemperatureLevelOption */
-        QGetModelV4TemperatureLevelOption: {
-            /** Temperature Level Id */
-            temperature_level_id: string | null;
-            /** Temperature */
-            temperature: number | null;
-            /** Is Upper */
-            is_upper: boolean | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetModelV4TemperatureLevelResource */
-        QGetModelV4TemperatureLevelResource: {
-            /** Temperature Level Id */
-            temperature_level_id: string | null;
-            /** Temperature */
-            temperature: number | null;
-            /** Is Upper */
-            is_upper: boolean | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetModelV4ValueResource */
-        QGetModelV4ValueResource: {
-            /** Id */
-            id: string | null;
-            /** Value */
-            value: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetModelV4VoiceOption */
-        QGetModelV4VoiceOption: {
-            /** Id */
-            id: string | null;
-            /** Voice */
-            voice: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetModelV4VoiceResource */
-        QGetModelV4VoiceResource: {
-            /** Id */
-            id: string | null;
-            /** Voice */
-            voice: string | null;
+            /** Active */
+            active: boolean | null;
             /** Generated */
             generated: boolean | null;
         };
@@ -24653,6 +24916,29 @@ export interface components {
             /** Generated */
             generated: boolean | null;
         };
+        /**
+         * QGetProvidersV4Item
+         * @description Provider resource item (placeholder until endpoint exists).
+         */
+        QGetProvidersV4Item: {
+            /** Id */
+            id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Generated */
+            generated?: boolean | null;
+        };
+        /** QGetQualitiesV4Item */
+        QGetQualitiesV4Item: {
+            /** Id */
+            id: string | null;
+            /** Quality */
+            quality: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
         /** QGetQuestionsV4Item */
         QGetQuestionsV4Item: {
             /** Question Id */
@@ -24665,6 +24951,15 @@ export interface components {
             generated: boolean | null;
             /** Time */
             time: number | null;
+        };
+        /** QGetReasoningLevelsV4Item */
+        QGetReasoningLevelsV4Item: {
+            /** Id */
+            id: string | null;
+            /** Reasoning Level */
+            reasoning_level: string | null;
+            /** Generated */
+            generated: boolean | null;
         };
         /** QGetRequestLimitsV4Item */
         QGetRequestLimitsV4Item: {
@@ -24690,102 +24985,6 @@ export interface components {
             icon_value?: string | null;
             /** Color Hex */
             color_hex?: string | null;
-        };
-        /** QGetRubricV4Department */
-        QGetRubricV4Department: {
-            /** Department Id */
-            department_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetRubricV4DescriptionResource */
-        QGetRubricV4DescriptionResource: {
-            /** Id */
-            id: string | null;
-            /** Description */
-            description: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetRubricV4FlagResource */
-        QGetRubricV4FlagResource: {
-            /** Id */
-            id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Icon */
-            icon: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetRubricV4NameResource */
-        QGetRubricV4NameResource: {
-            /** Id */
-            id: string | null;
-            /** Name */
-            name: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetRubricV4PointsOption */
-        QGetRubricV4PointsOption: {
-            /** Id */
-            id: string | null;
-            /** Value */
-            value: number | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetRubricV4PointsResource */
-        QGetRubricV4PointsResource: {
-            /** Id */
-            id: string | null;
-            /** Value */
-            value: number | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetRubricV4StandardGroupResource */
-        QGetRubricV4StandardGroupResource: {
-            /** Standard Group Id */
-            standard_group_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Points */
-            points: number | null;
-            /** Pass Points */
-            pass_points: number | null;
-            /** Position */
-            position: number | null;
-            /** Active */
-            active: boolean | null;
-            /** Standard Ids */
-            standard_ids: string[] | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetRubricV4StandardResource */
-        QGetRubricV4StandardResource: {
-            /** Standard Id */
-            standard_id: string | null;
-            /** Standard Group Id */
-            standard_group_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Points */
-            points: number | null;
-            /** Generated */
-            generated: boolean | null;
         };
         /** QGetRubricsListV4Department */
         QGetRubricsListV4Department: {
@@ -25320,6 +25519,43 @@ export interface components {
             /** Generated */
             generated: boolean | null;
         };
+        /** QGetStandardGroupsV4Item */
+        QGetStandardGroupsV4Item: {
+            /** Standard Group Id */
+            standard_group_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Points */
+            points: number | null;
+            /** Pass Points */
+            pass_points: number | null;
+        };
+        /** QGetStandardsV4Item */
+        QGetStandardsV4Item: {
+            /** Standard Id */
+            standard_id: string | null;
+            /** Standard Group Id */
+            standard_group_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Points */
+            points: number | null;
+        };
+        /** QGetTemperatureLevelsV4Item */
+        QGetTemperatureLevelsV4Item: {
+            /** Id */
+            id: string | null;
+            /** Temperature */
+            temperature: number | null;
+            /** Is Upper */
+            is_upper: boolean | null;
+            /** Generated */
+            generated: boolean | null;
+        };
         /** QGetTemplatesV4Item */
         QGetTemplatesV4Item: {
             /** Template Id */
@@ -25331,123 +25567,16 @@ export interface components {
             /** Generated */
             generated: boolean | null;
         };
-        /** QGetToolV4ArgsFieldDetail */
-        QGetToolV4ArgsFieldDetail: {
-            /** Args Id */
-            args_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Field Type */
-            field_type: string | null;
-            /** Required */
-            required: boolean | null;
-            /** Default Value */
-            default_value: string | null;
-            /** Position */
-            position: number | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetToolV4ArgsOutputsDetail */
-        QGetToolV4ArgsOutputsDetail: {
-            /** Args Outputs Id */
-            args_outputs_id: string | null;
-            /** Args Id */
-            args_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Template */
-            template: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetToolV4ArgsOutputsResource */
-        QGetToolV4ArgsOutputsResource: {
-            /** Id */
-            id: string | null;
-            /** Args Id */
-            args_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Template */
-            template: string | null;
-            /** Generated */
-            generated: boolean | null;
-            /** Group Id */
-            group_id: string | null;
-        };
-        /** QGetToolV4ArgsResource */
-        QGetToolV4ArgsResource: {
+        /** QGetToolsV4Item */
+        QGetToolsV4Item: {
             /** Id */
             id: string | null;
             /** Name */
             name: string | null;
             /** Description */
             description: string | null;
-            /** Field Type */
-            field_type: string | null;
-            /** Required */
-            required: boolean | null;
-            /** Default Value */
-            default_value: string | null;
-            /** Position */
-            position: number | null;
             /** Generated */
             generated: boolean | null;
-            /** Group Id */
-            group_id: string | null;
-        };
-        /** QGetToolV4DescriptionResource */
-        QGetToolV4DescriptionResource: {
-            /** Id */
-            id: string | null;
-            /** Description */
-            description: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetToolV4Domain */
-        QGetToolV4Domain: {
-            /** Domain Id */
-            domain_id: string | null;
-            /** Resource */
-            resource: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetToolV4NameResource */
-        QGetToolV4NameResource: {
-            /** Id */
-            id: string | null;
-            /** Name */
-            name: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetToolsListV4Tool */
-        QGetToolsListV4Tool: {
-            /** Tool Id */
-            tool_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Active */
-            active: boolean | null;
-            /** Num Schemas */
-            num_schemas: number | null;
-            /** Num Templates */
-            num_templates: number | null;
-            /** Can Edit */
-            can_edit: boolean | null;
-            /** Can Delete */
-            can_delete: boolean | null;
-            /** Can Duplicate */
-            can_duplicate: boolean | null;
-            /** Updated At */
-            updated_at: string | null;
         };
         /** QGetUploadsV4Item */
         QGetUploadsV4Item: {
@@ -26968,6 +27097,73 @@ export interface components {
             /** Pass Points */
             pass_points?: number | null;
         };
+        /**
+         * RubricFlagConfig
+         * @description Enriched flag config for direct client consumption.
+         */
+        RubricFlagConfig: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Description */
+            description?: string | null;
+            /** Icon Id */
+            icon_id?: string | null;
+            /** Flag Option Id */
+            flag_option_id?: string | null;
+            /**
+             * Show
+             * @default true
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Domain Id */
+            domain_id?: string | null;
+            /** Generated */
+            generated?: boolean | null;
+        };
+        /**
+         * RubricGenerationCompleteEvent
+         * @description Server-to-client event: rubric_generation_complete.
+         *
+         *     Emitted when a rubric resource generation completes successfully.
+         *     Contains full resource objects (not just IDs) for immediate frontend use.
+         */
+        RubricGenerationCompleteEvent: {
+            /**
+             * Artifact Type
+             * @default rubric
+             */
+            artifact_type: string;
+            /** Group Id */
+            group_id: string;
+            /** Resource Type */
+            resource_type: string;
+            /** Run Id */
+            run_id?: string | null;
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Type */
+            type?: string | null;
+            name_resource?: components["schemas"]["QGetNamesV4Item"] | null;
+            description_resource?: components["schemas"]["QGetDescriptionsV4Item"] | null;
+            flag_resource?: components["schemas"]["QGetFlagsV4Item"] | null;
+            points_resource?: components["schemas"]["QGetPointsV4Item"] | null;
+            pass_points_resource?: components["schemas"]["QGetPointsV4Item"] | null;
+            /** Department Resources */
+            department_resources?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
+            /** Standard Group Resources */
+            standard_group_resources?: components["schemas"]["QGetStandardGroupsV4Item"][] | null;
+            /** Standard Resources */
+            standard_resources?: components["schemas"]["QGetStandardsV4Item"][] | null;
+        };
         /** RubricHeatmapCell */
         RubricHeatmapCell: {
             /** Rubric Id */
@@ -27014,6 +27210,36 @@ export interface components {
             short_name?: string | null;
             /** Rubric Id */
             rubric_id?: string | null;
+        };
+        /**
+         * RubricResourceBucket
+         * @description Generic resources bucket with full objects (always plural lists).
+         */
+        RubricResourceBucket: {
+            /** Names */
+            names?: components["schemas"]["QGetNamesV4Item"][] | null;
+            /** Descriptions */
+            descriptions?: components["schemas"]["QGetDescriptionsV4Item"][] | null;
+            /** Flags */
+            flags?: components["schemas"]["RubricFlagConfig"][] | null;
+            /** Departments */
+            departments?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
+            /** Points */
+            points?: components["schemas"]["QGetPointsV4Item"][] | null;
+            /** Pass Points */
+            pass_points?: components["schemas"]["QGetPointsV4Item"][] | null;
+            /** Standard Groups */
+            standard_groups?: components["schemas"]["QGetStandardGroupsV4Item"][] | null;
+            /** Standards */
+            standards?: components["schemas"]["QGetStandardsV4Item"][] | null;
+        };
+        /**
+         * RubricResources
+         * @description Full resources + current selections.
+         */
+        RubricResources: {
+            resources?: components["schemas"]["RubricResourceBucket"] | null;
+            current?: components["schemas"]["RubricResourceBucket"] | null;
         };
         /**
          * RubricStructureData
@@ -27509,22 +27735,52 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
-        /** SaveRubricApiRequest */
+        /**
+         * SaveRubricApiRequest
+         * @description Request model for save rubric endpoint - accepts form data directly.
+         */
         SaveRubricApiRequest: {
             /**
-             * Draft Id
+             * Group Id
              * Format: uuid
              */
-            draft_id: string;
+            group_id: string;
             /** Input Rubric Id */
             input_rubric_id?: string | null;
+            /**
+             * Name Id
+             * Format: uuid
+             */
+            name_id: string;
+            /** Description Id */
+            description_id?: string | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
+            /** Total Points Id */
+            total_points_id?: string | null;
+            /** Pass Points Id */
+            pass_points_id?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Standard Group Ids */
+            standard_group_ids?: string[] | null;
+            /** Standard Ids */
+            standard_ids?: string[] | null;
         };
-        /** SaveRubricApiResponse */
+        /**
+         * SaveRubricApiResponse
+         * @description Response model for save rubric endpoint.
+         */
         SaveRubricApiResponse: {
-            /** Rubric Id */
-            rubric_id?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
+            /** Success */
+            success: boolean;
+            /**
+             * Rubric Id
+             * Format: uuid
+             */
+            rubric_id: string;
+            /** Message */
+            message: string;
         };
         /**
          * SaveScenarioApiRequest
@@ -27675,30 +27931,46 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
-        /** SaveToolApiRequest */
+        /**
+         * SaveToolApiRequest
+         * @description Request model for save tool endpoint - accepts resource IDs directly.
+         */
         SaveToolApiRequest: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /** Input Tool Id */
+            input_tool_id?: string | null;
+            /**
+             * Name Id
+             * Format: uuid
+             */
+            name_id: string;
+            /** Description Id */
+            description_id?: string | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
             /** Args Ids */
             args_ids?: string[] | null;
             /** Args Outputs Ids */
             args_outputs_ids?: string[] | null;
-            /** Input Tool Id */
-            input_tool_id?: string | null;
-            /**
-             * Active
-             * @default true
-             */
-            active: boolean | null;
         };
-        /** SaveToolApiResponse */
+        /**
+         * SaveToolApiResponse
+         * @description Response model for save tool endpoint.
+         */
         SaveToolApiResponse: {
-            /** Tool Id */
-            tool_id?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
+            /** Success */
+            success: boolean;
+            /**
+             * Tool Id
+             * Format: uuid
+             */
+            tool_id: string;
+            /** Message */
+            message: string;
         };
         /**
          * ScenarioDepartment
@@ -28227,6 +28499,58 @@ export interface components {
             /** Generated */
             generated?: boolean | null;
         };
+        /** SearchArgsApiRequest */
+        SearchArgsApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Draft Id */
+            draft_id?: string | null;
+            /** Suggest Source */
+            suggest_source?: string | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchArgsApiResponse */
+        SearchArgsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetArgsV4Item"][] | null;
+        };
+        /** SearchArgsOutputsApiRequest */
+        SearchArgsOutputsApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Draft Id */
+            draft_id?: string | null;
+            /** Suggest Source */
+            suggest_source?: string | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchArgsOutputsApiResponse */
+        SearchArgsOutputsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetArgsOutputsV4Item"][] | null;
+        };
         /**
          * SearchCohortsApiRequest
          * @description Request for searching cohorts.
@@ -28497,6 +28821,50 @@ export interface components {
             /** Items */
             items?: components["schemas"]["QGetInstructionsV4Item"][] | null;
         };
+        /** SearchModalitiesApiRequest */
+        SearchModalitiesApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchModalitiesApiResponse */
+        SearchModalitiesApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetModalitiesV4Item"][] | null;
+        };
+        /** SearchModelsApiRequest */
+        SearchModelsApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchModelsApiResponse */
+        SearchModelsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetModelsV4Item"][] | null;
+        };
         /** SearchNamesApiRequest */
         SearchNamesApiRequest: {
             /** Search */
@@ -28564,6 +28932,72 @@ export interface components {
         SearchParametersApiResponse: {
             /** Items */
             items?: components["schemas"]["QGetParametersV4Item"][] | null;
+        };
+        /** SearchPromptsApiRequest */
+        SearchPromptsApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchPromptsApiResponse */
+        SearchPromptsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetPromptsV4Item"][] | null;
+        };
+        /** SearchQualitiesApiRequest */
+        SearchQualitiesApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchQualitiesApiResponse */
+        SearchQualitiesApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetQualitiesV4Item"][] | null;
+        };
+        /** SearchReasoningLevelsApiRequest */
+        SearchReasoningLevelsApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchReasoningLevelsApiResponse */
+        SearchReasoningLevelsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetReasoningLevelsV4Item"][] | null;
         };
         /**
          * SearchRequestLimitsApiRequest
@@ -28777,6 +29211,28 @@ export interface components {
             /** Items */
             items?: components["schemas"]["GetSimulationV4Item"][] | null;
         };
+        /** SearchTemperatureLevelsApiRequest */
+        SearchTemperatureLevelsApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchTemperatureLevelsApiResponse */
+        SearchTemperatureLevelsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetTemperatureLevelsV4Item"][] | null;
+        };
         /** SearchTemplatesApiRequest */
         SearchTemplatesApiRequest: {
             /** Search */
@@ -28799,6 +29255,28 @@ export interface components {
             /** Items */
             items?: components["schemas"]["QGetTemplatesV4Item"][] | null;
         };
+        /** SearchToolsApiRequest */
+        SearchToolsApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchToolsApiResponse */
+        SearchToolsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetToolsV4Item"][] | null;
+        };
         /** SearchUploadsApiRequest */
         SearchUploadsApiRequest: {
             /** Search */
@@ -28820,6 +29298,28 @@ export interface components {
         SearchUploadsApiResponse: {
             /** Items */
             items?: components["schemas"]["QGetUploadsV4Item"][] | null;
+        };
+        /** SearchVoicesApiRequest */
+        SearchVoicesApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchVoicesApiResponse */
+        SearchVoicesApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetVoicesV4Item"][] | null;
         };
         /** SecondaryAttemptImprovement */
         SecondaryAttemptImprovement: {
@@ -29797,6 +30297,164 @@ export interface components {
             formatted?: string | null;
             /** Negative */
             negative?: boolean | null;
+        };
+        /**
+         * ToolFlagConfig
+         * @description Enriched flag config for direct client consumption.
+         */
+        ToolFlagConfig: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Description */
+            description?: string | null;
+            /** Icon Id */
+            icon_id?: string | null;
+            /** Flag Option Id */
+            flag_option_id?: string | null;
+            /**
+             * Show
+             * @default true
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Domain Id */
+            domain_id?: string | null;
+            /** Generated */
+            generated?: boolean | null;
+        };
+        /**
+         * ToolGenerationCompleteEvent
+         * @description Server-to-client event: tool_generation_complete.
+         *
+         *     Emitted when a tool resource generation completes successfully.
+         *     Contains full resource objects (not just IDs) for immediate frontend use.
+         */
+        ToolGenerationCompleteEvent: {
+            /**
+             * Artifact Type
+             * @default tool
+             */
+            artifact_type: string;
+            /** Group Id */
+            group_id: string;
+            /** Resource Type */
+            resource_type: string;
+            /** Run Id */
+            run_id?: string | null;
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Type */
+            type?: string | null;
+            name_resource?: components["schemas"]["QGetNamesV4Item"] | null;
+            description_resource?: components["schemas"]["QGetDescriptionsV4Item"] | null;
+            flag_resource?: components["schemas"]["QGetFlagsV4Item"] | null;
+            /** Args Resources */
+            args_resources?: components["schemas"]["QGetArgsV4Item"][] | null;
+            /** Args Outputs Resources */
+            args_outputs_resources?: components["schemas"]["QGetArgsOutputsV4Item"][] | null;
+        };
+        /**
+         * ToolGenerationErrorEvent
+         * @description Server-to-client event: tool_generation_error.
+         *
+         *     Emitted when tool resource generation fails.
+         */
+        ToolGenerationErrorEvent: {
+            /**
+             * Artifact Type
+             * @default tool
+             */
+            artifact_type: string;
+            /** Group Id */
+            group_id?: string | null;
+            /** Resource Type */
+            resource_type?: string | null;
+            /** Resource Types */
+            resource_types?: string[] | null;
+            /** Resource Id */
+            resource_id?: string | null;
+            /** Run Id */
+            run_id?: string | null;
+            /**
+             * Success
+             * @default false
+             */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Trace Id */
+            trace_id?: string | null;
+        };
+        /**
+         * ToolGenerationProgressEvent
+         * @description Server-to-client event: tool_generation_progress.
+         *
+         *     Emitted during tool resource generation to show progress.
+         */
+        ToolGenerationProgressEvent: {
+            /**
+             * Artifact Type
+             * @default tool
+             */
+            artifact_type: string;
+            /** Group Id */
+            group_id?: string | null;
+            /** Resource Type */
+            resource_type?: string | null;
+            /** Resource Id */
+            resource_id?: string | null;
+            /** Run Id */
+            run_id?: string | null;
+            /** Modality */
+            modality?: string | null;
+            /** Type */
+            type?: string | null;
+            /** Event Type */
+            event_type?: string | null;
+            /** Tool Call Id */
+            tool_call_id?: string | null;
+            /** Tool Name */
+            tool_name?: string | null;
+            /** Arguments */
+            arguments?: {
+                [key: string]: unknown;
+            } | null;
+            /** Arguments Delta */
+            arguments_delta?: string | null;
+            /** Trace Id */
+            trace_id?: string | null;
+        };
+        /**
+         * ToolResourceBucket
+         * @description Generic resources bucket with full objects (always plural lists).
+         */
+        ToolResourceBucket: {
+            /** Names */
+            names?: components["schemas"]["QGetNamesV4Item"][] | null;
+            /** Descriptions */
+            descriptions?: components["schemas"]["QGetDescriptionsV4Item"][] | null;
+            /** Args */
+            args?: components["schemas"]["QGetArgsV4Item"][] | null;
+            /** Args Outputs */
+            args_outputs?: components["schemas"]["QGetArgsOutputsV4Item"][] | null;
+            /** Flags */
+            flags?: components["schemas"]["ToolFlagConfig"][] | null;
+        };
+        /**
+         * ToolResources
+         * @description Full resources + current selections.
+         */
+        ToolResources: {
+            resources?: components["schemas"]["ToolResourceBucket"] | null;
+            current?: components["schemas"]["ToolResourceBucket"] | null;
         };
         /**
          * TrainingErrorEvent
@@ -34997,11 +35655,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetToolsListApiRequest"];
-            };
-        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {
@@ -35009,7 +35663,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetToolsListApiResponse"];
+                    "application/json": components["schemas"]["ListToolApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -36847,6 +37501,43 @@ export interface operations {
             };
         };
     };
+    search_args_api_v4_resources_args_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchArgsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchArgsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_args_outputs_api_v4_resources_args_outputs_post: {
         parameters: {
             query?: never;
@@ -36908,6 +37599,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetArgsOutputsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_args_outputs_api_v4_resources_args_outputs_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchArgsOutputsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchArgsOutputsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -38475,6 +39203,154 @@ export interface operations {
             };
         };
     };
+    get_modalities_api_v4_resources_modalities_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetModalitiesApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetModalitiesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_modalities_api_v4_resources_modalities_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchModalitiesApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchModalitiesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_models_api_v4_resources_models_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetModelsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetModelsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_models_api_v4_resources_models_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchModelsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchModelsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_names_api_v4_resources_names_post: {
         parameters: {
             query?: never;
@@ -39141,6 +40017,43 @@ export interface operations {
             };
         };
     };
+    search_prompts_api_v4_resources_prompts_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchPromptsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchPromptsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_protocols_api_v4_resources_protocols_post: {
         parameters: {
             query?: never;
@@ -39215,6 +40128,80 @@ export interface operations {
             };
         };
     };
+    get_qualities_api_v4_resources_qualities_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetQualitiesApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetQualitiesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_qualities_api_v4_resources_qualities_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchQualitiesApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchQualitiesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_questions_api_v4_resources_questions_post: {
         parameters: {
             query?: never;
@@ -39276,6 +40263,80 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetQuestionApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_reasoning_levels_api_v4_resources_reasoning_levels_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetReasoningLevelsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetReasoningLevelsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_reasoning_levels_api_v4_resources_reasoning_levels_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchReasoningLevelsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchReasoningLevelsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -40621,6 +41682,80 @@ export interface operations {
             };
         };
     };
+    get_temperature_levels_api_v4_resources_temperature_levels_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetTemperatureLevelsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetTemperatureLevelsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_temperature_levels_api_v4_resources_temperature_levels_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchTemperatureLevelsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchTemperatureLevelsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_templates_api_v4_resources_templates_post: {
         parameters: {
             query?: never;
@@ -40756,6 +41891,80 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchTemplatesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_tools_api_v4_resources_tools_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetToolsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetToolsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_tools_api_v4_resources_tools_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchToolsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchToolsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -40978,6 +42187,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetVoicesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_voices_api_v4_resources_voices_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchVoicesApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchVoicesApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -45352,9 +46598,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": {
-                    [key: string]: unknown;
-                };
+                "application/json": components["schemas"]["RubricGenerationCompleteEvent"];
             };
         };
         responses: {
@@ -46218,9 +47462,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": {
-                    [key: string]: unknown;
-                };
+                "application/json": components["schemas"]["ModelGenerationCompleteEvent"];
             };
         };
         responses: {
@@ -46292,9 +47534,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": {
-                    [key: string]: unknown;
-                };
+                "application/json": components["schemas"]["ToolGenerationProgressEvent"];
             };
         };
         responses: {
@@ -46329,9 +47569,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": {
-                    [key: string]: unknown;
-                };
+                "application/json": components["schemas"]["ToolGenerationCompleteEvent"];
             };
         };
         responses: {
@@ -46366,9 +47604,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": {
-                    [key: string]: unknown;
-                };
+                "application/json": components["schemas"]["ToolGenerationErrorEvent"];
             };
         };
         responses: {

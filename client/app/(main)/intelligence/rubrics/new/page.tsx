@@ -17,11 +17,6 @@ type SaveRubricIn = InputOf<"/api/v4/rubrics/save", "post">;
 type SaveRubricOut = OutputOf<"/api/v4/rubrics/save", "post">;
 type PatchRubricDraftIn = InputOf<"/api/v4/rubrics/draft", "patch">;
 type PatchRubricDraftOut = OutputOf<"/api/v4/rubrics/draft", "patch">;
-type CreateDraftStandardsIn = InputOf<"/api/v4/resources/standards", "post">;
-type CreateDraftStandardsOut = OutputOf<
-  "/api/v4/resources/standards",
-  "post"
->;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for new pages.
@@ -39,7 +34,6 @@ const getRubric = async (
         draft_id: draftId || null,
         description_search: descriptionSearch || null,
         standard_group_search: standardGroupSearch || null,
-        mcp: null,
       },
     },
     {
@@ -66,13 +60,6 @@ async function patchRubricDraft(
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
   return api.patch("/rubrics/draft", input);
-}
-
-async function createStandards(
-  input: CreateDraftStandardsIn
-): Promise<CreateDraftStandardsOut> {
-  "use server";
-  return api.post("/resources/standards", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -127,7 +114,6 @@ export default async function NewRubricPage({
         rubricData={rubricData}
         saveRubricAction={saveRubric}
         patchRubricDraftAction={patchRubricDraft}
-        createStandardsAction={createStandards}
       />
     </div>
   );

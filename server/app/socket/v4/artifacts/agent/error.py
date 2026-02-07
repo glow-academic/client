@@ -1,7 +1,7 @@
 """Agent error handler - listens to generate_*_error events and emits agent-specific events."""
 
 import uuid
-from typing import Any, cast
+from typing import Any
 
 from fastapi import APIRouter
 
@@ -10,7 +10,6 @@ from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
 from app.sql.types import (
     ValidateAgentResourceErrorSqlParams,
-    ValidateAgentResourceErrorSqlRow,
 )
 from app.utils.sql_helper import execute_sql_typed
 
@@ -60,10 +59,7 @@ async def handle_agents_error(data: dict[str, Any]) -> None:
                     or [],  # SQL function expects non-null array
                     artifact_type="agent",  # Always "agent" for this handler
                 )
-                result = cast(
-                    ValidateAgentResourceErrorSqlRow,
-                    await execute_sql_typed(conn, SQL_PATH, params=params),
-                )
+                await execute_sql_typed(conn, SQL_PATH, params=params)
         except Exception:
             # SQL validation failed, but still emit error to client
             pass

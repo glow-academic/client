@@ -5,10 +5,13 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.artifacts.model.permissions import compute_can_draft
 from app.infra.v4.activity.audit import audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
+    CheckModelDuplicateAccessSqlParams,
+    CheckModelDuplicateAccessSqlRow,
     PatchModelDraftApiRequest,
     PatchModelDraftApiResponse,
     PatchModelDraftSqlParams,
@@ -18,6 +21,10 @@ from app.sql.types import (
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
+# SQL paths — reuses the duplicate access check (only needs user_role)
+ACCESS_CHECK_SQL_PATH = (
+    "app/sql/v4/queries/models/check_model_duplicate_access_complete.sql"
+)
 SQL_PATH = "app/sql/v4/queries/models/patch_model_draft_complete.sql"
 
 router = APIRouter()
@@ -45,6 +52,34 @@ async def patch_model_draft(
             raise HTTPException(
                 status_code=401,
                 detail="Profile ID is required. Please sign in again.",
+            )
+
+        # Permission check: get user role using typed SQL
+        access_params = CheckModelDuplicateAccessSqlParams(
+            profile_id=profile_id,
+        )
+        access_result = cast(
+            CheckModelDuplicateAccessSqlRow,
+            await execute_sql_typed(
+                conn,
+                ACCESS_CHECK_SQL_PATH,
+                params=access_params,
+            ),
+        )
+
+        if not access_result:
+            raise HTTPException(
+                status_code=401,
+                detail="Unable to verify user permissions.",
+            )
+
+        # Permission check using centralized permissions logic
+        can_draft_result = compute_can_draft(user_role=access_result.user_role)
+
+        if not can_draft_result:
+            raise HTTPException(
+                status_code=403,
+                detail="You don't have permission to create or edit model drafts.",
             )
 
         async with conn.transaction():

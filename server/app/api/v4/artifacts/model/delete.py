@@ -5,20 +5,30 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.v4.activity.audit import audit_activity, audit_set
-from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db, transaction
-from app.sql.types import (
+from app.api.v4.artifacts.model.permissions import compute_can_delete
+from app.api.v4.artifacts.model.types import (
     DeleteModelApiRequest,
     DeleteModelApiResponse,
+)
+from app.infra.v4.activity.audit import audit_activity, audit_set
+from app.infra.v4.error.handle_route_error import handle_route_error
+from app.main import get_db
+from app.sql.types import (
+    CheckModelDeleteAccessSqlParams,
+    CheckModelDeleteAccessSqlRow,
     DeleteModelSqlParams,
     DeleteModelSqlRow,
+    load_sql_query,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
-# Load SQL with types at module level - makes it clear what SQL file is used
-SQL_PATH = "app/sql/v4/queries/models/delete_model_complete.sql"
+# SQL paths
+ACCESS_CHECK_SQL_PATH = (
+    "app/sql/v4/queries/models/check_model_delete_access_complete.sql"
+)
+DELETE_SQL_PATH = "app/sql/v4/queries/models/delete_model_complete.sql"
+
 
 router = APIRouter()
 
@@ -41,7 +51,7 @@ async def delete_model(
     """Delete a model if not in use."""
     tags = ["models"]  # From router tags
 
-    sql_query: str | None = None
+    sql_query = load_sql_query(DELETE_SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -53,7 +63,40 @@ async def delete_model(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        async with transaction(conn):
+        # Permission check: get user role and model info using typed SQL
+        access_params = CheckModelDeleteAccessSqlParams(
+            profile_id=profile_id,
+            model_id=request.model_id,
+        )
+        access_result = cast(
+            CheckModelDeleteAccessSqlRow,
+            await execute_sql_typed(
+                conn,
+                ACCESS_CHECK_SQL_PATH,
+                params=access_params,
+            ),
+        )
+
+        if not access_result:
+            raise HTTPException(
+                status_code=401,
+                detail="Unable to verify user permissions.",
+            )
+
+        can_delete = compute_can_delete(
+            user_role=access_result.user_role,
+            model_department_ids=access_result.model_department_ids,
+            total_persona_links=access_result.total_persona_links or 0,
+            agents_usage_count=access_result.agents_usage_count or 0,
+        )
+
+        if not can_delete:
+            raise HTTPException(
+                status_code=403,
+                detail="You don't have permission to delete this model.",
+            )
+
+        async with conn.transaction():
             # Convert API request to SQL params (add profile_id from header)
             params = DeleteModelSqlParams(**request.model_dump(), profile_id=profile_id)
             sql_params = params.to_tuple()
@@ -63,57 +106,44 @@ async def delete_model(
                 DeleteModelSqlRow,
                 await execute_sql_typed(
                     conn,
-                    SQL_PATH,
+                    DELETE_SQL_PATH,
                     params=params,
                 ),
             )
 
-            # Check if model exists using SQL result
-            if not result.model_exists:
-                raise HTTPException(
-                    status_code=404, detail=f"Model {request.model_id} not found"
-                )
-
-            # Check usage counts
-            if result.personas_usage_count and result.personas_usage_count > 0:
-                raise HTTPException(
-                    status_code=400,
-                    detail="Cannot delete model: It is in use by personas",
-                )
-
-            if result.agents_usage_count and result.agents_usage_count > 0:
-                raise HTTPException(
-                    status_code=400,
-                    detail="Cannot delete model: It is in use by agents",
-                )
+            if not result:
+                raise ValueError("Failed to check model usage")
 
             if not result.deleted:
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Failed to delete model: {request.model_id}",
-                )
+                raise ValueError(f"Model not found: {request.model_id}")
+
+            model_name = result.name or "Unknown"
 
             # Set audit context with data from SQL query
             if result.actor_name:
                 audit_set(
                     http_request,
                     actor={"name": result.actor_name, "id": profile_id},
-                    model={
-                        "name": result.name or "Unknown",
-                        "id": str(request.model_id),
-                    },
+                    model={"name": model_name, "id": str(request.model_id)},
                 )
 
-            # Convert SQL result to API response
-            api_response = DeleteModelApiResponse.model_validate(result.model_dump())
+        # Convert SQL result to API response
+        api_response = DeleteModelApiResponse.model_validate(
+            {
+                "success": True,
+                "message": f"Model '{model_name}' deleted successfully",
+            }
+        )
 
-            # Invalidate cache after mutation
-            await invalidate_tags(tags)
-            response.headers["X-Invalidate-Tags"] = ",".join(tags)
+        # Invalidate cache after mutation
+        await invalidate_tags(tags)
+        response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
-            return api_response
+        return api_response
     except HTTPException:
         raise
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
         handle_route_error(
             error=e,

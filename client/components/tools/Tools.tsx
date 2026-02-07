@@ -140,12 +140,12 @@ export default function Tools({
       const result = await duplicateToolAction({
         body: { tool_id: toolId },
       });
-      if (result.new_tool_id) {
+      if (result.tool_id) {
         const tool = toolsArray.find((t) => t.tool_id === toolId);
         toast.success(
-          `Tool '${result.original_name || tool?.name || "Unknown"}' duplicated successfully`
+          result.message || `Tool '${tool?.name || "Unknown"}' duplicated successfully`
         );
-        router.push(`/intelligence/tools/t/${result.new_tool_id}`);
+        router.push(`/intelligence/tools/t/${result.tool_id}`);
       }
     } catch (error) {
       toast.error(
@@ -179,14 +179,6 @@ export default function Tools({
               <CardTitle className="text-lg line-clamp-2">{toolName}</CardTitle>
               <div className="mt-1 space-y-2">
                 <div className="flex flex-wrap items-center gap-2">
-                  <Badge variant="outline">
-                    {tool.num_schemas || 0}{" "}
-                    {(tool.num_schemas || 0) === 1 ? "schema" : "schemas"}
-                  </Badge>
-                  <Badge variant="outline">
-                    {tool.num_templates || 0}{" "}
-                    {(tool.num_templates || 0) === 1 ? "template" : "templates"}
-                  </Badge>
                   <Badge
                     variant={tool.active ? "default" : "secondary"}
                     className="text-xs"
@@ -285,18 +277,16 @@ export default function Tools({
       const result = await deleteToolAction({
         body: { tool_id: deleteItem.id },
       });
-      if (result.deleted) {
+      if (result.success) {
         toast.success(
-          `Tool '${result.name || deleteItem.name}' deleted successfully`
+          result.message || `Tool '${deleteItem.name}' deleted successfully`
         );
         setShowDeleteDialog(false);
         setDeleteItem(null);
         router.refresh();
       } else {
         toast.error(
-          result.usage_count && result.usage_count > 0
-            ? `Cannot delete tool: Tool is in use (${result.usage_count} usage(s))`
-            : `Failed to delete tool: ${result.name || deleteItem.name}`
+          result.message || `Failed to delete tool: ${deleteItem.name}`
         );
       }
     } catch (error) {

@@ -1,18 +1,36 @@
-"""Agent generation router - unified handler for all agent resource types."""
+"""Agent generation router - unified handler for all agent resource types.
+
+Uses the three-layer architecture: calls get_agent_websocket() for data,
+then uses domain-based agent lookup for generation context.
+"""
 
 import uuid
 from typing import Any, cast
 
 from fastapi import APIRouter
 
+from app.api.v4.artifacts.agent.get import get_agent_websocket
+from app.api.v4.artifacts.agent.types import (
+    AgentResourceBucket,
+    GetAgentWebsocketResponse,
+)
 from app.infra.v4.generation import convert_tools_to_dict, render_developer_instructions
 from app.infra.v4.generation.resource_utils import normalize_resources_for_sql
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
+from app.socket.v4.artifacts.agent.permissions import (
+    GenerationContext,
+    format_generation_error,
+    validate_generation_access,
+)
+from app.socket.v4.artifacts.agent.types import GenerateAgentPayload
 from app.socket.v4.artifacts.types import GenerateErrorApiRequest
-from app.sql.types import GetAgentApiRequest, GetAgentSqlParams, GetAgentSqlRow
+from app.sql.types import (
+    GetPersonaGenerationContextSqlParams,
+    GetPersonaGenerationContextSqlRow,
+)
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed, load_sql
 
@@ -23,7 +41,10 @@ internal_sio = get_internal_sio()
 client_router = APIRouter()
 server_router = APIRouter()
 
-SQL_PATH = "app/sql/v4/queries/agents/get_agent_complete.sql"
+# SQL paths — reuse persona generation context (shared agent/model/rate-limit check)
+SQL_PATH_CONTEXT = (
+    "app/sql/v4/queries/generate/persona/get_persona_generation_context_complete.sql"
+)
 CREATE_RUN_SQL_PATH = "app/sql/v4/queries/generate/start/get_generation_run_context_and_create_run_complete.sql"
 TEXT_RUN_CONTEXT_SQL_PATH = "app/sql/v4/queries/generate/text/get_text_run_context_for_existing_run_complete.sql"
 
@@ -36,32 +57,101 @@ AGENT_RESOURCE_TYPES = [
     "instructions",
     "flags",
     "departments",
+    "tools",
+    "temperature_levels",
+    "reasoning_levels",
+    "voices",
 ]
 
 
-class GenerateAgentPayload(GetAgentApiRequest):
-    """Request to generate agent resources - extends GET API request with generation-specific fields."""
+def _build_agent_jinja_context(
+    response: GetAgentWebsocketResponse, resource_types: list[str]
+) -> dict[str, Any]:
+    """Build Jinja context from agent websocket response."""
 
-    agent_type: str | None = (
-        None  # Optional: "name", "description", "model", "prompt", "instructions", "flags", "departments", "general"/"all"
-    )
-    resource_types: list[str]  # Required: which resource types to generate
-    user_instructions: list[str] | None = None  # Optional: user instructions
+    if response.resources and response.resources.resources:
+        resources = response.resources.resources.model_dump()
+        current = (
+            response.resources.current.model_dump()
+            if response.resources.current
+            else AgentResourceBucket().model_dump()
+        )
+        resources["current"] = current
+        return resources
+    return {"current": AgentResourceBucket().model_dump()}
 
 
 async def _agent_generate_impl(
     sid: str, data: GenerateAgentPayload, profile_id: uuid.UUID
 ) -> None:
-    """Handle agent generation - emit generate_artifact for each resource type, then emit client event."""
+    """Handle agent generation with domain-based agent lookup.
+
+    This function:
+    1. Validates domain_ids and derives resource_types + agent_id
+    2. Fetches agent data via get_agent_websocket() for agent lookup
+    3. Validates generation prerequisites (agent, model, rate limit)
+    4. Creates run and fetches context
+    5. Renders developer instructions with Jinja
+    6. Emits simplified payload to generate_artifact handler
+    """
     try:
-        # Validate resource types
-        resource_types = data.resource_types
+        # Validate domain_ids
+        if not data.domain_ids:
+            await emit_to_internal(
+                "generate_call_error",
+                GenerateErrorApiRequest(
+                    sid=sid,
+                    error_message="domain_ids must be provided",
+                    artifact_type="agent",
+                    group_id=None,
+                    resource_type="agent",
+                ),
+                sid=sid,
+            )
+            return
+
+        # Step 1: Fetch agent data for domain-to-agent mapping
+        result = await get_agent_websocket(
+            profile_id=profile_id,
+            agent_id=data.agent_id,
+            draft_id=data.draft_id,
+        )
+
+        # Build domain_id -> agent_id mapping from result.domains
+        domain_to_agent: dict[uuid.UUID, uuid.UUID | None] = {}
+        if result.domains:
+            for domain in result.domains:
+                domain_to_agent[domain.domain_id] = domain.agent_id
+
+        # Build domain_id -> resource_type mapping
+        domain_to_resource: dict[uuid.UUID | None, str] = {
+            result.name_domain_id: "names",
+            result.descriptions_domain_id: "descriptions",
+            result.models_domain_id: "models",
+            result.prompts_domain_id: "prompts",
+            result.instructions_domain_id: "instructions",
+            result.flag_domain_id: "flags",
+            result.departments_domain_id: "departments",
+            result.tools_domain_id: "tools",
+            result.temperature_levels_domain_id: "temperature_levels",
+            result.reasoning_levels_domain_id: "reasoning_levels",
+            result.voices_domain_id: "voices",
+        }
+        # Remove None key if present
+        domain_to_resource.pop(None, None)
+
+        # Derive resource_types from domain_ids
+        resource_types: list[str] = []
+        for did in data.domain_ids:
+            if did in domain_to_resource:
+                resource_types.append(domain_to_resource[did])
+
         if not resource_types:
             await emit_to_internal(
                 "generate_call_error",
                 GenerateErrorApiRequest(
                     sid=sid,
-                    error_message="resource_types must be provided",
+                    error_message="No valid domain_ids provided",
                     artifact_type="agent",
                     group_id=None,
                     resource_type="agent",
@@ -85,139 +175,185 @@ async def _agent_generate_impl(
             )
             return
 
-        # Map agent_type to agent_id from response (will be done after fetching agent data)
+        # Get agent_id from the first valid domain_id
+        agent_id: uuid.UUID | None = None
+        for did in data.domain_ids:
+            if did in domain_to_agent and domain_to_agent[did] is not None:
+                agent_id = domain_to_agent[did]
+                break
 
-        # Call get_agent_v4 SQL function (same as GET API endpoint)
-        async with get_db_connection() as conn:
-            # Convert payload to SQL params (same as GET endpoint)
-            params = GetAgentSqlParams(
-                profile_id=profile_id,
-                agent_id=data.agent_id,
-                draft_id=data.draft_id,
-                mcp=getattr(data, "mcp", False) or False,
+        if not agent_id:
+            await emit_to_internal(
+                "generate_call_error",
+                GenerateErrorApiRequest(
+                    sid=sid,
+                    error_message="No agent found for the requested domains",
+                    artifact_type="agent",
+                    group_id=None,
+                    resource_type="agent",
+                ),
+                sid=sid,
             )
+            return
 
-            result = cast(
-                GetAgentSqlRow,
-                await execute_sql_typed(conn, SQL_PATH, params=params),
-            )
+        agent_jinja_context = _build_agent_jinja_context(result, resource_types)
 
-            # Map agent_type to agent_id from response
-            agent_id: uuid.UUID | None = None
-            if data.agent_type:
-                agent_type_map = {
-                    "name": result.name_agent_id,
-                    "description": result.description_agent_id,
-                    "model": result.models_agent_id,
-                    "models": result.models_agent_id,
-                    "prompt": result.prompts_agent_id,
-                    "prompts": result.prompts_agent_id,
-                    "instructions": result.instructions_agent_id,
-                    "flags": result.flag_agent_id,
-                    "departments": result.departments_agent_id,
-                    "general": None,  # Will need to determine best agent for all resources
-                    "all": None,  # Will need to determine best agent for all resources
+        # Build resources list from websocket response
+        resources: list[dict[str, Any]] = []
+        resources_bucket = result.resources.resources if result.resources else None
+
+        if resources_bucket and resources_bucket.names:
+            resources.append(
+                {
+                    "resource_type": "names",
+                    "resource_ids": [str(n.id) for n in resources_bucket.names if n.id],
                 }
-                agent_id = agent_type_map.get(data.agent_type)
-
-            # For "general" or "all", we need to find an agent that can handle all resource types
-            # For now, use the first available agent_id from the resource types
-            if not agent_id and data.agent_type in ["general", "all"]:
-                # Try to find an agent that can handle all requested resource types
-                # Use the first available agent_id from the requested resource types
-                for rt in resource_types:
-                    rt_map = {
-                        "names": result.name_agent_id,
-                        "descriptions": result.description_agent_id,
-                        "models": result.models_agent_id,
-                        "prompts": result.prompts_agent_id,
-                        "instructions": result.instructions_agent_id,
-                        "flags": result.flag_agent_id,
-                        "departments": result.departments_agent_id,
+            )
+        if resources_bucket and resources_bucket.descriptions:
+            resources.append(
+                {
+                    "resource_type": "descriptions",
+                    "resource_ids": [
+                        str(d.id) for d in resources_bucket.descriptions if d.id
+                    ],
+                }
+            )
+        if resources_bucket and resources_bucket.models:
+            resources.append(
+                {
+                    "resource_type": "models",
+                    "resource_ids": [
+                        str(m.id) for m in resources_bucket.models if m.id
+                    ],
+                }
+            )
+        if resources_bucket and resources_bucket.prompts:
+            resources.append(
+                {
+                    "resource_type": "prompts",
+                    "resource_ids": [
+                        str(p.id) for p in resources_bucket.prompts if p.id
+                    ],
+                }
+            )
+        if resources_bucket and resources_bucket.instructions:
+            resources.append(
+                {
+                    "resource_type": "instructions",
+                    "resource_ids": [
+                        str(i.id) for i in resources_bucket.instructions if i.id
+                    ],
+                }
+            )
+        if resources_bucket and resources_bucket.departments:
+            resources.append(
+                {
+                    "resource_type": "departments",
+                    "resource_ids": [
+                        str(d.department_id)
+                        for d in resources_bucket.departments
+                        if d.department_id
+                    ],
+                }
+            )
+        if resources_bucket and resources_bucket.tools:
+            resources.append(
+                {
+                    "resource_type": "tools",
+                    "resource_ids": [str(t.id) for t in resources_bucket.tools if t.id],
+                }
+            )
+        if resources_bucket and resources_bucket.temperature_levels:
+            resources.append(
+                {
+                    "resource_type": "temperature_levels",
+                    "resource_ids": [
+                        str(t.id) for t in resources_bucket.temperature_levels if t.id
+                    ],
+                }
+            )
+        if resources_bucket and resources_bucket.reasoning_levels:
+            resources.append(
+                {
+                    "resource_type": "reasoning_levels",
+                    "resource_ids": [
+                        str(r.id) for r in resources_bucket.reasoning_levels if r.id
+                    ],
+                }
+            )
+        if resources_bucket and resources_bucket.voices:
+            resources.append(
+                {
+                    "resource_type": "voices",
+                    "resource_ids": [
+                        str(v.id) for v in resources_bucket.voices if v.id
+                    ],
+                }
+            )
+        if resources_bucket and resources_bucket.flags:
+            flag_ids = [
+                str(f.flag_option_id)
+                for f in resources_bucket.flags
+                if f.flag_option_id
+            ]
+            if flag_ids:
+                resources.append(
+                    {
+                        "resource_type": "flags",
+                        "resource_ids": flag_ids,
                     }
-                    candidate_agent_id = rt_map.get(rt)
-                    if candidate_agent_id:
-                        agent_id = candidate_agent_id
-                        break
+                )
 
-            if not agent_id:
+        group_id: uuid.UUID | None = result.group_id
+
+        # Step 2: Validate generation prerequisites
+        async with get_db_connection() as conn:
+            context_params = GetPersonaGenerationContextSqlParams(
+                p_profile_id=profile_id,
+                p_agent_id=agent_id,
+            )
+            context_row = cast(
+                GetPersonaGenerationContextSqlRow,
+                await execute_sql_typed(conn, SQL_PATH_CONTEXT, params=context_params),
+            )
+
+            ctx = GenerationContext(
+                agent_exists=context_row.agent_exists or False,
+                agent_name=context_row.agent_name,
+                agent_is_active=context_row.agent_is_active or False,
+                model_id=context_row.model_id,
+                model_name=context_row.model_name,
+                provider_id=context_row.provider_id,
+                provider_name=context_row.provider_name,
+                has_api_key=context_row.has_api_key or False,
+                requests_per_day=context_row.requests_per_day,
+                runs_today=context_row.runs_today or 0,
+            )
+
+            is_valid, failures = validate_generation_access(ctx)
+
+            if not is_valid:
+                error_msg = format_generation_error(failures)
+                logger.error(
+                    f"Agent generation validation failed - "
+                    f"profile_id={profile_id}, agent_id={agent_id}, "
+                    f"reason: {error_msg}"
+                )
                 await emit_to_internal(
                     "generate_call_error",
                     GenerateErrorApiRequest(
                         sid=sid,
-                        error_message=f"No agent found for agent_type: {data.agent_type}",
+                        error_message=f"Failed to prepare agent generation: {error_msg}",
                         artifact_type="agent",
-                        group_id=None,
+                        group_id=str(group_id) if group_id else None,
                         resource_type="agent",
                     ),
                     sid=sid,
                 )
                 return
 
-            # Extract resource IDs from arrays and build resources array (composite type format)
-            resources: list[dict[str, Any]] = []
-
-            # Extract IDs from each resource array
-            if result.names:
-                resources.append(
-                    {
-                        "resource_type": "names",
-                        "resource_ids": [str(n.id) for n in result.names if n.id],
-                    }
-                )
-            if result.descriptions:
-                resources.append(
-                    {
-                        "resource_type": "descriptions",
-                        "resource_ids": [
-                            str(d.id) for d in result.descriptions if d.id
-                        ],
-                    }
-                )
-            if result.models:
-                resources.append(
-                    {
-                        "resource_type": "models",
-                        "resource_ids": [
-                            str(m.model_id) for m in result.models if m.model_id
-                        ],
-                    }
-                )
-            if result.prompts:
-                resources.append(
-                    {
-                        "resource_type": "prompts",
-                        "resource_ids": [
-                            str(p.prompt_id) for p in result.prompts if p.prompt_id
-                        ],
-                    }
-                )
-            if result.instructions:
-                resources.append(
-                    {
-                        "resource_type": "instructions",
-                        "resource_ids": [
-                            str(inst.id) for inst in result.instructions if inst.id
-                        ],
-                    }
-                )
-            if result.departments:
-                resources.append(
-                    {
-                        "resource_type": "departments",
-                        "resource_ids": [
-                            str(d.department_id)
-                            for d in result.departments
-                            if d.department_id
-                        ],
-                    }
-                )
-
-            # Get group_id from response if available
-            group_id: uuid.UUID | None = result.group_id
-
+            # Step 3: Create run and fetch context
             resources_sql = normalize_resources_for_sql(resources)
-
             create_run_sql = load_sql(CREATE_RUN_SQL_PATH)
             create_run_row = await conn.fetchrow(
                 create_run_sql,
@@ -276,9 +412,10 @@ async def _agent_generate_impl(
                 )
                 return
 
+            # Step 4: Render developer instructions with Jinja
             rendered_developer_messages = render_developer_instructions(
                 templates=run_context_row.get("developer_instruction_templates"),
-                jinja_context=run_context_row.get("context"),
+                jinja_context=agent_jinja_context,
             )
 
             messages: list[dict[str, Any]] = []
@@ -291,6 +428,7 @@ async def _agent_generate_impl(
             for user_msg in data.user_instructions or []:
                 messages.append({"role": "user", "content": user_msg})
 
+            # Step 5: Emit to generate_artifact handler
             await internal_sio.emit(
                 "generate_artifact",
                 {
@@ -319,6 +457,7 @@ async def _agent_generate_impl(
             )
 
     except Exception as e:
+        logger.exception(f"Failed to generate agent resources: {str(e)}")
         await emit_to_internal(
             "generate_call_error",
             GenerateErrorApiRequest(

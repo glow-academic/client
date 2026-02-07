@@ -1,4 +1,4 @@
-"""Tool save endpoint - v4 API following DHH principles (skeleton).
+"""Tool save endpoint - v4 API following DHH principles.
 Unified endpoint that handles both create (tool_id = NULL) and update (tool_id provided).
 """
 
@@ -7,20 +7,29 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.v4.activity.audit import audit_activity, audit_set
-from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db
-from app.sql.types import (
+from app.api.v4.artifacts.tool.permissions import (
+    compute_can_create,
+    compute_can_save,
+)
+from app.api.v4.artifacts.tool.types import (
     SaveToolApiRequest,
     SaveToolApiResponse,
     SaveToolSqlParams,
     SaveToolSqlRow,
+)
+from app.infra.v4.activity.audit import audit_activity, audit_set
+from app.infra.v4.error.handle_route_error import handle_route_error
+from app.main import get_db
+from app.sql.types import (
+    CheckToolSaveAccessSqlParams,
+    CheckToolSaveAccessSqlRow,
     load_sql_query,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
-# Load SQL with types at module level - makes it clear what SQL file is used
+# SQL paths
+ACCESS_CHECK_SQL_PATH = "app/sql/v4/queries/tools/check_tool_save_access_complete.sql"
 SQL_PATH = "app/sql/v4/queries/tools/save_tool_complete.sql"
 
 
@@ -43,8 +52,8 @@ async def save_tool(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> SaveToolApiResponse:
-    """Save tool - handles both create (tool_id = NULL) and update (tool_id provided) (skeleton)."""
-    tags = ["tools"]  # From router tags
+    """Save tool - handles both create (tool_id = NULL) and update (tool_id provided)."""
+    tags = ["tools"]
 
     sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
@@ -58,6 +67,43 @@ async def save_tool(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        # Permission check: get user role and tool info using typed SQL
+        access_params = CheckToolSaveAccessSqlParams(
+            profile_id=profile_id,
+            tool_id=request.input_tool_id,
+        )
+        access_result = cast(
+            CheckToolSaveAccessSqlRow,
+            await execute_sql_typed(
+                conn,
+                ACCESS_CHECK_SQL_PATH,
+                params=access_params,
+            ),
+        )
+
+        if not access_result:
+            raise HTTPException(
+                status_code=401,
+                detail="Unable to verify user permissions.",
+            )
+
+        # Permission logic: create vs update mode
+        if not request.input_tool_id:
+            can_save_result = compute_can_create(
+                user_role=access_result.user_role,
+            )
+        else:
+            can_save_result = compute_can_save(
+                user_role=access_result.user_role,
+                active_usage_count=access_result.active_usage_count or 0,
+            )
+
+        if not can_save_result:
+            raise HTTPException(
+                status_code=403,
+                detail="You don't have permission to save this tool.",
+            )
+
         async with conn.transaction():
             # Convert API request to SQL params (add profile_id from header)
             params = SaveToolSqlParams(
@@ -66,7 +112,7 @@ async def save_tool(
             )
             sql_params = params.to_tuple()
 
-            # Execute SQL with typed helper - automatically detects and calls function if present
+            # Execute SQL with typed helper
             result = cast(
                 SaveToolSqlRow,
                 await execute_sql_typed(
@@ -84,20 +130,25 @@ async def save_tool(
 
             # Set audit context with data from SQL query
             if result.actor_name:
-                audit_ctx = {"actor": {"name": result.actor_name, "id": profile_id}}
-                # Only add tool to audit context if input_tool_id was provided (update mode)
+                audit_ctx: dict[str, Any] = {
+                    "actor": {"name": result.actor_name, "id": profile_id}
+                }
                 if request.input_tool_id:
                     audit_ctx["tool"] = {
-                        "name": request.name or "Tool",
+                        "name": "Tool",
                         "id": str(result.tool_id),
                     }
                 audit_set(http_request, **audit_ctx)
 
         # Convert SQL result to API response
+        is_update = request.input_tool_id is not None
         api_response = SaveToolApiResponse.model_validate(
             {
+                "success": True,
                 "tool_id": str(result.tool_id),
-                "actor_name": result.actor_name,
+                "message": "Tool updated successfully"
+                if is_update
+                else "Tool created successfully",
             }
         )
 

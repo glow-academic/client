@@ -7,20 +7,31 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.v4.activity.audit import audit_activity, audit_set
-from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db
-from app.sql.types import (
+from app.api.v4.artifacts.rubric.permissions import (
+    compute_can_create,
+    compute_can_save,
+)
+from app.api.v4.artifacts.rubric.types import (
     SaveRubricApiRequest,
     SaveRubricApiResponse,
     SaveRubricSqlParams,
     SaveRubricSqlRow,
+)
+from app.infra.v4.activity.audit import audit_activity, audit_set
+from app.infra.v4.error.handle_route_error import handle_route_error
+from app.main import get_db
+from app.sql.types import (
+    CheckRubricSaveAccessSqlParams,
+    CheckRubricSaveAccessSqlRow,
     load_sql_query,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
-# Load SQL with types at module level - makes it clear what SQL file is used
+# SQL paths
+ACCESS_CHECK_SQL_PATH = (
+    "app/sql/v4/queries/rubrics/check_rubric_save_access_complete.sql"
+)
 SQL_PATH = "app/sql/v4/queries/rubrics/save_rubric_complete.sql"
 
 
@@ -44,13 +55,12 @@ async def save_rubric(
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> SaveRubricApiResponse:
     """Save rubric - handles both create (rubric_id = NULL) and update (rubric_id provided)."""
-    tags = ["rubrics"]  # From router tags
+    tags = ["rubrics"]
 
     sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        # Get profile_id from header (set by router-level dependency)
         profile_id = http_request.state.profile_id
         if not profile_id:
             raise HTTPException(
@@ -58,16 +68,53 @@ async def save_rubric(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        # Permission check: get user role and rubric info using typed SQL
+        access_params = CheckRubricSaveAccessSqlParams(
+            profile_id=profile_id,
+            rubric_id=request.input_rubric_id,
+        )
+        access_result = cast(
+            CheckRubricSaveAccessSqlRow,
+            await execute_sql_typed(
+                conn,
+                ACCESS_CHECK_SQL_PATH,
+                params=access_params,
+            ),
+        )
+
+        if not access_result:
+            raise HTTPException(
+                status_code=401,
+                detail="Unable to verify user permissions.",
+            )
+
+        # Permission logic: create vs update mode
+        if not request.input_rubric_id:
+            can_save_result = compute_can_create(
+                user_role=access_result.user_role,
+                department_ids=None,
+            )
+        else:
+            can_save_result = compute_can_save(
+                user_role=access_result.user_role,
+                user_department_ids=access_result.user_department_ids,
+                rubric_department_ids=access_result.rubric_department_ids,
+                active_simulation_count=access_result.active_simulation_count or 0,
+            )
+
+        if not can_save_result:
+            raise HTTPException(
+                status_code=403,
+                detail="You don't have permission to save this rubric.",
+            )
+
         async with conn.transaction():
-            # Convert API request to SQL params (add profile_id from header)
-            # Map input_rubric_id from API request (already correct field name)
             params = SaveRubricSqlParams(
                 **request.model_dump(),
                 profile_id=profile_id,
             )
             sql_params = params.to_tuple()
 
-            # Execute SQL with typed helper - automatically detects and calls function if present
             result = cast(
                 SaveRubricSqlRow,
                 await execute_sql_typed(
@@ -83,29 +130,27 @@ async def save_rubric(
                 else:
                     raise ValueError("Failed to create rubric")
 
-            # Set audit context with data from SQL query
+            # Set audit context
             if result.actor_name:
                 audit_ctx = {"actor": {"name": result.actor_name, "id": profile_id}}
-                # Only add rubric to audit context if input_rubric_id was provided (update mode)
-                # For create mode, we don't have the name yet, so we'll use the request name if available
                 if request.input_rubric_id:
-                    # Update mode: use request name (from request body)
-                    # Note: In update mode, request should have name field
                     audit_ctx["rubric"] = {
                         "name": getattr(request, "name", "Rubric"),
                         "id": str(result.rubric_id),
                     }
                 audit_set(http_request, **audit_ctx)
 
-        # Convert SQL result to API response
+        is_update = request.input_rubric_id is not None
         api_response = SaveRubricApiResponse.model_validate(
             {
+                "success": True,
                 "rubric_id": str(result.rubric_id),
-                "actor_name": result.actor_name,
+                "message": "Rubric updated successfully"
+                if is_update
+                else "Rubric created successfully",
             }
         )
 
-        # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 

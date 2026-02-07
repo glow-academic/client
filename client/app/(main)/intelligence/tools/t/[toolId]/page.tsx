@@ -52,13 +52,15 @@ export async function generateMetadata(
     const input: GetToolIn = {
       body: {
         tool_id: toolId,
-      } as GetToolIn["body"],
+      },
     };
     const tool = await getTool(input);
+    const toolName = tool?.resources?.current?.names?.[0]?.name;
+    const toolDesc = tool?.resources?.current?.descriptions?.[0]?.description;
     return {
-      title: `${tool?.name || "Tool"} - ${parentMetadata.title?.absolute || "Tools"}`,
+      title: `${toolName || "Tool"} - ${parentMetadata.title?.absolute || "Tools"}`,
       description:
-        tool?.description ||
+        toolDesc ||
         "View and edit tool details for teaching assistant training platform.",
     };
   } catch {
@@ -140,7 +142,7 @@ export default async function ToolDetailPage({
       body: {
         tool_id: toolId,
         draft_id: q.draftId ?? null,
-      } as GetToolIn["body"],
+      },
     };
     const toolDetail = await getTool(input);
 

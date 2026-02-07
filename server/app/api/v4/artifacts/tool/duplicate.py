@@ -5,12 +5,17 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.artifacts.tool.permissions import compute_can_duplicate
+from app.api.v4.artifacts.tool.types import (
+    DuplicateToolApiRequest,
+    DuplicateToolApiResponse,
+)
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
-    DuplicateToolApiRequest,
-    DuplicateToolApiResponse,
+    CheckToolDuplicateAccessSqlParams,
+    CheckToolDuplicateAccessSqlRow,
     DuplicateToolSqlParams,
     DuplicateToolSqlRow,
     load_sql_query,
@@ -18,8 +23,11 @@ from app.sql.types import (
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
-# Load SQL with types at module level - makes it clear what SQL file is used
-SQL_PATH = "app/sql/v4/queries/tools/duplicate_tool_complete.sql"
+# SQL paths
+ACCESS_CHECK_SQL_PATH = (
+    "app/sql/v4/queries/tools/check_tool_duplicate_access_complete.sql"
+)
+DUPLICATE_SQL_PATH = "app/sql/v4/queries/tools/duplicate_tool_complete.sql"
 
 
 router = APIRouter()
@@ -42,9 +50,9 @@ async def duplicate_tool(
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DuplicateToolApiResponse:
     """Duplicate a tool."""
-    tags = ["tools"]  # From router tags
+    tags = ["tools"]
 
-    sql_query = load_sql_query(SQL_PATH)
+    sql_query = load_sql_query(DUPLICATE_SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -56,6 +64,33 @@ async def duplicate_tool(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        # Permission check: get user role using typed SQL
+        access_params = CheckToolDuplicateAccessSqlParams(
+            profile_id=profile_id,
+        )
+        access_result = cast(
+            CheckToolDuplicateAccessSqlRow,
+            await execute_sql_typed(
+                conn,
+                ACCESS_CHECK_SQL_PATH,
+                params=access_params,
+            ),
+        )
+
+        if not access_result:
+            raise HTTPException(
+                status_code=401,
+                detail="Unable to verify user permissions.",
+            )
+
+        can_duplicate = compute_can_duplicate(user_role=access_result.user_role)
+
+        if not can_duplicate:
+            raise HTTPException(
+                status_code=403,
+                detail="You don't have permission to duplicate this tool.",
+            )
+
         async with conn.transaction():
             # Convert API request to SQL params (add profile_id from header)
             params = DuplicateToolSqlParams(
@@ -63,12 +98,12 @@ async def duplicate_tool(
             )
             sql_params = params.to_tuple()
 
-            # Execute SQL with typed helper - automatically detects and calls function if present
+            # Execute SQL with typed helper
             result = cast(
                 DuplicateToolSqlRow,
                 await execute_sql_typed(
                     conn,
-                    SQL_PATH,
+                    DUPLICATE_SQL_PATH,
                     params=params,
                 ),
             )
@@ -89,9 +124,9 @@ async def duplicate_tool(
             # Convert SQL result to API response
             api_response = DuplicateToolApiResponse.model_validate(
                 {
-                    "new_tool_id": result.new_tool_id,
-                    "original_name": original_name,
-                    "actor_name": result.actor_name,
+                    "success": True,
+                    "tool_id": result.new_tool_id,
+                    "message": f"Tool '{original_name}' duplicated successfully",
                 }
             )
 

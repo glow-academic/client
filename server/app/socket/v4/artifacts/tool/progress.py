@@ -5,6 +5,7 @@ from typing import Any
 from fastapi import APIRouter
 
 from app.main import get_internal_sio, sio
+from app.socket.v4.artifacts.tool.types import ToolGenerationProgressEvent
 
 internal_sio = get_internal_sio()
 
@@ -23,23 +24,30 @@ async def handle_tool_call_progress(data: dict[str, Any]) -> None:
     if not sid:
         return
 
+    event = ToolGenerationProgressEvent(
+        artifact_type="tool",
+        resource_type=data.get("resource_type"),
+        resource_id=data.get("resource_id"),
+        run_id=data.get("run_id"),
+        group_id=data.get("group_id"),
+        event_type=data.get("event_type"),
+        type=data.get("type", "progress"),
+        trace_id=data.get("trace_id"),
+    )
+
     await sio.emit(
         "tool_generation_progress",
-        {
-            "artifact_type": artifact_type,
-            "resource_type": data.get("resource_type"),
-            "resource_id": data.get("resource_id"),
-            "run_id": data.get("run_id"),
-            "group_id": data.get("group_id"),
-            "event_type": data.get("event_type"),
-            "type": data.get("type", "progress"),
-            "trace_id": data.get("trace_id"),
-        },
+        event.model_dump(mode="json"),
         room=sid,
     )
 
 
 @server_router.post("/tool_generation_progress")
-async def tool_generation_progress_api(request: dict[str, Any]) -> dict[str, bool]:
-    _ = request
-    return {"ok": True}
+async def tool_generation_progress_api(
+    request: ToolGenerationProgressEvent,
+) -> dict[str, bool]:
+    """Server-to-client event: Tool generation progress.
+
+    Emitted during tool resource generation to show progress.
+    """
+    return {"success": True}

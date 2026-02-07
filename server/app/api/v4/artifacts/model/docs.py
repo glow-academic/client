@@ -62,7 +62,11 @@ CONFIG = ArtifactDocsConfig(
         },
     },
     glow_context={
-        "description": "Models represent AI models used in GLOW for various AI operations. They can be associated with providers and assigned to agents.",
+        "description": (
+            "Models represent AI models used in GLOW for various"
+            " AI operations. They can be associated with"
+            " providers and assigned to agents."
+        ),
         "use_cases": [
             "Defining AI models for use in GLOW",
             "Associating models with providers",

@@ -12,11 +12,18 @@ from app.api.v4.resources.args.get import router as args_get_router
 
 router.include_router(args_router)
 router.include_router(args_get_router)
+from app.api.v4.resources.args.search import router as args_search_router
+
+router.include_router(args_search_router)
 from app.api.v4.resources.args_outputs.create import router as args_outputs_router
 from app.api.v4.resources.args_outputs.get import router as args_outputs_get_router
+from app.api.v4.resources.args_outputs.search import (
+    router as args_outputs_search_router,
+)
 
 router.include_router(args_outputs_router)
 router.include_router(args_outputs_get_router)
+router.include_router(args_outputs_search_router)
 # NOTE: audios removed - converted to audios_entry (migration 328)
 # NOTE: auths removed - non-creatable, sync via artifact save (migration 328)
 # NOTE: cohorts removed - non-creatable, sync via artifact save (migration 328)
@@ -156,7 +163,23 @@ router.include_router(keys_router)
 router.include_router(keys_decrypt_router)
 router.include_router(keys_get_router)
 # NOTE: modalities removed - non-creatable (migration 328)
+# GET/Search endpoints available for model two-pass architecture
+from app.api.v4.resources.modalities.get import (
+    router as modalities_get_router,
+)
+from app.api.v4.resources.modalities.search import (
+    router as modalities_search_router,
+)
+
+router.include_router(modalities_get_router)
+router.include_router(modalities_search_router)
 # NOTE: models removed - non-creatable, sync via artifact save (migration 328)
+# GET/Search endpoints available for agent two-pass architecture
+from app.api.v4.resources.models.get import router as models_get_router
+from app.api.v4.resources.models.search import router as models_search_router
+
+router.include_router(models_get_router)
+router.include_router(models_search_router)
 from app.api.v4.resources.names.create import router as names_router
 from app.api.v4.resources.names.get import router as names_get_router
 from app.api.v4.resources.names.search import router as names_search_router
@@ -211,6 +234,9 @@ from app.api.v4.resources.prompts.get import router as prompts_get_router
 
 router.include_router(prompts_router)
 router.include_router(prompts_get_router)
+from app.api.v4.resources.prompts.search import router as prompts_search_router
+
+router.include_router(prompts_search_router)
 from app.api.v4.resources.protocols.create import router as protocols_router
 from app.api.v4.resources.protocols.get import router as protocols_get_router
 
@@ -218,12 +244,32 @@ router.include_router(protocols_router)
 router.include_router(protocols_get_router)
 # NOTE: providers removed - non-creatable, sync via artifact save (migration 328)
 # NOTE: qualities removed - non-creatable (migration 328)
+# GET/Search endpoints available for model two-pass architecture
+from app.api.v4.resources.qualities.get import (
+    router as qualities_get_router,
+)
+from app.api.v4.resources.qualities.search import (
+    router as qualities_search_router,
+)
+
+router.include_router(qualities_get_router)
+router.include_router(qualities_search_router)
 from app.api.v4.resources.questions.create import router as questions_router
 from app.api.v4.resources.questions.get import router as questions_get_router
 
 router.include_router(questions_router)
 router.include_router(questions_get_router)
 # NOTE: reasoning_levels removed - non-creatable (migration 328)
+# GET/Search endpoints available for agent two-pass architecture
+from app.api.v4.resources.reasoning_levels.get import (
+    router as reasoning_levels_get_router,
+)
+from app.api.v4.resources.reasoning_levels.search import (
+    router as reasoning_levels_search_router,
+)
+
+router.include_router(reasoning_levels_get_router)
+router.include_router(reasoning_levels_search_router)
 from app.api.v4.resources.request_limits.create import router as request_limits_router
 from app.api.v4.resources.request_limits.get import router as request_limits_get_router
 from app.api.v4.resources.request_limits.search import (
@@ -362,6 +408,16 @@ router.include_router(standard_groups_router)
 # NOTE: standards removed - non-creatable (migration 328)
 # NOTE: strengths removed - converted to entry table (migration 305)
 # NOTE: temperature_levels removed - non-creatable (migration 328)
+# GET/Search endpoints available for agent two-pass architecture
+from app.api.v4.resources.temperature_levels.get import (
+    router as temperature_levels_get_router,
+)
+from app.api.v4.resources.temperature_levels.search import (
+    router as temperature_levels_search_router,
+)
+
+router.include_router(temperature_levels_get_router)
+router.include_router(temperature_levels_search_router)
 from app.api.v4.resources.templates.create import router as templates_router
 from app.api.v4.resources.templates.get import router as templates_get_router
 from app.api.v4.resources.templates.html import router as templates_html_router
@@ -374,6 +430,12 @@ router.include_router(templates_search_router)
 # NOTE: thresholds removed - non-creatable (migration 328)
 # NOTE: times removed - converted to entry table (migration 305)
 # NOTE: tools removed - non-creatable, sync via artifact save (migration 328)
+# GET/Search endpoints available for agent two-pass architecture
+from app.api.v4.resources.tools.get import router as tools_get_router
+from app.api.v4.resources.tools.search import router as tools_search_router
+
+router.include_router(tools_get_router)
+router.include_router(tools_search_router)
 from app.api.v4.resources.values.create import router as values_router
 from app.api.v4.resources.values.get import router as values_get_router
 
@@ -389,6 +451,9 @@ from app.api.v4.resources.voices.get import router as voices_get_router
 
 router.include_router(voices_router)
 router.include_router(voices_get_router)
+from app.api.v4.resources.voices.search import router as voices_search_router
+
+router.include_router(voices_search_router)
 from app.api.v4.resources.uploads.create import router as uploads_router
 from app.api.v4.resources.uploads.download import router as uploads_download_router
 from app.api.v4.resources.uploads.get import router as uploads_get_router

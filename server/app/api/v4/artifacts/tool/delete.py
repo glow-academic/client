@@ -5,12 +5,17 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.artifacts.tool.permissions import compute_can_delete
+from app.api.v4.artifacts.tool.types import (
+    DeleteToolApiRequest,
+    DeleteToolApiResponse,
+)
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
-    DeleteToolApiRequest,
-    DeleteToolApiResponse,
+    CheckToolDeleteAccessSqlParams,
+    CheckToolDeleteAccessSqlRow,
     DeleteToolSqlParams,
     DeleteToolSqlRow,
     load_sql_query,
@@ -18,8 +23,9 @@ from app.sql.types import (
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
-# Load SQL with types at module level - makes it clear what SQL file is used
-SQL_PATH = "app/sql/v4/queries/tools/delete_tool_complete.sql"
+# SQL paths
+ACCESS_CHECK_SQL_PATH = "app/sql/v4/queries/tools/check_tool_delete_access_complete.sql"
+DELETE_SQL_PATH = "app/sql/v4/queries/tools/delete_tool_complete.sql"
 
 
 router = APIRouter()
@@ -41,9 +47,9 @@ async def delete_tool(
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DeleteToolApiResponse:
     """Delete a tool."""
-    tags = ["tools"]  # From router tags
+    tags = ["tools"]
 
-    sql_query = load_sql_query(SQL_PATH)
+    sql_query = load_sql_query(DELETE_SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -55,17 +61,48 @@ async def delete_tool(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        # Permission check: get user role and tool info using typed SQL
+        access_params = CheckToolDeleteAccessSqlParams(
+            profile_id=profile_id,
+            tool_id=request.tool_id,
+        )
+        access_result = cast(
+            CheckToolDeleteAccessSqlRow,
+            await execute_sql_typed(
+                conn,
+                ACCESS_CHECK_SQL_PATH,
+                params=access_params,
+            ),
+        )
+
+        if not access_result:
+            raise HTTPException(
+                status_code=401,
+                detail="Unable to verify user permissions.",
+            )
+
+        can_delete = compute_can_delete(
+            user_role=access_result.user_role,
+            usage_count=access_result.usage_count or 0,
+        )
+
+        if not can_delete:
+            raise HTTPException(
+                status_code=403,
+                detail="You don't have permission to delete this tool.",
+            )
+
         async with conn.transaction():
             # Convert API request to SQL params (add profile_id from header)
             params = DeleteToolSqlParams(**request.model_dump(), profile_id=profile_id)
             sql_params = params.to_tuple()
 
-            # Execute SQL with typed helper - automatically detects and calls function if present
+            # Execute SQL with typed helper
             result = cast(
                 DeleteToolSqlRow,
                 await execute_sql_typed(
                     conn,
-                    SQL_PATH,
+                    DELETE_SQL_PATH,
                     params=params,
                 ),
             )
@@ -95,10 +132,8 @@ async def delete_tool(
         # Convert SQL result to API response
         api_response = DeleteToolApiResponse.model_validate(
             {
-                "usage_count": usage_count,
-                "name": tool_name,
-                "deleted": result.deleted,
-                "actor_name": result.actor_name,
+                "success": True,
+                "message": f"Tool '{tool_name}' deleted successfully",
             }
         )
 

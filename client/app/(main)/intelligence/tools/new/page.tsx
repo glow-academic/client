@@ -7,7 +7,7 @@ import Tool from "@/components/tools/Tool";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
-import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
+import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
 type GetToolIn = InputOf<"/api/v4/tools/get", "post">;
@@ -102,24 +102,16 @@ export default async function NewToolPage({
   // Inline server-side parsers for tool search params
   const toolSearchParams = {
     draftId: parseAsString,
-    schemaSearch: parseAsString,
-    templateSearch: parseAsString,
-    schemaShowSelected: parseAsBoolean,
-    templateShowSelected: parseAsBoolean,
   };
   const loadToolSearchParams = createLoader(toolSearchParams);
   const q = loadToolSearchParams(searchParamsObj);
 
-  // Fetch tool default data (for dropdowns and defaults) with draft_id and filter params
+  // Fetch tool default data (for dropdowns and defaults) with draft_id
   const input: GetToolIn = {
     body: {
       tool_id: null,
       draft_id: q.draftId ?? null,
-      schema_search: q.schemaSearch ?? null,
-      template_search: q.templateSearch ?? null,
-      schema_show_selected: q.schemaShowSelected ?? null,
-      template_show_selected: q.templateShowSelected ?? null,
-    } as GetToolIn["body"],
+    },
   };
   const toolDetailDefault = await getToolDefault(input);
 

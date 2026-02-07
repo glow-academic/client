@@ -1,16 +1,28 @@
-"""Tools list endpoint - v4 API following DHH principles (skeleton)."""
+"""Tools list endpoint - v4 API following DHH principles.
+
+Two-pass architecture:
+1. SQL returns raw data with active_usage_count and total_usage_count
+2. Python computes permissions (can_edit, can_delete, can_duplicate)
+"""
 
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.artifacts.tool.permissions import (
+    compute_can_delete,
+    compute_can_duplicate,
+    compute_can_edit,
+)
+from app.api.v4.artifacts.tool.types import (
+    ListToolApiResponse,
+    ListToolApiTool,
+)
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
-    GetToolsListApiRequest,
-    GetToolsListApiResponse,
     GetToolsListSqlParams,
     GetToolsListSqlRow,
     load_sql_query,
@@ -29,26 +41,24 @@ router = APIRouter()
 
 @router.post(
     "/list",
-    response_model=GetToolsListApiResponse,
+    response_model=ListToolApiResponse,
     dependencies=[
         audit_activity("tools.list", "{{ actor.name }} visited the Tools page")
     ],
 )
 async def get_tool_list(
-    request: GetToolsListApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> GetToolsListApiResponse:
+) -> ListToolApiResponse:
     """Get tools list with permissions."""
-    tags = ["tools"]  # From router tags
+    tags = ["tools"]
 
     # Check for cache bypass header (for testing)
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
-    # Generate cache key from path and parsed body
-    body_dict = request.model_dump()
-    cache_key_val = cache_key(http_request.url.path, body_dict)
+    # Generate cache key from path
+    cache_key_val = cache_key(http_request.url.path, {})
 
     # Try cache (unless bypassed)
     if not bypass_cache:
@@ -56,7 +66,7 @@ async def get_tool_list(
         if cached:
             response.headers["X-Cache-Tags"] = ",".join(tags)
             response.headers["X-Cache-Hit"] = "1"
-            return GetToolsListApiResponse.model_validate(cached["data"])
+            return ListToolApiResponse.model_validate(cached["data"])
 
     sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
@@ -74,7 +84,7 @@ async def get_tool_list(
         params = GetToolsListSqlParams(profile_id=profile_id)
         sql_params = params.to_tuple()
 
-        # Execute query with typed helper - automatically detects and calls function if present
+        # Execute query with typed helper
         result = cast(
             GetToolsListSqlRow,
             await execute_sql_typed(
@@ -86,12 +96,50 @@ async def get_tool_list(
 
         # Set audit context
         if result.actor_name:
-            audit_set(http_request, actor={"name": result.actor_name, "id": profile_id})
+            audit_set(
+                http_request,
+                actor={"name": result.actor_name, "id": profile_id},
+            )
 
-        # Convert SQL result to API response (no manual filtering needed - SQL handles it)
-        api_response = GetToolsListApiResponse.model_validate(result.model_dump())
+        # Get user_role from SQL result for Python permission computation
+        user_role = result.user_role
 
-        # Cache response (use mode='json' to serialize UUIDs and other types)
+        # Compute permissions for each tool in Python
+        tools_with_permissions: list[ListToolApiTool] = []
+        for tool in result.tools or []:
+            # Compute permissions based on user role and tool state
+            can_edit_val = compute_can_edit(
+                user_role=user_role,
+                active_usage_count=tool.active_usage_count or 0,
+            )
+            can_delete_val = compute_can_delete(
+                user_role=user_role,
+                usage_count=tool.total_usage_count or 0,
+            )
+            can_duplicate_val = compute_can_duplicate(user_role)
+
+            # Create tool with computed permissions
+            tools_with_permissions.append(
+                ListToolApiTool(
+                    tool_id=tool.tool_id,
+                    name=tool.name,
+                    description=tool.description,
+                    active=tool.active,
+                    updated_at=tool.updated_at,
+                    can_edit=can_edit_val,
+                    can_duplicate=can_duplicate_val,
+                    can_delete=can_delete_val,
+                )
+            )
+
+        # Build API response with computed permissions
+        api_response = ListToolApiResponse(
+            actor_name=result.actor_name,
+            tools=tools_with_permissions,
+            total_count=len(tools_with_permissions),
+        )
+
+        # Cache response
         await set_cached(
             cache_key_val,
             {"data": api_response.model_dump(mode="json")},

@@ -1,28 +1,33 @@
-"""Rubric page handler - routes rubric generation to artifacts/generate.py."""
+"""Rubric generation router - unified handler for all rubric resource types.
+
+Uses the domain_ids-based API pattern:
+1. Client sends domain_ids (which domains to generate)
+2. Server looks up agent_ids and resource_types from get_rubric_websocket()
+3. Server creates generation run and emits to generate_artifact handler
+"""
 
 import uuid
 from typing import Any
 
 from fastapi import APIRouter
 
+from app.api.v4.artifacts.rubric.get import get_rubric_websocket
 from app.infra.v4.generation import convert_tools_to_dict, render_developer_instructions
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
+from app.socket.v4.artifacts.rubric.types import GenerateRubricPayload
 from app.socket.v4.artifacts.types import GenerateErrorApiRequest
-from app.sql.types import GetRubricApiRequest, GetRubricSqlParams, GetRubricSqlRow
-from app.utils.sql_helper import execute_sql_typed, load_sql
+from app.utils.sql_helper import load_sql
 
 internal_sio = get_internal_sio()
 
 client_router = APIRouter()
 server_router = APIRouter()
 
-GET_RUBRIC_SQL_PATH = "app/sql/v4/queries/rubrics/get_rubric_complete.sql"
 CREATE_RUN_SQL_PATH = "app/sql/v4/queries/generate/start/get_generation_run_context_and_create_run_complete.sql"
 TEXT_RUN_CONTEXT_SQL_PATH = "app/sql/v4/queries/generate/text/get_text_run_context_for_existing_run_complete.sql"
-
 
 RUBRIC_RESOURCE_TYPES = [
     "names",
@@ -34,14 +39,6 @@ RUBRIC_RESOURCE_TYPES = [
     "standard_groups",
     "standards",
 ]
-
-
-class GenerateRubricPayload(GetRubricApiRequest):
-    """Request to generate rubric resources."""
-
-    agent_type: str | None = None
-    resource_types: list[str]
-    user_instructions: list[str] | None = None
 
 
 def format_rubric_context(
@@ -95,14 +92,14 @@ Generate descriptions for ALL combinations of standard groups and standards."""
 async def _generate_rubric_impl(
     sid: str, data: GenerateRubricPayload, profile_id: uuid.UUID
 ) -> None:
-    """Handle rubric generation - fetch context then route to generate_artifact."""
+    """Handle rubric generation using domain_ids-based pattern."""
     try:
-        if not data.resource_types:
+        if not data.domain_ids:
             await emit_to_internal(
                 "generate_call_error",
                 GenerateErrorApiRequest(
                     sid=sid,
-                    error_message="resource_types must be provided",
+                    error_message="domain_ids must be provided",
                     artifact_type="rubric",
                     group_id=None,
                     resource_type="rubric",
@@ -111,9 +108,53 @@ async def _generate_rubric_impl(
             )
             return
 
-        invalid_types = [
-            rt for rt in data.resource_types if rt not in RUBRIC_RESOURCE_TYPES
-        ]
+        # Step 1: Fetch rubric data via websocket function for domain/agent mappings
+        result = await get_rubric_websocket(
+            profile_id=profile_id,
+            rubric_id=data.rubric_id,
+            draft_id=data.draft_id,
+        )
+
+        # Build domain_id -> agent_id mapping from result.domains
+        domain_to_agent: dict[uuid.UUID, uuid.UUID | None] = {}
+        if result.domains:
+            for domain in result.domains:
+                domain_to_agent[domain.domain_id] = domain.agent_id
+
+        # Build domain_id -> resource_type mapping from result
+        domain_to_resource: dict[uuid.UUID | None, str] = {
+            result.name_domain_id: "names",
+            result.description_domain_id: "descriptions",
+            result.flag_domain_id: "flags",
+            result.departments_domain_id: "departments",
+            result.points_domain_id: "points",
+            result.pass_points_domain_id: "pass_points",
+            result.standard_groups_domain_id: "standard_groups",
+            result.standards_domain_id: "standards",
+        }
+        domain_to_resource.pop(None, None)
+
+        # Derive resource_types from domain_ids
+        resource_types: list[str] = []
+        for did in data.domain_ids:
+            if did in domain_to_resource:
+                resource_types.append(domain_to_resource[did])
+
+        if not resource_types:
+            await emit_to_internal(
+                "generate_call_error",
+                GenerateErrorApiRequest(
+                    sid=sid,
+                    error_message="No valid domain_ids provided",
+                    artifact_type="rubric",
+                    group_id=None,
+                    resource_type="rubric",
+                ),
+                sid=sid,
+            )
+            return
+
+        invalid_types = [rt for rt in resource_types if rt not in RUBRIC_RESOURCE_TYPES]
         if invalid_types:
             await emit_to_internal(
                 "generate_call_error",
@@ -128,83 +169,38 @@ async def _generate_rubric_impl(
             )
             return
 
+        # Get agent_id from the first valid domain_id
+        agent_id: uuid.UUID | None = None
+        for did in data.domain_ids:
+            if did in domain_to_agent and domain_to_agent[did] is not None:
+                agent_id = domain_to_agent[did]
+                break
+
+        if not agent_id:
+            await emit_to_internal(
+                "generate_call_error",
+                GenerateErrorApiRequest(
+                    sid=sid,
+                    error_message="No agent configured for rubric generation",
+                    artifact_type="rubric",
+                    group_id=str(result.group_id) if result.group_id else None,
+                    resource_type="rubric",
+                ),
+                sid=sid,
+            )
+            return
+
+        # Build rubric context for standard descriptions if needed
         rubric_context_text: str | None = None
+        if "standards" in resource_types or "standard_groups" in resource_types:
+            resources_bucket = result.resources.resources if result.resources else None
+            if resources_bucket:
+                rubric_context_text = format_rubric_context(
+                    resources_bucket.standard_groups,
+                    resources_bucket.standards,
+                )
 
         async with get_db_connection() as conn:
-            rubric_sql = load_sql(GET_RUBRIC_SQL_PATH)
-            rubric_params = GetRubricSqlParams(
-                profile_id=profile_id,
-                rubric_id=data.rubric_id,
-                draft_id=data.draft_id,
-                description_search=None,
-                standard_group_search=None,
-                mcp=data.mcp,
-            )
-            rubric_rows = await execute_sql_typed(
-                conn, rubric_sql, rubric_params, GetRubricSqlRow
-            )
-            result = rubric_rows[0] if rubric_rows else None
-            if not result:
-                await emit_to_internal(
-                    "generate_call_error",
-                    GenerateErrorApiRequest(
-                        sid=sid,
-                        error_message="Failed to load rubric context",
-                        artifact_type="rubric",
-                        group_id=None,
-                        resource_type="rubric",
-                    ),
-                    sid=sid,
-                )
-                return
-
-            if (
-                "standards" in data.resource_types
-                or "standard_groups" in data.resource_types
-            ):
-                rubric_context_text = format_rubric_context(
-                    result.standard_groups, result.standards
-                )
-
-            agent_type = data.agent_type
-            if not agent_type and len(data.resource_types) == 1:
-                resource_to_agent_type = {
-                    "names": "name",
-                    "descriptions": "description",
-                    "departments": "departments",
-                    "flags": "flags",
-                    "points": "points",
-                    "pass_points": "pass_points",
-                    "standard_groups": "standard_groups",
-                    "standards": "standards",
-                }
-                agent_type = resource_to_agent_type.get(data.resource_types[0])
-
-            agent_type_map = {
-                "name": result.name_agent_id,
-                "description": result.description_agent_id,
-                "departments": result.departments_agent_id,
-                "flags": result.flag_agent_id,
-                "points": result.points_agent_id,
-                "pass_points": result.pass_points_agent_id,
-                "standard_groups": result.standard_groups_agent_id,
-                "standards": result.standards_agent_id,
-            }
-            agent_id = agent_type_map.get(agent_type or "standard_groups")
-            if not agent_id:
-                await emit_to_internal(
-                    "generate_call_error",
-                    GenerateErrorApiRequest(
-                        sid=sid,
-                        error_message="No agent configured for rubric generation",
-                        artifact_type="rubric",
-                        group_id=str(result.group_id) if result.group_id else None,
-                        resource_type="rubric",
-                    ),
-                    sid=sid,
-                )
-                return
-
             create_run_sql = load_sql(CREATE_RUN_SQL_PATH)
             create_run_row = await conn.fetchrow(
                 create_run_sql,
@@ -230,7 +226,7 @@ async def _generate_rubric_impl(
                     ),
                     sid=sid,
                 )
-            return
+                return
 
             run_id = str(create_run_row["run_id"])
             group_id = create_run_row["group_id"] or result.group_id
@@ -282,9 +278,7 @@ async def _generate_rubric_impl(
             {
                 "sid": sid,
                 "artifact_type": "rubric",
-                "resource_type": data.resource_types[0]
-                if data.resource_types
-                else "rubric",
+                "resource_type": resource_types[0] if resource_types else "rubric",
                 "run_id": run_id,
                 "group_id": str(group_id) if group_id else None,
                 "message_id": None,
@@ -328,7 +322,6 @@ async def rubric_generate(sid: str, data: dict[str, Any]) -> None:
         try:
             profile_id_str = await find_profile_by_socket(sid)
         except Exception as lookup_error:
-            # If profile lookup fails (e.g., Redis recursion), emit error and return
             await emit_to_internal(
                 "generate_call_error",
                 GenerateErrorApiRequest(
@@ -373,12 +366,8 @@ async def rubric_generate(sid: str, data: dict[str, Any]) -> None:
 
 @internal_sio.on("rubric_generate")  # type: ignore
 async def rubric_generate_internal(data: dict[str, Any]) -> None:
-    """Handle rubric_generate event from internal bus (server-to-server).
-
-    Routes directly to artifacts/generate.py which will create run and handle generation.
-    """
+    """Handle rubric_generate event from internal bus (server-to-server)."""
     try:
-        # Route to artifacts/generate.py which will create run and handle generation
         await internal_sio.emit("generate_artifact", data)
     except Exception as e:
         sid = data.get("sid", "")

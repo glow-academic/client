@@ -13,6 +13,7 @@ from app.sql.types import (
     ListModelsApiResponse,
     ListModelsSqlParams,
     ListModelsSqlRow,
+    load_sql_query,
 )
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
@@ -41,18 +42,22 @@ async def get_model_list(
     """Get models list (flat structure with provider info)."""
     tags = ["models"]  # From router tags
 
+    # Check for cache bypass header (for testing)
+    bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
+
     # Generate cache key from path and parsed body
     body_dict = request.model_dump(mode="json")
     cache_key_val = cache_key(http_request.url.path, body_dict)
 
-    # Try cache
-    cached = await get_cached(cache_key_val)
-    if cached:
-        response.headers["X-Cache-Tags"] = ",".join(tags)
-        response.headers["X-Cache-Hit"] = "1"
-        return ListModelsApiResponse.model_validate(cached["data"])
+    # Try cache (unless bypassed)
+    if not bypass_cache:
+        cached = await get_cached(cache_key_val)
+        if cached:
+            response.headers["X-Cache-Tags"] = ",".join(tags)
+            response.headers["X-Cache-Hit"] = "1"
+            return ListModelsApiResponse.model_validate(cached["data"])
 
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -68,7 +73,7 @@ async def get_model_list(
         params = ListModelsSqlParams(**request.model_dump(), profile_id=profile_id)
         sql_params = params.to_tuple()
 
-        # Execute query with typed helper - automatically detects and calls function if present
+        # Execute query with typed helper
         result = cast(
             ListModelsSqlRow,
             await execute_sql_typed(
@@ -80,7 +85,10 @@ async def get_model_list(
 
         # Set audit context
         if result.actor_name:
-            audit_set(http_request, actor={"name": result.actor_name, "id": profile_id})
+            audit_set(
+                http_request,
+                actor={"name": result.actor_name, "id": profile_id},
+            )
 
         # Convert SQL result to API response
         api_response = ListModelsApiResponse.model_validate(result.model_dump())

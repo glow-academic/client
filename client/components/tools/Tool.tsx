@@ -136,24 +136,43 @@ function ToolComponent({
   // Memoize toolData fields used in renderStep
   const stableToolDataFields = React.useMemo(() => {
     if (!toolData) return null;
+    const resources = toolData.resources?.resources;
+    const current = toolData.resources?.current;
+    // Derive selected IDs from current bucket
+    const currentArgsIds = (current?.args ?? [])
+      .map((a) => a.id)
+      .filter((id): id is string => !!id);
+    const currentArgsOutputsIds = (current?.args_outputs ?? [])
+      .map((a) => a.id)
+      .filter((id): id is string => !!id);
     return {
       group_id: toolData.group_id,
-      args_ids: toolData.args_ids,
-      args_resources: toolData.args_resources,
+      // Selected IDs (from current bucket)
+      args_ids: currentArgsIds,
+      args_outputs_ids: currentArgsOutputsIds,
+      // Selected resources (from current bucket)
+      args_resources: current?.args ?? [],
+      args_outputs_resources: current?.args_outputs ?? [],
+      // All resources (from resources bucket)
+      args: resources?.args ?? [],
+      args_outputs: resources?.args_outputs ?? [],
+      // Show/required/suggestions (flat on response)
       show_args: toolData.show_args,
       args_suggestions: toolData.args_suggestions,
-      args: toolData.args,
       args_required: toolData.args_required,
-      args_agent_id: toolData.args_agent_id,
-      args_outputs_ids: toolData.args_outputs_ids,
-      args_outputs_resources: toolData.args_outputs_resources,
       show_args_outputs: toolData.show_args_outputs,
       args_outputs_suggestions: toolData.args_outputs_suggestions,
-      args_outputs: toolData.args_outputs,
       args_outputs_required: toolData.args_outputs_required,
-      args_outputs_agent_id: toolData.args_outputs_agent_id,
-      input_args_fields: toolData.input_args_fields ?? [],
-      output_args_outputs: toolData.output_args_outputs ?? [],
+      // Domain IDs for generation
+      args_domain_id: toolData.args_domain_id,
+      args_outputs_domain_id: toolData.args_outputs_domain_id,
+      // AI generate flags (replaces agent_id checks)
+      args_show_ai_generate: toolData.args_show_ai_generate,
+      args_outputs_show_ai_generate: toolData.args_outputs_show_ai_generate,
+      // Name/description current selections (for save)
+      name_id: current?.names?.[0]?.id ?? null,
+      description_id: current?.descriptions?.[0]?.id ?? null,
+      active_flag_id: current?.flags?.[0]?.flag_option_id ?? null,
     };
   }, [toolData]);
 
@@ -163,15 +182,12 @@ function ToolComponent({
       if (!stableToolDataFields) return false;
       switch (resourceType) {
         case "args":
-          return (
-            stableToolDataFields.args_resources?.some((r) => r.generated) ??
-            false
+          return stableToolDataFields.args_resources.some(
+            (r) => r.generated
           );
         case "args_outputs":
-          return (
-            stableToolDataFields.args_outputs_resources?.some(
-              (r) => r.generated
-            ) ?? false
+          return stableToolDataFields.args_outputs_resources.some(
+            (r) => r.generated
           );
         default:
           return false;
@@ -248,11 +264,18 @@ function ToolComponent({
         args_outputs_ids: [] as string[],
       };
     }
+    const current = data.resources?.current;
+    const currentName = current?.names?.[0];
+    const currentDesc = current?.descriptions?.[0];
     return {
-      name: data.name || "",
-      description: data.description || "",
-      args_ids: data.args_ids ?? [],
-      args_outputs_ids: data.args_outputs_ids ?? [],
+      name: currentName?.name || "",
+      description: currentDesc?.description || "",
+      args_ids: (current?.args ?? [])
+        .map((a) => a.id)
+        .filter((id): id is string => !!id),
+      args_outputs_ids: (current?.args_outputs ?? [])
+        .map((a) => a.id)
+        .filter((id): id is string => !!id),
     };
   }, []);
 
@@ -284,14 +307,24 @@ function ToolComponent({
     });
   }, [argsOutputsById, formState.args_ids]);
 
-  // Memoize stringified array dependencies
+  // Memoize stringified array dependencies (derive from resources.current)
   const argsIdsStr = React.useMemo(
-    () => JSON.stringify(toolData?.args_ids ?? []),
-    [toolData?.args_ids]
+    () =>
+      JSON.stringify(
+        (toolData?.resources?.current?.args ?? [])
+          .map((a) => a.id)
+          .filter(Boolean)
+      ),
+    [toolData?.resources?.current?.args]
   );
   const argsOutputsIdsStr = React.useMemo(
-    () => JSON.stringify(toolData?.args_outputs_ids ?? []),
-    [toolData?.args_outputs_ids]
+    () =>
+      JSON.stringify(
+        (toolData?.resources?.current?.args_outputs ?? [])
+          .map((a) => a.id)
+          .filter(Boolean)
+      ),
+    [toolData?.resources?.current?.args_outputs]
   );
 
   // Update form state when server data changes
@@ -310,8 +343,8 @@ function ToolComponent({
       return prev;
     });
   }, [
-    toolData?.name,
-    toolData?.description,
+    toolData?.resources?.current?.names,
+    toolData?.resources?.current?.descriptions,
     argsIdsStr,
     argsOutputsIdsStr,
     getInitialFormState,
@@ -377,10 +410,13 @@ function ToolComponent({
     () =>
       JSON.stringify({
         draftId: draftId || null,
+        name_id: stableToolDataFields?.name_id,
+        description_id: stableToolDataFields?.description_id,
+        active_flag_id: stableToolDataFields?.active_flag_id,
         args_ids: formState.args_ids,
         args_outputs_ids: formState.args_outputs_ids,
       }),
-    [draftId, formArgsIdsStr, formArgsOutputsIdsStr]
+    [draftId, stableToolDataFields?.name_id, stableToolDataFields?.description_id, stableToolDataFields?.active_flag_id, formArgsIdsStr, formArgsOutputsIdsStr]
   );
 
   const lastPatchedKeyRef = React.useRef<string | null>(null);
@@ -400,9 +436,14 @@ function ToolComponent({
     const timer = setTimeout(async () => {
       try {
         if (!patchToolDraftActionRef.current) return;
+        const currentFields = toolDataRef.current;
+        const currentBucket = currentFields?.resources?.current;
         const result = await patchToolDraftActionRef.current({
           body: {
             input_draft_id: draftId || null,
+            name_id: currentBucket?.names?.[0]?.id ?? null,
+            description_id: currentBucket?.descriptions?.[0]?.id ?? null,
+            active_flag_id: currentBucket?.flags?.[0]?.flag_option_id ?? null,
             args_ids: formState.args_ids,
             args_outputs_ids: formState.args_outputs_ids,
             expected_version: lastSavedVersionRef.current,
@@ -560,36 +601,43 @@ function ToolComponent({
     };
   }, [socket, isConnected, toolData?.group_id]);
 
-  // Multi-generation handler - accepts list of resource types and optional user instructions
-  const determineAgentType = useCallback(
-    (resourceTypes: ToolResourceType[]): string | null => {
-      if (resourceTypes.length === 1) {
-        // Single resource type - map to agent_type
-        const agentTypeMap: Partial<Record<ToolResourceType, string>> = {
-          args: "args",
-          args_outputs: "args_outputs",
-        };
-        const firstType = resourceTypes[0];
-        if (firstType && firstType in agentTypeMap) {
-          return agentTypeMap[firstType] ?? null;
+  // Map resource types to domain_ids for generation
+  const getDomainIds = useCallback(
+    (resourceTypes: ToolResourceType[]): string[] => {
+      const ids: string[] = [];
+      resourceTypes.forEach((rt) => {
+        switch (rt) {
+          case "args":
+            if (stableToolDataFields?.args_domain_id) {
+              ids.push(stableToolDataFields.args_domain_id);
+            }
+            break;
+          case "args_outputs":
+            if (stableToolDataFields?.args_outputs_domain_id) {
+              ids.push(stableToolDataFields.args_outputs_domain_id);
+            }
+            break;
         }
-      } else if (resourceTypes.length === 2) {
-        // Both resources - use general agent if available
-        return "general";
-      }
-      return null;
+      });
+      return ids;
     },
-    []
+    [stableToolDataFields]
   );
 
   const handleGenerateResources = useCallback(
     async (
       resourceTypes: ToolResourceType[],
-      agentType: string | null,
+      _agentType: string | null,
       userInstructions?: string
     ) => {
       if (!socket || !isConnected) {
         toast.error("WebSocket not connected");
+        return;
+      }
+
+      const domainIds = getDomainIds(resourceTypes);
+      if (domainIds.length === 0) {
+        toast.error("No generation domains available for selected resources");
         return;
       }
 
@@ -604,17 +652,15 @@ function ToolComponent({
       const formData = formDataRef.current;
       const draftId = (formData["draftId"] as string | undefined) ?? null;
 
-      // Emit tool_generate event
+      // Emit tool_generate event with domain_ids
       socket.emit("tool_generate", {
-        resource_types: resourceTypes,
-        agent_type: agentType,
+        domain_ids: domainIds,
         user_instructions: userInstructions ? [userInstructions] : null,
         draft_id: draftId || null,
-        mcp: false,
         tool_id: toolId || null,
       });
     },
-    [socket, isConnected, toolId]
+    [socket, isConnected, toolId, getDomainIds]
   );
 
   // Disabled logic based on can_edit flag - check in both new and edit modes
@@ -625,7 +671,7 @@ function ToolComponent({
 
   // Set breadcrumb context when tool data is loaded
   useEffect(() => {
-    const toolName = toolData?.name;
+    const toolName = toolData?.resources?.current?.names?.[0]?.name;
     if (toolName && toolId && isEditMode) {
       setEntityMetadata({
         entityId: toolId,
@@ -668,15 +714,29 @@ function ToolComponent({
         throw new Error("Tool name is required");
       }
 
+      // Get resource IDs from current selections
+      const currentBucket = toolData?.resources?.current;
+      const nameId = currentBucket?.names?.[0]?.id;
+      if (!nameId) {
+        toast.error("A name resource must be selected");
+        throw new Error("A name resource must be selected");
+      }
+      const groupId = toolData?.group_id;
+      if (!groupId) {
+        toast.error("Group ID is required");
+        throw new Error("Group ID is required");
+      }
+
       try {
         await saveToolAction({
           body: {
+            group_id: groupId,
             input_tool_id: isEditMode && toolId ? toolId : null,
-            name: formState.name,
-            description: formState.description || "",
+            name_id: nameId,
+            description_id: currentBucket?.descriptions?.[0]?.id ?? null,
+            active_flag_id: currentBucket?.flags?.[0]?.flag_option_id ?? null,
             args_ids: formState.args_ids,
             args_outputs_ids: formState.args_outputs_ids,
-            active: true,
           },
         });
         toast.success(
@@ -774,16 +834,15 @@ function ToolComponent({
   const handleModalGenerate = useCallback(
     async (selectedResources: string[], instructions: string) => {
       const resourceTypes = selectedResources as ToolResourceType[];
-      const agentType = determineAgentType(resourceTypes);
       await handleGenerateResources(
         resourceTypes,
-        agentType,
+        null,
         instructions.trim() || undefined
       );
       setShowGenerateModal(false);
       setModalInstructions("");
     },
-    [handleGenerateResources, determineAgentType]
+    [handleGenerateResources]
   );
 
   // Listen for full-page-generate event from layout
@@ -1031,7 +1090,7 @@ function ToolComponent({
               actions={
                 stepResources["args"] &&
                 stepResources["args"].length > 0 &&
-                currentToolData?.args_agent_id ? (
+                currentToolData?.args_show_ai_generate ? (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -1152,18 +1211,17 @@ function ToolComponent({
                 <Args
                   args_ids={formState.args_ids ?? []}
                   input_args_fields={
-                    currentToolData?.input_args_fields
-                      ?.filter(
-                        (f): f is NonNullable<typeof f> =>
-                          f !== null &&
-                          f.args_id !== null &&
+                    (currentToolData?.args ?? [])
+                      .filter(
+                        (f) =>
+                          f.id !== null &&
                           f.name !== null &&
                           f.field_type !== null &&
                           f.required !== null &&
                           f.position !== null
                       )
                       .map((f) => ({
-                        args_id: f.args_id!,
+                        args_id: f.id!,
                         name: f.name!,
                         description: f.description ?? "",
                         field_type: f.field_type!,
@@ -1171,12 +1229,11 @@ function ToolComponent({
                         default_value: f.default_value ?? "",
                         position: f.position!,
                         generated: f.generated ?? false,
-                      })) ?? []
+                      }))
                   }
                   disabled={disabled}
                   {...(createArgsAction ? { createArgsAction } : {})}
                   group_id={currentToolData?.group_id ?? null}
-                  agent_id={currentToolData?.args_agent_id ?? null}
                 />
               </div>
             </StepCard>
@@ -1237,7 +1294,7 @@ function ToolComponent({
               actions={
                 stepResources["args_outputs"] &&
                 stepResources["args_outputs"].length > 0 &&
-                currentToolData?.args_outputs_agent_id ? (
+                currentToolData?.args_outputs_show_ai_generate ? (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -1367,35 +1424,33 @@ function ToolComponent({
                 <ArgsOutputs
                   args_outputs_ids={formState.args_outputs_ids ?? []}
                   output_args_outputs={
-                    currentToolData?.output_args_outputs
-                      ?.filter(
-                        (o): o is NonNullable<typeof o> =>
-                          o !== null &&
-                          o.args_outputs_id !== null &&
+                    (currentToolData?.args_outputs ?? [])
+                      .filter(
+                        (o) =>
+                          o.id !== null &&
                           o.args_id !== null &&
                           o.name !== null
                       )
                       .map((o) => ({
-                        args_outputs_id: o.args_outputs_id!,
+                        args_outputs_id: o.id!,
                         args_id: o.args_id!,
                         name: o.name!,
                         template: o.template ?? "",
                         generated: o.generated ?? false,
-                      })) ?? []
+                      }))
                   }
                   input_args_fields={
-                    currentToolData?.input_args_fields
-                      ?.filter(
-                        (f): f is NonNullable<typeof f> =>
-                          f !== null &&
-                          f.args_id !== null &&
+                    (currentToolData?.args ?? [])
+                      .filter(
+                        (f) =>
+                          f.id !== null &&
                           f.name !== null &&
                           f.field_type !== null &&
                           f.required !== null &&
                           f.position !== null
                       )
                       .map((f) => ({
-                        args_id: f.args_id!,
+                        args_id: f.id!,
                         name: f.name!,
                         description: f.description ?? "",
                         field_type: f.field_type!,
@@ -1403,14 +1458,13 @@ function ToolComponent({
                         default_value: f.default_value ?? "",
                         position: f.position!,
                         generated: f.generated ?? false,
-                      })) ?? []
+                      }))
                   }
                   disabled={disabled}
                   {...(createArgsOutputsAction
                     ? { createArgsOutputsAction }
                     : {})}
                   group_id={currentToolData?.group_id ?? null}
-                  agent_id={currentToolData?.args_outputs_agent_id ?? null}
                 />
               </div>
             </StepCard>
@@ -1496,17 +1550,19 @@ function ToolComponent({
 // Memoize component to prevent re-renders when only prop references change
 export default React.memo(ToolComponent, (prevProps, nextProps) => {
   // Compare toolData by resource IDs, not object reference
+  const prevCurrent = prevProps.toolData?.resources?.current;
+  const nextCurrent = nextProps.toolData?.resources?.current;
   const prevIds = {
-    name: prevProps.toolData?.name,
-    description: prevProps.toolData?.description,
-    args_ids: prevProps.toolData?.args_ids,
-    args_outputs_ids: prevProps.toolData?.args_outputs_ids,
+    name: prevCurrent?.names?.[0]?.name,
+    description: prevCurrent?.descriptions?.[0]?.description,
+    args_ids: prevCurrent?.args?.map((a) => a.id),
+    args_outputs_ids: prevCurrent?.args_outputs?.map((a) => a.id),
   };
   const nextIds = {
-    name: nextProps.toolData?.name,
-    description: nextProps.toolData?.description,
-    args_ids: nextProps.toolData?.args_ids,
-    args_outputs_ids: nextProps.toolData?.args_outputs_ids,
+    name: nextCurrent?.names?.[0]?.name,
+    description: nextCurrent?.descriptions?.[0]?.description,
+    args_ids: nextCurrent?.args?.map((a) => a.id),
+    args_outputs_ids: nextCurrent?.args_outputs?.map((a) => a.id),
   };
 
   // Compare primitive props

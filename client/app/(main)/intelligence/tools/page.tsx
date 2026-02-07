@@ -9,6 +9,7 @@ import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
+type ToolsListIn = InputOf<"/api/v4/tools/list", "post">;
 type ToolsListOut = OutputOf<"/api/v4/tools/list", "post">;
 type DeleteToolIn = InputOf<"/api/v4/tools/delete", "post">;
 type DeleteToolOut = OutputOf<"/api/v4/tools/delete", "post">;
@@ -23,7 +24,7 @@ const getToolsList = async (): Promise<ToolsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
     "/tools/list",
-    { body: {} },
+    {} as ToolsListIn,
     {
       cache: "no-store",
       ...(bypassCache && {
