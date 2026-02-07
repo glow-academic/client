@@ -41,6 +41,8 @@ type EvalsListOut = {
   rubric_options: BenchmarkOverviewOut["rubric_options"];
   department_options: BenchmarkOverviewOut["department_options"];
   agent_options: BenchmarkOverviewOut["agent_options"];
+  date_range_earliest: string | null;
+  date_range_latest: string | null;
 };
 
 /** ---- Direct fetch (no Next.js cache) ---- */
@@ -215,6 +217,8 @@ export default async function BenchmarkPage({
     rubric_options: overviewData.rubric_options || [],
     department_options: overviewData.department_options || [],
     agent_options: overviewData.agent_options || [],
+    date_range_earliest: overviewData.date_range_earliest ?? null,
+    date_range_latest: overviewData.date_range_latest ?? null,
   };
 
   // Create historyKey for Suspense boundary

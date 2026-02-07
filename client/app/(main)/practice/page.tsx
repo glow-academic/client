@@ -168,6 +168,8 @@ export default async function PracticePage({
               historyInfiniteMode={historyInfiniteMode}
               historySortBy={historySortBy}
               historySortOrder={historySortOrder}
+              accessibleCohortIds={profileContext.cohort_ids || []}
+              accessibleDepartmentIds={profileContext.department_ids || []}
             />
           </Suspense>
         </div>
@@ -187,6 +189,8 @@ async function PracticeHistorySection({
   historyInfiniteMode,
   historySortBy,
   historySortOrder,
+  accessibleCohortIds,
+  accessibleDepartmentIds,
 }: {
   defaultFilters: {
     startDate: string;
@@ -203,6 +207,8 @@ async function PracticeHistorySection({
   historyInfiniteMode?: boolean | undefined;
   historySortBy: string;
   historySortOrder: string;
+  accessibleCohortIds: string[];
+  accessibleDepartmentIds: string[];
 }) {
   const historyFilters: PracticeHistoryIn = {
     body: {
@@ -214,6 +220,8 @@ async function PracticeHistorySection({
       page: historyPage,
       page_size: historyPageSize,
       show_archived: false,
+      accessible_cohort_ids: accessibleCohortIds,
+      accessible_department_ids: accessibleDepartmentIds,
       ...(historySearch && { search: historySearch }),
       ...(historySimulationIds &&
         historySimulationIds.length > 0 && {
@@ -266,6 +274,22 @@ async function PracticeHistorySection({
     };
   });
 
+  // Extract section-specific filter options from response
+  const cohortFilterOptions = (historyData.cohort_options || []).map(
+    (o: { value?: string | null; label?: string | null; count?: number | null }) => ({
+      value: String(o.value || ""),
+      label: o.label ?? null,
+      count: typeof o.count === "number" ? o.count : null,
+    })
+  );
+  const departmentFilterOptions = (historyData.department_options || []).map(
+    (o: { value?: string | null; label?: string | null; count?: number | null }) => ({
+      value: String(o.value || ""),
+      label: o.label ?? null,
+      count: typeof o.count === "number" ? o.count : null,
+    })
+  );
+
   return (
     <SimulationHistory
       data={dataArray}
@@ -282,6 +306,10 @@ async function PracticeHistorySection({
       scenarioOptions={scenarioOptions}
       showModeFilter={true}
       showCustomize={true}
+      cohortFilterOptions={cohortFilterOptions}
+      departmentFilterOptions={departmentFilterOptions}
+      dateRangeEarliest={historyData.date_range_earliest ?? null}
+      dateRangeLatest={historyData.date_range_latest ?? null}
     />
   );
 }

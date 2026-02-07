@@ -1,5 +1,6 @@
 """Get endpoint for benchmark artifact."""
 
+import asyncio
 from typing import Annotated
 from uuid import UUID
 
@@ -61,12 +62,42 @@ async def get_benchmark(
             [UUID(d) for d in request.department_ids] if request.department_ids else None
         )
 
-        # Step 1: Fetch eval summary from MV
-        eval_summary_result = await get_benchmark_eval_summary_internal(
-            conn=conn,
-            department_ids=department_uuids,
-            page_limit=200,
-            bypass_cache=bypass_cache,
+        # Step 1: Fetch eval summary from MV and date range in parallel
+        async def fetch_eval_summary():
+            return await get_benchmark_eval_summary_internal(
+                conn=conn,
+                department_ids=department_uuids,
+                page_limit=200,
+                bypass_cache=bypass_cache,
+            )
+
+        async def fetch_benchmark_date_range() -> tuple[str | None, str | None]:
+            if not department_uuids:
+                row = await conn.fetchrow(
+                    """
+                    SELECT MIN(created_at) as earliest, MAX(created_at) as latest
+                    FROM mv_benchmark_eval_summary
+                    """
+                )
+            else:
+                row = await conn.fetchrow(
+                    """
+                    SELECT MIN(created_at) as earliest, MAX(created_at) as latest
+                    FROM mv_benchmark_eval_summary
+                    WHERE department_ids && $1::uuid[]
+                    """,
+                    department_uuids,
+                )
+            if row and row["earliest"]:
+                return (
+                    row["earliest"].isoformat(),
+                    row["latest"].isoformat(),
+                )
+            return (None, None)
+
+        eval_summary_result, benchmark_date_range = await asyncio.gather(
+            fetch_eval_summary(),
+            fetch_benchmark_date_range(),
         )
 
         # Step 2: Collect all unique IDs from results
@@ -341,6 +372,8 @@ async def get_benchmark(
             rubric_options=rubric_options,
             department_options=department_options,
             agent_options=agent_options,
+            date_range_earliest=benchmark_date_range[0],
+            date_range_latest=benchmark_date_range[1],
         )
 
     except HTTPException:

@@ -1,5 +1,6 @@
 """Attempt list endpoint for unified attempt history data."""
 
+import asyncio
 from datetime import datetime
 from typing import Annotated, Any, cast
 from uuid import UUID
@@ -12,6 +13,11 @@ from app.api.v4.artifacts.attempt.types import (
     AttemptListItem,
     GetAttemptListRequest,
     GetAttemptListResponse,
+)
+from app.api.v4.artifacts.filter_helpers import (
+    fetch_cohort_filter_options,
+    fetch_date_range_from_mv,
+    fetch_department_filter_options,
 )
 from app.api.v4.artifacts.training.permissions import (
     compute_pass_pct,
@@ -27,7 +33,7 @@ from app.api.v4.views.analytics.attempts.get import get_attempt_facts_internal
 from app.api.v4.views.analytics.attempts.types import AttemptFactsItem
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db
+from app.main import get_db, get_pool
 from app.sql.types import (
     GetHomeContextSqlParams,
     GetHomeContextSqlRow,
@@ -433,15 +439,51 @@ async def list_attempts(
                 http_request, actor={"name": context.actor_name, "id": profile_id}
             )
 
-        result = await get_attempt_list_internal(
-            conn=conn,
-            request=request,
-            profile_resource_id=query_profile_id,
-            pass_threshold=context.pass_threshold,
-            actor_name=context.actor_name,
-            bypass_cache=bypass_cache,
-            cache_key_path=http_request.url.path,
+        pool = get_pool()
+        has_accessible_ids = bool(
+            request.accessible_cohort_ids or request.accessible_department_ids
         )
+
+        if has_accessible_ids and pool:
+            result, cohort_opts, dept_opts, date_range = await asyncio.gather(
+                get_attempt_list_internal(
+                    conn=conn,
+                    request=request,
+                    profile_resource_id=query_profile_id,
+                    pass_threshold=context.pass_threshold,
+                    actor_name=context.actor_name,
+                    bypass_cache=bypass_cache,
+                    cache_key_path=http_request.url.path,
+                ),
+                fetch_cohort_filter_options(pool, request.accessible_cohort_ids),
+                fetch_department_filter_options(pool, request.accessible_department_ids),
+                fetch_date_range_from_mv(pool, request.accessible_department_ids),
+            )
+            result.cohort_options = [
+                AttemptListFilterOption(
+                    value=o.value, label=o.label, count=o.count
+                )
+                for o in cohort_opts
+            ]
+            result.department_options = [
+                AttemptListFilterOption(
+                    value=o.value, label=o.label, count=o.count
+                )
+                for o in dept_opts
+            ]
+            result.date_range_earliest = date_range[0]
+            result.date_range_latest = date_range[1]
+        else:
+            result = await get_attempt_list_internal(
+                conn=conn,
+                request=request,
+                profile_resource_id=query_profile_id,
+                pass_threshold=context.pass_threshold,
+                actor_name=context.actor_name,
+                bypass_cache=bypass_cache,
+                cache_key_path=http_request.url.path,
+            )
+
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return result
     except HTTPException:

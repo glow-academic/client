@@ -8,6 +8,7 @@
 
 import type { LeaderboardOut } from "@/app/(main)/leaderboard/page";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useFilterOptions } from "@/contexts/filter-options-context";
 import { useProfile } from "@/contexts/profile-context";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -84,6 +85,25 @@ export default function Leaderboard({
   const { profile } = useProfile();
   const router = useRouter();
   const pathname = usePathname();
+
+  // Set section-specific filter options in context
+  const { setOptions } = useFilterOptions();
+  useEffect(() => {
+    setOptions({
+      cohortOptions: (leaderboardData.cohort_options || []).map((o) => ({
+        value: o.value || "",
+        label: o.label ?? null,
+        count: o.count ?? null,
+      })),
+      departmentOptions: (leaderboardData.department_options || []).map((o) => ({
+        value: o.value || "",
+        label: o.label ?? null,
+        count: o.count ?? null,
+      })),
+      dateRangeEarliest: leaderboardData.date_range_earliest ?? null,
+      dateRangeLatest: leaderboardData.date_range_latest ?? null,
+    });
+  }, [leaderboardData, setOptions]);
 
   // Use the data directly from props (fetched server-side)
   const hydratedRows = useMemo(() => {

@@ -79,9 +79,11 @@ function MainLayoutContent({
   const { getEntityName } = useBreadcrumbContext();
   const { clearOptions } = useFilterOptions();
 
-  // Clear section-specific filter options when navigating away from analytics
+  // Clear section-specific filter options when navigating away from analytics-related pages
   useEffect(() => {
-    if (!pathname.startsWith("/analytics")) {
+    const analyticsPages = ["/analytics", "/home", "/practice", "/leaderboard", "/benchmark"];
+    const isAnalyticsPage = analyticsPages.some((p) => pathname.startsWith(p));
+    if (!isAnalyticsPage) {
       clearOptions();
     }
   }, [pathname, clearOptions]);

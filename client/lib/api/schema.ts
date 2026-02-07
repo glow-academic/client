@@ -9647,6 +9647,10 @@ export interface components {
             department_options?: components["schemas"]["app__api__v4__artifacts__types__FilterOption"][];
             /** Agent Options */
             agent_options?: components["schemas"]["app__api__v4__artifacts__types__FilterOption"][];
+            /** Date Range Earliest */
+            date_range_earliest?: string | null;
+            /** Date Range Latest */
+            date_range_latest?: string | null;
         };
         /**
          * BenchmarkRubricItem
@@ -12621,6 +12625,10 @@ export interface components {
              * @default false
              */
             show_archived: boolean;
+            /** Accessible Cohort Ids */
+            accessible_cohort_ids?: string[];
+            /** Accessible Department Ids */
+            accessible_department_ids?: string[];
         };
         /**
          * GetAttemptListResponse
@@ -12657,6 +12665,14 @@ export interface components {
             scenario_options?: components["schemas"]["AttemptListFilterOption"][] | null;
             /** Profile Options */
             profile_options?: components["schemas"]["AttemptListFilterOption"][] | null;
+            /** Cohort Options */
+            cohort_options?: components["schemas"]["AttemptListFilterOption"][] | null;
+            /** Department Options */
+            department_options?: components["schemas"]["AttemptListFilterOption"][] | null;
+            /** Date Range Earliest */
+            date_range_earliest?: string | null;
+            /** Date Range Latest */
+            date_range_latest?: string | null;
         };
         /**
          * GetAttemptsRequest
@@ -18433,6 +18449,10 @@ export interface components {
              * @default 0
              */
             page_offset: number;
+            /** Accessible Cohort Ids */
+            accessible_cohort_ids?: string[];
+            /** Accessible Department Ids */
+            accessible_department_ids?: string[];
         };
         /**
          * LeaderboardResources
@@ -18475,6 +18495,14 @@ export interface components {
             simulation_options?: components["schemas"]["app__api__v4__artifacts__types__FilterOption"][];
             /** Profile Options */
             profile_options?: components["schemas"]["app__api__v4__artifacts__types__FilterOption"][];
+            /** Cohort Options */
+            cohort_options?: components["schemas"]["app__api__v4__artifacts__types__FilterOption"][];
+            /** Department Options */
+            department_options?: components["schemas"]["app__api__v4__artifacts__types__FilterOption"][];
+            /** Date Range Earliest */
+            date_range_earliest?: string | null;
+            /** Date Range Latest */
+            date_range_latest?: string | null;
         };
         /** LeaderboardScenarioResource */
         LeaderboardScenarioResource: {
@@ -20413,6 +20441,8 @@ export interface components {
             roles?: string[];
             /** Simulation Filters */
             simulation_filters?: string[];
+            /** Accessible Department Ids */
+            accessible_department_ids?: string[];
             /**
              * Page Limit
              * @default 50
@@ -20464,6 +20494,12 @@ export interface components {
             model_options?: components["schemas"]["app__api__v4__artifacts__types__FilterOption"][];
             /** Agent Options */
             agent_options?: components["schemas"]["app__api__v4__artifacts__types__FilterOption"][];
+            /** Department Options */
+            department_options?: components["schemas"]["app__api__v4__artifacts__types__FilterOption"][];
+            /** Date Range Earliest */
+            date_range_earliest?: string | null;
+            /** Date Range Latest */
+            date_range_latest?: string | null;
         };
         /**
          * PricingRunFactsItem
@@ -24582,6 +24618,10 @@ export interface components {
              * @default 0
              */
             page_offset: number;
+            /** Accessible Cohort Ids */
+            accessible_cohort_ids?: string[];
+            /** Accessible Department Ids */
+            accessible_department_ids?: string[];
         };
         /**
          * ReportsResources
@@ -24632,6 +24672,14 @@ export interface components {
             profile_options?: components["schemas"]["app__api__v4__artifacts__types__FilterOption"][];
             /** Scenario Options */
             scenario_options?: components["schemas"]["app__api__v4__artifacts__types__FilterOption"][];
+            /** Cohort Options */
+            cohort_options?: components["schemas"]["app__api__v4__artifacts__types__FilterOption"][];
+            /** Department Options */
+            department_options?: components["schemas"]["app__api__v4__artifacts__types__FilterOption"][];
+            /** Date Range Earliest */
+            date_range_earliest?: string | null;
+            /** Date Range Latest */
+            date_range_latest?: string | null;
         };
         /** ReportsRubricResource */
         ReportsRubricResource: {

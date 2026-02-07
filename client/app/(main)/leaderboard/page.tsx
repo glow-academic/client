@@ -71,6 +71,12 @@ export default async function LeaderboardPage({
       department_ids: filters.departmentIds,
       roles: filters.roles,
       simulation_filters: filters.simulationFilters,
+      sort_by: "highest_score",
+      sort_order: "desc",
+      page_limit: 50,
+      page_offset: 0,
+      accessible_cohort_ids: profileContext.cohort_ids || [],
+      accessible_department_ids: profileContext.department_ids || [],
     },
   });
 

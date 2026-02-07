@@ -44,6 +44,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useFilterOptions } from "@/contexts/filter-options-context";
 import type { AnalyticsFilters } from "@/lib/search-params/analytics-defaults";
 import {
   ColumnFiltersState,
@@ -75,6 +76,25 @@ export default function Reports({
 }: ReportsProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  // Set section-specific filter options in context
+  const { setOptions } = useFilterOptions();
+  useEffect(() => {
+    setOptions({
+      cohortOptions: (reportsData.cohort_options || []).map((o) => ({
+        value: o.value || "",
+        label: o.label ?? null,
+        count: o.count ?? null,
+      })),
+      departmentOptions: (reportsData.department_options || []).map((o) => ({
+        value: o.value || "",
+        label: o.label ?? null,
+        count: o.count ?? null,
+      })),
+      dateRangeEarliest: reportsData.date_range_earliest ?? null,
+      dateRangeLatest: reportsData.date_range_latest ?? null,
+    });
+  }, [reportsData, setOptions]);
 
   // Extract data from API response - read from normalized three-layer structure
   const profiles = useMemo(() => {

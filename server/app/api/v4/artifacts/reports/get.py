@@ -8,6 +8,11 @@ from uuid import UUID
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.artifacts.filter_helpers import (
+    fetch_cohort_filter_options,
+    fetch_date_range_from_mv,
+    fetch_department_filter_options,
+)
 from app.api.v4.artifacts.reports.permissions import build_reports_sections
 from app.api.v4.artifacts.reports.types import (
     ReportsCohortResource,
@@ -214,11 +219,17 @@ async def get_reports(
             chat_rows,
             daily_rows,
             profile_rows,
+            cohort_filter_options,
+            department_filter_options,
+            date_range_result,
         ) = await asyncio.gather(
             fetch_attempts(),
             fetch_chat_facts(),
             fetch_daily_metrics(),
             fetch_profile_metrics(),
+            fetch_cohort_filter_options(pool, request.accessible_cohort_ids),
+            fetch_department_filter_options(pool, request.accessible_department_ids),
+            fetch_date_range_from_mv(pool, request.accessible_department_ids),
         )
 
         threshold_success = 85
@@ -456,6 +467,10 @@ async def get_reports(
             simulation_options=simulation_options,
             profile_options=profile_options,
             scenario_options=scenario_options,
+            cohort_options=cohort_filter_options,
+            department_options=department_filter_options,
+            date_range_earliest=date_range_result[0],
+            date_range_latest=date_range_result[1],
         )
 
     except HTTPException:

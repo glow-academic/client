@@ -11,6 +11,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { useFilterOptions } from "@/contexts/filter-options-context";
 import { useProfile } from "@/contexts/profile-context";
 import BenchmarkZone, { BenchmarkZoneSkeleton } from "./BenchmarkZone";
 
@@ -45,6 +46,21 @@ export default function Benchmark({
     startingEvalId,
     setStartingEvalId,
   } = useProfile();
+
+  // Set section-specific filter options in context (benchmark has no cohort filter)
+  const { setOptions } = useFilterOptions();
+  useEffect(() => {
+    setOptions({
+      cohortOptions: [],
+      departmentOptions: (evalsData.department_options || []).map((o) => ({
+        value: o.value || "",
+        label: o.label ?? null,
+        count: o.count ?? null,
+      })),
+      dateRangeEarliest: evalsData.date_range_earliest ?? null,
+      dateRangeLatest: evalsData.date_range_latest ?? null,
+    });
+  }, [evalsData, setOptions]);
 
   // Use WebSocket's specific eval ID for precise loading state
   const loadingEval = startingEvalId;

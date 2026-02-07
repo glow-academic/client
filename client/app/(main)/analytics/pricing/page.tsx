@@ -84,6 +84,7 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
       simulation_filters: filters.simulationFilters,
       page_limit: 100,
       page_offset: 0,
+      accessible_department_ids: profileContext.department_ids || [],
     },
   });
 

@@ -631,6 +631,8 @@ class GetAttemptListRequest(BaseModel):
     page: int = 0
     page_size: int = 20
     show_archived: bool = False
+    accessible_cohort_ids: list[str] = Field(default_factory=list)
+    accessible_department_ids: list[str] = Field(default_factory=list)
 
 
 class AttemptListItem(BaseModel):
@@ -674,3 +676,7 @@ class GetAttemptListResponse(BaseModel):
     simulation_options: list[AttemptListFilterOption] | None = None
     scenario_options: list[AttemptListFilterOption] | None = None
     profile_options: list[AttemptListFilterOption] | None = None
+    cohort_options: list[AttemptListFilterOption] | None = None
+    department_options: list[AttemptListFilterOption] | None = None
+    date_range_earliest: str | None = None
+    date_range_latest: str | None = None

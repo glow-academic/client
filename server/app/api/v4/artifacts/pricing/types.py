@@ -29,6 +29,7 @@ class PricingRequest(BaseModel):
     department_ids: list[UUID] = Field(default_factory=list)
     roles: list[str] = Field(default_factory=list)
     simulation_filters: list[str] = Field(default_factory=list)
+    accessible_department_ids: list[str] = Field(default_factory=list)
 
     # Pagination
     page_limit: int = Field(default=50, ge=1, le=100)
@@ -69,3 +70,6 @@ class PricingResponse(BaseModel):
 
     model_options: list[FilterOption] = Field(default_factory=list)
     agent_options: list[FilterOption] = Field(default_factory=list)
+    department_options: list[FilterOption] = Field(default_factory=list)
+    date_range_earliest: str | None = None
+    date_range_latest: str | None = None

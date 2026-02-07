@@ -7,6 +7,11 @@ from typing import Annotated
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.artifacts.filter_helpers import (
+    fetch_cohort_filter_options,
+    fetch_date_range_from_mv,
+    fetch_department_filter_options,
+)
 from app.api.v4.artifacts.leaderboard.permissions import (
     build_leaderboard_rows,
     build_leaderboard_sections,
@@ -210,11 +215,17 @@ async def get_leaderboard(
             chat_rows,
             daily_rows,
             (profile_rows, profile_total_count),
+            cohort_filter_options,
+            department_filter_options,
+            date_range_result,
         ) = await asyncio.gather(
             fetch_attempts(),
             fetch_chat_facts(),
             fetch_daily_metrics(),
             fetch_profile_metrics(),
+            fetch_cohort_filter_options(pool, request.accessible_cohort_ids),
+            fetch_department_filter_options(pool, request.accessible_department_ids),
+            fetch_date_range_from_mv(pool, request.accessible_department_ids),
         )
 
         primary_color = "#171717"
@@ -383,6 +394,10 @@ async def get_leaderboard(
             total_count=profile_total_count,
             simulation_options=simulation_options,
             profile_options=profile_options,
+            cohort_options=cohort_filter_options,
+            department_options=department_filter_options,
+            date_range_earliest=date_range_result[0],
+            date_range_latest=date_range_result[1],
         )
 
     except HTTPException:
