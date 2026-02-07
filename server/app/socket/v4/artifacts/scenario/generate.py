@@ -1,12 +1,21 @@
-"""Scenario generation router - unified handler for all scenario resource types."""
+"""Scenario generation router - unified handler for all scenario resource types.
+
+Supports two modes:
+1. Legacy: agent_type + resource_types (backwards compat)
+2. Domain-based: domain_ids (new, matching persona pattern)
+"""
 
 import uuid
 from typing import Any
 
 from fastapi import APIRouter
 
-from app.api.v4.artifacts.scenario.get import get_scenario_generation_context
-from app.api.v4.artifacts.scenario.types import GetScenarioApiRequest
+from app.api.v4.artifacts.scenario.get import get_scenario_websocket
+from app.api.v4.artifacts.scenario.types import (
+    GetScenarioApiRequest,
+    GetScenarioWebsocketResponse,
+    ScenarioResourceBucket,
+)
 from app.infra.v4.generation import convert_tools_to_dict, render_developer_instructions
 from app.infra.v4.generation.resource_utils import normalize_resources_for_sql
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
@@ -49,26 +58,144 @@ SCENARIO_RESOURCE_TYPES = [
 class GenerateScenarioPayload(GetScenarioApiRequest):
     """Request to generate scenario resources - extends GET API request with generation-specific fields."""
 
+    # New domain-based approach (preferred)
+    domain_ids: list[uuid.UUID] | None = None
+
+    # Legacy agent_type approach (backwards compat)
     agent_type: str | None = (
         None  # Optional: "name", "description", "basic", "content", "general"/"all"
     )
-    resource_types: list[str]  # Required: which resource types to generate
+    resource_types: list[str] | None = None  # Which resource types to generate
     user_instructions: list[str] | None = None  # Optional: user instructions
+
+
+def _build_scenario_jinja_context(
+    response: GetScenarioWebsocketResponse, resource_types: list[str]
+) -> dict[str, Any]:
+    """Build Jinja context from scenario websocket response."""
+    if response.resources and response.resources.resources:
+        resources = response.resources.resources.model_dump()
+        current = (
+            response.resources.current.model_dump()
+            if response.resources.current
+            else ScenarioResourceBucket().model_dump()
+        )
+        resources["current"] = current
+        return resources
+    return {"current": ScenarioResourceBucket().model_dump()}
 
 
 async def _scenario_generate_impl(
     sid: str, data: GenerateScenarioPayload, profile_id: uuid.UUID
 ) -> None:
-    """Handle scenario generation - emit generate_artifact for each resource type, then emit client event."""
+    """Handle scenario generation - supports both domain-based and legacy agent_type modes."""
     try:
-        # Validate resource types
-        resource_types = data.resource_types
-        if not resource_types:
+        # Fetch scenario data via websocket function
+        result = await get_scenario_websocket(
+            profile_id=profile_id,
+            scenario_id=data.scenario_id,
+            draft_id=data.draft_id,
+        )
+
+        if not result.group_id and not data.scenario_id:
+            # New scenario without group_id is expected
+            pass
+
+        # Build domain_id -> agent_id mapping from result.domains
+        domain_to_agent: dict[uuid.UUID, uuid.UUID | None] = {}
+        if result.domains:
+            for domain in result.domains:
+                domain_to_agent[domain.domain_id] = domain.agent_id
+
+        # Build domain_id -> resource_type mapping from result
+        domain_to_resource: dict[uuid.UUID | None, str] = {
+            result.name_domain_id: "names",
+            result.description_domain_id: "descriptions",
+            result.problem_statement_domain_id: "problem_statements",
+            result.flag_domain_id: "scenario_flags",
+            result.departments_domain_id: "departments",
+            result.personas_domain_id: "personas",
+            result.documents_domain_id: "documents",
+            result.parameters_domain_id: "parameters",
+            result.parameter_fields_domain_id: "fields",
+            result.objectives_domain_id: "objectives",
+            result.images_domain_id: "images",
+            result.videos_domain_id: "videos",
+            result.questions_domain_id: "questions",
+            result.templates_domain_id: "templates",
+        }
+        domain_to_resource.pop(None, None)
+
+        # Determine resource_types and agent_id based on mode
+        resource_types: list[str] = []
+        agent_id: uuid.UUID | None = None
+
+        if data.domain_ids:
+            # === NEW DOMAIN-BASED MODE ===
+            for did in data.domain_ids:
+                if did in domain_to_resource:
+                    resource_types.append(domain_to_resource[did])
+
+            if not resource_types:
+                await emit_to_internal(
+                    "generate_call_error",
+                    GenerateErrorApiRequest(
+                        sid=sid,
+                        error_message="No valid domain_ids provided",
+                        artifact_type="scenario",
+                        group_id=None,
+                        resource_type="scenario",
+                    ),
+                    sid=sid,
+                )
+                return
+
+            # Get agent_id from the first valid domain_id
+            for did in data.domain_ids:
+                if did in domain_to_agent and domain_to_agent[did] is not None:
+                    agent_id = domain_to_agent[did]
+                    break
+
+        elif data.resource_types:
+            # === LEGACY AGENT_TYPE MODE ===
+            resource_types = data.resource_types
+
+            # Map agent_type to agent_id using domain_to_agent
+            # Build resource -> agent_id mapping from domains
+            resource_to_agent: dict[str, uuid.UUID | None] = {}
+            for domain_id, res_type in domain_to_resource.items():
+                if domain_id in domain_to_agent:
+                    resource_to_agent[res_type] = domain_to_agent[domain_id]
+
+            if data.agent_type == "name":
+                agent_id = resource_to_agent.get("names")
+            elif data.agent_type == "description":
+                agent_id = resource_to_agent.get("descriptions")
+            elif data.agent_type in ("general", "all"):
+                # Try to find any agent that's available
+                for res_type in SCENARIO_RESOURCE_TYPES:
+                    if resource_to_agent.get(res_type):
+                        agent_id = resource_to_agent[res_type]
+                        break
+            elif data.agent_type == "basic":
+                # Try names agent first, then any basic resource agent
+                for res_type in ["names", "descriptions", "scenario_flags", "departments"]:
+                    if resource_to_agent.get(res_type):
+                        agent_id = resource_to_agent[res_type]
+                        break
+            elif data.agent_type == "content":
+                # Try personas first, then any content resource agent
+                for res_type in ["personas", "documents", "parameters", "fields", "templates",
+                                 "objectives", "images", "videos", "questions", "problem_statements"]:
+                    if resource_to_agent.get(res_type):
+                        agent_id = resource_to_agent[res_type]
+                        break
+        else:
             await emit_to_internal(
                 "generate_call_error",
                 GenerateErrorApiRequest(
                     sid=sid,
-                    error_message="resource_types must be provided",
+                    error_message="Either domain_ids or resource_types must be provided",
                     artifact_type="scenario",
                     group_id=None,
                     resource_type="scenario",
@@ -77,6 +204,7 @@ async def _scenario_generate_impl(
             )
             return
 
+        # Validate resource types
         invalid_types = [
             rt for rt in resource_types if rt not in SCENARIO_RESOURCE_TYPES
         ]
@@ -94,71 +222,56 @@ async def _scenario_generate_impl(
             )
             return
 
-        # Get scenario context using internal API function (2-pass architecture)
-        async with get_db_connection() as conn:
-            context = await get_scenario_generation_context(
-                conn=conn,
-                profile_id=profile_id,
-                scenario_id=data.scenario_id,
-                draft_id=data.draft_id,
+        if not agent_id:
+            await emit_to_internal(
+                "generate_call_error",
+                GenerateErrorApiRequest(
+                    sid=sid,
+                    error_message=f"No agent found for the requested domains/agent_type: {data.agent_type}",
+                    artifact_type="scenario",
+                    group_id=str(result.group_id) if result.group_id else None,
+                    resource_type="scenario",
+                ),
+                sid=sid,
             )
+            return
 
-            if context is None:
-                await emit_to_internal(
-                    "generate_call_error",
-                    GenerateErrorApiRequest(
-                        sid=sid,
-                        error_message="Scenario not found or access denied",
-                        artifact_type="scenario",
-                        group_id=None,
-                        resource_type="scenario",
-                    ),
-                    sid=sid,
-                )
-                return
+        # Build Jinja context from resources
+        scenario_jinja_context = _build_scenario_jinja_context(result, resource_types)
 
-            # Map agent_type to agent_id from context
-            agent_id: uuid.UUID | None = None
-            if data.agent_type:
-                agent_type_map = {
-                    "name": context.name_agent_id,
-                    "description": context.description_agent_id,
-                    "basic": context.basic_agent_id,
-                    "content": context.content_agent_id,
-                    "general": context.general_agent_id,
-                    "all": context.general_agent_id,
-                }
-                agent_id = agent_type_map.get(data.agent_type)
+        # Build resources array from websocket result
+        resources_bucket = result.resources.resources if result.resources else None
+        resources: list[dict[str, Any]] = []
 
-            if not agent_id:
-                await emit_to_internal(
-                    "generate_call_error",
-                    GenerateErrorApiRequest(
-                        sid=sid,
-                        error_message=f"No agent found for agent_type: {data.agent_type}",
-                        artifact_type="scenario",
-                        group_id=str(context.group_id) if context.group_id else None,
-                        resource_type="scenario",
-                    ),
-                    sid=sid,
-                )
-                return
-
-            # Build resources array from context.resource_ids
-            resources: list[dict[str, Any]] = []
-            for resource_type, ids in context.resource_ids.items():
+        # Helper to extract IDs from resource bucket
+        def add_resource_ids(resource_type: str, items: list[Any] | None, id_attr: str) -> None:
+            if items and resource_type in resource_types:
+                ids = []
+                for item in items:
+                    item_id = item.get(id_attr) if isinstance(item, dict) else getattr(item, id_attr, None)
+                    if item_id:
+                        ids.append(str(item_id))
                 if ids:
-                    resources.append(
-                        {
-                            "resource_type": resource_type,
-                            "resource_ids": [str(id) for id in ids],
-                        }
-                    )
+                    resources.append({"resource_type": resource_type, "resource_ids": ids})
 
-            # Get group_id from context
-            group_id: uuid.UUID | None = context.group_id
-            resources_sql = normalize_resources_for_sql(resources)
+        if resources_bucket:
+            add_resource_ids("names", resources_bucket.names, "id")
+            add_resource_ids("descriptions", resources_bucket.descriptions, "id")
+            add_resource_ids("problem_statements", resources_bucket.problem_statements, "problem_statement_id")
+            add_resource_ids("departments", resources_bucket.departments, "department_id")
+            add_resource_ids("personas", resources_bucket.personas, "persona_id")
+            add_resource_ids("documents", resources_bucket.documents, "document_id")
+            add_resource_ids("parameters", resources_bucket.parameters, "parameter_id")
+            add_resource_ids("objectives", resources_bucket.objectives, "id")
+            add_resource_ids("images", resources_bucket.images, "image_id")
+            add_resource_ids("videos", resources_bucket.videos, "video_id")
+            add_resource_ids("questions", resources_bucket.questions, "question_id")
+            add_resource_ids("templates", resources_bucket.templates, "template_id")
 
+        group_id: uuid.UUID | None = result.group_id
+        resources_sql = normalize_resources_for_sql(resources)
+
+        async with get_db_connection() as conn:
             create_run_sql = load_sql(CREATE_RUN_SQL_PATH)
             create_run_row = await conn.fetchrow(
                 create_run_sql,

@@ -80,10 +80,19 @@ async def get_session_list_internal(
         for view_item in view_result.items
     ]
 
+    total_count = view_result.total_count
+    page_limit = request.page_limit
+    page_offset = request.page_offset
+    page = page_offset // page_limit if page_limit else 0
+    total_pages = (total_count + page_limit - 1) // page_limit if page_limit else 0
+
     api_response = GetSessionListResponse(
         actor_name=actor_name,
         items=items,
-        total_count=view_result.total_count,
+        total_count=total_count,
+        page=page,
+        page_size=page_limit,
+        total_pages=total_pages,
     )
 
     await set_cached(

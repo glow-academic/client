@@ -171,6 +171,8 @@ export interface paths {
          * Get Scenario
          * @description Get scenario information using two-pass architecture.
          *
+         *     This is a thin HTTP wrapper around get_scenario_client().
+         *
          *     Query 1: Access check (user role, departments, scenario state)
          *     Query 2: ID fetching (resource IDs, suggestions, agents)
          *     Pass 2: Parallel resource fetching (each resource type has own cache)
@@ -13284,6 +13286,8 @@ export interface components {
             show_results?: boolean | null;
             /** Should Show Controls */
             should_show_controls?: boolean | null;
+            /** Is Own Attempt */
+            is_own_attempt?: boolean | null;
             available_continuation_options?: components["schemas"]["AvailableContinuationOptions"] | null;
             rubric_structure?: components["schemas"]["RubricStructureData"] | null;
             resources?: components["schemas"]["AttemptResources"] | null;
@@ -17217,6 +17221,141 @@ export interface components {
             basic_agent_id?: string | null;
             /** Content Agent Id */
             content_agent_id?: string | null;
+            /** Draft Version */
+            draft_version?: number | null;
+            /** Name Domain Id */
+            name_domain_id?: string | null;
+            /** Description Domain Id */
+            description_domain_id?: string | null;
+            /** Problem Statement Domain Id */
+            problem_statement_domain_id?: string | null;
+            /** Flag Domain Id */
+            flag_domain_id?: string | null;
+            /** Departments Domain Id */
+            departments_domain_id?: string | null;
+            /** Personas Domain Id */
+            personas_domain_id?: string | null;
+            /** Documents Domain Id */
+            documents_domain_id?: string | null;
+            /** Parameters Domain Id */
+            parameters_domain_id?: string | null;
+            /** Parameter Fields Domain Id */
+            parameter_fields_domain_id?: string | null;
+            /** Objectives Domain Id */
+            objectives_domain_id?: string | null;
+            /** Images Domain Id */
+            images_domain_id?: string | null;
+            /** Videos Domain Id */
+            videos_domain_id?: string | null;
+            /** Questions Domain Id */
+            questions_domain_id?: string | null;
+            /** Templates Domain Id */
+            templates_domain_id?: string | null;
+            /** Names Group Id */
+            names_group_id?: string | null;
+            /** Descriptions Group Id */
+            descriptions_group_id?: string | null;
+            /** Problem Statements Group Id */
+            problem_statements_group_id?: string | null;
+            /** Flags Group Id */
+            flags_group_id?: string | null;
+            /** Departments Group Id */
+            departments_group_id?: string | null;
+            /** Personas Group Id */
+            personas_group_id?: string | null;
+            /** Documents Group Id */
+            documents_group_id?: string | null;
+            /** Parameters Group Id */
+            parameters_group_id?: string | null;
+            /** Parameter Fields Group Id */
+            parameter_fields_group_id?: string | null;
+            /** Objectives Group Id */
+            objectives_group_id?: string | null;
+            /** Images Group Id */
+            images_group_id?: string | null;
+            /** Videos Group Id */
+            videos_group_id?: string | null;
+            /** Questions Group Id */
+            questions_group_id?: string | null;
+            /** Templates Group Id */
+            templates_group_id?: string | null;
+            /** Name Show Ai Generate */
+            name_show_ai_generate?: boolean | null;
+            /** Description Show Ai Generate */
+            description_show_ai_generate?: boolean | null;
+            /** Problem Statement Show Ai Generate */
+            problem_statement_show_ai_generate?: boolean | null;
+            /** Flag Show Ai Generate */
+            flag_show_ai_generate?: boolean | null;
+            /** Departments Show Ai Generate */
+            departments_show_ai_generate?: boolean | null;
+            /** Personas Show Ai Generate */
+            personas_show_ai_generate?: boolean | null;
+            /** Documents Show Ai Generate */
+            documents_show_ai_generate?: boolean | null;
+            /** Parameters Show Ai Generate */
+            parameters_show_ai_generate?: boolean | null;
+            /** Parameter Fields Show Ai Generate */
+            parameter_fields_show_ai_generate?: boolean | null;
+            /** Objectives Show Ai Generate */
+            objectives_show_ai_generate?: boolean | null;
+            /** Images Show Ai Generate */
+            images_show_ai_generate?: boolean | null;
+            /** Videos Show Ai Generate */
+            videos_show_ai_generate?: boolean | null;
+            /** Questions Show Ai Generate */
+            questions_show_ai_generate?: boolean | null;
+            /** Templates Show Ai Generate */
+            templates_show_ai_generate?: boolean | null;
+            /** Basic Show Ai Generate */
+            basic_show_ai_generate?: boolean | null;
+            /** Content Show Ai Generate */
+            content_show_ai_generate?: boolean | null;
+            /** Name Create Tool Id */
+            name_create_tool_id?: string | null;
+            /** Description Create Tool Id */
+            description_create_tool_id?: string | null;
+            /** Problem Statement Create Tool Id */
+            problem_statement_create_tool_id?: string | null;
+            /** Objectives Create Tool Id */
+            objectives_create_tool_id?: string | null;
+            /** Images Create Tool Id */
+            images_create_tool_id?: string | null;
+            /** Questions Create Tool Id */
+            questions_create_tool_id?: string | null;
+            /** Templates Create Tool Id */
+            templates_create_tool_id?: string | null;
+            /** Name Link Tool Id */
+            name_link_tool_id?: string | null;
+            /** Description Link Tool Id */
+            description_link_tool_id?: string | null;
+            /** Problem Statement Link Tool Id */
+            problem_statement_link_tool_id?: string | null;
+            /** Flag Link Tool Id */
+            flag_link_tool_id?: string | null;
+            /** Departments Link Tool Id */
+            departments_link_tool_id?: string | null;
+            /** Personas Link Tool Id */
+            personas_link_tool_id?: string | null;
+            /** Documents Link Tool Id */
+            documents_link_tool_id?: string | null;
+            /** Parameters Link Tool Id */
+            parameters_link_tool_id?: string | null;
+            /** Parameter Fields Link Tool Id */
+            parameter_fields_link_tool_id?: string | null;
+            /** Objectives Link Tool Id */
+            objectives_link_tool_id?: string | null;
+            /** Images Link Tool Id */
+            images_link_tool_id?: string | null;
+            /** Videos Link Tool Id */
+            videos_link_tool_id?: string | null;
+            /** Questions Link Tool Id */
+            questions_link_tool_id?: string | null;
+            /** Templates Link Tool Id */
+            templates_link_tool_id?: string | null;
+            /** Domain Data */
+            domain_data?: components["schemas"]["DomainData"][] | null;
+            resources?: components["schemas"]["ScenarioResources"] | null;
         };
         /** GetScenarioFlagsApiRequest */
         GetScenarioFlagsApiRequest: {
@@ -17442,6 +17581,21 @@ export interface components {
              * @default 0
              */
             total_count: number;
+            /**
+             * Page
+             * @default 0
+             */
+            page: number;
+            /**
+             * Page Size
+             * @default 50
+             */
+            page_size: number;
+            /**
+             * Total Pages
+             * @default 0
+             */
+            total_pages: number;
         };
         /** GetSettingApiRequest */
         GetSettingApiRequest: {
@@ -26838,6 +26992,48 @@ export interface components {
             allow_multiple?: boolean | null;
             /** Generated */
             generated?: boolean | null;
+        };
+        /**
+         * ScenarioResourceBucket
+         * @description Generic resources bucket with full objects (always plural lists).
+         */
+        ScenarioResourceBucket: {
+            /** Names */
+            names?: components["schemas"]["ScenarioNameResource"][] | null;
+            /** Descriptions */
+            descriptions?: components["schemas"]["ScenarioDescriptionResource"][] | null;
+            /** Problem Statements */
+            problem_statements?: components["schemas"]["ScenarioProblemStatement"][] | null;
+            /** Flags */
+            flags?: components["schemas"]["ScenarioFlagConfig"][] | null;
+            /** Departments */
+            departments?: components["schemas"]["ScenarioDepartment"][] | null;
+            /** Personas */
+            personas?: components["schemas"]["ScenarioPersona"][] | null;
+            /** Documents */
+            documents?: components["schemas"]["ScenarioDocument"][] | null;
+            /** Parameters */
+            parameters?: components["schemas"]["ScenarioParameter"][] | null;
+            /** Parameter Fields */
+            parameter_fields?: components["schemas"]["ScenarioField"][] | null;
+            /** Objectives */
+            objectives?: components["schemas"]["ScenarioObjective"][] | null;
+            /** Images */
+            images?: components["schemas"]["ScenarioImage"][] | null;
+            /** Videos */
+            videos?: components["schemas"]["ScenarioVideo"][] | null;
+            /** Questions */
+            questions?: components["schemas"]["ScenarioQuestion"][] | null;
+            /** Templates */
+            templates?: components["schemas"]["ScenarioTemplate"][] | null;
+        };
+        /**
+         * ScenarioResources
+         * @description Full resources + current selections.
+         */
+        ScenarioResources: {
+            resources?: components["schemas"]["ScenarioResourceBucket"] | null;
+            current?: components["schemas"]["ScenarioResourceBucket"] | null;
         };
         /** ScenarioRubricsApiRequest */
         ScenarioRubricsApiRequest: {

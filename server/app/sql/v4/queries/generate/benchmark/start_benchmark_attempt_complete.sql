@@ -51,7 +51,7 @@ BEGIN
 
     -- Determine if eval uses groups or individual runs
     v_use_groups := EXISTS (
-        SELECT 1 FROM eval_groups_junction WHERE eval_id = p_eval_id AND active = true
+        SELECT 1 FROM eval_groups_junction egj WHERE egj.eval_id = p_eval_id AND egj.active = true
     );
 
     -- Create benchmark_tests_entry (attempt)

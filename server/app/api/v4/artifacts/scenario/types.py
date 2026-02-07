@@ -10,6 +10,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.api.v4.types import DomainAgent, DomainData
+
 # =============================================================================
 # Resource Types
 # =============================================================================
@@ -186,6 +188,37 @@ class ScenarioFieldParamFilter(BaseModel):
 
     parameter_id: UUID | None = None
     show_selected: bool | None = None
+
+
+# =============================================================================
+# Resource Bucket Types (for three-layer architecture)
+# =============================================================================
+
+
+class ScenarioResourceBucket(BaseModel):
+    """Generic resources bucket with full objects (always plural lists)."""
+
+    names: list[ScenarioNameResource] | None = None
+    descriptions: list[ScenarioDescriptionResource] | None = None
+    problem_statements: list[ScenarioProblemStatement] | None = None
+    flags: list[ScenarioFlagConfig] | None = None
+    departments: list[ScenarioDepartment] | None = None
+    personas: list[ScenarioPersona] | None = None
+    documents: list[ScenarioDocument] | None = None
+    parameters: list[ScenarioParameter] | None = None
+    parameter_fields: list[ScenarioField] | None = None
+    objectives: list[ScenarioObjective] | None = None
+    images: list[ScenarioImage] | None = None
+    videos: list[ScenarioVideo] | None = None
+    questions: list[ScenarioQuestion] | None = None
+    templates: list[ScenarioTemplate] | None = None
+
+
+class ScenarioResources(BaseModel):
+    """Full resources + current selections."""
+
+    resources: ScenarioResourceBucket | None = None
+    current: ScenarioResourceBucket | None = None
 
 
 # =============================================================================
@@ -406,6 +439,127 @@ class GetScenarioApiResponse(BaseModel):
     # Multi-resource combination agent IDs
     basic_agent_id: UUID | None = None
     content_agent_id: UUID | None = None
+
+    # Draft version
+    draft_version: int | None = None
+
+    # Per-resource domain IDs (for domain-based generation)
+    name_domain_id: UUID | None = None
+    description_domain_id: UUID | None = None
+    problem_statement_domain_id: UUID | None = None
+    flag_domain_id: UUID | None = None
+    departments_domain_id: UUID | None = None
+    personas_domain_id: UUID | None = None
+    documents_domain_id: UUID | None = None
+    parameters_domain_id: UUID | None = None
+    parameter_fields_domain_id: UUID | None = None
+    objectives_domain_id: UUID | None = None
+    images_domain_id: UUID | None = None
+    videos_domain_id: UUID | None = None
+    questions_domain_id: UUID | None = None
+    templates_domain_id: UUID | None = None
+
+    # Per-resource group IDs (from draft)
+    names_group_id: UUID | None = None
+    descriptions_group_id: UUID | None = None
+    problem_statements_group_id: UUID | None = None
+    flags_group_id: UUID | None = None
+    departments_group_id: UUID | None = None
+    personas_group_id: UUID | None = None
+    documents_group_id: UUID | None = None
+    parameters_group_id: UUID | None = None
+    parameter_fields_group_id: UUID | None = None
+    objectives_group_id: UUID | None = None
+    images_group_id: UUID | None = None
+    videos_group_id: UUID | None = None
+    questions_group_id: UUID | None = None
+    templates_group_id: UUID | None = None
+
+    # Per-resource show_ai_generate flags
+    name_show_ai_generate: bool | None = None
+    description_show_ai_generate: bool | None = None
+    problem_statement_show_ai_generate: bool | None = None
+    flag_show_ai_generate: bool | None = None
+    departments_show_ai_generate: bool | None = None
+    personas_show_ai_generate: bool | None = None
+    documents_show_ai_generate: bool | None = None
+    parameters_show_ai_generate: bool | None = None
+    parameter_fields_show_ai_generate: bool | None = None
+    objectives_show_ai_generate: bool | None = None
+    images_show_ai_generate: bool | None = None
+    videos_show_ai_generate: bool | None = None
+    questions_show_ai_generate: bool | None = None
+    templates_show_ai_generate: bool | None = None
+
+    # Step-level AI generation flags
+    basic_show_ai_generate: bool | None = None
+    content_show_ai_generate: bool | None = None
+
+    # Per-resource CREATE tool IDs
+    name_create_tool_id: UUID | None = None
+    description_create_tool_id: UUID | None = None
+    problem_statement_create_tool_id: UUID | None = None
+    objectives_create_tool_id: UUID | None = None
+    images_create_tool_id: UUID | None = None
+    questions_create_tool_id: UUID | None = None
+    templates_create_tool_id: UUID | None = None
+
+    # Per-resource LINK tool IDs
+    name_link_tool_id: UUID | None = None
+    description_link_tool_id: UUID | None = None
+    problem_statement_link_tool_id: UUID | None = None
+    flag_link_tool_id: UUID | None = None
+    departments_link_tool_id: UUID | None = None
+    personas_link_tool_id: UUID | None = None
+    documents_link_tool_id: UUID | None = None
+    parameters_link_tool_id: UUID | None = None
+    parameter_fields_link_tool_id: UUID | None = None
+    objectives_link_tool_id: UUID | None = None
+    images_link_tool_id: UUID | None = None
+    videos_link_tool_id: UUID | None = None
+    questions_link_tool_id: UUID | None = None
+    templates_link_tool_id: UUID | None = None
+
+    # Rich domain metadata for client display in modals
+    domain_data: list[DomainData] | None = None
+
+    # Generic resources payload (full objects + current selections)
+    resources: ScenarioResources | None = None
+
+
+class GetScenarioWebsocketResponse(BaseModel):
+    """Minimal response for WebSocket handlers (get_scenario_websocket).
+
+    Contains only what's needed for AI generation:
+    - Domain IDs (for domain_to_resource mapping)
+    - Domains list (for agent_id lookup)
+    - Group ID (for existing group context)
+    - Resources (for Jinja template context)
+    """
+
+    group_id: UUID | None = None
+
+    # Domain IDs for domain_to_resource mapping
+    name_domain_id: UUID | None = None
+    description_domain_id: UUID | None = None
+    problem_statement_domain_id: UUID | None = None
+    flag_domain_id: UUID | None = None
+    departments_domain_id: UUID | None = None
+    personas_domain_id: UUID | None = None
+    documents_domain_id: UUID | None = None
+    parameters_domain_id: UUID | None = None
+    parameter_fields_domain_id: UUID | None = None
+    objectives_domain_id: UUID | None = None
+    images_domain_id: UUID | None = None
+    videos_domain_id: UUID | None = None
+    questions_domain_id: UUID | None = None
+    templates_domain_id: UUID | None = None
+
+    # Domains mapping (domain_id -> agent_id) for server-side agent lookup
+    domains: list[DomainAgent] | None = None
+
+    # Resources for Jinja template context
+    resources: ScenarioResources | None = None
 
 
 # =============================================================================

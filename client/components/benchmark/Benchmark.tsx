@@ -170,12 +170,12 @@ export default function Benchmark({
       window.dispatchEvent(new CustomEvent("evalError"));
     };
 
-    socket.on("benchmarks_started", handleBenchmarksStarted);
-    socket.on("benchmarks_start_error", handleBenchmarksStartError);
+    socket.on("benchmark_started", handleBenchmarksStarted);
+    socket.on("benchmark_error", handleBenchmarksStartError);
 
     return () => {
-      socket.off("benchmarks_started", handleBenchmarksStarted);
-      socket.off("benchmarks_start_error", handleBenchmarksStartError);
+      socket.off("benchmark_started", handleBenchmarksStarted);
+      socket.off("benchmark_error", handleBenchmarksStartError);
     };
   }, [socket, setStartingEvalId]);
 

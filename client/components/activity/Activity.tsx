@@ -55,7 +55,13 @@ export default function Activity({
   const searchParams = useSearchParams();
 
   const bundleData = activityData.bundleData;
-  const sessionsList = useMemo(() => activityData.activityData?.sessions || [], [activityData.activityData?.sessions]);
+  const sessionsList = useMemo(() => {
+    const items = activityData.activityData?.items || [];
+    return items.map((item) => ({
+      ...item,
+      created_at: item.session_created_at ?? "",
+    }));
+  }, [activityData.activityData?.items]);
   const sessionsPage = activityData.activityData?.page || 0;
   const sessionsPageSize = activityData.activityData?.page_size || 50;
   const sessionsTotalPages = activityData.activityData?.total_pages || 0;

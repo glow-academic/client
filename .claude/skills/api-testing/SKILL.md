@@ -25,16 +25,19 @@ X-Bypass-Cache: 1
 
 ## Analytics Endpoint Parameters
 
-For analytics endpoints (home, dashboard, reports, pricing, etc.), use these standard parameters:
+For analytics endpoints (home, dashboard, reports, pricing, etc.), use these standard parameters.
+
+**IMPORTANT:** `cohort_ids`, `department_ids`, `accessible_cohort_ids`, and `accessible_department_ids` must use `*_resource` IDs (not `*_artifact` IDs). The MVs join against `cohorts_resource` and `departments_resource`.
 
 ```json
 {
   "start_date": "2025-08-01T00:00:00.000Z",
-  "end_date": "2025-11-01T23:59:59.999Z",
+  "end_date": "2026-02-28T23:59:59.999Z",
   "cohort_ids": [
-    "019b3be4-3243-7621-83d6-0ea2db46965b",
-    "019b3be4-3243-7679-89b8-826048d1bb5d",
-    "019b3be4-3243-7685-af3f-4de552900f45"
+    "019bb25e-e605-7406-b985-0a3e9f95395c",
+    "019bb25e-e605-7497-9ea7-9ab10588dcce",
+    "019bb25e-e605-749f-a376-47857f500e1c",
+    "019bb25e-e605-74a0-a4af-37a6a4b2375d"
   ],
   "roles": [
     "guest",
@@ -45,19 +48,55 @@ For analytics endpoints (home, dashboard, reports, pricing, etc.), use these sta
   ],
   "simulation_filters": [
     "general",
-    "practice",
-    "archived"
+    "practice"
   ],
   "department_ids": [
-    "019b3be4-3247-7cb0-bd74-9b2467b5e32d",
-    "019b3be4-3247-7d4f-9974-77e974f7949c",
-    "019b3be4-3247-7d5e-a958-5b9fb4e2725b",
-    "019b3be4-3247-7d66-a799-96fb9b34bc2a",
-    "019b3be4-3247-7d6c-9453-53b0a7155c04",
-    "019b3be4-3247-7d75-b682-fd462e133f6c",
-    "019b3be4-3247-7d7a-bded-a786d8eae83c"
+    "019bb25e-e624-73da-8cef-166028a1065a",
+    "019bb25e-e624-744f-a6b0-21686815b719",
+    "019bb25e-e624-7450-8897-a72c55c26107",
+    "019bb25e-e624-7455-a0f7-2248e8c5a63b",
+    "019bb25e-e624-7459-b42d-b7ee5595e1c7",
+    "019bb25e-e624-745f-85ac-d4c79657d7e1",
+    "019bb25e-e624-7461-ae69-85ba6cc54ae7"
+  ],
+  "accessible_cohort_ids": [
+    "019bb25e-e605-7406-b985-0a3e9f95395c",
+    "019bb25e-e605-7497-9ea7-9ab10588dcce",
+    "019bb25e-e605-749f-a376-47857f500e1c",
+    "019bb25e-e605-74a0-a4af-37a6a4b2375d"
+  ],
+  "accessible_department_ids": [
+    "019bb25e-e624-73da-8cef-166028a1065a",
+    "019bb25e-e624-744f-a6b0-21686815b719",
+    "019bb25e-e624-7450-8897-a72c55c26107",
+    "019bb25e-e624-7455-a0f7-2248e8c5a63b",
+    "019bb25e-e624-7459-b42d-b7ee5595e1c7",
+    "019bb25e-e624-745f-85ac-d4c79657d7e1",
+    "019bb25e-e624-7461-ae69-85ba6cc54ae7"
   ]
 }
 ```
+
+## ID Reference
+
+### Cohort Resource IDs (`cohorts_resource`)
+| Name | ID |
+|------|-----|
+| First Time GTA's | `019bb25e-e605-7406-b985-0a3e9f95395c` |
+| [DEMO] TESTING SIMULATIONS | `019bb25e-e605-7497-9ea7-9ab10588dcce` |
+| Returning GTAs | `019bb25e-e605-749f-a376-47857f500e1c` |
+| Department Mix | `019bb25e-e605-74a0-a4af-37a6a4b2375d` |
+| Practice Cohort | `019bb25e-e605-7500-8000-000000000001` |
+
+### Department Resource IDs (`departments_resource`)
+| Name | ID |
+|------|-----|
+| Purdue CS | `019bb25e-e624-73da-8cef-166028a1065a` |
+| Purdue Math | `019bb25e-e624-744f-a6b0-21686815b719` |
+| Purdue Chem | `019bb25e-e624-7450-8897-a72c55c26107` |
+| Biology | `019bb25e-e624-7455-a0f7-2248e8c5a63b` |
+| Earth, Atmospheric, and Planetary Sciences | `019bb25e-e624-7459-b42d-b7ee5595e1c7` |
+| Physics | `019bb25e-e624-745f-85ac-d4c79657d7e1` |
+| Statistics | `019bb25e-e624-7461-ae69-85ba6cc54ae7` |
 
 **Note:** Use `snake_case` for API request bodies (e.g., `start_date`, `cohort_ids`, `department_ids`), not `camelCase`.

@@ -7,6 +7,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from app.api.v4.types import DomainAgent, DomainData
 from app.sql.types import (
     QGetColorsV4Item,
     QGetDepartmentsV4Item,
@@ -20,25 +21,8 @@ from app.sql.types import (
     QGetParametersV4Item,
 )
 
-
-class DomainAgent(BaseModel):
-    """Maps a domain to its assigned agent and group. Used internally by server."""
-
-    domain_id: UUID
-    agent_id: UUID | None = None
-    group_id: UUID | None = None  # Per-resource group ID for this domain
-
-
-class DomainData(BaseModel):
-    """Rich metadata for a domain, used in generate/regenerate modals."""
-
-    domain_id: UUID
-    name: str  # Display name, e.g., "Name", "Description", "Instructions"
-    description: str  # Description for tooltips/modals
-    resource: str  # Internal resource type (for server use if needed)
-    icon: str | None = None  # Optional display icon
-    required: bool = False
-    show: bool = True
+# Re-export for backwards compatibility
+__all__ = ["DomainAgent", "DomainData"]
 
 
 class PersonaFlagConfig(BaseModel):

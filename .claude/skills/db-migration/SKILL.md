@@ -13,14 +13,20 @@ description: Database migration workflow for this project, including schema upda
 make generate-test-schema
 ```
 
-3. Create and apply migration:
-- Add a new file in `database/migrate/` named `{increment}_{desc}.sql`.
+3. **Find the next migration number** by checking the latest existing migration:
+```bash
+ls database/migrate/ | sort -n | tail -1
+```
+This will show something like `397_backfill_group_connections.sql` — the next migration would be `398_your_desc.sql`.
+
+4. Create and apply migration:
+- Add a new file in `database/migrate/` named `{next_number}_{desc}.sql` (incrementing from the number found in step 3).
 - Run:
 ```bash
 make migrate-db
 ```
 
-4. Inspect database (if needed):
+5. Inspect database (if needed):
 ```bash
 psql postgresql://myuser:mypassword@localhost:5432/mydb
 ```

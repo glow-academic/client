@@ -444,33 +444,11 @@ def build_domain_data(
     domain_ids: dict[str, UUID | None],
     show_flags: dict[str, bool],
     required_flags: dict[str, bool],
-) -> list[dict]:
+) -> list:
     """Build rich domain metadata for client display.
 
-    Args:
-        domain_ids: Mapping of resource type to domain_id
-        show_flags: Mapping of resource type to show flag
-        required_flags: Mapping of resource type to required flag
-
-    Returns:
-        List of domain data dicts for client consumption
+    Delegates to shared build_domain_data with persona-specific metadata.
     """
-    from app.api.v4.artifacts.persona.types import DomainData
+    from app.api.v4.types import build_domain_data as _build_domain_data
 
-    result: list[DomainData] = []
-    for resource, domain_id in domain_ids.items():
-        if domain_id is None:
-            continue
-        meta = PERSONA_DOMAIN_METADATA.get(resource, {})
-        result.append(
-            DomainData(
-                domain_id=domain_id,
-                name=str(meta.get("name", resource.title())),
-                description=str(meta.get("description", "")),
-                resource=resource,
-                icon=str(meta.get("icon")) if meta.get("icon") else None,
-                required=required_flags.get(resource, False),
-                show=show_flags.get(resource, True),
-            )
-        )
-    return result
+    return _build_domain_data(domain_ids, show_flags, required_flags, PERSONA_DOMAIN_METADATA)

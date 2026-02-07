@@ -2,19 +2,23 @@
 -- Fetches all resource IDs using user context from Query 1
 -- This query runs AFTER access check, BEFORE parallel resource fetching
 
--- Create composite type for candidate agents (if not exists)
+-- Drop and recreate composite type for candidate agents to add tool ID fields
 DO $$
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'scenario_candidate_agent') THEN
-        CREATE TYPE scenario_candidate_agent AS (
-            agent_id uuid,
-            agent_name text,
-            tool_resources text[],
-            department_ids uuid[],
-            updated_at timestamptz,
-            is_mcp boolean
-        );
-    END IF;
+    -- Drop the type if it exists (CASCADE will drop dependent functions)
+    DROP TYPE IF EXISTS scenario_candidate_agent CASCADE;
+
+    -- Recreate with new fields for create/link tool IDs
+    CREATE TYPE scenario_candidate_agent AS (
+        agent_id uuid,
+        agent_name text,
+        tool_resources text[],
+        create_tool_ids uuid[],
+        link_tool_ids uuid[],
+        department_ids uuid[],
+        updated_at timestamptz,
+        is_mcp boolean
+    );
 END $$;
 
 -- Drop function if exists (handles signature variations)
@@ -97,7 +101,23 @@ RETURNS TABLE (
     templates_has_tools boolean,
 
     -- Video enabled flag value (for video parameter filtering)
-    video_enabled_value boolean
+    video_enabled_value boolean,
+
+    -- Domain IDs (for domain-based generation)
+    name_domain_id uuid,
+    description_domain_id uuid,
+    problem_statement_domain_id uuid,
+    flag_domain_id uuid,
+    departments_domain_id uuid,
+    personas_domain_id uuid,
+    documents_domain_id uuid,
+    parameters_domain_id uuid,
+    parameter_fields_domain_id uuid,
+    objectives_domain_id uuid,
+    images_domain_id uuid,
+    videos_domain_id uuid,
+    questions_domain_id uuid,
+    templates_domain_id uuid
 )
 LANGUAGE sql
 STABLE
@@ -532,36 +552,73 @@ video_enabled_value_data AS (
     FROM params
 ),
 -- Candidate agents data (for Python-side agent scoring)
+-- First get per-agent, per-resource tool IDs with creatable flag
+agent_resource_tools AS (
+    SELECT
+        a.id as agent_id,
+        rt.resource::text as resource_name,
+        ta.id as tool_id,
+        COALESCE(tf_create.value, true) as is_creatable  -- Default true if flag not set
+    FROM agent_artifact a
+    JOIN agent_tools_junction at ON at.agent_id = a.id AND at.active = true
+    JOIN tools_resource tr ON tr.id = at.tool_id
+    JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
+    JOIN tool_artifact ta ON ta.id = ttj.tool_id
+    JOIN resource_tools_relation rt ON rt.tool_id = ta.id
+    LEFT JOIN tool_flags_junction tf_active ON tf_active.tool_id = ta.id
+    LEFT JOIN flags_resource f_active ON f_active.id = tf_active.flag_id AND f_active.name = 'tool_active'
+    LEFT JOIN tool_flags_junction tf_create ON tf_create.tool_id = ta.id
+    LEFT JOIN flags_resource f_create ON f_create.id = tf_create.flag_id AND f_create.name = 'tool_creatable'
+    LEFT JOIN agent_flags_junction af_agent ON af_agent.agent_id = a.id
+    LEFT JOIN flags_resource f_agent ON f_agent.id = af_agent.flag_id AND f_agent.name = 'agent_active'
+    WHERE COALESCE(af_agent.value, false) = true
+      AND (tf_active.tool_id IS NULL OR COALESCE(f_active.id, NULL) IS NULL OR COALESCE(tf_active.value, false) = true)
+),
+-- Step 1: Pick one create and one link tool per (agent, resource)
+agent_resource_tool_pairs AS (
+    SELECT
+        art.agent_id,
+        art.resource_name,
+        (ARRAY_AGG(art.tool_id ORDER BY art.tool_id) FILTER (WHERE art.is_creatable = true))[1] as create_tool_id,
+        (ARRAY_AGG(art.tool_id ORDER BY art.tool_id) FILTER (WHERE art.is_creatable = false))[1] as link_tool_id
+    FROM agent_resource_tools art
+    GROUP BY art.agent_id, art.resource_name
+),
+-- Step 2: Aggregate into aligned arrays (all same length, same order)
+agent_tool_arrays AS (
+    SELECT
+        agent_id,
+        ARRAY_AGG(resource_name ORDER BY resource_name) as tool_resources,
+        ARRAY_AGG(create_tool_id ORDER BY resource_name) as create_tool_ids,
+        ARRAY_AGG(link_tool_id ORDER BY resource_name) as link_tool_ids
+    FROM agent_resource_tool_pairs
+    GROUP BY agent_id
+),
 candidate_agents_data AS (
     SELECT
         a.id as agent_id,
         n.name as agent_name,
-        COALESCE(ARRAY_AGG(DISTINCT rt.resource::text) FILTER (WHERE rt.resource IS NOT NULL), ARRAY[]::text[]) as tool_resources,
+        COALESCE(ata.tool_resources, ARRAY[]::text[]) as tool_resources,
+        COALESCE(ata.create_tool_ids, ARRAY[]::uuid[]) as create_tool_ids,
+        COALESCE(ata.link_tool_ids, ARRAY[]::uuid[]) as link_tool_ids,
         COALESCE(ARRAY_AGG(DISTINCT ad.department_id) FILTER (WHERE ad.department_id IS NOT NULL), ARRAY[]::uuid[]) as department_ids,
         a.updated_at,
         COALESCE(af_mcp.value, false) as is_mcp
     FROM agent_artifact a
     JOIN agent_names_junction anj ON anj.agent_id = a.id
     JOIN names_resource n ON n.id = anj.name_id
-    LEFT JOIN agent_tools_junction at ON at.agent_id = a.id AND at.active = true
-    LEFT JOIN tools_resource tr ON tr.id = at.tool_id
-    LEFT JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
-    LEFT JOIN tool_artifact ta ON ta.id = ttj.tool_id
-    LEFT JOIN resource_tools_relation rt ON rt.tool_id = ta.id
-    LEFT JOIN tool_flags_junction tf ON tf.tool_id = ta.id
-    LEFT JOIN flags_resource f_tool ON f_tool.id = tf.flag_id AND f_tool.name = 'tool_active'
+    LEFT JOIN agent_tool_arrays ata ON ata.agent_id = a.id
     LEFT JOIN agent_departments_junction ad ON ad.agent_id = a.id AND ad.active = true
     LEFT JOIN agent_flags_junction af_active ON af_active.agent_id = a.id
     LEFT JOIN flags_resource f_active ON f_active.id = af_active.flag_id AND f_active.name = 'agent_active'
     LEFT JOIN agent_flags_junction af_mcp ON af_mcp.agent_id = a.id
     LEFT JOIN flags_resource f_mcp ON f_mcp.id = af_mcp.flag_id AND f_mcp.name = 'mcp'
     WHERE COALESCE(af_active.value, false) = true
-      AND (tf.tool_id IS NULL OR COALESCE(f_tool.id, NULL) IS NULL OR COALESCE(tf.value, false) = true)
       AND (
           NOT EXISTS (SELECT 1 FROM agent_departments_junction ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
           OR EXISTS (SELECT 1 FROM agent_departments_junction ad3 WHERE ad3.agent_id = a.id AND ad3.active = true AND ad3.department_id = ANY(user_department_ids))
       )
-    GROUP BY a.id, n.name, a.updated_at, af_mcp.value
+    GROUP BY a.id, n.name, a.updated_at, af_mcp.value, ata.tool_resources, ata.create_tool_ids, ata.link_tool_ids
 ),
 -- Tools existence check
 tools_existence_check AS (
@@ -580,6 +637,24 @@ tools_existence_check AS (
         EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'questions'::resource_type AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as questions_has_tools,
         EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'templates'::resource_type AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as templates_has_tools
     FROM params x
+),
+-- Domain IDs from domains_resource table
+domain_ids_data AS (
+    SELECT
+        (SELECT id FROM domains_resource WHERE resource = 'names'::resource_type AND active = true LIMIT 1) as name_domain_id,
+        (SELECT id FROM domains_resource WHERE resource = 'descriptions'::resource_type AND active = true LIMIT 1) as description_domain_id,
+        (SELECT id FROM domains_resource WHERE resource = 'problem_statements'::resource_type AND active = true LIMIT 1) as problem_statement_domain_id,
+        (SELECT id FROM domains_resource WHERE resource = 'flags'::resource_type AND active = true LIMIT 1) as flag_domain_id,
+        (SELECT id FROM domains_resource WHERE resource = 'departments'::resource_type AND active = true LIMIT 1) as departments_domain_id,
+        (SELECT id FROM domains_resource WHERE resource = 'personas'::resource_type AND active = true LIMIT 1) as personas_domain_id,
+        (SELECT id FROM domains_resource WHERE resource = 'documents'::resource_type AND active = true LIMIT 1) as documents_domain_id,
+        (SELECT id FROM domains_resource WHERE resource = 'parameters'::resource_type AND active = true LIMIT 1) as parameters_domain_id,
+        (SELECT id FROM domains_resource WHERE resource = 'fields'::resource_type AND active = true LIMIT 1) as parameter_fields_domain_id,
+        (SELECT id FROM domains_resource WHERE resource = 'objectives'::resource_type AND active = true LIMIT 1) as objectives_domain_id,
+        (SELECT id FROM domains_resource WHERE resource = 'images'::resource_type AND active = true LIMIT 1) as images_domain_id,
+        (SELECT id FROM domains_resource WHERE resource = 'videos'::resource_type AND active = true LIMIT 1) as videos_domain_id,
+        (SELECT id FROM domains_resource WHERE resource = 'questions'::resource_type AND active = true LIMIT 1) as questions_domain_id,
+        (SELECT id FROM domains_resource WHERE resource = 'templates'::resource_type AND active = true LIMIT 1) as templates_domain_id
 )
 SELECT
     -- Single-select resource IDs
@@ -619,9 +694,9 @@ SELECT
     ARRAY[]::uuid[] as question_suggestions,
     ARRAY[]::uuid[] as template_suggestions,
 
-    -- Candidate agents (for Python-side agent scoring)
+    -- Candidate agents (for Python-side agent scoring with tool IDs)
     (SELECT COALESCE(
-        ARRAY_AGG(ROW(ca.agent_id, ca.agent_name, ca.tool_resources, ca.department_ids, ca.updated_at, ca.is_mcp)::scenario_candidate_agent),
+        ARRAY_AGG(ROW(ca.agent_id, ca.agent_name, ca.tool_resources, ca.create_tool_ids, ca.link_tool_ids, ca.department_ids, ca.updated_at, ca.is_mcp)::scenario_candidate_agent),
         ARRAY[]::scenario_candidate_agent[]
     ) FROM candidate_agents_data ca) as candidate_agents,
 
@@ -641,7 +716,24 @@ SELECT
     tec.templates_has_tools,
 
     -- Video enabled flag value
-    (SELECT video_enabled_value FROM video_enabled_value_data) as video_enabled_value
+    (SELECT video_enabled_value FROM video_enabled_value_data) as video_enabled_value,
+
+    -- Domain IDs
+    did.name_domain_id,
+    did.description_domain_id,
+    did.problem_statement_domain_id,
+    did.flag_domain_id,
+    did.departments_domain_id,
+    did.personas_domain_id,
+    did.documents_domain_id,
+    did.parameters_domain_id,
+    did.parameter_fields_domain_id,
+    did.objectives_domain_id,
+    did.images_domain_id,
+    did.videos_domain_id,
+    did.questions_domain_id,
+    did.templates_domain_id
 FROM params x
-CROSS JOIN tools_existence_check tec;
+CROSS JOIN tools_existence_check tec
+CROSS JOIN domain_ids_data did;
 $$;

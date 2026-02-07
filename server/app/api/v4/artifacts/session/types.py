@@ -58,6 +58,9 @@ class GetSessionListResponse(BaseModel):
     actor_name: str | None = None
     items: list[SessionListItem] = Field(default_factory=list)
     total_count: int = Field(default=0)
+    page: int = Field(default=0)
+    page_size: int = Field(default=50)
+    total_pages: int = Field(default=0)
 
 
 class GetSessionDetailRequest(BaseModel):

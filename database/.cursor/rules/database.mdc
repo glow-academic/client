@@ -24,15 +24,16 @@ alwaysApply: false
 
 ## Migration Workflow
 1. Make schema changes in SQL files in `database/app/` folder
-2. Create migration file: Create new SQL file in `database/migrate/` folder
-3. Write migration SQL: Use `DO $$ BEGIN ... END $$` blocks for conditional DDL
-4. Apply migration: Run `make migrate-db` or `cd database && yarn migrate`
-5. Restart services to pick up schema changes
+2. Find the next migration number: `ls database/migrate/ | sort -n | tail -1` and increment
+3. Create migration file: New SQL file in `database/migrate/{next_number}_{desc}.sql`
+4. Write migration SQL: Use `DO $$ BEGIN ... END $$` blocks for conditional DDL
+5. Apply migration: Run `make migrate-db` or `cd database && yarn migrate`
+6. Restart services to pick up schema changes
 
 ## Database Operations
 - Server uses **asyncpg** for all database operations (no ORM)
 - Client accesses data only via API routes (no direct database access)
-- **SQL files location**: `server/sql/v3/[resource]/[operation]_complete.sql` (one file per route)
+- **SQL files location**: `server/app/sql/v4/queries/[resource]/[operation]_complete.sql` (one file per route)
 - Use connection pooling for performance (managed by asyncpg pool)
 
 ## Common Patterns & Gotchas
@@ -51,7 +52,7 @@ alwaysApply: false
 ### UUIDs vs Serial IDs
 - **Use UUIDs**: Primary keys are UUIDs (`gen_random_uuid()`)
 - **Text representation**: Store as `UUID` type, convert to text in queries: `id::text`
-- **Pattern**: `id UUID PRIMARY KEY DEFAULT gen_random_uuid()`
+- **Pattern**: `id UUID PRIMARY KEY DEFAULT uuidv7()`
 
 ### Timestamps
 - **Always use**: `TIMESTAMP WITH TIME ZONE` (not `TIMESTAMP`)

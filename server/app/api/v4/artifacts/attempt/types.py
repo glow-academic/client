@@ -591,6 +591,7 @@ class GetAttemptDetailResponse(BaseModel):
     is_active: bool | None = None
     show_results: bool | None = None
     should_show_controls: bool | None = None
+    is_own_attempt: bool | None = None
     # Continuation options for infinite mode
     available_continuation_options: AvailableContinuationOptions | None = None
     # Extended data (scenario_documents removed - use chat.documents)

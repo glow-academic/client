@@ -6,6 +6,138 @@ following the two-pass architecture pattern.
 
 from uuid import UUID
 
+from app.api.v4.permissions import (
+    select_agents_for_artifact,
+    select_multi_resource_agent,
+)
+from app.api.v4.types import CandidateAgent
+
+# Re-export for backwards compatibility
+__all__ = [
+    "CandidateAgent",
+    "select_agents_for_artifact",
+    "select_multi_resource_agent",
+    "SCENARIO_RESOURCES",
+    "SCENARIO_BASIC_RESOURCES",
+    "SCENARIO_CONTENT_RESOURCES",
+]
+
+# ========== Agent Scoring - Scenario-specific Constants ==========
+
+# Scenario-specific resource definitions
+SCENARIO_RESOURCES: set[str] = {
+    "names",
+    "descriptions",
+    "problem_statements",
+    "objectives",
+    "flags",
+    "images",
+    "videos",
+    "questions",
+    "departments",
+    "fields",
+    "personas",
+    "documents",
+    "parameters",
+    "templates",
+}
+
+# Multi-resource agent definitions for scenario
+SCENARIO_BASIC_RESOURCES: set[str] = {
+    "names",
+    "descriptions",
+    "flags",
+    "departments",
+}
+
+SCENARIO_CONTENT_RESOURCES: set[str] = {
+    "personas",
+    "documents",
+    "parameters",
+    "fields",
+    "templates",
+    "objectives",
+    "images",
+    "videos",
+    "questions",
+    "problem_statements",
+}
+
+# ========== Domain Metadata - for client-side display in modals ==========
+
+SCENARIO_DOMAIN_METADATA: dict[str, dict[str, str | bool]] = {
+    "names": {
+        "name": "Name",
+        "description": "The display name for this scenario",
+        "icon": "file-text",
+    },
+    "descriptions": {
+        "name": "Description",
+        "description": "A brief description of this scenario",
+        "icon": "align-left",
+    },
+    "problem_statements": {
+        "name": "Problem Statement",
+        "description": "The problem statement for this scenario",
+        "icon": "help-circle",
+    },
+    "flags": {
+        "name": "Settings",
+        "description": "Scenario settings and flags",
+        "icon": "flag",
+    },
+    "departments": {
+        "name": "Departments",
+        "description": "Which departments can access this scenario",
+        "icon": "building",
+    },
+    "personas": {
+        "name": "Personas",
+        "description": "AI personas used in this scenario",
+        "icon": "user",
+    },
+    "documents": {
+        "name": "Documents",
+        "description": "Reference documents for this scenario",
+        "icon": "file",
+    },
+    "parameters": {
+        "name": "Parameters",
+        "description": "Configuration parameters for this scenario",
+        "icon": "settings",
+    },
+    "fields": {
+        "name": "Fields",
+        "description": "Custom fields for this scenario",
+        "icon": "form-input",
+    },
+    "objectives": {
+        "name": "Objectives",
+        "description": "Learning objectives for this scenario",
+        "icon": "target",
+    },
+    "images": {
+        "name": "Images",
+        "description": "Images used in this scenario",
+        "icon": "image",
+    },
+    "videos": {
+        "name": "Videos",
+        "description": "Videos used in this scenario",
+        "icon": "video",
+    },
+    "questions": {
+        "name": "Questions",
+        "description": "Assessment questions for this scenario",
+        "icon": "message-square",
+    },
+    "templates": {
+        "name": "Templates",
+        "description": "Document templates for this scenario",
+        "icon": "layout",
+    },
+}
+
 # =============================================================================
 # Access Control
 # =============================================================================

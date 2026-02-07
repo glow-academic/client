@@ -43,8 +43,8 @@ alwaysApply: false
 - **Pattern**: Export server actions from page, import types, pass to components
 
 ### Type Safety with Server Actions
-- **Use type helpers**: `InputOf<"/api/v3/[resource]/[operation]", "post">` and `OutputOf<...>`
-- **Example**: `type CreatePersonaIn = InputOf<"/api/v3/personas/create", "post">`
+- **Use type helpers**: `InputOf<"/api/v4/[resource]/[operation]", "post">` and `OutputOf<...>`
+- **Example**: `type CreatePersonaIn = InputOf<"/api/v4/personas/save", "post">`
 - **Purpose**: Ensures type safety between client and server without manual type definitions
 
 ### Profile ID in Server Actions

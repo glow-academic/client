@@ -1020,6 +1020,7 @@ async def get_attempt_internal(
             is_active=is_active,
             show_results=show_results,
             should_show_controls=should_show_controls,
+            is_own_attempt=is_own_attempt,
             available_continuation_options=None,
             rubric_structure=rubric_structure,
             resources=resources_payload,

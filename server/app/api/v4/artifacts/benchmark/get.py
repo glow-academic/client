@@ -63,37 +63,41 @@ async def get_benchmark(
         )
 
         # Step 1: Fetch eval summary from MV and date range in parallel
+        # Each branch acquires its own connection since asyncpg doesn't
+        # support concurrent operations on a single connection.
         async def fetch_eval_summary():
-            return await get_benchmark_eval_summary_internal(
-                conn=conn,
-                department_ids=department_uuids,
-                page_limit=200,
-                bypass_cache=bypass_cache,
-            )
+            async with pool.acquire() as c:
+                return await get_benchmark_eval_summary_internal(
+                    conn=c,
+                    department_ids=department_uuids,
+                    page_limit=200,
+                    bypass_cache=bypass_cache,
+                )
 
         async def fetch_benchmark_date_range() -> tuple[str | None, str | None]:
-            if not department_uuids:
-                row = await conn.fetchrow(
-                    """
-                    SELECT MIN(created_at) as earliest, MAX(created_at) as latest
-                    FROM mv_benchmark_eval_summary
-                    """
-                )
-            else:
-                row = await conn.fetchrow(
-                    """
-                    SELECT MIN(created_at) as earliest, MAX(created_at) as latest
-                    FROM mv_benchmark_eval_summary
-                    WHERE department_ids && $1::uuid[]
-                    """,
-                    department_uuids,
-                )
-            if row and row["earliest"]:
-                return (
-                    row["earliest"].isoformat(),
-                    row["latest"].isoformat(),
-                )
-            return (None, None)
+            async with pool.acquire() as c:
+                if not department_uuids:
+                    row = await c.fetchrow(
+                        """
+                        SELECT MIN(created_at) as earliest, MAX(created_at) as latest
+                        FROM mv_benchmark_eval_summary
+                        """
+                    )
+                else:
+                    row = await c.fetchrow(
+                        """
+                        SELECT MIN(created_at) as earliest, MAX(created_at) as latest
+                        FROM mv_benchmark_eval_summary
+                        WHERE department_ids && $1::uuid[]
+                        """,
+                        department_uuids,
+                    )
+                if row and row["earliest"]:
+                    return (
+                        row["earliest"].isoformat(),
+                        row["latest"].isoformat(),
+                    )
+                return (None, None)
 
         eval_summary_result, benchmark_date_range = await asyncio.gather(
             fetch_eval_summary(),

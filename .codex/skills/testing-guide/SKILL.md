@@ -7,12 +7,13 @@ description: Testing structure and commands for this project, including unit, in
 
 Test structure:
 - Unit tests: `server/tests/unit/`
-- Integration tests: `server/tests/integration/v4/[resource]/`
+- Integration tests: `server/tests/integration/api/v4/[resource]/`
+- Infrastructure tests: `server/tests/integration/infra/v4/[resource]/`
 - E2E tests: `server/tests/e2e/`
 - No client-side unit tests.
 
 Write integration tests per endpoint in:
-`server/tests/integration/v4/[resource]/test_[operation].py`
+`server/tests/integration/api/v4/[resource]/test_[operation].py`
 
 Write E2E tests in:
 `server/tests/e2e/` (uses Playwright).
@@ -23,7 +24,7 @@ make test-unit
 make test-integration
 make test
 make test-cov
-make test server/tests/integration/v4/personas/test_create.py
+make test server/tests/integration/api/v4/personas/test_create.py
 ```
 
 E2E workflow:

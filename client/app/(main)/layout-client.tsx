@@ -378,11 +378,11 @@ function MainLayoutContent({
   // Check if we should show SimulationControls
   // Only show if we have attemptData, attemptId, and the attempt belongs to the active profile
   const shouldShowSimulationControls = useMemo(() => {
-    if (!attemptData || !attemptId || !profile || !attemptData.attempt) {
+    if (!attemptData || !attemptId || !attemptData.attempt) {
       return false;
     }
-    return attemptData.attempt.profile_id === profile.id;
-  }, [attemptData, attemptId, profile]);
+    return attemptData.is_own_attempt === true;
+  }, [attemptData, attemptId]);
 
   // Determine if we're on a create/edit page and get resource type
   const isCreateOrEditPage = useMemo(() => {

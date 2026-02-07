@@ -10,6 +10,26 @@ from uuid import UUID
 from pydantic import BaseModel
 
 
+class DomainAgent(BaseModel):
+    """Maps a domain to its assigned agent and group. Used internally by server."""
+
+    domain_id: UUID
+    agent_id: UUID | None = None
+    group_id: UUID | None = None  # Per-resource group ID for this domain
+
+
+class DomainData(BaseModel):
+    """Rich metadata for a domain, used in generate/regenerate modals."""
+
+    domain_id: UUID
+    name: str  # Display name, e.g., "Name", "Description", "Instructions"
+    description: str  # Description for tooltips/modals
+    resource: str  # Internal resource type (for server use if needed)
+    icon: str | None = None  # Optional display icon
+    required: bool = False
+    show: bool = True
+
+
 class CandidateAgentRow(BaseModel):
     """SQL row type for candidate agent from composite type."""
 
@@ -72,3 +92,39 @@ class CandidateAgent:
         if not rows:
             return []
         return [cls.from_sql_row(row) for row in rows]
+
+
+def build_domain_data(
+    domain_ids: dict[str, UUID | None],
+    show_flags: dict[str, bool],
+    required_flags: dict[str, bool],
+    domain_metadata: dict[str, dict[str, str | bool]],
+) -> list[DomainData]:
+    """Build rich domain metadata for client display.
+
+    Args:
+        domain_ids: Mapping of resource type to domain_id
+        show_flags: Mapping of resource type to show flag
+        required_flags: Mapping of resource type to required flag
+        domain_metadata: Mapping of resource type to display metadata (name, description, icon)
+
+    Returns:
+        List of DomainData for client consumption
+    """
+    result: list[DomainData] = []
+    for resource, domain_id in domain_ids.items():
+        if domain_id is None:
+            continue
+        meta = domain_metadata.get(resource, {})
+        result.append(
+            DomainData(
+                domain_id=domain_id,
+                name=str(meta.get("name", resource.title())),
+                description=str(meta.get("description", "")),
+                resource=resource,
+                icon=str(meta.get("icon")) if meta.get("icon") else None,
+                required=required_flags.get(resource, False),
+                show=show_flags.get(resource, True),
+            )
+        )
+    return result

@@ -18955,6 +18955,20 @@ class GetScenarioIdsSqlRow(BaseModel):
     questions_has_tools: bool | None = None
     templates_has_tools: bool | None = None
     video_enabled_value: bool | None = None
+    name_domain_id: UUID | None = None
+    description_domain_id: UUID | None = None
+    problem_statement_domain_id: UUID | None = None
+    flag_domain_id: UUID | None = None
+    departments_domain_id: UUID | None = None
+    personas_domain_id: UUID | None = None
+    documents_domain_id: UUID | None = None
+    parameters_domain_id: UUID | None = None
+    parameter_fields_domain_id: UUID | None = None
+    objectives_domain_id: UUID | None = None
+    images_domain_id: UUID | None = None
+    videos_domain_id: UUID | None = None
+    questions_domain_id: UUID | None = None
+    templates_domain_id: UUID | None = None
 
 class GetScenarioIdsApiRequest(BaseModel):
 
@@ -19011,6 +19025,20 @@ class GetScenarioIdsApiResponse(BaseModel):
     questions_has_tools: bool | None = None
     templates_has_tools: bool | None = None
     video_enabled_value: bool | None = None
+    name_domain_id: UUID | None = None
+    description_domain_id: UUID | None = None
+    problem_statement_domain_id: UUID | None = None
+    flag_domain_id: UUID | None = None
+    departments_domain_id: UUID | None = None
+    personas_domain_id: UUID | None = None
+    documents_domain_id: UUID | None = None
+    parameters_domain_id: UUID | None = None
+    parameter_fields_domain_id: UUID | None = None
+    objectives_domain_id: UUID | None = None
+    images_domain_id: UUID | None = None
+    videos_domain_id: UUID | None = None
+    questions_domain_id: UUID | None = None
+    templates_domain_id: UUID | None = None
 
 
 

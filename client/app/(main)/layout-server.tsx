@@ -27,8 +27,8 @@ const REFRESH_ENDPOINT_MAP: Record<string, string> = {
   activity: "/artifacts/activity/refresh",
   health: "/artifacts/health/refresh",
 };
-type AttemptFullIn = InputOf<"/api/v4/attempts/simulation/get", "post">;
-type AttemptFullOut = OutputOf<"/api/v4/attempts/simulation/get", "post">;
+type AttemptFullIn = InputOf<"/api/v4/attempt/get", "post">;
+type AttemptFullOut = OutputOf<"/api/v4/attempt/get", "post">;
 type SearchSimulatableProfilesIn = InputOf<"/api/v4/auth/simulatable", "post">;
 type SearchSimulatableProfilesOut = OutputOf<
   "/api/v4/auth/simulatable",
@@ -130,7 +130,7 @@ const getAttemptFull = async (
   _attemptId: string,
   input: AttemptFullIn
 ): Promise<AttemptFullOut> => {
-  return api.post("/attempts/simulation/get", input, {
+  return api.post("/attempt/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
