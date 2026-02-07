@@ -28,7 +28,7 @@ def test_simulation_create_validation_and_success(page: Page, base_url: str) -> 
     """Validate required fields and create a simulation successfully."""
     simulation_id: str | None = None
     try:
-        page.goto(f"{base_url}/create/simulations/new")
+        page.goto(f"{base_url}/training/simulations/new")
         page.wait_for_load_state("networkidle")
 
         # Verify data-page attribute
@@ -96,7 +96,7 @@ def test_simulation_create_validation_and_success(page: Page, base_url: str) -> 
 
         submit_button.click()
 
-        page.wait_for_url(f"{base_url}/create/simulations", timeout=20000)
+        page.wait_for_url(f"{base_url}/training/simulations", timeout=20000)
         page.wait_for_load_state("networkidle")
 
         search_input = page.get_by_test_id("simulations-search")

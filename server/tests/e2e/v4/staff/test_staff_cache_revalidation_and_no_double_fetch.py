@@ -233,7 +233,7 @@ def test_staff_no_double_fetch_on_navigation(page: Page, base_url: str) -> None:
     initial_count = list_counter["total"]
 
     # Navigate away
-    page.goto(f"{base_url}/create/personas")
+    page.goto(f"{base_url}/training/personas")
     page.wait_for_load_state("networkidle")
 
     # Navigate back

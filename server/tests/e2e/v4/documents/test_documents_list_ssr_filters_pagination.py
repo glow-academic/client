@@ -20,7 +20,7 @@ pytestmark = [pytest.mark.e2e, pytest.mark.test_profile_id(ADMIN_PROFILE_ID)]
 
 def test_documents_list_filters_and_empty_state(page: Page, base_url: str) -> None:
     """Ensure document list SSR renders and search/filter flows work."""
-    page.goto(f"{base_url}/create/documents")
+    page.goto(f"{base_url}/management/documents")
     page.wait_for_load_state("networkidle")
 
     # Check for either list or grid view
@@ -161,10 +161,10 @@ def test_documents_pagination_persists_filters(page: Page, base_url: str) -> Non
                     effective_profile_id=ADMIN_PROFILE_ID,
                 )
                 created_document_ids.append(document_id)
-            page.goto(f"{base_url}/create/documents")
+            page.goto(f"{base_url}/management/documents")
             page.wait_for_load_state("networkidle")
 
-        page.goto(f"{base_url}/create/documents")
+        page.goto(f"{base_url}/management/documents")
         page.wait_for_load_state("networkidle")
 
         # Apply a filter
@@ -207,7 +207,7 @@ def test_documents_pagination_persists_filters(page: Page, base_url: str) -> Non
 
 def test_documents_view_mode_switching(page: Page, base_url: str) -> None:
     """Verify view mode switching between list and grid works."""
-    page.goto(f"{base_url}/create/documents")
+    page.goto(f"{base_url}/management/documents")
     page.wait_for_load_state("networkidle")
 
     # Verify default is list view

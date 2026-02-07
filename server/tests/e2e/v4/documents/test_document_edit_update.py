@@ -40,7 +40,7 @@ def test_document_edit_update_fields(page: Page, base_url: str) -> None:
             effective_profile_id=ADMIN_PROFILE_ID,
         )
 
-        page.goto(f"{base_url}/create/documents")
+        page.goto(f"{base_url}/management/documents")
         page.wait_for_load_state("networkidle")
 
         # Find document card/row
@@ -150,7 +150,7 @@ def test_document_edit_cancel(page: Page, base_url: str) -> None:
         )
         original_name = detail.get("name", "")
 
-        page.goto(f"{base_url}/create/documents")
+        page.goto(f"{base_url}/management/documents")
         page.wait_for_load_state("networkidle")
 
         # Find and click edit button

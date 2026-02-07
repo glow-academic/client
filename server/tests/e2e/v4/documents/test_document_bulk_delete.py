@@ -41,7 +41,7 @@ def test_document_bulk_delete_multiple(page: Page, base_url: str) -> None:
             )
             created_document_ids.append(doc_id)
 
-        page.goto(f"{base_url}/create/documents")
+        page.goto(f"{base_url}/management/documents")
         page.wait_for_load_state("networkidle")
 
         # Switch to list view for selection
@@ -121,7 +121,7 @@ def test_document_bulk_delete_mixed_permissions(page: Page, base_url: str) -> No
             )
             created_document_ids.append(doc_id)
 
-        page.goto(f"{base_url}/create/documents")
+        page.goto(f"{base_url}/management/documents")
         page.wait_for_load_state("networkidle")
 
         # Switch to list view
@@ -175,7 +175,7 @@ def test_document_bulk_delete_mixed_permissions(page: Page, base_url: str) -> No
 
 def test_document_bulk_delete_all_non_deletable(page: Page, base_url: str) -> None:
     """Verify bulk delete button is disabled when all selected documents are non-deletable."""
-    page.goto(f"{base_url}/create/documents")
+    page.goto(f"{base_url}/management/documents")
     page.wait_for_load_state("networkidle")
 
     # Switch to list view

@@ -66,7 +66,7 @@ import type {
   PatchAgentDraftOut,
   SaveAgentIn,
   SaveAgentOut,
-} from "@/app/(main)/engine/agents/a/[agentId]/page";
+} from "@/app/(main)/intelligence/agents/a/[agentId]/page";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 
 // Resource creation action types
@@ -738,7 +738,7 @@ export default function Agent({
           `Agent ${isEditMode ? "updated" : "created"} successfully!`
         );
         resetFormAndState();
-        router.push("/engine/agents");
+        router.push("/intelligence/agents");
       } catch (error) {
         const msg = error instanceof Error ? error.message : "Unknown error";
         toast.error(
@@ -1327,7 +1327,7 @@ export default function Agent({
             }}
             onSubmit={handleSubmit}
             submitButton={{
-              backUrl: "/engine/agents",
+              backUrl: "/intelligence/agents",
               backLabel: "Back",
               createLabel: "Create Agent",
               updateLabel: "Update Agent",

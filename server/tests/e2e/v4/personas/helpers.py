@@ -57,7 +57,7 @@ def _resolve_profile_ids(
     *,
     profile_id: str,
     effective_profile_id: str | None,
-    pathname: str = "/create/personas",
+    pathname: str = "/training/personas",
 ) -> tuple[str, str]:
     """Resolve profile IDs to ensure they are valid UUIDs."""
     effective = effective_profile_id or profile_id

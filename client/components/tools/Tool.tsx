@@ -682,7 +682,7 @@ function ToolComponent({
         toast.success(
           `Tool ${isEditMode ? "updated" : "created"} successfully!`
         );
-        router.push("/engine/tools");
+        router.push("/intelligence/tools");
       } catch (error) {
         toast.error(
           `Failed to ${isEditMode ? "update" : "create"} tool: ${
@@ -896,7 +896,7 @@ function ToolComponent({
 
   const submitButton = useMemo(
     () => ({
-      backUrl: "/engine/tools",
+      backUrl: "/intelligence/tools",
       backLabel: "Back",
       createLabel: "Create Tool",
       updateLabel: "Update Tool",

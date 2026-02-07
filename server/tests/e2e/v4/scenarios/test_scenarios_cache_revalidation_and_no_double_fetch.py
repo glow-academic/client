@@ -59,7 +59,7 @@ def test_scenarios_cache_revalidation_and_no_double_fetch(
 ) -> None:
     """Ensure default detail fetch happens once and mutations revalidate list data."""
     detail_counter, stop_counter = _set_request_counter(page, "/api/v4/scenarios/new")
-    page.goto(f"{base_url}/create/scenarios/new")
+    page.goto(f"{base_url}/training/scenarios/new")
     page.wait_for_load_state("networkidle")
     stop_counter()
     assert detail_counter["total"] <= 1, (
@@ -80,7 +80,7 @@ def test_scenarios_cache_revalidation_and_no_double_fetch(
     submit_button.click()
 
     _expect_toast(page, "Scenario created successfully")
-    page.wait_for_url(f"{base_url}/create/scenarios")
+    page.wait_for_url(f"{base_url}/training/scenarios")
 
     search_input = page.get_by_test_id("scenarios-search")
     search_input.fill(scenario_name)
@@ -156,7 +156,7 @@ def test_scenarios_cache_revalidation_and_no_double_fetch(
     ).get_by_test_id("btn-edit-scenario")
     edit_button.click()
 
-    page.wait_for_url(f"{base_url}/create/scenarios/s/{scenario_id}")
+    page.wait_for_url(f"{base_url}/training/scenarios/s/{scenario_id}")
     page.wait_for_load_state("networkidle")
 
     updated_name = f"{scenario_name} Updated"
@@ -167,7 +167,7 @@ def test_scenarios_cache_revalidation_and_no_double_fetch(
     submit_button = page.get_by_test_id("btn-submit-scenario")
     submit_button.click()
 
-    page.wait_for_url(f"{base_url}/create/scenarios")
+    page.wait_for_url(f"{base_url}/training/scenarios")
 
     search_input = page.get_by_test_id("scenarios-search")
     search_input.fill(updated_name)

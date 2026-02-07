@@ -26,7 +26,7 @@ def _get_simulation_ids(page: Page) -> set[str]:
 
 def test_simulation_duplicate_refreshes_list(page: Page, base_url: str) -> None:
     """Verify duplicate operation refreshes list correctly."""
-    page.goto(f"{base_url}/create/simulations")
+    page.goto(f"{base_url}/training/simulations")
     page.wait_for_load_state("networkidle")
 
     initial_ids = _get_simulation_ids(page)

@@ -58,7 +58,7 @@ const getSectionFromSegments = (segments: string[]): string => {
       }
       return "analytics";
 
-    case "create":
+    case "training":
       if (second === "personas") {
         if (third === "p" && fourth) {
           return `persona-${fourth}`;
@@ -89,7 +89,7 @@ const getSectionFromSegments = (segments: string[]): string => {
         }
         return "cohorts";
       }
-      return "create";
+      return "training";
 
     case "leaderboard":
       return "leaderboard";
@@ -121,7 +121,7 @@ const getSectionFromSegments = (segments: string[]): string => {
       }
       return "management";
 
-    case "engine":
+    case "intelligence":
       if (second === "agents") {
         if (third === "a" && fourth) {
           return `agent-${fourth}`;
@@ -146,7 +146,7 @@ const getSectionFromSegments = (segments: string[]): string => {
         }
         return "tools";
       }
-      return "engine";
+      return "intelligence";
 
     case "system":
       if (second === "providers") {
@@ -242,8 +242,8 @@ export const generateBreadcrumbs = (pathname: string): BreadcrumbItem[] => {
       case "profile":
         title = "Profile";
         break;
-      case "create":
-        title = "Create";
+      case "training":
+        title = "Training";
         break;
       case "leaderboard":
         title = "Leaderboard";
@@ -304,8 +304,8 @@ export const generateBreadcrumbs = (pathname: string): BreadcrumbItem[] => {
       case "evals":
         title = "Evals";
         break;
-      case "engine":
-        title = "Engine";
+      case "intelligence":
+        title = "Intelligence";
         break;
       case "fields":
         title = "Fields";

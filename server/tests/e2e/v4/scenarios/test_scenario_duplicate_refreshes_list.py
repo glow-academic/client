@@ -21,7 +21,7 @@ def _get_scenario_ids(page: Page) -> set[str]:
 
 def test_scenario_duplicate_refreshes_list(page: Page, base_url: str) -> None:
     """Duplicate a scenario and verify new card appears with refreshed data."""
-    page.goto(f"{base_url}/create/scenarios")
+    page.goto(f"{base_url}/training/scenarios")
     page.wait_for_load_state("networkidle")
 
     cards = page.get_by_test_id("scenario-card")

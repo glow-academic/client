@@ -51,7 +51,7 @@ import type {
   DuplicateModelIn,
   DuplicateModelOut,
   ModelsListOut,
-} from "@/app/(main)/engine/models/page";
+} from "@/app/(main)/intelligence/models/page";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import { Input } from "@/components/ui/input";
@@ -301,7 +301,7 @@ export default function Models({
   };
 
   const handleEdit = (modelId: string) => {
-    router.push(`/engine/models/${modelId}`);
+    router.push(`/intelligence/models/${modelId}`);
   };
 
   const renderModelCard = (model: (typeof models)[number]) => (

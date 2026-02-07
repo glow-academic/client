@@ -28,7 +28,7 @@ def test_simulation_readonly_permissions(page: Page, base_url: str) -> None:
     simulation_id = readonly_simulation["simulation_id"]
     simulation_name = readonly_simulation["name"]
 
-    page.goto(f"{base_url}/create/simulations")
+    page.goto(f"{base_url}/training/simulations")
     page.wait_for_load_state("networkidle")
 
     search_input = page.get_by_test_id("simulations-search")
@@ -47,7 +47,7 @@ def test_simulation_readonly_permissions(page: Page, base_url: str) -> None:
 
     view_button.click()
 
-    page.wait_for_url(f"{base_url}/create/simulations/s/{simulation_id}")
+    page.wait_for_url(f"{base_url}/training/simulations/s/{simulation_id}")
     page.wait_for_load_state("networkidle")
 
     # Verify data-page attribute
@@ -100,7 +100,7 @@ def test_simulation_readonly_permissions(page: Page, base_url: str) -> None:
     # Verify delete button not visible if can_delete is false
     if not readonly_simulation.get("can_delete"):
         # Navigate back to list to check delete button
-        page.goto(f"{base_url}/create/simulations")
+        page.goto(f"{base_url}/training/simulations")
         page.wait_for_load_state("networkidle")
         search_input = page.get_by_test_id("simulations-search")
         search_input.fill(simulation_name)

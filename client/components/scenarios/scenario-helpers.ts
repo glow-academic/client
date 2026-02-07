@@ -6,8 +6,8 @@
 import type {
   ScenarioDetailOut,
   ScenarioNewOut,
-} from "@/app/(main)/create/scenarios/s/[scenarioId]/page";
-import { stringifyJsonDict } from "@/app/(main)/create/scenarios/searchParams";
+} from "@/app/(main)/training/scenarios/s/[scenarioId]/page";
+import { stringifyJsonDict } from "@/app/(main)/training/scenarios/searchParams";
 import type { DraftState } from "./scenario-types";
 
 /**

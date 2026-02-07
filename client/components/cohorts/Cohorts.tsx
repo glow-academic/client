@@ -17,7 +17,7 @@ import type {
   DeleteCohortOut,
   DuplicateCohortIn,
   DuplicateCohortOut,
-} from "@/app/(main)/create/cohorts/page";
+} from "@/app/(main)/training/cohorts/page";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import { Input } from "@/components/ui/input";
@@ -498,11 +498,11 @@ export default function Cohorts({
   };
 
   const handleEdit = (id: string) => {
-    router.push(`/create/cohorts/c/${id}`);
+    router.push(`/training/cohorts/c/${id}`);
   };
 
   const handleView = (id: string) => {
-    router.push(`/create/cohorts/c/${id}`);
+    router.push(`/training/cohorts/c/${id}`);
   };
 
   const renderCohortCard = (cohort: (typeof cohorts)[number]) => (

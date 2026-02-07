@@ -15,7 +15,7 @@ pytestmark = [pytest.mark.e2e, pytest.mark.test_profile_id(ADMIN_PROFILE_ID)]
 def test_document_upload_workflow(page: Page, base_url: str) -> None:
     """Test document upload via TUS protocol: upload → classify → verify in list."""
     # Navigate to documents page
-    page.goto(f"{base_url}/create/documents")
+    page.goto(f"{base_url}/management/documents")
     page.wait_for_load_state("networkidle")
 
     # Wait for documents page to load

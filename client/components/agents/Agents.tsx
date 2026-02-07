@@ -14,7 +14,7 @@ import type {
   DeleteAgentOut,
   DuplicateAgentIn,
   DuplicateAgentOut,
-} from "@/app/(main)/engine/agents/page";
+} from "@/app/(main)/intelligence/agents/page";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import {
@@ -277,7 +277,7 @@ export default function Agents({
   ]);
 
   const handleEdit = (id: string) => {
-    router.push(`/engine/agents/a/${id}`);
+    router.push(`/intelligence/agents/a/${id}`);
   };
 
   const handleDuplicate = async (id: string) => {

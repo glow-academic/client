@@ -1104,7 +1104,7 @@ function ModelComponent({
         toast.success(
           `Model ${isEditMode ? "updated" : "created"} successfully!`
         );
-        router.push(`/engine/models`);
+        router.push(`/intelligence/models`);
       } catch (error) {
         toast.error(
           `Failed to ${isEditMode ? "update" : "create"} model: ${error instanceof Error ? error.message : "Unknown error"}`
@@ -1471,7 +1471,7 @@ function ModelComponent({
   // Submit button config (for GenericForm)
   const submitButton = useMemo(
     () => ({
-      backUrl: "/engine/models",
+      backUrl: "/intelligence/models",
       backLabel: "Back",
       createLabel: "Create Model",
       updateLabel: "Update Model",

@@ -126,27 +126,27 @@ export function UnifiedAccessDenied({
     const getListPath = () => {
       switch (resourceType) {
         case "scenario":
-          return "/create/scenarios";
+          return "/training/scenarios";
         case "simulation":
-          return "/create/simulations";
+          return "/training/simulations";
         case "cohort":
           return "/cohorts";
         case "persona":
-          return "/create/personas";
+          return "/training/personas";
         case "department":
           return "/departments";
         case "agent":
-          return "/engine/agents";
+          return "/intelligence/agents";
         case "rubric":
-          return "/engine/rubrics";
+          return "/intelligence/rubrics";
         case "parameter":
           return "/management/parameters";
         case "key":
           return "/system/keys";
         case "prompt":
-          return "/engine/prompts";
+          return "/intelligence/prompts";
         case "video":
-          return "/create/videos";
+          return "/training/videos";
         default:
           return "/";
       }

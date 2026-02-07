@@ -26,8 +26,8 @@ export {
  * Main screens are those with 1 or 2 slashes (main sections and their direct children)
  */
 export const isMainScreen = (pathname: string): boolean => {
-  // Special case: allow /create/cohorts/new to be treated as a main screen
-  if (pathname === "/create/cohorts/new") {
+  // Special case: allow /training/cohorts/new to be treated as a main screen
+  if (pathname === "/training/cohorts/new") {
     return true;
   }
 
@@ -83,19 +83,19 @@ export const getSectionRoute = (
     case "departments":
       return "/system/departments";
 
-    // Create routes
-    case "create":
-      return "/create";
+    // Training routes
+    case "training":
+      return "/training";
     case "scenarios":
-      return "/create/scenarios";
+      return "/training/scenarios";
     case "simulations":
-      return "/create/simulations";
+      return "/training/simulations";
     case "videos":
-      return "/create/videos";
+      return "/training/videos";
     case "personas":
-      return "/create/personas";
+      return "/training/personas";
     case "cohorts":
-      return "/create/cohorts";
+      return "/training/cohorts";
 
     // Management routes
     case "management":
@@ -109,17 +109,17 @@ export const getSectionRoute = (
     case "fields":
       return "/management/fields";
 
-    // Engine routes
-    case "engine":
-      return "/engine";
+    // Intelligence routes
+    case "intelligence":
+      return "/intelligence";
     case "agents":
-      return "/engine/agents";
+      return "/intelligence/agents";
     case "models":
-      return "/engine/models";
+      return "/intelligence/models";
     case "rubrics":
-      return "/engine/rubrics";
+      return "/intelligence/rubrics";
     case "tools":
-      return "/engine/tools";
+      return "/intelligence/tools";
     case "evals":
       return "/system/evals";
 
@@ -152,21 +152,21 @@ export const getSectionRoute = (
 
       if (section.startsWith("cohort-")) {
         const cohortId = section.replace("cohort-", "");
-        // Route to edit page (cohorts are now under create)
-        return `/create/cohorts/c/${cohortId}`;
+        // Route to edit page (cohorts are now under training)
+        return `/training/cohorts/c/${cohortId}`;
       }
 
       if (section.startsWith("simulation-")) {
         const simulationId = section.replace("simulation-", "");
-        return `/create/simulations/s/${simulationId}`;
+        return `/training/simulations/s/${simulationId}`;
       }
       if (section.startsWith("scenario-")) {
         const scenarioId = section.replace("scenario-", "");
-        return `/create/scenarios/s/${scenarioId}`;
+        return `/training/scenarios/s/${scenarioId}`;
       }
       if (section.startsWith("rubric-")) {
         const rubricId = section.replace("rubric-", "");
-        return `/engine/rubrics/r/${rubricId}`;
+        return `/intelligence/rubrics/r/${rubricId}`;
       }
       if (section.startsWith("document-")) {
         const documentId = section.replace("document-", "");
@@ -193,7 +193,7 @@ export const getSectionRoute = (
       }
       if (section.startsWith("model-")) {
         const modelId = section.replace("model-", "");
-        return `/engine/models/${modelId}`;
+        return `/intelligence/models/${modelId}`;
       }
       if (section.startsWith("profile-")) {
         const profileId = section.replace("profile-", "");
@@ -210,13 +210,13 @@ export const getSectionRoute = (
       }
       if (section.startsWith("persona-")) {
         const personaId = section.replace("persona-", "");
-        return `/create/personas/p/${personaId}`;
+        return `/training/personas/p/${personaId}`;
       }
 
-      // Engine dynamic routes
+      // Intelligence dynamic routes
       if (section.startsWith("agent-")) {
         const agentId = section.replace("agent-", "");
-        return `/engine/agents/a/${agentId}`;
+        return `/intelligence/agents/a/${agentId}`;
       }
       if (section.startsWith("eval-run-")) {
         const evalRunId = section.replace("eval-run-", "");

@@ -27,7 +27,7 @@ import type {
   DuplicatePersonaIn,
   DuplicatePersonaOut,
   PersonasListOut,
-} from "@/app/(main)/create/personas/page";
+} from "@/app/(main)/training/personas/page";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import {
@@ -690,11 +690,11 @@ export default function Personas({
   };
 
   const handleEdit = (id: string) => {
-    router.push(`/create/personas/p/${id}`);
+    router.push(`/training/personas/p/${id}`);
   };
 
   const handleView = (id: string) => {
-    router.push(`/create/personas/p/${id}`);
+    router.push(`/training/personas/p/${id}`);
   };
 
   const renderPersonaCard = (persona: (typeof personas)[0]) => {

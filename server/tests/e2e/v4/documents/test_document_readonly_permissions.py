@@ -12,7 +12,7 @@ pytestmark = [pytest.mark.e2e, pytest.mark.test_profile_id(ADMIN_PROFILE_ID)]
 
 def test_document_readonly_no_edit_button(page: Page, base_url: str) -> None:
     """Verify documents with can_edit=false don't show edit button or show view button instead."""
-    page.goto(f"{base_url}/create/documents")
+    page.goto(f"{base_url}/management/documents")
     page.wait_for_load_state("networkidle")
 
     # Find documents - check for edit buttons
@@ -46,7 +46,7 @@ def test_document_readonly_no_edit_button(page: Page, base_url: str) -> None:
 
 def test_document_readonly_no_delete_button(page: Page, base_url: str) -> None:
     """Verify documents with can_delete=false don't show delete button or it's disabled."""
-    page.goto(f"{base_url}/create/documents")
+    page.goto(f"{base_url}/management/documents")
     page.wait_for_load_state("networkidle")
 
     # Find delete buttons
@@ -74,7 +74,7 @@ def test_document_readonly_no_delete_button(page: Page, base_url: str) -> None:
 
 def test_document_readonly_can_preview(page: Page, base_url: str) -> None:
     """Verify read-only documents can be previewed."""
-    page.goto(f"{base_url}/create/documents")
+    page.goto(f"{base_url}/management/documents")
     page.wait_for_load_state("networkidle")
 
     # Find preview buttons

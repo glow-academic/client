@@ -39,7 +39,7 @@ def test_document_delete_cancel_then_confirm(page: Page, base_url: str) -> None:
             effective_profile_id=ADMIN_PROFILE_ID,
         )
 
-        page.goto(f"{base_url}/create/documents")
+        page.goto(f"{base_url}/management/documents")
         page.wait_for_load_state("networkidle")
 
         # Find document card/row
@@ -112,7 +112,7 @@ def test_document_delete_cancel_then_confirm(page: Page, base_url: str) -> None:
 
 def test_document_delete_non_deletable_shows_warning(page: Page, base_url: str) -> None:
     """Verify that non-deletable documents show appropriate warning."""
-    page.goto(f"{base_url}/create/documents")
+    page.goto(f"{base_url}/management/documents")
     page.wait_for_load_state("networkidle")
 
     # Find a document that is used in scenarios (can_delete = false)

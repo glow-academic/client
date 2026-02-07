@@ -18,7 +18,7 @@ pytestmark = [pytest.mark.e2e, pytest.mark.test_profile_id(ADMIN_PROFILE_ID)]
 
 def test_simulations_list_filters_and_empty_state(page: Page, base_url: str) -> None:
     """Ensure simulation list SSR renders and search/filter flows work."""
-    page.goto(f"{base_url}/create/simulations")
+    page.goto(f"{base_url}/training/simulations")
     page.wait_for_load_state("networkidle")
 
     grid = page.get_by_test_id("simulations-grid")
@@ -159,10 +159,10 @@ def test_simulations_list_pagination(page: Page, base_url: str) -> None:
                     effective_profile_id=ADMIN_PROFILE_ID,
                 )
                 created_simulation_ids.append(simulation_id)
-            page.goto(f"{base_url}/create/simulations")
+            page.goto(f"{base_url}/training/simulations")
             page.wait_for_load_state("networkidle")
 
-        page.goto(f"{base_url}/create/simulations")
+        page.goto(f"{base_url}/training/simulations")
         page.wait_for_load_state("networkidle")
 
         next_button = page.get_by_role("button", name="Go to next page")

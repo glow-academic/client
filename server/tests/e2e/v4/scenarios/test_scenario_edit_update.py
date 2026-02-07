@@ -27,7 +27,7 @@ def test_scenario_edit_update_fields(page: Page, base_url: str) -> None:
 
     try:
         # Navigate to scenarios list
-        page.goto(f"{base_url}/create/scenarios")
+        page.goto(f"{base_url}/training/scenarios")
         page.wait_for_load_state("networkidle")
 
         # Wait for grid to be visible
@@ -53,7 +53,7 @@ def test_scenario_edit_update_fields(page: Page, base_url: str) -> None:
         expect(edit_button).to_be_enabled()
         edit_button.click()
 
-        page.wait_for_url(f"{base_url}/create/scenarios/s/{scenario_id}")
+        page.wait_for_url(f"{base_url}/training/scenarios/s/{scenario_id}")
         page.wait_for_load_state("networkidle")
 
         # Verify page attributes
@@ -90,7 +90,7 @@ def test_scenario_edit_update_fields(page: Page, base_url: str) -> None:
         submit_button.click()
 
         # Wait for redirect back to list
-        page.wait_for_url(f"{base_url}/create/scenarios", timeout=20000)
+        page.wait_for_url(f"{base_url}/training/scenarios", timeout=20000)
         page.wait_for_load_state("networkidle")
 
         # Verify changes persist

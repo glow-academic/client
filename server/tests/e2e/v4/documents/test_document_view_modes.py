@@ -12,7 +12,7 @@ pytestmark = [pytest.mark.e2e, pytest.mark.test_profile_id(ADMIN_PROFILE_ID)]
 
 def test_document_list_view_selection(page: Page, base_url: str) -> None:
     """Verify list view shows checkboxes and enables bulk operations."""
-    page.goto(f"{base_url}/create/documents")
+    page.goto(f"{base_url}/management/documents")
     page.wait_for_load_state("networkidle")
 
     # Ensure we're in list view
@@ -69,7 +69,7 @@ def test_document_list_view_selection(page: Page, base_url: str) -> None:
 
 def test_document_grid_view_no_selection(page: Page, base_url: str) -> None:
     """Verify grid view doesn't show checkboxes and bulk operations aren't available."""
-    page.goto(f"{base_url}/create/documents")
+    page.goto(f"{base_url}/management/documents")
     page.wait_for_load_state("networkidle")
 
     # Switch to grid view
@@ -121,7 +121,7 @@ def test_document_grid_view_no_selection(page: Page, base_url: str) -> None:
 
 def test_document_view_mode_persistence(page: Page, base_url: str) -> None:
     """Verify view mode persists or resets appropriately on reload."""
-    page.goto(f"{base_url}/create/documents")
+    page.goto(f"{base_url}/management/documents")
     page.wait_for_load_state("networkidle")
 
     # Switch to grid view

@@ -21,7 +21,7 @@ def _get_persona_ids(page: Page) -> set[str]:
 
 def test_persona_duplicate_refreshes_list(page: Page, base_url: str) -> None:
     """Duplicate a persona and verify new card appears with refreshed data."""
-    page.goto(f"{base_url}/create/personas")
+    page.goto(f"{base_url}/training/personas")
     page.wait_for_load_state("networkidle")
 
     cards = page.get_by_test_id("persona-card")

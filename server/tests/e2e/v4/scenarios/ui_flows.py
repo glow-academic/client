@@ -19,7 +19,7 @@ def create_scenario_via_ui(
     """Create a scenario via UI and return (scenario_name, scenario_id)."""
     scenario_name = name or generate_unique_scenario_name("UI Scenario")
 
-    page.goto(f"{base_url}/create/scenarios/new")
+    page.goto(f"{base_url}/training/scenarios/new")
     page.wait_for_load_state("networkidle")
 
     title_input = page.get_by_test_id("input-scenario-title")
@@ -33,7 +33,7 @@ def create_scenario_via_ui(
     submit_button = page.get_by_test_id("btn-submit-scenario")
     submit_button.click()
 
-    page.wait_for_url(re.compile(r".*/create/scenarios.*"), timeout=20000)
+    page.wait_for_url(re.compile(r".*/training/scenarios.*"), timeout=20000)
     page.wait_for_load_state("networkidle")
     print(f"[E2E] Landed on URL after scenario create: {page.url}", file=sys.stdout)
     page.wait_for_selector("[data-testid='scenarios-grid']", timeout=10000)

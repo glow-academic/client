@@ -45,7 +45,7 @@ def _set_monaco_value(page: Page, value: str) -> None:
 
 def test_persona_create_validation_and_success(page: Page, base_url: str) -> None:
     """Validate required fields and create a persona successfully."""
-    page.goto(f"{base_url}/create/personas/new")
+    page.goto(f"{base_url}/training/personas/new")
     page.wait_for_load_state("networkidle")
 
     name_input = page.get_by_test_id("input-persona-name")
@@ -95,7 +95,7 @@ def test_persona_create_validation_and_success(page: Page, base_url: str) -> Non
 
     submit_button.click()
 
-    page.wait_for_url(f"{base_url}/create/personas", timeout=20000)
+    page.wait_for_url(f"{base_url}/training/personas", timeout=20000)
     page.wait_for_load_state("networkidle")
 
     search_input = page.get_by_test_id("personas-search")

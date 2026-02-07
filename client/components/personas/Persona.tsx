@@ -1655,7 +1655,7 @@ function PersonaComponent({
         toast.success(
           `Persona ${isEditMode ? "updated" : "created"} successfully!`
         );
-        router.push("/create/personas");
+        router.push("/training/personas");
       } catch (error) {
         toast.error(
           `Failed to ${isEditMode ? "update" : "create"} persona: ${error instanceof Error ? error.message : "Unknown error"}`
@@ -1893,7 +1893,7 @@ function PersonaComponent({
   // Memoize submitButton to prevent GenericForm re-renders
   const submitButton = useMemo(
     () => ({
-      backUrl: "/create/personas",
+      backUrl: "/training/personas",
       backLabel: "Back",
       createLabel: "Create Persona",
       updateLabel: "Update Persona",

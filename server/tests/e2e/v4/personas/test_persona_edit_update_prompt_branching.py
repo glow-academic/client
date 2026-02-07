@@ -84,7 +84,7 @@ def test_persona_edit_update_prompt_branching(page: Page, base_url: str) -> None
     department_prompt = "Department-specific prompt created via E2E."
 
     try:
-        page.goto(f"{base_url}/create/personas")
+        page.goto(f"{base_url}/training/personas")
         page.wait_for_load_state("networkidle")
 
         persona_card = page.locator(
@@ -95,7 +95,7 @@ def test_persona_edit_update_prompt_branching(page: Page, base_url: str) -> None
         edit_button = persona_card.get_by_test_id("btn-edit-persona")
         edit_button.click()
 
-        page.wait_for_url(f"{base_url}/create/personas/p/{persona_id}")
+        page.wait_for_url(f"{base_url}/training/personas/p/{persona_id}")
         page.wait_for_load_state("networkidle")
 
         container = page.locator("[data-page='persona-edit']").first
@@ -136,7 +136,7 @@ def test_persona_edit_update_prompt_branching(page: Page, base_url: str) -> None
         submit_button = page.get_by_test_id("btn-submit-persona")
         submit_button.click()
 
-        page.wait_for_url(f"{base_url}/create/personas", timeout=20000)
+        page.wait_for_url(f"{base_url}/training/personas", timeout=20000)
         page.wait_for_load_state("networkidle")
 
         search_input = page.get_by_test_id("personas-search")
@@ -151,7 +151,7 @@ def test_persona_edit_update_prompt_branching(page: Page, base_url: str) -> None
         edit_button = persona_card.get_by_test_id("btn-edit-persona")
         edit_button.click()
 
-        page.wait_for_url(f"{base_url}/create/personas/p/{persona_id}")
+        page.wait_for_url(f"{base_url}/training/personas/p/{persona_id}")
         page.wait_for_load_state("networkidle")
 
         name_input = page.get_by_test_id("input-persona-name")

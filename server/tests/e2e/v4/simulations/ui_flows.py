@@ -23,7 +23,7 @@ def create_simulation_via_ui(
     """Create a simulation through the UI and return (name, simulation_id)."""
     simulation_name = name or generate_unique_simulation_name("UI Simulation")
 
-    page.goto(f"{base_url}/create/simulations/new")
+    page.goto(f"{base_url}/training/simulations/new")
     page.wait_for_load_state("networkidle")
 
     name_input = page.get_by_test_id("input-simulation-title")
@@ -81,7 +81,7 @@ def create_simulation_via_ui(
     submit_button = page.get_by_test_id("btn-submit-simulation")
     submit_button.click()
 
-    page.wait_for_url(re.compile(r".*/create/simulations.*"), timeout=20000)
+    page.wait_for_url(re.compile(r".*/training/simulations.*"), timeout=20000)
     page.wait_for_load_state("networkidle")
     print(f"[E2E] Landed on URL after simulation create: {page.url}", file=sys.stdout)
     page.wait_for_selector("[data-testid='simulations-grid']", timeout=10000)

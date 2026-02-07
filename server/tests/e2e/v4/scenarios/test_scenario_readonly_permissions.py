@@ -29,7 +29,7 @@ def test_scenario_readonly_permissions(page: Page, base_url: str) -> None:
         readonly_scenario.get("title") or readonly_scenario.get("name") or ""
     )
 
-    page.goto(f"{base_url}/create/scenarios")
+    page.goto(f"{base_url}/training/scenarios")
     page.wait_for_load_state("networkidle")
 
     search_input = page.get_by_test_id("scenarios-search")
@@ -49,7 +49,7 @@ def test_scenario_readonly_permissions(page: Page, base_url: str) -> None:
 
     view_button.click()
 
-    page.wait_for_url(f"{base_url}/create/scenarios/s/{scenario_id}")
+    page.wait_for_url(f"{base_url}/training/scenarios/s/{scenario_id}")
     page.wait_for_load_state("networkidle")
 
     # Verify page attributes

@@ -81,7 +81,7 @@ def test_personas_cache_revalidation_and_no_double_fetch(
 ) -> None:
     """Ensure default detail fetch happens once and mutations revalidate list data."""
     detail_counter, stop_counter = _set_request_counter(page, "/api/v4/personas/new")
-    page.goto(f"{base_url}/create/personas/new")
+    page.goto(f"{base_url}/training/personas/new")
     page.wait_for_load_state("networkidle")
     stop_counter()
     assert detail_counter["total"] <= 1, (
@@ -112,7 +112,7 @@ def test_personas_cache_revalidation_and_no_double_fetch(
     submit_button.click()
 
     _expect_toast(page, "Persona created successfully!")
-    page.wait_for_url(f"{base_url}/create/personas")
+    page.wait_for_url(f"{base_url}/training/personas")
 
     search_input = page.get_by_test_id("personas-search")
     search_input.fill(persona_name)
@@ -158,7 +158,7 @@ def test_personas_cache_revalidation_and_no_double_fetch(
     ).get_by_test_id("btn-edit-persona")
     edit_button.click()
 
-    page.wait_for_url(f"{base_url}/create/personas/p/{persona_id}")
+    page.wait_for_url(f"{base_url}/training/personas/p/{persona_id}")
     page.wait_for_load_state("networkidle")
 
     updated_name = f"{persona_name} Updated"
@@ -169,7 +169,7 @@ def test_personas_cache_revalidation_and_no_double_fetch(
     submit_button = page.get_by_test_id("btn-submit-persona")
     submit_button.click()
 
-    page.wait_for_url(f"{base_url}/create/personas")
+    page.wait_for_url(f"{base_url}/training/personas")
 
     search_input = page.get_by_test_id("personas-search")
     search_input.fill(updated_name)

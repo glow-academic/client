@@ -23,7 +23,7 @@ import type {
   DuplicateSimulationIn,
   DuplicateSimulationOut,
   SimulationsListOut,
-} from "@/app/(main)/create/simulations/page";
+} from "@/app/(main)/training/simulations/page";
 import { GenerateRegenerateModal, type GenerateRegenerateModalResource } from "@/components/common/GenerateRegenerateModal";
 import { useProfile } from "@/contexts/profile-context";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
@@ -492,7 +492,7 @@ export function Simulations({
   };
 
   const handleEdit = (id: string) => {
-    router.push(`/create/simulations/s/${id}`);
+    router.push(`/training/simulations/s/${id}`);
   };
 
   const handleDuplicate = async (

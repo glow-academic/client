@@ -183,18 +183,18 @@ function MainLayoutContent({
       return null;
     }
 
-    if (pathname === "/create/cohorts") {
+    if (pathname === "/training/cohorts") {
       return (
-        <Button onClick={() => router.push("/create/cohorts/new")} size="sm">
+        <Button onClick={() => router.push("/training/cohorts/new")} size="sm">
           <Plus className="h-4 w-4 mr-2" />
           Create Cohort
         </Button>
       );
     }
 
-    if (pathname === "/create/personas") {
+    if (pathname === "/training/personas") {
       return (
-        <Button onClick={() => router.push("/create/personas/new")} size="sm">
+        <Button onClick={() => router.push("/training/personas/new")} size="sm">
           <Plus className="h-4 w-4 mr-2" />
           Create Persona
         </Button>
@@ -213,9 +213,9 @@ function MainLayoutContent({
       );
     }
 
-    if (pathname === "/engine/rubrics") {
+    if (pathname === "/intelligence/rubrics") {
       return (
-        <Button onClick={() => router.push("/engine/rubrics/new")} size="sm">
+        <Button onClick={() => router.push("/intelligence/rubrics/new")} size="sm">
           <Plus className="h-4 w-4 mr-2" />
           Create Rubric
         </Button>
@@ -240,19 +240,19 @@ function MainLayoutContent({
       );
     }
 
-    if (pathname === "/create/scenarios") {
+    if (pathname === "/training/scenarios") {
       return (
-        <Button onClick={() => router.push("/create/scenarios/new")} size="sm">
+        <Button onClick={() => router.push("/training/scenarios/new")} size="sm">
           <Plus className="h-4 w-4 mr-2" />
           Create Scenario
         </Button>
       );
     }
 
-    if (pathname === "/create/simulations") {
+    if (pathname === "/training/simulations") {
       return (
         <Button
-          onClick={() => router.push("/create/simulations/new")}
+          onClick={() => router.push("/training/simulations/new")}
           size="sm"
         >
           <Plus className="h-4 w-4 mr-2" />
@@ -266,9 +266,9 @@ function MainLayoutContent({
       return null;
     }
 
-    if (pathname === "/engine/models") {
+    if (pathname === "/intelligence/models") {
       return (
-        <Button onClick={() => router.push("/engine/models/new")} size="sm">
+        <Button onClick={() => router.push("/intelligence/models/new")} size="sm">
           <Plus className="h-4 w-4 mr-2" />
           Create Model
         </Button>
@@ -296,18 +296,18 @@ function MainLayoutContent({
       );
     }
 
-    if (pathname === "/engine/agents") {
+    if (pathname === "/intelligence/agents") {
       return (
-        <Button onClick={() => router.push("/engine/agents/new")} size="sm">
+        <Button onClick={() => router.push("/intelligence/agents/new")} size="sm">
           <Plus className="h-4 w-4 mr-2" />
           Create Agent
         </Button>
       );
     }
 
-    if (pathname === "/engine/evals") {
+    if (pathname === "/intelligence/evals") {
       return (
-        <Button onClick={() => router.push("/engine/evals/new")} size="sm">
+        <Button onClick={() => router.push("/intelligence/evals/new")} size="sm">
           <Plus className="h-4 w-4 mr-2" />
           New Eval
         </Button>
@@ -353,9 +353,9 @@ function MainLayoutContent({
       );
     }
 
-    if (pathname === "/engine/tools") {
+    if (pathname === "/intelligence/tools") {
       return (
-        <Button onClick={() => router.push("/engine/tools/new")} size="sm">
+        <Button onClick={() => router.push("/intelligence/tools/new")} size="sm">
           <Plus className="h-4 w-4 mr-2" />
           Create Tool
         </Button>
@@ -389,7 +389,7 @@ function MainLayoutContent({
     // /management/staff/new
     // /engine/rubrics/new
     // /system/departments/new
-    return /^\/(create|management|engine|system)\/([^/]+)\/(new|[pscrdafm]\/[^/]+)/.test(
+    return /^\/(training|management|intelligence|system)\/([^/]+)\/(new|[pscrdafm]\/[^/]+)/.test(
       pathname
     );
   }, [pathname]);
@@ -397,7 +397,7 @@ function MainLayoutContent({
   const urlPathSegment = useMemo(() => {
     if (!isCreateOrEditPage) return null;
     const match = pathname.match(
-      /^\/(create|management|engine|system)\/([^/]+)/
+      /^\/(training|management|intelligence|system)\/([^/]+)/
     );
     return match ? match[2] : null; // Use second capture group (URL path segment)
   }, [pathname, isCreateOrEditPage]);

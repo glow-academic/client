@@ -173,10 +173,10 @@ def get_agents_docs() -> dict[str, Any]:
                 "client/components/agents/Agent.tsx",
             ],
             "pages": [
-                "client/app/(main)/engine/agents/new/page.tsx",
-                "client/app/(main)/engine/agents/a/[agentId]/page.tsx",
+                "client/app/(main)/intelligence/agents/new/page.tsx",
+                "client/app/(main)/intelligence/agents/a/[agentId]/page.tsx",
             ],
-            "usage_patterns": "Agents are created and edited through the engine/agents pages. Agents represent AI assistants that can be configured with models, tools, and other resources.",
+            "usage_patterns": "Agents are created and edited through the intelligence/agents pages. Agents represent AI assistants that can be configured with models, tools, and other resources.",
         },
         "glow_context": {
             "description": "Agents represent AI assistants used in GLOW for various purposes. They can be configured with models, tools, and other resources to define their capabilities and behavior.",

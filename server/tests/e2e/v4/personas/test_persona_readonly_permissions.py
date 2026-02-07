@@ -27,7 +27,7 @@ def test_persona_readonly_permissions(page: Page, base_url: str) -> None:
     persona_id = readonly_persona["persona_id"]
     persona_name = readonly_persona["name"]
 
-    page.goto(f"{base_url}/create/personas")
+    page.goto(f"{base_url}/training/personas")
     page.wait_for_load_state("networkidle")
 
     search_input = page.get_by_test_id("personas-search")
@@ -46,7 +46,7 @@ def test_persona_readonly_permissions(page: Page, base_url: str) -> None:
 
     view_button.click()
 
-    page.wait_for_url(f"{base_url}/create/personas/p/{persona_id}")
+    page.wait_for_url(f"{base_url}/training/personas/p/{persona_id}")
     page.wait_for_load_state("networkidle")
 
     banner = page.get_by_text("Persona is read-only")

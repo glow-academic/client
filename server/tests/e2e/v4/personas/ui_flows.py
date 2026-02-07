@@ -42,7 +42,7 @@ def create_persona_via_ui(
     """Create a persona through the UI and return (name, persona_id)."""
     persona_name = name or generate_unique_persona_name("UI Persona")
 
-    page.goto(f"{base_url}/create/personas/new")
+    page.goto(f"{base_url}/training/personas/new")
     page.wait_for_load_state("networkidle")
 
     name_input = page.get_by_test_id("input-persona-name")
@@ -87,7 +87,7 @@ def create_persona_via_ui(
     submit_button = page.get_by_test_id("btn-submit-persona")
     submit_button.click()
 
-    page.wait_for_url(re.compile(r".*/create/personas.*"), timeout=20000)
+    page.wait_for_url(re.compile(r".*/training/personas.*"), timeout=20000)
     page.wait_for_load_state("networkidle")
     print(f"[E2E] Landed on URL after persona create: {page.url}", file=sys.stdout)
     page.wait_for_selector("[data-testid='personas-grid']", timeout=10000)

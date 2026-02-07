@@ -1046,7 +1046,7 @@ function CohortComponent({
         toast.success(
           `Cohort ${isEditMode ? "updated" : "created"} successfully!`
         );
-        router.push("/create/cohorts");
+        router.push("/training/cohorts");
       } catch (error) {
         toast.error(
           `Failed to ${isEditMode ? "update" : "create"} cohort: ${error instanceof Error ? error.message : "Unknown error"}`
@@ -1252,7 +1252,7 @@ function CohortComponent({
   // Memoize submitButton to prevent GenericForm re-renders
   const submitButton = useMemo(
     () => ({
-      backUrl: "/create/cohorts",
+      backUrl: "/training/cohorts",
       backLabel: "Back",
       createLabel: "Create Cohort",
       updateLabel: "Update Cohort",

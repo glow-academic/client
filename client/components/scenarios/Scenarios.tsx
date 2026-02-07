@@ -29,7 +29,7 @@ import type {
   DuplicateScenarioIn,
   DuplicateScenarioOut,
   ScenariosListOut,
-} from "@/app/(main)/create/scenarios/page";
+} from "@/app/(main)/training/scenarios/page";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import {
@@ -484,11 +484,11 @@ export function Scenarios({
   };
 
   const handleEdit = (id: string) => {
-    router.push(`/create/scenarios/s/${id}`);
+    router.push(`/training/scenarios/s/${id}`);
   };
 
   const handleView = (id: string) => {
-    router.push(`/create/scenarios/s/${id}`);
+    router.push(`/training/scenarios/s/${id}`);
   };
 
   const toggleGroupCollapse = (parentId: string) => {

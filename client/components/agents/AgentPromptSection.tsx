@@ -4,7 +4,7 @@
  */
 "use client";
 
-import type { AgentDetailOut } from "@/app/(main)/engine/agents/a/[agentId]/page";
+import type { AgentDetailOut } from "@/app/(main)/intelligence/agents/a/[agentId]/page";
 import UnifiedPromptEditor from "@/components/common/editor/UnifiedPromptEditor";
 import {
   PromptInfo,

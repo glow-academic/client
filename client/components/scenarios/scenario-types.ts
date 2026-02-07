@@ -3,7 +3,7 @@
  * Extracted from Scenario.tsx for better organization
  */
 
-import type { GetScenarioOut } from "@/app/(main)/create/scenarios/s/[scenarioId]/page";
+import type { GetScenarioOut } from "@/app/(main)/training/scenarios/s/[scenarioId]/page";
 
 /**
  * Draft state type for scenario form

@@ -1888,7 +1888,7 @@ function ScenarioComponent({
 
   const submitButton = useMemo(
     () => ({
-      backUrl: "/create/scenarios",
+      backUrl: "/training/scenarios",
       backLabel: "Back",
       createLabel: "Save Scenario",
       updateLabel: "Save Scenario",
@@ -2203,7 +2203,7 @@ function ScenarioComponent({
         toast.success(
           `Scenario ${isEditMode ? "updated" : "created"} successfully!`
         );
-        router.push("/create/scenarios");
+        router.push("/training/scenarios");
       } catch (error) {
         toast.error(
           `Failed to ${isEditMode ? "update" : "create"} scenario: ${error instanceof Error ? error.message : "Unknown error"}`

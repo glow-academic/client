@@ -12,7 +12,7 @@ def edit_document_via_ui(
     updates: dict,
 ) -> None:
     """Edit a document through the UI."""
-    page.goto(f"{base_url}/create/documents")
+    page.goto(f"{base_url}/management/documents")
     page.wait_for_load_state("networkidle")
 
     # Find document card/row
@@ -73,7 +73,7 @@ def delete_document_via_ui(
     confirm: bool = True,
 ) -> None:
     """Delete a document through the UI."""
-    page.goto(f"{base_url}/create/documents")
+    page.goto(f"{base_url}/management/documents")
     page.wait_for_load_state("networkidle")
 
     # Find document card/row

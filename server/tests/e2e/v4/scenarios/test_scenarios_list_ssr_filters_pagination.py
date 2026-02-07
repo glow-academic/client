@@ -12,7 +12,7 @@ pytestmark = [pytest.mark.e2e, pytest.mark.test_profile_id(ADMIN_PROFILE_ID)]
 
 def test_scenarios_list_filters_and_empty_state(page: Page, base_url: str) -> None:
     """Ensure scenario list SSR renders and search/filter flows work."""
-    page.goto(f"{base_url}/create/scenarios")
+    page.goto(f"{base_url}/training/scenarios")
     page.wait_for_load_state("networkidle")
 
     grid = page.get_by_test_id("scenarios-grid")

@@ -51,11 +51,11 @@ import Link from "next/link";
 import {
   Activity,
   AlertCircle,
-  Brain,
   ChevronRight,
   ChevronsUpDown,
   ClipboardList,
   Gauge,
+  GraduationCap,
   Home,
   LogOut,
   PieChart,
@@ -226,38 +226,38 @@ export function UnifiedSidebar({
       });
     }
 
-    // Create - Available from instructor level and up
-    // Check for parent section "create" - if present, show all subsections
-    if (availableSections.includes("create")) {
-      const createItems: MenuItem[] = [];
+    // Training - Available from instructor level and up
+    // Check for parent section "training" - if present, show all subsections
+    if (availableSections.includes("training")) {
+      const trainingItems: MenuItem[] = [];
 
-      // Show all create subsections when parent section is available
-      createItems.push({
+      // Show all training subsections when parent section is available
+      trainingItems.push({
         title: "Cohorts",
         url: "#",
         section: "cohorts",
       });
-      createItems.push({
+      trainingItems.push({
         title: "Simulations",
         url: "#",
         section: "simulations",
       });
-      createItems.push({
+      trainingItems.push({
         title: "Scenarios",
         url: "#",
         section: "scenarios",
       });
-      createItems.push({
+      trainingItems.push({
         title: "Personas",
         url: "#",
         section: "personas",
       });
 
       menu.push({
-        title: "Create",
+        title: "Training",
         url: "#",
-        icon: Sparkles,
-        items: createItems,
+        icon: GraduationCap,
+        items: trainingItems,
       });
     }
 
@@ -296,41 +296,41 @@ export function UnifiedSidebar({
       });
     }
 
-    // Engine - Available for admin and superadmin
-    // Check for parent section "engine" - if present, show all subsections
+    // Intelligence - Available for admin and superadmin
+    // Check for parent section "intelligence" - if present, show all subsections
     if (
       (profile.role === "admin" || profile.role === "superadmin") &&
-      availableSections.includes("engine")
+      availableSections.includes("intelligence")
     ) {
-      const engineItems: MenuItem[] = [];
+      const intelligenceItems: MenuItem[] = [];
 
-      // Show all engine subsections when parent section is available
-      engineItems.push({
+      // Show all intelligence subsections when parent section is available
+      intelligenceItems.push({
         title: "Agents",
         url: "#",
         section: "agents",
       });
-      engineItems.push({
+      intelligenceItems.push({
         title: "Models",
         url: "#",
         section: "models",
       });
-      engineItems.push({
+      intelligenceItems.push({
         title: "Rubrics",
         url: "#",
         section: "rubrics",
       });
-      engineItems.push({
+      intelligenceItems.push({
         title: "Tools",
         url: "#",
         section: "tools",
       });
 
       menu.push({
-        title: "Engine",
+        title: "Intelligence",
         url: "#",
-        icon: Brain,
-        items: engineItems,
+        icon: Sparkles,
+        items: intelligenceItems,
       });
     }
 

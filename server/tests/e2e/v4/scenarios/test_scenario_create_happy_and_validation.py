@@ -26,7 +26,7 @@ def _expect_toast(page: Page, message: str) -> None:
 
 def test_scenario_create_validation_and_success(page: Page, base_url: str) -> None:
     """Validate required fields and create a scenario successfully."""
-    page.goto(f"{base_url}/create/scenarios/new")
+    page.goto(f"{base_url}/training/scenarios/new")
     page.wait_for_load_state("networkidle")
 
     # Verify page attribute
@@ -73,7 +73,7 @@ def test_scenario_create_validation_and_success(page: Page, base_url: str) -> No
 
     submit_button.click()
 
-    page.wait_for_url(f"{base_url}/create/scenarios", timeout=20000)
+    page.wait_for_url(f"{base_url}/training/scenarios", timeout=20000)
     page.wait_for_load_state("networkidle")
 
     search_input = page.get_by_test_id("scenarios-search")

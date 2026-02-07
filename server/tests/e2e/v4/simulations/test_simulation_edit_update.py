@@ -44,7 +44,7 @@ def test_simulation_edit_update_fields(page: Page, base_url: str) -> None:
             effective_profile_id=ADMIN_PROFILE_ID,
         )
 
-        page.goto(f"{base_url}/create/simulations")
+        page.goto(f"{base_url}/training/simulations")
         page.wait_for_load_state("networkidle")
 
         # Wait for the simulation card to appear - may need to search or wait longer
@@ -58,7 +58,7 @@ def test_simulation_edit_update_fields(page: Page, base_url: str) -> None:
         edit_button.click()
 
         page.wait_for_url(
-            f"{base_url}/create/simulations/s/{simulation_id}", timeout=20000
+            f"{base_url}/training/simulations/s/{simulation_id}", timeout=20000
         )
         page.wait_for_load_state("networkidle")
 
@@ -102,7 +102,7 @@ def test_simulation_edit_update_fields(page: Page, base_url: str) -> None:
         except Exception:
             # Toast might not appear or have different text
             pass
-        page.wait_for_url(f"{base_url}/create/simulations", timeout=20000)
+        page.wait_for_url(f"{base_url}/training/simulations", timeout=20000)
         page.wait_for_load_state("networkidle")
 
         search_input = page.get_by_test_id("simulations-search")
@@ -118,7 +118,7 @@ def test_simulation_edit_update_fields(page: Page, base_url: str) -> None:
         edit_button.click()
 
         page.wait_for_url(
-            f"{base_url}/create/simulations/s/{simulation_id}", timeout=20000
+            f"{base_url}/training/simulations/s/{simulation_id}", timeout=20000
         )
         page.wait_for_load_state("networkidle")
 
@@ -176,7 +176,7 @@ def test_simulation_edit_scenario_management(page: Page, base_url: str) -> None:
             effective_profile_id=ADMIN_PROFILE_ID,
         )
 
-        page.goto(f"{base_url}/create/simulations/s/{simulation_id}", timeout=20000)
+        page.goto(f"{base_url}/training/simulations/s/{simulation_id}", timeout=20000)
         page.wait_for_load_state("networkidle")
 
         # Verify scenarios render in grid
@@ -206,7 +206,7 @@ def test_simulation_edit_scenario_management(page: Page, base_url: str) -> None:
         submit_button = page.get_by_test_id("btn-submit-simulation")
         submit_button.click()
 
-        page.wait_for_url(f"{base_url}/create/simulations", timeout=20000)
+        page.wait_for_url(f"{base_url}/training/simulations", timeout=20000)
         page.wait_for_load_state("networkidle")
 
         # Verify simulation still exists

@@ -61,7 +61,7 @@ def test_documents_cache_revalidation_after_create(page: Page, base_url: str) ->
     """Ensure document creation invalidates cache and new document appears."""
     document_id = None
     try:
-        page.goto(f"{base_url}/create/documents")
+        page.goto(f"{base_url}/management/documents")
         page.wait_for_load_state("networkidle")
 
         # Get initial document count
@@ -112,7 +112,7 @@ def test_documents_cache_revalidation_after_update(page: Page, base_url: str) ->
             effective_profile_id=ADMIN_PROFILE_ID,
         )
 
-        page.goto(f"{base_url}/create/documents")
+        page.goto(f"{base_url}/management/documents")
         page.wait_for_load_state("networkidle")
 
         # Note original type
@@ -187,7 +187,7 @@ def test_documents_cache_revalidation_after_delete(page: Page, base_url: str) ->
             effective_profile_id=ADMIN_PROFILE_ID,
         )
 
-        page.goto(f"{base_url}/create/documents")
+        page.goto(f"{base_url}/management/documents")
         page.wait_for_load_state("networkidle")
 
         # Verify document visible
@@ -237,15 +237,15 @@ def test_documents_no_double_fetch_on_navigation(page: Page, base_url: str) -> N
     """Ensure navigating away and back doesn't cause double-fetch of list."""
     list_counter, stop_counter = _set_request_counter(page, "/api/v4/documents/list")
 
-    page.goto(f"{base_url}/create/documents")
+    page.goto(f"{base_url}/management/documents")
     page.wait_for_load_state("networkidle")
 
     # Navigate away
-    page.goto(f"{base_url}/create/personas")
+    page.goto(f"{base_url}/training/personas")
     page.wait_for_load_state("networkidle")
 
     # Navigate back
-    page.goto(f"{base_url}/create/documents")
+    page.goto(f"{base_url}/management/documents")
     page.wait_for_load_state("networkidle")
 
     stop_counter()

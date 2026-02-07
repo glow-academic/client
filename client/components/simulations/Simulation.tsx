@@ -1667,7 +1667,7 @@ function SimulationComponent({
         toast.success(
           `Simulation ${isEditMode ? "updated" : "created"} successfully!`
         );
-        router.push("/create/simulations");
+        router.push("/training/simulations");
       } catch (error) {
         toast.error(
           `Failed to ${isEditMode ? "update" : "create"} simulation: ${error instanceof Error ? error.message : "Unknown error"}`
@@ -1946,7 +1946,7 @@ function SimulationComponent({
   // Memoize submitButton to prevent GenericForm re-renders
   const submitButton = useMemo(
     () => ({
-      backUrl: "/create/simulations",
+      backUrl: "/training/simulations",
       backLabel: "Back",
       createLabel: "Create Simulation",
       updateLabel: "Update Simulation",

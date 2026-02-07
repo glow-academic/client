@@ -26,7 +26,7 @@ import type {
   DuplicateToolIn,
   DuplicateToolOut,
   ToolsListOut,
-} from "@/app/(main)/engine/tools/page";
+} from "@/app/(main)/intelligence/tools/page";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import {
   AlertDialog,
@@ -145,7 +145,7 @@ export default function Tools({
         toast.success(
           `Tool '${result.original_name || tool?.name || "Unknown"}' duplicated successfully`
         );
-        router.push(`/engine/tools/t/${result.new_tool_id}`);
+        router.push(`/intelligence/tools/t/${result.new_tool_id}`);
       }
     } catch (error) {
       toast.error(
@@ -201,7 +201,7 @@ export default function Tools({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => router.push(`/engine/tools/t/${toolId}`)}
+                  onClick={() => router.push(`/intelligence/tools/t/${toolId}`)}
                   aria-label={`Edit ${toolName}`}
                   data-testid={`btn-edit-tool-${toolId}`}
                   title={`Edit ${toolName}`}
@@ -214,7 +214,7 @@ export default function Tools({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => router.push(`/engine/tools/t/${toolId}`)}
+                  onClick={() => router.push(`/intelligence/tools/t/${toolId}`)}
                   aria-label={`View ${toolName}`}
                   data-testid={`btn-view-tool-${toolId}`}
                   title={`View ${toolName}`}

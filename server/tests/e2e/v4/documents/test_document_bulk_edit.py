@@ -41,7 +41,7 @@ def test_document_bulk_edit_fields(page: Page, base_url: str) -> None:
             )
             created_document_ids.append(doc_id)
 
-        page.goto(f"{base_url}/create/documents")
+        page.goto(f"{base_url}/management/documents")
         page.wait_for_load_state("networkidle")
 
         # Switch to list view for selection
@@ -127,7 +127,7 @@ def test_document_bulk_edit_partial_updates(page: Page, base_url: str) -> None:
         )
         created_document_ids.append(doc2_id)
 
-        page.goto(f"{base_url}/create/documents")
+        page.goto(f"{base_url}/management/documents")
         page.wait_for_load_state("networkidle")
 
         # Switch to list view
@@ -192,7 +192,7 @@ def test_document_bulk_edit_cancel(page: Page, base_url: str) -> None:
             )
             created_document_ids.append(doc_id)
 
-        page.goto(f"{base_url}/create/documents")
+        page.goto(f"{base_url}/management/documents")
         page.wait_for_load_state("networkidle")
 
         # Switch to list view

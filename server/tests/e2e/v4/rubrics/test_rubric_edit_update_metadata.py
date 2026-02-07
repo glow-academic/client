@@ -39,7 +39,7 @@ def test_rubric_edit_update_metadata(page: Page, base_url: str) -> None:
         updated_name = f"{rubric_name} Updated"
         updated_description = "Updated description via E2E."
 
-        page.goto(f"{base_url}/engine/rubrics")
+        page.goto(f"{base_url}/intelligence/rubrics")
         page.wait_for_load_state("networkidle")
 
         rubric_card = page.locator(
@@ -50,7 +50,7 @@ def test_rubric_edit_update_metadata(page: Page, base_url: str) -> None:
         edit_button = rubric_card.get_by_test_id("btn-edit-rubric")
         edit_button.click()
 
-        page.wait_for_url(f"{base_url}/engine/rubrics/r/{rubric_id}")
+        page.wait_for_url(f"{base_url}/intelligence/rubrics/r/{rubric_id}")
         page.wait_for_load_state("networkidle")
 
         container = page.locator("[data-page='rubric-edit']").first
@@ -151,7 +151,7 @@ def test_rubric_edit_update_metadata(page: Page, base_url: str) -> None:
         expect(description_input).to_have_value(updated_description)
 
         # Navigate back to list and verify updated rubric appears
-        page.goto(f"{base_url}/engine/rubrics")
+        page.goto(f"{base_url}/intelligence/rubrics")
         page.wait_for_load_state("networkidle")
 
         search_input = page.get_by_test_id("rubrics-search")

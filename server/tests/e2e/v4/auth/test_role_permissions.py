@@ -42,9 +42,9 @@ def test_admin_access(page: Page, base_url: str) -> None:
     expect(staff_table).to_be_visible()
 
     # Verify admin can access other management pages
-    page.goto(f"{base_url}/create/personas")
+    page.goto(f"{base_url}/training/personas")
     page.wait_for_load_state("networkidle")
-    expect(page).to_have_url(re.compile(r".*/create/personas.*"))
+    expect(page).to_have_url(re.compile(r".*/training/personas.*"))
 
     # Verify personas page loads
     personas_grid = page.get_by_test_id("personas-grid")
@@ -88,11 +88,11 @@ def test_guest_access(page: Page, base_url: str) -> None:
         )
 
     # Guest should NOT be able to access create pages
-    page.goto(f"{base_url}/create/personas")
+    page.goto(f"{base_url}/training/personas")
     page.wait_for_load_state("networkidle")
 
     current_url = page.url
-    if "/create/personas" not in current_url:
+    if "/training/personas" not in current_url:
         # Redirected away
         pass
     else:
