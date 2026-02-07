@@ -194,13 +194,13 @@ export default function Documents({
   // Use server-provided filter options directly (already composite type arrays)
   const scenarioOptions = useMemo(
     () =>
-      (documentsData?.scenario_options || [])
-        .filter((opt) => opt.value && opt.label)
-        .map((opt) => ({
+      (documentsData?.scenario_options_junction || [])
+        .filter((opt: { value?: string | null; label?: string | null }) => opt.value && opt.label)
+        .map((opt: { value?: string | null; label?: string | null }) => ({
           value: opt.value!,
           label: opt.label!,
         })),
-    [documentsData?.scenario_options]
+    [documentsData?.scenario_options_junction]
   );
   const departmentOptions = useMemo(
     () =>

@@ -5,12 +5,17 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.v4.activity.audit import audit_activity, audit_set
-from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db, transaction
-from app.sql.types import (
+from app.api.v4.artifacts.parameter.permissions import compute_can_duplicate
+from app.api.v4.artifacts.parameter.types import (
     DuplicateParameterApiRequest,
     DuplicateParameterApiResponse,
+)
+from app.infra.v4.activity.audit import audit_activity, audit_set
+from app.infra.v4.error.handle_route_error import handle_route_error
+from app.main import get_db
+from app.sql.types import (
+    CheckParameterDuplicateAccessSqlParams,
+    CheckParameterDuplicateAccessSqlRow,
     DuplicateParameterSqlParams,
     DuplicateParameterSqlRow,
     load_sql_query,
@@ -18,8 +23,11 @@ from app.sql.types import (
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
-# Load SQL with types at module level - makes it clear what SQL file is used
-SQL_PATH = "app/sql/v4/queries/parameters/duplicate_parameter_complete.sql"
+# SQL paths
+ACCESS_CHECK_SQL_PATH = (
+    "app/sql/v4/queries/parameters/check_parameter_duplicate_access_complete.sql"
+)
+DUPLICATE_SQL_PATH = "app/sql/v4/queries/parameters/duplicate_parameter_complete.sql"
 
 
 router = APIRouter()
@@ -41,10 +49,10 @@ async def duplicate_parameter(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DuplicateParameterApiResponse:
-    """Duplicate a parameter with all items and their department associations."""
-    tags = ["parameters", "agents"]  # Parameters used in scenario generation
+    """Duplicate a parameter."""
+    tags = ["parameters", "agents"]
 
-    sql_query = load_sql_query(SQL_PATH)
+    sql_query = load_sql_query(DUPLICATE_SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -56,7 +64,34 @@ async def duplicate_parameter(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        async with transaction(conn):
+        # Permission check: get user role using typed SQL
+        access_params = CheckParameterDuplicateAccessSqlParams(
+            profile_id=profile_id,
+        )
+        access_result = cast(
+            CheckParameterDuplicateAccessSqlRow,
+            await execute_sql_typed(
+                conn,
+                ACCESS_CHECK_SQL_PATH,
+                params=access_params,
+            ),
+        )
+
+        if not access_result:
+            raise HTTPException(
+                status_code=401,
+                detail="Unable to verify user permissions.",
+            )
+
+        can_duplicate = compute_can_duplicate(user_role=access_result.user_role)
+
+        if not can_duplicate:
+            raise HTTPException(
+                status_code=403,
+                detail="You don't have permission to duplicate this parameter.",
+            )
+
+        async with conn.transaction():
             # Convert API request to SQL params (add profile_id from header)
             params = DuplicateParameterSqlParams(
                 **request.model_dump(), profile_id=profile_id
@@ -68,16 +103,15 @@ async def duplicate_parameter(
                 DuplicateParameterSqlRow,
                 await execute_sql_typed(
                     conn,
-                    SQL_PATH,
+                    DUPLICATE_SQL_PATH,
                     params=params,
                 ),
             )
 
-            if not result.parameter_id:
+            if not result or not result.parameter_id:
                 raise ValueError(f"Parameter not found: {request.parameter_id}")
 
-            if not result.original_name:
-                raise ValueError(f"Parameter not found: {request.parameter_id}")
+            original_name = result.original_name or "Unknown"
 
             # Set audit context with data from SQL query
             if result.actor_name:
@@ -85,19 +119,25 @@ async def duplicate_parameter(
                     http_request,
                     actor={"name": result.actor_name, "id": profile_id},
                     parameter={
-                        "name": result.original_name,
+                        "name": original_name,
                         "id": str(request.parameter_id),
                     },
                 )
 
-        # Convert SQL result to API response
-        api_response = DuplicateParameterApiResponse.model_validate(result.model_dump())
+            # Convert SQL result to API response
+            api_response = DuplicateParameterApiResponse.model_validate(
+                {
+                    "success": True,
+                    "parameter_id": str(result.parameter_id),
+                    "message": f"Parameter '{original_name}' duplicated successfully",
+                }
+            )
 
-        # Invalidate cache after mutation
-        await invalidate_tags(tags)
-        response.headers["X-Invalidate-Tags"] = ",".join(tags)
+            # Invalidate cache after mutation
+            await invalidate_tags(tags)
+            response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
-        return api_response
+            return api_response
     except HTTPException:
         raise
     except ValueError as e:

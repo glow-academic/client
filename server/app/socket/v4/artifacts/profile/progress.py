@@ -8,6 +8,7 @@ from fastapi import APIRouter
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
+from app.socket.v4.artifacts.profile.types import ProfileGenerationProgressEvent
 from app.sql.types import (
     ValidateProfileResourceProgressSqlParams,
 )
@@ -57,31 +58,32 @@ async def handle_profiles_call_progress(data: dict[str, Any]) -> None:
     except Exception:
         return
 
+    event = ProfileGenerationProgressEvent(
+        artifact_type="profile",
+        resource_type=resource_type,
+        resource_id=data.get("resource_id"),
+        run_id=data.get("run_id"),
+        group_id=data.get("group_id"),
+        modality="call",
+        type=data.get("type", "progress"),
+        event_type=data.get("event_type"),
+        tool_call_id=data.get("tool_call_id"),
+        tool_name=data.get("tool_name"),
+        arguments=data.get("arguments"),
+        arguments_delta=data.get("arguments_delta"),
+        trace_id=data.get("trace_id"),
+    )
+
     await sio.emit(
         "profile_generation_progress",
-        {
-            "modality": "call",
-            "artifact_type": artifact_type,
-            "resource_type": resource_type,
-            "resource_id": data.get("resource_id"),
-            "run_id": data.get("run_id"),
-            "group_id": data.get("group_id"),
-            "type": data.get("type", "progress"),
-            "event_type": data.get("event_type"),
-            "tool_call_id": data.get("tool_call_id"),
-            "tool_name": data.get("tool_name"),
-            "arguments": data.get("arguments"),
-            "arguments_delta": data.get("arguments_delta"),
-            "trace_id": data.get("trace_id"),
-        },
+        event.model_dump(mode="json"),
         room=sid,
     )
 
 
 @server_router.post("/profile_generation_progress")
 async def profile_generation_progress_api(
-    request: dict[str, Any],
+    request: ProfileGenerationProgressEvent,
 ) -> dict[str, bool]:
     """Server-to-client event: profile generation progress."""
-    _ = request
     return {"ok": True}

@@ -1,16 +1,31 @@
-"""Parameters list endpoint."""
+"""Parameters list endpoint - v4 API following DHH principles.
+
+Two-pass architecture:
+1. SQL returns raw data with active_scenario_count and total_scenario_links
+2. Python computes permissions (can_edit, can_delete, can_duplicate)
+"""
 
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.artifacts.parameter.permissions import (
+    compute_can_delete,
+    compute_can_duplicate,
+    compute_can_edit,
+)
+from app.api.v4.artifacts.parameter.types import (
+    ListParameterApiDepartment,
+    ListParameterApiParameter,
+    ListParameterApiResponse,
+    ListParameterApiScenario,
+)
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
     GetParametersListApiRequest,
-    GetParametersListApiResponse,
     GetParametersListSqlParams,
     GetParametersListSqlRow,
     load_sql_query,
@@ -29,7 +44,7 @@ router = APIRouter()
 
 @router.post(
     "/list",
-    response_model=GetParametersListApiResponse,
+    response_model=ListParameterApiResponse,
     dependencies=[
         audit_activity(
             "parameters.list", "{{ actor.name }} visited the Parameters page"
@@ -41,20 +56,24 @@ async def get_parameter_list(
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> GetParametersListApiResponse:
-    """Get parameters list with item counts and permissions."""
-    tags = ["parameters"]  # From router tags
+) -> ListParameterApiResponse:
+    """Get parameters list with permissions and scenario details."""
+    tags = ["parameters"]
+
+    # Check for cache bypass header (for testing)
+    bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     # Generate cache key from path and parsed body
-    body_dict = request.model_dump()
+    body_dict = request.model_dump(mode="json")
     cache_key_val = cache_key(http_request.url.path, body_dict)
 
-    # Try cache
-    cached = await get_cached(cache_key_val)
-    if cached:
-        response.headers["X-Cache-Tags"] = ",".join(tags)
-        response.headers["X-Cache-Hit"] = "1"
-        return GetParametersListApiResponse.model_validate(cached["data"])
+    # Try cache (unless bypassed)
+    if not bypass_cache:
+        cached = await get_cached(cache_key_val)
+        if cached:
+            response.headers["X-Cache-Tags"] = ",".join(tags)
+            response.headers["X-Cache-Hit"] = "1"
+            return ListParameterApiResponse.model_validate(cached["data"])
 
     sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
@@ -70,7 +89,7 @@ async def get_parameter_list(
 
         # Convert API request to SQL params (add profile_id from header)
         params = GetParametersListSqlParams(
-            **request.model_dump(), profile_id=profile_id
+            profile_id=profile_id,
         )
         sql_params = params.to_tuple()
 
@@ -88,8 +107,74 @@ async def get_parameter_list(
         if result.actor_name:
             audit_set(http_request, actor={"name": result.actor_name, "id": profile_id})
 
-        # Convert SQL result to API response (no manual conversion needed - SQL returns arrays)
-        api_response = GetParametersListApiResponse.model_validate(result.model_dump())
+        # Get user_role from SQL result for Python permission computation
+        user_role = result.user_role
+
+        # Compute permissions for each parameter in Python
+        parameters_with_permissions: list[ListParameterApiParameter] = []
+        for parameter in result.parameters or []:
+            # Compute permissions based on user role and parameter state
+            can_edit_val = compute_can_edit(
+                user_role=user_role,
+                parameter_department_ids=parameter.department_ids,
+                active_scenario_count=parameter.active_scenario_count or 0,
+            )
+            can_delete_val = compute_can_delete(
+                user_role=user_role,
+                parameter_department_ids=parameter.department_ids,
+                total_scenario_links=parameter.total_scenario_links or 0,
+            )
+            can_duplicate_val = compute_can_duplicate(user_role)
+
+            # Create parameter with computed permissions
+            parameters_with_permissions.append(
+                ListParameterApiParameter(
+                    parameter_id=parameter.parameter_id,
+                    name=parameter.name,
+                    description=parameter.description,
+                    active=parameter.active,
+                    department_ids=parameter.department_ids,
+                    scenario_ids=parameter.scenario_ids,
+                    num_items=parameter.num_items,
+                    sample_items=parameter.sample_items,
+                    can_edit=can_edit_val,
+                    can_duplicate=can_duplicate_val,
+                    can_delete=can_delete_val,
+                    updated_at=parameter.updated_at,
+                )
+            )
+
+        # Transform scenarios, departments to API types
+        scenarios = [
+            ListParameterApiScenario(
+                scenario_id=s.scenario_id,
+                name=s.name,
+                description=s.description,
+                active=s.active,
+                parameter_item_ids=s.parameter_item_ids,
+                count=s.count,
+            )
+            for s in (result.scenarios or [])
+        ]
+
+        departments = [
+            ListParameterApiDepartment(
+                department_id=d.department_id,
+                name=d.name,
+                description=d.description,
+                count=d.count,
+            )
+            for d in (result.departments or [])
+        ]
+
+        # Build API response with computed permissions
+        api_response = ListParameterApiResponse(
+            actor_name=result.actor_name,
+            parameters=parameters_with_permissions,
+            scenarios=scenarios,
+            departments=departments,
+            total_count=result.total_count,
+        )
 
         # Cache response (use mode='json' to serialize UUIDs and other types)
         await set_cached(

@@ -60,11 +60,14 @@ export async function generateMetadata(
       } as GetFieldIn["body"],
     };
     const field = await getField(input);
+    const fieldName = field?.resources?.current?.names?.[0]?.name ?? null;
+    const fieldDescription =
+      field?.resources?.current?.descriptions?.[0]?.description ?? null;
     return {
-      title: `${field?.name || "Field"}`,
+      title: `${fieldName || "Field"}`,
       description:
-        field?.description ||
-        `${field?.name ? `${field.name} - ` : ""}Custom field configuration for teaching assistant training platform. Manage field definitions to track additional educational data, assessment criteria, and learning metrics.`,
+        fieldDescription ||
+        `${fieldName ? `${fieldName} - ` : ""}Custom field configuration for teaching assistant training platform. Manage field definitions to track additional educational data, assessment criteria, and learning metrics.`,
     };
   } catch {
     // Fall through to default metadata

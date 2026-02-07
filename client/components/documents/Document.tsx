@@ -52,18 +52,6 @@ type CreateDraftDescriptionsOut = OutputOf<
   "/api/v4/resources/descriptions",
   "post"
 >;
-type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
-type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
-type CreateDraftDepartmentsIn = InputOf<
-  "/api/v4/resources/departments",
-  "post"
->;
-type CreateDraftDepartmentsOut = OutputOf<
-  "/api/v4/resources/departments",
-  "post"
->;
-type CreateDraftFieldsIn = InputOf<"/api/v4/resources/fields", "post">;
-type CreateDraftFieldsOut = OutputOf<"/api/v4/resources/fields", "post">;
 type CreateDraftUploadsIn = InputOf<"/api/v4/resources/uploads", "post">;
 type CreateDraftUploadsOut = OutputOf<"/api/v4/resources/uploads", "post">;
 type PatchDocumentDraftIn = InputOf<"/api/v4/documents/draft", "patch">;
@@ -92,15 +80,6 @@ export interface DocumentProps {
   createUploadsAction?: (
     input: CreateDraftUploadsIn
   ) => Promise<CreateDraftUploadsOut>;
-  createFlagsAction?: (
-    input: CreateDraftFlagsIn
-  ) => Promise<CreateDraftFlagsOut>;
-  createFieldsAction?: (
-    input: CreateDraftFieldsIn
-  ) => Promise<CreateDraftFieldsOut>;
-  createDepartmentsAction?: (
-    input: CreateDraftDepartmentsIn
-  ) => Promise<CreateDraftDepartmentsOut>;
 }
 
 function DocumentComponent({
@@ -113,9 +92,6 @@ function DocumentComponent({
   createNamesAction,
   createDescriptionsAction,
   createUploadsAction,
-  createFlagsAction,
-  createFieldsAction,
-  createDepartmentsAction,
 }: DocumentProps) {
   const router = useRouter();
   const isEditMode = mode === "edit" && !!documentId;
@@ -178,14 +154,21 @@ function DocumentComponent({
         upload_ids: [] as string[],
       };
     }
-    // Extract resource IDs from server data
+    // Extract resource IDs from resource buckets
+    const current = documentDetail.resources?.current;
     return {
-      name_id: documentDetail.name_id ?? null,
-      description_id: documentDetail.description_id ?? null,
-      active_flag_id: documentDetail.active_flag_id ?? null,
-      department_ids: documentDetail.department_ids ?? [],
-      field_ids: documentDetail.field_ids ?? [],
-      upload_ids: documentDetail.upload_ids ?? [],
+      name_id: current?.names?.[0]?.id ?? null,
+      description_id: current?.descriptions?.[0]?.id ?? null,
+      active_flag_id: current?.flags?.[0]?.flag_option_id ?? null,
+      department_ids:
+        current?.departments?.map((d) => d.department_id).filter((x): x is string => x != null) ??
+        ([] as string[]),
+      field_ids:
+        current?.fields?.map((f) => f.id).filter((x): x is string => x != null) ??
+        ([] as string[]),
+      upload_ids:
+        current?.uploads?.map((u) => u.uploads_id).filter((x): x is string => x != null) ??
+        ([] as string[]),
     };
   }, [documentDetail]);
 
@@ -210,12 +193,12 @@ function DocumentComponent({
       return prev;
     });
   }, [
-    documentDetail?.name_id,
-    documentDetail?.description_id,
-    documentDetail?.active_flag_id,
-    documentDetail?.department_ids,
-    documentDetail?.field_ids,
-    documentDetail?.upload_ids,
+    documentDetail?.resources?.current?.names,
+    documentDetail?.resources?.current?.descriptions,
+    documentDetail?.resources?.current?.flags,
+    documentDetail?.resources?.current?.departments,
+    documentDetail?.resources?.current?.fields,
+    documentDetail?.resources?.current?.uploads,
     getInitialFormState,
   ]);
 
@@ -363,12 +346,13 @@ function DocumentComponent({
       artifact_type?: string;
       group_id?: string;
       resource_type?: string;
-      name_id?: string | null;
-      description_id?: string | null;
-      active_flag_id?: string | null;
-      field_ids?: string[];
-      department_ids?: string[];
-      upload_ids?: string[];
+      // Full resource objects from server
+      name_resource?: { id?: string | null } | null;
+      description_resource?: { id?: string | null } | null;
+      flag_resource?: { id?: string | null } | null;
+      department_resources?: Array<{ department_id?: string | null }> | null;
+      field_resources?: Array<{ id?: string | null }> | null;
+      upload_resources?: Array<{ id?: string | null }> | null;
       message?: string;
       success?: boolean;
       [key: string]: unknown;
@@ -394,31 +378,43 @@ function DocumentComponent({
         data.resource_type &&
         validResourceTypes.includes(data.resource_type as ResourceType)
       ) {
-        // Update formState with the resource ID that was generated
-        // Only update the field that matches resource_type (others will be null)
+        // Extract IDs from full resource objects
+        const nameId = data.name_resource?.id ?? null;
+        const descriptionId = data.description_resource?.id ?? null;
+        const flagId = data.flag_resource?.id ?? null;
+        const deptIds = (
+          data.department_resources
+            ?.map((d) => d.department_id)
+            .filter((x): x is string => x != null) ?? []
+        );
+        const fieldIds = (
+          data.field_resources?.map((f) => f.id).filter((x): x is string => x != null) ?? []
+        );
+        const uploadIds = (
+          data.upload_resources?.map((u) => u.id).filter((x): x is string => x != null) ?? []
+        );
+
+        // Update formState with extracted IDs
         setFormState((prev) => {
           const updates: Partial<typeof prev> = {};
 
-          if (data.name_id) updates.name_id = data.name_id;
-          if (data.description_id) updates.description_id = data.description_id;
-          if (data.active_flag_id) updates.active_flag_id = data.active_flag_id;
-          if (data.field_ids && data.field_ids.length > 0) {
-            // For arrays, append new IDs (avoid duplicates)
-            const newFieldIds = data.field_ids.filter(
+          if (nameId) updates.name_id = nameId;
+          if (descriptionId) updates.description_id = descriptionId;
+          if (flagId) updates.active_flag_id = flagId;
+          if (fieldIds.length > 0) {
+            const newFieldIds = (fieldIds as string[]).filter(
               (id) => !prev.field_ids.includes(id)
             );
             updates.field_ids = [...prev.field_ids, ...newFieldIds];
           }
-          if (data.department_ids && data.department_ids.length > 0) {
-            // For arrays, append new IDs (avoid duplicates)
-            const newDeptIds = data.department_ids.filter(
+          if (deptIds.length > 0) {
+            const newDeptIds = (deptIds as string[]).filter(
               (id) => !prev.department_ids.includes(id)
             );
             updates.department_ids = [...prev.department_ids, ...newDeptIds];
           }
-          if (data.upload_ids && data.upload_ids.length > 0) {
-            // For arrays, append new IDs (avoid duplicates)
-            const newUploadIds = data.upload_ids.filter(
+          if (uploadIds.length > 0) {
+            const newUploadIds = (uploadIds as string[]).filter(
               (id) => !prev.upload_ids.includes(id)
             );
             updates.upload_ids = [...prev.upload_ids, ...newUploadIds];
@@ -511,64 +507,48 @@ function DocumentComponent({
     };
   }, [socket, isConnected, documentDetail?.group_id]);
 
-  // Multi-generation handler - accepts list of resource types and optional user instructions
-  // Helper function to determine agent_type from resource types
-  const determineAgentType = useCallback(
-    (resourceTypes: ResourceType[]): string | null => {
-      const basicResources: ResourceType[] = [
-        "names",
-        "descriptions",
-        "flags",
-        "departments",
-      ];
-      const allResourceTypes: ResourceType[] = [
-        "names",
-        "descriptions",
-        "flags",
-        "departments",
-        "fields",
-        "uploads",
-      ];
-
-      const isBasicCombo =
-        resourceTypes.length === basicResources.length &&
-        resourceTypes.every((rt) => basicResources.includes(rt));
-      const isAllResources =
-        resourceTypes.length === allResourceTypes.length &&
-        resourceTypes.every((rt) => allResourceTypes.includes(rt));
-
-      if (isAllResources) {
-        return "general";
-      } else if (isBasicCombo) {
-        return "basic";
-      } else if (resourceTypes.length === 1) {
-        // Single resource type - map to agent_type
-        const agentTypeMap: Partial<Record<ResourceType, string>> = {
-          names: "name",
-          descriptions: "description",
-          flags: "flags",
-          departments: "departments",
-          fields: "fields",
-          uploads: "uploads",
-        };
-        const firstType = resourceTypes[0];
-        if (firstType && firstType in agentTypeMap) {
-          return agentTypeMap[firstType] ?? null;
-        }
+  // Map resource types to domain_ids for socket emit
+  const resourceTypeToDomainId = useCallback(
+    (resourceType: ResourceType): string | null => {
+      if (!documentDetail) return null;
+      switch (resourceType) {
+        case "names":
+          return documentDetail.name_domain_id ?? null;
+        case "descriptions":
+          return documentDetail.description_domain_id ?? null;
+        case "flags":
+          return documentDetail.flag_domain_id ?? null;
+        case "departments":
+          return documentDetail.departments_domain_id ?? null;
+        case "fields":
+          return documentDetail.fields_domain_id ?? null;
+        case "uploads":
+          return documentDetail.uploads_domain_id ?? null;
+        default:
+          return null;
       }
-      return null;
     },
-    []
+    [documentDetail]
   );
 
   const handleGenerateResources = useCallback(
     async (
       resourceTypes: ResourceType[],
-      agentType: string | null,
+      _agentType: string | null,
       userInstructions?: string
     ) => {
       if (!socket || !isConnected) {
         toast.error("WebSocket not connected");
+        return;
+      }
+
+      // Convert resource types to domain_ids
+      const domainIds = resourceTypes
+        .map((rt) => resourceTypeToDomainId(rt))
+        .filter(Boolean) as string[];
+
+      if (domainIds.length === 0) {
+        toast.error("No valid domains for generation");
         return;
       }
 
@@ -582,85 +562,57 @@ function DocumentComponent({
       // Read search params from formData
       const formData = formDataRef.current;
       const draftId = (formData["draftId"] as string | undefined) ?? null;
-      const fieldSearch =
-        (formData["fieldSearch"] as string | undefined) ?? null;
-      const uploadSearch =
-        (formData["uploadSearch"] as string | undefined) ?? null;
-      const fieldShowSelected =
-        (formData["fieldShowSelected"] as boolean | undefined) ?? false;
 
-      // Emit document_generate event
+      // Emit document_generate event with domain_ids
       socket.emit("document_generate", {
-        resource_types: resourceTypes, // Simple array of strings
-        agent_type: agentType,
+        domain_ids: domainIds,
         user_instructions: userInstructions ? [userInstructions] : null,
-        // GetDocumentApiRequest fields from formData
         draft_id: draftId || null,
-        field_search: fieldSearch || null,
-        upload_search: uploadSearch || null,
-        field_show_selected: fieldShowSelected || false,
-        mcp: false,
         document_id: documentId || null,
       });
     },
-    [socket, isConnected, documentId]
+    [socket, isConnected, documentId, resourceTypeToDomainId]
   );
 
   // Individual generation handlers - generate directly without modals
   const handleGenerateName = useCallback(
-    async () =>
-      handleGenerateResources(["names"], determineAgentType(["names"])),
-    [handleGenerateResources, determineAgentType]
+    async () => handleGenerateResources(["names"], null),
+    [handleGenerateResources]
   );
 
   const handleGenerateDescription = useCallback(
-    async () =>
-      handleGenerateResources(
-        ["descriptions"],
-        determineAgentType(["descriptions"])
-      ),
-    [handleGenerateResources, determineAgentType]
+    async () => handleGenerateResources(["descriptions"], null),
+    [handleGenerateResources]
   );
 
   const handleGenerateDepartments = useCallback(
-    async () =>
-      handleGenerateResources(
-        ["departments"],
-        determineAgentType(["departments"])
-      ),
-    [handleGenerateResources, determineAgentType]
+    async () => handleGenerateResources(["departments"], null),
+    [handleGenerateResources]
   );
 
   const handleGenerateFlags = useCallback(
-    async () =>
-      handleGenerateResources(["flags"], determineAgentType(["flags"])),
-    [handleGenerateResources, determineAgentType]
+    async () => handleGenerateResources(["flags"], null),
+    [handleGenerateResources]
   );
 
   // Helper to check if a resource type can be regenerated
   const canRegenerate = useCallback(
     (resourceType: ResourceType): boolean => {
-      if (!documentDetail) return false;
+      const current = documentDetail?.resources?.current;
+      if (!current) return false;
       switch (resourceType) {
         case "names":
-          return documentDetail.name_resource?.generated ?? false;
+          return current.names?.[0]?.generated ?? false;
         case "descriptions":
-          return documentDetail.description_resource?.generated ?? false;
+          return current.descriptions?.[0]?.generated ?? false;
         case "flags":
-          return documentDetail.flag_resource?.generated ?? false;
+          return current.flags?.[0]?.generated ?? false;
         case "departments":
-          return (
-            documentDetail.department_resources?.some((d) => d.generated) ??
-            false
-          );
+          return current.departments?.some((d) => d.generated) ?? false;
         case "fields":
-          return (
-            documentDetail.field_resources?.some((f) => f.generated) ?? false
-          );
+          return current.fields?.some((f) => f.generated) ?? false;
         case "uploads":
-          return (
-            documentDetail.upload_resources?.some((u) => u.generated) ?? false
-          );
+          return current.uploads?.some((u) => u.generated) ?? false;
         default:
           return false;
       }
@@ -677,7 +629,7 @@ function DocumentComponent({
 
   // Set breadcrumb context when document data is loaded
   useEffect(() => {
-    const documentName = documentDetail?.name_resource?.name;
+    const documentName = documentDetail?.resources?.current?.names?.[0]?.name;
     if (documentName && documentId && isEditMode) {
       setEntityMetadata({
         entityId: documentId,
@@ -736,9 +688,16 @@ function DocumentComponent({
         throw new Error("Required fields are missing");
       }
 
+      const groupId = documentDetail?.group_id;
+      if (!groupId) {
+        toast.error("Missing group ID. Please refresh and try again.");
+        throw new Error("Missing group ID");
+      }
+
       try {
         await saveDocumentAction({
           body: {
+            group_id: groupId,
             input_document_id: isEditMode && documentId ? documentId : null,
             name_id: formState.name_id,
             description_id: formState.description_id || null,
@@ -852,16 +811,15 @@ function DocumentComponent({
   const handleModalGenerate = useCallback(
     async (selectedResources: string[], instructions: string) => {
       const resourceTypes = selectedResources as ResourceType[];
-      const agentType = determineAgentType(resourceTypes);
       await handleGenerateResources(
         resourceTypes,
-        agentType,
+        null,
         instructions.trim() || undefined
       );
       setShowGenerateModal(false);
       setModalInstructions("");
     },
-    [handleGenerateResources, determineAgentType]
+    [handleGenerateResources]
   );
 
   // Listen for full-page-generate event from layout
@@ -1021,10 +979,10 @@ function DocumentComponent({
               customHeader={
                 <Names
                   name_id={formState.name_id ?? null}
-                  name_resource={documentDetail?.name_resource ?? null}
+                  name_resource={documentDetail?.resources?.current?.names?.[0] ?? null}
                   show_name={documentDetail?.show_name ?? true}
                   name_suggestions={documentDetail?.name_suggestions ?? []}
-                  names={documentDetail?.names ?? []}
+                  names={documentDetail?.resources?.resources?.names ?? []}
                   disabled={disabled}
                   onNameIdChange={(nameId) =>
                     setFormState((prev) => ({ ...prev, name_id: nameId }))
@@ -1036,7 +994,9 @@ function DocumentComponent({
                   required={documentDetail?.name_required ?? false}
                   hideDescription={true}
                   group_id={documentDetail?.group_id ?? null}
-                  agent_id={documentDetail?.name_agent_id ?? null}
+                  showAiGenerate={documentDetail?.name_show_ai_generate ?? false}
+                  create_tool_id={documentDetail?.name_create_tool_id ?? null}
+                  link_tool_id={documentDetail?.name_link_tool_id ?? null}
                   createNamesAction={createNamesAction}
                 />
               }
@@ -1050,7 +1010,7 @@ function DocumentComponent({
               actions={
                 stepResources["basic"] &&
                 stepResources["basic"].length > 0 &&
-                documentDetail?.general_agent_id ? (
+                documentDetail?.basic_show_ai_generate ? (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -1100,13 +1060,13 @@ function DocumentComponent({
                 <Descriptions
                   description_id={formState.description_id ?? null}
                   description_resource={
-                    documentDetail?.description_resource ?? null
+                    documentDetail?.resources?.current?.descriptions?.[0] ?? null
                   }
                   show_description={documentDetail?.show_description ?? true}
                   description_suggestions={
                     documentDetail?.description_suggestions ?? []
                   }
-                  descriptions={documentDetail?.descriptions ?? []}
+                  descriptions={documentDetail?.resources?.resources?.descriptions ?? []}
                   disabled={disabled}
                   onDescriptionIdChange={(descriptionId) =>
                     setFormState((prev) => ({
@@ -1126,7 +1086,9 @@ function DocumentComponent({
                   rows={4}
                   data-testid="input-document-description"
                   group_id={documentDetail?.group_id ?? null}
-                  agent_id={documentDetail?.description_agent_id ?? null}
+                  showAiGenerate={documentDetail?.description_show_ai_generate ?? false}
+                  create_tool_id={documentDetail?.description_create_tool_id ?? null}
+                  link_tool_id={documentDetail?.description_link_tool_id ?? null}
                   createDescriptionsAction={createDescriptionsAction}
                 />
 
@@ -1134,13 +1096,13 @@ function DocumentComponent({
                 <Departments
                   department_ids={formState.department_ids ?? []}
                   department_resources={
-                    documentDetail?.department_resources ?? []
+                    documentDetail?.resources?.current?.departments ?? []
                   }
                   show_departments={documentDetail?.show_departments ?? false}
                   department_suggestions={
                     documentDetail?.department_suggestions ?? []
                   }
-                  departments={documentDetail?.departments ?? []}
+                  departments={documentDetail?.resources?.resources?.departments ?? []}
                   disabled={disabled}
                   onChange={(ids) =>
                     setFormState((prev) => ({ ...prev, department_ids: ids }))
@@ -1149,14 +1111,18 @@ function DocumentComponent({
                   isGenerating={isGenerating("departments")}
                   required={documentDetail?.departments_required ?? false}
                   group_id={documentDetail?.group_id ?? null}
-                  agent_id={documentDetail?.departments_agent_id ?? null}
-                  createDepartmentsAction={createDepartmentsAction}
+                  showAiGenerate={documentDetail?.departments_show_ai_generate ?? false}
+                  link_tool_id={documentDetail?.departments_link_tool_id ?? null}
                 />
 
                 {/* Active Switch - using Flags resource component */}
                 <Flags
                   flag_id={formState.active_flag_id ?? null}
-                  flag_resource={documentDetail?.flag_resource ?? null}
+                  flag_resource={(() => {
+                    const f = documentDetail?.resources?.current?.flags?.[0];
+                    if (!f) return null;
+                    return { id: f.flag_option_id ?? null, name: f.label ?? null, description: f.description ?? null, icon: null, generated: f.generated ?? null };
+                  })()}
                   show_flag={documentDetail?.show_flag ?? false}
                   disabled={disabled}
                   onFlagIdChange={(flagId) =>
@@ -1171,8 +1137,8 @@ function DocumentComponent({
                   helpText="Inactive documents will not be available for scenarios"
                   required={documentDetail?.flag_required ?? false}
                   group_id={documentDetail?.group_id ?? null}
-                  agent_id={documentDetail?.flag_agent_id ?? null}
-                  createFlagsAction={createFlagsAction}
+                  showAiGenerate={documentDetail?.flag_show_ai_generate ?? false}
+                  link_tool_id={documentDetail?.flag_link_tool_id ?? null}
                 />
               </div>
             </StepCard>
@@ -1213,7 +1179,7 @@ function DocumentComponent({
               actions={
                 stepResources["fields"] &&
                 stepResources["fields"].length > 0 &&
-                documentDetail?.fields_agent_id ? (
+                documentDetail?.fields_show_ai_generate ? (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -1260,10 +1226,10 @@ function DocumentComponent({
             >
               <Fields
                 field_ids={formState.field_ids ?? []}
-                field_resources={documentDetail?.field_resources ?? []}
+                field_resources={documentDetail?.resources?.current?.fields ?? []}
                 show_fields={documentDetail?.show_fields ?? false}
                 field_suggestions={documentDetail?.field_suggestions ?? []}
-                fields={documentDetail?.fields ?? []}
+                fields={documentDetail?.resources?.resources?.fields ?? []}
                 disabled={disabled}
                 onChange={(ids) =>
                   setFormState((prev) => ({ ...prev, field_ids: ids }))
@@ -1271,8 +1237,8 @@ function DocumentComponent({
                 label="Fields"
                 required={documentDetail?.fields_required ?? false}
                 group_id={documentDetail?.group_id ?? null}
-                agent_id={documentDetail?.fields_agent_id ?? null}
-                createFieldsAction={createFieldsAction}
+                showAiGenerate={documentDetail?.fields_show_ai_generate ?? false}
+                link_tool_id={documentDetail?.fields_link_tool_id ?? null}
                 searchTerm={fieldSearchTerm}
                 showSelectedFilter={fieldShowSelected}
               />
@@ -1296,7 +1262,7 @@ function DocumentComponent({
               actions={
                 stepResources["uploads"] &&
                 stepResources["uploads"].length > 0 &&
-                documentDetail?.uploads_agent_id ? (
+                documentDetail?.uploads_show_ai_generate ? (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -1343,10 +1309,10 @@ function DocumentComponent({
             >
               <Uploads
                 upload_ids={formState.upload_ids ?? []}
-                upload_resources={documentDetail?.upload_resources ?? []}
+                upload_resources={documentDetail?.resources?.current?.uploads ?? []}
                 show_uploads={documentDetail?.show_uploads ?? false}
                 upload_suggestions={documentDetail?.upload_suggestions ?? []}
-                uploads={documentDetail?.uploads ?? []}
+                uploads={documentDetail?.resources?.resources?.uploads ?? []}
                 disabled={disabled}
                 onChange={(ids) =>
                   setFormState((prev) => ({ ...prev, upload_ids: ids }))
@@ -1354,12 +1320,11 @@ function DocumentComponent({
                 label="Files"
                 required={documentDetail?.uploads_required ?? false}
                 group_id={documentDetail?.group_id ?? null}
-                uploads_agent_id={documentDetail?.uploads_agent_id ?? null}
+                showAiGenerate={documentDetail?.uploads_show_ai_generate ?? false}
+                create_tool_id={documentDetail?.uploads_link_tool_id ?? null}
+                link_tool_id={documentDetail?.uploads_link_tool_id ?? null}
                 createUploadsAction={createUploadsAction}
                 searchTerm={uploadSearchTerm}
-                onSearchChange={(term) =>
-                  setStepFormData({ uploadSearch: term || null })
-                }
               />
             </StepCard>
           );
@@ -1386,9 +1351,6 @@ function DocumentComponent({
       formState.upload_ids,
       createNamesAction,
       createDescriptionsAction,
-      createFlagsAction,
-      createFieldsAction,
-      createDepartmentsAction,
       createUploadsAction,
       canRegenerate,
       handleOpenStepCardModal,
@@ -1451,24 +1413,26 @@ function DocumentComponent({
 
 // Memoize component to prevent re-renders when only prop references change (content is same)
 export default React.memo(DocumentComponent, (prevProps, nextProps) => {
-  // Compare documentDetail by resource IDs, not object reference
+  // Compare documentDetail by resource IDs from buckets, not object reference
   const prevDetail = prevProps.documentDetail ?? prevProps.documentDetailDefault;
   const nextDetail = nextProps.documentDetail ?? nextProps.documentDetailDefault;
+  const prevCurrent = prevDetail?.resources?.current;
+  const nextCurrent = nextDetail?.resources?.current;
   const prevIds = {
-    name_id: prevDetail?.name_id,
-    description_id: prevDetail?.description_id,
-    active_flag_id: prevDetail?.active_flag_id,
-    department_ids: prevDetail?.department_ids,
-    field_ids: prevDetail?.field_ids,
-    upload_ids: prevDetail?.upload_ids,
+    name_id: prevCurrent?.names?.[0]?.id,
+    description_id: prevCurrent?.descriptions?.[0]?.id,
+    active_flag_id: prevCurrent?.flags?.[0]?.flag_option_id,
+    department_ids: prevCurrent?.departments?.map((d) => d.department_id),
+    field_ids: prevCurrent?.fields?.map((f) => f.id),
+    upload_ids: prevCurrent?.uploads?.map((u) => u.uploads_id),
   };
   const nextIds = {
-    name_id: nextDetail?.name_id,
-    description_id: nextDetail?.description_id,
-    active_flag_id: nextDetail?.active_flag_id,
-    department_ids: nextDetail?.department_ids,
-    field_ids: nextDetail?.field_ids,
-    upload_ids: nextDetail?.upload_ids,
+    name_id: nextCurrent?.names?.[0]?.id,
+    description_id: nextCurrent?.descriptions?.[0]?.id,
+    active_flag_id: nextCurrent?.flags?.[0]?.flag_option_id,
+    department_ids: nextCurrent?.departments?.map((d) => d.department_id),
+    field_ids: nextCurrent?.fields?.map((f) => f.id),
+    upload_ids: nextCurrent?.uploads?.map((u) => u.uploads_id),
   };
 
   // Compare primitive props
@@ -1486,10 +1450,7 @@ export default React.memo(DocumentComponent, (prevProps, nextProps) => {
     prevProps.patchDocumentDraftAction !== nextProps.patchDocumentDraftAction ||
     prevProps.createNamesAction !== nextProps.createNamesAction ||
     prevProps.createDescriptionsAction !== nextProps.createDescriptionsAction ||
-    prevProps.createUploadsAction !== nextProps.createUploadsAction ||
-    prevProps.createFlagsAction !== nextProps.createFlagsAction ||
-    prevProps.createFieldsAction !== nextProps.createFieldsAction ||
-    prevProps.createDepartmentsAction !== nextProps.createDepartmentsAction
+    prevProps.createUploadsAction !== nextProps.createUploadsAction
   ) {
     return false; // Function props changed, re-render
   }

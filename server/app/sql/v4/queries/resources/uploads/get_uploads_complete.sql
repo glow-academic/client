@@ -1,7 +1,7 @@
 -- Get uploads resources by IDs
 -- Simple data fetching - no business logic
 -- Parameters: ids (uuid[])
--- Returns: items (array of upload resources)
+-- Returns: items (array of upload resources with file details)
 
 -- Drop function if exists (handles signature variations)
 DO $$
@@ -18,7 +18,7 @@ BEGIN
     END LOOP;
 END $$;
 
--- Drop types WITHOUT CASCADE
+-- Drop types WITH CASCADE (search function depends on this type)
 DO $$
 DECLARE
     r RECORD;
@@ -29,13 +29,17 @@ BEGIN
         WHERE typname LIKE 'q_get_uploads_v4_%'
           AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
     LOOP
-        EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
+        EXECUTE format('DROP TYPE IF EXISTS types.%I CASCADE', r.typname);
     END LOOP;
 END $$;
 
--- Create composite type for upload item
+-- Create composite type for upload item (includes file details via view_uploads_entry)
 CREATE TYPE types.q_get_uploads_v4_item AS (
-    id uuid,
+    uploads_id uuid,
+    upload_id uuid,
+    file_path text,
+    mime_type text,
+    size bigint,
     generated boolean
 );
 
@@ -51,12 +55,12 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (u.id, COALESCE(u.generated, false))::types.q_get_uploads_v4_item
-        ORDER BY array_position(ids, u.id)
+        (v.id, v.upload_id, v.file_path, v.mime_type, v.size, COALESCE(v.generated, false))::types.q_get_uploads_v4_item
+        ORDER BY array_position(ids, v.id)
     ),
     ARRAY[]::types.q_get_uploads_v4_item[]
 ) as items
-FROM uploads_resource u
-WHERE u.id = ANY(ids)
-  AND u.active = true;
+FROM view_uploads_entry v
+WHERE v.id = ANY(ids)
+  AND v.active = true;
 $$;

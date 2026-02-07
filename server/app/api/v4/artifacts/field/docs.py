@@ -36,7 +36,7 @@ CONFIG = ArtifactDocsConfig(
                 "method": "POST",
                 "description": "List fields with optional filters",
                 "request_model": "GetFieldsListApiRequest",
-                "response_model": "GetFieldsListApiResponse",
+                "response_model": "ListFieldApiResponse",
             },
             "duplicate": {
                 "path": "/duplicate",

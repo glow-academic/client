@@ -1,16 +1,21 @@
-"""Profile duplicate endpoint."""
+"""Profile duplicate endpoint - two-pass architecture with Python permissions."""
 
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.artifacts.profile.permissions import compute_can_duplicate
+from app.api.v4.artifacts.profile.types import (
+    DuplicateProfileApiRequest,
+    DuplicateProfileApiResponse,
+)
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
-    DuplicateProfileApiRequest,
-    DuplicateProfileApiResponse,
+    CheckProfileDuplicateAccessSqlParams,
+    CheckProfileDuplicateAccessSqlRow,
     DuplicateProfileSqlParams,
     DuplicateProfileSqlRow,
     load_sql_query,
@@ -18,7 +23,12 @@ from app.sql.types import (
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/v4/queries/profile/duplicate_profile_complete.sql"
+# SQL paths
+ACCESS_CHECK_SQL_PATH = (
+    "app/sql/v4/queries/profile/check_profile_duplicate_access_complete.sql"
+)
+DUPLICATE_SQL_PATH = "app/sql/v4/queries/profile/duplicate_profile_complete.sql"
+
 
 router = APIRouter()
 
@@ -42,7 +52,7 @@ async def duplicate_profile(
     """Duplicate a profile."""
     tags = ["profile"]
 
-    sql_query = load_sql_query(SQL_PATH)
+    sql_query = load_sql_query(DUPLICATE_SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -53,34 +63,70 @@ async def duplicate_profile(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        params = DuplicateProfileSqlParams(
-            **request.model_dump(), profile_id=profile_id
+        # Permission check: get user role
+        access_params = CheckProfileDuplicateAccessSqlParams(
+            profile_id=profile_id,
         )
-        sql_params = params.to_tuple()
-
-        result = cast(
-            DuplicateProfileSqlRow,
+        access_result = cast(
+            CheckProfileDuplicateAccessSqlRow,
             await execute_sql_typed(
                 conn,
-                SQL_PATH,
-                params=params,
+                ACCESS_CHECK_SQL_PATH,
+                params=access_params,
             ),
         )
 
-        if not result.new_profile_id:
-            raise HTTPException(status_code=404, detail="Profile not found")
-
-        if result.actor_name:
-            audit_set(
-                http_request,
-                actor={"name": result.actor_name, "id": profile_id},
-                profile={
-                    "name": result.original_name,
-                    "id": str(result.new_profile_id),
-                },
+        if not access_result:
+            raise HTTPException(
+                status_code=401,
+                detail="Unable to verify user permissions.",
             )
 
-        api_response = DuplicateProfileApiResponse.model_validate(result.model_dump())
+        can_duplicate = compute_can_duplicate(user_role=access_result.user_role)
+
+        if not can_duplicate:
+            raise HTTPException(
+                status_code=403,
+                detail="You don't have permission to duplicate this profile.",
+            )
+
+        async with conn.transaction():
+            params = DuplicateProfileSqlParams(
+                **request.model_dump(), profile_id=profile_id
+            )
+            sql_params = params.to_tuple()
+
+            result = cast(
+                DuplicateProfileSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    DUPLICATE_SQL_PATH,
+                    params=params,
+                ),
+            )
+
+            if not result or not result.new_profile_id:
+                raise ValueError(f"Profile not found: {request.target_profile_id}")
+
+            original_name = result.original_name or "Unknown"
+
+            if result.actor_name:
+                audit_set(
+                    http_request,
+                    actor={"name": result.actor_name, "id": profile_id},
+                    profile={
+                        "name": original_name,
+                        "id": str(request.target_profile_id),
+                    },
+                )
+
+        api_response = DuplicateProfileApiResponse.model_validate(
+            {
+                "success": True,
+                "profile_id": str(result.new_profile_id),
+                "message": f"Profile '{original_name}' duplicated successfully",
+            }
+        )
 
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
@@ -88,6 +134,8 @@ async def duplicate_profile(
         return api_response
     except HTTPException:
         raise
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
         handle_route_error(
             error=e,

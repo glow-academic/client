@@ -5,12 +5,17 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.v4.activity.audit import audit_activity, audit_set
-from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db, transaction
-from app.sql.types import (
+from app.api.v4.artifacts.parameter.permissions import compute_can_delete
+from app.api.v4.artifacts.parameter.types import (
     DeleteParameterApiRequest,
     DeleteParameterApiResponse,
+)
+from app.infra.v4.activity.audit import audit_activity, audit_set
+from app.infra.v4.error.handle_route_error import handle_route_error
+from app.main import get_db
+from app.sql.types import (
+    CheckParameterDeleteAccessSqlParams,
+    CheckParameterDeleteAccessSqlRow,
     DeleteParameterSqlParams,
     DeleteParameterSqlRow,
     load_sql_query,
@@ -18,8 +23,11 @@ from app.sql.types import (
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
-# Load SQL with types at module level - makes it clear what SQL file is used
-SQL_PATH = "app/sql/v4/queries/parameters/delete_parameter_complete.sql"
+# SQL paths
+ACCESS_CHECK_SQL_PATH = (
+    "app/sql/v4/queries/parameters/check_parameter_delete_access_complete.sql"
+)
+DELETE_SQL_PATH = "app/sql/v4/queries/parameters/delete_parameter_complete.sql"
 
 
 router = APIRouter()
@@ -41,10 +49,10 @@ async def delete_parameter(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DeleteParameterApiResponse:
-    """Delete a parameter if items not in use."""
-    tags = ["parameters", "agents"]  # Parameters used in scenario generation
+    """Delete a parameter."""
+    tags = ["parameters", "agents"]
 
-    sql_query = load_sql_query(SQL_PATH)
+    sql_query = load_sql_query(DELETE_SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -56,7 +64,39 @@ async def delete_parameter(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        async with transaction(conn):
+        # Permission check: get user role and parameter info using typed SQL
+        access_params = CheckParameterDeleteAccessSqlParams(
+            profile_id=profile_id,
+            parameter_id=request.parameter_id,
+        )
+        access_result = cast(
+            CheckParameterDeleteAccessSqlRow,
+            await execute_sql_typed(
+                conn,
+                ACCESS_CHECK_SQL_PATH,
+                params=access_params,
+            ),
+        )
+
+        if not access_result:
+            raise HTTPException(
+                status_code=401,
+                detail="Unable to verify user permissions.",
+            )
+
+        can_delete = compute_can_delete(
+            user_role=access_result.user_role,
+            parameter_department_ids=access_result.parameter_department_ids,
+            total_scenario_links=access_result.total_scenario_links or 0,
+        )
+
+        if not can_delete:
+            raise HTTPException(
+                status_code=403,
+                detail="You don't have permission to delete this parameter.",
+            )
+
+        async with conn.transaction():
             # Convert API request to SQL params (add profile_id from header)
             params = DeleteParameterSqlParams(
                 **request.model_dump(), profile_id=profile_id
@@ -68,40 +108,41 @@ async def delete_parameter(
                 DeleteParameterSqlRow,
                 await execute_sql_typed(
                     conn,
-                    SQL_PATH,
+                    DELETE_SQL_PATH,
                     params=params,
                 ),
             )
 
-            # Check if parameter exists using SQL result
-            if not result.parameter_exists:
-                raise HTTPException(
-                    status_code=404,
-                    detail=f"Parameter {request.parameter_id} not found",
-                )
-
-            if not result.name:
-                raise HTTPException(
-                    status_code=404,
-                    detail=f"Parameter {request.parameter_id} not found",
-                )
+            if not result:
+                raise ValueError("Failed to check parameter usage")
 
             usage_count = result.usage_count or 0
             if usage_count > 0:
-                raise ValueError(
-                    "Cannot delete parameter: Some items are in use by scenarios"
-                )
+                raise ValueError("Cannot delete parameter that is in use by scenarios")
+
+            if not result.parameter_exists:
+                raise ValueError(f"Parameter not found: {request.parameter_id}")
+
+            parameter_name = result.name or "Unknown"
 
             # Set audit context with data from SQL query
             if result.actor_name:
                 audit_set(
                     http_request,
                     actor={"name": result.actor_name, "id": profile_id},
-                    parameter={"name": result.name, "id": str(request.parameter_id)},
+                    parameter={
+                        "name": parameter_name,
+                        "id": str(request.parameter_id),
+                    },
                 )
 
         # Convert SQL result to API response
-        api_response = DeleteParameterApiResponse.model_validate(result.model_dump())
+        api_response = DeleteParameterApiResponse.model_validate(
+            {
+                "success": True,
+                "message": f"Parameter '{parameter_name}' deleted successfully",
+            }
+        )
 
         # Invalidate cache after mutation
         await invalidate_tags(tags)

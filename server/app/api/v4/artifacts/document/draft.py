@@ -5,12 +5,14 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.artifacts.document.types import (
+    PatchDocumentDraftApiRequest,
+    PatchDocumentDraftApiResponse,
+)
 from app.infra.v4.activity.audit import audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
-    PatchDocumentDraftApiRequest,
-    PatchDocumentDraftApiResponse,
     PatchDocumentDraftSqlParams,
     PatchDocumentDraftSqlRow,
     load_sql_query,

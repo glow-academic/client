@@ -24,6 +24,7 @@ CREATE OR REPLACE FUNCTION api_patch_field_draft_v4(
     description_id uuid DEFAULT NULL,
     active_flag_id uuid DEFAULT NULL,
     department_ids uuid[] DEFAULT NULL,
+    parameter_ids uuid[] DEFAULT NULL,
     expected_version int DEFAULT 0
 )
 RETURNS TABLE (
@@ -114,7 +115,17 @@ BEGIN
                 ON CONFLICT ON CONSTRAINT departments_draft_pkey DO UPDATE
                 SET version = v_new_version;
             END IF;
-            
+
+            -- Handle array resources (parameters)
+            IF parameter_ids IS NOT NULL THEN
+                DELETE FROM parameters_drafts_connection WHERE parameters_drafts_connection.draft_id = v_draft_id;
+                INSERT INTO parameters_drafts_connection (draft_id, parameters_id, version)
+                SELECT v_draft_id, param_id, v_new_version
+                FROM UNNEST(parameter_ids) as param_id
+                ON CONFLICT ON CONSTRAINT parameters_draft_pkey DO UPDATE
+                SET version = v_new_version;
+            END IF;
+
             RETURN QUERY SELECT v_draft_id, v_new_version, v_draft_exists;
             RETURN;
         END IF;
@@ -165,7 +176,15 @@ BEGIN
         ON CONFLICT ON CONSTRAINT departments_draft_pkey DO UPDATE
         SET version = v_new_version;
     END IF;
-    
+
+    IF parameter_ids IS NOT NULL THEN
+        INSERT INTO parameters_drafts_connection (draft_id, parameters_id, version)
+        SELECT v_draft_id, param_id, v_new_version
+        FROM UNNEST(parameter_ids) as param_id
+        ON CONFLICT ON CONSTRAINT parameters_draft_pkey DO UPDATE
+        SET version = v_new_version;
+    END IF;
+
     RETURN QUERY SELECT v_draft_id, v_new_version, false;
 END;
 $$;

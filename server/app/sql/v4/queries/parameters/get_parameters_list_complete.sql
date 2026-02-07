@@ -1,16 +1,27 @@
--- Get parameters list with permissions and relationships
--- Converted to function with composite types
+-- Get parameters list with raw data for Python permission computation
+-- SQL returns raw data (user_role, active_scenario_count, total_scenario_links per parameter)
+-- Python computes can_edit, can_delete, can_duplicate from these
+
 -- 1) Drop function first (breaks dependency on types)
-DROP FUNCTION IF EXISTS api_list_parameters_v4(uuid);
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN
+        SELECT oidvectortypes(proargtypes) as sig
+        FROM pg_proc
+        WHERE proname = 'api_list_parameters_v4'
+          AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+    LOOP
+        EXECUTE format('DROP FUNCTION IF EXISTS api_list_parameters_v4(%s)', r.sig);
+    END LOOP;
+END $$;
 
 -- 2) Drop types WITHOUT CASCADE (drop parameter type first since it depends on sample_item)
 DROP TYPE IF EXISTS types.q_list_parameters_v4_parameter;
 DROP TYPE IF EXISTS types.q_list_parameters_v4_sample_item;
 DROP TYPE IF EXISTS types.q_list_parameters_v4_scenario;
 DROP TYPE IF EXISTS types.q_list_parameters_v4_department;
-DROP TYPE IF EXISTS types.q_list_parameters_v4_document;
-DROP TYPE IF EXISTS types.q_list_parameters_v4_scenario_option;
-DROP TYPE IF EXISTS types.q_list_parameters_v4_document_option;
 
 -- 3) Recreate types
 CREATE TYPE types.q_list_parameters_v4_sample_item AS (
@@ -27,53 +38,38 @@ CREATE TYPE types.q_list_parameters_v4_parameter AS (
     updated_at timestamptz,
     department_ids text[],
     scenario_ids text[],
-    document_ids text[],
     num_items int,
     sample_items types.q_list_parameters_v4_sample_item[],
-    can_edit boolean,
-    can_delete boolean,
-    can_duplicate boolean
+    -- Raw data for Python permission computation
+    active_scenario_count bigint,
+    total_scenario_links bigint
 );
 
 CREATE TYPE types.q_list_parameters_v4_scenario AS (
     scenario_id uuid,
     name text,
     description text,
-    active boolean
+    active boolean,
+    parameter_item_ids uuid[],
+    count int
 );
 
 CREATE TYPE types.q_list_parameters_v4_department AS (
     department_id uuid,
     name text,
-    description text
-);
-
-CREATE TYPE types.q_list_parameters_v4_document AS (
-    document_id uuid,
-    name text,
-    description text
-);
-
-CREATE TYPE types.q_list_parameters_v4_scenario_option AS (
-    value text,
-    label text
-);
-
-CREATE TYPE types.q_list_parameters_v4_document_option AS (
-    value text,
-    label text
+    description text,
+    count int
 );
 
 -- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_list_parameters_v4(profile_id uuid)
 RETURNS TABLE (
     actor_name text,
+    user_role text,
     parameters types.q_list_parameters_v4_parameter[],
     scenarios types.q_list_parameters_v4_scenario[],
     departments types.q_list_parameters_v4_department[],
-    documents types.q_list_parameters_v4_document[],
-    scenario_options_junction types.q_list_parameters_v4_scenario_option[],
-    document_options types.q_list_parameters_v4_document_option[]
+    total_count int
 )
 LANGUAGE sql
 STABLE
@@ -110,7 +106,7 @@ parameter_all_scenario_links AS (
     GROUP BY pfr.parameter_id
 ),
 scenario_parameters_data AS (
-    SELECT 
+    SELECT
         sp.parameter_id,
         ARRAY_AGG(DISTINCT st.parent_id::text ORDER BY st.parent_id::text) as scenario_ids,
         COUNT(DISTINCT st.parent_id) as num_scenarios
@@ -121,7 +117,7 @@ scenario_parameters_data AS (
     GROUP BY sp.parameter_id
 ),
 parameter_item_counts AS (
-    SELECT 
+    SELECT
         (SELECT pf.parameter_id FROM parameter_fields_junction pf WHERE pf.field_id = f.id LIMIT 1),
         COUNT(*) as num_items
     FROM field_artifact f
@@ -129,7 +125,7 @@ parameter_item_counts AS (
     GROUP BY (SELECT pf.parameter_id FROM parameter_fields_junction pf WHERE pf.field_id = f.id LIMIT 1)
 ),
 parameter_sample_items_data AS (
-    SELECT 
+    SELECT
         f_sub.parameter_id,
         f_sub.field_id,
         f_sub.name,
@@ -143,7 +139,7 @@ parameter_sample_items_data AS (
     WHERE f_sub.rn <= 3
 ),
 parameter_item_departments_data AS (
-    SELECT 
+    SELECT
         combined.parameter_id,
         ARRAY_AGG(DISTINCT combined.department_id::text ORDER BY combined.department_id::text) as department_ids
     FROM (
@@ -173,21 +169,8 @@ parameter_item_departments_for_filter AS (
         WHERE EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource f ON ff.flag_id = f.id WHERE ff.field_id = f.id AND f.name = 'field_active' AND ff.value = true) AND fd.active = true AND (SELECT pf.parameter_id FROM parameter_fields_junction pf WHERE pf.field_id = f.id LIMIT 1) IS NOT NULL
     ) combined
 ),
-parameter_documents AS (
-    SELECT
-        pfr.parameter_id,
-        ARRAY_AGG(DISTINCT dpfj.document_id::text ORDER BY dpfj.document_id::text) as document_ids
-    FROM parameter_fields_resource pfr
-    JOIN document_parameter_fields_junction dpfj ON dpfj.parameter_field_id = pfr.id
-    JOIN fields_resource f ON f.id = pfr.field_id
-    JOIN field_fields_junction ffj ON ffj.fields_id = f.id
-    WHERE EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = ffj.field_id AND fl.name = 'field_active' AND ff.value = true)
-      AND dpfj.active = true
-      AND pfr.parameter_id IS NOT NULL
-    GROUP BY pfr.parameter_id
-),
 filtered_parameters AS (
-    SELECT 
+    SELECT
         p.id,
         (SELECT n.name FROM parameter_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = p.id LIMIT 1),
         (SELECT d.description FROM parameter_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.parameter_id = p.id LIMIT 1),
@@ -196,14 +179,14 @@ filtered_parameters AS (
     FROM parameter_artifact p
     LEFT JOIN parameter_item_departments_for_filter pidf ON pidf.parameter_id = p.id
     GROUP BY p.id, (SELECT n.name FROM parameter_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = p.id LIMIT 1), (SELECT d.description FROM parameter_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.parameter_id = p.id LIMIT 1), EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = p.id AND f.name = 'parameter_active' AND pf.value = TRUE), p.updated_at
-    HAVING 
+    HAVING
         COUNT(pidf.parameter_id) FILTER (WHERE pidf.department_id IN (SELECT department_id FROM user_departments)) > 0
         OR NOT EXISTS (
             SELECT 1 FROM parameter_departments_junction pd2 WHERE pd2.parameter_id = p.id AND pd2.active = true
         )
         AND NOT EXISTS (
-            SELECT 1 FROM field_departments_junction fd2 
-            JOIN fields_resource f2 ON f2.id = fd2.field_id 
+            SELECT 1 FROM field_departments_junction fd2
+            JOIN fields_resource f2 ON f2.id = fd2.field_id
             JOIN parameter_fields_junction pf2 ON pf2.field_id = f2.id WHERE pf2.parameter_id = p.id AND EXISTS (SELECT 1 FROM field_flags_junction ff2 JOIN flags_resource fl2 ON ff2.flag_id = fl2.id WHERE ff2.field_id = f2.id AND fl2.name = 'field_active' AND ff2.value = TRUE) AND fd2.active = true
         )
 ),
@@ -219,17 +202,26 @@ all_scenario_ids AS (
     FROM scenario_parameters_data
     WHERE scenario_ids IS NOT NULL
 ),
-all_document_ids AS (
-    SELECT DISTINCT unnest(document_ids)::uuid as document_id
-    FROM parameter_documents
-    WHERE document_ids IS NOT NULL
-),
 scenarios_data AS (
     SELECT
         s.id as scenario_id,
         (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = ssj.scenario_id LIMIT 1),
         COALESCE(ps.problem_statement, '') as description,
-        EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'scenario_active' AND sf.value = TRUE) as active
+        EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'scenario_active' AND sf.value = TRUE) as active,
+        -- Parameter field IDs linked to this scenario
+        COALESCE(
+            (SELECT ARRAY_AGG(DISTINCT spfj.parameter_field_id)
+             FROM scenario_parameter_fields_junction spfj
+             WHERE spfj.scenario_id = s.id AND spfj.active = true),
+            ARRAY[]::uuid[]
+        ) as parameter_item_ids,
+        -- Count of parameters linked to this scenario
+        COALESCE(
+            (SELECT COUNT(DISTINCT sp.parameter_id)::int
+             FROM scenario_parameters_junction sp
+             WHERE sp.scenario_id = s.id AND sp.active = true),
+            0
+        ) as count
     FROM all_scenario_ids asi
     LEFT JOIN scenarios_resource s ON s.id = asi.scenario_id
     LEFT JOIN scenario_scenarios_junction ssj ON ssj.scenarios_id = s.id
@@ -238,122 +230,40 @@ scenarios_data AS (
     WHERE s.id IS NOT NULL
 ),
 departments_data AS (
-    SELECT 
+    SELECT
         d.id as department_id,
         (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name,
-        COALESCE((SELECT d_desc.description FROM department_descriptions_junction dd JOIN descriptions_resource d_desc ON d_desc.id = dd.description_id WHERE dd.department_id = d.id LIMIT 1), '') as description
+        COALESCE((SELECT d_desc.description FROM department_descriptions_junction dd JOIN descriptions_resource d_desc ON d_desc.id = dd.description_id WHERE dd.department_id = d.id LIMIT 1), '') as description,
+        -- Count of parameters in this department
+        COALESCE(
+            (SELECT COUNT(DISTINCT pidd.parameter_id)::int
+             FROM parameter_item_departments_data pidd
+             WHERE pidd.department_ids @> ARRAY[d.id::text]),
+            0
+        ) as count
     FROM department_artifact d
     WHERE d.id IN (SELECT department_id FROM all_department_ids)
 ),
-documents_data AS (
-    SELECT 
-        doc.id as document_id,
-        (SELECT n.name FROM document_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = doc.id LIMIT 1) as name,
-        COALESCE((SELECT d.description FROM document_descriptions_junction dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = doc.id LIMIT 1), '') as description
-    FROM document_artifact doc
-    WHERE doc.id IN (SELECT document_id FROM all_document_ids)
-),
--- Collect scenario IDs, document IDs, and department IDs actually assigned to parameters
-assigned_scenario_ids AS (
-    SELECT DISTINCT unnest(spd.scenario_ids)::uuid as scenario_id
-    FROM filtered_parameters fp
-    LEFT JOIN scenario_parameters_data spd ON spd.parameter_id = fp.id
-    WHERE spd.scenario_ids IS NOT NULL
-),
-assigned_document_ids AS (
-    SELECT DISTINCT unnest(pd.document_ids)::uuid as document_id
-    FROM filtered_parameters fp
-    LEFT JOIN parameter_documents pd ON pd.parameter_id = fp.id
-    WHERE pd.document_ids IS NOT NULL
-),
+-- Collect department IDs actually assigned to parameters
 assigned_department_ids AS (
     SELECT DISTINCT unnest(pidd.department_ids)::uuid as department_id
     FROM filtered_parameters fp
     LEFT JOIN parameter_item_departments_data pidd ON pidd.parameter_id = fp.id
     WHERE pidd.department_ids IS NOT NULL
 ),
--- Filter scenarios to only include those assigned to parameters AND in user's departments
-scenario_ids_in_user_depts AS (
-    SELECT DISTINCT sd.scenario_id::text
-    FROM scenario_departments_junction sd
-    WHERE sd.scenario_id IN (SELECT scenario_id FROM assigned_scenario_ids)
-    AND sd.department_id IN (SELECT department_id FROM user_departments)
-    AND sd.active = true
-    UNION
-    SELECT DISTINCT s.id::text
-    FROM scenario_artifact s
-    WHERE s.id IN (SELECT scenario_id FROM assigned_scenario_ids)
-    AND NOT EXISTS (
-        SELECT 1 FROM scenario_departments_junction sd2 
-        WHERE sd2.scenario_id = s.id AND sd2.active = true
-    )
-),
--- Filter documents to only include those assigned to parameters AND in user's departments
-document_ids_in_user_depts AS (
-    SELECT DISTINCT dd.document_id::text
-    FROM document_departments_junction dd
-    WHERE dd.document_id IN (SELECT document_id FROM assigned_document_ids)
-    AND dd.department_id IN (SELECT department_id FROM user_departments)
-    AND dd.active = true
-    UNION
-    SELECT DISTINCT d.id::text
-    FROM document_artifact d
-    WHERE d.id IN (SELECT document_id FROM assigned_document_ids)
-    AND NOT EXISTS (
-        SELECT 1 FROM document_departments_junction dd2 
-        WHERE dd2.document_id = d.id AND dd2.active = true
-    )
-),
--- Build scenario options with disambiguation
-scenario_names_count AS (
-    SELECT 
-        name,
-        COUNT(*) as name_count
-    FROM scenarios_data
-    GROUP BY name
-),
-scenario_options_data AS (
-    SELECT 
-        sd.scenario_id::text as value,
-        CASE 
-            WHEN snc.name_count > 1 THEN sd.name || ' (' || SUBSTRING(sd.scenario_id::text FROM LENGTH(sd.scenario_id::text) - 7) || ')'
-            ELSE sd.name
-        END as label
-    FROM scenarios_data sd
-    JOIN scenario_names_count snc ON snc.name = sd.name
-    WHERE sd.scenario_id::text IN (SELECT scenario_id FROM scenario_ids_in_user_depts)
-),
--- Build document options with disambiguation
-document_names_count AS (
-    SELECT 
-        name,
-        COUNT(*) as name_count
-    FROM documents_data
-    GROUP BY name
-),
-document_options_data AS (
-    SELECT 
-        dd.document_id::text as value,
-        CASE 
-            WHEN dnc.name_count > 1 THEN dd.name || ' (' || SUBSTRING(dd.document_id::text FROM LENGTH(dd.document_id::text) - 7) || ')'
-            ELSE dd.name
-        END as label
-    FROM documents_data dd
-    JOIN document_names_count dnc ON dnc.name = dd.name
-    WHERE dd.document_id::text IN (SELECT document_id FROM document_ids_in_user_depts)
-),
 -- Filter departments to only include those assigned to parameters AND in user's departments
 filtered_departments_data AS (
-    SELECT 
+    SELECT
         d.department_id,
-        (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.department_id LIMIT 1) as name,
-        COALESCE((SELECT d_desc.description FROM department_descriptions_junction dd JOIN descriptions_resource d_desc ON d_desc.id = dd.description_id WHERE dd.department_id = d.department_id LIMIT 1), '') as description
+        d.name,
+        d.description,
+        d.count
     FROM departments_data d
     WHERE d.department_id IN (SELECT department_id FROM assigned_department_ids)
     AND d.department_id IN (SELECT department_id FROM user_departments)
 ),
 parameters_data AS (
-    SELECT 
+    SELECT
         fp.id as parameter_id,
         fp.name,
         fp.description,
@@ -361,7 +271,6 @@ parameters_data AS (
         fp.updated_at,
         COALESCE(pidd.department_ids, NULL) as department_ids,
         COALESCE(spd.scenario_ids, ARRAY[]::text[]) as scenario_ids,
-        COALESCE(pd.document_ids, ARRAY[]::text[]) as document_ids,
         COALESCE(pic.num_items, 0) as num_items,
         COALESCE(
             (SELECT ARRAY_AGG((psi.field_id, psi.name, psi.description)::types.q_list_parameters_v4_sample_item ORDER BY psi.name)
@@ -369,37 +278,25 @@ parameters_data AS (
              WHERE psi.parameter_id = fp.id),
             '{}'::types.q_list_parameters_v4_sample_item[]
         ) as sample_items,
-        CASE 
-            WHEN COALESCE(pasl.active_scenario_count, 0) > 0 THEN false
-            WHEN up.role IN ('admin'::profile_type, 'superadmin'::profile_type) THEN true
-            ELSE false
-        END as can_edit,
-        CASE 
-            WHEN COALESCE(pasl_all.total_scenario_links, 0) > 0 THEN false
-            WHEN up.role IN ('admin'::profile_type, 'superadmin'::profile_type) THEN true
-            ELSE false
-        END as can_delete,
-        CASE 
-            WHEN up.role IN ('admin'::profile_type, 'superadmin'::profile_type) THEN true
-            ELSE false
-        END as can_duplicate
+        -- Raw data for Python permission computation (replaces SQL-computed can_edit/can_delete/can_duplicate)
+        COALESCE(pasl.active_scenario_count, 0)::bigint as active_scenario_count,
+        COALESCE(pasl_all.total_scenario_links, 0)::bigint as total_scenario_links
     FROM filtered_parameters fp
-    CROSS JOIN user_profile up
     LEFT JOIN parameter_item_departments_data pidd ON pidd.parameter_id = fp.id
     LEFT JOIN scenario_parameters_data spd ON spd.parameter_id = fp.id
-    LEFT JOIN parameter_documents pd ON pd.parameter_id = fp.id
     LEFT JOIN parameter_item_counts pic ON pic.parameter_id = fp.id
     LEFT JOIN parameter_active_scenario_links pasl ON pasl.parameter_id = fp.id
     LEFT JOIN parameter_all_scenario_links pasl_all ON pasl_all.parameter_id = fp.id
 )
-SELECT 
+SELECT
     up.actor_name::text as actor_name,
+    up.role::text as user_role,
     -- Aggregate parameters separately
     COALESCE(
         (SELECT ARRAY_AGG(
             (pd.parameter_id, pd.name, pd.description, pd.active, pd.updated_at,
-             pd.department_ids, pd.scenario_ids, pd.document_ids, pd.num_items,
-             pd.sample_items, pd.can_edit, pd.can_delete, pd.can_duplicate
+             pd.department_ids, pd.scenario_ids, pd.num_items,
+             pd.sample_items, pd.active_scenario_count, pd.total_scenario_links
             )::types.q_list_parameters_v4_parameter
             ORDER BY pd.updated_at DESC NULLS LAST
         ) FROM parameters_data pd),
@@ -408,7 +305,7 @@ SELECT
     -- Aggregate scenarios separately
     COALESCE(
         (SELECT ARRAY_AGG(
-            (sd.scenario_id, sd.name, sd.description, sd.active)::types.q_list_parameters_v4_scenario
+            (sd.scenario_id, sd.name, sd.description, sd.active, sd.parameter_item_ids, sd.count)::types.q_list_parameters_v4_scenario
             ORDER BY sd.name
         ) FROM scenarios_data sd),
         '{}'::types.q_list_parameters_v4_scenario[]
@@ -416,34 +313,15 @@ SELECT
     -- Aggregate departments separately
     COALESCE(
         (SELECT ARRAY_AGG(
-            (fdd.department_id, fdd.name, fdd.description)::types.q_list_parameters_v4_department
+            (fdd.department_id, fdd.name, fdd.description, fdd.count)::types.q_list_parameters_v4_department
             ORDER BY fdd.name
         ) FROM filtered_departments_data fdd),
         '{}'::types.q_list_parameters_v4_department[]
     ) as departments,
-    -- Aggregate documents separately
+    -- Total count of parameters
     COALESCE(
-        (SELECT ARRAY_AGG(
-            (dd.document_id, dd.name, dd.description)::types.q_list_parameters_v4_document
-            ORDER BY dd.name
-        ) FROM documents_data dd),
-        '{}'::types.q_list_parameters_v4_document[]
-    ) as documents,
-    -- Aggregate scenario options separately
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (sod.value, sod.label)::types.q_list_parameters_v4_scenario_option
-            ORDER BY sod.label
-        ) FROM scenario_options_data sod),
-        '{}'::types.q_list_parameters_v4_scenario_option[]
-    ) as scenario_options_junction,
-    -- Aggregate document options separately
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (dod.value, dod.label)::types.q_list_parameters_v4_document_option
-            ORDER BY dod.label
-        ) FROM document_options_data dod),
-        '{}'::types.q_list_parameters_v4_document_option[]
-    ) as document_options
+        (SELECT COUNT(*)::int FROM parameters_data),
+        0
+    ) as total_count
 FROM user_profile up
 $$;

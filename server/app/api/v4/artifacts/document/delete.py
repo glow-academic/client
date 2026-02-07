@@ -5,12 +5,17 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.artifacts.document.permissions import compute_can_delete
+from app.api.v4.artifacts.document.types import (
+    DeleteDocumentApiRequest,
+    DeleteDocumentApiResponse,
+)
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
-    DeleteDocumentApiRequest,
-    DeleteDocumentApiResponse,
+    CheckDocumentDeleteAccessSqlParams,
+    CheckDocumentDeleteAccessSqlRow,
     DeleteDocumentSqlParams,
     DeleteDocumentSqlRow,
     load_sql_query,
@@ -18,8 +23,11 @@ from app.sql.types import (
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
-# Load SQL with types at module level - makes it clear what SQL file is used
-SQL_PATH = "app/sql/v4/queries/documents/delete_document_complete.sql"
+# SQL paths
+ACCESS_CHECK_SQL_PATH = (
+    "app/sql/v4/queries/documents/check_document_delete_access_complete.sql"
+)
+DELETE_SQL_PATH = "app/sql/v4/queries/documents/delete_document_complete.sql"
 
 
 router = APIRouter()
@@ -44,7 +52,7 @@ async def delete_document(
     """Delete a document."""
     tags = ["documents"]  # From router tags
 
-    sql_query = load_sql_query(SQL_PATH)
+    sql_query = load_sql_query(DELETE_SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -56,31 +64,85 @@ async def delete_document(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Convert API request to SQL params (add profile_id from header)
-        # Use double star pattern: **request.model_dump()
-        params = DeleteDocumentSqlParams(**request.model_dump(), profile_id=profile_id)
-        sql_params = params.to_tuple()
-
-        # Execute SQL with typed helper - automatically detects and calls function if present
-        result = cast(
-            DeleteDocumentSqlRow,
+        # Permission check: get user role and document info using typed SQL
+        access_params = CheckDocumentDeleteAccessSqlParams(
+            profile_id=profile_id,
+            document_id=request.document_id,
+        )
+        access_result = cast(
+            CheckDocumentDeleteAccessSqlRow,
             await execute_sql_typed(
                 conn,
-                SQL_PATH,
-                params=params,
+                ACCESS_CHECK_SQL_PATH,
+                params=access_params,
             ),
         )
 
-        # Set audit context with data from SQL query
-        if result.actor_name and result.document_name:
-            audit_set(
-                http_request,
-                actor={"name": result.actor_name, "id": profile_id},
-                document={"name": result.document_name, "id": str(result.document_id)},
+        if not access_result:
+            raise HTTPException(
+                status_code=401,
+                detail="Unable to verify user permissions.",
             )
 
+        can_delete = compute_can_delete(
+            user_role=access_result.user_role,
+            document_department_ids=access_result.document_department_ids,
+            total_scenario_links=access_result.total_scenario_links or 0,
+        )
+
+        if not can_delete:
+            raise HTTPException(
+                status_code=403,
+                detail="You don't have permission to delete this document.",
+            )
+
+        async with conn.transaction():
+            # Convert API request to SQL params (add profile_id from header)
+            params = DeleteDocumentSqlParams(
+                **request.model_dump(), profile_id=profile_id
+            )
+            sql_params = params.to_tuple()
+
+            # Execute SQL with typed helper
+            result = cast(
+                DeleteDocumentSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    DELETE_SQL_PATH,
+                    params=params,
+                ),
+            )
+
+            if not result:
+                raise ValueError("Failed to check document usage")
+
+            usage_count = result.usage_count or 0
+            if usage_count > 0:
+                raise ValueError("Cannot delete document that is in use by scenarios")
+
+            if not result.deleted:
+                raise ValueError(f"Document not found: {request.document_id}")
+
+            document_name = result.document_name or "Unknown"
+
+            # Set audit context with data from SQL query
+            if result.actor_name:
+                audit_set(
+                    http_request,
+                    actor={"name": result.actor_name, "id": profile_id},
+                    document={
+                        "name": document_name,
+                        "id": str(request.document_id),
+                    },
+                )
+
         # Convert SQL result to API response
-        api_response = DeleteDocumentApiResponse.model_validate(result.model_dump())
+        api_response = DeleteDocumentApiResponse.model_validate(
+            {
+                "success": True,
+                "message": f"Document '{document_name}' deleted successfully",
+            }
+        )
 
         # Invalidate cache after mutation
         await invalidate_tags(tags)
@@ -89,6 +151,8 @@ async def delete_document(
         return api_response
     except HTTPException:
         raise
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
         handle_route_error(
             error=e,

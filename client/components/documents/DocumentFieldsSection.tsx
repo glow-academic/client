@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 import type { DocumentDetailOut } from "@/app/(main)/management/documents/d/[documentId]/page";
 
 type FieldMappingItem = NonNullable<
-  NonNullable<DocumentDetailOut["fields"]>[number]
+  NonNullable<NonNullable<NonNullable<DocumentDetailOut["resources"]>["resources"]>["fields"]>[number]
 >;
 
 type StepStatus = "pending" | "active" | "completed";

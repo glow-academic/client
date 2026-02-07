@@ -1,14 +1,15 @@
--- Unified save parameter function - handles both create (parameter_id = NULL) and update (parameter_id provided)
--- Converted to function following personas pattern
+-- Unified save parameter function - handles both create (input_parameter_id = NULL) and update (input_parameter_id provided)
+-- Accepts resource IDs directly (no raw text params)
+-- Permission validation is handled in Python (permissions.py)
+
 -- 1) Drop function first (breaks dependency on types)
--- Drop all versions of the function using DO block to handle signature variations
 DO $$
 DECLARE
     r RECORD;
 BEGIN
-    FOR r IN 
-        SELECT oidvectortypes(proargtypes) as sig 
-        FROM pg_proc 
+    FOR r IN
+        SELECT oidvectortypes(proargtypes) as sig
+        FROM pg_proc
         WHERE proname = 'api_save_parameter_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
@@ -28,314 +29,206 @@ CREATE TYPE types.i_save_parameter_v4_field_connection AS (
 
 -- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_save_parameter_v4(
-    name text,
-    description text,
-    active boolean,
-    simulation_parameter boolean,
-    document_parameter boolean,
-    persona_parameter boolean,
-    scenario_parameter boolean,
-    video_parameter boolean,
-    department_ids uuid[],
-    field_connections types.i_save_parameter_v4_field_connection[],
     profile_id uuid,
+    group_id uuid,
     input_parameter_id uuid DEFAULT NULL,
-    persona_ids uuid[] DEFAULT NULL,
-    document_ids uuid[] DEFAULT NULL
+    -- Required single-select resources
+    name_id uuid DEFAULT NULL,
+    -- Optional single-select resources
+    description_id uuid DEFAULT NULL,
+    active_flag_id uuid DEFAULT NULL,
+    -- Optional multi-select resources
+    flag_ids uuid[] DEFAULT NULL,
+    department_ids uuid[] DEFAULT NULL,
+    field_connections types.i_save_parameter_v4_field_connection[] DEFAULT NULL
 )
 RETURNS TABLE (
     parameter_id uuid,
-    parameter_exists boolean,
     actor_name text
 )
 LANGUAGE plpgsql
 VOLATILE
 AS $$
+#variable_conflict use_column
 DECLARE
     v_parameter_id uuid;
     v_actor_name text;
+    v_group_id uuid;
+    v_profile_id uuid;
+    v_input_parameter_id uuid;
     is_create boolean;
+    v_name_id uuid;
+    v_description_id uuid;
+    v_active_flag_id uuid;
+    v_flag_ids uuid[];
+    v_department_ids uuid[];
+    v_field_connections types.i_save_parameter_v4_field_connection[];
 BEGIN
+    -- Assign parameters to local variables
+    v_profile_id := profile_id;
+    v_group_id := group_id;
+    v_input_parameter_id := input_parameter_id;
+    v_name_id := name_id;
+    v_description_id := description_id;
+    v_active_flag_id := active_flag_id;
+    v_flag_ids := COALESCE(flag_ids, ARRAY[]::uuid[]);
+    v_department_ids := COALESCE(department_ids, ARRAY[]::uuid[]);
+    v_field_connections := COALESCE(field_connections, ARRAY[]::types.i_save_parameter_v4_field_connection[]);
+
+    -- Validate required fields
+    IF v_group_id IS NULL THEN
+        RAISE EXCEPTION 'group_id is required';
+    END IF;
+
+    IF v_name_id IS NULL THEN
+        RAISE EXCEPTION 'Name resource is required';
+    END IF;
+
     -- Determine if create or update
-    is_create := (input_parameter_id IS NULL);
-    
+    is_create := (v_input_parameter_id IS NULL);
+
     -- Create or UPDATE parameter_artifact first (outside CTE)
     IF is_create THEN
         -- CREATE path
         INSERT INTO parameter_artifact (created_at, updated_at)
         VALUES (NOW(), NOW())
         RETURNING id INTO v_parameter_id;
+        -- Link group via junction table
+        INSERT INTO parameter_groups_junction (parameter_id, group_id)
+        VALUES (v_parameter_id, v_group_id)
+        ON CONFLICT DO NOTHING;
     ELSE
         -- UPDATE path
-        v_parameter_id := input_parameter_id;
+        v_parameter_id := v_input_parameter_id;
         UPDATE parameter_artifact
         SET updated_at = NOW()
         WHERE id = v_parameter_id;
-        
-        -- Check if parameter exists
-        IF NOT FOUND THEN
-            RETURN QUERY SELECT NULL::uuid, false::boolean, ''::text;
-            RETURN;
-        END IF;
+        -- Upsert group via junction table
+        INSERT INTO parameter_groups_junction (parameter_id, group_id)
+        VALUES (v_parameter_id, v_group_id)
+        ON CONFLICT DO NOTHING;
     END IF;
-    
+
+    -- Validate resource IDs exist
+    IF v_name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names_resource WHERE id = v_name_id) THEN
+        RAISE EXCEPTION 'Name resource not found: %', v_name_id;
+    END IF;
+
+    IF v_description_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM descriptions_resource WHERE id = v_description_id) THEN
+        RAISE EXCEPTION 'Description resource not found: %', v_description_id;
+    END IF;
+
+    IF v_active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = v_active_flag_id) THEN
+        RAISE EXCEPTION 'Flag resource not found: %', v_active_flag_id;
+    END IF;
+
+    -- Conditional: For update, remove old links first
+    IF NOT is_create THEN
+        DELETE FROM parameter_names_junction WHERE parameter_id = v_parameter_id;
+        DELETE FROM parameter_descriptions_junction WHERE parameter_id = v_parameter_id;
+        DELETE FROM parameter_departments_junction WHERE parameter_id = v_parameter_id;
+        DELETE FROM parameter_fields_junction WHERE parameter_id = v_parameter_id;
+        -- Update existing active flag if it exists
+        UPDATE parameter_flags_junction SET
+            flag_id = COALESCE(v_active_flag_id, parameter_flags_junction.flag_id),
+            value = CASE WHEN v_active_flag_id IS NOT NULL THEN true ELSE false END
+        WHERE parameter_id = v_parameter_id;
+    END IF;
+
     -- Continue with parameter save using SQL (parameter already created/updated above)
     RETURN QUERY
     WITH params AS (
         SELECT
             v_parameter_id AS parameter_id,
-            name,
-            description,
-            active,
-            simulation_parameter,
-            document_parameter,
-            persona_parameter,
-            scenario_parameter,
-            video_parameter,
-            COALESCE(department_ids, ARRAY[]::uuid[]) AS department_ids,
-            COALESCE(field_connections, ARRAY[]::types.i_save_parameter_v4_field_connection[]) AS field_connections,
-            COALESCE(persona_ids, ARRAY[]::uuid[]) AS persona_ids,
-            COALESCE(document_ids, ARRAY[]::uuid[]) AS document_ids,
-            profile_id,
-            is_create
+            v_name_id AS name_id,
+            v_description_id AS description_id,
+            v_active_flag_id AS active_flag_id,
+            v_flag_ids AS flag_ids,
+            v_department_ids AS department_ids,
+            v_field_connections AS field_connections,
+            v_profile_id AS profile_id
     ),
     user_profile AS (
         SELECT role, actor_name
         FROM view_user_profile_context
         WHERE profile_id = (SELECT profile_id FROM params)
     ),
-    -- Conditional: Validate permissions based on operation
-    object_current_departments AS (
-        SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
-        FROM parameter_departments_junction
-        WHERE parameter_departments_junction.parameter_id = (SELECT p.parameter_id FROM params p LIMIT 1) AND active = true
-    ),
-    user_departments AS (
-        SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
-        FROM profile_departments_junction
-        WHERE profile_departments_junction.profile_id = (SELECT p.profile_id FROM params p LIMIT 1) AND active = true
-    ),
-    validate_permissions AS (
-        SELECT 
-            CASE 
-                WHEN (SELECT p.is_create FROM params p LIMIT 1) THEN
-                    -- Validate create permissions
-                    (SELECT validate_department_create_permissions(
-                        up.role::text,
-                        x.department_ids::text[]
-                    ) FROM params x CROSS JOIN user_profile up)
-                ELSE
-                    -- Validate update permissions
-                    (SELECT validate_department_update_permissions(
-                        up.role::text,
-                        ocd.department_ids,
-                        ud.department_ids
-                    ) FROM user_profile up
-                    CROSS JOIN object_current_departments ocd
-                    CROSS JOIN user_departments ud)
-            END as validation_passed
-    ),
+    -- Permission validation is now handled in Python (permissions.py)
+    -- See compute_can_create and compute_can_save functions
     actor_profile AS (
-        SELECT 
+        SELECT
             x.profile_id,
             up.actor_name
         FROM params x
         CROSS JOIN user_profile up
     ),
-    -- Insert/update name in names table
-    name_resource AS (
-        INSERT INTO names_resource (name, created_at)
-        SELECT name, NOW()
-        FROM params
-        WHERE name IS NOT NULL AND name != ''
-        ON CONFLICT (name) DO UPDATE SET created_at = EXCLUDED.created_at
-        RETURNING id as name_id
-    ),
-    -- Insert/update description in descriptions table
-    description_resource AS (
-        INSERT INTO descriptions_resource (description, created_at)
-        SELECT description, NOW()
-        FROM params
-        WHERE description IS NOT NULL AND description != ''
-        ON CONFLICT (description) DO UPDATE SET created_at = EXCLUDED.created_at
-        RETURNING id as description_id
-    ),
-    -- Conditional: For update, remove old links first
-    remove_old_name AS (
-        DELETE FROM parameter_names_junction
-        WHERE parameter_id = (SELECT p.parameter_id FROM params p LIMIT 1)
-          AND (SELECT p.is_create FROM params p LIMIT 1) = false
-          AND name_id NOT IN (SELECT name_id FROM name_resource)
-    ),
     -- Link parameter to name
     link_parameter_name AS (
         INSERT INTO parameter_names_junction (parameter_id, name_id, created_at)
-        SELECT 
+        SELECT
             x.parameter_id,
-            nr.name_id,
+            x.name_id,
             NOW()
         FROM params x
-        CROSS JOIN name_resource nr
-        WHERE x.name IS NOT NULL AND x.name != ''
+        WHERE x.name_id IS NOT NULL
         ON CONFLICT (parameter_id, name_id) DO NOTHING
-    ),
-    -- Conditional: For update, remove old description links
-    remove_old_description AS (
-        DELETE FROM parameter_descriptions_junction
-        WHERE parameter_id = (SELECT p.parameter_id FROM params p LIMIT 1)
-          AND (SELECT p.is_create FROM params p LIMIT 1) = false
-          AND description_id NOT IN (SELECT description_id FROM description_resource)
     ),
     -- Link parameter to description
     link_parameter_description AS (
         INSERT INTO parameter_descriptions_junction (parameter_id, description_id, created_at)
-        SELECT 
+        SELECT
             x.parameter_id,
-            dr.description_id,
+            x.description_id,
             NOW()
         FROM params x
-        CROSS JOIN description_resource dr
-        WHERE x.description IS NOT NULL AND x.description != ''
+        WHERE x.description_id IS NOT NULL
         ON CONFLICT (parameter_id, description_id) DO NOTHING
     ),
-    -- Update or insert parameter active flag
-    update_parameter_active_flag AS (
-        UPDATE parameter_flags_junction SET
-            value = (SELECT active FROM params LIMIT 1)
-        WHERE parameter_id = (SELECT p.parameter_id FROM params p LIMIT 1)
-          
-          AND (SELECT p.is_create FROM params p LIMIT 1) = false
-    ),
+    -- Insert or UPDATE parameter active flag
     insert_parameter_active_flag AS (
-        INSERT INTO parameter_flags_junction (parameter_id, flag_id, value, created_at) SELECT x.parameter_id,
-            f.id,
-            x.active,
+        INSERT INTO parameter_flags_junction (parameter_id, flag_id, value, created_at)
+        SELECT x.parameter_id,
+            COALESCE(x.active_flag_id, f.id),
+            CASE WHEN x.active_flag_id IS NOT NULL THEN true ELSE false END,
             NOW()
         FROM params x
         CROSS JOIN flags_resource f
         WHERE f.name = 'parameter_active'
-          AND NOT EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = x.parameter_id AND f.name = 'parameter_active')
-        ON CONFLICT (parameter_id, flag_id, type) DO UPDATE SET 
+        ON CONFLICT (parameter_id, flag_id) DO UPDATE SET
+            flag_id = COALESCE(EXCLUDED.flag_id, parameter_flags_junction.flag_id),
             value = EXCLUDED.value
     ),
-    -- Update or insert parameter simulation_parameter flag
-    update_parameter_simulation_flag AS (
-        UPDATE parameter_flags_junction SET
-            value = (SELECT simulation_parameter FROM params LIMIT 1)
-        WHERE parameter_id = (SELECT p.parameter_id FROM params p LIMIT 1)
-          
-          AND (SELECT p.is_create FROM params p LIMIT 1) = false
-    ),
-    insert_parameter_simulation_flag AS (
-        INSERT INTO parameter_flags_junction (parameter_id, flag_id, type, value, created_at)
-        SELECT 
+    -- Insert additional flag_ids (type flags like parameter_simulation, etc.)
+    insert_flag_ids AS (
+        INSERT INTO parameter_flags_junction (parameter_id, flag_id, value, created_at)
+        SELECT
             x.parameter_id,
-            f.id,
-            x.simulation_parameter,
-            NOW(),
+            fid,
+            true,
             NOW()
         FROM params x
-        CROSS JOIN flags_resource f
-        WHERE f.name = 'simulation_parameter'
-          AND NOT EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = x.parameter_id AND f.name = 'simulation_parameter')
-        ON CONFLICT (parameter_id, flag_id, type) DO UPDATE SET 
-            value = EXCLUDED.value
+        CROSS JOIN UNNEST(x.flag_ids) AS fid
+        WHERE COALESCE(array_length(x.flag_ids, 1), 0) > 0
+        ON CONFLICT (parameter_id, flag_id) DO UPDATE SET
+            value = true
     ),
-    -- Update or insert parameter document_parameter flag
-    update_parameter_document_flag AS (
-        UPDATE parameter_flags_junction SET
-            value = (SELECT document_parameter FROM params LIMIT 1)
-        WHERE parameter_id = (SELECT p.parameter_id FROM params p LIMIT 1)
-          
-          AND (SELECT p.is_create FROM params p LIMIT 1) = false
-    ),
-    insert_parameter_document_flag AS (
-        INSERT INTO parameter_flags_junction (parameter_id, flag_id, type, value, created_at)
-        SELECT 
+    -- Link departments (old ones already deleted above if update)
+    link_departments AS (
+        INSERT INTO parameter_departments_junction (parameter_id, department_id, active, created_at)
+        SELECT
             x.parameter_id,
-            f.id,
-            x.document_parameter,
-            NOW(),
+            dept_id,
+            true,
             NOW()
         FROM params x
-        CROSS JOIN flags_resource f
-        WHERE f.name = 'document_parameter'
-          AND NOT EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = x.parameter_id AND f.name = 'document_parameter')
-        ON CONFLICT (parameter_id, flag_id, type) DO UPDATE SET 
-            value = EXCLUDED.value
+        CROSS JOIN UNNEST(x.department_ids) as dept_id
+        WHERE COALESCE(array_length(x.department_ids, 1), 0) > 0
+        ON CONFLICT (parameter_id, department_id) DO UPDATE SET
+            active = true
     ),
-    -- Update or insert parameter persona_parameter flag
-    update_parameter_persona_flag AS (
-        UPDATE parameter_flags_junction SET
-            value = (SELECT persona_parameter FROM params LIMIT 1)
-        WHERE parameter_id = (SELECT p.parameter_id FROM params p LIMIT 1)
-          
-          AND (SELECT p.is_create FROM params p LIMIT 1) = false
-    ),
-    insert_parameter_persona_flag AS (
-        INSERT INTO parameter_flags_junction (parameter_id, flag_id, type, value, created_at)
-        SELECT 
-            x.parameter_id,
-            f.id,
-            x.persona_parameter,
-            NOW(),
-            NOW()
-        FROM params x
-        CROSS JOIN flags_resource f
-        WHERE f.name = 'persona_parameter'
-          AND NOT EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = x.parameter_id AND f.name = 'persona_parameter')
-        ON CONFLICT (parameter_id, flag_id, type) DO UPDATE SET 
-            value = EXCLUDED.value
-    ),
-    -- Update or insert parameter scenario_parameter flag
-    update_parameter_scenario_flag AS (
-        UPDATE parameter_flags_junction SET
-            value = (SELECT scenario_parameter FROM params LIMIT 1)
-        WHERE parameter_id = (SELECT p.parameter_id FROM params p LIMIT 1)
-          
-          AND (SELECT p.is_create FROM params p LIMIT 1) = false
-    ),
-    insert_parameter_scenario_flag AS (
-        INSERT INTO parameter_flags_junction (parameter_id, flag_id, type, value, created_at)
-        SELECT 
-            x.parameter_id,
-            f.id,
-            x.scenario_parameter,
-            NOW(),
-            NOW()
-        FROM params x
-        CROSS JOIN flags_resource f
-        WHERE f.name = 'scenario_parameter'
-          AND NOT EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = x.parameter_id AND f.name = 'scenario_parameter')
-        ON CONFLICT (parameter_id, flag_id, type) DO UPDATE SET 
-            value = EXCLUDED.value
-    ),
-    -- Update or insert parameter video_parameter flag
-    update_parameter_video_flag AS (
-        UPDATE parameter_flags_junction SET
-            value = (SELECT video_parameter FROM params LIMIT 1)
-        WHERE parameter_id = (SELECT p.parameter_id FROM params p LIMIT 1)
-          
-          AND (SELECT p.is_create FROM params p LIMIT 1) = false
-    ),
-    insert_parameter_video_flag AS (
-        INSERT INTO parameter_flags_junction (parameter_id, flag_id, type, value, created_at)
-        SELECT 
-            x.parameter_id,
-            f.id,
-            x.video_parameter,
-            NOW(),
-            NOW()
-        FROM params x
-        CROSS JOIN flags_resource f
-        WHERE f.name = 'video_parameter'
-          AND NOT EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = x.parameter_id AND f.name = 'video_parameter')
-        ON CONFLICT (parameter_id, flag_id, type) DO UPDATE SET 
-            value = EXCLUDED.value
-    ),
+    -- Expand field connections
     field_connections_expanded AS (
-        -- Expand composite type array field_connections
-        SELECT 
+        SELECT
             (x.field_connections[i]).field_id,
             COALESCE((x.field_connections[i])."default", false) as conn_default,
             COALESCE((x.field_connections[i]).active, true) as conn_active,
@@ -347,16 +240,16 @@ BEGIN
     ),
     ensure_one_default AS (
         -- Ensure exactly one default: if none specified, set first one; if multiple, keep first
-        SELECT 
+        SELECT
             conn_order,
-            CASE 
+            CASE
                 WHEN conn_order = (
-                    SELECT MIN(conn_order) 
-                    FROM field_connections_expanded 
+                    SELECT MIN(conn_order)
+                    FROM field_connections_expanded
                     WHERE conn_default = true
                     LIMIT 1
                 ) THEN true
-                WHEN (SELECT COUNT(*) FROM field_connections_expanded WHERE conn_default = true) = 0 
+                WHEN (SELECT COUNT(*) FROM field_connections_expanded WHERE conn_default = true) = 0
                      AND conn_order = (SELECT MIN(conn_order) FROM field_connections_expanded)
                 THEN true
                 ELSE false
@@ -364,24 +257,17 @@ BEGIN
         FROM field_connections_expanded
     ),
     field_connections_fixed AS (
-        SELECT 
+        SELECT
             fce.field_id,
             COALESCE(eod.conn_default_fixed, false) as conn_default,
             fce.conn_active
         FROM field_connections_expanded fce
         LEFT JOIN ensure_one_default eod ON eod.conn_order = fce.conn_order
     ),
-    -- Conditional: For update, delete old field links first
-    delete_existing_field_links AS (
-        DELETE FROM parameter_fields_junction
-        WHERE parameter_id = (SELECT p.parameter_id FROM params p LIMIT 1)
-          AND (SELECT p.is_create FROM params p LIMIT 1) = false
-          AND field_id NOT IN (SELECT field_id FROM field_connections_fixed WHERE conn_active = true)
-    ),
-    -- Link fields to parameter via parameter_fields_junction junction table
+    -- Link fields to parameter via parameter_fields_junction (old ones already deleted above if update)
     link_fields_to_parameter AS (
         INSERT INTO parameter_fields_junction (parameter_id, field_id, created_at)
-        SELECT 
+        SELECT
             x.parameter_id,
             fcf.field_id,
             NOW()
@@ -391,87 +277,21 @@ BEGIN
           AND fcf.conn_active = true
         ON CONFLICT (parameter_id, field_id) DO NOTHING
     ),
-    -- Conditional: For update, delete old department links first
-    delete_existing_parameter_departments AS (
-        DELETE FROM parameter_departments_junction 
-        WHERE parameter_id = (SELECT p.parameter_id FROM params p LIMIT 1)
-          AND (SELECT p.is_create FROM params p LIMIT 1) = false
-    ),
-    -- Link departments (old ones already deleted above if update)
-    link_departments AS (
-        INSERT INTO parameter_departments_junction (parameter_id, department_id, active, created_at)
-        SELECT 
-            x.parameter_id,
-            dept_id,
-            true,
-            NOW()
-        FROM params x
-        CROSS JOIN UNNEST(x.department_ids) as dept_id
-        WHERE COALESCE(array_length(x.department_ids, 1), 0) > 0
-        ON CONFLICT (parameter_id, department_id) DO UPDATE SET
-            active = true
-    ),
-    -- Conditional: For update, delete old persona/document links first
-    delete_existing_parameter_personas AS (
-        DELETE FROM parameter_personas 
-        WHERE parameter_id = (SELECT p.parameter_id FROM params p LIMIT 1)
-          AND (SELECT p.is_create FROM params p LIMIT 1) = false
-    ),
-    delete_existing_parameter_documents AS (
-        DELETE FROM parameter_documents 
-        WHERE parameter_id = (SELECT p.parameter_id FROM params p LIMIT 1)
-          AND (SELECT p.is_create FROM params p LIMIT 1) = false
-    ),
-    -- Link personas (old ones already deleted above if update)
-    -- Note: Only insert if parameter_personas table exists (may not exist yet)
-    link_personas AS (
-        INSERT INTO parameter_personas (parameter_id, persona_id, active, created_at, updated_at)
-        SELECT 
-            x.parameter_id,
-            persona_id,
-            true,
-            NOW(),
-            NOW()
-        FROM params x
-        CROSS JOIN UNNEST(x.persona_ids) as persona_id
-        WHERE COALESCE(array_length(x.persona_ids, 1), 0) > 0
-          AND EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'parameter_personas')
-        ON CONFLICT (parameter_id, persona_id) DO UPDATE SET
-            active = true,
-            updated_at = NOW()
-    ),
-    -- Link documents (old ones already deleted above if update)
-    -- Note: Only insert if parameter_documents table exists (may not exist yet)
-    link_documents AS (
-        INSERT INTO parameter_documents (parameter_id, document_id, active, created_at, updated_at)
-        SELECT
-            x.parameter_id,
-            document_id,
-            true,
-            NOW(),
-            NOW()
-        FROM params x
-        CROSS JOIN UNNEST(x.document_ids) as document_id
-        WHERE COALESCE(array_length(x.document_ids, 1), 0) > 0
-          AND EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'parameter_documents')
-        ON CONFLICT (parameter_id, document_id) DO UPDATE SET
-            active = true,
-            updated_at = NOW()
-    ),
     -- Sync linked resources with name/description
     sync_artifact_resources AS (
         UPDATE parameters_resource r
-        SET name = p.name,
-            description = p.description
+        SET name = n.name,
+            description = d.description
         FROM parameter_parameters_junction j
         CROSS JOIN params p
+        LEFT JOIN names_resource n ON n.id = p.name_id
+        LEFT JOIN descriptions_resource d ON d.id = p.description_id
         WHERE j.parameters_id = r.id
           AND j.parameter_id = p.parameter_id
         RETURNING r.id
     )
     SELECT
         x.parameter_id AS parameter_id,
-        CASE WHEN x.is_create THEN false ELSE true END as parameter_exists,
         ap.actor_name AS actor_name
     FROM params x
     CROSS JOIN actor_profile ap;

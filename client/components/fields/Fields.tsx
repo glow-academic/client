@@ -91,23 +91,23 @@ export default function Fields({
   // Use server-provided facet options directly (no client-side computation)
   const parameterOptions = useMemo(
     () =>
-      (fieldsData?.parameter_options || [])
+      (fieldsData?.parameters || [])
         .map((opt) => ({
-          value: opt["value"] as string,
-          label: opt["label"] as string,
+          value: opt.parameter_id as string,
+          label: opt.name as string,
         }))
         .filter((opt) => opt.value && opt.label),
-    [fieldsData?.parameter_options]
+    [fieldsData?.parameters]
   );
   const departmentOptions = useMemo(
     () =>
-      (fieldsData?.department_options || [])
+      (fieldsData?.departments || [])
         .map((opt) => ({
-          value: opt["value"] as string,
-          label: opt["label"] as string,
+          value: opt.department_id as string,
+          label: opt.name as string,
         }))
         .filter((opt) => opt.value && opt.label),
-    [fieldsData?.department_options]
+    [fieldsData?.departments]
   );
 
   // Define table columns inline

@@ -5,12 +5,17 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.artifacts.field.permissions import compute_can_draft
+from app.api.v4.artifacts.field.types import (
+    PatchFieldDraftApiRequest,
+    PatchFieldDraftApiResponse,
+)
 from app.infra.v4.activity.audit import audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
-    PatchFieldDraftApiRequest,
-    PatchFieldDraftApiResponse,
+    CheckFieldDuplicateAccessSqlParams,
+    CheckFieldDuplicateAccessSqlRow,
     PatchFieldDraftSqlParams,
     PatchFieldDraftSqlRow,
     load_sql_query,
@@ -18,6 +23,10 @@ from app.sql.types import (
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
+# SQL paths
+ACCESS_CHECK_SQL_PATH = (
+    "app/sql/v4/queries/fields/check_field_duplicate_access_complete.sql"
+)
 SQL_PATH = "app/sql/v4/queries/fields/patch_field_draft_complete.sql"
 
 router = APIRouter()
@@ -47,6 +56,34 @@ async def patch_field_draft(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        # Permission check: get user role using typed SQL
+        access_params = CheckFieldDuplicateAccessSqlParams(
+            profile_id=profile_id,
+        )
+        access_result = cast(
+            CheckFieldDuplicateAccessSqlRow,
+            await execute_sql_typed(
+                conn,
+                ACCESS_CHECK_SQL_PATH,
+                params=access_params,
+            ),
+        )
+
+        if not access_result:
+            raise HTTPException(
+                status_code=401,
+                detail="Unable to verify user permissions.",
+            )
+
+        # Permission check using centralized permissions logic
+        can_draft_result = compute_can_draft(user_role=access_result.user_role)
+
+        if not can_draft_result:
+            raise HTTPException(
+                status_code=403,
+                detail="You don't have permission to create or edit field drafts.",
+            )
+
         async with conn.transaction():
             params = PatchFieldDraftSqlParams(
                 **request.model_dump(), profile_id=profile_id
@@ -67,7 +104,18 @@ async def patch_field_draft(
                 draft={"id": str(result.draft_id)},
             )
 
-        api_response = PatchFieldDraftApiResponse.model_validate(result.model_dump())
+        # Build response with success and message
+        is_update = request.input_draft_id is not None
+        api_response = PatchFieldDraftApiResponse.model_validate(
+            {
+                "success": True,
+                "draft_id": str(result.draft_id),
+                "new_version": result.new_version,
+                "message": "Draft updated successfully"
+                if is_update
+                else "Draft created successfully",
+            }
+        )
 
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

@@ -1,5 +1,5 @@
 """Field save endpoint - v4 API following DHH principles.
-Unified endpoint that handles both create (input_field_id = NULL) and update (input_field_id provided).
+Unified endpoint that handles both create (field_id = NULL) and update (field_id provided).
 """
 
 from typing import Annotated, Any, cast
@@ -7,20 +7,29 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.v4.activity.audit import audit_activity, audit_set
-from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db
-from app.sql.types import (
+from app.api.v4.artifacts.field.permissions import (
+    compute_can_create,
+    compute_can_save,
+)
+from app.api.v4.artifacts.field.types import (
     SaveFieldApiRequest,
     SaveFieldApiResponse,
     SaveFieldSqlParams,
     SaveFieldSqlRow,
+)
+from app.infra.v4.activity.audit import audit_activity, audit_set
+from app.infra.v4.error.handle_route_error import handle_route_error
+from app.main import get_db
+from app.sql.types import (
+    CheckFieldSaveAccessSqlParams,
+    CheckFieldSaveAccessSqlRow,
     load_sql_query,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
-# Load SQL with types at module level - makes it clear what SQL file is used
+# SQL paths
+ACCESS_CHECK_SQL_PATH = "app/sql/v4/queries/fields/check_field_save_access_complete.sql"
 SQL_PATH = "app/sql/v4/queries/fields/save_field_complete.sql"
 
 
@@ -43,14 +52,13 @@ async def save_field(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> SaveFieldApiResponse:
-    """Save field - handles both create (input_field_id = NULL) and update (input_field_id provided)."""
-    tags = ["fields"]  # From router tags
+    """Save field - handles both create (field_id = NULL) and update (field_id provided)."""
+    tags = ["fields"]
 
     sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        # Get profile_id from header (set by router-level dependency)
         profile_id = http_request.state.profile_id
         if not profile_id:
             raise HTTPException(
@@ -58,16 +66,52 @@ async def save_field(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        # Permission check: get user role and field info using typed SQL
+        access_params = CheckFieldSaveAccessSqlParams(
+            profile_id=profile_id,
+            field_id=request.input_field_id,
+        )
+        access_result = cast(
+            CheckFieldSaveAccessSqlRow,
+            await execute_sql_typed(
+                conn,
+                ACCESS_CHECK_SQL_PATH,
+                params=access_params,
+            ),
+        )
+
+        if not access_result:
+            raise HTTPException(
+                status_code=401,
+                detail="Unable to verify user permissions.",
+            )
+
+        # Permission logic: create vs update mode
+        if not request.input_field_id:
+            can_save_result = compute_can_create(
+                user_role=access_result.user_role,
+                department_ids=None,
+            )
+        else:
+            can_save_result = compute_can_save(
+                user_role=access_result.user_role,
+                user_department_ids=access_result.user_department_ids,
+                field_department_ids=access_result.field_department_ids,
+            )
+
+        if not can_save_result:
+            raise HTTPException(
+                status_code=403,
+                detail="You don't have permission to save this field.",
+            )
+
         async with conn.transaction():
-            # Convert API request to SQL params (add profile_id from header)
-            # Map input_field_id from API request (already correct field name)
             params = SaveFieldSqlParams(
                 **request.model_dump(),
                 profile_id=profile_id,
             )
             sql_params = params.to_tuple()
 
-            # Execute SQL with typed helper - automatically detects and calls function if present
             result = cast(
                 SaveFieldSqlRow,
                 await execute_sql_typed(
@@ -83,28 +127,26 @@ async def save_field(
                 else:
                     raise ValueError("Failed to create field")
 
-            # Set audit context with data from SQL query
             if result.actor_name:
                 audit_ctx = {"actor": {"name": result.actor_name, "id": profile_id}}
-                # Only add field to audit context if input_field_id was provided (update mode)
-                # For create mode, we don't have the name yet, so we'll use the request name if available
                 if request.input_field_id:
-                    # Update mode: use request name (from request body)
                     audit_ctx["field"] = {
                         "name": getattr(request, "name", "Field"),
                         "id": str(result.field_id),
                     }
                 audit_set(http_request, **audit_ctx)
 
-        # Convert SQL result to API response
+        is_update = request.input_field_id is not None
         api_response = SaveFieldApiResponse.model_validate(
             {
+                "success": True,
                 "field_id": str(result.field_id),
-                "actor_name": result.actor_name,
+                "message": "Field updated successfully"
+                if is_update
+                else "Field created successfully",
             }
         )
 
-        # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 

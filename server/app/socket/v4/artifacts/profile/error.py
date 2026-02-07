@@ -1,16 +1,16 @@
 """Profile error handler - listens to generate_*_error events and emits profile-specific events."""
 
 import uuid
-from typing import Any, cast
+from typing import Any
 
 from fastapi import APIRouter
 
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
+from app.socket.v4.artifacts.profile.types import ProfileGenerationErrorEvent
 from app.sql.types import (
     ValidateProfileResourceErrorSqlParams,
-    ValidateProfileResourceErrorSqlRow,
 )
 from app.utils.sql_helper import execute_sql_typed
 
@@ -43,7 +43,6 @@ async def handle_profiles_error(data: dict[str, Any]) -> None:
     resource_types = data.get("resource_types", [])
 
     # SQL validation is optional - only validate if group_id is provided
-    # We must always emit errors to the client, even without a group_id
     if group_id_str:
         try:
             group_id = uuid.UUID(group_id_str)
@@ -55,10 +54,7 @@ async def handle_profiles_error(data: dict[str, Any]) -> None:
                     resource_types=resource_types or [],
                     artifact_type="profile",
                 )
-                result = cast(
-                    ValidateProfileResourceErrorSqlRow,
-                    await execute_sql_typed(conn, SQL_PATH, params=params),
-                )
+                await execute_sql_typed(conn, SQL_PATH, params=params)
         except Exception:
             # SQL validation failed, but still emit error to client
             pass
@@ -67,26 +63,28 @@ async def handle_profiles_error(data: dict[str, Any]) -> None:
         "message", "An error occurred during profile generation"
     )
 
+    event = ProfileGenerationErrorEvent(
+        artifact_type="profile",
+        resource_type=resource_type,
+        resource_types=resource_types if resource_types else None,
+        resource_id=data.get("resource_id"),
+        group_id=data.get("group_id"),
+        run_id=data.get("run_id"),
+        success=False,
+        message=error_message,
+        trace_id=data.get("trace_id"),
+    )
+
     await sio.emit(
         "profile_generation_error",
-        {
-            "artifact_type": artifact_type,
-            "resource_type": resource_type,
-            "resource_types": resource_types if resource_types else None,
-            "resource_id": data.get("resource_id"),
-            "group_id": data.get("group_id"),
-            "success": False,
-            "message": error_message,
-            "trace_id": data.get("trace_id"),
-        },
+        event.model_dump(mode="json"),
         room=sid,
     )
 
 
 @server_router.post("/profile_generation_error")
 async def profile_generation_error_api(
-    request: dict[str, Any],
+    request: ProfileGenerationErrorEvent,
 ) -> dict[str, bool]:
     """Server-to-client event: profile generation error."""
-    _ = request
     return {"ok": True}

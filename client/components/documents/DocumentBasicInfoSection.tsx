@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type { DocumentDetailOut } from "@/app/(main)/management/documents/d/[documentId]/page";
 
 type DepartmentMappingItem = NonNullable<
-  NonNullable<DocumentDetailOut["departments"]>[number]
+  NonNullable<NonNullable<NonNullable<DocumentDetailOut["resources"]>["resources"]>["departments"]>[number]
 >;
 
 export interface DocumentBasicInfoSectionProps {

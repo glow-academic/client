@@ -15,6 +15,7 @@ import { createLoader, parseAsString } from "nuqs/server";
 /** ---- Strong types from OpenAPI ---- */
 type GetDocumentIn = InputOf<"/api/v4/documents/get", "post">;
 type GetDocumentOut = OutputOf<"/api/v4/documents/get", "post">;
+export type DocumentDetailOut = GetDocumentOut;
 type SaveDocumentIn = InputOf<"/api/v4/documents/save", "post">;
 type SaveDocumentOut = OutputOf<"/api/v4/documents/save", "post">;
 type PatchDocumentDraftIn = InputOf<"/api/v4/documents/draft", "patch">;
@@ -29,18 +30,6 @@ type CreateDraftDescriptionsOut = OutputOf<
   "/api/v4/resources/descriptions",
   "post"
 >;
-type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
-type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
-type CreateDraftDepartmentsIn = InputOf<
-  "/api/v4/resources/departments",
-  "post"
->;
-type CreateDraftDepartmentsOut = OutputOf<
-  "/api/v4/resources/departments",
-  "post"
->;
-type CreateDraftFieldsIn = InputOf<"/api/v4/resources/fields", "post">;
-type CreateDraftFieldsOut = OutputOf<"/api/v4/resources/fields", "post">;
 type CreateDraftUploadsIn = InputOf<"/api/v4/resources/uploads", "post">;
 type CreateDraftUploadsOut = OutputOf<"/api/v4/resources/uploads", "post">;
 
@@ -69,7 +58,7 @@ export async function generateMetadata(
     const document = await getDocumentDefault({
       body: { document_id: documentId, draft_id: null },
     });
-    const documentName = document?.name_resource?.name;
+    const documentName = document?.resources?.current?.names?.[0]?.name;
     return {
       title: `${documentName || "Document"}`,
       description: `${documentName ? `${documentName} - ` : ""}Learning resource and educational document for teaching assistant training. Access course materials, instructional resources, and reference documents to support pedagogical development.`,
@@ -101,7 +90,35 @@ async function patchDocumentDraft(
   return api.patch("/documents/draft", input);
 }
 
-// generateTemplate removed - component now uses WebSocket directly
+async function createDraftNames(
+  input: CreateDraftNamesIn
+): Promise<CreateDraftNamesOut> {
+  "use server";
+  return api.post("/resources/names", input);
+}
+
+async function createDraftDescriptions(
+  input: CreateDraftDescriptionsIn
+): Promise<CreateDraftDescriptionsOut> {
+  "use server";
+  return api.post("/resources/descriptions", input);
+}
+
+async function createDraftUploads(
+  input: CreateDraftUploadsIn
+): Promise<CreateDraftUploadsOut> {
+  "use server";
+  return api.post("/resources/uploads", input);
+}
+
+const getDocument = async (
+  documentId: string,
+  draftId: string | null
+): Promise<GetDocumentOut> => {
+  return getDocumentDefault({
+    body: { document_id: documentId, draft_id: draftId },
+  });
+};
 
 /** ---- Server renders client with typed data and actions ---- */
 export default async function DocumentEditPage({
@@ -153,9 +170,6 @@ export default async function DocumentEditPage({
           patchDocumentDraftAction={patchDocumentDraft}
           createNamesAction={createDraftNames}
           createDescriptionsAction={createDraftDescriptions}
-          createFlagsAction={createDraftFlags}
-          createFieldsAction={createDraftFields}
-          createDepartmentsAction={createDraftDepartments}
           createUploadsAction={createDraftUploads}
         />
       </div>

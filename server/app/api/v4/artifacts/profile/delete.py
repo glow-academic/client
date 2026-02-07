@@ -1,16 +1,21 @@
-"""Profile delete endpoint - delete a profile."""
+"""Profile delete endpoint - two-pass architecture with Python permissions."""
 
 from typing import Annotated, Any, cast
 
-import asyncpg
+import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.artifacts.profile.permissions import compute_can_delete
+from app.api.v4.artifacts.profile.types import (
+    DeleteProfileApiRequest,
+    DeleteProfileApiResponse,
+)
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
-    DeleteProfileApiRequest,
-    DeleteProfileApiResponse,
+    CheckProfileDeleteAccessSqlParams,
+    CheckProfileDeleteAccessSqlRow,
     DeleteProfileSqlParams,
     DeleteProfileSqlRow,
     load_sql_query,
@@ -18,8 +23,11 @@ from app.sql.types import (
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
-# Load SQL with types at module level - makes it clear what SQL file is used
-SQL_PATH = "app/sql/v4/queries/profile/delete_profile_complete.sql"
+# SQL paths
+ACCESS_CHECK_SQL_PATH = (
+    "app/sql/v4/queries/profile/check_profile_delete_access_complete.sql"
+)
+DELETE_SQL_PATH = "app/sql/v4/queries/profile/delete_profile_complete.sql"
 
 router = APIRouter()
 
@@ -40,11 +48,12 @@ async def delete_profile(
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DeleteProfileApiResponse:
     """Delete a profile."""
-    sql_query = load_sql_query(SQL_PATH)
+    tags = ["profile"]
+
+    sql_query = load_sql_query(DELETE_SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        # Get profile_id from header (set by router-level dependency)
         current_profile_id = http_request.state.profile_id
         if not current_profile_id:
             raise HTTPException(
@@ -52,53 +61,84 @@ async def delete_profile(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Convert API request to SQL params using double star pattern (add current_profile_id from header)
-        # Exclude current_profile_id from request if present (it comes from header, not request body)
-        request_dict = request.model_dump(
-            exclude={"current_profile_id"}, exclude_none=False
+        # Permission check: get user role and target profile info
+        access_params = CheckProfileDeleteAccessSqlParams(
+            profile_id=current_profile_id,
+            target_profile_id=request.target_profile_id,
         )
-        params = DeleteProfileSqlParams(
-            **request_dict, current_profile_id=current_profile_id
-        )
-        sql_params = params.to_tuple()
-
-        result = cast(
-            DeleteProfileSqlRow,
+        access_result = cast(
+            CheckProfileDeleteAccessSqlRow,
             await execute_sql_typed(
                 conn,
-                SQL_PATH,
-                params=params,
+                ACCESS_CHECK_SQL_PATH,
+                params=access_params,
             ),
         )
 
-        # Check if profile exists
-        if not result.profile_exists:
+        if not access_result:
             raise HTTPException(
-                status_code=404,
-                detail=f"Profile not found: {request.target_profile_id}",
+                status_code=401,
+                detail="Unable to verify user permissions.",
             )
 
-        # Verify deletion occurred
-        if not result.deleted:
-            raise HTTPException(status_code=500, detail="Failed to delete profile")
+        can_delete = compute_can_delete(
+            user_role=access_result.user_role,
+            target_is_self=access_result.target_is_self or False,
+        )
 
-        # Set audit context with data from SQL query
-        if result.actor_name:
-            audit_set(
-                http_request,
-                actor={"name": result.actor_name, "id": current_profile_id},
-                profile={"name": result.name, "id": str(result.profile_id)},
+        if not can_delete:
+            raise HTTPException(
+                status_code=403,
+                detail="You don't have permission to delete this profile.",
             )
 
-        # Convert SQL result to API response
-        response_data = DeleteProfileApiResponse.model_validate(result.model_dump())
+        async with conn.transaction():
+            params = DeleteProfileSqlParams(
+                **request.model_dump(), current_profile_id=current_profile_id
+            )
+            sql_params = params.to_tuple()
 
-        # Invalidate cache after mutation
-        tags = ["profile"]  # Profile operations
+            result = cast(
+                DeleteProfileSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    DELETE_SQL_PATH,
+                    params=params,
+                ),
+            )
+
+            if not result.profile_exists:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Profile not found: {request.target_profile_id}",
+                )
+
+            if not result.deleted:
+                raise HTTPException(status_code=500, detail="Failed to delete profile")
+
+            profile_name = access_result.profile_name or result.name or "Unknown"
+
+            if result.actor_name:
+                audit_set(
+                    http_request,
+                    actor={"name": result.actor_name, "id": current_profile_id},
+                    profile={
+                        "name": profile_name,
+                        "id": str(result.profile_id),
+                    },
+                )
+
+        api_response = DeleteProfileApiResponse.model_validate(
+            {
+                "success": True,
+                "message": f"Profile '{profile_name}' deleted successfully",
+            }
+        )
+
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
-        return response_data
+        return api_response
     except HTTPException:
         raise
     except Exception as e:

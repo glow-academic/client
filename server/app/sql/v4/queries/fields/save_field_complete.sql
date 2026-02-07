@@ -1,14 +1,14 @@
 -- Unified save field function - handles both create (input_field_id = NULL) and update (input_field_id provided)
--- Converted to function
+-- Accepts resource IDs directly (no raw values)
+
 -- 1) Drop function first (breaks dependency on types)
--- Drop all versions of the function using DO block to handle signature variations
 DO $$
 DECLARE
     r RECORD;
 BEGIN
-    FOR r IN 
-        SELECT oidvectortypes(proargtypes) as sig 
-        FROM pg_proc 
+    FOR r IN
+        SELECT oidvectortypes(proargtypes) as sig
+        FROM pg_proc
         WHERE proname = 'api_save_field_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
@@ -16,14 +16,19 @@ BEGIN
     END LOOP;
 END $$;
 
+-- 2) Recreate function with resource ID parameters
 CREATE OR REPLACE FUNCTION api_save_field_v4(
-    name text,
-    description text,
-    active boolean,
-    department_ids text[],
-    conditional_parameter_ids text[],
     profile_id uuid,
-    input_field_id uuid DEFAULT NULL
+    group_id uuid,
+    input_field_id uuid DEFAULT NULL,
+    -- Required form data
+    name_id uuid DEFAULT NULL,
+    -- Optional single-select form data
+    description_id uuid DEFAULT NULL,
+    active_flag_id uuid DEFAULT NULL,
+    -- Optional multi-select form data
+    department_ids uuid[] DEFAULT NULL,
+    parameter_ids uuid[] DEFAULT NULL
 )
 RETURNS TABLE (
     field_id uuid,
@@ -32,179 +37,160 @@ RETURNS TABLE (
 LANGUAGE plpgsql
 VOLATILE
 AS $$
+#variable_conflict use_column
 DECLARE
     v_field_id uuid;
     v_actor_name text;
+    v_group_id uuid;
+    v_profile_id uuid;
+    v_input_field_id uuid;
     is_create boolean;
+    v_name_id uuid;
+    v_description_id uuid;
+    v_active_flag_id uuid;
+    v_department_ids uuid[];
+    v_parameter_ids uuid[];
 BEGIN
+    -- Assign parameters to local variables
+    v_profile_id := profile_id;
+    v_group_id := group_id;
+    v_input_field_id := input_field_id;
+    v_name_id := name_id;
+    v_description_id := description_id;
+    v_active_flag_id := active_flag_id;
+    v_department_ids := COALESCE(department_ids, ARRAY[]::uuid[]);
+    v_parameter_ids := COALESCE(parameter_ids, ARRAY[]::uuid[]);
+
+    -- Validate required fields
+    IF v_group_id IS NULL THEN
+        RAISE EXCEPTION 'group_id is required';
+    END IF;
+
+    IF v_name_id IS NULL THEN
+        RAISE EXCEPTION 'Name resource is required';
+    END IF;
+
     -- Determine if create or update
-    is_create := (input_field_id IS NULL);
-    
-    -- Create or UPDATE field_artifact first (outside CTE)
+    is_create := (v_input_field_id IS NULL);
+
+    -- Create or UPDATE field_artifact first
     IF is_create THEN
-        -- CREATE path - use field table (singular) for INSERT
+        -- CREATE path
         INSERT INTO field_artifact (created_at, updated_at)
         VALUES (NOW(), NOW())
         RETURNING id INTO v_field_id;
+        -- Link group via junction table
+        INSERT INTO field_groups_junction (field_id, group_id)
+        VALUES (v_field_id, v_group_id)
+        ON CONFLICT DO NOTHING;
     ELSE
-        -- UPDATE path - use field table (singular) for UPDATE to match create pattern
-        v_field_id := input_field_id;
+        -- UPDATE path
+        v_field_id := v_input_field_id;
         UPDATE field_artifact
         SET updated_at = NOW()
         WHERE id = v_field_id;
+        -- Upsert group via junction table
+        INSERT INTO field_groups_junction (field_id, group_id)
+        VALUES (v_field_id, v_group_id)
+        ON CONFLICT DO NOTHING;
     END IF;
-    
+
+    -- Validate resource IDs exist
+    IF v_name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names_resource WHERE id = v_name_id) THEN
+        RAISE EXCEPTION 'Name resource not found: %', v_name_id;
+    END IF;
+
+    IF v_description_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM descriptions_resource WHERE id = v_description_id) THEN
+        RAISE EXCEPTION 'Description resource not found: %', v_description_id;
+    END IF;
+
+    IF v_active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = v_active_flag_id) THEN
+        RAISE EXCEPTION 'Flag resource not found: %', v_active_flag_id;
+    END IF;
+
+    -- Conditional: For update, remove old links first
+    IF NOT is_create THEN
+        DELETE FROM field_names_junction WHERE field_id = v_field_id;
+        DELETE FROM field_descriptions_junction WHERE field_id = v_field_id;
+        DELETE FROM field_departments_junction WHERE field_id = v_field_id;
+        UPDATE field_conditional_parameters_junction SET active = false WHERE field_id = v_field_id;
+        -- Update existing active flag if it exists
+        UPDATE field_flags_junction SET
+            flag_id = COALESCE(v_active_flag_id, field_flags_junction.flag_id),
+            value = CASE WHEN v_active_flag_id IS NOT NULL THEN true ELSE false END
+        WHERE field_id = v_field_id;
+    END IF;
+
     -- Continue with field save using SQL (field already created/updated above)
     RETURN QUERY
     WITH params AS (
         SELECT
-            v_field_id::uuid AS field_id,
-            name AS name,
-            COALESCE(NULLIF(description, ''), '') AS description,
-            COALESCE(active, true) AS active,
-            COALESCE(department_ids, ARRAY[]::text[]) AS department_ids,
-            COALESCE(conditional_parameter_ids, ARRAY[]::text[]) AS conditional_parameter_ids,
-            profile_id AS profile_id,
-            is_create AS is_create
+            v_field_id AS field_id,
+            v_name_id AS name_id,
+            v_description_id AS description_id,
+            v_active_flag_id AS active_flag_id,
+            v_department_ids AS department_ids,
+            v_parameter_ids AS parameter_ids,
+            v_profile_id AS profile_id
     ),
     user_profile AS (
         SELECT role, actor_name
         FROM view_user_profile_context
         WHERE profile_id = (SELECT profile_id FROM params)
     ),
-    -- Conditional: Validate permissions based on operation
-    object_current_departments AS (
-        SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
-        FROM field_departments_junction
-        WHERE field_departments_junction.field_id = (SELECT p.field_id FROM params p LIMIT 1) AND active = true
-    ),
-    user_departments AS (
-        SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
-        FROM profile_departments_junction
-        WHERE profile_departments_junction.profile_id = (SELECT p.profile_id FROM params p LIMIT 1) AND active = true
-    ),
-    validate_permissions AS (
-        SELECT 
-            CASE 
-                WHEN (SELECT p.is_create FROM params p) THEN
-                    -- Validate create permissions
-                    (SELECT validate_department_create_permissions(
-                        up.role::text,
-                        x.department_ids
-                    ) FROM params x CROSS JOIN user_profile up)
-                ELSE
-                    -- Validate update permissions
-                    (SELECT validate_department_update_permissions(
-                        up.role::text,
-                        ocd.department_ids,
-                        ud.department_ids
-                    ) FROM user_profile up
-                    CROSS JOIN object_current_departments ocd
-                    CROSS JOIN user_departments ud)
-            END as validation_passed
-    ),
+    -- Permission validation is now handled in Python (permissions.py)
     actor_profile AS (
-        SELECT 
+        SELECT
             x.profile_id,
             up.actor_name
         FROM params x
         CROSS JOIN user_profile up
     ),
-    -- Insert/update name in names table
-    name_resource AS (
-        INSERT INTO names_resource (name, created_at)
-        SELECT name, NOW()
-        FROM params
-        WHERE name IS NOT NULL AND name != ''
-        ON CONFLICT (name) DO UPDATE SET created_at = EXCLUDED.created_at
-        RETURNING id as name_id
-    ),
-    -- Insert/update description in descriptions table
-    description_resource AS (
-        INSERT INTO descriptions_resource (description, created_at)
-        SELECT description, NOW()
-        FROM params
-        WHERE description IS NOT NULL AND description != ''
-        ON CONFLICT (description) DO UPDATE SET created_at = EXCLUDED.created_at
-        RETURNING id as description_id
-    ),
-    -- Conditional: Remove old name links (only for update)
-    remove_old_name AS (
-        DELETE FROM field_names_junction
-        WHERE field_id = (SELECT field_id FROM params)
-          AND name_id NOT IN (SELECT name_id FROM name_resource)
-          AND NOT (SELECT is_create FROM params)
-    ),
     -- Link field to name
     link_field_name AS (
         INSERT INTO field_names_junction (field_id, name_id, created_at)
-        SELECT 
+        SELECT
             x.field_id,
-            nr.name_id,
+            x.name_id,
             NOW()
         FROM params x
-        CROSS JOIN name_resource nr
+        WHERE x.name_id IS NOT NULL
         ON CONFLICT (field_id, name_id) DO NOTHING
-    ),
-    -- Conditional: Remove old description links (only for update)
-    remove_old_description AS (
-        DELETE FROM field_descriptions_junction
-        WHERE field_id = (SELECT field_id FROM params)
-          AND description_id NOT IN (SELECT description_id FROM description_resource)
-          AND NOT (SELECT is_create FROM params)
     ),
     -- Link field to description
     link_field_description AS (
         INSERT INTO field_descriptions_junction (field_id, description_id, created_at)
-        SELECT 
+        SELECT
             x.field_id,
-            dr.description_id,
+            x.description_id,
             NOW()
         FROM params x
-        CROSS JOIN description_resource dr
+        WHERE x.description_id IS NOT NULL
         ON CONFLICT (field_id, description_id) DO NOTHING
     ),
-    -- UPDATE field_artifact active flag
-    update_field_active_flag AS (
-        UPDATE field_flags_junction SET
-            value = (SELECT active FROM params)
-        WHERE field_id = (SELECT field_id FROM params)
-          
-          AND NOT (SELECT is_create FROM params)
-    ),
-    -- Insert field active flag (for create or if doesn't exist in update)
+    -- Insert or UPDATE field active flag
     insert_field_active_flag AS (
-        INSERT INTO field_flags_junction (field_id, flag_id, value, created_at) SELECT x.field_id,
-            f.id,
+        INSERT INTO field_flags_junction (field_id, flag_id, type, value, created_at) SELECT x.field_id,
+            COALESCE(x.active_flag_id, f.id),
             'active'::type_field_flags,
-            x.active,
+            CASE WHEN x.active_flag_id IS NOT NULL THEN true ELSE false END,
             NOW()
         FROM params x
         CROSS JOIN flags_resource f
         WHERE f.name = 'field_active'
-          AND (
-              (SELECT is_create FROM params)
-              OR NOT EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource f ON ff.flag_id = f.id WHERE ff.field_id = x.field_id AND f.name = 'field_active')
-          )
-        ON CONFLICT (field_id, flag_id, type) DO UPDATE SET 
+        ON CONFLICT (field_id, flag_id, type) DO UPDATE SET
+            flag_id = COALESCE(EXCLUDED.flag_id, field_flags_junction.flag_id),
             value = EXCLUDED.value
     ),
     -- Ensure conditional_parameters_resource entries exist for each parameter
     ensure_conditional_parameters AS (
         INSERT INTO conditional_parameters_resource (parameter_id, created_at, updated_at)
-        SELECT cond_param_id::uuid, NOW(), NOW()
+        SELECT param_id, NOW(), NOW()
         FROM params x
-        CROSS JOIN UNNEST(x.conditional_parameter_ids) as cond_param_id
-        WHERE COALESCE(array_length(x.conditional_parameter_ids, 1), 0) > 0
+        CROSS JOIN UNNEST(x.parameter_ids) as param_id
+        WHERE COALESCE(array_length(x.parameter_ids, 1), 0) > 0
         ON CONFLICT (parameter_id) DO NOTHING
         RETURNING id, parameter_id
-    ),
-    -- Conditional: Delete existing conditional parameters (only for update)
-    delete_existing_conditional_parameters AS (
-        UPDATE field_conditional_parameters_junction
-        SET active = false
-        WHERE field_id = (SELECT field_id FROM params)
-          AND NOT (SELECT is_create FROM params)
     ),
     -- Link conditional parameters
     link_conditional_parameters AS (
@@ -215,24 +201,18 @@ BEGIN
             true,
             NOW()
         FROM params x
-        CROSS JOIN UNNEST(x.conditional_parameter_ids) as cond_param_id
-        JOIN conditional_parameters_resource cpr ON cpr.parameter_id = cond_param_id::uuid
-        WHERE COALESCE(array_length(x.conditional_parameter_ids, 1), 0) > 0
+        CROSS JOIN UNNEST(x.parameter_ids) as param_id
+        JOIN conditional_parameters_resource cpr ON cpr.parameter_id = param_id
+        WHERE COALESCE(array_length(x.parameter_ids, 1), 0) > 0
         ON CONFLICT (field_id, conditional_parameter_id) DO UPDATE SET
             active = true
     ),
-    -- Conditional: Delete existing departments (only for update)
-    delete_existing_departments AS (
-        DELETE FROM field_departments_junction 
-        WHERE field_id = (SELECT field_id FROM params)
-          AND NOT (SELECT is_create FROM params)
-    ),
-    -- Link departments
+    -- Link departments (old ones already deleted above if update)
     link_departments AS (
         INSERT INTO field_departments_junction (field_id, department_id, active, created_at)
         SELECT
             x.field_id,
-            dept_id::uuid,
+            dept_id,
             true,
             NOW()
         FROM params x
@@ -244,10 +224,12 @@ BEGIN
     -- Sync linked resources with name/description
     sync_artifact_resources AS (
         UPDATE fields_resource r
-        SET name = p.name,
-            description = p.description
+        SET name = n.name,
+            description = d.description
         FROM field_fields_junction j
         CROSS JOIN params p
+        LEFT JOIN names_resource n ON n.id = p.name_id
+        LEFT JOIN descriptions_resource d ON d.id = p.description_id
         WHERE j.fields_id = r.id
           AND j.field_id = p.field_id
         RETURNING r.id

@@ -150,24 +150,32 @@ function FieldComponent({
     (data: typeof serverFieldData): string | null => {
       if (!data) return null;
       if (typeof data === "object" && data !== null) {
-        if ("field_id" in data && data.field_id) {
-          return `field_id:${String(data.field_id)}`;
+        if ("field_exists" in data && data.field_exists) {
+          return `field_exists:${String(data.field_exists)}`;
         }
+        // Use resources.current for stability check
+        const current = data.resources?.current;
         const keyFields: Record<string, unknown> = {};
-        if ("name_id" in data && data.name_id) {
-          keyFields["name_id"] = data.name_id;
+        if (current?.names?.[0]?.id) {
+          keyFields["name_id"] = current.names[0].id;
         }
-        if ("description_id" in data && data.description_id) {
-          keyFields["description_id"] = data.description_id;
+        if (current?.descriptions?.[0]?.id) {
+          keyFields["description_id"] = current.descriptions[0].id;
         }
-        if ("active_flag_id" in data && data.active_flag_id) {
-          keyFields["active_flag_id"] = data.active_flag_id;
+        if (current?.flags?.[0]?.flag_option_id) {
+          keyFields["active_flag_id"] = current.flags[0].flag_option_id;
         }
-        if ("department_ids" in data && Array.isArray(data.department_ids)) {
-          keyFields["department_ids"] = data.department_ids.sort().join(",");
+        if (current?.departments && current.departments.length > 0) {
+          keyFields["department_ids"] = current.departments
+            .map((d) => d.department_id)
+            .sort()
+            .join(",");
         }
-        if ("parameter_ids" in data && Array.isArray(data.parameter_ids)) {
-          keyFields["parameter_ids"] = data.parameter_ids.sort().join(",");
+        if (current?.parameters && current.parameters.length > 0) {
+          keyFields["parameter_ids"] = current.parameters
+            .map((p) => p.parameter_id)
+            .sort()
+            .join(",");
         }
         const sortedKeys = Object.keys(keyFields).sort();
         const hash = sortedKeys
@@ -209,44 +217,67 @@ function FieldComponent({
 
   const fieldData = stableFieldDataRef.current.data;
 
-  // Memoize stable field data fields to prevent callback recreation
+  // Extract resource data from nested structure for component consumption
   const stableFieldDataFields = useMemo(() => {
     if (!fieldData) return null;
+    const current = fieldData.resources?.current;
+    const resources = fieldData.resources?.resources;
     return {
-      name_id: fieldData.name_id,
-      name_resource: fieldData.name_resource,
-      show_name: fieldData.show_name,
-      name_agent_id: fieldData.name_agent_id,
-      name_required: fieldData.name_required,
-      name_suggestions: fieldData.name_suggestions,
-      names: fieldData.names,
-      description_id: fieldData.description_id,
-      description_resource: fieldData.description_resource,
-      show_description: fieldData.show_description,
-      description_agent_id: fieldData.description_agent_id,
-      description_required: fieldData.description_required,
-      description_suggestions: fieldData.description_suggestions,
-      descriptions: fieldData.descriptions,
-      active_flag_id: fieldData.active_flag_id,
-      active_flag_resource: fieldData.active_flag_resource,
-      show_active_flag: fieldData.show_active_flag,
-      active_flag_agent_id: fieldData.active_flag_agent_id,
-      active_flag_required: fieldData.active_flag_required,
-      department_ids: fieldData.department_ids,
-      department_resources: fieldData.department_resources,
-      show_departments: fieldData.show_departments,
-      departments_agent_id: fieldData.departments_agent_id,
-      departments_required: fieldData.departments_required,
-      department_suggestions: fieldData.department_suggestions,
-      departments: fieldData.departments,
-      parameter_ids: fieldData.parameter_ids,
-      parameter_resources: fieldData.parameter_resources,
-      show_parameters: fieldData.show_parameters,
-      parameters_agent_id: fieldData.parameters_agent_id,
-      parameters_required: fieldData.parameters_required,
-      parameter_suggestions: fieldData.parameter_suggestions,
-      parameters: fieldData.parameters,
-      group_id: fieldData.group_id,
+      // Name resource
+      name_id: current?.names?.[0]?.id ?? null,
+      name_resource: current?.names?.[0] ?? null,
+      show_name: fieldData.show_name ?? true,
+      name_show_ai_generate: fieldData.name_show_ai_generate ?? false,
+      name_domain_id: fieldData.name_domain_id ?? null,
+      name_required: fieldData.name_required ?? false,
+      name_suggestions: fieldData.name_suggestions ?? [],
+      names: resources?.names ?? [],
+      // Description resource
+      description_id: current?.descriptions?.[0]?.id ?? null,
+      description_resource: current?.descriptions?.[0] ?? null,
+      show_description: fieldData.show_description ?? true,
+      description_show_ai_generate: fieldData.description_show_ai_generate ?? false,
+      description_domain_id: fieldData.description_domain_id ?? null,
+      description_required: fieldData.description_required ?? false,
+      description_suggestions: fieldData.description_suggestions ?? [],
+      descriptions: resources?.descriptions ?? [],
+      // Flag resource
+      active_flag_id: current?.flags?.[0]?.flag_option_id ?? null,
+      active_flag_resource: current?.flags?.[0] ?? null,
+      show_active_flag: fieldData.show_flag ?? false,
+      flag_show_ai_generate: fieldData.flag_show_ai_generate ?? false,
+      flag_domain_id: fieldData.flag_domain_id ?? null,
+      active_flag_required: fieldData.flag_required ?? false,
+      // Department resources
+      department_ids: current?.departments?.map((d) => d.department_id).filter(Boolean) as string[] ?? [],
+      department_resources: current?.departments ?? [],
+      show_departments: fieldData.show_departments ?? false,
+      departments_show_ai_generate: fieldData.departments_show_ai_generate ?? false,
+      departments_domain_id: fieldData.departments_domain_id ?? null,
+      departments_required: fieldData.departments_required ?? false,
+      department_suggestions: fieldData.department_suggestions ?? [],
+      departments: resources?.departments ?? [],
+      // Parameter resources
+      parameter_ids: current?.parameters?.map((p) => p.parameter_id).filter(Boolean) as string[] ?? [],
+      parameter_resources: current?.parameters ?? [],
+      show_parameters: fieldData.show_parameters ?? false,
+      parameters_show_ai_generate: fieldData.parameters_show_ai_generate ?? false,
+      parameters_domain_id: fieldData.parameters_domain_id ?? null,
+      parameters_required: fieldData.parameters_required ?? false,
+      parameter_suggestions: fieldData.parameter_suggestions ?? [],
+      parameters: resources?.parameters ?? [],
+      // Group
+      group_id: fieldData.group_id ?? null,
+      // Domain data for generation
+      domain_data: fieldData.domain_data ?? [],
+      // Tool IDs for resource components
+      name_create_tool_id: fieldData.name_create_tool_id ?? null,
+      name_link_tool_id: fieldData.name_link_tool_id ?? null,
+      description_create_tool_id: fieldData.description_create_tool_id ?? null,
+      description_link_tool_id: fieldData.description_link_tool_id ?? null,
+      flag_link_tool_id: fieldData.flag_link_tool_id ?? null,
+      departments_link_tool_id: fieldData.departments_link_tool_id ?? null,
+      parameters_link_tool_id: fieldData.parameters_link_tool_id ?? null,
     };
   }, [fieldData]);
 
@@ -290,7 +321,7 @@ function FieldComponent({
 
   // Initialize form state from server data
   const initialFormState = useMemo((): FieldFormState => {
-    if (!fieldData) {
+    if (!stableFieldDataFields) {
       return {
         name_id: null,
         description_id: null,
@@ -301,13 +332,13 @@ function FieldComponent({
     }
 
     return {
-      name_id: fieldData.name_id ?? null,
-      description_id: fieldData.description_id ?? null,
-      active_flag_id: fieldData.active_flag_id ?? null,
-      department_ids: fieldData.department_ids ?? [],
-      parameter_ids: fieldData.parameter_ids ?? [],
+      name_id: stableFieldDataFields.name_id ?? null,
+      description_id: stableFieldDataFields.description_id ?? null,
+      active_flag_id: stableFieldDataFields.active_flag_id ?? null,
+      department_ids: stableFieldDataFields.department_ids ?? [],
+      parameter_ids: stableFieldDataFields.parameter_ids ?? [],
     };
-  }, [fieldData, fieldDataId]);
+  }, [stableFieldDataFields, fieldDataId]);
 
   const [formState, setFormState] = useState<FieldFormState>(initialFormState);
 
@@ -383,11 +414,11 @@ function FieldComponent({
       artifact_type?: string;
       group_id?: string;
       resource_type?: string;
-      name_id?: string | null;
-      description_id?: string | null;
-      active_flag_id?: string | null;
-      department_ids?: string[];
-      parameter_ids?: string[];
+      name_resource?: { id?: string } | null;
+      description_resource?: { id?: string } | null;
+      flag_resource?: { flag_option_id?: string } | null;
+      department_resources?: Array<{ department_id?: string }> | null;
+      parameter_resources?: Array<{ parameter_id?: string }> | null;
       message?: string;
       success?: boolean;
       [key: string]: unknown;
@@ -412,24 +443,28 @@ function FieldComponent({
         data.resource_type &&
         validResourceTypes.includes(data.resource_type as ResourceType)
       ) {
-        // Update formState with the resource ID that was generated
+        // Update formState with the resource ID from full resource objects
         setFormState((prev) => {
           const updates: Partial<typeof prev> = {};
 
-          if (data.name_id) updates.name_id = data.name_id;
-          if (data.description_id) updates.description_id = data.description_id;
-          if (data.active_flag_id) updates.active_flag_id = data.active_flag_id;
-          if (data.department_ids && data.department_ids.length > 0) {
-            const newDeptIds = data.department_ids.filter(
-              (id) => !prev.department_ids.includes(id)
-            );
-            updates.department_ids = [...prev.department_ids, ...newDeptIds];
+          if (data.name_resource?.id) updates.name_id = data.name_resource.id;
+          if (data.description_resource?.id) updates.description_id = data.description_resource.id;
+          if (data.flag_resource?.flag_option_id) updates.active_flag_id = data.flag_resource.flag_option_id;
+          if (data.department_resources && data.department_resources.length > 0) {
+            const newDeptIds = data.department_resources
+              .map((d) => d.department_id)
+              .filter((id): id is string => !!id && !prev.department_ids.includes(id));
+            if (newDeptIds.length > 0) {
+              updates.department_ids = [...prev.department_ids, ...newDeptIds];
+            }
           }
-          if (data.parameter_ids && data.parameter_ids.length > 0) {
-            const newParamIds = data.parameter_ids.filter(
-              (id) => !prev.parameter_ids.includes(id)
-            );
-            updates.parameter_ids = [...prev.parameter_ids, ...newParamIds];
+          if (data.parameter_resources && data.parameter_resources.length > 0) {
+            const newParamIds = data.parameter_resources
+              .map((p) => p.parameter_id)
+              .filter((id): id is string => !!id && !prev.parameter_ids.includes(id));
+            if (newParamIds.length > 0) {
+              updates.parameter_ids = [...prev.parameter_ids, ...newParamIds];
+            }
           }
 
           return { ...prev, ...updates };
@@ -514,7 +549,70 @@ function FieldComponent({
     };
   }, [socket, isConnected, fieldData?.group_id]);
 
-  // Helper function to determine agent_type from resource types
+  // Helper to get domain_ids from resource types
+  const getDomainIdsForResources = useCallback(
+    (resourceTypes: ResourceType[]): string[] => {
+      const currentFieldData = stableFieldDataFields;
+      if (!currentFieldData) return [];
+
+      const domainMap: Partial<Record<ResourceType, string | null>> = {
+        names: currentFieldData.name_domain_id,
+        descriptions: currentFieldData.description_domain_id,
+        flags: currentFieldData.flag_domain_id,
+        departments: currentFieldData.departments_domain_id,
+        parameters: currentFieldData.parameters_domain_id,
+      };
+
+      return resourceTypes
+        .map((rt) => domainMap[rt])
+        .filter((id): id is string => !!id);
+    },
+    [stableFieldDataFields]
+  );
+
+  // Multi-generation handler (domain-based API)
+  const handleGenerateResources = useCallback(
+    async (
+      resourceTypes: ResourceType[],
+      _agentType: string | null,
+      userInstructions?: string
+    ) => {
+      if (!socket || !isConnected) {
+        toast.error("WebSocket not connected");
+        return;
+      }
+
+      setGeneratingResources((prev) => {
+        const next = new Set(prev);
+        resourceTypes.forEach((rt) => next.add(rt));
+        return next;
+      });
+
+      const formData = formDataRef.current;
+      const draftId = (formData["draftId"] as string | undefined) ?? null;
+      const domainIds = getDomainIdsForResources(resourceTypes);
+
+      if (domainIds.length === 0) {
+        toast.error("No AI generation available for selected resources");
+        setGeneratingResources((prev) => {
+          const next = new Set(prev);
+          resourceTypes.forEach((rt) => next.delete(rt));
+          return next;
+        });
+        return;
+      }
+
+      socket.emit("field_generate", {
+        domain_ids: domainIds,
+        user_instructions: userInstructions ? [userInstructions] : null,
+        draft_id: draftId || null,
+        field_id: fieldId || null,
+      });
+    },
+    [socket, isConnected, fieldId, getDomainIdsForResources]
+  );
+
+  // Helper function to determine agent_type from resource types (kept for modal compatibility)
   const determineAgentType = useCallback(
     (resourceTypes: ResourceType[]): string | null => {
       const basicResources: ResourceType[] = [
@@ -558,39 +656,6 @@ function FieldComponent({
       return null;
     },
     []
-  );
-
-  // Multi-generation handler
-  const handleGenerateResources = useCallback(
-    async (
-      resourceTypes: ResourceType[],
-      agentType: string | null,
-      userInstructions?: string
-    ) => {
-      if (!socket || !isConnected) {
-        toast.error("WebSocket not connected");
-        return;
-      }
-
-      setGeneratingResources((prev) => {
-        const next = new Set(prev);
-        resourceTypes.forEach((rt) => next.add(rt));
-        return next;
-      });
-
-      const formData = formDataRef.current;
-      const draftId = (formData["draftId"] as string | undefined) ?? null;
-
-      socket.emit("field_generate", {
-        resource_types: resourceTypes,
-        agent_type: agentType,
-        user_instructions: userInstructions ? [userInstructions] : null,
-        draft_id: draftId || null,
-        mcp: false,
-        field_id: fieldId || null,
-      });
-    },
-    [socket, isConnected, fieldId]
   );
 
   // Individual generation handlers
@@ -641,7 +706,7 @@ function FieldComponent({
 
   // Set breadcrumb context when field data is loaded
   useEffect(() => {
-    const fieldName = fieldData?.name_resource?.name;
+    const fieldName = stableFieldDataFields?.name_resource?.name;
     if (fieldName && fieldId && isEditMode) {
       setEntityMetadata({
         entityId: fieldId,
@@ -650,7 +715,7 @@ function FieldComponent({
       });
     }
     return () => clearEntityMetadata();
-  }, [fieldData, fieldId, isEditMode, setEntityMetadata, clearEntityMetadata]);
+  }, [stableFieldDataFields, fieldId, isEditMode, setEntityMetadata, clearEntityMetadata]);
 
   // Step-to-resources mapping for multi-generation
   const stepResources: Record<string, ResourceType[]> = useMemo(
@@ -688,9 +753,9 @@ function FieldComponent({
         case "flags":
           return !!currentFieldData.active_flag_resource?.generated;
         case "departments":
-          return currentFieldData.department_resources.some((d) => d.generated);
+          return currentFieldData.department_resources.some((d: { generated?: boolean | null }) => d.generated);
         case "parameters":
-          return currentFieldData.parameter_resources.some((p) => p.generated);
+          return currentFieldData.parameter_resources.some((p: { generated?: boolean | null }) => p.generated);
         default:
           return false;
       }
@@ -784,7 +849,6 @@ function FieldComponent({
   const getStepStatus = useCallback(
     (stepId: string, _formData: Record<string, unknown>): StepStatus => {
       const hasName = !!formState.name_id;
-      const hasDescription = !!formState.description_id;
 
       switch (stepId) {
         case "basic":
@@ -839,9 +903,15 @@ function FieldComponent({
         throw new Error("Name is required");
       }
 
+      if (!fieldData?.group_id) {
+        toast.error("Group ID is missing. Please refresh the page.");
+        throw new Error("Group ID is required");
+      }
+
       try {
         await saveFieldAction({
           body: {
+            group_id: fieldData.group_id,
             name_id: formState.name_id,
             description_id: formState.description_id || null,
             active_flag_id: formState.active_flag_id || null,
@@ -871,6 +941,7 @@ function FieldComponent({
       fieldData?.name_required,
       fieldData?.departments_required,
       fieldData?.parameters_required,
+      fieldData?.group_id,
     ]
   );
 
@@ -929,6 +1000,25 @@ function FieldComponent({
       updateLabel: "Update Field",
     }),
     []
+  );
+
+  // Check if any resources have AI generation available for step actions
+  const hasAiGenerate = useCallback(
+    (resourceTypes: ResourceType[]): boolean => {
+      const currentFieldData = stableFieldDataFields;
+      if (!currentFieldData) return false;
+
+      const aiMap: Partial<Record<ResourceType, boolean>> = {
+        names: currentFieldData.name_show_ai_generate,
+        descriptions: currentFieldData.description_show_ai_generate,
+        flags: currentFieldData.flag_show_ai_generate,
+        departments: currentFieldData.departments_show_ai_generate,
+        parameters: currentFieldData.parameters_show_ai_generate,
+      };
+
+      return resourceTypes.some((rt) => aiMap[rt]);
+    },
+    [stableFieldDataFields]
   );
 
   // Memoize renderStep
@@ -991,7 +1081,9 @@ function FieldComponent({
                   required={currentFieldData?.name_required ?? false}
                   hideDescription={true}
                   group_id={currentFieldData?.group_id ?? null}
-                  agent_id={currentFieldData?.name_agent_id ?? null}
+                  create_tool_id={currentFieldData?.name_create_tool_id ?? null}
+                  link_tool_id={currentFieldData?.name_link_tool_id ?? null}
+                  showAiGenerate={currentFieldData?.name_show_ai_generate ?? false}
                   createNamesAction={
                     createNamesAction as
                       | ((
@@ -1011,10 +1103,7 @@ function FieldComponent({
               actions={
                 stepResources["basic"] &&
                 stepResources["basic"].length > 0 &&
-                (currentFieldData?.name_agent_id ||
-                  currentFieldData?.description_agent_id ||
-                  currentFieldData?.active_flag_agent_id ||
-                  currentFieldData?.departments_agent_id) ? (
+                hasAiGenerate(stepResources["basic"]!) ? (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -1085,7 +1174,9 @@ function FieldComponent({
                   rows={3}
                   data-testid="input-field-description"
                   group_id={currentFieldData?.group_id ?? null}
-                  agent_id={currentFieldData?.description_agent_id ?? null}
+                  create_tool_id={currentFieldData?.description_create_tool_id ?? null}
+                  link_tool_id={currentFieldData?.description_link_tool_id ?? null}
+                  showAiGenerate={currentFieldData?.description_show_ai_generate ?? false}
                   createDescriptionsAction={createDescriptionsAction}
                   searchTerm={descriptionSearchTerm}
                   onSearchChange={(term: string) =>
@@ -1111,13 +1202,24 @@ function FieldComponent({
                   isGenerating={isGenerating("departments")}
                   required={currentFieldData?.departments_required ?? false}
                   group_id={currentFieldData?.group_id ?? null}
-                  agent_id={currentFieldData?.departments_agent_id ?? null}
+                  link_tool_id={currentFieldData?.departments_link_tool_id ?? null}
+                  showAiGenerate={currentFieldData?.departments_show_ai_generate ?? false}
                   createDepartmentsAction={createDepartmentsAction}
                 />
 
                 <Flags
                   flag_id={formState.active_flag_id ?? null}
-                  flag_resource={currentFieldData?.active_flag_resource ?? null}
+                  flag_resource={
+                    currentFieldData?.active_flag_resource
+                      ? {
+                          id: currentFieldData.active_flag_resource.flag_option_id ?? null,
+                          name: currentFieldData.active_flag_resource.label ?? null,
+                          description: currentFieldData.active_flag_resource.description ?? null,
+                          icon: currentFieldData.active_flag_resource.icon_id ?? null,
+                          generated: currentFieldData.active_flag_resource.generated ?? null,
+                        }
+                      : null
+                  }
                   show_flag={currentFieldData?.show_active_flag ?? false}
                   disabled={disabled}
                   onFlagIdChange={(flagId) =>
@@ -1132,8 +1234,8 @@ function FieldComponent({
                   helpText="Inactive fields will not be available for selection"
                   required={currentFieldData?.active_flag_required ?? false}
                   group_id={currentFieldData?.group_id ?? null}
-                  agent_id={currentFieldData?.active_flag_agent_id ?? null}
-                  createFlagsAction={createFlagsAction}
+                  link_tool_id={currentFieldData?.flag_link_tool_id ?? null}
+                  showAiGenerate={currentFieldData?.flag_show_ai_generate ?? false}
                 />
               </div>
             </StepCard>
@@ -1181,7 +1283,7 @@ function FieldComponent({
               actions={
                 stepResources["parameters"] &&
                 stepResources["parameters"].length > 0 &&
-                currentFieldData?.parameters_agent_id ? (
+                hasAiGenerate(stepResources["parameters"]!) ? (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -1245,7 +1347,8 @@ function FieldComponent({
                 label="Conditional Parameters"
                 required={currentFieldData?.parameters_required ?? false}
                 group_id={currentFieldData?.group_id ?? null}
-                agent_id={currentFieldData?.parameters_agent_id ?? null}
+                link_tool_id={currentFieldData?.parameters_link_tool_id ?? null}
+                showAiGenerate={currentFieldData?.parameters_show_ai_generate ?? false}
                 createParametersAction={createParametersAction}
                 onGenerate={handleGenerateParameters}
                 isGenerating={isGenerating("parameters")}
@@ -1267,6 +1370,7 @@ function FieldComponent({
       stepResources,
       canRegenerate,
       isGenerating,
+      hasAiGenerate,
       handleGenerateName,
       handleGenerateDescription,
       handleGenerateDepartments,
@@ -1337,19 +1441,21 @@ function FieldComponent({
 
 // Memoize component to prevent re-renders when only prop references change
 export default React.memo(FieldComponent, (prevProps, nextProps) => {
+  const prevCurrent = prevProps.fieldData?.resources?.current;
+  const nextCurrent = nextProps.fieldData?.resources?.current;
   const prevIds = {
-    name_id: prevProps.fieldData?.name_id,
-    description_id: prevProps.fieldData?.description_id,
-    active_flag_id: prevProps.fieldData?.active_flag_id,
-    department_ids: prevProps.fieldData?.department_ids,
-    parameter_ids: prevProps.fieldData?.parameter_ids,
+    name_id: prevCurrent?.names?.[0]?.id,
+    description_id: prevCurrent?.descriptions?.[0]?.id,
+    active_flag_id: prevCurrent?.flags?.[0]?.flag_option_id,
+    department_ids: prevCurrent?.departments?.map((d) => d.department_id),
+    parameter_ids: prevCurrent?.parameters?.map((p) => p.parameter_id),
   };
   const nextIds = {
-    name_id: nextProps.fieldData?.name_id,
-    description_id: nextProps.fieldData?.description_id,
-    active_flag_id: nextProps.fieldData?.active_flag_id,
-    department_ids: nextProps.fieldData?.department_ids,
-    parameter_ids: nextProps.fieldData?.parameter_ids,
+    name_id: nextCurrent?.names?.[0]?.id,
+    description_id: nextCurrent?.descriptions?.[0]?.id,
+    active_flag_id: nextCurrent?.flags?.[0]?.flag_option_id,
+    department_ids: nextCurrent?.departments?.map((d) => d.department_id),
+    parameter_ids: nextCurrent?.parameters?.map((p) => p.parameter_id),
   };
 
   if (

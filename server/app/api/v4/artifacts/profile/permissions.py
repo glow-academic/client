@@ -1,0 +1,358 @@
+"""Profile permission helpers.
+
+Extracts business logic from SQL into Python for the two-pass architecture.
+These functions compute permissions, UI flags, and access control based on
+data fetched from the Pass 1 SQL query.
+
+Key difference from persona: Profile has actor/target distinction
+(target_is_self flag, cannot delete own profile).
+"""
+
+from uuid import UUID
+
+from app.api.v4.permissions import (
+    select_agents_for_artifact,
+    select_multi_resource_agent,
+)
+from app.api.v4.types import CandidateAgent
+
+# Re-export for backwards compatibility
+__all__ = [
+    "CandidateAgent",
+    "select_agents_for_artifact",
+    "select_multi_resource_agent",
+    "PROFILE_RESOURCES",
+    "PROFILE_BASIC_RESOURCES",
+    "PROFILE_GENERAL_RESOURCES",
+]
+
+
+def compute_can_edit(
+    user_role: str | None,
+    target_is_self: bool,
+    target_department_ids: list[str] | list[UUID] | None,
+) -> bool:
+    """Unified can_edit logic for both get and list views.
+
+    Constraints:
+    1. Superadmin can edit all profiles
+    2. Admin can edit profiles in their departments
+    3. Staff/instructional can only edit their own profile
+    4. Learners cannot edit profiles
+    """
+    if user_role == "superadmin":
+        return True
+
+    if user_role in ("admin", "instructional"):
+        return True
+
+    if user_role == "staff" and target_is_self:
+        return True
+
+    return False
+
+
+def compute_disabled_reason(
+    user_role: str | None,
+    target_is_self: bool,
+    target_department_ids: list[str] | list[UUID] | None,
+) -> str | None:
+    """Compute the reason why editing is disabled, if any.
+
+    Returns None if editing is allowed.
+    """
+    if user_role == "superadmin":
+        return None
+
+    if user_role in ("admin", "instructional"):
+        return None
+
+    if user_role == "staff" and target_is_self:
+        return None
+
+    if user_role == "staff":
+        return (
+            "You can only edit your own profile. "
+            "Contact an administrator to make changes to other profiles."
+        )
+
+    if user_role == "learner":
+        return (
+            "You do not have permission to edit profiles. "
+            "Contact an administrator to make changes."
+        )
+
+    return (
+        "This profile cannot be edited. "
+        "You can view the details but cannot make changes."
+    )
+
+
+def has_access(
+    user_role: str | None,
+    user_department_ids: list[UUID] | None,
+    target_department_ids: list[UUID] | None,
+) -> bool:
+    """Check if user has access to view the profile.
+
+    Access rules:
+    - Superadmin has access to all profiles
+    - User has access if profile has no departments (default profile)
+    - User has access if they share at least one department with the profile
+    """
+    if user_role == "superadmin":
+        return True
+
+    # Default profiles (no departments) are accessible to all
+    if not target_department_ids:
+        return True
+
+    # Check department overlap
+    if not user_department_ids:
+        return False
+
+    user_dept_set = set(user_department_ids)
+    target_dept_set = set(target_department_ids)
+    return bool(user_dept_set & target_dept_set)
+
+
+def compute_show_name(names_has_tools: bool) -> bool:
+    """Determine if name picker should be shown."""
+    return names_has_tools
+
+
+def compute_show_emails(emails_has_tools: bool) -> bool:
+    """Determine if emails picker should be shown."""
+    return emails_has_tools
+
+
+def compute_show_request_limit(request_limits_has_tools: bool) -> bool:
+    """Determine if request_limit picker should be shown."""
+    return request_limits_has_tools
+
+
+def compute_show_flag() -> bool:
+    """Determine if flag toggle should be shown."""
+    return True
+
+
+def compute_show_departments(departments_count: int) -> bool:
+    """Determine if departments picker should be shown."""
+    return departments_count > 0
+
+
+def compute_show_cohorts(cohorts_count: int) -> bool:
+    """Determine if cohorts picker should be shown."""
+    return cohorts_count > 0
+
+
+def compute_name_required() -> bool:
+    """Determine if name is required."""
+    return True
+
+
+def compute_emails_required() -> bool:
+    """Determine if emails is required."""
+    return False
+
+
+def compute_request_limit_required() -> bool:
+    """Determine if request_limit is required."""
+    return False
+
+
+def compute_flag_required() -> bool:
+    """Determine if flag is required."""
+    return False
+
+
+def compute_departments_required() -> bool:
+    """Determine if departments is required."""
+    return False
+
+
+def compute_cohorts_required() -> bool:
+    """Determine if cohorts is required."""
+    return False
+
+
+# ========== List Endpoint Permission Functions ==========
+
+
+def compute_can_delete(
+    user_role: str | None,
+    target_is_self: bool,
+) -> bool:
+    """Compute can_delete permission.
+
+    Business logic:
+    - Cannot delete own profile
+    - Only admins and superadmins can delete
+    """
+    if target_is_self:
+        return False
+
+    return user_role in ("admin", "superadmin")
+
+
+def compute_can_duplicate(user_role: str | None) -> bool:
+    """Compute can_duplicate permission.
+
+    Business logic:
+    - Anyone with admin+ permissions can duplicate
+    """
+    return user_role in ("admin", "instructional", "superadmin")
+
+
+# ========== Save/Create Endpoint Permission Functions ==========
+
+
+def compute_can_create(
+    user_role: str | None,
+    department_ids: list[str] | list[UUID] | None,
+) -> bool:
+    """Compute permission to create a new profile.
+
+    Business logic:
+    - Non-superadmins cannot create general objects (empty department_ids)
+    - Only admin/superadmin can create profiles
+    """
+    if user_role not in ("admin", "superadmin"):
+        return False
+
+    if user_role != "superadmin" and not department_ids:
+        return False
+
+    return True
+
+
+def compute_can_save(
+    user_role: str | None,
+    user_department_ids: list[str] | list[UUID] | None,
+    target_department_ids: list[str] | list[UUID] | None,
+) -> bool:
+    """Compute permission to save/update an existing profile.
+
+    Business logic:
+    - Only admin/instructional/superadmin can save
+    - Non-superadmins must belong to ALL of the target's departments
+    """
+    if user_role not in ("admin", "instructional", "superadmin"):
+        return False
+
+    if user_role != "superadmin" and target_department_ids:
+        if not user_department_ids:
+            return False
+        user_dept_set = {str(d) for d in user_department_ids}
+        target_dept_set = {str(d) for d in target_department_ids}
+        if not target_dept_set.issubset(user_dept_set):
+            return False
+
+    return True
+
+
+# ========== Draft Endpoint Permission Functions ==========
+
+
+def compute_can_draft(user_role: str | None) -> bool:
+    """Compute permission to create or update a draft.
+
+    Business logic:
+    - Only admin/instructional/superadmin can create/edit drafts
+    """
+    return user_role in ("admin", "instructional", "superadmin")
+
+
+def get_missing_tools(
+    names_has_tools: bool,
+    emails_has_tools: bool,
+    request_limits_has_tools: bool,
+    show_departments: bool,
+    departments_has_tools: bool,
+    show_cohorts: bool,
+    cohorts_has_tools: bool,
+) -> list[str]:
+    """Get list of missing required tools."""
+    missing = []
+
+    if not names_has_tools:
+        missing.append("name")
+    if not emails_has_tools:
+        missing.append("emails")
+    if not request_limits_has_tools:
+        missing.append("request_limits")
+    if show_departments and not departments_has_tools:
+        missing.append("departments")
+    if show_cohorts and not cohorts_has_tools:
+        missing.append("cohorts")
+
+    return missing
+
+
+# ========== Agent Scoring - Profile-specific Constants ==========
+
+# Profile-specific resource definitions
+PROFILE_RESOURCES: set[str] = {
+    "names",
+    "emails",
+    "request_limits",
+    "flags",
+    "departments",
+    "cohorts",
+}
+
+# Multi-resource agent definitions for profile
+PROFILE_BASIC_RESOURCES: set[str] = {"names", "emails", "flags", "request_limits"}
+PROFILE_GENERAL_RESOURCES: set[str] = PROFILE_RESOURCES  # All resources
+
+
+# ========== Domain Metadata - for client-side display in modals ==========
+
+PROFILE_DOMAIN_METADATA: dict[str, dict[str, str | bool]] = {
+    "names": {
+        "name": "Name",
+        "description": "The display name for this profile",
+        "icon": "user",
+    },
+    "emails": {
+        "name": "Emails",
+        "description": "Email addresses associated with this profile",
+        "icon": "mail",
+    },
+    "request_limits": {
+        "name": "Request Limit",
+        "description": "Daily request limit for this profile",
+        "icon": "gauge",
+    },
+    "flags": {
+        "name": "Status",
+        "description": "Active/inactive status",
+        "icon": "flag",
+    },
+    "departments": {
+        "name": "Departments",
+        "description": "Which departments this profile belongs to",
+        "icon": "building",
+    },
+    "cohorts": {
+        "name": "Cohorts",
+        "description": "Cohort memberships for this profile",
+        "icon": "users",
+    },
+}
+
+
+def build_domain_data(
+    domain_ids: dict[str, UUID | None],
+    show_flags: dict[str, bool],
+    required_flags: dict[str, bool],
+) -> list:
+    """Build rich domain metadata for client display.
+
+    Delegates to shared build_domain_data with profile-specific metadata.
+    """
+    from app.api.v4.types import build_domain_data as _build_domain_data
+
+    return _build_domain_data(
+        domain_ids, show_flags, required_flags, PROFILE_DOMAIN_METADATA
+    )

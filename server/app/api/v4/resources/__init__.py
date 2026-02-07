@@ -22,8 +22,10 @@ router.include_router(args_outputs_get_router)
 # NOTE: cohorts removed - non-creatable, sync via artifact save (migration 328)
 # GET endpoint available for profile context two-pass architecture
 from app.api.v4.resources.cohorts.get import router as cohorts_get_router
+from app.api.v4.resources.cohorts.search import router as cohorts_search_router
 
 router.include_router(cohorts_get_router)
+router.include_router(cohorts_search_router)
 from app.api.v4.resources.colors.create import router as colors_router
 from app.api.v4.resources.colors.get import router as colors_get_router
 from app.api.v4.resources.colors.search import router as colors_search_router
@@ -56,9 +58,11 @@ from app.api.v4.resources.documents.get import router as documents_get_router
 router.include_router(documents_get_router)
 from app.api.v4.resources.emails.create import router as emails_router
 from app.api.v4.resources.emails.get import router as emails_get_router
+from app.api.v4.resources.emails.search import router as emails_search_router
 
 router.include_router(emails_router)
 router.include_router(emails_get_router)
+router.include_router(emails_search_router)
 from app.api.v4.resources.endpoints.create import router as endpoints_router
 from app.api.v4.resources.endpoints.get import router as endpoints_get_router
 
@@ -222,9 +226,13 @@ router.include_router(questions_get_router)
 # NOTE: reasoning_levels removed - non-creatable (migration 328)
 from app.api.v4.resources.request_limits.create import router as request_limits_router
 from app.api.v4.resources.request_limits.get import router as request_limits_get_router
+from app.api.v4.resources.request_limits.search import (
+    router as request_limits_search_router,
+)
 
 router.include_router(request_limits_router)
 router.include_router(request_limits_get_router)
+router.include_router(request_limits_search_router)
 # NOTE: responses removed - converted to entry table (migration 305)
 # NOTE: roles removed - non-creatable (migration 328)
 # GET endpoint available for profile context two-pass architecture
@@ -384,9 +392,11 @@ router.include_router(voices_get_router)
 from app.api.v4.resources.uploads.create import router as uploads_router
 from app.api.v4.resources.uploads.download import router as uploads_download_router
 from app.api.v4.resources.uploads.get import router as uploads_get_router
+from app.api.v4.resources.uploads.search import router as uploads_search_router
 from app.api.v4.resources.uploads.upload import router as uploads_upload_router
 
 router.include_router(uploads_router)
 router.include_router(uploads_download_router)
 router.include_router(uploads_get_router)
+router.include_router(uploads_search_router)
 router.include_router(uploads_upload_router)
