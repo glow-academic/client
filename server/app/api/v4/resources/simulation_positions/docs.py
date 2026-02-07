@@ -1,17 +1,20 @@
-"""{item.title()} resource documentation."""
+"""Simulation Positions resource documentation."""
 
 from typing import Any
 
+from app.utils.docs_helper import (
+    ResourceDocsConfig,
+    build_resource_docs_static,
+)
+
+CONFIG = ResourceDocsConfig(
+    name="simulation_positions",
+    table_name="simulation_positions_resource",
+    description="Simulation position resources for ordering simulations.",
+    used_by_artifacts=["cohort"],
+)
+
 
 def get_simulation_positions_docs() -> dict[str, Any]:
-    """Get comprehensive documentation for the simulation_positions resource.
-
-    Returns:
-        Dictionary containing database schema, relationships, API routing,
-        and GLOW context.
-    """
-    return {
-        "name": "simulation_positions",
-        "type": "resource",
-        "description": "Simulation_Positions resource documentation - see SQL files for schema details",
-    }
+    """Get simulation_positions documentation (static portions, for MCP)."""
+    return build_resource_docs_static(CONFIG)

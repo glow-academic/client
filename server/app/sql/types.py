@@ -4598,6 +4598,90 @@ class GetDeveloperInstructionContextApiResponse(BaseModel):
     times: Any | None = None
 
 
+# Generated from: get_docs_columns
+
+
+class GetDocsColumnsSqlParams(BaseModel):
+    table_name_param: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (self.table_name_param,)
+
+
+class QDocsColumnsV4Column(BaseModel):
+    name: str | None
+    type: str | None
+    nullable: bool | None
+    default_value: str | None
+
+
+class GetDocsColumnsSqlRow(BaseModel):
+    columns: list[QDocsColumnsV4Column] | None = None
+
+
+class GetDocsColumnsApiRequest(BaseModel):
+    table_name_param: str
+
+
+class GetDocsColumnsApiResponse(BaseModel):
+    columns: list[QDocsColumnsV4Column] | None = None
+
+
+# Generated from: get_docs_foreign_keys
+
+
+class GetDocsForeignKeysSqlParams(BaseModel):
+    table_pattern_param: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (self.table_pattern_param,)
+
+
+class QDocsFkV4ForeignKey(BaseModel):
+    table_name: str | None
+    column_name: str | None
+    references_table: str | None
+
+
+class GetDocsForeignKeysSqlRow(BaseModel):
+    foreign_keys: list[QDocsFkV4ForeignKey] | None = None
+
+
+class GetDocsForeignKeysApiRequest(BaseModel):
+    table_pattern_param: str
+
+
+class GetDocsForeignKeysApiResponse(BaseModel):
+    foreign_keys: list[QDocsFkV4ForeignKey] | None = None
+
+
+# Generated from: get_docs_junctions
+
+
+class GetDocsJunctionsSqlParams(BaseModel):
+    prefix_param: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (self.prefix_param,)
+
+
+class QDocsJunctionsV4Junction(BaseModel):
+    name: str | None
+    columns: list[str] | None
+
+
+class GetDocsJunctionsSqlRow(BaseModel):
+    junction_tables: list[QDocsJunctionsV4Junction] | None = None
+
+
+class GetDocsJunctionsApiRequest(BaseModel):
+    prefix_param: str
+
+
+class GetDocsJunctionsApiResponse(BaseModel):
+    junction_tables: list[QDocsJunctionsV4Junction] | None = None
+
+
 # Generated from: get_document_agent_id_v4
 
 
@@ -19421,19 +19505,27 @@ class GetSimulationIdsSqlRow(BaseModel):
     scenario_rubric_ids: list[UUID] | None = None
     scenario_time_limit_ids: list[UUID] | None = None
     scenario_persona_ids: list[UUID] | None = None
-    name_agent_id: UUID | None = None
-    description_agent_id: UUID | None = None
-    flag_agent_id: UUID | None = None
-    departments_agent_id: UUID | None = None
-    scenarios_agent_id: UUID | None = None
-    basic_agent_id: UUID | None = None
-    general_agent_id: UUID | None = None
     candidate_agents: Any | None = None
     names_has_tools: bool | None = None
     descriptions_has_tools: bool | None = None
     flags_has_tools: bool | None = None
     departments_has_tools: bool | None = None
     scenarios_has_tools: bool | None = None
+    scenario_flags_has_tools: bool | None = None
+    scenario_personas_has_tools: bool | None = None
+    scenario_positions_has_tools: bool | None = None
+    scenario_rubrics_has_tools: bool | None = None
+    scenario_time_limits_has_tools: bool | None = None
+    name_domain_id: UUID | None = None
+    description_domain_id: UUID | None = None
+    flag_domain_id: UUID | None = None
+    departments_domain_id: UUID | None = None
+    scenarios_domain_id: UUID | None = None
+    scenario_flags_domain_id: UUID | None = None
+    scenario_personas_domain_id: UUID | None = None
+    scenario_positions_domain_id: UUID | None = None
+    scenario_rubrics_domain_id: UUID | None = None
+    scenario_time_limits_domain_id: UUID | None = None
 
 
 class GetSimulationIdsApiRequest(BaseModel):
@@ -19454,19 +19546,27 @@ class GetSimulationIdsApiResponse(BaseModel):
     scenario_rubric_ids: list[UUID] | None = None
     scenario_time_limit_ids: list[UUID] | None = None
     scenario_persona_ids: list[UUID] | None = None
-    name_agent_id: UUID | None = None
-    description_agent_id: UUID | None = None
-    flag_agent_id: UUID | None = None
-    departments_agent_id: UUID | None = None
-    scenarios_agent_id: UUID | None = None
-    basic_agent_id: UUID | None = None
-    general_agent_id: UUID | None = None
     candidate_agents: Any | None = None
     names_has_tools: bool | None = None
     descriptions_has_tools: bool | None = None
     flags_has_tools: bool | None = None
     departments_has_tools: bool | None = None
     scenarios_has_tools: bool | None = None
+    scenario_flags_has_tools: bool | None = None
+    scenario_personas_has_tools: bool | None = None
+    scenario_positions_has_tools: bool | None = None
+    scenario_rubrics_has_tools: bool | None = None
+    scenario_time_limits_has_tools: bool | None = None
+    name_domain_id: UUID | None = None
+    description_domain_id: UUID | None = None
+    flag_domain_id: UUID | None = None
+    departments_domain_id: UUID | None = None
+    scenarios_domain_id: UUID | None = None
+    scenario_flags_domain_id: UUID | None = None
+    scenario_personas_domain_id: UUID | None = None
+    scenario_positions_domain_id: UUID | None = None
+    scenario_rubrics_domain_id: UUID | None = None
+    scenario_time_limits_domain_id: UUID | None = None
 
 
 # Generated from: get_simulation_resource_ids_by_group_id
@@ -22989,6 +23089,24 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetDeveloperInstructionContextApiRequest",
         "GetDeveloperInstructionContextApiResponse",
     ),
+    "app/sql/v4/queries/docs/get_docs_columns_complete.sql": (
+        "GetDocsColumnsSqlParams",
+        "GetDocsColumnsSqlRow",
+        "GetDocsColumnsApiRequest",
+        "GetDocsColumnsApiResponse",
+    ),
+    "app/sql/v4/queries/docs/get_docs_foreign_keys_complete.sql": (
+        "GetDocsForeignKeysSqlParams",
+        "GetDocsForeignKeysSqlRow",
+        "GetDocsForeignKeysApiRequest",
+        "GetDocsForeignKeysApiResponse",
+    ),
+    "app/sql/v4/queries/docs/get_docs_junctions_complete.sql": (
+        "GetDocsJunctionsSqlParams",
+        "GetDocsJunctionsSqlRow",
+        "GetDocsJunctionsApiRequest",
+        "GetDocsJunctionsApiResponse",
+    ),
     "app/sql/v4/queries/document/get_document_agent_id_v4_complete.sql": (
         "GetDocumentAgentIdV4SqlParams",
         "GetDocumentAgentIdV4SqlRow",
@@ -25777,6 +25895,23 @@ if TYPE_CHECKING:
         file_path: Literal[
             "app/sql/v4/queries/developer_instructions/get_developer_instruction_context_complete.sql"
         ],
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/docs/get_docs_columns_complete.sql"],
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal[
+            "app/sql/v4/queries/docs/get_docs_foreign_keys_complete.sql"
+        ],
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/docs/get_docs_junctions_complete.sql"],
     ) -> SqlString: ...
 
     @overload

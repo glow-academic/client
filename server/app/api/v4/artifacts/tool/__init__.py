@@ -3,6 +3,7 @@
 from fastapi import APIRouter
 
 from app.api.v4.artifacts.tool.delete import router as delete_router
+from app.api.v4.artifacts.tool.docs import router as docs_router
 from app.api.v4.artifacts.tool.draft import router as draft_router
 from app.api.v4.artifacts.tool.duplicate import router as duplicate_router
 from app.api.v4.artifacts.tool.get import router as get_router
@@ -18,3 +19,4 @@ router.include_router(save_router)
 router.include_router(duplicate_router)
 router.include_router(delete_router)
 router.include_router(draft_router)
+router.include_router(docs_router)

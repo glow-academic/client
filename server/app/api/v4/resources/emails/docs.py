@@ -1,17 +1,20 @@
-"""{item.title()} resource documentation."""
+"""Emails resource documentation."""
 
 from typing import Any
 
+from app.utils.docs_helper import (
+    ResourceDocsConfig,
+    build_resource_docs_static,
+)
+
+CONFIG = ResourceDocsConfig(
+    name="emails",
+    table_name="emails_resource",
+    description="Email resources for user contact information.",
+    used_by_artifacts=["profile"],
+)
+
 
 def get_emails_docs() -> dict[str, Any]:
-    """Get comprehensive documentation for the emails resource.
-
-    Returns:
-        Dictionary containing database schema, relationships, API routing,
-        and GLOW context.
-    """
-    return {
-        "name": "emails",
-        "type": "resource",
-        "description": "Emails resource documentation - see SQL files for schema details",
-    }
+    """Get emails documentation (static portions, for MCP)."""
+    return build_resource_docs_static(CONFIG)

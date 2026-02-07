@@ -1,17 +1,20 @@
-"""{item.title()} resource documentation."""
+"""Prompts resource documentation."""
 
 from typing import Any
 
+from app.utils.docs_helper import (
+    ResourceDocsConfig,
+    build_resource_docs_static,
+)
+
+CONFIG = ResourceDocsConfig(
+    name="prompts",
+    table_name="prompts_resource",
+    description="Prompt resources for AI system and user prompts.",
+    used_by_artifacts=["persona"],
+)
+
 
 def get_prompts_docs() -> dict[str, Any]:
-    """Get comprehensive documentation for the prompts resource.
-
-    Returns:
-        Dictionary containing database schema, relationships, API routing,
-        and GLOW context.
-    """
-    return {
-        "name": "prompts",
-        "type": "resource",
-        "description": "Prompts resource documentation - see SQL files for schema details",
-    }
+    """Get prompts documentation (static portions, for MCP)."""
+    return build_resource_docs_static(CONFIG)

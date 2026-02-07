@@ -1,17 +1,37 @@
-"""{item.title()} resource documentation."""
+"""Names resource documentation."""
 
 from typing import Any
 
+from app.utils.docs_helper import (
+    ResourceDocsConfig,
+    build_resource_docs_static,
+)
+
+CONFIG = ResourceDocsConfig(
+    name="names",
+    table_name="names_resource",
+    description="Name resources providing display names for artifacts.",
+    used_by_artifacts=[
+        "agent",
+        "auth",
+        "cohort",
+        "department",
+        "document",
+        "eval",
+        "field",
+        "model",
+        "parameter",
+        "persona",
+        "provider",
+        "rubric",
+        "scenario",
+        "setting",
+        "simulation",
+        "tool",
+    ],
+)
+
 
 def get_names_docs() -> dict[str, Any]:
-    """Get comprehensive documentation for the names resource.
-
-    Returns:
-        Dictionary containing database schema, relationships, API routing,
-        and GLOW context.
-    """
-    return {
-        "name": "names",
-        "type": "resource",
-        "description": "Names resource documentation - see SQL files for schema details",
-    }
+    """Get names documentation (static portions, for MCP)."""
+    return build_resource_docs_static(CONFIG)

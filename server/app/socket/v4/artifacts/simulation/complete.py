@@ -1,41 +1,45 @@
 """Simulation completion handler - listens to generate_call_complete events and emits granular simulation events."""
 
 import uuid
-from typing import Any, cast
+from typing import Any
 
 from fastapi import APIRouter
 
+from app.api.v4.resources.departments.get import get_departments_internal
+from app.api.v4.resources.descriptions.get import get_descriptions_internal
+from app.api.v4.resources.flags.get import get_flags_internal
+from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.scenarios.get import get_scenarios_internal
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
 from app.socket.v4.artifacts.simulation.types import (
     SimulationGenerationCompleteEvent,
-    SimulationGenerationErrorEvent,
 )
-from app.sql.types import (
-    GetSimulationResourceIdsByGroupIdSqlParams,
-    GetSimulationResourceIdsByGroupIdSqlRow,
-)
-from app.utils.sql_helper import execute_sql_typed
+from app.utils.logging.db_logger import get_logger
+from app.utils.sql_helper import load_sql
+
+logger = get_logger(__name__)
 
 internal_sio = get_internal_sio()
+SQL_PATH_CREATE_MESSAGE_WITH_TEXT = (
+    "app/sql/v4/queries/messages/create_message_with_text_complete.sql"
+)
 
 client_router = APIRouter()
 server_router = APIRouter()
 
-SQL_PATH = "app/sql/v4/queries/simulations/get_simulation_resource_ids_by_group_id_complete.sql"
-
 
 @internal_sio.on("generate_call_complete")  # type: ignore
+@internal_sio.on("generate_text_complete")  # type: ignore
 async def handle_simulation_artifact_complete(data: dict[str, Any]) -> None:
-    """Handle generate_call_complete events - filter by simulation artifact_type and emit granular event."""
+    """Handle generate_call_complete and generate_text_complete events - filter by simulation artifact_type and emit granular event."""
     # Skip processing if in eval mode - benchmark handlers will handle evals
     eval_mode = data.get("eval_mode", False)
     if eval_mode:
         return  # Don't process evals - benchmark handlers will handle them
 
-    # Filter by artifact_type (SQL will also validate, but early return for efficiency)
+    # Filter by artifact_type
     artifact_type = data.get("artifact_type")
     if artifact_type != "simulation":
         return  # Not for us
@@ -48,13 +52,23 @@ async def handle_simulation_artifact_complete(data: dict[str, Any]) -> None:
     profile_id_str = await find_profile_by_socket(sid)
     if not profile_id_str:
         return
-    profile_id = uuid.UUID(profile_id_str)
 
-    # Extract all data from event (no Python filtering for resource_type - SQL handles it)
+    # Extract all data from event
     group_id_str = data.get("group_id")
+    resource_type = data.get("resource_type")
     event_type = data.get("event_type")
 
-    # Only process actual tool completion events, not summary events
+    # Handle text completion - save assistant message
+    if event_type == "text_complete":
+        await _handle_simulation_text_complete(sid, data)
+        return
+
+    # Handle run complete - save final assistant content + update tokens
+    if event_type == "run_complete":
+        await _handle_simulation_run_complete(sid, data)
+        return
+
+    # Only process tool completion events for resource generation
     if event_type not in ("tool_call_complete", "tool_result"):
         return
 
@@ -65,109 +79,181 @@ async def handle_simulation_artifact_complete(data: dict[str, Any]) -> None:
     if event_type == "tool_call_complete" and not tool_result and not tool_results:
         return
     resource_id_str = tool_result.get("resource_id")
-    resource_type = data.get("resource_type")
 
     if not group_id_str or not resource_type:
         return
 
     if not resource_id_str:
         # Check if this was a tool failure (e.g., duplicate key error)
-        # In that case, the error was already returned to the model for retry
-        # and we don't need to emit an error event to the client
         tool_success = tool_result.get("success", True)
         if not tool_success:
-            # Tool execution failed - this is expected and model can retry
-            # Don't emit error since other successful calls may have completed
             return
-        error_event = SimulationGenerationErrorEvent(
-            group_id=group_id_str,
-            resource_type=resource_type,
-            message=f"Missing resource_id for {resource_type} tool result",
-        )
         await sio.emit(
             "simulation_generation_error",
-            error_event.model_dump(mode="json"),
+            {
+                "artifact_type": "simulation",
+                "resource_type": resource_type,
+                "group_id": group_id_str,
+                "success": False,
+                "message": f"Missing resource_id for {resource_type} tool result",
+            },
             room=sid,
         )
         return
 
-    group_id = uuid.UUID(group_id_str)
     resource_id = uuid.UUID(resource_id_str)
 
-    # Query SQL function - SQL handles validation and mapping (no-op, no queries)
+    # Build the event with the appropriate resource field populated
+    event = SimulationGenerationCompleteEvent(
+        artifact_type="simulation",
+        group_id=group_id_str,
+        resource_type=resource_type,
+        run_id=data.get("run_id"),
+        success=True,
+        message=f"{resource_type} generation completed successfully",
+    )
+
     try:
         async with get_db_connection() as conn:
-            params = GetSimulationResourceIdsByGroupIdSqlParams(
-                profile_id=profile_id,
-                group_id=group_id,
-                resource_id=resource_id,
-                resource_type=resource_type,
-                artifact_type="simulation",  # Always "simulation" for this handler
-            )
-            result = cast(
-                GetSimulationResourceIdsByGroupIdSqlRow,
-                await execute_sql_typed(conn, SQL_PATH, params=params),
-            )
+            # Fetch the resource using the appropriate internal function.
+            # For standard resources, we fetch by ID. For scenario-dependent
+            # resources, the tool_result already contains the data.
+            if resource_type == "names":
+                items = await get_names_internal(conn, [resource_id])
+                event.name_resource = items[0] if items else None
+            elif resource_type == "descriptions":
+                items = await get_descriptions_internal(conn, [resource_id])
+                event.description_resource = items[0] if items else None
+            elif resource_type == "flags":
+                items = await get_flags_internal(conn, [resource_id])
+                event.flag_resources = items if items else None
+            elif resource_type == "departments":
+                items = await get_departments_internal(conn, [resource_id])
+                event.department_resources = items if items else None
+            elif resource_type == "scenarios":
+                items = await get_scenarios_internal(
+                    conn, [resource_id], bypass_cache=True
+                )
+                event.scenario_resources = items if items else None
+            elif resource_type == "scenario_flags":
+                # Scenario-dependent resources: pass tool_result data directly
+                event.scenario_flag_resources = [tool_result]
+            elif resource_type == "scenario_personas":
+                event.scenario_persona_resources = [tool_result]
+            elif resource_type == "scenario_positions":
+                event.scenario_position_resources = [tool_result]
+            elif resource_type == "scenario_rubrics":
+                event.scenario_rubric_resources = [tool_result]
+            elif resource_type == "scenario_time_limits":
+                event.scenario_time_limit_resources = [tool_result]
     except Exception as e:
-        # SQL function raised error (validation failed) - emit error to client
-        error_event = SimulationGenerationErrorEvent(
-            group_id=group_id_str,
-            resource_type=resource_type,
-            message=str(e),
-        )
+        # Resource fetch failed - emit error to client
         await sio.emit(
             "simulation_generation_error",
-            error_event.model_dump(mode="json"),
+            {
+                "artifact_type": "simulation",
+                "resource_type": resource_type,
+                "group_id": group_id_str,
+                "success": False,
+                "message": str(e),
+            },
             room=sid,
         )
         return
 
-    # For scenarios, fetch full objects for AI diff view
-    scenario_resources = None
-    if resource_type == "scenarios" and result.scenario_ids:
-        try:
-            async with get_db_connection() as conn:
-                scenario_resources = await get_scenarios_internal(
-                    conn, result.scenario_ids, bypass_cache=True
-                )
-        except Exception:
-            # If fetch fails, continue without full objects (IDs are still available)
-            pass
-
-    # Emit granular event with mapped resource ID (one field set, others NULL)
-    complete_event = SimulationGenerationCompleteEvent(
-        group_id=group_id_str,
-        resource_type=resource_type,
-        name_id=str(result.name_id) if result.name_id else None,
-        description_id=str(result.description_id) if result.description_id else None,
-        active_flag_id=str(result.active_flag_id) if result.active_flag_id else None,
-        department_ids=[str(did) for did in (result.department_ids or [])],
-        scenario_ids=[str(s_id) for s_id in (result.scenario_ids or [])],
-        scenario_resources=scenario_resources,
-        scenario_flag_ids=[str(sfid) for sfid in (result.scenario_flag_ids or [])],
-        scenario_position_ids=[
-            str(spid) for spid in (result.scenario_position_ids or [])
-        ],
-        scenario_rubric_ids=[str(srid) for srid in (result.scenario_rubric_ids or [])],
-        scenario_time_limit_ids=[
-            str(stlid) for stlid in (result.scenario_time_limit_ids or [])
-        ],
-        success=True,
-        message=f"{resource_type} generation completed successfully",
-        run_id=data.get("run_id"),
-        type=data.get("type", "complete"),
-    )
+    # Emit the typed event
     await sio.emit(
         "simulation_generation_complete",
-        complete_event.model_dump(mode="json"),
+        event.model_dump(mode="json"),
         room=sid,
     )
 
 
+async def _handle_simulation_text_complete(sid: str, data: dict[str, Any]) -> None:
+    """Handle simulation text generation completion - save assistant message."""
+    run_id = data.get("run_id")
+    final_content = data.get("text") or ""
+
+    if not run_id or not final_content:
+        return
+
+    try:
+        async with get_db_connection() as conn:
+            create_message_sql = load_sql(SQL_PATH_CREATE_MESSAGE_WITH_TEXT)
+            await conn.fetchval(
+                create_message_sql,
+                uuid.UUID(run_id),
+                "assistant",
+                final_content,
+                True,
+                False,
+            )
+    except Exception as e:
+        logger.exception(f"Failed to save simulation text message: {str(e)}")
+
+
+async def _handle_simulation_run_complete(sid: str, data: dict[str, Any]) -> None:
+    """Handle simulation generation run completion - save assistant output if present."""
+    run_id = data.get("run_id")
+    assistant_output = data.get("assistant_output") or ""
+    input_tokens = data.get("input_text_tokens", 0)
+    output_tokens = data.get("output_text_tokens", 0)
+
+    if not run_id:
+        return
+
+    try:
+        async with get_db_connection() as conn:
+            # Save assistant message if there's text output (and wasn't already saved by text_complete)
+            if assistant_output:
+                existing = await conn.fetchval(
+                    """
+                    SELECT id FROM messages_entry
+                    WHERE run_id = $1 AND role = 'assistant'::message_type
+                    LIMIT 1
+                    """,
+                    uuid.UUID(run_id),
+                )
+                if not existing:
+                    create_message_sql = load_sql(SQL_PATH_CREATE_MESSAGE_WITH_TEXT)
+                    await conn.fetchval(
+                        create_message_sql,
+                        uuid.UUID(run_id),
+                        "assistant",
+                        assistant_output,
+                        True,
+                        False,
+                    )
+
+            # Update run with token counts
+            if input_tokens or output_tokens:
+                await conn.execute(
+                    """
+                    UPDATE runs_entry
+                    SET input_tokens = COALESCE($2, input_tokens),
+                        output_tokens = COALESCE($3, output_tokens)
+                    WHERE id = $1
+                    """,
+                    uuid.UUID(run_id),
+                    input_tokens,
+                    output_tokens,
+                )
+    except Exception as e:
+        logger.exception(f"Failed to save simulation run complete: {str(e)}")
+
+
+# =============================================================================
+# FastAPI endpoint for OpenAPI documentation
+# =============================================================================
+
+
 @server_router.post("/simulation_generation_complete")
 async def simulation_generation_complete_api(
-    request: dict[str, Any],
+    request: SimulationGenerationCompleteEvent,
 ) -> dict[str, bool]:
-    """Server-to-client event: simulation generation complete."""
-    _ = request
-    return {"ok": True}
+    """Server-to-client event: Simulation generation completed.
+
+    Emitted when a simulation resource is successfully generated.
+    Contains full resource objects for immediate frontend use.
+    """
+    return {"success": True}

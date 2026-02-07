@@ -1,17 +1,20 @@
-"""{item.title()} resource documentation."""
+"""Items resource documentation."""
 
 from typing import Any
 
+from app.utils.docs_helper import (
+    ResourceDocsConfig,
+    build_resource_docs_static,
+)
+
+CONFIG = ResourceDocsConfig(
+    name="items",
+    table_name="items_resource",
+    description="Item resources for generic key-value data items.",
+    used_by_artifacts=["auth"],
+)
+
 
 def get_items_docs() -> dict[str, Any]:
-    """Get comprehensive documentation for the items resource.
-
-    Returns:
-        Dictionary containing database schema, relationships, API routing,
-        and GLOW context.
-    """
-    return {
-        "name": "items",
-        "type": "resource",
-        "description": "Items resource documentation - see SQL files for schema details",
-    }
+    """Get items documentation (static portions, for MCP)."""
+    return build_resource_docs_static(CONFIG)

@@ -1,17 +1,20 @@
-"""{item.title()} resource documentation."""
+"""Args Outputs resource documentation."""
 
 from typing import Any
 
+from app.utils.docs_helper import (
+    ResourceDocsConfig,
+    build_resource_docs_static,
+)
+
+CONFIG = ResourceDocsConfig(
+    name="args_outputs",
+    table_name="args_outputs_resource",
+    description="Argument output resources for tracking parameter outputs.",
+    used_by_artifacts=["parameter"],
+)
+
 
 def get_args_outputs_docs() -> dict[str, Any]:
-    """Get comprehensive documentation for the args_outputs resource.
-
-    Returns:
-        Dictionary containing database schema, relationships, API routing,
-        and GLOW context.
-    """
-    return {
-        "name": "args_outputs",
-        "type": "resource",
-        "description": "Args_Outputs resource documentation - see SQL files for schema details",
-    }
+    """Get args_outputs documentation (static portions, for MCP)."""
+    return build_resource_docs_static(CONFIG)

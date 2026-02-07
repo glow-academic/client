@@ -3,6 +3,7 @@
 from fastapi import APIRouter
 
 from app.api.v4.artifacts.rubric.delete import router as delete_router
+from app.api.v4.artifacts.rubric.docs import router as docs_router
 from app.api.v4.artifacts.rubric.draft import router as draft_router
 from app.api.v4.artifacts.rubric.duplicate import router as duplicate_router
 from app.api.v4.artifacts.rubric.get import router as get_router
@@ -18,3 +19,4 @@ router.include_router(save_router)
 router.include_router(duplicate_router)
 router.include_router(delete_router)
 router.include_router(draft_router)
+router.include_router(docs_router)

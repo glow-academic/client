@@ -1,17 +1,20 @@
-"""{item.title()} resource documentation."""
+"""Run Rubrics resource documentation."""
 
 from typing import Any
 
+from app.utils.docs_helper import (
+    ResourceDocsConfig,
+    build_resource_docs_static,
+)
+
+CONFIG = ResourceDocsConfig(
+    name="run_rubrics",
+    table_name="run_rubrics_resource",
+    description="Run rubric resources linking rubrics to evaluation runs.",
+    used_by_artifacts=["eval"],
+)
+
 
 def get_run_rubrics_docs() -> dict[str, Any]:
-    """Get comprehensive documentation for the run_rubrics resource.
-
-    Returns:
-        Dictionary containing database schema, relationships, API routing,
-        and GLOW context.
-    """
-    return {
-        "name": "run_rubrics",
-        "type": "resource",
-        "description": "Run_Rubrics resource documentation - see SQL files for schema details",
-    }
+    """Get run_rubrics documentation (static portions, for MCP)."""
+    return build_resource_docs_static(CONFIG)

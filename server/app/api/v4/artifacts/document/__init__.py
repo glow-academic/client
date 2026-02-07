@@ -4,6 +4,7 @@ from fastapi import APIRouter
 
 from app.api.v4.artifacts.document.bulk import router as bulk_router
 from app.api.v4.artifacts.document.delete import router as delete_router
+from app.api.v4.artifacts.document.docs import router as docs_router
 from app.api.v4.artifacts.document.draft import router as draft_router
 from app.api.v4.artifacts.document.duplicate import router as duplicate_router
 from app.api.v4.artifacts.document.get import router as get_router
@@ -20,3 +21,4 @@ router.include_router(duplicate_router)
 router.include_router(delete_router)
 router.include_router(draft_router)
 router.include_router(bulk_router)
+router.include_router(docs_router)

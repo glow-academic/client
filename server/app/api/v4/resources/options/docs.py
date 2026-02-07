@@ -1,17 +1,20 @@
-"""{item.title()} resource documentation."""
+"""Options resource documentation."""
 
 from typing import Any
 
+from app.utils.docs_helper import (
+    ResourceDocsConfig,
+    build_resource_docs_static,
+)
+
+CONFIG = ResourceDocsConfig(
+    name="options",
+    table_name="options_resource",
+    description="Option resources for configurable choices and selections.",
+    used_by_artifacts=["parameter"],
+)
+
 
 def get_options_docs() -> dict[str, Any]:
-    """Get comprehensive documentation for the options resource.
-
-    Returns:
-        Dictionary containing database schema, relationships, API routing,
-        and GLOW context.
-    """
-    return {
-        "name": "options",
-        "type": "resource",
-        "description": "Options resource documentation - see SQL files for schema details",
-    }
+    """Get options documentation (static portions, for MCP)."""
+    return build_resource_docs_static(CONFIG)

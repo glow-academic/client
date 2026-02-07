@@ -40,29 +40,13 @@ def has_access(
     user_department_ids: list[UUID] | None,
     simulation_department_ids: list[UUID] | None,
 ) -> bool:
-    """Check if user has access to the simulation.
-
-    Args:
-        user_role: User's role (superadmin, admin, staff, learner)
-        user_department_ids: List of department IDs user belongs to
-        simulation_department_ids: List of department IDs simulation belongs to
-
-    Returns:
-        True if user has access to the simulation
-    """
-    # Superadmins have access to everything
+    """Check if user has access to the simulation."""
     if user_role == "superadmin":
         return True
-
-    # If simulation has no departments, it's accessible to all
     if not simulation_department_ids:
         return True
-
-    # If user has no departments, they only get access to non-department simulations
     if not user_department_ids:
         return False
-
-    # Check if user shares any department with the simulation
     user_dept_set = set(user_department_ids)
     sim_dept_set = set(simulation_department_ids)
     return bool(user_dept_set & sim_dept_set)
@@ -78,25 +62,11 @@ def compute_can_edit(
     simulation_department_ids: list[UUID] | None,
     cohort_usage_count: int | None,
 ) -> bool:
-    """Compute whether user can edit the simulation.
-
-    Args:
-        user_role: User's role
-        simulation_department_ids: Simulation's department IDs
-        cohort_usage_count: Number of cohorts using this simulation
-
-    Returns:
-        True if user can edit the simulation
-    """
-    # Learners cannot edit
+    """Compute whether user can edit the simulation."""
     if user_role == "learner":
         return False
-
-    # Superadmins and admins can always edit
     if user_role in ("superadmin", "admin"):
         return True
-
-    # Staff can edit if simulation is not used by any cohorts
     usage_count = cohort_usage_count or 0
     return usage_count == 0
 
@@ -106,23 +76,12 @@ def compute_disabled_reason(
     simulation_department_ids: list[UUID] | None,
     cohort_usage_count: int | None,
 ) -> str | None:
-    """Compute reason why editing is disabled.
-
-    Args:
-        user_role: User's role
-        simulation_department_ids: Simulation's department IDs
-        cohort_usage_count: Number of cohorts using this simulation
-
-    Returns:
-        Reason string if editing is disabled, None otherwise
-    """
+    """Compute reason why editing is disabled."""
     if user_role == "learner":
         return "Learners cannot edit simulations"
-
     usage_count = cohort_usage_count or 0
     if user_role == "staff" and usage_count > 0:
         return f"Simulation is used by {usage_count} cohort(s). Only admins can edit."
-
     return None
 
 
@@ -136,35 +95,15 @@ def compute_can_delete(
     simulation_department_ids: list[UUID] | None,
     cohort_usage_count: int | None,
 ) -> bool:
-    """Compute whether user can delete the simulation.
-
-    Args:
-        user_role: User's role
-        simulation_department_ids: Simulation's department IDs
-        cohort_usage_count: Number of cohorts using this simulation
-
-    Returns:
-        True if user can delete the simulation
-    """
-    # Only admins, instructional, and superadmins can delete
+    """Compute whether user can delete the simulation."""
     if user_role not in ("superadmin", "admin", "instructional"):
         return False
-
-    # Cannot delete if used by cohorts
     usage_count = cohort_usage_count or 0
     return usage_count == 0
 
 
 def compute_can_duplicate(user_role: str | None) -> bool:
-    """Compute whether user can duplicate simulations.
-
-    Args:
-        user_role: User's role
-
-    Returns:
-        True if user can duplicate simulations
-    """
-    # Everyone except learners can duplicate
+    """Compute whether user can duplicate simulations."""
     return user_role != "learner"
 
 
@@ -177,24 +116,11 @@ def compute_can_create(
     user_role: str | None,
     department_ids: list[UUID] | None,
 ) -> bool:
-    """Compute whether user can create a new simulation.
-
-    Args:
-        user_role: User's role
-        department_ids: Department IDs for the new simulation
-
-    Returns:
-        True if user can create the simulation
-    """
-    # Learners cannot create
+    """Compute whether user can create a new simulation."""
     if user_role == "learner":
         return False
-
-    # Superadmins and admins can always create
     if user_role in ("superadmin", "admin"):
         return True
-
-    # Staff can create if they have department access
     return bool(department_ids)
 
 
@@ -204,22 +130,9 @@ def compute_can_save(
     simulation_department_ids: list[UUID] | None,
     cohort_usage_count: int | None,
 ) -> bool:
-    """Compute whether user can save/update the simulation.
-
-    Args:
-        user_role: User's role
-        user_department_ids: User's department IDs
-        simulation_department_ids: Simulation's department IDs
-        cohort_usage_count: Number of cohorts using this simulation
-
-    Returns:
-        True if user can save the simulation
-    """
-    # Must have access first
+    """Compute whether user can save/update the simulation."""
     if not has_access(user_role, user_department_ids, simulation_department_ids):
         return False
-
-    # Then check edit permission
     return compute_can_edit(user_role, simulation_department_ids, cohort_usage_count)
 
 
@@ -229,15 +142,7 @@ def compute_can_save(
 
 
 def compute_can_draft(user_role: str | None) -> bool:
-    """Compute whether user can create/modify drafts.
-
-    Args:
-        user_role: User's role
-
-    Returns:
-        True if user can work with drafts
-    """
-    # Everyone except learners can use drafts
+    """Compute whether user can create/modify drafts."""
     return user_role != "learner"
 
 
@@ -247,59 +152,85 @@ def compute_can_draft(user_role: str | None) -> bool:
 
 
 def compute_show_name(names_has_tools: bool | None) -> bool:
-    """Compute whether to show name field.
-
-    Args:
-        names_has_tools: Whether names tools exist
-
-    Returns:
-        True if name field should be shown
-    """
+    """Compute whether to show name field."""
     return names_has_tools is True
 
 
 def compute_show_description() -> bool:
-    """Compute whether to show description field.
-
-    Returns:
-        Always True - description is always shown
-    """
+    """Compute whether to show description field."""
     return True
 
 
 def compute_show_departments(departments_count: int | None) -> bool:
-    """Compute whether to show departments field.
-
-    Args:
-        departments_count: Number of available departments
-
-    Returns:
-        True if departments field should be shown
-    """
+    """Compute whether to show departments field."""
     count = departments_count or 0
     return count > 0
 
 
 def compute_show_flag() -> bool:
-    """Compute whether to show flag field.
-
-    Returns:
-        Always True - flag is always shown
-    """
+    """Compute whether to show flag field."""
     return True
 
 
 def compute_show_scenarios(scenarios_count: int | None) -> bool:
-    """Compute whether to show scenarios field.
-
-    Args:
-        scenarios_count: Number of available scenarios
-
-    Returns:
-        True if scenarios field should be shown
-    """
+    """Compute whether to show scenarios field."""
     count = scenarios_count or 0
     return count > 0
+
+
+def compute_show_scenario_flags(
+    effective_scenario_ids: list[UUID] | None,
+    scenario_flags_count: int,
+    scenarios_count: int,
+) -> bool:
+    """Compute whether to show scenario flags."""
+    return bool(
+        effective_scenario_ids or scenario_flags_count > 0 or scenarios_count > 0
+    )
+
+
+def compute_show_scenario_personas(
+    effective_scenario_ids: list[UUID] | None,
+    scenario_personas_count: int,
+    scenarios_count: int,
+) -> bool:
+    """Compute whether to show scenario personas."""
+    return bool(
+        effective_scenario_ids or scenario_personas_count > 0 or scenarios_count > 0
+    )
+
+
+def compute_show_scenario_positions(
+    effective_scenario_ids: list[UUID] | None,
+    scenario_positions_count: int,
+    scenarios_count: int,
+) -> bool:
+    """Compute whether to show scenario positions."""
+    return bool(
+        effective_scenario_ids or scenario_positions_count > 0 or scenarios_count > 0
+    )
+
+
+def compute_show_scenario_rubrics(
+    effective_scenario_ids: list[UUID] | None,
+    scenario_rubrics_count: int,
+    scenarios_count: int,
+) -> bool:
+    """Compute whether to show scenario rubrics."""
+    return bool(
+        effective_scenario_ids or scenario_rubrics_count > 0 or scenarios_count > 0
+    )
+
+
+def compute_show_scenario_time_limits(
+    effective_scenario_ids: list[UUID] | None,
+    scenario_time_limits_count: int,
+    scenarios_count: int,
+) -> bool:
+    """Compute whether to show scenario time limits."""
+    return bool(
+        effective_scenario_ids or scenario_time_limits_count > 0 or scenarios_count > 0
+    )
 
 
 # =============================================================================
@@ -308,48 +239,53 @@ def compute_show_scenarios(scenarios_count: int | None) -> bool:
 
 
 def compute_name_required() -> bool:
-    """Compute whether name is required.
-
-    Returns:
-        Always True - name is always required
-    """
+    """Name is always required."""
     return True
 
 
 def compute_description_required() -> bool:
-    """Compute whether description is required.
-
-    Returns:
-        Always False - description is optional
-    """
+    """Description is optional."""
     return False
 
 
 def compute_departments_required() -> bool:
-    """Compute whether departments are required.
-
-    Returns:
-        Always False - departments are optional
-    """
+    """Departments are optional."""
     return False
 
 
 def compute_flag_required() -> bool:
-    """Compute whether flag is required.
-
-    Returns:
-        Always False - flag is optional
-    """
+    """Flag is optional."""
     return False
 
 
 def compute_scenarios_required() -> bool:
-    """Compute whether scenarios are required.
-
-    Returns:
-        Always True - at least one scenario is needed
-    """
+    """At least one scenario is needed."""
     return True
+
+
+def compute_scenario_flags_required() -> bool:
+    """Scenario flags are optional."""
+    return False
+
+
+def compute_scenario_personas_required() -> bool:
+    """Scenario personas are optional."""
+    return False
+
+
+def compute_scenario_positions_required() -> bool:
+    """Scenario positions are optional."""
+    return False
+
+
+def compute_scenario_rubrics_required() -> bool:
+    """Scenario rubrics are required."""
+    return True
+
+
+def compute_scenario_time_limits_required() -> bool:
+    """Scenario time limits are optional."""
+    return False
 
 
 # =============================================================================
@@ -365,30 +301,7 @@ def compute_scenario_show_flags(
     questions_enabled: bool | None,
     templates_enabled: bool | None,
 ) -> dict[str, bool]:
-    """Compute show flags for scenario-level flag filtering.
-
-    These flags control which scenario flags are visible in the UI.
-    The business logic is:
-    - show_problem_statement: controlled by problem_statement_enabled
-    - show_objectives: controlled by objectives_enabled
-    - show_video: controlled by video_enabled
-    - show_text/show_audio/show_copy_paste: shown when NOT in video mode
-    - show_images: controlled by images_enabled
-    - show_questions: controlled by questions_enabled
-    - show_templates: controlled by templates_enabled
-
-    Args:
-        problem_statement_enabled: Whether problem statement is enabled for scenario
-        objectives_enabled: Whether objectives are enabled for scenario
-        video_enabled: Whether video mode is enabled for scenario
-        images_enabled: Whether images are enabled for scenario
-        questions_enabled: Whether questions are enabled for scenario
-        templates_enabled: Whether templates are enabled for scenario
-
-    Returns:
-        Dictionary of show_* flags for the scenario
-    """
-    # Default to True if None (backwards compatibility)
+    """Compute show flags for scenario-level flag filtering."""
     ps_enabled = (
         problem_statement_enabled if problem_statement_enabled is not None else True
     )
@@ -402,13 +315,84 @@ def compute_scenario_show_flags(
         "show_problem_statement": ps_enabled,
         "show_objectives": obj_enabled,
         "show_video": vid_enabled,
-        "show_text": not vid_enabled,  # Text mode when not video
-        "show_audio": not vid_enabled,  # Audio mode when not video
-        "show_copy_paste": not vid_enabled,  # Copy/paste when not video
+        "show_text": not vid_enabled,
+        "show_audio": not vid_enabled,
+        "show_copy_paste": not vid_enabled,
         "show_images": img_enabled,
         "show_questions": q_enabled,
         "show_templates": t_enabled,
     }
+
+
+# =============================================================================
+# Domain Metadata - for client-side display in modals
+# =============================================================================
+
+SIMULATION_DOMAIN_METADATA: dict[str, dict[str, str | bool]] = {
+    "names": {
+        "name": "Name",
+        "description": "The display name for this simulation",
+        "icon": "type",
+    },
+    "descriptions": {
+        "name": "Description",
+        "description": "A brief description of this simulation",
+        "icon": "file-text",
+    },
+    "flags": {
+        "name": "Status",
+        "description": "Active/inactive and practice mode settings",
+        "icon": "flag",
+    },
+    "departments": {
+        "name": "Departments",
+        "description": "Which departments can access this simulation",
+        "icon": "building",
+    },
+    "scenarios": {
+        "name": "Scenarios",
+        "description": "Scenarios included in this simulation",
+        "icon": "layout",
+    },
+    "scenario_flags": {
+        "name": "Scenario Flags",
+        "description": "Flag configurations for scenarios",
+        "icon": "toggle-left",
+    },
+    "scenario_personas": {
+        "name": "Scenario Personas",
+        "description": "Persona assignments for scenarios",
+        "icon": "users",
+    },
+    "scenario_positions": {
+        "name": "Scenario Positions",
+        "description": "Position ordering for scenarios",
+        "icon": "list-ordered",
+    },
+    "scenario_rubrics": {
+        "name": "Scenario Rubrics",
+        "description": "Rubric assignments for scenarios",
+        "icon": "clipboard-check",
+    },
+    "scenario_time_limits": {
+        "name": "Scenario Time Limits",
+        "description": "Time limit settings for scenarios",
+        "icon": "clock",
+    },
+}
+
+
+def build_domain_data(
+    domain_ids: dict[str, UUID | None],
+    show_flags: dict[str, bool],
+    required_flags: dict[str, bool],
+) -> list:
+    """Build rich domain metadata for client display."""
+    from app.api.v4.types import build_domain_data as _build_domain_data
+
+    return _build_domain_data(
+        domain_ids, show_flags, required_flags, SIMULATION_DOMAIN_METADATA
+    )
 
 
 # =============================================================================
@@ -423,20 +407,8 @@ def get_missing_tools(
     departments_has_tools: bool | None,
     scenarios_has_tools: bool | None,
 ) -> list[str]:
-    """Get list of missing tools.
-
-    Args:
-        names_has_tools: Whether names tools exist
-        descriptions_has_tools: Whether descriptions tools exist
-        flags_has_tools: Whether flags tools exist
-        departments_has_tools: Whether departments tools exist
-        scenarios_has_tools: Whether scenarios tools exist
-
-    Returns:
-        List of missing tool names
-    """
+    """Get list of missing tools."""
     missing = []
-
     if not names_has_tools:
         missing.append("names")
     if not descriptions_has_tools:
@@ -447,5 +419,4 @@ def get_missing_tools(
         missing.append("departments")
     if not scenarios_has_tools:
         missing.append("scenarios")
-
     return missing

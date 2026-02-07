@@ -1,10 +1,19 @@
-"""Simulation generation router - unified handler for all simulation resource types."""
+"""Simulation generation router - unified handler for all simulation resource types.
+
+Uses domain-based API: client sends domain_ids, server maps them to
+resource_types and agent_id using get_simulation_websocket().
+"""
 
 import uuid
-from typing import Any, cast
+from typing import Any
 
 from fastapi import APIRouter
 
+from app.api.v4.artifacts.simulation.get import get_simulation_websocket
+from app.api.v4.artifacts.simulation.types import (
+    GetSimulationWebsocketResponse,
+    SimulationResourceBucket,
+)
 from app.infra.v4.generation import convert_tools_to_dict, render_developer_instructions
 from app.infra.v4.generation.resource_utils import normalize_resources_for_sql
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
@@ -13,12 +22,8 @@ from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
 from app.socket.v4.artifacts.simulation.types import GenerateSimulationPayload
 from app.socket.v4.artifacts.types import GenerateErrorApiRequest
-from app.sql.types import (
-    GetSimulationSqlParams,
-    GetSimulationSqlRow,
-)
 from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import execute_sql_typed, load_sql
+from app.utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
 
@@ -27,7 +32,6 @@ internal_sio = get_internal_sio()
 client_router = APIRouter()
 server_router = APIRouter()
 
-SQL_PATH = "app/sql/v4/queries/simulations/get_simulation_complete.sql"
 CREATE_RUN_SQL_PATH = "app/sql/v4/queries/generate/start/get_generation_run_context_and_create_run_complete.sql"
 TEXT_RUN_CONTEXT_SQL_PATH = "app/sql/v4/queries/generate/text/get_text_run_context_for_existing_run_complete.sql"
 
@@ -45,19 +49,115 @@ SIMULATION_RESOURCE_TYPES = [
 ]
 
 
+def _serialize_resource_item(item: Any) -> Any:
+    if item is None:
+        return None
+    if hasattr(item, "model_dump"):
+        return item.model_dump()
+    if hasattr(item, "_asdict"):
+        return dict(item._asdict())
+    if hasattr(item, "dict"):
+        return item.dict()
+    if isinstance(item, dict):
+        return item
+    return item
+
+
+def _serialize_resource_list(items: list[Any] | None) -> list[Any]:
+    if not items:
+        return []
+    return [
+        serialized
+        for item in items
+        if (serialized := _serialize_resource_item(item)) is not None
+    ]
+
+
+def _build_simulation_jinja_context(
+    response: GetSimulationWebsocketResponse, resource_types: list[str]
+) -> dict[str, Any]:
+    """Build Jinja context from simulation websocket response."""
+    if response.resources and response.resources.resources:
+        resources = response.resources.resources.model_dump()
+        current = (
+            response.resources.current.model_dump()
+            if response.resources.current
+            else SimulationResourceBucket().model_dump()
+        )
+        resources["current"] = current
+        return resources
+    return {"current": SimulationResourceBucket().model_dump()}
+
+
 async def _simulation_generate_impl(
     sid: str, data: GenerateSimulationPayload, profile_id: uuid.UUID
 ) -> None:
-    """Handle simulation generation - emit generate_artifact for each resource type, then emit client event."""
+    """Handle simulation generation with domain-based API.
+
+    This function:
+    1. Validates domain_ids and derives resource_types + agent_id
+    2. Fetches simulation data via get_simulation_websocket() for context
+    3. Creates generation run via generic SQL
+    4. Renders developer instructions with Jinja
+    5. Emits payload to generate_artifact handler
+    """
     try:
-        # Validate resource types
-        resource_types = data.resource_types
+        # Validate domain_ids
+        if not data.domain_ids:
+            await emit_to_internal(
+                "generate_call_error",
+                GenerateErrorApiRequest(
+                    sid=sid,
+                    error_message="domain_ids must be provided",
+                    artifact_type="simulation",
+                    group_id=None,
+                    resource_type="simulation",
+                ),
+                sid=sid,
+            )
+            return
+
+        # Step 1: Fetch simulation data for domain mapping and context
+        result = await get_simulation_websocket(
+            profile_id=profile_id,
+            simulation_id=data.simulation_id,
+            draft_id=data.draft_id,
+        )
+
+        # Build domain_id -> agent_id mapping from result.domains
+        domain_to_agent: dict[uuid.UUID, uuid.UUID | None] = {}
+        if result.domains:
+            for domain in result.domains:
+                domain_to_agent[domain.domain_id] = domain.agent_id
+
+        # Build domain_id -> resource_type mapping from result
+        domain_to_resource: dict[uuid.UUID | None, str] = {
+            result.name_domain_id: "names",
+            result.description_domain_id: "descriptions",
+            result.flag_domain_id: "flags",
+            result.departments_domain_id: "departments",
+            result.scenarios_domain_id: "scenarios",
+            result.scenario_flags_domain_id: "scenario_flags",
+            result.scenario_personas_domain_id: "scenario_personas",
+            result.scenario_positions_domain_id: "scenario_positions",
+            result.scenario_rubrics_domain_id: "scenario_rubrics",
+            result.scenario_time_limits_domain_id: "scenario_time_limits",
+        }
+        # Remove None key if present
+        domain_to_resource.pop(None, None)
+
+        # Derive resource_types from domain_ids
+        resource_types: list[str] = []
+        for did in data.domain_ids:
+            if did in domain_to_resource:
+                resource_types.append(domain_to_resource[did])
+
         if not resource_types:
             await emit_to_internal(
                 "generate_call_error",
                 GenerateErrorApiRequest(
                     sid=sid,
-                    error_message="resource_types must be provided",
+                    error_message="No valid domain_ids provided",
                     artifact_type="simulation",
                     group_id=None,
                     resource_type="simulation",
@@ -83,149 +183,138 @@ async def _simulation_generate_impl(
             )
             return
 
-        # Map agent_type to agent_id from response (will be done after fetching simulation data)
+        # Get agent_id from the first valid domain_id
+        agent_id: uuid.UUID | None = None
+        for did in data.domain_ids:
+            if did in domain_to_agent and domain_to_agent[did] is not None:
+                agent_id = domain_to_agent[did]
+                break
 
-        # Call get_simulation_v4 SQL function (same as GET API endpoint)
-        async with get_db_connection() as conn:
-            # Convert payload to SQL params (same as GET endpoint)
-            params = GetSimulationSqlParams(
-                profile_id=profile_id,
-                simulation_id=data.simulation_id,
-                draft_id=data.draft_id,
-                scenario_search=data.scenario_search,
-                scenario_show_selected=data.scenario_show_selected,
-                filter_scenario_ids=data.filter_scenario_ids,
-                mcp=getattr(data, "mcp", False) or False,
-            )
-
-            result = cast(
-                GetSimulationSqlRow,
-                await execute_sql_typed(conn, SQL_PATH, params=params),
-            )
-
-            # Map agent_type to agent_id from response
-            agent_id: uuid.UUID | None = None
-            if data.agent_type:
-                agent_type_map = {
-                    "name": result.name_agent_id,
-                    "description": result.description_agent_id,
-                    "departments": result.departments_agent_id,
-                    "flags": result.flag_agent_id,
-                    "scenarios": result.scenarios_agent_id,
-                    "scenario_flags": result.scenario_flags_agent_id,
-                    "scenario_positions": result.scenario_positions_agent_id,
-                    "scenario_rubrics": result.scenario_rubrics_agent_id,
-                    "scenario_time_limits": result.scenario_time_limits_agent_id,
-                    "general": result.general_agent_id,
-                    "all": result.general_agent_id,
-                }
-                agent_id = agent_type_map.get(data.agent_type)
-
-            if not agent_id:
-                await emit_to_internal(
-                    "generate_call_error",
-                    GenerateErrorApiRequest(
-                        sid=sid,
-                        error_message=f"No agent found for agent_type: {data.agent_type}",
-                        artifact_type="simulation",
-                        group_id=None,
-                        resource_type="simulation",
-                    ),
+        if not agent_id:
+            await emit_to_internal(
+                "generate_call_error",
+                GenerateErrorApiRequest(
                     sid=sid,
-                )
-                return
+                    error_message="No agent found for the requested domains",
+                    artifact_type="simulation",
+                    group_id=None,
+                    resource_type="simulation",
+                ),
+                sid=sid,
+            )
+            return
 
-            # Extract resource IDs from arrays and build resources array (composite type format)
-            resources: list[dict[str, Any]] = []
+        # Build Jinja context from resources
+        simulation_jinja_context = _build_simulation_jinja_context(
+            result, resource_types
+        )
 
-            # Extract IDs from each resource array
-            if result.names:
+        # Step 2: Build resources array from websocket response
+        resources: list[dict[str, Any]] = []
+        resources_bucket = result.resources.resources if result.resources else None
+
+        if resources_bucket:
+            if resources_bucket.names:
                 resources.append(
                     {
                         "resource_type": "names",
-                        "resource_ids": [str(n.id) for n in result.names if n.id],
+                        "resource_ids": [
+                            str(n.id) for n in resources_bucket.names if n.id
+                        ],
                     }
                 )
-            if result.descriptions:
+            if resources_bucket.descriptions:
                 resources.append(
                     {
                         "resource_type": "descriptions",
                         "resource_ids": [
-                            str(d.id) for d in result.descriptions if d.id
+                            str(d.id) for d in resources_bucket.descriptions if d.id
                         ],
                     }
                 )
-            if result.departments:
-                resources.append(
-                    {
-                        "resource_type": "departments",
-                        "resource_ids": [
-                            str(d.department_id)
-                            for d in result.departments
-                            if d.department_id
-                        ],
-                    }
-                )
-            if result.flags:
+            if resources_bucket.departments:
+                dept_ids = []
+                for d in resources_bucket.departments:
+                    did = getattr(d, "department_id", None)
+                    if did:
+                        dept_ids.append(str(did))
+                if dept_ids:
+                    resources.append(
+                        {
+                            "resource_type": "departments",
+                            "resource_ids": dept_ids,
+                        }
+                    )
+            if resources_bucket.flags:
                 resources.append(
                     {
                         "resource_type": "flags",
-                        "resource_ids": [str(f.id) for f in result.flags if f.id],
+                        "resource_ids": [
+                            str(f.flag_option_id)
+                            for f in resources_bucket.flags
+                            if f.flag_option_id
+                        ],
                     }
                 )
-            if result.scenarios:
+            if resources_bucket.scenarios:
                 resources.append(
                     {
                         "resource_type": "scenarios",
-                        "resource_ids": [str(s.id) for s in result.scenarios if s.id],
-                    }
-                )
-            if result.scenario_flags:
-                resources.append(
-                    {
-                        "resource_type": "scenario_flags",
                         "resource_ids": [
-                            str(sf.id) for sf in result.scenario_flags if sf.id
+                            str(s.scenario_id)
+                            for s in resources_bucket.scenarios
+                            if s.scenario_id
                         ],
                     }
                 )
-            if result.scenario_positions:
-                # scenario_positions uses composite key (simulation_id, scenario_id)
-                # Format as "simulation_id-scenario_id" strings
-                resources.append(
-                    {
-                        "resource_type": "scenario_positions",
-                        "resource_ids": [
-                            f"{sp.simulation_id}-{sp.scenario_id}"
-                            for sp in result.scenario_positions
-                            if sp.simulation_id and sp.scenario_id
-                        ],
-                    }
-                )
-            if result.scenario_rubrics:
-                resources.append(
-                    {
-                        "resource_type": "scenario_rubrics",
-                        "resource_ids": [
-                            str(sr.id) for sr in result.scenario_rubrics if sr.id
-                        ],
-                    }
-                )
-            if result.scenario_time_limits:
-                resources.append(
-                    {
-                        "resource_type": "scenario_time_limits",
-                        "resource_ids": [
-                            str(stl.id) for stl in result.scenario_time_limits if stl.id
-                        ],
-                    }
-                )
+            if resources_bucket.scenario_flags:
+                ids = [
+                    str(getattr(sf, "id", None) or "")
+                    for sf in resources_bucket.scenario_flags
+                    if getattr(sf, "id", None)
+                ]
+                if ids:
+                    resources.append(
+                        {"resource_type": "scenario_flags", "resource_ids": ids}
+                    )
+            if resources_bucket.scenario_positions:
+                ids = [
+                    str(getattr(sp, "id", None) or "")
+                    for sp in resources_bucket.scenario_positions
+                    if getattr(sp, "id", None)
+                ]
+                if ids:
+                    resources.append(
+                        {"resource_type": "scenario_positions", "resource_ids": ids}
+                    )
+            if resources_bucket.scenario_rubrics:
+                ids = [
+                    str(getattr(sr, "id", None) or "")
+                    for sr in resources_bucket.scenario_rubrics
+                    if getattr(sr, "id", None)
+                ]
+                if ids:
+                    resources.append(
+                        {"resource_type": "scenario_rubrics", "resource_ids": ids}
+                    )
+            if resources_bucket.scenario_time_limits:
+                ids = [
+                    str(getattr(stl, "id", None) or "")
+                    for stl in resources_bucket.scenario_time_limits
+                    if getattr(stl, "id", None)
+                ]
+                if ids:
+                    resources.append(
+                        {"resource_type": "scenario_time_limits", "resource_ids": ids}
+                    )
 
-            # Get group_id from response if available
-            group_id: uuid.UUID | None = result.group_id
+        # Get group_id from response
+        group_id: uuid.UUID | None = result.group_id
 
-            resources_sql = normalize_resources_for_sql(resources)
+        resources_sql = normalize_resources_for_sql(resources)
 
+        # Step 3: Create generation run
+        async with get_db_connection() as conn:
             create_run_sql = load_sql(CREATE_RUN_SQL_PATH)
             create_run_row = await conn.fetchrow(
                 create_run_sql,
@@ -284,9 +373,10 @@ async def _simulation_generate_impl(
                 )
                 return
 
+            # Step 4: Render developer instructions with Jinja context
             rendered_developer_messages = render_developer_instructions(
                 templates=run_context_row.get("developer_instruction_templates"),
-                jinja_context=run_context_row.get("context"),
+                jinja_context=simulation_jinja_context,
             )
 
             messages: list[dict[str, Any]] = []
@@ -299,6 +389,7 @@ async def _simulation_generate_impl(
             for user_msg in data.user_instructions or []:
                 messages.append({"role": "user", "content": user_msg})
 
+            # Step 5: Emit to generate_artifact handler
             await internal_sio.emit(
                 "generate_artifact",
                 {
@@ -329,6 +420,7 @@ async def _simulation_generate_impl(
             )
 
     except Exception as e:
+        logger.exception(f"Failed to generate simulation resources: {str(e)}")
         await emit_to_internal(
             "generate_call_error",
             GenerateErrorApiRequest(

@@ -1,17 +1,20 @@
-"""{item.title()} resource documentation."""
+"""Request Limits resource documentation."""
 
 from typing import Any
 
+from app.utils.docs_helper import (
+    ResourceDocsConfig,
+    build_resource_docs_static,
+)
+
+CONFIG = ResourceDocsConfig(
+    name="request_limits",
+    table_name="request_limits_resource",
+    description="Request limit resources for rate limiting configurations.",
+    used_by_artifacts=["model"],
+)
+
 
 def get_request_limits_docs() -> dict[str, Any]:
-    """Get comprehensive documentation for the request_limits resource.
-
-    Returns:
-        Dictionary containing database schema, relationships, API routing,
-        and GLOW context.
-    """
-    return {
-        "name": "request_limits",
-        "type": "resource",
-        "description": "Request_Limits resource documentation - see SQL files for schema details",
-    }
+    """Get request_limits documentation (static portions, for MCP)."""
+    return build_resource_docs_static(CONFIG)
