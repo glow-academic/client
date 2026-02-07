@@ -7,20 +7,29 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.v4.activity.audit import audit_activity, audit_set
-from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db
-from app.sql.types import (
+from app.api.v4.artifacts.eval.permissions import (
+    compute_can_create,
+    compute_can_save,
+)
+from app.api.v4.artifacts.eval.types import (
     SaveEvalApiRequest,
     SaveEvalApiResponse,
     SaveEvalSqlParams,
     SaveEvalSqlRow,
+)
+from app.infra.v4.activity.audit import audit_activity, audit_set
+from app.infra.v4.error.handle_route_error import handle_route_error
+from app.main import get_db
+from app.sql.types import (
+    CheckEvalSaveAccessSqlParams,
+    CheckEvalSaveAccessSqlRow,
     load_sql_query,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
-# Load SQL with types at module level - makes it clear what SQL file is used
+# SQL paths
+ACCESS_CHECK_SQL_PATH = "app/sql/v4/queries/evals/check_eval_save_access_complete.sql"
 SQL_PATH = "app/sql/v4/queries/evals/save_eval_complete.sql"
 
 
@@ -58,16 +67,55 @@ async def save_eval(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        # Permission check: get user role and eval info using typed SQL
+        access_params = CheckEvalSaveAccessSqlParams(
+            profile_id=profile_id,
+            eval_id=request.input_eval_id,
+        )
+        access_result = cast(
+            CheckEvalSaveAccessSqlRow,
+            await execute_sql_typed(
+                conn,
+                ACCESS_CHECK_SQL_PATH,
+                params=access_params,
+            ),
+        )
+
+        if not access_result:
+            raise HTTPException(
+                status_code=401,
+                detail="Unable to verify user permissions.",
+            )
+
+        # Permission logic: create vs update mode
+        if not request.input_eval_id:
+            can_save_result = compute_can_create(
+                user_role=access_result.user_role,
+                department_ids=None,
+            )
+        else:
+            can_save_result = compute_can_save(
+                user_role=access_result.user_role,
+                user_department_ids=access_result.user_department_ids,
+                eval_department_ids=access_result.eval_department_ids,
+                active_usage_count=access_result.active_usage_count or 0,
+            )
+
+        if not can_save_result:
+            raise HTTPException(
+                status_code=403,
+                detail="You don't have permission to save this eval.",
+            )
+
         async with conn.transaction():
             # Convert API request to SQL params (add profile_id from header)
-            # Map input_eval_id from API request (already correct field name)
             params = SaveEvalSqlParams(
                 **request.model_dump(),
                 profile_id=profile_id,
             )
             sql_params = params.to_tuple()
 
-            # Execute SQL with typed helper - automatically detects and calls function if present
+            # Execute SQL with typed helper
             result = cast(
                 SaveEvalSqlRow,
                 await execute_sql_typed(
@@ -86,11 +134,7 @@ async def save_eval(
             # Set audit context with data from SQL query
             if result.actor_name:
                 audit_ctx = {"actor": {"name": result.actor_name, "id": profile_id}}
-                # Only add eval to audit context if input_eval_id was provided (update mode)
-                # For create mode, we don't have the name yet, so we'll use the request name if available
                 if request.input_eval_id:
-                    # Update mode: use request name (from request body)
-                    # Note: In update mode, request should have name field
                     audit_ctx["eval"] = {
                         "name": getattr(request, "name", "Eval"),
                         "id": str(result.eval_id),
@@ -98,10 +142,14 @@ async def save_eval(
                 audit_set(http_request, **audit_ctx)
 
         # Convert SQL result to API response
+        is_update = request.input_eval_id is not None
         api_response = SaveEvalApiResponse.model_validate(
             {
+                "success": True,
                 "eval_id": str(result.eval_id),
-                "actor_name": result.actor_name,
+                "message": "Eval updated successfully"
+                if is_update
+                else "Eval created successfully",
             }
         )
 

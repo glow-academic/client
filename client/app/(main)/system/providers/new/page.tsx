@@ -104,7 +104,6 @@ export default async function NewProviderPage({
     >
       <Provider
         key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
-        mode="create"
         providerData={providerDetailDefault}
         saveProviderAction={saveProvider}
         patchProviderDraftAction={patchProviderDraft}

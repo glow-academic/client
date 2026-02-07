@@ -48,7 +48,7 @@ async function duplicateAuth(
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/auth/duplicate", input);
+  return api.post("/auths/duplicate", input);
 }
 
 async function deleteAuth(input: DeleteAuthIn): Promise<DeleteAuthOut> {

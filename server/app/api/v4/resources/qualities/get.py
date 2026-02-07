@@ -21,10 +21,7 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = (
-    "app/sql/v4/queries/resources"
-    "/qualities/get_qualities_complete.sql"
-)
+SQL_PATH = "app/sql/v4/queries/resources/qualities/get_qualities_complete.sql"
 
 
 router = APIRouter()
@@ -59,9 +56,7 @@ async def get_qualities_internal(
         await execute_sql_typed(conn, SQL_PATH, params=params),
     )
 
-    items: list[QGetQualitiesV4Item] = (
-        result.items if result and result.items else []
-    )
+    items: list[QGetQualitiesV4Item] = result.items if result and result.items else []
 
     await set_cached(
         cache_key_val,
@@ -85,22 +80,16 @@ async def get_qualities(
 ) -> GetQualitiesApiResponse:
     """Get qualities resources by IDs."""
     tags = ["resources", "qualities"]
-    bypass_cache = (
-        http_request.headers.get("X-Bypass-Cache") == "1"
-    )
+    bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     try:
-        items = await get_qualities_internal(
-            conn, request.ids, bypass_cache
-        )
+        items = await get_qualities_internal(conn, request.ids, bypass_cache)
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return GetQualitiesApiResponse(items=items)
     except HTTPException:
         raise
     except ValueError as e:
-        raise HTTPException(
-            status_code=400, detail=str(e)
-        ) from e
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
         handle_route_error(
             error=e,

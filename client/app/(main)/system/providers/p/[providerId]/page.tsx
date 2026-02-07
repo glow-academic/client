@@ -48,7 +48,8 @@ export async function generateMetadata(
       } as GetProviderIn["body"],
     };
     const provider = await getProvider(input);
-    const providerName = provider?.name_resource?.name || "Provider";
+    const providerName =
+      provider?.resources?.current?.names?.[0]?.name || "Provider";
     return {
       title: providerName,
       description: `${providerName !== "Provider" ? `${providerName} - ` : ""}AI provider configuration for teaching assistant training platform. Manage provider settings, API endpoints, and platform integrations for educational institutions and L&D programs.`,
@@ -137,7 +138,6 @@ export default async function EditProviderPage({
       >
         <Provider
           providerId={providerId}
-          mode="edit"
           providerData={providerDetail}
           saveProviderAction={saveProvider}
           patchProviderDraftAction={patchProviderDraft}

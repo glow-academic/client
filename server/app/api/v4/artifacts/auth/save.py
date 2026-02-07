@@ -1,5 +1,6 @@
 """Auth save endpoint - v4 API following DHH principles.
 Unified endpoint that handles both create (auth_id = NULL) and update (auth_id provided).
+Uses access check SQL + Python permission logic before executing save.
 """
 
 from typing import Annotated, Any, cast
@@ -7,13 +8,22 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.artifacts.auth.permissions import (
+    compute_can_create,
+    compute_can_save,
+)
+from app.api.v4.artifacts.auth.types import (
+    SaveAuthApiRequest,
+    SaveAuthApiResponse,
+)
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.auth.keycloak_sync import perform_keycloak_sync
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
-    SaveAuthApiRequest,
-    SaveAuthApiResponse,
+    CheckAuthSaveAccessSqlParams,
+    CheckAuthSaveAccessSqlRow,
+    ISaveAuthV4AuthItem,
     SaveAuthSqlParams,
     SaveAuthSqlRow,
     load_sql_query,
@@ -21,7 +31,8 @@ from app.sql.types import (
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
-# Load SQL with types at module level - makes it clear what SQL file is used
+# SQL paths
+ACCESS_CHECK_SQL_PATH = "app/sql/v4/queries/auth/check_auth_save_access_complete.sql"
 SQL_PATH = "app/sql/v4/queries/auth/save_auth_complete.sql"
 
 
@@ -45,13 +56,12 @@ async def save_auth(
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> SaveAuthApiResponse:
     """Save auth - handles both create (auth_id = NULL) and update (auth_id provided)."""
-    tags = ["auth"]  # From router tags
+    tags = ["auth"]
 
     sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        # Get profile_id from header (set by router-level dependency)
         profile_id = http_request.state.profile_id
         if not profile_id:
             raise HTTPException(
@@ -59,16 +69,67 @@ async def save_auth(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        # Permission check: get user role using typed SQL
+        access_params = CheckAuthSaveAccessSqlParams(
+            profile_id=profile_id,
+            auth_id=request.input_auth_id,
+        )
+        access_result = cast(
+            CheckAuthSaveAccessSqlRow,
+            await execute_sql_typed(
+                conn,
+                ACCESS_CHECK_SQL_PATH,
+                params=access_params,
+            ),
+        )
+
+        if not access_result:
+            raise HTTPException(
+                status_code=401,
+                detail="Unable to verify user permissions.",
+            )
+
+        # Permission logic: create vs update mode
+        if not request.input_auth_id:
+            can_save_result = compute_can_create(user_role=access_result.user_role)
+        else:
+            can_save_result = compute_can_save(user_role=access_result.user_role)
+
+        if not can_save_result:
+            raise HTTPException(
+                status_code=403,
+                detail="You don't have permission to save this auth entry.",
+            )
+
         async with conn.transaction():
-            # Convert API request to SQL params (add profile_id from header)
-            # Map input_auth_id from API request (already correct field name)
+            # Build auth_items_junction as ISaveAuthV4AuthItem objects for SQL
+            auth_items_junction = None
+            if request.auth_items:
+                auth_items_junction = [
+                    ISaveAuthV4AuthItem(
+                        name=item.name,
+                        description=item.description,
+                        encrypted=item.encrypted,
+                        position=item.position,
+                        active=item.active,
+                        key_id=item.key_id,
+                    )
+                    for item in request.auth_items
+                ]
+
             params = SaveAuthSqlParams(
-                **request.model_dump(),
                 profile_id=profile_id,
+                group_id=request.group_id,
+                input_auth_id=request.input_auth_id,
+                name_id=request.name_id,
+                description_id=request.description_id,
+                active_flag_id=request.active_flag_id,
+                protocol_ids=request.protocol_ids,
+                slug_ids=request.slug_ids,
+                auth_items_junction=auth_items_junction,
             )
             sql_params = params.to_tuple()
 
-            # Execute SQL with typed helper - automatically detects and calls function if present
             result = cast(
                 SaveAuthSqlRow,
                 await execute_sql_typed(
@@ -84,27 +145,24 @@ async def save_auth(
                 else:
                     raise ValueError("Failed to create auth")
 
-            # Set audit context with data from SQL query
+            # Set audit context
             if result.actor_name:
                 audit_ctx = {"actor": {"name": result.actor_name, "id": profile_id}}
-                # Only add auth to audit context if input_auth_id was provided (update mode)
-                # For create mode, we don't have the name yet, so we'll use the request name if available
                 if request.input_auth_id:
-                    # Update mode: use request name (from request body)
-                    # Note: In update mode, request should have name_id field
-                    # We'll need to fetch the name from the name_id
                     audit_ctx["auth"] = {
-                        "name": "Auth",  # Will be updated with actual name if available
+                        "name": "Auth",
                         "id": str(result.auth_id),
                     }
                 audit_set(http_request, **audit_ctx)
 
-        # Convert SQL result to API response
-        api_response = SaveAuthApiResponse.model_validate(
-            {
-                "auth_id": str(result.auth_id),
-                "actor_name": result.actor_name,
-            }
+        # Build response
+        is_update = request.input_auth_id is not None
+        api_response = SaveAuthApiResponse(
+            success=True,
+            auth_id=result.auth_id,
+            message="Auth updated successfully"
+            if is_update
+            else "Auth created successfully",
         )
 
         # Invalidate cache after mutation

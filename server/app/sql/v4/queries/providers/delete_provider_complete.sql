@@ -1,15 +1,15 @@
--- Delete provider (cascade deletes provider_endpoints, setting_provider_keys_junction)
+-- Delete provider with usage check - checks model_usage_count, deletes if 0
+-- Returns usage_count, name, deleted (boolean), actor_name
 -- Converted to function
--- Uses safe drop/recreate pattern: drop function first, then recreate
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
 DECLARE
     r RECORD;
 BEGIN
-    FOR r IN 
-        SELECT oidvectortypes(proargtypes) as sig 
-        FROM pg_proc 
+    FOR r IN
+        SELECT oidvectortypes(proargtypes) as sig
+        FROM pg_proc
         WHERE proname = 'api_delete_provider_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
@@ -23,25 +23,51 @@ CREATE OR REPLACE FUNCTION api_delete_provider_v4(
     profile_id uuid
 )
 RETURNS TABLE (
-    provider_exists boolean,
-    provider_id uuid,
+    usage_count bigint,
     name text,
-    actor_name text,
-    deleted boolean
+    deleted boolean,
+    actor_name text
 )
 LANGUAGE sql
 VOLATILE
 AS $$
-WITH actor_profile AS (
-    SELECT 
-        COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = api_delete_provider_v4.profile_id LIMIT 1), '') as actor_name
+WITH params AS (
+    SELECT provider_id AS provider_id,
+           profile_id AS profile_id
+),
+user_profile AS (
+    SELECT actor_name
+    FROM view_user_profile_context
+    WHERE profile_id = (SELECT profile_id FROM params)
+),
+usage_check AS (
+    -- Count distinct models using this provider via providers_resource link
+    SELECT COALESCE(
+        (
+            SELECT COUNT(DISTINCT mpj.model_id)::bigint
+            FROM provider_providers_junction ppj
+            JOIN model_providers_junction mpj ON mpj.providers_id = ppj.providers_id
+            WHERE ppj.provider_id = (SELECT provider_id FROM params)
+        ),
+        0
+    ) as usage_count
+),
+provider_info AS (
+    SELECT
+        (SELECT n.name FROM provider_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.provider_id = p.id LIMIT 1) as name
+    FROM params x
+    JOIN provider_artifact p ON p.id = x.provider_id
+),
+delete_result AS (
+    DELETE FROM provider_artifact
+    WHERE id = (SELECT provider_id FROM params)
+      AND (SELECT usage_count FROM usage_check) = 0
+      AND EXISTS(SELECT 1 FROM provider_info)
+    RETURNING id
 )
--- Providers is now an enum, not a table - cannot delete providers
-SELECT 
-    false::boolean as provider_exists,
-    NULL::uuid as provider_id,
-    NULL::text as name,
-    ap.actor_name::text as actor_name,
-    false::boolean as deleted
-FROM actor_profile ap
+SELECT
+    (SELECT usage_count FROM usage_check) as usage_count,
+    (SELECT name FROM provider_info) as name,
+    CASE WHEN EXISTS(SELECT 1 FROM delete_result) THEN true ELSE false END as deleted,
+    (SELECT actor_name FROM user_profile) as actor_name
 $$;

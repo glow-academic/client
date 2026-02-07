@@ -49,8 +49,8 @@ type CreateDraftProtocolsIn = InputOf<"/api/v4/resources/protocols", "post">;
 type CreateDraftProtocolsOut = OutputOf<"/api/v4/resources/protocols", "post">;
 type CreateDraftSlugsIn = InputOf<"/api/v4/resources/slugs", "post">;
 type CreateDraftSlugsOut = OutputOf<"/api/v4/resources/slugs", "post">;
-type PatchAuthDraftIn = InputOf<"/api/v4/auth/draft", "patch">;
-type PatchAuthDraftOut = OutputOf<"/api/v4/auth/draft", "patch">;
+type PatchAuthDraftIn = InputOf<"/api/v4/auths/draft", "patch">;
+type PatchAuthDraftOut = OutputOf<"/api/v4/auths/draft", "patch">;
 
 type AuthData = OutputOf<"/api/v4/auths/get", "post">;
 
@@ -122,36 +122,69 @@ function AuthComponent({
   // when only object reference changes (but content is same)
   const stableAuthDataFields = React.useMemo(() => {
     if (!authData) return null;
+    // Map current resources to component-compatible shapes
+    const currentNames = authData.resources?.current?.names;
+    const currentDescriptions = authData.resources?.current?.descriptions;
+    const currentFlags = authData.resources?.current?.flags;
+    const currentProtocols = authData.resources?.current?.protocols;
+    const currentSlugs = authData.resources?.current?.slugs;
+
+    // Map AuthFlagConfig to FlagItem shape for FlagsLegacy component
+    const flagResource = currentFlags?.[0]
+      ? {
+          id: currentFlags[0].flag_option_id ?? null,
+          name: currentFlags[0].label ?? null,
+          description: currentFlags[0].description ?? null,
+          icon: currentFlags[0].icon_id ?? null,
+          generated: currentFlags[0].generated ?? null,
+        }
+      : null;
+
     return {
       group_id: authData.group_id,
-      name_resource: authData.name_resource,
+      // Name resource
+      name_resource: currentNames?.[0] ?? null,
       show_name: authData.show_name,
       name_suggestions: authData.name_suggestions,
-      names: authData.names,
+      names: authData.resources?.resources?.names ?? [],
       name_required: authData.name_required,
-      name_agent_id: authData.name_agent_id,
-      description_resource: authData.description_resource,
+      name_create_tool_id: authData.name_create_tool_id,
+      name_link_tool_id: authData.name_link_tool_id,
+      name_show_ai_generate: authData.name_show_ai_generate,
+      // Description resource
+      description_resource: currentDescriptions?.[0] ?? null,
       show_description: authData.show_description,
       description_suggestions: authData.description_suggestions,
       description_required: authData.description_required,
-      description_agent_id: authData.description_agent_id,
-      descriptions: authData.descriptions,
-      flag_resource: authData.flag_resource,
+      descriptions: authData.resources?.resources?.descriptions ?? [],
+      description_create_tool_id: authData.description_create_tool_id,
+      description_link_tool_id: authData.description_link_tool_id,
+      description_show_ai_generate: authData.description_show_ai_generate,
+      // Flag resource
+      flag_resource: flagResource,
       show_flag: authData.show_flag,
       flag_required: authData.flag_required,
-      flag_agent_id: authData.flag_agent_id,
-      protocol_resources: authData.protocol_resources,
+      flag_link_tool_id: authData.flag_link_tool_id,
+      flag_show_ai_generate: authData.flag_show_ai_generate,
+      // Protocol resources
+      protocol_resources: currentProtocols ?? [],
       show_protocols: authData.show_protocols,
       protocol_suggestions: authData.protocol_suggestions,
       protocols_required: authData.protocols_required,
-      protocols_agent_id: authData.protocols_agent_id,
-      protocols: authData.protocols,
-      slug_resources: authData.slug_resources,
+      protocols: authData.resources?.resources?.protocols ?? [],
+      protocols_create_tool_id: authData.protocols_create_tool_id,
+      protocols_link_tool_id: authData.protocols_link_tool_id,
+      protocols_show_ai_generate: authData.protocols_show_ai_generate,
+      // Slug resources
+      slug_resources: currentSlugs ?? [],
       show_slugs: authData.show_slugs,
       slug_suggestions: authData.slug_suggestions,
       slugs_required: authData.slugs_required,
-      slugs_agent_id: authData.slugs_agent_id,
-      slugs: authData.slugs,
+      slugs: authData.resources?.resources?.slugs ?? [],
+      slugs_create_tool_id: authData.slugs_create_tool_id,
+      slugs_link_tool_id: authData.slugs_link_tool_id,
+      slugs_show_ai_generate: authData.slugs_show_ai_generate,
+      // Auth items
       auth_items: authData.auth_items,
     };
     // Intentionally depend on individual fields, not whole authData object
@@ -159,34 +192,35 @@ function AuthComponent({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     authData?.group_id,
-    authData?.name_resource,
+    authData?.resources,
     authData?.show_name,
     authData?.name_suggestions,
-    authData?.names,
     authData?.name_required,
-    authData?.name_agent_id,
-    authData?.description_resource,
+    authData?.name_create_tool_id,
+    authData?.name_link_tool_id,
+    authData?.name_show_ai_generate,
     authData?.show_description,
     authData?.description_suggestions,
     authData?.description_required,
-    authData?.description_agent_id,
-    authData?.descriptions,
-    authData?.flag_resource,
+    authData?.description_create_tool_id,
+    authData?.description_link_tool_id,
+    authData?.description_show_ai_generate,
     authData?.show_flag,
     authData?.flag_required,
-    authData?.flag_agent_id,
-    authData?.protocol_resources,
+    authData?.flag_link_tool_id,
+    authData?.flag_show_ai_generate,
     authData?.show_protocols,
     authData?.protocol_suggestions,
     authData?.protocols_required,
-    authData?.protocols_agent_id,
-    authData?.protocols,
-    authData?.slug_resources,
+    authData?.protocols_create_tool_id,
+    authData?.protocols_link_tool_id,
+    authData?.protocols_show_ai_generate,
     authData?.show_slugs,
     authData?.slug_suggestions,
     authData?.slugs_required,
-    authData?.slugs_agent_id,
-    authData?.slugs,
+    authData?.slugs_create_tool_id,
+    authData?.slugs_link_tool_id,
+    authData?.slugs_show_ai_generate,
     authData?.auth_items,
   ]);
 
@@ -209,14 +243,18 @@ function AuthComponent({
         }>,
       };
     }
-    // Extract resource IDs from server data
-    // Note: Server data may have display values, but we only store IDs here
+    // Extract resource IDs from current resource objects
+    const currentNames = data.resources?.current?.names;
+    const currentDescriptions = data.resources?.current?.descriptions;
+    const currentFlags = data.resources?.current?.flags;
+    const currentProtocols = data.resources?.current?.protocols;
+    const currentSlugs = data.resources?.current?.slugs;
     return {
-      name_id: data.name_id ?? null,
-      description_id: data.description_id ?? null,
-      active_flag_id: data.active_flag_id ?? null,
-      protocol_ids: data.protocol_ids ?? [],
-      slug_ids: data.slug_ids ?? [],
+      name_id: currentNames?.[0]?.id ?? null,
+      description_id: currentDescriptions?.[0]?.id ?? null,
+      active_flag_id: currentFlags?.[0]?.flag_option_id ?? null,
+      protocol_ids: currentProtocols?.map((p) => p.id).filter((id): id is string => id != null) ?? [],
+      slug_ids: currentSlugs?.map((s) => s.id).filter((id): id is string => id != null) ?? [],
       auth_items:
         data.auth_items?.map((item) => ({
           name: item.name ?? "",
@@ -239,12 +277,12 @@ function AuthComponent({
 
   // Memoize stringified array dependencies to prevent effect from running when array references change but content is same
   const protocolIdsStr = React.useMemo(
-    () => JSON.stringify(authData?.protocol_ids ?? []),
-    [authData?.protocol_ids]
+    () => JSON.stringify(authData?.resources?.current?.protocols?.map((p) => p.id) ?? []),
+    [authData?.resources?.current?.protocols]
   );
   const slugIdsStr = React.useMemo(
-    () => JSON.stringify(authData?.slug_ids ?? []),
-    [authData?.slug_ids]
+    () => JSON.stringify(authData?.resources?.current?.slugs?.map((s) => s.id) ?? []),
+    [authData?.resources?.current?.slugs]
   );
 
   // Memoize stringified formState arrays for draft listener effect dependencies
@@ -284,9 +322,9 @@ function AuthComponent({
     // Intentionally exclude formState and getInitialFormState to prevent infinite loops
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    authData?.name_id,
-    authData?.description_id,
-    authData?.active_flag_id,
+    authData?.resources?.current?.names,
+    authData?.resources?.current?.descriptions,
+    authData?.resources?.current?.flags,
     protocolIdsStr,
     slugIdsStr,
     authData?.auth_items,
@@ -401,7 +439,6 @@ function AuthComponent({
             active_flag_id: formState.active_flag_id,
             protocol_ids: formState.protocol_ids,
             slug_ids: formState.slug_ids,
-            auth_items: formState.auth_items,
             expected_version: lastSavedVersionRef.current, // ✅ ref, not state dep
           },
         });
@@ -447,7 +484,7 @@ function AuthComponent({
 
   // Set breadcrumb context when auth data is loaded
   useEffect(() => {
-    const authName = authData?.name_resource?.name;
+    const authName = authData?.resources?.current?.names?.[0]?.name;
     if (authName && authId && isEditMode) {
       setEntityMetadata({
         entityId: authId,
@@ -508,6 +545,7 @@ function AuthComponent({
       try {
         await saveAuthAction({
           body: {
+            group_id: authData?.group_id || "",
             input_auth_id: isEditMode && authId ? authId : null,
             name_id: formState.name_id,
             description_id: formState.description_id || null,
@@ -535,6 +573,7 @@ function AuthComponent({
       profile?.id,
       saveAuthAction,
       router,
+      authData?.group_id,
       authData?.name_required,
       authData?.description_required,
       authData?.protocols_required,
@@ -757,7 +796,9 @@ function AuthComponent({
                   required={currentAuthData?.name_required ?? false}
                   hideDescription={true}
                   group_id={currentAuthData?.group_id ?? null}
-                  agent_id={currentAuthData?.name_agent_id ?? null}
+                  create_tool_id={currentAuthData?.name_create_tool_id ?? null}
+                  link_tool_id={currentAuthData?.name_link_tool_id ?? null}
+                  showAiGenerate={currentAuthData?.name_show_ai_generate ?? false}
                   createNamesAction={
                     createNamesAction as
                       | ((
@@ -805,7 +846,9 @@ function AuthComponent({
                   rows={4}
                   data-testid="input-auth-description"
                   group_id={currentAuthData?.group_id ?? null}
-                  agent_id={currentAuthData?.description_agent_id ?? null}
+                  create_tool_id={currentAuthData?.description_create_tool_id ?? null}
+                  link_tool_id={currentAuthData?.description_link_tool_id ?? null}
+                  showAiGenerate={currentAuthData?.description_show_ai_generate ?? false}
                   createDescriptionsAction={createDescriptionsAction}
                 />
 
@@ -825,8 +868,8 @@ function AuthComponent({
                   helpText="Inactive auth methods will not be available"
                   required={currentAuthData?.flag_required ?? false}
                   group_id={currentAuthData?.group_id ?? null}
-                  agent_id={currentAuthData?.flag_agent_id ?? null}
-                  createFlagsAction={createFlagsAction}
+                  link_tool_id={currentAuthData?.flag_link_tool_id ?? null}
+                  showAiGenerate={currentAuthData?.flag_show_ai_generate ?? false}
                 />
               </div>
             </StepCard>
@@ -859,7 +902,9 @@ function AuthComponent({
                 }
                 required={currentAuthData?.protocols_required ?? false}
                 group_id={currentAuthData?.group_id ?? null}
-                agent_id={currentAuthData?.protocols_agent_id ?? null}
+                create_tool_id={currentAuthData?.protocols_create_tool_id ?? null}
+                link_tool_id={currentAuthData?.protocols_link_tool_id ?? null}
+                showAiGenerate={currentAuthData?.protocols_show_ai_generate ?? false}
                 createProtocolsAction={createProtocolsAction}
               />
             </StepCard>
@@ -890,7 +935,9 @@ function AuthComponent({
                 }
                 required={currentAuthData?.slugs_required ?? false}
                 group_id={currentAuthData?.group_id ?? null}
-                agent_id={currentAuthData?.slugs_agent_id ?? null}
+                create_tool_id={currentAuthData?.slugs_create_tool_id ?? null}
+                link_tool_id={currentAuthData?.slugs_link_tool_id ?? null}
+                showAiGenerate={currentAuthData?.slugs_show_ai_generate ?? false}
                 createSlugsAction={createSlugsAction}
               />
             </StepCard>
@@ -982,20 +1029,22 @@ function AuthComponent({
 
 // Memoize component to prevent re-renders when only prop references change (content is same)
 export default React.memo(AuthComponent, (prevProps, nextProps) => {
-  // Compare authData by resource IDs, not object reference
+  // Compare authData by resource IDs from current resources, not object reference
+  const prevCurrent = prevProps.authData?.resources?.current;
+  const nextCurrent = nextProps.authData?.resources?.current;
   const prevIds = {
-    name_id: prevProps.authData?.name_id,
-    description_id: prevProps.authData?.description_id,
-    active_flag_id: prevProps.authData?.active_flag_id,
-    protocol_ids: prevProps.authData?.protocol_ids,
-    slug_ids: prevProps.authData?.slug_ids,
+    name_id: prevCurrent?.names?.[0]?.id,
+    description_id: prevCurrent?.descriptions?.[0]?.id,
+    active_flag_id: prevCurrent?.flags?.[0]?.flag_option_id,
+    protocol_ids: prevCurrent?.protocols?.map((p) => p.id),
+    slug_ids: prevCurrent?.slugs?.map((s) => s.id),
   };
   const nextIds = {
-    name_id: nextProps.authData?.name_id,
-    description_id: nextProps.authData?.description_id,
-    active_flag_id: nextProps.authData?.active_flag_id,
-    protocol_ids: nextProps.authData?.protocol_ids,
-    slug_ids: nextProps.authData?.slug_ids,
+    name_id: nextCurrent?.names?.[0]?.id,
+    description_id: nextCurrent?.descriptions?.[0]?.id,
+    active_flag_id: nextCurrent?.flags?.[0]?.flag_option_id,
+    protocol_ids: nextCurrent?.protocols?.map((p) => p.id),
+    slug_ids: nextCurrent?.slugs?.map((s) => s.id),
   };
 
   // Compare primitive props

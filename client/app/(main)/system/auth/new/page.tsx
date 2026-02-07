@@ -13,8 +13,8 @@ type GetAuthIn = InputOf<"/api/v4/auths/get", "post">;
 type GetAuthOut = OutputOf<"/api/v4/auths/get", "post">;
 type SaveAuthIn = InputOf<"/api/v4/auths/save", "post">;
 type SaveAuthOut = OutputOf<"/api/v4/auths/save", "post">;
-type PatchAuthDraftIn = InputOf<"/api/v4/auth/draft", "patch">;
-type PatchAuthDraftOut = OutputOf<"/api/v4/auth/draft", "patch">;
+type PatchAuthDraftIn = InputOf<"/api/v4/auths/draft", "patch">;
+type PatchAuthDraftOut = OutputOf<"/api/v4/auths/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
@@ -65,7 +65,7 @@ async function patchAuthDraft(
 ): Promise<PatchAuthDraftOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.patch("/auth/draft", input);
+  return api.patch("/auths/draft", input);
 }
 
 async function createDraftNames(
@@ -151,7 +151,7 @@ export default async function AuthCreatePage({
         key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
         authData={authData}
         saveAuthAction={saveAuth}
-        patchAuthDraftAction={undefined}
+        patchAuthDraftAction={patchAuthDraft}
         createNamesAction={createDraftNames}
         createDescriptionsAction={createDraftDescriptions}
         createFlagsAction={createDraftFlags}

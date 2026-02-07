@@ -1,4 +1,6 @@
--- Duplicate provider - fetches original and creates copy with resource links in single query
+-- Duplicate provider - creates copy linking to existing resources (except name)
+-- Only name gets " Copy" suffix, active flag set to FALSE
+-- All other resources (description, value, regenerates, departments) link to existing
 -- Converted to function
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
@@ -6,9 +8,9 @@ DO $$
 DECLARE
     r RECORD;
 BEGIN
-    FOR r IN 
-        SELECT oidvectortypes(proargtypes) as sig 
-        FROM pg_proc 
+    FOR r IN
+        SELECT oidvectortypes(proargtypes) as sig
+        FROM pg_proc
         WHERE proname = 'api_duplicate_provider_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
@@ -38,20 +40,22 @@ user_profile AS (
     WHERE profile_id = (SELECT profile_id FROM params)
 ),
 original_provider AS (
-    SELECT 
+    SELECT
         pr.id,
-        (SELECT n.name FROM provider_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.provider_id = pr.id LIMIT 1),
-        (SELECT d.description FROM provider_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.provider_id = pr.id LIMIT 1)
+        (SELECT n.name FROM provider_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.provider_id = pr.id LIMIT 1) as name,
+        (SELECT pd.description_id FROM provider_descriptions_junction pd WHERE pd.provider_id = pr.id LIMIT 1) as description_id,
+        (SELECT pv.values_id FROM provider_values_junction pv WHERE pv.provider_id = pr.id AND pv.active = true LIMIT 1) as value_id,
+        (SELECT prg.regenerates_id FROM provider_regenerates_junction prg WHERE prg.provider_id = pr.id AND prg.active = true LIMIT 1) as regenerates_id
     FROM params x
     JOIN provider_artifact pr ON pr.id = x.provider_id
 ),
-original_flags AS (
-    -- Get flag IDs from original provider
-    SELECT flag_id
+original_departments AS (
+    -- Get department IDs from original provider
+    SELECT department_id
     FROM params x
-    JOIN provider_flags_junction pf ON pf.provider_id = x.provider_id
+    JOIN provider_departments_junction pd ON pd.provider_id = x.provider_id AND pd.active = true
 ),
--- Insert name INTO names_resource table
+-- Insert name INTO names_resource table (only resource that gets copied with " Copy" suffix)
 new_name_resource AS (
     INSERT INTO names_resource (name, created_at)
     SELECT name || ' Copy', NOW()
@@ -60,30 +64,32 @@ new_name_resource AS (
     ON CONFLICT (name) DO UPDATE SET created_at = EXCLUDED.created_at
     RETURNING id as name_id, name
 ),
--- Insert description INTO descriptions_resource table
-new_description_resource AS (
-    INSERT INTO descriptions_resource (description, created_at)
-    SELECT description, NOW()
-    FROM original_provider
-    WHERE description IS NOT NULL AND description != ''
-    ON CONFLICT (description) DO UPDATE SET created_at = EXCLUDED.created_at
-    RETURNING id as description_id, description
-),
 new_provider AS (
     INSERT INTO provider_artifact (
         created_at,
         updated_at
     )
-    SELECT 
+    SELECT
         NOW(),
         NOW()
     FROM original_provider op
     RETURNING id
 ),
--- Link provider to name
+-- Link provider to group (copy from original)
+link_provider_group AS (
+    INSERT INTO provider_groups_junction (provider_id, group_id)
+    SELECT
+        np.id,
+        pgj.group_id
+    FROM new_provider np
+    CROSS JOIN params x
+    JOIN provider_groups_junction pgj ON pgj.provider_id = x.provider_id
+    ON CONFLICT DO NOTHING
+),
+-- Link provider to name (new name with " Copy" suffix)
 link_provider_name AS (
     INSERT INTO provider_names_junction (provider_id, name_id, created_at)
-    SELECT 
+    SELECT
         np.id,
         nnr.name_id,
         NOW()
@@ -91,43 +97,79 @@ link_provider_name AS (
     CROSS JOIN new_name_resource nnr
     ON CONFLICT (provider_id, name_id) DO NOTHING
 ),
--- Link provider to description
+-- Link provider to existing description
 link_provider_description AS (
     INSERT INTO provider_descriptions_junction (provider_id, description_id, created_at)
-    SELECT 
+    SELECT
         np.id,
-        ndr.description_id,
+        op.description_id,
         NOW()
     FROM new_provider np
-    CROSS JOIN new_description_resource ndr
+    CROSS JOIN original_provider op
+    WHERE op.description_id IS NOT NULL
     ON CONFLICT (provider_id, description_id) DO NOTHING
 ),
 -- Link provider active flag (set to false for duplicate)
 link_provider_active_flag AS (
-    INSERT INTO provider_flags_junction (provider_id, flag_id, value, created_at) SELECT np.id,
+    INSERT INTO provider_flags_junction (provider_id, flag_id, value, created_at)
+    SELECT np.id,
         f.id,
         FALSE,
         NOW()
     FROM new_provider np
     CROSS JOIN flags_resource f
     WHERE f.name = 'provider_active'
-    ON CONFLICT (provider_id, flag_id) DO UPDATE SET 
+    ON CONFLICT (provider_id, flag_id) DO UPDATE SET
         value = FALSE
 ),
--- Copy other flags from original provider
-copy_provider_flags AS (
-    INSERT INTO provider_flags_junction (provider_id, flag_id, value, created_at)
-    SELECT 
+-- Link provider to existing value
+link_provider_value AS (
+    INSERT INTO provider_values_junction (provider_id, values_id, created_at)
+    SELECT
         np.id,
-        of.flag_id,
-        FALSE,
+        op.value_id,
         NOW()
     FROM new_provider np
-    CROSS JOIN original_flags of
-    ON CONFLICT (provider_id, flag_id) DO UPDATE SET 
-        value = FALSE
+    CROSS JOIN original_provider op
+    WHERE op.value_id IS NOT NULL
+    ON CONFLICT ON CONSTRAINT provider_values_pkey DO NOTHING
+),
+-- Link provider to existing regenerates
+link_provider_regenerates AS (
+    INSERT INTO provider_regenerates_junction (provider_id, regenerates_id, created_at)
+    SELECT
+        np.id,
+        op.regenerates_id,
+        NOW()
+    FROM new_provider np
+    CROSS JOIN original_provider op
+    WHERE op.regenerates_id IS NOT NULL
+    ON CONFLICT ON CONSTRAINT provider_regenerates_junction_pkey DO NOTHING
+),
+-- Link provider to existing departments
+copy_departments AS (
+    INSERT INTO provider_departments_junction (provider_id, department_id, active, created_at)
+    SELECT
+        np.id,
+        od.department_id,
+        true,
+        NOW()
+    FROM new_provider np
+    CROSS JOIN original_departments od
+    ON CONFLICT ON CONSTRAINT provider_departments_pkey DO NOTHING
+),
+-- Copy providers_resource link (the openai/gemini enum)
+link_providers_resource AS (
+    INSERT INTO provider_providers_junction (provider_id, providers_id)
+    SELECT
+        np.id,
+        ppj.providers_id
+    FROM new_provider np
+    CROSS JOIN params x
+    JOIN provider_providers_junction ppj ON ppj.provider_id = x.provider_id
+    ON CONFLICT DO NOTHING
 )
-SELECT 
+SELECT
     (SELECT id FROM new_provider LIMIT 1) as new_provider_id,
     (SELECT name FROM original_provider LIMIT 1) as original_name,
     (SELECT actor_name FROM user_profile LIMIT 1) as actor_name

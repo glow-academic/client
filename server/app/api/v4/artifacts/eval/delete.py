@@ -2,15 +2,20 @@
 
 from typing import Annotated, Any, cast
 
-import asyncpg
+import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.v4.activity.audit import audit_activity, audit_set
-from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db, transaction
-from app.sql.types import (
+from app.api.v4.artifacts.eval.permissions import compute_can_delete
+from app.api.v4.artifacts.eval.types import (
     DeleteEvalApiRequest,
     DeleteEvalApiResponse,
+)
+from app.infra.v4.activity.audit import audit_activity, audit_set
+from app.infra.v4.error.handle_route_error import handle_route_error
+from app.main import get_db
+from app.sql.types import (
+    CheckEvalDeleteAccessSqlParams,
+    CheckEvalDeleteAccessSqlRow,
     DeleteEvalSqlParams,
     DeleteEvalSqlRow,
     load_sql_query,
@@ -18,8 +23,9 @@ from app.sql.types import (
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
-# Load SQL with types at module level - makes it clear what SQL file is used
-SQL_PATH = "app/sql/v4/queries/benchmark/delete_eval_complete.sql"
+# SQL paths
+ACCESS_CHECK_SQL_PATH = "app/sql/v4/queries/evals/check_eval_delete_access_complete.sql"
+DELETE_SQL_PATH = "app/sql/v4/queries/evals/delete_eval_complete.sql"
 
 
 router = APIRouter()
@@ -43,10 +49,11 @@ async def delete_eval(
     """Delete an eval."""
     tags = ["evals"]  # From router tags
 
-    sql_query = load_sql_query(SQL_PATH)
+    sql_query = load_sql_query(DELETE_SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
         profile_id = http_request.state.profile_id
         if not profile_id:
             raise HTTPException(
@@ -54,37 +61,80 @@ async def delete_eval(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        async with transaction(conn):
+        # Permission check: get user role and eval info using typed SQL
+        access_params = CheckEvalDeleteAccessSqlParams(
+            profile_id=profile_id,
+            eval_id=request.eval_id,
+        )
+        access_result = cast(
+            CheckEvalDeleteAccessSqlRow,
+            await execute_sql_typed(
+                conn,
+                ACCESS_CHECK_SQL_PATH,
+                params=access_params,
+            ),
+        )
+
+        if not access_result:
+            raise HTTPException(
+                status_code=401,
+                detail="Unable to verify user permissions.",
+            )
+
+        can_delete = compute_can_delete(
+            user_role=access_result.user_role,
+            eval_department_ids=access_result.eval_department_ids,
+            total_usage_links=access_result.total_usage_links or 0,
+        )
+
+        if not can_delete:
+            raise HTTPException(
+                status_code=403,
+                detail="You don't have permission to delete this eval.",
+            )
+
+        async with conn.transaction():
             # Convert API request to SQL params (add profile_id from header)
-            # Use double star pattern: **request.model_dump()
             params = DeleteEvalSqlParams(**request.model_dump(), profile_id=profile_id)
             sql_params = params.to_tuple()
 
-            # Execute query with typed helper - automatically detects and calls function if present
+            # Execute SQL with typed helper
             result = cast(
                 DeleteEvalSqlRow,
                 await execute_sql_typed(
                     conn,
-                    SQL_PATH,
+                    DELETE_SQL_PATH,
                     params=params,
                 ),
             )
 
-            if not result or not result.eval_id:
+            if not result:
+                raise ValueError("Failed to check eval usage")
+
+            usage_count = result.usage_count or 0
+            if usage_count > 0:
+                raise ValueError("Cannot delete eval that is in use")
+
+            if not result.deleted:
                 raise ValueError(f"Eval not found: {request.eval_id}")
 
-            eval_name = result.eval_name
-            actor_name = result.actor_name
+            eval_name = result.eval_name or "Unknown"
 
-            if actor_name:
+            # Set audit context with data from SQL query
+            if result.actor_name:
                 audit_set(
                     http_request,
-                    actor={"name": actor_name, "id": profile_id},
+                    actor={"name": result.actor_name, "id": profile_id},
                     eval={"name": eval_name, "id": str(request.eval_id)},
                 )
 
         # Convert SQL result to API response
-        api_response = DeleteEvalApiResponse.model_validate(result.model_dump())
+        api_response = DeleteEvalApiResponse.model_validate(
+            {
+                "success": True,
+                "message": f"Eval '{eval_name}' deleted successfully",
+            }
+        )
 
         # Invalidate cache after mutation
         await invalidate_tags(tags)

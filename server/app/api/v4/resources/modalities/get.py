@@ -21,10 +21,7 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = (
-    "app/sql/v4/queries/resources"
-    "/modalities/get_modalities_complete.sql"
-)
+SQL_PATH = "app/sql/v4/queries/resources/modalities/get_modalities_complete.sql"
 
 
 router = APIRouter()
@@ -59,9 +56,7 @@ async def get_modalities_internal(
         await execute_sql_typed(conn, SQL_PATH, params=params),
     )
 
-    items: list[QGetModalitiesV4Item] = (
-        result.items if result and result.items else []
-    )
+    items: list[QGetModalitiesV4Item] = result.items if result and result.items else []
 
     await set_cached(
         cache_key_val,
@@ -85,22 +80,16 @@ async def get_modalities(
 ) -> GetModalitiesApiResponse:
     """Get modalities resources by IDs."""
     tags = ["resources", "modalities"]
-    bypass_cache = (
-        http_request.headers.get("X-Bypass-Cache") == "1"
-    )
+    bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     try:
-        items = await get_modalities_internal(
-            conn, request.ids, bypass_cache
-        )
+        items = await get_modalities_internal(conn, request.ids, bypass_cache)
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return GetModalitiesApiResponse(items=items)
     except HTTPException:
         raise
     except ValueError as e:
-        raise HTTPException(
-            status_code=400, detail=str(e)
-        ) from e
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
         handle_route_error(
             error=e,

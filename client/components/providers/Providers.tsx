@@ -121,10 +121,6 @@ export default function Providers({
         accessorKey: "value",
         header: "Value",
       },
-      {
-        accessorKey: "base_url",
-        header: "Base URL",
-      },
       // Hidden faceting column for Status
       {
         id: "status",
@@ -362,11 +358,6 @@ export default function Providers({
           <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
             {provider.description || "No description"}
           </p>
-          {provider.base_url && (
-            <p className="text-xs text-muted-foreground mt-auto">
-              <span className="font-medium">Base URL:</span> {provider.base_url}
-            </p>
-          )}
         </CardContent>
       </Card>
     );

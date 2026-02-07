@@ -5,7 +5,7 @@
  * 07/20/2025
  */
 "use client";
-import { Copy, DollarSign, Edit, Eye, Trash2, Users, X } from "lucide-react";
+import { Copy, Edit, Eye, Trash2, Users, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -31,7 +31,6 @@ import type {
   DuplicateDepartmentIn,
   DuplicateDepartmentOut,
 } from "@/app/(main)/system/departments/page";
-import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import { Input } from "@/components/ui/input";
 import {
@@ -40,8 +39,6 @@ import {
   SortingState,
   VisibilityState,
   getCoreRowModel,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
@@ -89,96 +86,15 @@ export default function Departments({
     () => departmentsData?.departments || [],
     [departmentsData?.departments],
   );
-  const cohorts = useMemo(
-    () =>
-      (departmentsData?.cohorts as Array<{
-        cohort_id: string;
-        name: string;
-        description: string;
-      }>) || [],
-    [departmentsData?.cohorts],
-  );
-  const profiles = useMemo(
-    () =>
-      (departmentsData?.profiles as Array<{
-        profile_id: string;
-        name: string;
-        description: string;
-      }>) || [],
-    [departmentsData?.profiles],
-  );
-
-  // Build filter options from arrays
-  const cohortOptions = useMemo(() => {
-    return cohorts.map((cohort) => ({
-      value: cohort.cohort_id,
-      label: cohort.name || cohort.cohort_id,
-    }));
-  }, [cohorts]);
-  const profileOptions = useMemo(() => {
-    return profiles.map((profile) => ({
-      value: profile.profile_id,
-      label: profile.name || profile.profile_id,
-    }));
-  }, [profiles]);
+  // Note: cohort/profile filter options removed since faceted filtering
+  // is no longer supported without cohort_ids/profile_ids per row
 
   // Define table columns inline
   const columns: ColumnDef<(typeof departments)[number]>[] = useMemo(
     () => [
       {
-        accessorKey: "title",
-        header: "Title",
-      },
-      // Hidden faceting column for Price Spent (categorical)
-      {
-        id: "total_price_spent",
-        header: () => null,
-        cell: () => null,
-        enableHiding: true,
-        enableSorting: false,
-        accessorFn: (row: (typeof departments)[number]) => {
-          const price = row.total_price_spent ?? 0;
-          if (price === 0) return "0-10";
-          if (price <= 10) return "0-10";
-          if (price <= 50) return "10-50";
-          if (price <= 100) return "50-100";
-          return "100+";
-        },
-      },
-      // Hidden faceting column for Cohorts (array of IDs)
-      {
-        id: "cohorts",
-        header: () => null,
-        cell: () => null,
-        enableHiding: true,
-        enableSorting: false,
-        accessorFn: (row: (typeof departments)[number]) => row.cohort_ids ?? [],
-        filterFn: (row, _id, value: string[]) => {
-          const rowIds = (row.getValue("cohorts") as string[]) ?? [];
-          if (value.length === 0) return true;
-          if (rowIds.length === 0) return true; // Show cross-department items when no filter
-          return value.some((v) => rowIds.includes(v));
-        },
-      },
-      // Hidden faceting column for Profiles/Names (array of IDs)
-      {
-        id: "profiles",
-        header: () => null,
-        cell: () => null,
-        enableHiding: true,
-        enableSorting: false,
-        accessorFn: (row: (typeof departments)[number]) =>
-          row.profile_ids ?? [],
-        filterFn: (row, _id, value: string[]) => {
-          const rowIds = (row.getValue("profiles") as string[]) ?? [];
-          if (value.length === 0) return true;
-          if (rowIds.length === 0) return true; // Show cross-department items when no filter
-          return value.some((v) => rowIds.includes(v));
-        },
-      },
-      {
-        accessorKey: "active",
-        header: "Active",
+        accessorKey: "name",
+        header: "Name",
       },
       {
         accessorKey: "updated_at",
@@ -221,8 +137,6 @@ export default function Departments({
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    getFacetedRowModel: getFacetedRowModel(),
-    getFacetedUniqueValues: getFacetedUniqueValues(),
     initialState: {
       pagination: {
         pageSize: 12,
@@ -250,23 +164,8 @@ export default function Departments({
     pageSize,
   ]);
 
-  // Filter options based on actual data using faceted values
-  const priceSpentColumn = table.getColumn("total_price_spent");
-  const cohortsColumn = table.getColumn("cohorts");
-  const profilesColumn = table.getColumn("profiles");
-  const priceSpentFacets = priceSpentColumn?.getFacetedUniqueValues();
-
-  const priceSpentOptions = useMemo(() => {
-    const allOptions = [
-      { value: "0-10", label: "$0 - $10" },
-      { value: "10-50", label: "$10 - $50" },
-      { value: "50-100", label: "$50 - $100" },
-      { value: "100+", label: "$100+" },
-    ];
-    // Filter to only show options that have matching departments
-    if (!priceSpentFacets) return allOptions;
-    return allOptions.filter((opt) => priceSpentFacets.has(opt.value));
-  }, [priceSpentFacets]);
+  // Note: cohort/profile faceted filtering removed since the list API
+  // no longer returns cohort_ids/profile_ids per department row
 
   const handleEdit = (id: string) => {
     router.push(`/system/departments/d/${id}`);
@@ -287,7 +186,7 @@ export default function Departments({
       await duplicateDepartmentAction({
         body: { department_id: department.department_id },
       });
-      toast.success(`Department "${department.title}" duplicated successfully`);
+      toast.success(`Department "${department.name}" duplicated successfully`);
       router.refresh();
     } catch {
       toast.error("Failed to duplicate department");
@@ -331,24 +230,25 @@ export default function Departments({
       data-testid="department-card"
       data-department-id={department.department_id}
       role="gridcell"
-      aria-label={`department card ${department.title || "Unnamed Department"}`}
+      aria-label={`department card ${department.name || "Unnamed Department"}`}
     >
       <CardHeader>
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
           <div className="space-y-2 flex-1 min-w-0">
             <CardTitle className="text-base line-clamp-2">
-              {department.title || "Unnamed Department"}
+              {department.name || "Unnamed Department"}
             </CardTitle>
             <div className="mt-1 space-y-2">
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="outline" className="text-xs">
-                  <DollarSign className="h-3 w-3 mr-1" />$
-                  {(department.total_price_spent ?? 0).toFixed(2)}
-                </Badge>
-                <Badge variant="outline" className="text-xs">
                   <Users className="h-3 w-3 mr-1" />
                   {department.staff_count} staff
                 </Badge>
+                {department.is_inactive && (
+                  <Badge variant="secondary" className="text-xs">
+                    Inactive
+                  </Badge>
+                )}
               </div>
             </div>
             <p className="text-sm text-muted-foreground mt-2">
@@ -361,9 +261,9 @@ export default function Departments({
                 variant="outline"
                 size="sm"
                 onClick={() => handleEdit(department.department_id!)}
-                aria-label={`Edit department ${department.title || "Unknown"}`}
+                aria-label={`Edit department ${department.name || "Unknown"}`}
                 data-testid="btn-edit-department"
-                title={`Edit department ${department.title || "Unknown"}`}
+                title={`Edit department ${department.name || "Unknown"}`}
                 className="h-9 px-3"
               >
                 <Edit className="h-4 w-4 md:mr-0 mr-2" />
@@ -374,9 +274,9 @@ export default function Departments({
                 variant="outline"
                 size="sm"
                 onClick={() => department.department_id && handleEdit(department.department_id)}
-                aria-label={`View department ${department.title || "Unknown"}`}
+                aria-label={`View department ${department.name || "Unknown"}`}
                 data-testid="btn-view-department"
-                title={`View department ${department.title || "Unknown"}`}
+                title={`View department ${department.name || "Unknown"}`}
                 className="h-9 px-3"
               >
                 <Eye className="h-4 w-4 md:mr-0 mr-2" />
@@ -392,9 +292,9 @@ export default function Departments({
                 aria-busy={
                   isDuplicating === department.department_id ? true : undefined
                 }
-                aria-label={`Duplicate department ${department.title || "Unknown"}`}
+                aria-label={`Duplicate department ${department.name || "Unknown"}`}
                 data-testid="btn-duplicate-department"
-                title={`Duplicate department ${department.title || "Unknown"}`}
+                title={`Duplicate department ${department.name || "Unknown"}`}
                 className="h-9 px-3"
               >
                 {isDuplicating === department.department_id ? (
@@ -414,11 +314,11 @@ export default function Departments({
                 variant="outline"
                 size="sm"
                 onClick={() =>
-                  handleDeleteClick(department.department_id!, department.title || "Unknown")
+                  handleDeleteClick(department.department_id!, department.name || "Unknown")
                 }
-                aria-label={`Delete department ${department.title || "Unknown"}`}
+                aria-label={`Delete department ${department.name || "Unknown"}`}
                 data-testid="btn-delete-department"
-                title={`Delete department ${department.title || "Unknown"}`}
+                title={`Delete department ${department.name || "Unknown"}`}
                 className="h-9 px-3"
               >
                 <Trash2 className="h-4 w-4 md:mr-0 mr-2" />
@@ -440,7 +340,7 @@ export default function Departments({
   );
 
   // Get column references for toolbar
-  const nameColumn = table.getColumn("title");
+  const nameColumn = table.getColumn("name");
   const isFiltered = table.getState().columnFilters.length > 0;
 
   return (
@@ -467,33 +367,6 @@ export default function Departments({
             </div>
 
             <div className="flex items-center space-x-2 flex-wrap">
-              {/* Price Spent Filter */}
-              {priceSpentColumn && priceSpentOptions.length > 0 && (
-                <DataTableFacetedFilter
-                  column={priceSpentColumn}
-                  title="Price Spent"
-                  options={priceSpentOptions}
-                />
-              )}
-
-              {/* Cohorts Filter */}
-              {cohortsColumn && cohortOptions.length > 0 && (
-                <DataTableFacetedFilter
-                  column={cohortsColumn}
-                  title="Cohort"
-                  options={cohortOptions}
-                />
-              )}
-
-              {/* Profiles/Names Filter */}
-              {profilesColumn && profileOptions.length > 0 && (
-                <DataTableFacetedFilter
-                  column={profilesColumn}
-                  title="Name"
-                  options={profileOptions}
-                />
-              )}
-
               {isFiltered && (
                 <Button
                   variant="ghost"

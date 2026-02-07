@@ -1,125 +1,649 @@
-"""Provider generation handler - routes provider generation through unified generate pipeline."""
+"""Provider generation router - unified handler for all provider resource types.
+
+This module handles all business logic for provider generation:
+- Rate limit validation (fail fast)
+- Group/run creation
+- Agent/model context fetching
+- Jinja template rendering for developer instructions
+- Message insertion with deduplication
+
+The AI handler (generate.py) receives a simplified payload with pre-rendered content.
+"""
 
 import uuid
 from typing import Any, cast
 
 from fastapi import APIRouter
 
+from app.api.v4.artifacts.provider.get import get_provider_websocket
+from app.api.v4.artifacts.provider.types import (
+    GetProviderWebsocketResponse,
+    ProviderResourceBucket,
+)
+from app.infra.v4.generation import convert_tools_to_dict, render_developer_instructions
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
+from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
-from app.socket.v4.artifacts.generation_common import (
-    emit_generate_artifact,
-    emit_generation_error,
-    extract_group_id,
-    pick_agent_id,
+from app.socket.v4.artifacts.provider.permissions import (
+    GenerationContext,
+    format_generation_error,
+    validate_generation_access,
 )
-from app.sql.types import GetProviderApiRequest, GetProviderSqlParams, GetProviderSqlRow
-from app.utils.sql_helper import execute_sql_typed
+from app.socket.v4.artifacts.provider.types import GenerateProviderPayload
+from app.socket.v4.artifacts.types import GenerateErrorApiRequest
+from app.sql.types import (
+    GetPersonaGenerationContextSqlParams,
+    GetPersonaGenerationContextSqlRow,
+    IPersonaResourceV4,
+    PreparePersonaGenerationSqlParams,
+    PreparePersonaGenerationSqlRow,
+)
+from app.utils.logging.db_logger import get_logger
+from app.utils.sql_helper import execute_sql_typed, load_sql
+
+logger = get_logger(__name__)
 
 internal_sio = get_internal_sio()
 
 client_router = APIRouter()
 server_router = APIRouter()
 
-SQL_PATH = "app/sql/v4/queries/providers/get_provider_complete.sql"
+# SQL paths (reuse persona generation SQL - agent-generic)
+SQL_PATH_CONTEXT = (
+    "app/sql/v4/queries/generate/persona/get_persona_generation_context_complete.sql"
+)
+SQL_PATH_PREPARE = (
+    "app/sql/v4/queries/generate/persona/prepare_persona_generation_complete.sql"
+)
+SQL_PATH_CREATE_MESSAGE_WITH_TEXT = (
+    "app/sql/v4/queries/messages/create_message_with_text_complete.sql"
+)
+
+# Provider resource types
+PROVIDER_RESOURCE_TYPES = [
+    "names",
+    "descriptions",
+    "flags",
+    "departments",
+    "values",
+    "regenerates",
+]
 
 
-class GenerateProviderPayload(GetProviderApiRequest):
-    """Request to generate provider resources."""
+def _serialize_resource_item(item: Any) -> Any:
+    if item is None:
+        return None
+    if hasattr(item, "model_dump"):
+        return item.model_dump()
+    if hasattr(item, "_asdict"):
+        return dict(item._asdict())
+    if hasattr(item, "dict"):
+        return item.dict()
+    if isinstance(item, dict):
+        return item
+    return item
 
-    agent_type: str | None = None
-    resource_types: list[str]
-    user_instructions: list[str] | None = None
+
+def _serialize_resource_list(items: list[Any] | None) -> list[Any]:
+    if not items:
+        return []
+    return [
+        serialized
+        for item in items
+        if (serialized := _serialize_resource_item(item)) is not None
+    ]
 
 
-async def _generate_provider_impl(
-    sid: str,
-    data: GenerateProviderPayload,
-    profile_id: uuid.UUID,
+def _build_provider_jinja_context(
+    response: GetProviderWebsocketResponse, resource_types: list[str]
+) -> dict[str, Any]:
+    """Build Jinja context from provider websocket response."""
+
+    if response.resources and response.resources.resources:
+        resources = response.resources.resources.model_dump()
+        current = (
+            response.resources.current.model_dump()
+            if response.resources.current
+            else ProviderResourceBucket().model_dump()
+        )
+        resources["current"] = current
+        return resources
+    return {"current": ProviderResourceBucket().model_dump()}
+
+
+async def _provider_generate_impl(
+    sid: str, data: GenerateProviderPayload, profile_id: uuid.UUID
 ) -> None:
+    """Handle provider generation with all business logic.
+
+    This function:
+    1. Validates domain_ids and derives resource_types + agent_id
+    2. Fetches provider data via internal function for seed nodes
+    3. Calls prepare generation SQL (rate limit, group/run, context)
+    4. Renders developer instructions with Jinja
+    5. Inserts pre-rendered messages
+    6. Emits simplified payload to generate_artifact handler
+    """
     try:
-        if not data.resource_types:
-            await emit_generation_error(
+        # Validate domain_ids
+        if not data.domain_ids:
+            await emit_to_internal(
+                "generate_call_error",
+                GenerateErrorApiRequest(
+                    sid=sid,
+                    error_message="domain_ids must be provided",
+                    artifact_type="provider",
+                    group_id=None,
+                    resource_type="provider",
+                ),
                 sid=sid,
-                artifact_type="provider",
-                message="resource_types must be provided",
-                resource_id=str(data.provider_id) if data.provider_id else None,
-                resource_type="provider",
             )
             return
 
-        async with get_db_connection() as conn:
-            request_payload = GetProviderApiRequest.model_validate(data.model_dump())
-            params = GetProviderSqlParams(
-                profile_id=profile_id,
-                **request_payload.model_dump(),
+        if not data.draft_id:
+            await emit_to_internal(
+                "generate_call_error",
+                GenerateErrorApiRequest(
+                    sid=sid,
+                    error_message="Draft ID is required for provider generation",
+                    artifact_type="provider",
+                    group_id=None,
+                    resource_type="provider",
+                ),
+                sid=sid,
             )
-            result = cast(
-                GetProviderSqlRow,
-                await execute_sql_typed(conn, SQL_PATH, params=params),
+            return
+
+        # Step 1: Fetch provider data for seed nodes using websocket function
+        # This gives us the domains mapping to look up agent_ids
+        result = await get_provider_websocket(
+            profile_id=profile_id,
+            provider_id=data.provider_id,
+            draft_id=data.draft_id,
+        )
+
+        # Build domain_id -> agent_id mapping from result.domains
+        domain_to_agent: dict[uuid.UUID, uuid.UUID | None] = {}
+        if result.domains:
+            for domain in result.domains:
+                domain_to_agent[domain.domain_id] = domain.agent_id
+
+        # Build domain_id -> resource_type mapping from result
+        domain_to_resource: dict[uuid.UUID | None, str] = {
+            result.name_domain_id: "names",
+            result.description_domain_id: "descriptions",
+            result.flag_domain_id: "flags",
+            result.departments_domain_id: "departments",
+            result.value_domain_id: "values",
+            result.regenerates_domain_id: "regenerates",
+        }
+        # Remove None key if present
+        domain_to_resource.pop(None, None)
+
+        # Derive resource_types from domain_ids (internal use only)
+        resource_types: list[str] = []
+        for did in data.domain_ids:
+            if did in domain_to_resource:
+                resource_types.append(domain_to_resource[did])
+
+        if not resource_types:
+            await emit_to_internal(
+                "generate_call_error",
+                GenerateErrorApiRequest(
+                    sid=sid,
+                    error_message="No valid domain_ids provided",
+                    artifact_type="provider",
+                    group_id=None,
+                    resource_type="provider",
+                ),
+                sid=sid,
+            )
+            return
+
+        invalid_types = [
+            rt for rt in resource_types if rt not in PROVIDER_RESOURCE_TYPES
+        ]
+        if invalid_types:
+            await emit_to_internal(
+                "generate_call_error",
+                GenerateErrorApiRequest(
+                    sid=sid,
+                    error_message=f"Invalid resource types: {', '.join(invalid_types)}",
+                    artifact_type="provider",
+                    group_id=None,
+                    resource_type="provider",
+                ),
+                sid=sid,
+            )
+            return
+
+        # Get agent_id from the first valid domain_id
+        agent_id: uuid.UUID | None = None
+        for did in data.domain_ids:
+            if did in domain_to_agent and domain_to_agent[did] is not None:
+                agent_id = domain_to_agent[did]
+                break
+
+        if not agent_id:
+            await emit_to_internal(
+                "generate_call_error",
+                GenerateErrorApiRequest(
+                    sid=sid,
+                    error_message="No agent found for the requested domains",
+                    artifact_type="provider",
+                    group_id=None,
+                    resource_type="provider",
+                ),
+                sid=sid,
+            )
+            return
+
+        provider_jinja_context = _build_provider_jinja_context(result, resource_types)
+
+        # Step 2: Seed resource nodes from the provider GET result (ONLY requested types)
+        # Provider resources are simpler than persona - build IPersonaResourceV4 for SQL reuse
+        current_resources: list[IPersonaResourceV4] = []
+        resources_bucket = result.resources.current if result.resources else None
+
+        if resources_bucket:
+            if resources_bucket.names:
+                name_ids = [n.id for n in resources_bucket.names if n.id]
+                if name_ids:
+                    current_resources.append(
+                        IPersonaResourceV4(resource_type="names", resource_ids=name_ids)
+                    )
+            if resources_bucket.descriptions:
+                desc_ids = [d.id for d in resources_bucket.descriptions if d.id]
+                if desc_ids:
+                    current_resources.append(
+                        IPersonaResourceV4(
+                            resource_type="descriptions", resource_ids=desc_ids
+                        )
+                    )
+            if resources_bucket.flags:
+                flag_ids = [
+                    f.flag_option_id for f in resources_bucket.flags if f.flag_option_id
+                ]
+                if flag_ids:
+                    current_resources.append(
+                        IPersonaResourceV4(resource_type="flags", resource_ids=flag_ids)
+                    )
+            if resources_bucket.departments:
+                dept_ids = [
+                    d.department_id
+                    for d in resources_bucket.departments
+                    if d.department_id
+                ]
+                if dept_ids:
+                    current_resources.append(
+                        IPersonaResourceV4(
+                            resource_type="departments", resource_ids=dept_ids
+                        )
+                    )
+            if resources_bucket.values:
+                val_ids = [v.id for v in resources_bucket.values if v.id]
+                if val_ids:
+                    current_resources.append(
+                        IPersonaResourceV4(resource_type="values", resource_ids=val_ids)
+                    )
+            if resources_bucket.regenerates:
+                regen_ids = [r.id for r in resources_bucket.regenerates if r.id]
+                if regen_ids:
+                    current_resources.append(
+                        IPersonaResourceV4(
+                            resource_type="regenerates", resource_ids=regen_ids
+                        )
+                    )
+
+        # Build seed resources (all resources for Jinja context)
+        seed_resources: list[IPersonaResourceV4] = []
+        all_bucket = result.resources.resources if result.resources else None
+
+        if all_bucket:
+            if all_bucket.names:
+                ids = [n.id for n in all_bucket.names if n.id]
+                if ids:
+                    seed_resources.append(
+                        IPersonaResourceV4(resource_type="names", resource_ids=ids)
+                    )
+            if all_bucket.descriptions:
+                ids = [d.id for d in all_bucket.descriptions if d.id]
+                if ids:
+                    seed_resources.append(
+                        IPersonaResourceV4(
+                            resource_type="descriptions", resource_ids=ids
+                        )
+                    )
+            if all_bucket.flags:
+                ids = [f.flag_option_id for f in all_bucket.flags if f.flag_option_id]
+                if ids:
+                    seed_resources.append(
+                        IPersonaResourceV4(resource_type="flags", resource_ids=ids)
+                    )
+            if all_bucket.departments:
+                ids = [
+                    d.department_id for d in all_bucket.departments if d.department_id
+                ]
+                if ids:
+                    seed_resources.append(
+                        IPersonaResourceV4(
+                            resource_type="departments", resource_ids=ids
+                        )
+                    )
+            if all_bucket.values:
+                ids = [v.id for v in all_bucket.values if v.id]
+                if ids:
+                    seed_resources.append(
+                        IPersonaResourceV4(resource_type="values", resource_ids=ids)
+                    )
+            if all_bucket.regenerates:
+                ids = [r.id for r in all_bucket.regenerates if r.id]
+                if ids:
+                    seed_resources.append(
+                        IPersonaResourceV4(
+                            resource_type="regenerates", resource_ids=ids
+                        )
+                    )
+
+        async with get_db_connection() as conn:
+            # Get group_id from provider response if available
+            existing_group_id: uuid.UUID | None = result.group_id
+
+            # Step 3: Fetch context and validate prerequisites
+            context_params = GetPersonaGenerationContextSqlParams(
+                p_profile_id=profile_id,
+                p_agent_id=agent_id,
+            )
+            context_row = cast(
+                GetPersonaGenerationContextSqlRow,
+                await execute_sql_typed(conn, SQL_PATH_CONTEXT, params=context_params),
             )
 
-            agent_id = pick_agent_id(result, data.agent_type, data.resource_types)
-            if not agent_id:
-                await emit_generation_error(
+            # Build context dataclass for validation
+            ctx = GenerationContext(
+                agent_exists=context_row.agent_exists or False,
+                agent_name=context_row.agent_name,
+                agent_is_active=context_row.agent_is_active or False,
+                model_id=context_row.model_id,
+                model_name=context_row.model_name,
+                provider_id=context_row.provider_id,
+                provider_name=context_row.provider_name,
+                has_api_key=context_row.has_api_key or False,
+                requests_per_day=context_row.requests_per_day,
+                runs_today=context_row.runs_today or 0,
+            )
+
+            # Validate using business logic in Python
+            is_valid, failures = validate_generation_access(ctx)
+
+            if not is_valid:
+                error_msg = format_generation_error(failures)
+                logger.error(
+                    f"Provider generation validation failed - "
+                    f"profile_id={profile_id}, agent_id={agent_id}, "
+                    f"reason: {error_msg}"
+                )
+                await emit_to_internal(
+                    "generate_call_error",
+                    GenerateErrorApiRequest(
+                        sid=sid,
+                        error_message=f"Failed to prepare provider generation: {error_msg}",
+                        artifact_type="provider",
+                        group_id=str(existing_group_id) if existing_group_id else None,
+                        resource_type="provider",
+                    ),
                     sid=sid,
-                    artifact_type="provider",
-                    message="No agent configured for requested resources",
-                    resource_id=str(data.provider_id) if data.provider_id else None,
-                    group_id=str(extract_group_id(result))
-                    if extract_group_id(result)
-                    else None,
-                    resource_type=(data.resource_types or ["provider"])[0],
                 )
                 return
 
-            await emit_generate_artifact(
-                conn=conn,
-                sid=sid,
-                artifact_type="provider",
-                resource_id=str(data.provider_id) if data.provider_id else None,
-                resource_types=data.resource_types,
-                user_instructions=data.user_instructions,
-                profile_id=profile_id,
-                agent_id=agent_id,
-                group_id=extract_group_id(result),
+            # Step 4: Prepare generation (group/run creation, context fetch)
+            try:
+                prepare_params = PreparePersonaGenerationSqlParams(
+                    p_profile_id=profile_id,
+                    p_agent_id=agent_id,
+                    p_group_id=existing_group_id,
+                    p_resources=seed_resources if seed_resources else None,
+                    p_current_resources=current_resources
+                    if current_resources
+                    else None,
+                    p_resource_types=resource_types,  # For tool filtering
+                )
+                prepare_row = cast(
+                    PreparePersonaGenerationSqlRow,
+                    await execute_sql_typed(
+                        conn, SQL_PATH_PREPARE, params=prepare_params
+                    ),
+                )
+
+                if not prepare_row.run_id:
+                    logger.error(
+                        f"Provider generation preparation failed unexpectedly - "
+                        f"profile_id={profile_id}, agent_id={agent_id}"
+                    )
+                    await emit_to_internal(
+                        "generate_call_error",
+                        GenerateErrorApiRequest(
+                            sid=sid,
+                            error_message="Failed to prepare provider generation: Unknown error",
+                            artifact_type="provider",
+                            group_id=str(existing_group_id)
+                            if existing_group_id
+                            else None,
+                            resource_type="provider",
+                        ),
+                        sid=sid,
+                    )
+                    return
+
+            except Exception as e:
+                error_msg = str(e)
+                # Check for rate limit error (fail fast)
+                if "RATE_LIMIT_EXCEEDED" in error_msg:
+                    user_msg = (
+                        error_msg.split("RATE_LIMIT_EXCEEDED: ", 1)[1]
+                        if "RATE_LIMIT_EXCEEDED: " in error_msg
+                        else "Rate limit exceeded. Please try again later."
+                    )
+                    await emit_to_internal(
+                        "generate_call_error",
+                        GenerateErrorApiRequest(
+                            sid=sid,
+                            error_message=user_msg,
+                            artifact_type="provider",
+                            group_id=str(existing_group_id)
+                            if existing_group_id
+                            else None,
+                            resource_type="provider",
+                        ),
+                        sid=sid,
+                    )
+                    return
+                raise
+
+            # Extract context from prepare result
+            run_id = prepare_row.run_id
+            group_id = prepare_row.group_id
+            trace_id = prepare_row.trace_id
+            system_prompt = prepare_row.system_prompt
+            model_name = prepare_row.model_name
+            provider_name = prepare_row.provider_name
+            base_url = prepare_row.base_url
+            api_key = prepare_row.api_key
+            temperature = prepare_row.temperature
+            reasoning = prepare_row.reasoning
+            voice = prepare_row.voice
+            quality = prepare_row.quality
+            tools = prepare_row.tools
+            developer_instruction_templates = (
+                prepare_row.developer_instruction_templates
+            )
+            jinja_context = provider_jinja_context
+
+            # Step 5: Render developer instructions with Jinja
+            rendered_developer_messages = render_developer_instructions(
+                templates=developer_instruction_templates,
+                jinja_context=jinja_context,
+            )
+
+            # Step 6: Build messages for LLM AND persist to database
+            messages: list[dict[str, str]] = []
+            create_message_sql = load_sql(SQL_PATH_CREATE_MESSAGE_WITH_TEXT)
+
+            # Insert system prompt
+            if system_prompt:
+                messages.append({"role": "system", "content": system_prompt})
+                await conn.fetchval(
+                    create_message_sql,
+                    run_id,
+                    "system",
+                    system_prompt,
+                    True,
+                    False,
+                )
+
+            # Insert developer instructions
+            for m in rendered_developer_messages:
+                messages.append({"role": "developer", "content": m})
+                await conn.fetchval(
+                    create_message_sql,
+                    run_id,
+                    "developer",
+                    m,
+                    True,
+                    False,
+                )
+
+            # Insert user instructions
+            if data.user_instructions:
+                for instruction in data.user_instructions:
+                    messages.append({"role": "user", "content": instruction})
+                    await conn.fetchval(
+                        create_message_sql,
+                        run_id,
+                        "user",
+                        instruction,
+                        True,
+                        False,
+                    )
+
+            # Step 7: Emit simplified payload to generate_artifact handler
+            # The AI handler only needs to decrypt API key and stream LLM
+            await internal_sio.emit(
+                "generate_artifact",
+                {
+                    "sid": sid,
+                    "artifact_type": "provider",
+                    "resource_type": resource_types[0]
+                    if resource_types
+                    else "provider",
+                    "run_id": str(run_id),
+                    "group_id": str(group_id) if group_id else None,
+                    "message_id": None,
+                    "messages": messages,
+                    "llm_config": {
+                        "model": model_name,
+                        "api_key": api_key,
+                        "base_url": base_url,
+                        "temperature": temperature,
+                        "reasoning": reasoning,
+                        "provider": provider_name,
+                        "voice": voice,
+                        "quality": quality,
+                        "length_seconds": None,
+                        "tool_choice": "required",  # Force tool calls for provider generation
+                    },
+                    "tools": convert_tools_to_dict(tools),
+                    "metadata": {"trace_id": trace_id},
+                    "eval_mode": False,
+                },
             )
 
     except Exception as e:
-        await emit_generation_error(
+        logger.exception(f"Failed to generate provider resources: {str(e)}")
+        await emit_to_internal(
+            "generate_call_error",
+            GenerateErrorApiRequest(
+                sid=sid,
+                error_message=f"Failed to generate provider resources: {str(e)}",
+                artifact_type="provider",
+                group_id=None,
+                resource_type="provider",
+            ),
             sid=sid,
-            artifact_type="provider",
-            message=f"Failed to generate provider: {str(e)}",
-            resource_id=str(data.provider_id) if data.provider_id else None,
-            resource_type="provider",
         )
 
 
 @sio.event  # type: ignore
 async def provider_generate(sid: str, data: dict[str, Any]) -> None:
-    """Handle provider_generate client event."""
+    """Handle provider_generate event (client-to-server)."""
     try:
         payload = GenerateProviderPayload(**data)
         profile_id_str = await find_profile_by_socket(sid)
         if not profile_id_str:
-            await emit_generation_error(
+            await emit_to_internal(
+                "generate_call_error",
+                GenerateErrorApiRequest(
+                    sid=sid,
+                    error_message="Profile not found. Please reconnect.",
+                    artifact_type="provider",
+                    group_id=None,
+                    resource_type="provider",
+                ),
                 sid=sid,
+            )
+            return
+        profile_id = uuid.UUID(profile_id_str)
+        await _provider_generate_impl(sid, payload, profile_id)
+    except Exception as e:
+        await emit_to_internal(
+            "generate_call_error",
+            GenerateErrorApiRequest(
+                sid=sid,
+                error_message=f"Invalid request: {str(e)}",
                 artifact_type="provider",
-                message="Profile not found. Please reconnect.",
-                resource_id=str(payload.provider_id) if payload.provider_id else None,
+                group_id=None,
                 resource_type="provider",
+            ),
+            sid=sid,
+        )
+
+
+@internal_sio.on("provider_generate")  # type: ignore
+async def provider_generate_internal(data: dict[str, Any]) -> None:
+    """Handle provider_generate event from internal bus (server-to-server)."""
+    try:
+        sid = data.get("sid", "")
+        if not sid:
+            return
+
+        profile_id_str = await find_profile_by_socket(sid)
+        if not profile_id_str:
+            await emit_to_internal(
+                "generate_call_error",
+                GenerateErrorApiRequest(
+                    sid=sid,
+                    error_message="Profile not found. Please reconnect.",
+                    artifact_type="provider",
+                    group_id=None,
+                    resource_type="provider",
+                ),
+                sid=sid,
             )
             return
 
-        await _generate_provider_impl(sid, payload, uuid.UUID(profile_id_str))
+        profile_id = uuid.UUID(profile_id_str)
+        payload = GenerateProviderPayload(**data)
+        await _provider_generate_impl(sid, payload, profile_id)
     except Exception as e:
-        await emit_generation_error(
+        await emit_to_internal(
+            "generate_call_error",
+            GenerateErrorApiRequest(
+                sid=sid,
+                error_message=f"Invalid request: {str(e)}",
+                artifact_type="provider",
+                group_id=None,
+                resource_type="provider",
+            ),
             sid=sid,
-            artifact_type="provider",
-            message=f"Invalid request: {str(e)}",
-            resource_id=str(data.get("provider_id"))
-            if data.get("provider_id")
-            else None,
-            resource_type="provider",
         )

@@ -5,12 +5,17 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.artifacts.provider.permissions import compute_can_draft
+from app.api.v4.artifacts.provider.types import (
+    PatchProviderDraftApiRequest,
+    PatchProviderDraftApiResponse,
+)
 from app.infra.v4.activity.audit import audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
-    PatchProviderDraftApiRequest,
-    PatchProviderDraftApiResponse,
+    CheckProviderDuplicateAccessSqlParams,
+    CheckProviderDuplicateAccessSqlRow,
     PatchProviderDraftSqlParams,
     PatchProviderDraftSqlRow,
     load_sql_query,
@@ -18,6 +23,10 @@ from app.sql.types import (
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
+# SQL paths
+ACCESS_CHECK_SQL_PATH = (
+    "app/sql/v4/queries/providers/check_provider_duplicate_access_complete.sql"
+)
 SQL_PATH = "app/sql/v4/queries/providers/patch_provider_draft_complete.sql"
 
 router = APIRouter()
@@ -47,6 +56,32 @@ async def patch_provider_draft(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        # Permission check: reuse duplicate access (just user_role)
+        access_params = CheckProviderDuplicateAccessSqlParams(
+            profile_id=profile_id,
+        )
+        access_result = cast(
+            CheckProviderDuplicateAccessSqlRow,
+            await execute_sql_typed(
+                conn,
+                ACCESS_CHECK_SQL_PATH,
+                params=access_params,
+            ),
+        )
+
+        if not access_result:
+            raise HTTPException(
+                status_code=401,
+                detail="Unable to verify user permissions.",
+            )
+
+        can_draft = compute_can_draft(user_role=access_result.user_role)
+        if not can_draft:
+            raise HTTPException(
+                status_code=403,
+                detail="You don't have permission to create or update drafts.",
+            )
+
         async with conn.transaction():
             params = PatchProviderDraftSqlParams(
                 **request.model_dump(), profile_id=profile_id
@@ -67,7 +102,14 @@ async def patch_provider_draft(
                 draft={"id": str(result.draft_id)},
             )
 
-        api_response = PatchProviderDraftApiResponse.model_validate(result.model_dump())
+        api_response = PatchProviderDraftApiResponse.model_validate(
+            {
+                "success": True,
+                "draft_id": str(result.draft_id),
+                "new_version": result.new_version,
+                "message": "Draft saved successfully",
+            }
+        )
 
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

@@ -5,6 +5,7 @@ from typing import Any
 from fastapi import APIRouter
 
 from app.main import get_internal_sio, sio
+from app.socket.v4.artifacts.department.types import DepartmentGenerationErrorEvent
 
 internal_sio = get_internal_sio()
 
@@ -22,18 +23,18 @@ async def handle_department_generation_error(data: dict[str, Any]) -> None:
     if not sid:
         return
 
+    event = DepartmentGenerationErrorEvent(
+        artifact_type=artifact_type,
+        resource_type=data.get("resource_type"),
+        resource_types=data.get("resource_types"),
+        group_id=data.get("group_id"),
+        message=data.get("error_message") or data.get("message") or "Generation failed",
+        success=False,
+    )
+
     await sio.emit(
         "department_generation_error",
-        {
-            "artifact_type": artifact_type,
-            "resource_type": data.get("resource_type"),
-            "resource_types": data.get("resource_types"),
-            "group_id": data.get("group_id"),
-            "message": data.get("error_message")
-            or data.get("message")
-            or "Generation failed",
-            "success": False,
-        },
+        event.model_dump(mode="json"),
         room=sid,
     )
 

@@ -21,10 +21,7 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = (
-    "app/sql/v4/queries/resources"
-    "/modalities/search_modalities_complete.sql"
-)
+SQL_PATH = "app/sql/v4/queries/resources/modalities/search_modalities_complete.sql"
 
 router = APIRouter()
 
@@ -48,9 +45,7 @@ async def search_modalities_internal(
             "search": search,
             "limit_count": limit_count,
             "offset_count": offset_count,
-            "exclude_ids": [
-                str(id) for id in (exclude_ids or [])
-            ],
+            "exclude_ids": [str(id) for id in (exclude_ids or [])],
         },
     )
 
@@ -73,9 +68,7 @@ async def search_modalities_internal(
         await execute_sql_typed(conn, SQL_PATH, params=params),
     )
 
-    items: list[QGetModalitiesV4Item] = (
-        result.items if result and result.items else []
-    )
+    items: list[QGetModalitiesV4Item] = result.items if result and result.items else []
 
     await set_cached(
         cache_key_val,
@@ -99,9 +92,7 @@ async def search_modalities(
 ) -> SearchModalitiesApiResponse:
     """Search modalities resources."""
     tags = ["resources", "modalities"]
-    bypass_cache = (
-        http_request.headers.get("X-Bypass-Cache") == "1"
-    )
+    bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     try:
         items = await search_modalities_internal(
@@ -117,9 +108,7 @@ async def search_modalities(
     except HTTPException:
         raise
     except ValueError as e:
-        raise HTTPException(
-            status_code=400, detail=str(e)
-        ) from e
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
         handle_route_error(
             error=e,

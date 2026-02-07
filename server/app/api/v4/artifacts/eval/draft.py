@@ -5,19 +5,28 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.v4.activity.audit import audit_set
-from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db
-from app.sql.types import (
+from app.api.v4.artifacts.eval.permissions import compute_can_draft
+from app.api.v4.artifacts.eval.types import (
     PatchEvalDraftApiRequest,
     PatchEvalDraftApiResponse,
     PatchEvalDraftSqlParams,
     PatchEvalDraftSqlRow,
+)
+from app.infra.v4.activity.audit import audit_set
+from app.infra.v4.error.handle_route_error import handle_route_error
+from app.main import get_db
+from app.sql.types import (
+    CheckEvalDuplicateAccessSqlParams,
+    CheckEvalDuplicateAccessSqlRow,
     load_sql_query,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
+# SQL paths
+ACCESS_CHECK_SQL_PATH = (
+    "app/sql/v4/queries/evals/check_eval_duplicate_access_complete.sql"
+)
 SQL_PATH = "app/sql/v4/queries/evals/patch_eval_draft_complete.sql"
 
 router = APIRouter()
@@ -47,6 +56,34 @@ async def patch_eval_draft(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        # Permission check: get user role using typed SQL
+        access_params = CheckEvalDuplicateAccessSqlParams(
+            profile_id=profile_id,
+        )
+        access_result = cast(
+            CheckEvalDuplicateAccessSqlRow,
+            await execute_sql_typed(
+                conn,
+                ACCESS_CHECK_SQL_PATH,
+                params=access_params,
+            ),
+        )
+
+        if not access_result:
+            raise HTTPException(
+                status_code=401,
+                detail="Unable to verify user permissions.",
+            )
+
+        # Permission check using centralized permissions logic
+        can_draft_result = compute_can_draft(user_role=access_result.user_role)
+
+        if not can_draft_result:
+            raise HTTPException(
+                status_code=403,
+                detail="You don't have permission to create or edit eval drafts.",
+            )
+
         async with conn.transaction():
             params = PatchEvalDraftSqlParams(
                 **request.model_dump(), profile_id=profile_id
@@ -67,7 +104,18 @@ async def patch_eval_draft(
                 draft={"id": str(result.draft_id)},
             )
 
-        api_response = PatchEvalDraftApiResponse.model_validate(result.model_dump())
+        # Build response with success and message
+        is_update = request.input_draft_id is not None
+        api_response = PatchEvalDraftApiResponse.model_validate(
+            {
+                "success": True,
+                "draft_id": str(result.draft_id),
+                "new_version": result.new_version,
+                "message": "Draft updated successfully"
+                if is_update
+                else "Draft created successfully",
+            }
+        )
 
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

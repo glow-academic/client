@@ -85,76 +85,42 @@ export default function Evals({
     setEvalsList(evalsArray);
   }, [evalsData?.evals]);
 
-  // Build agent options from mapping
-  const agentOptions = useMemo(
-    () =>
-      (evalsData?.agent_options || [])
-        .map((opt) => ({
-          value: opt["value"] as string,
-          label: opt["label"] as string,
-        }))
-        .filter((opt) => opt.value && opt.label),
-    [evalsData?.agent_options]
-  );
+  // Build agent options from evals data (unique agents across all evals)
+  const agentOptions = useMemo(() => {
+    const agentMap = new Map<string, string>();
+    (evalsData?.evals || []).forEach((evalItem) => {
+      (evalItem.agent_ids || []).forEach((id) => {
+        if (id && !agentMap.has(id)) {
+          agentMap.set(id, id);
+        }
+      });
+    });
+    return Array.from(agentMap.entries()).map(([value]) => ({
+      value,
+      label: value,
+    }));
+  }, [evalsData?.evals]);
 
-  // WebSocket integration for real-time status updates
-  // Note: WebSocket handlers currently don't update UI as evals state was unused
-  // TODO: Fix WebSocket integration to update evalsList or use state properly
+  // WebSocket integration for real-time updates
   useEffect(() => {
     if (!socket) return;
-
-    const handleEvalProgress = (data: {
-      eval_id: string;
-      model_run_id?: string;
-      status: string;
-      message: string;
-    }) => {
-      setEvalsList((prev) =>
-        (prev || []).map((evalItem) =>
-          evalItem.eval_id === data.eval_id
-            ? { ...evalItem, status: data.status }
-            : evalItem
-        )
-      );
-    };
 
     const handleEvalCompleted = (data: {
       eval_id: string;
       message: string;
     }) => {
-      setEvalsList((prev) =>
-        (prev || []).map((evalItem) =>
-          evalItem.eval_id === data.eval_id
-            ? { ...evalItem, status: "completed" }
-            : evalItem
-        )
-      );
+      // Refresh the page to get updated eval data
+      if (data.eval_id) {
+        router.refresh();
+      }
     };
 
-    const handleEvalStopped = (data: {
-      eval_id: string;
-      success: boolean;
-      stopped_count: number;
-    }) => {
-      setEvalsList((prev) =>
-        (prev || []).map((evalItem) =>
-          evalItem.eval_id === data.eval_id
-            ? { ...evalItem, status: data.success ? "completed" : "pending" }
-            : evalItem
-        )
-      );
-    };
-
-    socket.on("eval_progress", handleEvalProgress);
     socket.on("eval_completed", handleEvalCompleted);
-    socket.on("eval_stopped", handleEvalStopped);
 
     return () => {
-      socket.off("eval_progress", handleEvalProgress);
       socket.off("eval_completed", handleEvalCompleted);
-      socket.off("eval_stopped", handleEvalStopped);
     };
-  }, [socket]);
+  }, [socket, router]);
 
   const handleDelete = async () => {
     if (!deleteItem || !deleteEvalAction) return;
@@ -286,8 +252,8 @@ export default function Evals({
               <div className="mt-1 space-y-2">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant="outline">
-                    {evalItem.total_runs}{" "}
-                    {evalItem.total_runs === 1 ? "run" : "runs"}
+                    {evalItem.num_runs ?? 0}{" "}
+                    {(evalItem.num_runs ?? 0) === 1 ? "run" : "runs"}
                   </Badge>
                 </div>
               </div>

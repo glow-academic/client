@@ -677,12 +677,9 @@ export interface paths {
         put?: never;
         /**
          * Get Department
-         * @description Get department information - handles both new (department_id = NULL) and detail (department_id provided).
+         * @description Get department information using two-pass architecture.
          *
-         *     Validation Logic:
-         *     - Tools are REQUIRED for resources - error if no tools exist (via missing_tools_check CTE)
-         *     - Agents are OPTIONAL - NULL agent_id means manual entry only (no generate button shown)
-         *     - Frontend components check agent_id before showing generate button
+         *     This is a thin HTTP wrapper around get_department_internal().
          */
         post: operations["get_department_api_v4_departments_get_post"];
         delete?: never;
@@ -762,7 +759,7 @@ export interface paths {
         put?: never;
         /**
          * Delete Department
-         * @description Delete a department (with usage check).
+         * @description Delete a department.
          */
         post: operations["delete_department_api_v4_departments_delete_post"];
         delete?: never;
@@ -962,7 +959,7 @@ export interface paths {
         put?: never;
         /**
          * Get Eval List
-         * @description Get evals list with status derivation and permissions.
+         * @description Get evals list with permissions and status details.
          */
         post: operations["get_eval_list_api_v4_evals_list_post"];
         delete?: never;
@@ -982,12 +979,13 @@ export interface paths {
         put?: never;
         /**
          * Get Eval
-         * @description Get eval information - handles both new (eval_id = NULL) and detail (eval_id provided).
+         * @description Get eval information using two-pass architecture.
          *
-         *     Validation Logic:
-         *     - Tools are REQUIRED for resources - error if no tools exist (via missing_tools_check CTE)
-         *     - Agents are OPTIONAL - NULL agent_id means manual entry only (no generate button shown)
-         *     - Frontend components check agent_id before showing generate button
+         *     This is a thin HTTP wrapper around get_eval_internal().
+         *
+         *     Query 1: Access check (user role, departments, eval state)
+         *     Query 2: ID fetching (resource IDs, suggestions, agents)
+         *     Pass 2: Parallel resource fetching (each resource type has own cache)
          */
         post: operations["get_eval_api_v4_evals_get_post"];
         delete?: never;
@@ -1663,7 +1661,7 @@ export interface paths {
         put?: never;
         /**
          * Get Provider List
-         * @description Get providers list with permissions and endpoint info.
+         * @description Get providers list with Python-computed permissions.
          */
         post: operations["get_provider_list_api_v4_providers_list_post"];
         delete?: never;
@@ -1683,12 +1681,7 @@ export interface paths {
         put?: never;
         /**
          * Get Provider
-         * @description Get provider information - handles both new (provider_id = NULL) and detail (provider_id provided).
-         *
-         *     Validation Logic:
-         *     - Tools are REQUIRED for resources - error if no tools exist (via missing_tools_check CTE)
-         *     - Agents are OPTIONAL - NULL agent_id means manual entry only (no generate button shown)
-         *     - Frontend components check agent_id before showing generate button
+         * @description Get provider information using two-pass architecture.
          */
         post: operations["get_provider_api_v4_providers_get_post"];
         delete?: never;
@@ -2296,12 +2289,11 @@ export interface paths {
         put?: never;
         /**
          * Get Auth
-         * @description Get auth information - handles both new (auth_id = NULL) and detail (auth_id provided).
+         * @description Get auth information using two-pass architecture.
          *
-         *     Validation Logic:
-         *     - Tools are REQUIRED for resources - error if no tools exist (via missing_tools_check CTE)
-         *     - Agents are OPTIONAL - NULL agent_id means manual entry only (no generate button shown)
-         *     - Frontend components check agent_id before showing generate button
+         *     Query 1: Access check (user role, auth state)
+         *     Query 2: ID fetching (resource IDs, suggestions, agents)
+         *     Pass 2: Parallel resource fetching (each resource type has own cache)
          */
         post: operations["get_auth_api_v4_auths_get_post"];
         delete?: never;
@@ -4857,6 +4849,60 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/protocols/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Search Protocols */
+        post: operations["search_protocols_api_v4_resources_protocols_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/regenerates/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Regenerates
+         * @description Get regenerates resources by IDs.
+         */
+        post: operations["get_regenerates_api_v4_resources_regenerates_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/regenerates/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Search Regenerates */
+        post: operations["search_regenerates_api_v4_resources_regenerates_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/qualities/get": {
         parameters: {
             query?: never;
@@ -5686,6 +5732,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/slugs/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Search Slugs */
+        post: operations["search_slugs_api_v4_resources_slugs_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/standard_groups": {
         parameters: {
             query?: never;
@@ -5901,6 +5964,23 @@ export interface paths {
          * @description Get values resources by IDs.
          */
         post: operations["get_values_api_v4_resources_values_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/values/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Search Values */
+        post: operations["search_values_api_v4_resources_values_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7624,6 +7704,73 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/socket/v4/server/auth_generation_progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Auth Generation Progress Api
+         * @description Server-to-client event: Auth generation progress.
+         *
+         *     Emitted during auth resource generation to show progress.
+         */
+        post: operations["auth_generation_progress_api_socket_v4_server_auth_generation_progress_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/auth_generation_complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Auth Generation Complete Api
+         * @description Server-to-client event: Auth generation completed.
+         *
+         *     Emitted when an auth resource is successfully generated.
+         *     Contains full resource objects for immediate frontend use.
+         */
+        post: operations["auth_generation_complete_api_socket_v4_server_auth_generation_complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/auth_generation_error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Auth Generation Error Api
+         * @description Server-to-client event: Auth generation error.
+         *
+         *     Emitted when auth resource generation fails.
+         */
+        post: operations["auth_generation_error_api_socket_v4_server_auth_generation_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/socket/v4/server/training/started": {
         parameters: {
             query?: never;
@@ -9148,7 +9295,13 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Provider Generation Complete Api */
+        /**
+         * Provider Generation Complete Api
+         * @description Server-to-client event: Provider generation completed.
+         *
+         *     Emitted when a provider resource is successfully generated.
+         *     Contains full resource objects for immediate frontend use.
+         */
         post: operations["provider_generation_complete_api_socket_v4_server_provider_generation_complete_post"];
         delete?: never;
         options?: never;
@@ -9199,7 +9352,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Eval Generation Complete Api */
+        /**
+         * Eval Generation Complete Api
+         * @description Server-to-client event: Eval generation completed.
+         */
         post: operations["eval_generation_complete_api_socket_v4_server_eval_generation_complete_post"];
         delete?: never;
         options?: never;
@@ -11019,6 +11175,186 @@ export interface components {
             simulation_messages?: components["schemas"]["MessageData"][] | null;
         };
         /**
+         * AuthFlagConfig
+         * @description Enriched flag config for direct client consumption.
+         */
+        AuthFlagConfig: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Description */
+            description?: string | null;
+            /** Icon Id */
+            icon_id?: string | null;
+            /** Flag Option Id */
+            flag_option_id?: string | null;
+            /**
+             * Show
+             * @default true
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Domain Id */
+            domain_id?: string | null;
+            /** Generated */
+            generated?: boolean | null;
+        };
+        /**
+         * AuthGenerationCompleteEvent
+         * @description Server-to-client event: auth_generation_complete.
+         *
+         *     Emitted when an auth resource generation completes successfully.
+         *     Contains full resource objects (not just IDs) for immediate frontend use.
+         */
+        AuthGenerationCompleteEvent: {
+            /**
+             * Artifact Type
+             * @default auth
+             */
+            artifact_type: string;
+            /** Group Id */
+            group_id: string;
+            /** Resource Type */
+            resource_type: string;
+            /** Run Id */
+            run_id?: string | null;
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Type */
+            type?: string | null;
+            name_resource?: components["schemas"]["QGetNamesV4Item"] | null;
+            description_resource?: components["schemas"]["QGetDescriptionsV4Item"] | null;
+            flag_resource?: components["schemas"]["QGetFlagsV4Item"] | null;
+            /** Protocol Resources */
+            protocol_resources?: components["schemas"]["QGetProtocolsV4Item"][] | null;
+            /** Slug Resources */
+            slug_resources?: components["schemas"]["QGetSlugsV4Item"][] | null;
+        };
+        /**
+         * AuthGenerationErrorEvent
+         * @description Server-to-client event: auth_generation_error.
+         *
+         *     Emitted when auth resource generation fails.
+         */
+        AuthGenerationErrorEvent: {
+            /**
+             * Artifact Type
+             * @default auth
+             */
+            artifact_type: string;
+            /** Group Id */
+            group_id?: string | null;
+            /** Resource Type */
+            resource_type?: string | null;
+            /** Resource Types */
+            resource_types?: string[] | null;
+            /** Resource Id */
+            resource_id?: string | null;
+            /** Run Id */
+            run_id?: string | null;
+            /**
+             * Success
+             * @default false
+             */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Trace Id */
+            trace_id?: string | null;
+        };
+        /**
+         * AuthGenerationProgressEvent
+         * @description Server-to-client event: auth_generation_progress.
+         *
+         *     Emitted during auth resource generation to show progress.
+         */
+        AuthGenerationProgressEvent: {
+            /**
+             * Artifact Type
+             * @default auth
+             */
+            artifact_type: string;
+            /** Group Id */
+            group_id?: string | null;
+            /** Resource Type */
+            resource_type?: string | null;
+            /** Resource Id */
+            resource_id?: string | null;
+            /** Run Id */
+            run_id?: string | null;
+            /** Modality */
+            modality?: string | null;
+            /** Type */
+            type?: string | null;
+            /** Event Type */
+            event_type?: string | null;
+            /** Tool Call Id */
+            tool_call_id?: string | null;
+            /** Tool Name */
+            tool_name?: string | null;
+            /** Arguments */
+            arguments?: {
+                [key: string]: unknown;
+            } | null;
+            /** Arguments Delta */
+            arguments_delta?: string | null;
+            /** Trace Id */
+            trace_id?: string | null;
+        };
+        /**
+         * AuthItemData
+         * @description Auth item data for display.
+         */
+        AuthItemData: {
+            /** Auth Item Id */
+            auth_item_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Position */
+            position?: number | null;
+            /** Active */
+            active?: boolean | null;
+            /** Value Masked */
+            value_masked?: string | null;
+            /** Key Id */
+            key_id?: string | null;
+            /** Encrypted */
+            encrypted?: boolean | null;
+        };
+        /**
+         * AuthResourceBucket
+         * @description Generic resources bucket with full objects.
+         */
+        AuthResourceBucket: {
+            /** Names */
+            names?: components["schemas"]["QGetNamesV4Item"][] | null;
+            /** Descriptions */
+            descriptions?: components["schemas"]["QGetDescriptionsV4Item"][] | null;
+            /** Flags */
+            flags?: components["schemas"]["AuthFlagConfig"][] | null;
+            /** Protocols */
+            protocols?: components["schemas"]["QGetProtocolsV4Item"][] | null;
+            /** Slugs */
+            slugs?: components["schemas"]["QGetSlugsV4Item"][] | null;
+        };
+        /**
+         * AuthResources
+         * @description Full resources + current selections.
+         */
+        AuthResources: {
+            resources?: components["schemas"]["AuthResourceBucket"] | null;
+            current?: components["schemas"]["AuthResourceBucket"] | null;
+        };
+        /**
          * AvailableContinuationOptions
          * @description Available continuation options for an attempt.
          */
@@ -12522,7 +12858,10 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
-        /** DeleteAuthApiRequest */
+        /**
+         * DeleteAuthApiRequest
+         * @description Request model for delete auth endpoint.
+         */
         DeleteAuthApiRequest: {
             /**
              * Auth Id
@@ -12530,18 +12869,15 @@ export interface components {
              */
             auth_id: string;
         };
-        /** DeleteAuthApiResponse */
+        /**
+         * DeleteAuthApiResponse
+         * @description Response model for delete auth endpoint.
+         */
         DeleteAuthApiResponse: {
-            /** Auth Exists */
-            auth_exists?: boolean | null;
             /** Success */
-            success?: boolean | null;
-            /** Name */
-            name?: string | null;
+            success: boolean;
             /** Message */
-            message?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
+            message: string;
         };
         /** DeleteCohortApiRequest */
         DeleteCohortApiRequest: {
@@ -12562,7 +12898,10 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
-        /** DeleteDepartmentApiRequest */
+        /**
+         * DeleteDepartmentApiRequest
+         * @description Request model for delete department endpoint.
+         */
         DeleteDepartmentApiRequest: {
             /**
              * Department Id
@@ -12570,18 +12909,36 @@ export interface components {
              */
             department_id: string;
         };
-        /** DeleteDepartmentApiResponse */
+        /**
+         * DeleteDepartmentApiResponse
+         * @description Response model for delete department endpoint.
+         */
         DeleteDepartmentApiResponse: {
-            /** Department Exists */
-            department_exists?: boolean | null;
-            /** Deleted */
-            deleted?: boolean | null;
-            /** Total Usage */
-            total_usage?: number | null;
-            /** Title */
-            title?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+        };
+        /**
+         * DeleteEvalApiRequest
+         * @description Request model for delete eval endpoint.
+         */
+        DeleteEvalApiRequest: {
+            /**
+             * Eval Id
+             * Format: uuid
+             */
+            eval_id: string;
+        };
+        /**
+         * DeleteEvalApiResponse
+         * @description Response model for delete eval endpoint.
+         */
+        DeleteEvalApiResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
         };
         /**
          * DeleteFieldApiRequest
@@ -12688,7 +13045,10 @@ export interface components {
             /** Message */
             message: string;
         };
-        /** DeleteProviderApiRequest */
+        /**
+         * DeleteProviderApiRequest
+         * @description Request model for delete provider endpoint.
+         */
         DeleteProviderApiRequest: {
             /**
              * Provider Id
@@ -12696,18 +13056,15 @@ export interface components {
              */
             provider_id: string;
         };
-        /** DeleteProviderApiResponse */
+        /**
+         * DeleteProviderApiResponse
+         * @description Response model for delete provider endpoint.
+         */
         DeleteProviderApiResponse: {
-            /** Provider Exists */
-            provider_exists?: boolean | null;
-            /** Provider Id */
-            provider_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Deleted */
-            deleted?: boolean | null;
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
         };
         /**
          * DeleteRubricApiRequest
@@ -12819,6 +13176,58 @@ export interface components {
             success: boolean;
             /** Message */
             message: string;
+        };
+        /**
+         * DepartmentFlagConfig
+         * @description Enriched flag config for direct client consumption.
+         */
+        DepartmentFlagConfig: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Description */
+            description?: string | null;
+            /** Icon Id */
+            icon_id?: string | null;
+            /** Flag Option Id */
+            flag_option_id?: string | null;
+            /**
+             * Show
+             * @default true
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Domain Id */
+            domain_id?: string | null;
+            /** Generated */
+            generated?: boolean | null;
+        };
+        /**
+         * DepartmentResourceBucket
+         * @description Generic resources bucket with full objects (always plural lists).
+         */
+        DepartmentResourceBucket: {
+            /** Names */
+            names?: unknown[] | null;
+            /** Descriptions */
+            descriptions?: unknown[] | null;
+            /** Flags */
+            flags?: components["schemas"]["DepartmentFlagConfig"][] | null;
+            /** Settings */
+            settings?: unknown[] | null;
+        };
+        /**
+         * DepartmentResources
+         * @description Full resources + current selections.
+         */
+        DepartmentResources: {
+            resources?: components["schemas"]["DepartmentResourceBucket"] | null;
+            current?: components["schemas"]["DepartmentResourceBucket"] | null;
         };
         /** DescriptionsApiRequest */
         DescriptionsApiRequest: {
@@ -13123,7 +13532,10 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
-        /** DuplicateAuthApiRequest */
+        /**
+         * DuplicateAuthApiRequest
+         * @description Request model for duplicate auth endpoint.
+         */
         DuplicateAuthApiRequest: {
             /**
              * Auth Id
@@ -13131,20 +13543,20 @@ export interface components {
              */
             auth_id: string;
         };
-        /** DuplicateAuthApiResponse */
+        /**
+         * DuplicateAuthApiResponse
+         * @description Response model for duplicate auth endpoint.
+         */
         DuplicateAuthApiResponse: {
-            /** Auth Exists */
-            auth_exists?: boolean | null;
             /** Success */
-            success?: boolean | null;
-            /** Auth Id */
-            auth_id?: string | null;
-            /** Original Name */
-            original_name?: string | null;
+            success: boolean;
+            /**
+             * Auth Id
+             * Format: uuid
+             */
+            auth_id: string;
             /** Message */
-            message?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
+            message: string;
         };
         /** DuplicateCohortApiRequest */
         DuplicateCohortApiRequest: {
@@ -13165,7 +13577,10 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
-        /** DuplicateDepartmentApiRequest */
+        /**
+         * DuplicateDepartmentApiRequest
+         * @description Request model for duplicate department endpoint.
+         */
         DuplicateDepartmentApiRequest: {
             /**
              * Department Id
@@ -13173,14 +13588,20 @@ export interface components {
              */
             department_id: string;
         };
-        /** DuplicateDepartmentApiResponse */
+        /**
+         * DuplicateDepartmentApiResponse
+         * @description Response model for duplicate department endpoint.
+         */
         DuplicateDepartmentApiResponse: {
-            /** New Department Id */
-            new_department_id?: string | null;
-            /** Original Title */
-            original_title?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
+            /** Success */
+            success: boolean;
+            /**
+             * Department Id
+             * Format: uuid
+             */
+            department_id: string;
+            /** Message */
+            message: string;
         };
         /**
          * DuplicateDocumentApiRequest
@@ -13208,7 +13629,10 @@ export interface components {
             /** Message */
             message: string;
         };
-        /** DuplicateEvalApiRequest */
+        /**
+         * DuplicateEvalApiRequest
+         * @description Request model for duplicate eval endpoint.
+         */
         DuplicateEvalApiRequest: {
             /**
              * Eval Id
@@ -13216,14 +13640,20 @@ export interface components {
              */
             eval_id: string;
         };
-        /** DuplicateEvalApiResponse */
+        /**
+         * DuplicateEvalApiResponse
+         * @description Response model for duplicate eval endpoint.
+         */
         DuplicateEvalApiResponse: {
-            /** New Eval Id */
-            new_eval_id?: string | null;
-            /** Original Name */
-            original_name?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
+            /** Success */
+            success: boolean;
+            /**
+             * Eval Id
+             * Format: uuid
+             */
+            eval_id: string;
+            /** Message */
+            message: string;
         };
         /**
          * DuplicateFieldApiRequest
@@ -13355,7 +13785,10 @@ export interface components {
             /** Message */
             message: string;
         };
-        /** DuplicateProviderApiRequest */
+        /**
+         * DuplicateProviderApiRequest
+         * @description Request model for duplicate provider endpoint.
+         */
         DuplicateProviderApiRequest: {
             /**
              * Provider Id
@@ -13363,14 +13796,20 @@ export interface components {
              */
             provider_id: string;
         };
-        /** DuplicateProviderApiResponse */
+        /**
+         * DuplicateProviderApiResponse
+         * @description Response model for duplicate provider endpoint.
+         */
         DuplicateProviderApiResponse: {
-            /** New Provider Id */
-            new_provider_id?: string | null;
-            /** Original Name */
-            original_name?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
+            /** Success */
+            success: boolean;
+            /**
+             * Provider Id
+             * Format: uuid
+             */
+            provider_id: string;
+            /** Message */
+            message: string;
         };
         /**
          * DuplicateRubricApiRequest
@@ -13550,6 +13989,210 @@ export interface components {
         EndpointsApiResponse: {
             /** Endpoints Id */
             endpoints_id?: string | null;
+        };
+        /**
+         * EvalAgentItem
+         * @description Eval agent item (from eval_agents resource endpoint).
+         */
+        EvalAgentItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Roles */
+            roles?: string[] | null;
+            /**
+             * Generated
+             * @default false
+             */
+            generated: boolean;
+        };
+        /**
+         * EvalAvailableGroup
+         * @description Available group for eval selection.
+         */
+        EvalAvailableGroup: {
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Member Count */
+            member_count?: number | null;
+        };
+        /**
+         * EvalAvailableModelRun
+         * @description Available model run for eval selection.
+         */
+        EvalAvailableModelRun: {
+            /**
+             * Model Run Id
+             * Format: uuid
+             */
+            model_run_id: string;
+            /** Created At */
+            created_at?: string | null;
+            /** Model Id */
+            model_id?: string | null;
+            /** Model Name */
+            model_name?: string | null;
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Profile Name */
+            profile_name?: string | null;
+            /** Agent Id */
+            agent_id?: string | null;
+            /** Agent Name */
+            agent_name?: string | null;
+            /** Persona Id */
+            persona_id?: string | null;
+            /** Persona Name */
+            persona_name?: string | null;
+            /** Actor Type */
+            actor_type?: string | null;
+        };
+        /**
+         * EvalFlagConfig
+         * @description Enriched flag config for direct client consumption.
+         */
+        EvalFlagConfig: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Description */
+            description?: string | null;
+            /** Icon Id */
+            icon_id?: string | null;
+            /** Flag Option Id */
+            flag_option_id?: string | null;
+            /**
+             * Show
+             * @default true
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Domain Id */
+            domain_id?: string | null;
+            /** Generated */
+            generated?: boolean | null;
+        };
+        /**
+         * EvalGenerationCompleteEvent
+         * @description Server-to-client event: eval_generation_complete.
+         */
+        EvalGenerationCompleteEvent: {
+            /**
+             * Artifact Type
+             * @default eval
+             */
+            artifact_type: string;
+            /** Group Id */
+            group_id: string;
+            /** Resource Type */
+            resource_type: string;
+            /** Run Id */
+            run_id?: string | null;
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Type */
+            type?: string | null;
+            name_resource?: components["schemas"]["QGetNamesV4Item"] | null;
+            description_resource?: components["schemas"]["QGetDescriptionsV4Item"] | null;
+            flag_resource?: components["schemas"]["QGetFlagsV4Item"] | null;
+            /** Department Resources */
+            department_resources?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
+        };
+        /**
+         * EvalGroupRubricMapping
+         * @description Maps a group to its assigned rubric IDs.
+         */
+        EvalGroupRubricMapping: {
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /** Rubric Ids */
+            rubric_ids?: string[] | null;
+        };
+        /**
+         * EvalResourceBucket
+         * @description Generic resources bucket with full objects.
+         */
+        EvalResourceBucket: {
+            /** Names */
+            names?: components["schemas"]["QGetNamesV4Item"][] | null;
+            /** Descriptions */
+            descriptions?: components["schemas"]["QGetDescriptionsV4Item"][] | null;
+            /** Flags */
+            flags?: components["schemas"]["EvalFlagConfig"][] | null;
+            /** Departments */
+            departments?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
+            /** Eval Agents */
+            eval_agents?: components["schemas"]["EvalAgentItem"][] | null;
+            /** Rubrics */
+            rubrics?: components["schemas"]["EvalRubricItem"][] | null;
+        };
+        /**
+         * EvalResources
+         * @description Full resources + current selections.
+         */
+        EvalResources: {
+            resources?: components["schemas"]["EvalResourceBucket"] | null;
+            current?: components["schemas"]["EvalResourceBucket"] | null;
+        };
+        /**
+         * EvalRubricItem
+         * @description Eval rubric item (from rubrics resource endpoint).
+         */
+        EvalRubricItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Agent Role */
+            agent_role?: string | null;
+            /**
+             * Generated
+             * @default false
+             */
+            generated: boolean;
+        };
+        /**
+         * EvalRunRubricMapping
+         * @description Maps a model run to its assigned rubric IDs.
+         */
+        EvalRunRubricMapping: {
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /** Rubric Ids */
+            rubric_ids?: string[] | null;
         };
         /** ExamplesApiRequest */
         ExamplesApiRequest: {
@@ -14862,19 +15505,20 @@ export interface components {
              */
             items?: components["schemas"]["AttemptViewItem"][];
         };
-        /** GetAuthApiRequest */
+        /**
+         * GetAuthApiRequest
+         * @description Request model for get auth endpoint.
+         */
         GetAuthApiRequest: {
             /** Auth Id */
             auth_id?: string | null;
             /** Draft Id */
             draft_id?: string | null;
-            /**
-             * Mcp
-             * @default false
-             */
-            mcp: boolean | null;
         };
-        /** GetAuthApiResponse */
+        /**
+         * GetAuthApiResponse
+         * @description Response model for get auth endpoint.
+         */
         GetAuthApiResponse: {
             /** Actor Name */
             actor_name?: string | null;
@@ -14884,93 +15528,96 @@ export interface components {
             can_edit?: boolean | null;
             /** Disabled Reason */
             disabled_reason?: string | null;
+            /** Draft Version */
+            draft_version?: number | null;
             /** Group Id */
             group_id?: string | null;
-            /** Name Id */
-            name_id?: string | null;
-            name_resource?: components["schemas"]["QGetAuthV4NameResource"] | null;
+            /** Names Group Id */
+            names_group_id?: string | null;
+            /** Descriptions Group Id */
+            descriptions_group_id?: string | null;
+            /** Flags Group Id */
+            flags_group_id?: string | null;
+            /** Protocols Group Id */
+            protocols_group_id?: string | null;
+            /** Slugs Group Id */
+            slugs_group_id?: string | null;
             /** Show Name */
             show_name?: boolean | null;
-            /** Name Agent Id */
-            name_agent_id?: string | null;
+            /** Name Domain Id */
+            name_domain_id?: string | null;
             /** Name Required */
             name_required?: boolean | null;
             /** Name Suggestions */
             name_suggestions?: string[] | null;
-            /** Names */
-            names?: components["schemas"]["QGetAuthV4NameResource"][] | null;
-            /** Description Id */
-            description_id?: string | null;
-            description_resource?: components["schemas"]["QGetAuthV4DescriptionResource"] | null;
+            /** Name Show Ai Generate */
+            name_show_ai_generate?: boolean | null;
             /** Show Description */
             show_description?: boolean | null;
-            /** Description Agent Id */
-            description_agent_id?: string | null;
+            /** Description Domain Id */
+            description_domain_id?: string | null;
             /** Description Required */
             description_required?: boolean | null;
             /** Description Suggestions */
             description_suggestions?: string[] | null;
-            /** Descriptions */
-            descriptions?: components["schemas"]["QGetAuthV4DescriptionResource"][] | null;
-            /** Active Flag Id */
-            active_flag_id?: string | null;
-            flag_resource?: components["schemas"]["QGetAuthV4FlagResource"] | null;
+            /** Description Show Ai Generate */
+            description_show_ai_generate?: boolean | null;
             /** Show Flag */
             show_flag?: boolean | null;
-            /** Flag Agent Id */
-            flag_agent_id?: string | null;
+            /** Flag Domain Id */
+            flag_domain_id?: string | null;
             /** Flag Required */
             flag_required?: boolean | null;
-            /** Flag Suggestions */
-            flag_suggestions?: string[] | null;
-            /** Protocol Ids */
-            protocol_ids?: string[] | null;
-            /** Protocol Resources */
-            protocol_resources?: components["schemas"]["QGetAuthV4Protocol"][] | null;
+            /** Flag Show Ai Generate */
+            flag_show_ai_generate?: boolean | null;
             /** Show Protocols */
             show_protocols?: boolean | null;
-            /** Protocols Agent Id */
-            protocols_agent_id?: string | null;
+            /** Protocols Domain Id */
+            protocols_domain_id?: string | null;
             /** Protocols Required */
             protocols_required?: boolean | null;
             /** Protocol Suggestions */
             protocol_suggestions?: string[] | null;
-            /** Protocols */
-            protocols?: components["schemas"]["QGetAuthV4Protocol"][] | null;
-            /** Slug Ids */
-            slug_ids?: string[] | null;
-            /** Slug Resources */
-            slug_resources?: components["schemas"]["QGetAuthV4Slug"][] | null;
+            /** Protocols Show Ai Generate */
+            protocols_show_ai_generate?: boolean | null;
             /** Show Slugs */
             show_slugs?: boolean | null;
-            /** Slugs Agent Id */
-            slugs_agent_id?: string | null;
+            /** Slugs Domain Id */
+            slugs_domain_id?: string | null;
             /** Slugs Required */
             slugs_required?: boolean | null;
             /** Slug Suggestions */
             slug_suggestions?: string[] | null;
-            /** Slugs */
-            slugs?: components["schemas"]["QGetAuthV4Slug"][] | null;
-            /** Auth Items Junction */
-            auth_items_junction?: components["schemas"]["QGetAuthV4AuthItem"][] | null;
-            /** Auth Item Ids */
-            auth_item_ids?: unknown | null;
-            /** Auth Item Active States */
-            auth_item_active_states?: unknown | null;
-            /** Auth Item Encrypted States */
-            auth_item_encrypted_states?: unknown | null;
-            /** Draft Version */
-            draft_version?: number | null;
+            /** Slugs Show Ai Generate */
+            slugs_show_ai_generate?: boolean | null;
+            /** Basic Show Ai Generate */
+            basic_show_ai_generate?: boolean | null;
+            /** Name Create Tool Id */
+            name_create_tool_id?: string | null;
+            /** Description Create Tool Id */
+            description_create_tool_id?: string | null;
+            /** Protocols Create Tool Id */
+            protocols_create_tool_id?: string | null;
+            /** Slugs Create Tool Id */
+            slugs_create_tool_id?: string | null;
+            /** Name Link Tool Id */
+            name_link_tool_id?: string | null;
+            /** Description Link Tool Id */
+            description_link_tool_id?: string | null;
+            /** Flag Link Tool Id */
+            flag_link_tool_id?: string | null;
+            /** Protocols Link Tool Id */
+            protocols_link_tool_id?: string | null;
+            /** Slugs Link Tool Id */
+            slugs_link_tool_id?: string | null;
+            /** Domain Data */
+            domain_data?: components["schemas"]["DomainData"][] | null;
+            resources?: components["schemas"]["AuthResources"] | null;
+            /** Auth Items */
+            auth_items?: components["schemas"]["AuthItemData"][] | null;
         };
         /** GetAuthListApiRequest */
         GetAuthListApiRequest: Record<string, never>;
-        /** GetAuthListApiResponse */
-        GetAuthListApiResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Auths */
-            auths?: components["schemas"]["QGetAuthListV4Auth"][] | null;
-        };
         /**
          * GetBenchmarkAttemptFactsRequest
          * @description Request for getting benchmark attempt facts.
@@ -15535,19 +16182,20 @@ export interface components {
              */
             total_count: number;
         };
-        /** GetDepartmentApiRequest */
+        /**
+         * GetDepartmentApiRequest
+         * @description Request model for get department endpoint.
+         */
         GetDepartmentApiRequest: {
             /** Department Id */
             department_id?: string | null;
             /** Draft Id */
             draft_id?: string | null;
-            /**
-             * Mcp
-             * @default false
-             */
-            mcp: boolean | null;
         };
-        /** GetDepartmentApiResponse */
+        /**
+         * GetDepartmentApiResponse
+         * @description Response model for get department endpoint.
+         */
         GetDepartmentApiResponse: {
             /** Actor Name */
             actor_name?: string | null;
@@ -15557,137 +16205,75 @@ export interface components {
             can_edit?: boolean | null;
             /** Disabled Reason */
             disabled_reason?: string | null;
+            /** Draft Version */
+            draft_version?: number | null;
             /** Group Id */
             group_id?: string | null;
-            /** Name Id */
-            name_id?: string | null;
-            name_resource?: components["schemas"]["QGetDepartmentV4NameResource"] | null;
+            /** Names Group Id */
+            names_group_id?: string | null;
+            /** Descriptions Group Id */
+            descriptions_group_id?: string | null;
+            /** Flags Group Id */
+            flags_group_id?: string | null;
+            /** Settings Group Id */
+            settings_group_id?: string | null;
             /** Show Name */
             show_name?: boolean | null;
-            /** Name Agent Id */
-            name_agent_id?: string | null;
+            /** Name Domain Id */
+            name_domain_id?: string | null;
             /** Name Required */
             name_required?: boolean | null;
             /** Name Suggestions */
             name_suggestions?: string[] | null;
-            /** Names */
-            names?: components["schemas"]["QGetDepartmentV4NameResource"][] | null;
-            /** Description Id */
-            description_id?: string | null;
-            description_resource?: components["schemas"]["QGetDepartmentV4DescriptionResource"] | null;
+            /** Name Show Ai Generate */
+            name_show_ai_generate?: boolean | null;
             /** Show Description */
             show_description?: boolean | null;
-            /** Description Agent Id */
-            description_agent_id?: string | null;
+            /** Description Domain Id */
+            description_domain_id?: string | null;
             /** Description Required */
             description_required?: boolean | null;
             /** Description Suggestions */
             description_suggestions?: string[] | null;
-            /** Descriptions */
-            descriptions?: components["schemas"]["QGetDepartmentV4DescriptionResource"][] | null;
-            /** Active Flag Id */
-            active_flag_id?: string | null;
-            flag_resource?: components["schemas"]["QGetDepartmentV4FlagResource"] | null;
+            /** Description Show Ai Generate */
+            description_show_ai_generate?: boolean | null;
             /** Show Flag */
             show_flag?: boolean | null;
-            /** Flag Agent Id */
-            flag_agent_id?: string | null;
+            /** Flag Domain Id */
+            flag_domain_id?: string | null;
             /** Flag Required */
             flag_required?: boolean | null;
-            /** Flags */
-            flags?: components["schemas"]["QGetDepartmentV4FlagResource"][] | null;
-            /** Settings Ids */
-            settings_ids?: string[] | null;
-            /** Settings Resources */
-            settings_resources?: components["schemas"]["QGetDepartmentV4Setting"][] | null;
+            /** Flag Show Ai Generate */
+            flag_show_ai_generate?: boolean | null;
             /** Show Settings */
             show_settings?: boolean | null;
-            /** Settings Agent Id */
-            settings_agent_id?: string | null;
+            /** Settings Domain Id */
+            settings_domain_id?: string | null;
             /** Settings Required */
             settings_required?: boolean | null;
             /** Settings Suggestions */
             settings_suggestions?: string[] | null;
-            /** Settings */
-            settings?: components["schemas"]["QGetDepartmentV4Setting"][] | null;
-            /** Cohort Ids */
-            cohort_ids?: string[] | null;
-            /** Cohort Resources */
-            cohort_resources?: components["schemas"]["QGetDepartmentV4Cohort"][] | null;
-            /** Show Cohorts */
-            show_cohorts?: boolean | null;
-            /** Cohorts Agent Id */
-            cohorts_agent_id?: string | null;
-            /** Cohorts Required */
-            cohorts_required?: boolean | null;
-            /** Cohort Suggestions */
-            cohort_suggestions?: string[] | null;
-            /** Cohorts */
-            cohorts?: components["schemas"]["QGetDepartmentV4Cohort"][] | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Department Resources */
-            department_resources?: components["schemas"]["QGetDepartmentV4Department"][] | null;
-            /** Show Departments */
-            show_departments?: boolean | null;
-            /** Departments Agent Id */
-            departments_agent_id?: string | null;
-            /** Departments Required */
-            departments_required?: boolean | null;
-            /** Department Suggestions */
-            department_suggestions?: string[] | null;
-            /** Departments */
-            departments?: components["schemas"]["QGetDepartmentV4Department"][] | null;
-            /** Model Ids */
-            model_ids?: string[] | null;
-            /** Model Resources */
-            model_resources?: components["schemas"]["QGetDepartmentV4Model"][] | null;
-            /** Show Models */
-            show_models?: boolean | null;
-            /** Models Agent Id */
-            models_agent_id?: string | null;
-            /** Models Required */
-            models_required?: boolean | null;
-            /** Model Suggestions */
-            model_suggestions?: string[] | null;
-            /** Models */
-            models?: components["schemas"]["QGetDepartmentV4Model"][] | null;
-            /** Key Ids */
-            key_ids?: string[] | null;
-            /** Key Resources */
-            key_resources?: components["schemas"]["QGetDepartmentV4Key"][] | null;
-            /** Show Keys */
-            show_keys?: boolean | null;
-            /** Keys Agent Id */
-            keys_agent_id?: string | null;
-            /** Keys Required */
-            keys_required?: boolean | null;
-            /** Key Suggestions */
-            key_suggestions?: string[] | null;
-            /** Keys */
-            keys?: components["schemas"]["QGetDepartmentV4Key"][] | null;
-            /** Can Duplicate */
-            can_duplicate?: boolean | null;
-            /** Can Delete */
-            can_delete?: boolean | null;
-            /** In Use */
-            in_use?: boolean | null;
-            /** Staff Count */
-            staff_count?: number | null;
-            /** Total Price Spent */
-            total_price_spent?: number | null;
-            /** Settings Id */
-            settings_id?: string | null;
-            /** Valid Department Ids */
-            valid_department_ids?: string[] | null;
-            /** Valid Model Ids */
-            valid_model_ids?: string[] | null;
-            /** Valid Key Ids */
-            valid_key_ids?: string[] | null;
-            /** Model Keys Junction */
-            model_keys_junction?: components["schemas"]["QGetDepartmentV4ModelKey"][] | null;
-            /** Draft Version */
-            draft_version?: number | null;
+            /** Settings Show Ai Generate */
+            settings_show_ai_generate?: boolean | null;
+            /** Basic Show Ai Generate */
+            basic_show_ai_generate?: boolean | null;
+            /** Settings Step Show Ai Generate */
+            settings_step_show_ai_generate?: boolean | null;
+            /** Name Create Tool Id */
+            name_create_tool_id?: string | null;
+            /** Description Create Tool Id */
+            description_create_tool_id?: string | null;
+            /** Name Link Tool Id */
+            name_link_tool_id?: string | null;
+            /** Description Link Tool Id */
+            description_link_tool_id?: string | null;
+            /** Flag Link Tool Id */
+            flag_link_tool_id?: string | null;
+            /** Settings Link Tool Id */
+            settings_link_tool_id?: string | null;
+            /** Domain Data */
+            domain_data?: components["schemas"]["DomainData"][] | null;
+            resources?: components["schemas"]["DepartmentResources"] | null;
         };
         /** GetDepartmentsApiRequest */
         GetDepartmentsApiRequest: {
@@ -15701,17 +16287,6 @@ export interface components {
         };
         /** GetDepartmentsListApiRequest */
         GetDepartmentsListApiRequest: Record<string, never>;
-        /** GetDepartmentsListApiResponse */
-        GetDepartmentsListApiResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Departments */
-            departments?: components["schemas"]["QListDepartmentsV4Department"][] | null;
-            /** Cohorts */
-            cohorts?: components["schemas"]["QListDepartmentsV4Cohort"][] | null;
-            /** Profiles */
-            profiles?: components["schemas"]["QListDepartmentsV4Profile"][] | null;
-        };
         /** GetDescriptionsApiRequest */
         GetDescriptionsApiRequest: {
             /** Ids */
@@ -15922,10 +16497,19 @@ export interface components {
             /** Items */
             items?: components["schemas"]["QGetEndpointsV4Item"][] | null;
         };
-        /** GetEvalApiRequest */
+        /**
+         * GetEvalApiRequest
+         * @description Request model for get eval endpoint.
+         */
         GetEvalApiRequest: {
             /** Eval Id */
             eval_id?: string | null;
+            /** Draft Id */
+            draft_id?: string | null;
+            /** Agent Search */
+            agent_search?: string | null;
+            /** Group Search */
+            group_search?: string | null;
             /** Available Model Runs Search */
             available_model_runs_search?: string | null;
             /** Available Model Runs Agent Ids */
@@ -15940,19 +16524,11 @@ export interface components {
              * @default 50
              */
             available_model_runs_page_size: number | null;
-            /** Draft Id */
-            draft_id?: string | null;
-            /** Agent Search */
-            agent_search?: string | null;
-            /** Group Search */
-            group_search?: string | null;
-            /**
-             * Mcp
-             * @default false
-             */
-            mcp: boolean | null;
         };
-        /** GetEvalApiResponse */
+        /**
+         * GetEvalApiResponse
+         * @description Response model for get eval endpoint.
+         */
         GetEvalApiResponse: {
             /** Actor Name */
             actor_name?: string | null;
@@ -15968,109 +16544,135 @@ export interface components {
             group_id?: string | null;
             /** Name Id */
             name_id?: string | null;
-            name_resource?: components["schemas"]["QGetEvalV4NameResource"] | null;
-            /** Show Name */
-            show_name?: boolean | null;
-            /** Name Agent Id */
-            name_agent_id?: string | null;
-            /** Name Required */
-            name_required?: boolean | null;
-            /** Name Suggestions */
-            name_suggestions?: string[] | null;
-            /** Names */
-            names?: components["schemas"]["QGetEvalV4NameResource"][] | null;
             /** Description Id */
             description_id?: string | null;
-            description_resource?: components["schemas"]["QGetEvalV4DescriptionResource"] | null;
-            /** Show Description */
-            show_description?: boolean | null;
-            /** Description Agent Id */
-            description_agent_id?: string | null;
-            /** Description Required */
-            description_required?: boolean | null;
-            /** Description Suggestions */
-            description_suggestions?: string[] | null;
-            /** Descriptions */
-            descriptions?: components["schemas"]["QGetEvalV4DescriptionResource"][] | null;
             /** Active Flag Id */
             active_flag_id?: string | null;
-            active_flag_resource?: components["schemas"]["QGetEvalV4FlagResource"] | null;
-            /** Show Active Flag */
-            show_active_flag?: boolean | null;
-            /** Active Flag Agent Id */
-            active_flag_agent_id?: string | null;
-            /** Active Flag Required */
-            active_flag_required?: boolean | null;
             /** Dynamic Flag Id */
             dynamic_flag_id?: string | null;
-            dynamic_flag_resource?: components["schemas"]["QGetEvalV4FlagResource"] | null;
-            /** Show Dynamic Flag */
-            show_dynamic_flag?: boolean | null;
-            /** Dynamic Flag Agent Id */
-            dynamic_flag_agent_id?: string | null;
-            /** Dynamic Flag Required */
-            dynamic_flag_required?: boolean | null;
             /** Groups Flag Id */
             groups_flag_id?: string | null;
-            groups_flag_resource?: components["schemas"]["QGetEvalV4FlagResource"] | null;
-            /** Show Groups Flag */
-            show_groups_flag?: boolean | null;
-            /** Groups Flag Agent Id */
-            groups_flag_agent_id?: string | null;
-            /** Groups Flag Required */
-            groups_flag_required?: boolean | null;
             /** Department Ids */
             department_ids?: string[] | null;
-            /** Department Resources */
-            department_resources?: components["schemas"]["QGetEvalV4Department"][] | null;
-            /** Show Departments */
-            show_departments?: boolean | null;
-            /** Departments Agent Id */
-            departments_agent_id?: string | null;
-            /** Departments Required */
-            departments_required?: boolean | null;
-            /** Department Suggestions */
-            department_suggestions?: string[] | null;
-            /** Departments */
-            departments?: components["schemas"]["QGetEvalV4Department"][] | null;
             /** Agent Ids */
             agent_ids?: string[] | null;
-            /** Agent Resources */
-            agent_resources?: components["schemas"]["QGetEvalV4Agent"][] | null;
-            /** Show Agents */
-            show_agents?: boolean | null;
-            /** Agents Agent Id */
-            agents_agent_id?: string | null;
-            /** Agents Required */
-            agents_required?: boolean | null;
-            /** Agent Suggestions */
-            agent_suggestions?: string[] | null;
-            /** Agents */
-            agents?: components["schemas"]["QGetEvalV4Agent"][] | null;
-            /** Rubric Ids */
-            rubric_ids?: string[] | null;
-            /** Rubric Resources */
-            rubric_resources?: components["schemas"]["QGetEvalV4Rubric"][] | null;
-            /** Show Rubrics */
-            show_rubrics?: boolean | null;
-            /** Rubrics Agent Id */
-            rubrics_agent_id?: string | null;
-            /** Rubrics Required */
-            rubrics_required?: boolean | null;
-            /** Rubric Suggestions */
-            rubric_suggestions?: string[] | null;
-            /** Rubrics */
-            rubrics?: components["schemas"]["QGetEvalV4Rubric"][] | null;
             /** Model Run Ids */
             model_run_ids?: string[] | null;
             /** Group Ids */
             group_ids?: string[] | null;
+            /** Names Group Id */
+            names_group_id?: string | null;
+            /** Descriptions Group Id */
+            descriptions_group_id?: string | null;
+            /** Flags Group Id */
+            flags_group_id?: string | null;
+            /** Departments Group Id */
+            departments_group_id?: string | null;
+            /** Eval Agents Group Id */
+            eval_agents_group_id?: string | null;
+            /** Rubrics Group Id */
+            rubrics_group_id?: string | null;
+            /** Show Name */
+            show_name?: boolean | null;
+            /** Name Domain Id */
+            name_domain_id?: string | null;
+            /** Name Required */
+            name_required?: boolean | null;
+            /** Name Suggestions */
+            name_suggestions?: string[] | null;
+            /** Name Show Ai Generate */
+            name_show_ai_generate?: boolean | null;
+            /** Show Description */
+            show_description?: boolean | null;
+            /** Description Domain Id */
+            description_domain_id?: string | null;
+            /** Description Required */
+            description_required?: boolean | null;
+            /** Description Suggestions */
+            description_suggestions?: string[] | null;
+            /** Description Show Ai Generate */
+            description_show_ai_generate?: boolean | null;
+            /** Show Active Flag */
+            show_active_flag?: boolean | null;
+            /** Active Flag Domain Id */
+            active_flag_domain_id?: string | null;
+            /** Active Flag Required */
+            active_flag_required?: boolean | null;
+            /** Active Flag Show Ai Generate */
+            active_flag_show_ai_generate?: boolean | null;
+            /** Show Dynamic Flag */
+            show_dynamic_flag?: boolean | null;
+            /** Dynamic Flag Domain Id */
+            dynamic_flag_domain_id?: string | null;
+            /** Dynamic Flag Required */
+            dynamic_flag_required?: boolean | null;
+            /** Dynamic Flag Show Ai Generate */
+            dynamic_flag_show_ai_generate?: boolean | null;
+            /** Show Groups Flag */
+            show_groups_flag?: boolean | null;
+            /** Groups Flag Domain Id */
+            groups_flag_domain_id?: string | null;
+            /** Groups Flag Required */
+            groups_flag_required?: boolean | null;
+            /** Groups Flag Show Ai Generate */
+            groups_flag_show_ai_generate?: boolean | null;
+            /** Show Departments */
+            show_departments?: boolean | null;
+            /** Departments Domain Id */
+            departments_domain_id?: string | null;
+            /** Departments Required */
+            departments_required?: boolean | null;
+            /** Department Suggestions */
+            department_suggestions?: string[] | null;
+            /** Departments Show Ai Generate */
+            departments_show_ai_generate?: boolean | null;
+            /** Show Agents */
+            show_agents?: boolean | null;
+            /** Agents Domain Id */
+            agents_domain_id?: string | null;
+            /** Agents Required */
+            agents_required?: boolean | null;
+            /** Agent Suggestions */
+            agent_suggestions?: string[] | null;
+            /** Agents Show Ai Generate */
+            agents_show_ai_generate?: boolean | null;
+            /** Show Rubrics */
+            show_rubrics?: boolean | null;
+            /** Rubrics Domain Id */
+            rubrics_domain_id?: string | null;
+            /** Rubrics Required */
+            rubrics_required?: boolean | null;
+            /** Rubric Suggestions */
+            rubric_suggestions?: string[] | null;
+            /** Rubrics Show Ai Generate */
+            rubrics_show_ai_generate?: boolean | null;
+            /** Name Create Tool Id */
+            name_create_tool_id?: string | null;
+            /** Description Create Tool Id */
+            description_create_tool_id?: string | null;
+            /** Name Link Tool Id */
+            name_link_tool_id?: string | null;
+            /** Description Link Tool Id */
+            description_link_tool_id?: string | null;
+            /** Flag Link Tool Id */
+            flag_link_tool_id?: string | null;
+            /** Departments Link Tool Id */
+            departments_link_tool_id?: string | null;
+            /** Agents Link Tool Id */
+            agents_link_tool_id?: string | null;
+            /** Rubrics Link Tool Id */
+            rubrics_link_tool_id?: string | null;
+            /** Basic Show Ai Generate */
+            basic_show_ai_generate?: boolean | null;
+            /** Domain Data */
+            domain_data?: components["schemas"]["DomainData"][] | null;
+            resources?: components["schemas"]["EvalResources"] | null;
             /** Run Rubrics */
-            run_rubrics?: components["schemas"]["QGetEvalV4RunRubrics"][] | null;
+            run_rubrics?: components["schemas"]["EvalRunRubricMapping"][] | null;
             /** Group Rubrics */
-            group_rubrics?: components["schemas"]["QGetEvalV4GroupRubrics"][] | null;
+            group_rubrics?: components["schemas"]["EvalGroupRubricMapping"][] | null;
             /** Available Model Runs */
-            available_model_runs?: components["schemas"]["QGetEvalV4AvailableModelRun"][] | null;
+            available_model_runs?: components["schemas"]["EvalAvailableModelRun"][] | null;
             /** Available Model Runs Total Count */
             available_model_runs_total_count?: number | null;
             /** Available Model Runs Page */
@@ -16080,7 +16682,26 @@ export interface components {
             /** Available Model Runs Total Pages */
             available_model_runs_total_pages?: number | null;
             /** Available Groups */
-            available_groups?: components["schemas"]["QGetEvalV4AvailableGroup"][] | null;
+            available_groups?: components["schemas"]["EvalAvailableGroup"][] | null;
+        };
+        /** GetEvalsListApiRequest */
+        GetEvalsListApiRequest: {
+            /** Search */
+            search?: string | null;
+            /** Filter Department Ids */
+            filter_department_ids?: string[] | null;
+            /** Department Search */
+            department_search?: string | null;
+            /**
+             * Page Size
+             * @default 50
+             */
+            page_size: number | null;
+            /**
+             * Page Offset
+             * @default 0
+             */
+            page_offset: number | null;
         };
         /** GetExamplesApiRequest */
         GetExamplesApiRequest: {
@@ -17987,19 +18608,20 @@ export interface components {
             /** Items */
             items?: components["schemas"]["QGetProtocolsV4Item"][] | null;
         };
-        /** GetProviderApiRequest */
+        /**
+         * GetProviderApiRequest
+         * @description Request model for get provider endpoint.
+         */
         GetProviderApiRequest: {
             /** Provider Id */
             provider_id?: string | null;
             /** Draft Id */
             draft_id?: string | null;
-            /**
-             * Mcp
-             * @default false
-             */
-            mcp: boolean | null;
         };
-        /** GetProviderApiResponse */
+        /**
+         * GetProviderApiResponse
+         * @description Response model for get provider endpoint.
+         */
         GetProviderApiResponse: {
             /** Actor Name */
             actor_name?: string | null;
@@ -18013,57 +18635,104 @@ export interface components {
             draft_version?: number | null;
             /** Group Id */
             group_id?: string | null;
-            /** Name Id */
-            name_id?: string | null;
-            name_resource?: components["schemas"]["QGetProviderV4NameResource"] | null;
+            /** Names Group Id */
+            names_group_id?: string | null;
+            /** Descriptions Group Id */
+            descriptions_group_id?: string | null;
+            /** Flags Group Id */
+            flags_group_id?: string | null;
+            /** Departments Group Id */
+            departments_group_id?: string | null;
+            /** Values Group Id */
+            values_group_id?: string | null;
+            /** Regenerates Group Id */
+            regenerates_group_id?: string | null;
             /** Show Name */
             show_name?: boolean | null;
-            /** Name Agent Id */
-            name_agent_id?: string | null;
+            /** Name Domain Id */
+            name_domain_id?: string | null;
             /** Name Required */
             name_required?: boolean | null;
             /** Name Suggestions */
             name_suggestions?: string[] | null;
-            /** Names */
-            names?: components["schemas"]["QGetProviderV4NameResource"][] | null;
-            /** Description Id */
-            description_id?: string | null;
-            description_resource?: components["schemas"]["QGetProviderV4DescriptionResource"] | null;
+            /** Name Show Ai Generate */
+            name_show_ai_generate?: boolean | null;
             /** Show Description */
             show_description?: boolean | null;
-            /** Description Agent Id */
-            description_agent_id?: string | null;
+            /** Description Domain Id */
+            description_domain_id?: string | null;
             /** Description Required */
             description_required?: boolean | null;
             /** Description Suggestions */
             description_suggestions?: string[] | null;
-            /** Descriptions */
-            descriptions?: components["schemas"]["QGetProviderV4DescriptionResource"][] | null;
-            /** Active Flag Id */
-            active_flag_id?: string | null;
-            flag_resource?: components["schemas"]["QGetProviderV4FlagResource"] | null;
+            /** Description Show Ai Generate */
+            description_show_ai_generate?: boolean | null;
             /** Show Flag */
             show_flag?: boolean | null;
-            /** Flag Agent Id */
-            flag_agent_id?: string | null;
+            /** Flag Domain Id */
+            flag_domain_id?: string | null;
             /** Flag Required */
             flag_required?: boolean | null;
-            /** Flags */
-            flags?: components["schemas"]["QGetProviderV4FlagResource"][] | null;
+            /** Flag Show Ai Generate */
+            flag_show_ai_generate?: boolean | null;
+            /** Show Departments */
+            show_departments?: boolean | null;
+            /** Departments Domain Id */
+            departments_domain_id?: string | null;
+            /** Departments Required */
+            departments_required?: boolean | null;
+            /** Department Suggestions */
+            department_suggestions?: string[] | null;
+            /** Departments Show Ai Generate */
+            departments_show_ai_generate?: boolean | null;
+            /** Show Value */
+            show_value?: boolean | null;
+            /** Value Domain Id */
+            value_domain_id?: string | null;
+            /** Value Required */
+            value_required?: boolean | null;
+            /** Value Suggestions */
+            value_suggestions?: string[] | null;
+            /** Value Show Ai Generate */
+            value_show_ai_generate?: boolean | null;
+            /** Show Regenerates */
+            show_regenerates?: boolean | null;
+            /** Regenerates Domain Id */
+            regenerates_domain_id?: string | null;
+            /** Regenerates Required */
+            regenerates_required?: boolean | null;
+            /** Regenerates Suggestions */
+            regenerates_suggestions?: string[] | null;
+            /** Regenerates Show Ai Generate */
+            regenerates_show_ai_generate?: boolean | null;
+            /** Basic Show Ai Generate */
+            basic_show_ai_generate?: boolean | null;
+            /** Name Create Tool Id */
+            name_create_tool_id?: string | null;
+            /** Description Create Tool Id */
+            description_create_tool_id?: string | null;
+            /** Value Create Tool Id */
+            value_create_tool_id?: string | null;
+            /** Regenerates Create Tool Id */
+            regenerates_create_tool_id?: string | null;
+            /** Name Link Tool Id */
+            name_link_tool_id?: string | null;
+            /** Description Link Tool Id */
+            description_link_tool_id?: string | null;
+            /** Flag Link Tool Id */
+            flag_link_tool_id?: string | null;
+            /** Departments Link Tool Id */
+            departments_link_tool_id?: string | null;
+            /** Value Link Tool Id */
+            value_link_tool_id?: string | null;
+            /** Regenerates Link Tool Id */
+            regenerates_link_tool_id?: string | null;
+            /** Domain Data */
+            domain_data?: components["schemas"]["DomainData"][] | null;
+            resources?: components["schemas"]["ProviderResources"] | null;
         };
         /** GetProvidersListApiRequest */
         GetProvidersListApiRequest: Record<string, never>;
-        /** GetProvidersListApiResponse */
-        GetProvidersListApiResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Providers */
-            providers?: components["schemas"]["QListProvidersV4Provider"][] | null;
-            /** Provider Options */
-            provider_options?: components["schemas"]["QListProvidersV4ProviderOption"][] | null;
-            /** Status Options */
-            status_options?: components["schemas"]["QListProvidersV4StatusOption"][] | null;
-        };
         /** GetQualitiesApiRequest */
         GetQualitiesApiRequest: {
             /** Ids */
@@ -18115,6 +18784,16 @@ export interface components {
         GetReasoningLevelsApiResponse: {
             /** Items */
             items?: components["schemas"]["QGetReasoningLevelsV4Item"][] | null;
+        };
+        /** GetRegeneratesApiRequest */
+        GetRegeneratesApiRequest: {
+            /** Ids */
+            ids?: string[] | null;
+        };
+        /** GetRegeneratesApiResponse */
+        GetRegeneratesApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetRegeneratesV4Item"][] | null;
         };
         /** GetRequestLimitsApiRequest */
         GetRequestLimitsApiRequest: {
@@ -21033,6 +21712,44 @@ export interface components {
             profile_metrics?: components["schemas"]["ProfileMetricsItem"][];
         };
         /**
+         * ListAuthApiAuth
+         * @description Auth type for list endpoint with computed permissions.
+         */
+        ListAuthApiAuth: {
+            /** Auth Id */
+            auth_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Protocol Count */
+            protocol_count?: number | null;
+            /** Slug Count */
+            slug_count?: number | null;
+            /** Item Count */
+            item_count?: number | null;
+            /** Is Inactive */
+            is_inactive?: boolean | null;
+            /** Can Edit */
+            can_edit?: boolean | null;
+            /** Can Duplicate */
+            can_duplicate?: boolean | null;
+            /** Can Delete */
+            can_delete?: boolean | null;
+        };
+        /**
+         * ListAuthApiResponse
+         * @description Response model for list auth endpoint with computed permissions.
+         */
+        ListAuthApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Auths */
+            auths?: components["schemas"]["ListAuthApiAuth"][] | null;
+            /** Total Count */
+            total_count?: number | null;
+        };
+        /**
          * ListCohortApiCohort
          * @description Cohort item in list response with Python-computed permissions.
          */
@@ -21151,6 +21868,136 @@ export interface components {
             department_ids?: string[] | null;
             /** Scenario Ids */
             scenario_ids?: string[] | null;
+        };
+        /**
+         * ListDepartmentApiCohort
+         * @description Cohort type for list endpoint.
+         */
+        ListDepartmentApiCohort: {
+            /** Cohort Id */
+            cohort_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Count */
+            count?: number | null;
+        };
+        /**
+         * ListDepartmentApiDepartment
+         * @description Department type for list endpoint with computed permissions.
+         */
+        ListDepartmentApiDepartment: {
+            /** Department Id */
+            department_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Staff Count */
+            staff_count?: number | null;
+            /** Is Inactive */
+            is_inactive?: boolean | null;
+            /** Can Edit */
+            can_edit?: boolean | null;
+            /** Can Duplicate */
+            can_duplicate?: boolean | null;
+            /** Can Delete */
+            can_delete?: boolean | null;
+            /** Updated At */
+            updated_at?: string | null;
+        };
+        /**
+         * ListDepartmentApiProfile
+         * @description Profile type for list endpoint.
+         */
+        ListDepartmentApiProfile: {
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Count */
+            count?: number | null;
+        };
+        /**
+         * ListDepartmentApiResponse
+         * @description Response model for list department endpoint with computed permissions.
+         */
+        ListDepartmentApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Departments */
+            departments?: components["schemas"]["ListDepartmentApiDepartment"][] | null;
+            /** Cohorts */
+            cohorts?: components["schemas"]["ListDepartmentApiCohort"][] | null;
+            /** Profiles */
+            profiles?: components["schemas"]["ListDepartmentApiProfile"][] | null;
+            /** Total Count */
+            total_count?: number | null;
+        };
+        /**
+         * ListEvalApiDepartment
+         * @description Department type for list endpoint.
+         */
+        ListEvalApiDepartment: {
+            /** Department Id */
+            department_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Count */
+            count?: number | null;
+        };
+        /**
+         * ListEvalApiEval
+         * @description Eval type for list endpoint with computed permissions.
+         */
+        ListEvalApiEval: {
+            /** Eval Id */
+            eval_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Agent Ids */
+            agent_ids?: string[] | null;
+            /** Is Inactive */
+            is_inactive?: boolean | null;
+            /** Is Dynamic */
+            is_dynamic?: boolean | null;
+            /** Use Groups */
+            use_groups?: boolean | null;
+            /** Num Runs */
+            num_runs?: number | null;
+            /** Num Groups */
+            num_groups?: number | null;
+            /** Can Edit */
+            can_edit?: boolean | null;
+            /** Can Duplicate */
+            can_duplicate?: boolean | null;
+            /** Can Delete */
+            can_delete?: boolean | null;
+            /** Updated At */
+            updated_at?: string | null;
+        };
+        /**
+         * ListEvalApiResponse
+         * @description Response model for list eval endpoint with computed permissions.
+         */
+        ListEvalApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Evals */
+            evals?: components["schemas"]["ListEvalApiEval"][] | null;
+            /** Departments */
+            departments?: components["schemas"]["ListEvalApiDepartment"][] | null;
+            /** Total Count */
+            total_count?: number | null;
+            /** User Role */
+            user_role?: string | null;
         };
         /**
          * ListFieldApiDepartment
@@ -21418,6 +22265,68 @@ export interface components {
             parameter_item_ids?: string[] | null;
             /** Count */
             count?: number | null;
+        };
+        /**
+         * ListProviderApiProvider
+         * @description Provider type for list endpoint with computed permissions.
+         */
+        ListProviderApiProvider: {
+            /** Provider Id */
+            provider_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Value */
+            value?: string | null;
+            /** Active */
+            active?: boolean | null;
+            /** Updated At */
+            updated_at?: string | null;
+            /** Model Usage Count */
+            model_usage_count?: number | null;
+            /** Can Edit */
+            can_edit?: boolean | null;
+            /** Can Delete */
+            can_delete?: boolean | null;
+            /** Can Duplicate */
+            can_duplicate?: boolean | null;
+        };
+        /**
+         * ListProviderApiProviderOption
+         * @description Provider option type for list endpoint.
+         */
+        ListProviderApiProviderOption: {
+            /** Value */
+            value?: string | null;
+            /** Label */
+            label?: string | null;
+        };
+        /**
+         * ListProviderApiResponse
+         * @description Response model for list provider endpoint with computed permissions.
+         */
+        ListProviderApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Providers */
+            providers?: components["schemas"]["ListProviderApiProvider"][] | null;
+            /** Provider Options */
+            provider_options?: components["schemas"]["ListProviderApiProviderOption"][] | null;
+            /** Status Options */
+            status_options?: components["schemas"]["ListProviderApiStatusOption"][] | null;
+            /** Total Count */
+            total_count?: number | null;
+        };
+        /**
+         * ListProviderApiStatusOption
+         * @description Status option type for list endpoint.
+         */
+        ListProviderApiStatusOption: {
+            /** Value */
+            value?: string | null;
+            /** Label */
+            label?: string | null;
         };
         /**
          * ListScenarioApiCohort
@@ -22068,7 +22977,10 @@ export interface components {
             /** Draft Exists */
             draft_exists?: boolean | null;
         };
-        /** PatchAuthDraftApiRequest */
+        /**
+         * PatchAuthDraftApiRequest
+         * @description Request model for patch auth draft endpoint.
+         */
         PatchAuthDraftApiRequest: {
             /** Input Draft Id */
             input_draft_id?: string | null;
@@ -22078,20 +22990,32 @@ export interface components {
             description_id?: string | null;
             /** Active Flag Id */
             active_flag_id?: string | null;
+            /** Protocol Ids */
+            protocol_ids?: string[] | null;
+            /** Slug Ids */
+            slug_ids?: string[] | null;
             /**
              * Expected Version
              * @default 0
              */
-            expected_version: number | null;
+            expected_version: number;
         };
-        /** PatchAuthDraftApiResponse */
+        /**
+         * PatchAuthDraftApiResponse
+         * @description Response model for patch auth draft endpoint.
+         */
         PatchAuthDraftApiResponse: {
-            /** Draft Id */
-            draft_id?: string | null;
+            /** Success */
+            success: boolean;
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
             /** New Version */
-            new_version?: number | null;
-            /** Draft Exists */
-            draft_exists?: boolean | null;
+            new_version: number;
+            /** Message */
+            message: string;
         };
         /** PatchCohortDraftApiRequest */
         PatchCohortDraftApiRequest: {
@@ -22124,7 +23048,10 @@ export interface components {
             /** Draft Exists */
             draft_exists?: boolean | null;
         };
-        /** PatchDepartmentDraftApiRequest */
+        /**
+         * PatchDepartmentDraftApiRequest
+         * @description Request model for patch department draft endpoint.
+         */
         PatchDepartmentDraftApiRequest: {
             /** Input Draft Id */
             input_draft_id?: string | null;
@@ -22134,22 +23061,30 @@ export interface components {
             description_id?: string | null;
             /** Active Flag Id */
             active_flag_id?: string | null;
-            /** Setting Ids */
-            setting_ids?: string[] | null;
+            /** Settings Ids */
+            settings_ids?: string[] | null;
             /**
              * Expected Version
              * @default 0
              */
-            expected_version: number | null;
+            expected_version: number;
         };
-        /** PatchDepartmentDraftApiResponse */
+        /**
+         * PatchDepartmentDraftApiResponse
+         * @description Response model for patch department draft endpoint.
+         */
         PatchDepartmentDraftApiResponse: {
-            /** Draft Id */
-            draft_id?: string | null;
+            /** Success */
+            success: boolean;
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
             /** New Version */
-            new_version?: number | null;
-            /** Draft Exists */
-            draft_exists?: boolean | null;
+            new_version: number;
+            /** Message */
+            message: string;
         };
         /**
          * PatchDocumentDraftApiRequest
@@ -22193,7 +23128,10 @@ export interface components {
             /** Message */
             message: string;
         };
-        /** PatchEvalDraftApiRequest */
+        /**
+         * PatchEvalDraftApiRequest
+         * @description Request model for patch eval draft endpoint.
+         */
         PatchEvalDraftApiRequest: {
             /** Input Draft Id */
             input_draft_id?: string | null;
@@ -22215,16 +23153,24 @@ export interface components {
              * Expected Version
              * @default 0
              */
-            expected_version: number | null;
+            expected_version: number;
         };
-        /** PatchEvalDraftApiResponse */
+        /**
+         * PatchEvalDraftApiResponse
+         * @description Response model for patch eval draft endpoint.
+         */
         PatchEvalDraftApiResponse: {
-            /** Draft Id */
-            draft_id?: string | null;
+            /** Success */
+            success: boolean;
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
             /** New Version */
-            new_version?: number | null;
-            /** Draft Exists */
-            draft_exists?: boolean | null;
+            new_version: number;
+            /** Message */
+            message: string;
         };
         /**
          * PatchFieldDraftApiRequest
@@ -22461,7 +23407,10 @@ export interface components {
             /** Message */
             message: string;
         };
-        /** PatchProviderDraftApiRequest */
+        /**
+         * PatchProviderDraftApiRequest
+         * @description Request model for patch provider draft endpoint.
+         */
         PatchProviderDraftApiRequest: {
             /** Input Draft Id */
             input_draft_id?: string | null;
@@ -22471,20 +23420,34 @@ export interface components {
             description_id?: string | null;
             /** Active Flag Id */
             active_flag_id?: string | null;
+            /** Value Id */
+            value_id?: string | null;
+            /** Regenerates Id */
+            regenerates_id?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
             /**
              * Expected Version
              * @default 0
              */
-            expected_version: number | null;
+            expected_version: number;
         };
-        /** PatchProviderDraftApiResponse */
+        /**
+         * PatchProviderDraftApiResponse
+         * @description Response model for patch provider draft endpoint.
+         */
         PatchProviderDraftApiResponse: {
-            /** Draft Id */
-            draft_id?: string | null;
+            /** Success */
+            success: boolean;
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
             /** New Version */
-            new_version?: number | null;
-            /** Draft Exists */
-            draft_exists?: boolean | null;
+            new_version: number;
+            /** Message */
+            message: string;
         };
         /**
          * PatchRubricDraftApiRequest
@@ -23946,6 +24909,95 @@ export interface components {
             /** Protocols Id */
             protocols_id?: string | null;
         };
+        /**
+         * ProviderFlagConfig
+         * @description Enriched flag config for direct client consumption.
+         */
+        ProviderFlagConfig: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Description */
+            description?: string | null;
+            /** Icon Id */
+            icon_id?: string | null;
+            /** Flag Option Id */
+            flag_option_id?: string | null;
+            /**
+             * Show
+             * @default true
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Domain Id */
+            domain_id?: string | null;
+            /** Generated */
+            generated?: boolean | null;
+        };
+        /**
+         * ProviderGenerationCompleteEvent
+         * @description Server-to-client event: provider_generation_complete.
+         *
+         *     Emitted when a provider resource generation completes successfully.
+         *     Contains full resource objects (not just IDs) for immediate frontend use.
+         */
+        ProviderGenerationCompleteEvent: {
+            /**
+             * Artifact Type
+             * @default provider
+             */
+            artifact_type: string;
+            /** Group Id */
+            group_id: string;
+            /** Resource Type */
+            resource_type: string;
+            /** Run Id */
+            run_id?: string | null;
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Type */
+            type?: string | null;
+            name_resource?: components["schemas"]["QGetNamesV4Item"] | null;
+            description_resource?: components["schemas"]["QGetDescriptionsV4Item"] | null;
+            flag_resource?: components["schemas"]["QGetFlagsV4Item"] | null;
+            value_resource?: components["schemas"]["QGetValuesV4Item"] | null;
+            regenerates_resource?: components["schemas"]["QGetRegeneratesV4Item"] | null;
+            /** Department Resources */
+            department_resources?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
+        };
+        /**
+         * ProviderResourceBucket
+         * @description Generic resources bucket with full objects (always plural lists).
+         */
+        ProviderResourceBucket: {
+            /** Names */
+            names?: components["schemas"]["QGetNamesV4Item"][] | null;
+            /** Descriptions */
+            descriptions?: components["schemas"]["QGetDescriptionsV4Item"][] | null;
+            /** Flags */
+            flags?: components["schemas"]["ProviderFlagConfig"][] | null;
+            /** Departments */
+            departments?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
+            /** Values */
+            values?: components["schemas"]["QGetValuesV4Item"][] | null;
+            /** Regenerates */
+            regenerates?: components["schemas"]["QGetRegeneratesV4Item"][] | null;
+        };
+        /**
+         * ProviderResources
+         * @description Full resources + current selections.
+         */
+        ProviderResources: {
+            resources?: components["schemas"]["ProviderResourceBucket"] | null;
+            current?: components["schemas"]["ProviderResourceBucket"] | null;
+        };
         /** QGetArgsOutputsV4Item */
         QGetArgsOutputsV4Item: {
             /** Id */
@@ -23978,106 +25030,6 @@ export interface components {
             /** Generated */
             generated: boolean | null;
         };
-        /** QGetAuthListV4Auth */
-        QGetAuthListV4Auth: {
-            /** Auth Id */
-            auth_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Active */
-            active: boolean | null;
-            /** Updated At */
-            updated_at: string | null;
-            /** Num Items */
-            num_items: number | null;
-            /** Sample Items */
-            sample_items: components["schemas"]["QGetAuthListV4AuthItem"][] | null;
-            /** Can Edit */
-            can_edit: boolean | null;
-            /** Can Delete */
-            can_delete: boolean | null;
-            /** Can Duplicate */
-            can_duplicate: boolean | null;
-        };
-        /** QGetAuthListV4AuthItem */
-        QGetAuthListV4AuthItem: {
-            /** Auth Item Id */
-            auth_item_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-        };
-        /** QGetAuthV4AuthItem */
-        QGetAuthV4AuthItem: {
-            /** Auth Item Id */
-            auth_item_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Position */
-            position: number | null;
-            /** Active */
-            active: boolean | null;
-            /** Value Masked */
-            value_masked: string | null;
-            /** Key Id */
-            key_id: string | null;
-            /** Encrypted */
-            encrypted: boolean | null;
-        };
-        /** QGetAuthV4DescriptionResource */
-        QGetAuthV4DescriptionResource: {
-            /** Id */
-            id: string | null;
-            /** Description */
-            description: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetAuthV4FlagResource */
-        QGetAuthV4FlagResource: {
-            /** Id */
-            id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Icon */
-            icon: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetAuthV4NameResource */
-        QGetAuthV4NameResource: {
-            /** Id */
-            id: string | null;
-            /** Name */
-            name: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetAuthV4Protocol */
-        QGetAuthV4Protocol: {
-            /** Id */
-            id: string | null;
-            /** Value */
-            value: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetAuthV4Slug */
-        QGetAuthV4Slug: {
-            /** Id */
-            id: string | null;
-            /** Value */
-            value: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
         /**
          * QGetCohortsV4Item
          * @description Cohort item returned from get endpoint.
@@ -24104,105 +25056,6 @@ export interface components {
             description: string | null;
             /** Hex Code */
             hex_code: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetDepartmentV4Cohort */
-        QGetDepartmentV4Cohort: {
-            /** Cohort Id */
-            cohort_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetDepartmentV4Department */
-        QGetDepartmentV4Department: {
-            /** Department Id */
-            department_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetDepartmentV4DescriptionResource */
-        QGetDepartmentV4DescriptionResource: {
-            /** Id */
-            id: string | null;
-            /** Description */
-            description: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetDepartmentV4FlagResource */
-        QGetDepartmentV4FlagResource: {
-            /** Id */
-            id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Icon */
-            icon: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetDepartmentV4Key */
-        QGetDepartmentV4Key: {
-            /** Key Id */
-            key_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Key Masked */
-            key_masked: string | null;
-            /** Active */
-            active: boolean | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetDepartmentV4Model */
-        QGetDepartmentV4Model: {
-            /** Model Id */
-            model_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetDepartmentV4ModelKey */
-        QGetDepartmentV4ModelKey: {
-            /** Model Id */
-            model_id: string | null;
-            /** Key Id */
-            key_id: string | null;
-        };
-        /** QGetDepartmentV4NameResource */
-        QGetDepartmentV4NameResource: {
-            /** Id */
-            id: string | null;
-            /** Name */
-            name: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetDepartmentV4Setting */
-        QGetDepartmentV4Setting: {
-            /** Settings Id */
-            settings_id: string | null;
-            /** Created At */
-            created_at: string | null;
-            /** Active */
-            active: boolean | null;
-            /** Department Ids */
-            department_ids: string[] | null;
             /** Generated */
             generated: boolean | null;
         };
@@ -24275,124 +25128,6 @@ export interface components {
             base_url: string | null;
             /** Generated */
             generated: boolean | null;
-        };
-        /** QGetEvalV4Agent */
-        QGetEvalV4Agent: {
-            /** Agent Id */
-            agent_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Roles */
-            roles: string[] | null;
-        };
-        /** QGetEvalV4AvailableGroup */
-        QGetEvalV4AvailableGroup: {
-            /** Group Id */
-            group_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Created At */
-            created_at: string | null;
-            /** Member Count */
-            member_count: number | null;
-        };
-        /** QGetEvalV4AvailableModelRun */
-        QGetEvalV4AvailableModelRun: {
-            /** Model Run Id */
-            model_run_id: string | null;
-            /** Created At */
-            created_at: string | null;
-            /** Model Id */
-            model_id: string | null;
-            /** Model Name */
-            model_name: string | null;
-            /** Profile Id */
-            profile_id: string | null;
-            /** Profile Name */
-            profile_name: string | null;
-            /** Agent Id */
-            agent_id: string | null;
-            /** Agent Name */
-            agent_name: string | null;
-            /** Persona Id */
-            persona_id: string | null;
-            /** Persona Name */
-            persona_name: string | null;
-            /** Actor Type */
-            actor_type: string | null;
-        };
-        /** QGetEvalV4Department */
-        QGetEvalV4Department: {
-            /** Department Id */
-            department_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetEvalV4DescriptionResource */
-        QGetEvalV4DescriptionResource: {
-            /** Id */
-            id: string | null;
-            /** Description */
-            description: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetEvalV4FlagResource */
-        QGetEvalV4FlagResource: {
-            /** Id */
-            id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Icon */
-            icon: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetEvalV4GroupRubrics */
-        QGetEvalV4GroupRubrics: {
-            /** Group Id */
-            group_id: string | null;
-            /** Rubric Ids */
-            rubric_ids: string[] | null;
-        };
-        /** QGetEvalV4NameResource */
-        QGetEvalV4NameResource: {
-            /** Id */
-            id: string | null;
-            /** Name */
-            name: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetEvalV4Rubric */
-        QGetEvalV4Rubric: {
-            /** Rubric Id */
-            rubric_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Agent Role */
-            agent_role: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetEvalV4RunRubrics */
-        QGetEvalV4RunRubrics: {
-            /** Run Id */
-            run_id: string | null;
-            /** Rubric Ids */
-            rubric_ids: string[] | null;
         };
         /** QGetExamplesV4Item */
         QGetExamplesV4Item: {
@@ -24885,37 +25620,6 @@ export interface components {
             /** Generated */
             generated: boolean | null;
         };
-        /** QGetProviderV4DescriptionResource */
-        QGetProviderV4DescriptionResource: {
-            /** Id */
-            id: string | null;
-            /** Description */
-            description: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetProviderV4FlagResource */
-        QGetProviderV4FlagResource: {
-            /** Id */
-            id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Icon */
-            icon: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetProviderV4NameResource */
-        QGetProviderV4NameResource: {
-            /** Id */
-            id: string | null;
-            /** Name */
-            name: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
         /**
          * QGetProvidersV4Item
          * @description Provider resource item (placeholder until endpoint exists).
@@ -24958,6 +25662,15 @@ export interface components {
             id: string | null;
             /** Reasoning Level */
             reasoning_level: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetRegeneratesV4Item */
+        QGetRegeneratesV4Item: {
+            /** Id */
+            id: string | null;
+            /** Instructions */
+            instructions: string | null;
             /** Generated */
             generated: boolean | null;
         };
@@ -25661,51 +26374,6 @@ export interface components {
             /** Actor Name */
             actor_name: string | null;
         };
-        /** QListDepartmentsV4Cohort */
-        QListDepartmentsV4Cohort: {
-            /** Cohort Id */
-            cohort_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-        };
-        /** QListDepartmentsV4Department */
-        QListDepartmentsV4Department: {
-            /** Department Id */
-            department_id: string | null;
-            /** Title */
-            title: string | null;
-            /** Description */
-            description: string | null;
-            /** Active */
-            active: boolean | null;
-            /** Updated At */
-            updated_at: string | null;
-            /** Total Price Spent */
-            total_price_spent: number | null;
-            /** Staff Count */
-            staff_count: number | null;
-            /** Cohort Ids */
-            cohort_ids: string[] | null;
-            /** Profile Ids */
-            profile_ids: string[] | null;
-            /** Can Edit */
-            can_edit: boolean | null;
-            /** Can Delete */
-            can_delete: boolean | null;
-            /** Can Duplicate */
-            can_duplicate: boolean | null;
-        };
-        /** QListDepartmentsV4Profile */
-        QListDepartmentsV4Profile: {
-            /** Profile Id */
-            profile_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-        };
         /** QListDocumentsV4Department */
         QListDocumentsV4Department: {
             /** Department Id */
@@ -25841,45 +26509,6 @@ export interface components {
         };
         /** QListModelsV4StatusOption */
         QListModelsV4StatusOption: {
-            /** Value */
-            value: string | null;
-            /** Label */
-            label: string | null;
-        };
-        /** QListProvidersV4Provider */
-        QListProvidersV4Provider: {
-            /** Provider Id */
-            provider_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Value */
-            value: string | null;
-            /** Active */
-            active: boolean | null;
-            /** Created At */
-            created_at: string | null;
-            /** Updated At */
-            updated_at: string | null;
-            /** Base Url */
-            base_url: string | null;
-            /** Can Edit */
-            can_edit: boolean | null;
-            /** Can Delete */
-            can_delete: boolean | null;
-            /** Can Duplicate */
-            can_duplicate: boolean | null;
-        };
-        /** QListProvidersV4ProviderOption */
-        QListProvidersV4ProviderOption: {
-            /** Value */
-            value: string | null;
-            /** Label */
-            label: string | null;
-        };
-        /** QListProvidersV4StatusOption */
-        QListProvidersV4StatusOption: {
             /** Value */
             value: string | null;
             /** Label */
@@ -26131,20 +26760,6 @@ export interface components {
             cohort_ids: string[] | null;
             /** Errors */
             errors: components["schemas"]["QProcessDocumentCsvV4CsvRowError"][] | null;
-        };
-        /** QSaveEvalV4GroupRubricLink */
-        QSaveEvalV4GroupRubricLink: {
-            /** Group Id */
-            group_id: string | null;
-            /** Rubric Ids */
-            rubric_ids: string[] | null;
-        };
-        /** QSaveEvalV4RunRubricLink */
-        QSaveEvalV4RunRubricLink: {
-            /** Run Id */
-            run_id: string | null;
-            /** Rubric Ids */
-            rubric_ids: string[] | null;
         };
         /** QSearchSimulatableProfilesV4Profile */
         QSearchSimulatableProfilesV4Profile: {
@@ -27359,22 +27974,72 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
-        /** SaveAuthApiRequest */
+        /**
+         * SaveAuthApiRequest
+         * @description Request model for save auth endpoint - accepts form data directly.
+         */
         SaveAuthApiRequest: {
             /**
-             * Draft Id
+             * Group Id
              * Format: uuid
              */
-            draft_id: string;
+            group_id: string;
             /** Input Auth Id */
             input_auth_id?: string | null;
+            /**
+             * Name Id
+             * Format: uuid
+             */
+            name_id: string;
+            /** Description Id */
+            description_id?: string | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
+            /** Protocol Ids */
+            protocol_ids?: string[] | null;
+            /** Slug Ids */
+            slug_ids?: string[] | null;
+            /** Auth Items */
+            auth_items?: components["schemas"]["SaveAuthItemInput"][] | null;
         };
-        /** SaveAuthApiResponse */
+        /**
+         * SaveAuthApiResponse
+         * @description Response model for save auth endpoint.
+         */
         SaveAuthApiResponse: {
-            /** Auth Id */
-            auth_id?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
+            /** Success */
+            success: boolean;
+            /**
+             * Auth Id
+             * Format: uuid
+             */
+            auth_id: string;
+            /** Message */
+            message: string;
+        };
+        /**
+         * SaveAuthItemInput
+         * @description Auth item input for save endpoint.
+         */
+        SaveAuthItemInput: {
+            /** Name */
+            name: string;
+            /** Description */
+            description?: string | null;
+            /**
+             * Encrypted
+             * @default true
+             */
+            encrypted: boolean;
+            /** Position */
+            position?: number | null;
+            /**
+             * Active
+             * @default true
+             */
+            active: boolean;
+            /** Key Id */
+            key_id?: string | null;
         };
         /**
          * SaveCohortApiRequest
@@ -27414,65 +28079,99 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
-        /** SaveDepartmentApiRequest */
+        /**
+         * SaveDepartmentApiRequest
+         * @description Request model for save department endpoint - accepts form data directly (no draft_id).
+         */
         SaveDepartmentApiRequest: {
             /**
-             * Draft Id
+             * Group Id
              * Format: uuid
              */
-            draft_id: string;
+            group_id: string;
             /** Input Department Id */
             input_department_id?: string | null;
-        };
-        /** SaveDepartmentApiResponse */
-        SaveDepartmentApiResponse: {
-            /** Department Id */
-            department_id?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
-        };
-        /** SaveEvalApiRequest */
-        SaveEvalApiRequest: {
-            /** Name */
-            name: string;
-            /** Agent Ids */
-            agent_ids: string[];
-            /** Description */
-            description?: string | null;
             /**
-             * Use Groups
-             * @default false
+             * Name Id
+             * Format: uuid
              */
-            use_groups: boolean | null;
+            name_id: string;
+            /** Description Id */
+            description_id?: string | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
+            /** Settings Ids */
+            settings_ids?: string[] | null;
+        };
+        /**
+         * SaveDepartmentApiResponse
+         * @description Response model for save department endpoint.
+         */
+        SaveDepartmentApiResponse: {
+            /** Success */
+            success: boolean;
+            /**
+             * Department Id
+             * Format: uuid
+             */
+            department_id: string;
+            /** Message */
+            message: string;
+        };
+        /**
+         * SaveEvalApiRequest
+         * @description Request model for save eval endpoint - accepts form data directly.
+         */
+        SaveEvalApiRequest: {
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /** Input Eval Id */
+            input_eval_id?: string | null;
+            /**
+             * Name Id
+             * Format: uuid
+             */
+            name_id: string;
+            /** Description Id */
+            description_id?: string | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
+            /** Dynamic Flag Id */
+            dynamic_flag_id?: string | null;
+            /** Groups Flag Id */
+            groups_flag_id?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Agent Ids */
+            agent_ids?: string[] | null;
+            /** Rubric Ids */
+            rubric_ids?: string[] | null;
             /** Model Run Ids */
             model_run_ids?: string[] | null;
             /** Group Ids */
             group_ids?: string[] | null;
-            /** Run Rubric Links */
-            run_rubric_links?: components["schemas"]["QSaveEvalV4RunRubricLink"][] | null;
-            /** Group Rubric Links */
-            group_rubric_links?: components["schemas"]["QSaveEvalV4GroupRubricLink"][] | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /**
-             * Active
-             * @default true
-             */
-            active: boolean | null;
-            /**
-             * Dynamic
-             * @default false
-             */
-            dynamic: boolean | null;
-            /** Input Eval Id */
-            input_eval_id?: string | null;
+            /** Run Rubrics */
+            run_rubrics?: components["schemas"]["EvalRunRubricMapping"][] | null;
+            /** Group Rubrics */
+            group_rubrics?: components["schemas"]["EvalGroupRubricMapping"][] | null;
         };
-        /** SaveEvalApiResponse */
+        /**
+         * SaveEvalApiResponse
+         * @description Response model for save eval endpoint.
+         */
         SaveEvalApiResponse: {
-            /** Eval Id */
-            eval_id?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
+            /** Success */
+            success: boolean;
+            /**
+             * Eval Id
+             * Format: uuid
+             */
+            eval_id: string;
+            /** Message */
+            message: string;
         };
         /**
          * SaveFieldApiRequest
@@ -27718,22 +28417,48 @@ export interface components {
             /** Message */
             message: string;
         };
-        /** SaveProviderApiRequest */
+        /**
+         * SaveProviderApiRequest
+         * @description Request model for save provider endpoint - accepts form data directly (no draft_id).
+         */
         SaveProviderApiRequest: {
             /**
-             * Draft Id
+             * Group Id
              * Format: uuid
              */
-            draft_id: string;
+            group_id: string;
             /** Input Provider Id */
             input_provider_id?: string | null;
+            /**
+             * Name Id
+             * Format: uuid
+             */
+            name_id: string;
+            /** Description Id */
+            description_id?: string | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
+            /** Value Id */
+            value_id?: string | null;
+            /** Regenerates Id */
+            regenerates_id?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
         };
-        /** SaveProviderApiResponse */
+        /**
+         * SaveProviderApiResponse
+         * @description Response model for save provider endpoint.
+         */
         SaveProviderApiResponse: {
-            /** Provider Id */
-            provider_id?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
+            /** Success */
+            success: boolean;
+            /**
+             * Provider Id
+             * Format: uuid
+             */
+            provider_id: string;
+            /** Message */
+            message: string;
         };
         /**
          * SaveRubricApiRequest
@@ -28955,6 +29680,32 @@ export interface components {
             /** Items */
             items?: components["schemas"]["QGetPromptsV4Item"][] | null;
         };
+        /** SearchProtocolsApiRequest */
+        SearchProtocolsApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Draft Id */
+            draft_id?: string | null;
+            /** Suggest Source */
+            suggest_source?: string | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchProtocolsApiResponse */
+        SearchProtocolsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetProtocolsV4Item"][] | null;
+        };
         /** SearchQualitiesApiRequest */
         SearchQualitiesApiRequest: {
             /** Search */
@@ -28998,6 +29749,30 @@ export interface components {
         SearchReasoningLevelsApiResponse: {
             /** Items */
             items?: components["schemas"]["QGetReasoningLevelsV4Item"][] | null;
+        };
+        /** SearchRegeneratesApiRequest */
+        SearchRegeneratesApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Suggest Source */
+            suggest_source?: string | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchRegeneratesApiResponse */
+        SearchRegeneratesApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetRegeneratesV4Item"][] | null;
         };
         /**
          * SearchRequestLimitsApiRequest
@@ -29211,6 +29986,32 @@ export interface components {
             /** Items */
             items?: components["schemas"]["GetSimulationV4Item"][] | null;
         };
+        /** SearchSlugsApiRequest */
+        SearchSlugsApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Draft Id */
+            draft_id?: string | null;
+            /** Suggest Source */
+            suggest_source?: string | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchSlugsApiResponse */
+        SearchSlugsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetSlugsV4Item"][] | null;
+        };
         /** SearchTemperatureLevelsApiRequest */
         SearchTemperatureLevelsApiRequest: {
             /** Search */
@@ -29298,6 +30099,30 @@ export interface components {
         SearchUploadsApiResponse: {
             /** Items */
             items?: components["schemas"]["QGetUploadsV4Item"][] | null;
+        };
+        /** SearchValuesApiRequest */
+        SearchValuesApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Suggest Source */
+            suggest_source?: string | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchValuesApiResponse */
+        SearchValuesApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetValuesV4Item"][] | null;
         };
         /** SearchVoicesApiRequest */
         SearchVoicesApiRequest: {
@@ -30791,6 +31616,14 @@ export interface components {
             /** Voices Id */
             voices_id?: string | null;
         };
+        /** RefreshHomeMvsNewApiRequest */
+        "_MissingSqlType-Input": {
+            [key: string]: unknown;
+        };
+        /** RefreshHomeMvsNewApiResponse */
+        "_MissingSqlType-Output": {
+            [key: string]: unknown;
+        };
         /**
          * DeleteDocumentApiRequest
          * @description Request model for delete document endpoint.
@@ -31202,30 +32035,6 @@ export interface components {
             document_id?: string | null;
             /** Actor Name */
             actor_name?: string | null;
-        };
-        /** GetEvalsListApiRequest */
-        app__sql__types___build_missing_type___locals____MissingSqlType__1: {
-            [key: string]: unknown;
-        };
-        /** DeleteEvalApiRequest */
-        app__sql__types___build_missing_type___locals____MissingSqlType__2: {
-            [key: string]: unknown;
-        };
-        /** RefreshHomeMvsNewApiRequest */
-        app__sql__types___build_missing_type___locals____MissingSqlType__3: {
-            [key: string]: unknown;
-        };
-        /** GetEvalsListApiResponse */
-        app__sql__types___build_missing_type___locals____MissingSqlType__4: {
-            [key: string]: unknown;
-        };
-        /** DeleteEvalApiResponse */
-        app__sql__types___build_missing_type___locals____MissingSqlType__5: {
-            [key: string]: unknown;
-        };
-        /** RefreshHomeMvsNewApiResponse */
-        app__sql__types___build_missing_type___locals____MissingSqlType__6: {
-            [key: string]: unknown;
         };
     };
     responses: never;
@@ -32472,7 +33281,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetDepartmentsListApiResponse"];
+                    "application/json": components["schemas"]["ListDepartmentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -32939,7 +33748,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__1"];
+                "application/json": components["schemas"]["GetEvalsListApiRequest"];
             };
         };
         responses: {
@@ -32949,7 +33758,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__4"];
+                    "application/json": components["schemas"]["ListEvalApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -33087,7 +33896,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__2"];
+                "application/json": components["schemas"]["DeleteEvalApiRequest"];
             };
         };
         responses: {
@@ -33097,7 +33906,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__5"];
+                    "application/json": components["schemas"]["DeleteEvalApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -34234,7 +35043,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetProvidersListApiResponse"];
+                    "application/json": components["schemas"]["ListProviderApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -35447,7 +36256,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetAuthListApiResponse"];
+                    "application/json": components["schemas"]["ListAuthApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -36165,7 +36974,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__3"];
+                "application/json": components["schemas"]["_MissingSqlType-Input"];
             };
         };
         responses: {
@@ -36175,7 +36984,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__6"];
+                    "application/json": components["schemas"]["_MissingSqlType-Output"];
                 };
             };
             /** @description Validation Error */
@@ -40128,6 +40937,117 @@ export interface operations {
             };
         };
     };
+    search_protocols_api_v4_resources_protocols_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchProtocolsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchProtocolsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_regenerates_api_v4_resources_regenerates_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetRegeneratesApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetRegeneratesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_regenerates_api_v4_resources_regenerates_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchRegeneratesApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchRegeneratesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_qualities_api_v4_resources_qualities_get_post: {
         parameters: {
             query?: never;
@@ -41645,6 +42565,43 @@ export interface operations {
             };
         };
     };
+    search_slugs_api_v4_resources_slugs_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchSlugsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchSlugsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_standard_groups_api_v4_resources_standard_groups_post: {
         parameters: {
             query?: never;
@@ -42039,6 +42996,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetValuesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_values_api_v4_resources_values_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchValuesApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchValuesApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -45107,6 +46101,111 @@ export interface operations {
             };
         };
     };
+    auth_generation_progress_api_socket_v4_server_auth_generation_progress_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AuthGenerationProgressEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    auth_generation_complete_api_socket_v4_server_auth_generation_complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AuthGenerationCompleteEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    auth_generation_error_api_socket_v4_server_auth_generation_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AuthGenerationErrorEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     training_started_api_socket_v4_server_training_started_post: {
         parameters: {
             query?: never;
@@ -47787,9 +48886,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": {
-                    [key: string]: unknown;
-                };
+                "application/json": components["schemas"]["ProviderGenerationCompleteEvent"];
             };
         };
         responses: {
@@ -47898,9 +48995,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": {
-                    [key: string]: unknown;
-                };
+                "application/json": components["schemas"]["EvalGenerationCompleteEvent"];
             };
         };
         responses: {

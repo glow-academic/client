@@ -5,12 +5,17 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.artifacts.provider.permissions import compute_can_duplicate
+from app.api.v4.artifacts.provider.types import (
+    DuplicateProviderApiRequest,
+    DuplicateProviderApiResponse,
+)
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
-    DuplicateProviderApiRequest,
-    DuplicateProviderApiResponse,
+    CheckProviderDuplicateAccessSqlParams,
+    CheckProviderDuplicateAccessSqlRow,
     DuplicateProviderSqlParams,
     DuplicateProviderSqlRow,
     load_sql_query,
@@ -18,8 +23,12 @@ from app.sql.types import (
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
-# Load SQL with types at module level - makes it clear what SQL file is used
-SQL_PATH = "app/sql/v4/queries/providers/duplicate_provider_complete.sql"
+# SQL paths
+ACCESS_CHECK_SQL_PATH = (
+    "app/sql/v4/queries/providers/check_provider_duplicate_access_complete.sql"
+)
+DUPLICATE_SQL_PATH = "app/sql/v4/queries/providers/duplicate_provider_complete.sql"
+
 
 router = APIRouter()
 
@@ -41,9 +50,9 @@ async def duplicate_provider(
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DuplicateProviderApiResponse:
     """Duplicate a provider."""
-    tags = ["providers"]  # From router tags
+    tags = ["providers"]
 
-    sql_query = load_sql_query(SQL_PATH)
+    sql_query = load_sql_query(DUPLICATE_SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -55,49 +64,77 @@ async def duplicate_provider(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Convert API request to SQL params (add profile_id from header)
-        params = DuplicateProviderSqlParams(
-            **request.model_dump(), profile_id=profile_id
+        # Permission check: get user role using typed SQL
+        access_params = CheckProviderDuplicateAccessSqlParams(
+            profile_id=profile_id,
         )
-        sql_params = params.to_tuple()
-
-        # Execute query with typed helper - automatically detects and calls function if present
-        result = cast(
-            DuplicateProviderSqlRow,
+        access_result = cast(
+            CheckProviderDuplicateAccessSqlRow,
             await execute_sql_typed(
                 conn,
-                SQL_PATH,
-                params=params,
+                ACCESS_CHECK_SQL_PATH,
+                params=access_params,
             ),
         )
 
-        if not result or not result.new_provider_id:
-            raise ValueError(f"Provider not found: {request.provider_id}")
-
-        original_name = result.original_name or "Unknown"
-
-        # Set audit context with data from SQL query
-        if result.actor_name:
-            audit_set(
-                http_request,
-                actor={"name": result.actor_name, "id": profile_id},
-                provider={"name": original_name, "id": str(request.provider_id)},
+        if not access_result:
+            raise HTTPException(
+                status_code=401,
+                detail="Unable to verify user permissions.",
             )
 
-        # Convert SQL result to API response
-        api_response = DuplicateProviderApiResponse.model_validate(
-            {
-                "success": True,
-                "providerId": str(result.new_provider_id),
-                "message": f"Provider '{original_name}' duplicated successfully",
-            }
-        )
+        can_duplicate = compute_can_duplicate(user_role=access_result.user_role)
 
-        # Invalidate cache after mutation
-        await invalidate_tags(tags)
-        response.headers["X-Invalidate-Tags"] = ",".join(tags)
+        if not can_duplicate:
+            raise HTTPException(
+                status_code=403,
+                detail="You don't have permission to duplicate this provider.",
+            )
 
-        return api_response
+        async with conn.transaction():
+            # Convert API request to SQL params (add profile_id from header)
+            params = DuplicateProviderSqlParams(
+                **request.model_dump(), profile_id=profile_id
+            )
+            sql_params = params.to_tuple()
+
+            # Execute SQL with typed helper
+            result = cast(
+                DuplicateProviderSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    DUPLICATE_SQL_PATH,
+                    params=params,
+                ),
+            )
+
+            if not result or not result.new_provider_id:
+                raise ValueError(f"Provider not found: {request.provider_id}")
+
+            original_name = result.original_name or "Unknown"
+
+            # Set audit context with data from SQL query
+            if result.actor_name:
+                audit_set(
+                    http_request,
+                    actor={"name": result.actor_name, "id": profile_id},
+                    provider={"name": original_name, "id": str(request.provider_id)},
+                )
+
+            # Convert SQL result to API response
+            api_response = DuplicateProviderApiResponse.model_validate(
+                {
+                    "success": True,
+                    "provider_id": str(result.new_provider_id),
+                    "message": f"Provider '{original_name}' duplicated successfully",
+                }
+            )
+
+            # Invalidate cache after mutation
+            await invalidate_tags(tags)
+            response.headers["X-Invalidate-Tags"] = ",".join(tags)
+
+            return api_response
     except HTTPException:
         raise
     except ValueError as e:

@@ -239,10 +239,19 @@ from app.api.v4.resources.prompts.search import router as prompts_search_router
 router.include_router(prompts_search_router)
 from app.api.v4.resources.protocols.create import router as protocols_router
 from app.api.v4.resources.protocols.get import router as protocols_get_router
+from app.api.v4.resources.protocols.search import router as protocols_search_router
 
 router.include_router(protocols_router)
 router.include_router(protocols_get_router)
+router.include_router(protocols_search_router)
 # NOTE: providers removed - non-creatable, sync via artifact save (migration 328)
+# NOTE: regenerates removed - non-creatable (migration 328)
+# GET/Search endpoints available for provider two-pass architecture
+from app.api.v4.resources.regenerates.get import router as regenerates_get_router
+from app.api.v4.resources.regenerates.search import router as regenerates_search_router
+
+router.include_router(regenerates_get_router)
+router.include_router(regenerates_search_router)
 # NOTE: qualities removed - non-creatable (migration 328)
 # GET/Search endpoints available for model two-pass architecture
 from app.api.v4.resources.qualities.get import (
@@ -399,9 +408,11 @@ router.include_router(simulations_get_router)
 router.include_router(simulations_search_router)
 from app.api.v4.resources.slugs.create import router as slugs_router
 from app.api.v4.resources.slugs.get import router as slugs_get_router
+from app.api.v4.resources.slugs.search import router as slugs_search_router
 
 router.include_router(slugs_router)
 router.include_router(slugs_get_router)
+router.include_router(slugs_search_router)
 from app.api.v4.resources.standard_groups.create import router as standard_groups_router
 
 router.include_router(standard_groups_router)
@@ -438,9 +449,11 @@ router.include_router(tools_get_router)
 router.include_router(tools_search_router)
 from app.api.v4.resources.values.create import router as values_router
 from app.api.v4.resources.values.get import router as values_get_router
+from app.api.v4.resources.values.search import router as values_search_router
 
 router.include_router(values_router)
 router.include_router(values_get_router)
+router.include_router(values_search_router)
 from app.api.v4.resources.videos.create import router as videos_router
 from app.api.v4.resources.videos.get import router as videos_get_router
 

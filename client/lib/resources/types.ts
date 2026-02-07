@@ -31,5 +31,6 @@ export type ResourceType =
   | "temperature_levels"
   | "voices"
   | "tools"
+  | "settings"
   | "args"
   | "args_outputs"

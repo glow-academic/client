@@ -1,14 +1,13 @@
 -- Unified save department function - handles both create (department_id = NULL) and update (department_id provided)
--- Converted to function following personas pattern
+-- Accepts form fields directly (no draft_id dependency) - follows persona gold standard pattern
 -- 1) Drop function first (breaks dependency on types)
--- Drop all versions of the function using DO block to handle signature variations
 DO $$
 DECLARE
     r RECORD;
 BEGIN
-    FOR r IN 
-        SELECT oidvectortypes(proargtypes) as sig 
-        FROM pg_proc 
+    FOR r IN
+        SELECT oidvectortypes(proargtypes) as sig
+        FROM pg_proc
         WHERE proname = 'api_save_department_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
@@ -16,10 +15,18 @@ BEGIN
     END LOOP;
 END $$;
 
+-- 2) Recreate function with direct form data parameters (no draft_id)
 CREATE OR REPLACE FUNCTION api_save_department_v4(
-    draft_id uuid,
     profile_id uuid,
-    input_department_id uuid DEFAULT NULL
+    group_id uuid,
+    input_department_id uuid DEFAULT NULL,
+    -- Required form data
+    name_id uuid DEFAULT NULL,
+    -- Optional single-select form data
+    description_id uuid DEFAULT NULL,
+    active_flag_id uuid DEFAULT NULL,
+    -- Optional multi-select form data
+    settings_ids uuid[] DEFAULT NULL
 )
 RETURNS TABLE (
     department_id uuid,
@@ -28,59 +35,40 @@ RETURNS TABLE (
 LANGUAGE plpgsql
 VOLATILE
 AS $$
+#variable_conflict use_column
 DECLARE
     v_department_id uuid;
     v_actor_name text;
     v_group_id uuid;
-    v_draft_id uuid;
     v_profile_id uuid;
     v_input_department_id uuid;
     is_create boolean;
     v_name_id uuid;
     v_description_id uuid;
     v_active_flag_id uuid;
-    v_settings_id uuid;
+    v_settings_ids uuid[];
 BEGIN
-    v_draft_id := draft_id;
+    -- Assign parameters to local variables
     v_profile_id := profile_id;
+    v_group_id := group_id;
     v_input_department_id := input_department_id;
+    v_name_id := name_id;
+    v_description_id := description_id;
+    v_active_flag_id := active_flag_id;
+    v_settings_ids := COALESCE(settings_ids, ARRAY[]::uuid[]);
 
-    IF v_draft_id IS NULL THEN
-        RAISE EXCEPTION 'Draft ID is required';
-    END IF;
-
-    SELECT dde.group_id INTO v_group_id
-    FROM view_drafts_entry d
-    JOIN draft_domains_entry dde ON dde.draft_id = d.id AND dde.active = TRUE
-    WHERE d.id = v_draft_id;
-
+    -- Validate required fields
     IF v_group_id IS NULL THEN
-        RAISE EXCEPTION 'Draft group_id not found: %', v_draft_id;
+        RAISE EXCEPTION 'group_id is required';
     END IF;
 
-    SELECT dn.names_id INTO v_name_id
-    FROM names_drafts_connection dn
-    WHERE dn.draft_id = v_draft_id
-    LIMIT 1;
-
-    SELECT dd.descriptions_id INTO v_description_id
-    FROM descriptions_drafts_connection dd
-    WHERE dd.draft_id = v_draft_id
-    LIMIT 1;
-
-    SELECT df.flags_id INTO v_active_flag_id
-    FROM flags_drafts_connection df
-    WHERE df.draft_id = v_draft_id
-    LIMIT 1;
-
-    SELECT ds.settings_id INTO v_settings_id
-    FROM settings_drafts_connection ds
-    WHERE ds.draft_id = v_draft_id
-    LIMIT 1;
+    IF v_name_id IS NULL THEN
+        RAISE EXCEPTION 'Name resource is required';
+    END IF;
 
     -- Determine if create or update
     is_create := (v_input_department_id IS NULL);
-    
+
     -- Create or UPDATE department_artifact first (outside CTE)
     IF is_create THEN
         -- CREATE path
@@ -97,25 +85,25 @@ BEGIN
         UPDATE department_artifact
         SET updated_at = NOW()
         WHERE id = v_department_id;
-    END IF;
-    
-    -- Validate required resource IDs exist (same for both)
-    IF v_name_id IS NULL THEN
-        RAISE EXCEPTION 'Name resource is required';
+        -- Upsert group via junction table
+        INSERT INTO department_groups_junction (department_id, group_id)
+        VALUES (v_department_id, v_group_id)
+        ON CONFLICT DO NOTHING;
     END IF;
 
+    -- Validate resource IDs exist
     IF v_name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names_resource WHERE id = v_name_id) THEN
         RAISE EXCEPTION 'Name resource not found: %', v_name_id;
     END IF;
-    
+
     IF v_description_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM descriptions_resource WHERE id = v_description_id) THEN
         RAISE EXCEPTION 'Description resource not found: %', v_description_id;
     END IF;
-    
+
     IF v_active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = v_active_flag_id) THEN
         RAISE EXCEPTION 'Flag resource not found: %', v_active_flag_id;
     END IF;
-    
+
     -- Conditional: For update, remove old links first (outside CTE since we need PL/pgSQL variable)
     IF NOT is_create THEN
         DELETE FROM department_names_junction WHERE department_id = v_department_id;
@@ -124,10 +112,11 @@ BEGIN
         UPDATE department_flags_junction SET
             flag_id = COALESCE(v_active_flag_id, department_flags_junction.flag_id),
             value = CASE WHEN v_active_flag_id IS NOT NULL THEN true ELSE false END
-        WHERE department_id = v_department_id
-          ;
+        WHERE department_id = v_department_id;
+        -- Clear old settings links
+        DELETE FROM department_settings_junction WHERE department_id = v_department_id;
     END IF;
-    
+
     -- Continue with department save using SQL (department already created/updated above)
     RETURN QUERY
     WITH params AS (
@@ -136,7 +125,7 @@ BEGIN
             v_name_id AS name_id,
             v_description_id AS description_id,
             v_active_flag_id AS active_flag_id,
-            COALESCE(v_settings_id, NULL::uuid) AS settings_id,
+            v_settings_ids AS settings_ids,
             v_profile_id AS profile_id
     ),
     user_profile AS (
@@ -144,8 +133,9 @@ BEGIN
         FROM view_user_profile_context
         WHERE profile_id = (SELECT profile_id FROM params)
     ),
+    -- Permission validation is now handled in Python (permissions.py)
     actor_profile AS (
-        SELECT 
+        SELECT
             x.profile_id,
             up.actor_name
         FROM params x
@@ -154,7 +144,7 @@ BEGIN
     -- Link department to name
     link_department_name AS (
         INSERT INTO department_names_junction (department_id, name_id, created_at)
-        SELECT 
+        SELECT
             x.department_id,
             x.name_id,
             NOW()
@@ -165,7 +155,7 @@ BEGIN
     -- Link department to description
     link_department_description AS (
         INSERT INTO department_descriptions_junction (department_id, description_id, created_at)
-        SELECT 
+        SELECT
             x.department_id,
             x.description_id,
             NOW()
@@ -173,9 +163,10 @@ BEGIN
         WHERE x.description_id IS NOT NULL
         ON CONFLICT ON CONSTRAINT department_descriptions_pkey DO NOTHING
     ),
-    -- Insert or UPDATE department_artifact active flag (UPDATE handled above for update case, INSERT here handles both via ON CONFLICT)
+    -- Insert or UPDATE department active flag
     insert_department_active_flag AS (
-        INSERT INTO department_flags_junction (department_id, flag_id, value, created_at) SELECT x.department_id,
+        INSERT INTO department_flags_junction (department_id, flag_id, value, created_at)
+        SELECT x.department_id,
             COALESCE(x.active_flag_id, f.id),
             'active'::type_department_flags,
             CASE WHEN x.active_flag_id IS NOT NULL THEN true ELSE false END,
@@ -183,29 +174,21 @@ BEGIN
         FROM params x
         CROSS JOIN flags_resource f
         WHERE f.name = 'department_active'
-        ON CONFLICT ON CONSTRAINT department_flags_pkey DO UPDATE SET 
+        ON CONFLICT ON CONSTRAINT department_flags_pkey DO UPDATE SET
             flag_id = COALESCE(EXCLUDED.flag_id, department_flags_junction.flag_id),
             value = EXCLUDED.value
     ),
-    -- Remove existing settings link if settings_id is null or different (for update case)
-    remove_existing_settings AS (
-        DELETE FROM department_settings_junction ds
-        WHERE ds.department_id = (SELECT x.department_id FROM params x)
-          AND (
-              (SELECT x2.settings_id FROM params x2) IS NULL 
-              OR ds.settings_id != (SELECT x3.settings_id FROM params x3)
-          )
-    ),
-    -- Link settings if provided
+    -- Link settings (old ones already deleted above if update)
     link_settings AS (
         INSERT INTO department_settings_junction (settings_id, department_id, active, created_at)
         SELECT
-            x.settings_id,
+            settings_id,
             x.department_id,
             true,
             NOW()
         FROM params x
-        WHERE x.settings_id IS NOT NULL
+        CROSS JOIN UNNEST(x.settings_ids) as settings_id
+        WHERE COALESCE(array_length(x.settings_ids, 1), 0) > 0
         ON CONFLICT ON CONSTRAINT department_settings_pkey DO UPDATE SET
             active = true
     ),
@@ -223,8 +206,8 @@ BEGIN
         RETURNING r.id
     )
     SELECT
-        x.department_id,
-        ap.actor_name
+        x.department_id AS department_id,
+        ap.actor_name AS actor_name
     FROM params x
     CROSS JOIN actor_profile ap;
 END;

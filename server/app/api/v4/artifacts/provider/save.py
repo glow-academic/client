@@ -7,20 +7,31 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.v4.activity.audit import audit_activity, audit_set
-from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db
-from app.sql.types import (
+from app.api.v4.artifacts.provider.permissions import (
+    compute_can_create,
+    compute_can_save,
+)
+from app.api.v4.artifacts.provider.types import (
     SaveProviderApiRequest,
     SaveProviderApiResponse,
     SaveProviderSqlParams,
     SaveProviderSqlRow,
+)
+from app.infra.v4.activity.audit import audit_activity, audit_set
+from app.infra.v4.error.handle_route_error import handle_route_error
+from app.main import get_db
+from app.sql.types import (
+    CheckProviderSaveAccessSqlParams,
+    CheckProviderSaveAccessSqlRow,
     load_sql_query,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
-# Load SQL with types at module level - makes it clear what SQL file is used
+# SQL paths
+ACCESS_CHECK_SQL_PATH = (
+    "app/sql/v4/queries/providers/check_provider_save_access_complete.sql"
+)
 SQL_PATH = "app/sql/v4/queries/providers/save_provider_complete.sql"
 
 
@@ -44,7 +55,7 @@ async def save_provider(
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> SaveProviderApiResponse:
     """Save provider - handles both create (provider_id = NULL) and update (provider_id provided)."""
-    tags = ["providers"]  # From router tags
+    tags = ["providers"]
 
     sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
@@ -58,16 +69,55 @@ async def save_provider(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        # Permission check: get user role and provider info using typed SQL
+        access_params = CheckProviderSaveAccessSqlParams(
+            profile_id=profile_id,
+            provider_id=request.input_provider_id,
+        )
+        access_result = cast(
+            CheckProviderSaveAccessSqlRow,
+            await execute_sql_typed(
+                conn,
+                ACCESS_CHECK_SQL_PATH,
+                params=access_params,
+            ),
+        )
+
+        if not access_result:
+            raise HTTPException(
+                status_code=401,
+                detail="Unable to verify user permissions.",
+            )
+
+        # Permission logic: create vs update mode
+        if not request.input_provider_id:
+            can_save_result = compute_can_create(
+                user_role=access_result.user_role,
+                department_ids=None,  # Validated when saving
+            )
+        else:
+            can_save_result = compute_can_save(
+                user_role=access_result.user_role,
+                user_department_ids=access_result.user_department_ids,
+                provider_department_ids=access_result.provider_department_ids,
+                model_usage_count=access_result.model_usage_count or 0,
+            )
+
+        if not can_save_result:
+            raise HTTPException(
+                status_code=403,
+                detail="You don't have permission to save this provider.",
+            )
+
         async with conn.transaction():
             # Convert API request to SQL params (add profile_id from header)
-            # Map input_provider_id from API request (already correct field name)
             params = SaveProviderSqlParams(
                 **request.model_dump(),
                 profile_id=profile_id,
             )
             sql_params = params.to_tuple()
 
-            # Execute SQL with typed helper - automatically detects and calls function if present
+            # Execute SQL with typed helper
             result = cast(
                 SaveProviderSqlRow,
                 await execute_sql_typed(
@@ -86,21 +136,22 @@ async def save_provider(
             # Set audit context with data from SQL query
             if result.actor_name:
                 audit_ctx = {"actor": {"name": result.actor_name, "id": profile_id}}
-                # Only add provider to audit context if input_provider_id was provided (update mode)
                 if request.input_provider_id:
-                    # Update mode: use request name (from request body)
-                    # Note: In update mode, request should have name_id field
                     audit_ctx["provider"] = {
-                        "name": "Provider",  # Will be resolved from name_id if needed
+                        "name": "Provider",
                         "id": str(result.provider_id),
                     }
                 audit_set(http_request, **audit_ctx)
 
         # Convert SQL result to API response
+        is_update = request.input_provider_id is not None
         api_response = SaveProviderApiResponse.model_validate(
             {
+                "success": True,
                 "provider_id": str(result.provider_id),
-                "actor_name": result.actor_name,
+                "message": "Provider updated successfully"
+                if is_update
+                else "Provider created successfully",
             }
         )
 

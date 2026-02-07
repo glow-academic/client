@@ -63,9 +63,17 @@ export async function generateMetadata(
       } as GetDepartmentIn["body"],
     };
     const department = await getDepartment(input);
+    const nameResource = department?.resources?.current?.names?.[0] as
+      | { name?: string }
+      | undefined;
+    const descResource = department?.resources?.current?.descriptions?.[0] as
+      | { description?: string }
+      | undefined;
+    const deptName = nameResource?.name;
+    const deptDesc = descResource?.description;
     return {
-      title: `${department?.name_resource?.name || "Department"} Department`,
-      description: `${department?.name_resource?.name ? `${department.name_resource.name} - ` : ""}Academic department for teaching assistant training programs.${department?.description_resource?.description ? ` ${department.description_resource.description}` : ""} Manage department-specific settings and coordinate L&D programs across different academic units.`,
+      title: `${deptName || "Department"} Department`,
+      description: `${deptName ? `${deptName} - ` : ""}Academic department for teaching assistant training programs.${deptDesc ? ` ${deptDesc}` : ""} Manage department-specific settings and coordinate L&D programs across different academic units.`,
     };
   } catch {
     // Fall through to default metadata

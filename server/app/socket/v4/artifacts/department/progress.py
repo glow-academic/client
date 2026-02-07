@@ -5,6 +5,7 @@ from typing import Any
 from fastapi import APIRouter
 
 from app.main import get_internal_sio, sio
+from app.socket.v4.artifacts.department.types import DepartmentGenerationProgressEvent
 
 internal_sio = get_internal_sio()
 
@@ -23,18 +24,20 @@ async def handle_department_call_progress(data: dict[str, Any]) -> None:
     if not sid:
         return
 
+    event = DepartmentGenerationProgressEvent(
+        artifact_type=artifact_type,
+        resource_type=data.get("resource_type"),
+        resource_id=data.get("resource_id"),
+        run_id=data.get("run_id"),
+        group_id=data.get("group_id"),
+        event_type=data.get("event_type"),
+        type=data.get("type", "progress"),
+        trace_id=data.get("trace_id"),
+    )
+
     await sio.emit(
         "department_generation_progress",
-        {
-            "artifact_type": artifact_type,
-            "resource_type": data.get("resource_type"),
-            "resource_id": data.get("resource_id"),
-            "run_id": data.get("run_id"),
-            "group_id": data.get("group_id"),
-            "event_type": data.get("event_type"),
-            "type": data.get("type", "progress"),
-            "trace_id": data.get("trace_id"),
-        },
+        event.model_dump(mode="json"),
         room=sid,
     )
 

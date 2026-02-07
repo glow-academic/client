@@ -1,16 +1,21 @@
-"""Department duplicate endpoint - v4 API."""
+"""Department duplicate endpoint - v4 API following DHH principles."""
 
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.v4.activity.audit import audit_activity, audit_set
-from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db, transaction
-from app.sql.types import (
+from app.api.v4.artifacts.department.permissions import compute_can_duplicate
+from app.api.v4.artifacts.department.types import (
     DuplicateDepartmentApiRequest,
     DuplicateDepartmentApiResponse,
+)
+from app.infra.v4.activity.audit import audit_activity, audit_set
+from app.infra.v4.error.handle_route_error import handle_route_error
+from app.main import get_db
+from app.sql.types import (
+    CheckDepartmentDuplicateAccessSqlParams,
+    CheckDepartmentDuplicateAccessSqlRow,
     DuplicateDepartmentSqlParams,
     DuplicateDepartmentSqlRow,
     load_sql_query,
@@ -18,8 +23,12 @@ from app.sql.types import (
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
-# Load SQL with types at module level - makes it clear what SQL file is used
-SQL_PATH = "app/sql/v4/queries/departments/duplicate_department_complete.sql"
+# SQL paths
+ACCESS_CHECK_SQL_PATH = (
+    "app/sql/v4/queries/departments/check_department_duplicate_access_complete.sql"
+)
+DUPLICATE_SQL_PATH = "app/sql/v4/queries/departments/duplicate_department_complete.sql"
+
 
 router = APIRouter()
 
@@ -41,13 +50,12 @@ async def duplicate_department(
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DuplicateDepartmentApiResponse:
     """Duplicate a department."""
-    tags = ["departments"]  # From router tags
+    tags = ["departments"]
 
-    sql_query = load_sql_query(SQL_PATH)
+    sql_query = load_sql_query(DUPLICATE_SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        # Get profile_id from header (set by router-level dependency)
         profile_id = http_request.state.profile_id
         if not profile_id:
             raise HTTPException(
@@ -55,55 +63,79 @@ async def duplicate_department(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        async with transaction(conn):
-            # Convert API request to SQL params (add profile_id from header)
+        # Permission check: get user role using typed SQL
+        access_params = CheckDepartmentDuplicateAccessSqlParams(
+            profile_id=profile_id,
+        )
+        access_result = cast(
+            CheckDepartmentDuplicateAccessSqlRow,
+            await execute_sql_typed(
+                conn,
+                ACCESS_CHECK_SQL_PATH,
+                params=access_params,
+            ),
+        )
+
+        if not access_result:
+            raise HTTPException(
+                status_code=401,
+                detail="Unable to verify user permissions.",
+            )
+
+        can_duplicate = compute_can_duplicate(user_role=access_result.user_role)
+
+        if not can_duplicate:
+            raise HTTPException(
+                status_code=403,
+                detail="You don't have permission to duplicate this department.",
+            )
+
+        async with conn.transaction():
             params = DuplicateDepartmentSqlParams(
                 **request.model_dump(), profile_id=profile_id
             )
             sql_params = params.to_tuple()
 
-            # Execute SQL with typed helper
             result = cast(
                 DuplicateDepartmentSqlRow,
                 await execute_sql_typed(
                     conn,
-                    SQL_PATH,
+                    DUPLICATE_SQL_PATH,
                     params=params,
                 ),
             )
 
-            if not result.new_department_id:
-                raise HTTPException(
-                    status_code=404,
-                    detail=f"Department {request.department_id} not found",
-                )
+            if not result or not result.new_department_id:
+                raise ValueError(f"Department not found: {request.department_id}")
 
-            new_department_id = result.new_department_id
             original_title = result.original_title or "Unknown"
-            actor_name = result.actor_name
 
-            # Set audit context with data from SQL query
-            if actor_name:
+            # Set audit context
+            if result.actor_name:
                 audit_set(
                     http_request,
-                    actor={"name": actor_name, "id": profile_id},
+                    actor={"name": result.actor_name, "id": profile_id},
                     department={
                         "title": original_title,
                         "id": str(request.department_id),
                     },
                 )
 
-        result_response = DuplicateDepartmentApiResponse.model_validate(
-            result.model_dump()
+        api_response = DuplicateDepartmentApiResponse(
+            success=True,
+            department_id=result.new_department_id,
+            message=f"Department '{original_title}' duplicated successfully",
         )
 
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
-        return result_response
+        return api_response
     except HTTPException:
         raise
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
         handle_route_error(
             error=e,

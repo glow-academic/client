@@ -1,26 +1,23 @@
 """Department completion handler - emits department-specific generation complete events."""
 
 import uuid
-from typing import Any, cast
+from typing import Any
 
 from fastapi import APIRouter
 
+from app.api.v4.resources.descriptions.get import get_descriptions_internal
+from app.api.v4.resources.flags.get import get_flags_internal
+from app.api.v4.resources.names.get import get_names_internal
+from app.api.v4.resources.settings.get import get_settings_internal
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
-from app.sql.types import (
-    GetDepartmentApiRequest,
-    GetDepartmentSqlParams,
-    GetDepartmentSqlRow,
-)
-from app.utils.sql_helper import execute_sql_typed
+from app.socket.v4.artifacts.department.types import DepartmentGenerationCompleteEvent
 
 internal_sio = get_internal_sio()
 
 client_router = APIRouter()
 server_router = APIRouter()
-
-SQL_PATH = "app/sql/v4/queries/departments/get_department_complete.sql"
 
 
 @internal_sio.on("generate_call_complete")  # type: ignore
@@ -52,18 +49,28 @@ async def handle_department_artifact_complete(data: dict[str, Any]) -> None:
         return
 
     try:
-        async with get_db_connection() as conn:
-            request_payload = GetDepartmentApiRequest.model_validate(
-                {"department_id": uuid.UUID(artifact_id_str)}
-            )
-            params = GetDepartmentSqlParams(
-                profile_id=uuid.UUID(profile_id_str),
-                **request_payload.model_dump(),
-            )
-            result = cast(
-                GetDepartmentSqlRow,
-                await execute_sql_typed(conn, SQL_PATH, params=params),
-            )
+        # Fetch full resource objects using _internal() functions
+        name_resource = None
+        description_resource = None
+        flag_resource = None
+        settings_resources = None
+
+        if generated_resource_id:
+            resource_id = uuid.UUID(generated_resource_id)
+            async with get_db_connection() as conn:
+                if resource_type == "names":
+                    items = await get_names_internal(conn, [resource_id], True)
+                    name_resource = items[0] if items else None
+                elif resource_type == "descriptions":
+                    items = await get_descriptions_internal(conn, [resource_id], True)
+                    description_resource = items[0] if items else None
+                elif resource_type == "flags":
+                    items = await get_flags_internal(conn, [resource_id], True)
+                    flag_resource = items[0] if items else None
+                elif resource_type == "settings":
+                    item = await get_settings_internal(conn, resource_id, True)
+                    settings_resources = [item] if item else None
+
     except Exception as e:
         await sio.emit(
             "department_generation_error",
@@ -78,32 +85,25 @@ async def handle_department_artifact_complete(data: dict[str, Any]) -> None:
         )
         return
 
-    payload: dict[str, Any] = {
-        "artifact_type": "department",
-        "group_id": str(getattr(result, "group_id", None))
-        if getattr(result, "group_id", None)
-        else data.get("group_id"),
-        "resource_type": resource_type,
-        "run_id": data.get("run_id"),
-        "success": bool(generated_resource_id),
-        "message": f"{resource_type} generation completed"
+    event = DepartmentGenerationCompleteEvent(
+        artifact_type="department",
+        group_id=data.get("group_id", ""),
+        resource_type=resource_type or "department",
+        run_id=data.get("run_id"),
+        success=bool(generated_resource_id),
+        message=f"{resource_type} generation completed"
         if generated_resource_id
         else "Missing resource_id in tool result",
-        "type": data.get("type", "complete"),
-    }
-
-    value = getattr(result, "name_id", None)
-    payload["name_id"] = str(value) if value else None
-    value = getattr(result, "description_id", None)
-    payload["description_id"] = str(value) if value else None
-    value = getattr(result, "active_flag_id", None)
-    payload["active_flag_id"] = str(value) if value else None
-    values = getattr(result, "settings_ids", None) or []
-    payload["settings_ids"] = [str(v) for v in values if v]
+        type=data.get("type", "complete"),
+        name_resource=name_resource,
+        description_resource=description_resource,
+        flag_resource=flag_resource,
+        settings_resources=settings_resources,
+    )
 
     await sio.emit(
         "department_generation_complete",
-        payload,
+        event.model_dump(mode="json"),
         room=sid,
     )
 

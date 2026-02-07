@@ -70,7 +70,7 @@ export default function Auths({
       return;
     }
 
-    setIsDuplicating(auth.auth_id);
+    setIsDuplicating(auth.auth_id ?? null);
     try {
       await duplicateAuthAction({
         body: {
@@ -122,39 +122,8 @@ export default function Auths({
     setShowDeleteDialog(true);
   };
 
-  const renderPreview = (
-    items: NonNullable<
-      NonNullable<AuthListOut["auths"]>[number]
-    >["sample_items"],
-    totalCount: number
-  ) => {
-    if (!items) return null;
-    return (
-      <div className="space-y-2">
-        {items.map((item) => (
-          <div
-            key={item.auth_item_id}
-            className="flex items-center justify-between p-2 bg-muted/50 rounded-md"
-          >
-            <div>
-              <p className="text-sm font-medium">{item.name}</p>
-              <p className="text-xs text-muted-foreground line-clamp-1">
-                {item.description}
-              </p>
-            </div>
-          </div>
-        ))}
-        {totalCount > 3 && (
-          <p className="text-xs text-muted-foreground">
-            +{totalCount - 3} more
-          </p>
-        )}
-      </div>
-    );
-  };
-
   const renderAuthCard = (auth: (typeof auths)[number]) => {
-    const count = auth.num_items; // Pre-calculated from server
+    const count = auth.item_count ?? 0;
 
     return (
       <Card
@@ -176,7 +145,7 @@ export default function Auths({
                 <Badge variant="outline">
                   {count} {count === 1 ? "item" : "items"}
                 </Badge>
-                {!auth.active && (
+                {auth.is_inactive && (
                   <Badge variant="secondary" className="text-xs">
                     Inactive
                   </Badge>
@@ -258,17 +227,6 @@ export default function Auths({
           <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
             {auth.description}
           </p>
-          {count &&
-            count > 0 &&
-            auth.sample_items &&
-            auth.sample_items.length > 0 && (
-              <div>
-                <p className="text-xs font-medium mb-2 text-muted-foreground">
-                  Sample Items:
-                </p>
-                {renderPreview(auth.sample_items, count ?? 0)}
-              </div>
-            )}
         </CardContent>
       </Card>
     );

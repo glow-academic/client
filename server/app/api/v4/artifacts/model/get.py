@@ -420,9 +420,7 @@ async def get_model_internal(
     department_ids = selected_department_ids
     input_modality_ids = selected_input_modality_ids
     output_modality_ids = selected_output_modality_ids
-    all_modality_ids = list(
-        set(input_modality_ids + output_modality_ids)
-    )
+    all_modality_ids = list(set(input_modality_ids + output_modality_ids))
     temperature_level_ids = selected_temperature_level_ids
     pricing_ids_list = selected_pricing_ids
     reasoning_level_ids = selected_reasoning_level_ids
@@ -519,16 +517,12 @@ async def get_model_internal(
 
     async def fetch_modalities():
         async with pool.acquire() as c:
-            selected = await get_modalities_internal(
-                c, all_modality_ids, bypass_cache
-            )
+            selected = await get_modalities_internal(c, all_modality_ids, bypass_cache)
             return (selected, [])
 
     async def fetch_qualities():
         async with pool.acquire() as c:
-            selected = await get_qualities_internal(
-                c, quality_ids, bypass_cache
-            )
+            selected = await get_qualities_internal(c, quality_ids, bypass_cache)
             return (selected, [])
 
     async def fetch_pricing():
@@ -596,12 +590,8 @@ async def get_model_internal(
     departments = _dedupe_by_id(
         departments_selected + departments_suggestions, "department_id"
     )
-    modalities = _dedupe_by_id(
-        modalities_selected + modalities_suggestions, "id"
-    )
-    qualities = _dedupe_by_id(
-        qualities_selected + qualities_suggestions, "id"
-    )
+    modalities = _dedupe_by_id(modalities_selected + modalities_suggestions, "id")
+    qualities = _dedupe_by_id(qualities_selected + qualities_suggestions, "id")
     pricing = _dedupe_by_id(pricing_selected + pricing_suggestions, "pricing_id")
     temperature_levels = _dedupe_by_id(
         temperature_levels_selected + temperature_levels_suggestions,
@@ -633,9 +623,7 @@ async def get_model_internal(
     output_modality_resources = [
         m for m in modalities if m.id in selected_output_modality_ids
     ]
-    quality_resources = [
-        q for q in qualities if q.id in selected_quality_ids
-    ]
+    quality_resources = [q for q in qualities if q.id in selected_quality_ids]
     pricing_resources = [p for p in pricing if p.pricing_id in selected_pricing_ids]
     temperature_level_resources = [
         t

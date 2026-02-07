@@ -82,8 +82,8 @@ function DepartmentComponent({
   patchDepartmentDraftAction,
   createNamesAction,
   createDescriptionsAction,
-  createFlagsAction,
-  createSettingsAction,
+  createFlagsAction: _createFlagsAction,
+  createSettingsAction: _createSettingsAction,
 }: DepartmentProps) {
   const router = useRouter();
   const isEditMode = !!departmentId;
@@ -113,60 +113,96 @@ function DepartmentComponent({
   // when only object reference changes (but content is same)
   const stableDepartmentDataFields = React.useMemo(() => {
     if (!departmentData) return null;
+    const current = departmentData.resources?.current;
+    const resources = departmentData.resources?.resources;
+    // Cast unknown[] types from schema to expected component types
+    type NameItem = { id?: string | null; name?: string | null; generated?: boolean | null };
+    type DescItem = { id?: string | null; description?: string | null; generated?: boolean | null };
+    type SettingsItem = { settings_id: string | null; created_at?: string | null; active?: boolean | null; department_ids?: string[] | null; generated?: boolean | null };
     return {
       group_id: departmentData.group_id,
-      name_resource: departmentData.name_resource,
+      // Current selections (single-select: first item, multi-select: full list)
+      name_resource: (current?.names?.[0] as NameItem | undefined) ?? null,
+      description_resource: (current?.descriptions?.[0] as DescItem | undefined) ?? null,
+      flag_resource: current?.flags?.[0]
+        ? { id: current.flags[0].flag_option_id ?? null, name: current.flags[0].label ?? null, description: current.flags[0].description ?? null, icon: current.flags[0].icon_id ?? null, generated: current.flags[0].generated ?? null }
+        : null,
+      settings_resources: (current?.settings ?? []) as SettingsItem[],
+      // All available resources (for suggestions/options lists)
+      names: (resources?.names ?? []) as NameItem[],
+      descriptions: (resources?.descriptions ?? []) as DescItem[],
+      flags: (resources?.flags ?? []).map((f) => ({
+        id: f.flag_option_id ?? null,
+        name: f.label ?? null,
+        description: f.description ?? null,
+        icon: f.icon_id ?? null,
+        generated: f.generated ?? null,
+      })),
+      settings: (resources?.settings ?? []) as SettingsItem[],
+      // Show/required/suggestions from flat fields
       show_name: departmentData.show_name,
       name_suggestions: departmentData.name_suggestions,
-      names: departmentData.names,
       name_required: departmentData.name_required,
-      name_agent_id: departmentData.name_agent_id,
-      description_resource: departmentData.description_resource,
       show_description: departmentData.show_description,
       description_suggestions: departmentData.description_suggestions,
       description_required: departmentData.description_required,
-      description_agent_id: departmentData.description_agent_id,
-      descriptions: departmentData.descriptions,
-      flag_resource: departmentData.flag_resource,
       show_flag: departmentData.show_flag,
       flag_required: departmentData.flag_required,
-      flag_agent_id: departmentData.flag_agent_id,
-      flags: departmentData.flags,
-      settings_resources: departmentData.settings_resources,
       show_settings: departmentData.show_settings,
       settings_suggestions: departmentData.settings_suggestions,
       settings_required: departmentData.settings_required,
-      settings_agent_id: departmentData.settings_agent_id,
-      settings: departmentData.settings,
+      // Per-resource group IDs (for resource creation actions)
+      names_group_id: departmentData.names_group_id,
+      descriptions_group_id: departmentData.descriptions_group_id,
+      flags_group_id: departmentData.flags_group_id,
+      settings_group_id: departmentData.settings_group_id,
+      // AI generate flags
+      name_show_ai_generate: departmentData.name_show_ai_generate,
+      description_show_ai_generate: departmentData.description_show_ai_generate,
+      flag_show_ai_generate: departmentData.flag_show_ai_generate,
+      settings_show_ai_generate: departmentData.settings_show_ai_generate,
+      // Tool IDs for resource creation/linking
+      name_create_tool_id: departmentData.name_create_tool_id,
+      description_create_tool_id: departmentData.description_create_tool_id,
+      name_link_tool_id: departmentData.name_link_tool_id,
+      description_link_tool_id: departmentData.description_link_tool_id,
+      flag_link_tool_id: departmentData.flag_link_tool_id,
+      settings_link_tool_id: departmentData.settings_link_tool_id,
+      // Domain data for generation modal
+      domain_data: departmentData.domain_data,
     };
     // Intentionally depend on individual fields, not whole departmentData object
     // to prevent recreation when only object reference changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     departmentData?.group_id,
-    departmentData?.name_resource,
+    departmentData?.resources,
     departmentData?.show_name,
     departmentData?.name_suggestions,
-    departmentData?.names,
     departmentData?.name_required,
-    departmentData?.name_agent_id,
-    departmentData?.description_resource,
     departmentData?.show_description,
     departmentData?.description_suggestions,
     departmentData?.description_required,
-    departmentData?.description_agent_id,
-    departmentData?.descriptions,
-    departmentData?.flag_resource,
     departmentData?.show_flag,
     departmentData?.flag_required,
-    departmentData?.flag_agent_id,
-    departmentData?.flags,
-    departmentData?.settings_resources,
     departmentData?.show_settings,
     departmentData?.settings_suggestions,
     departmentData?.settings_required,
-    departmentData?.settings_agent_id,
-    departmentData?.settings,
+    departmentData?.names_group_id,
+    departmentData?.descriptions_group_id,
+    departmentData?.flags_group_id,
+    departmentData?.settings_group_id,
+    departmentData?.name_show_ai_generate,
+    departmentData?.description_show_ai_generate,
+    departmentData?.flag_show_ai_generate,
+    departmentData?.settings_show_ai_generate,
+    departmentData?.name_create_tool_id,
+    departmentData?.description_create_tool_id,
+    departmentData?.name_link_tool_id,
+    departmentData?.description_link_tool_id,
+    departmentData?.flag_link_tool_id,
+    departmentData?.settings_link_tool_id,
+    departmentData?.domain_data,
   ]);
 
   const getInitialFormState = useCallback(() => {
@@ -179,13 +215,18 @@ function DepartmentComponent({
         settings_ids: [] as string[],
       };
     }
-    // Extract resource IDs from server data
-    // Note: Server data may have display values, but we only store IDs here
+    // Extract resource IDs from resources.current (new three-layer response shape)
+    const current = data.resources?.current;
+    const nameItem = current?.names?.[0] as { id?: string } | undefined;
+    const descItem = current?.descriptions?.[0] as { id?: string } | undefined;
+    const settingsItems = (current?.settings ?? []) as Array<{ id?: string }>;
     return {
-      name_id: data.name_id ?? null,
-      description_id: data.description_id ?? null,
-      active_flag_id: data.active_flag_id ?? null,
-      settings_ids: data.settings_ids ?? [],
+      name_id: nameItem?.id ?? null,
+      description_id: descItem?.id ?? null,
+      active_flag_id: current?.flags?.[0]?.flag_option_id ?? null,
+      settings_ids: settingsItems
+        .map((s) => s.id)
+        .filter(Boolean) as string[],
     };
     // Remove departmentData from dependencies - use ref instead to prevent callback recreation
   }, []);
@@ -198,9 +239,13 @@ function DepartmentComponent({
   }, [formState]);
 
   // Memoize stringified array dependencies to prevent effect from running when array references change but content is same
+  const currentSettingsIds = ((departmentData?.resources?.current?.settings ?? []) as Array<{ id?: string }>)
+    .map((s) => s.id)
+    .filter(Boolean);
   const settingsIdsStr = React.useMemo(
-    () => JSON.stringify(departmentData?.settings_ids ?? []),
-    [departmentData?.settings_ids]
+    () => JSON.stringify(currentSettingsIds),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [JSON.stringify(currentSettingsIds)]
   );
 
   // Memoize stringified formState arrays for draft listener effect dependencies
@@ -230,9 +275,9 @@ function DepartmentComponent({
     // Intentionally exclude formState and getInitialFormState to prevent infinite loops
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    departmentData?.name_id,
-    departmentData?.description_id,
-    departmentData?.active_flag_id,
+    departmentData?.resources?.current?.names,
+    departmentData?.resources?.current?.descriptions,
+    departmentData?.resources?.current?.flags,
     settingsIdsStr,
   ]);
 
@@ -293,10 +338,11 @@ function DepartmentComponent({
       artifact_type?: string;
       group_id?: string;
       resource_type?: string;
-      name_id?: string | null;
-      description_id?: string | null;
-      active_flag_id?: string | null;
-      settings_ids?: string[];
+      // Full resource objects from server (via _internal() functions)
+      name_resource?: { id?: string } | null;
+      description_resource?: { id?: string } | null;
+      flag_resource?: { flag_option_id?: string } | null;
+      settings_resources?: Array<{ id?: string }> | null;
       message?: string;
       success?: boolean;
       [key: string]: unknown;
@@ -320,16 +366,24 @@ function DepartmentComponent({
         data.resource_type &&
         validResourceTypes.includes(data.resource_type as ResourceType)
       ) {
+        // Extract IDs from full resource objects returned by server
+        const nameId = data.name_resource?.id ?? null;
+        const descriptionId = data.description_resource?.id ?? null;
+        const flagId = data.flag_resource?.flag_option_id ?? null;
+        const settingsIds = (data.settings_resources ?? [])
+          .map((s) => s.id)
+          .filter((id): id is string => !!id);
+
         // Update formState with the resource ID that was generated
         setFormState((prev) => {
           const updates: Partial<typeof prev> = {};
 
-          if (data.name_id) updates.name_id = data.name_id;
-          if (data.description_id) updates.description_id = data.description_id;
-          if (data.active_flag_id) updates.active_flag_id = data.active_flag_id;
-          if (data.settings_ids && data.settings_ids.length > 0) {
+          if (nameId) updates.name_id = nameId;
+          if (descriptionId) updates.description_id = descriptionId;
+          if (flagId) updates.active_flag_id = flagId;
+          if (settingsIds.length > 0) {
             // For arrays, append new IDs (avoid duplicates)
-            const newSettingsIds = data.settings_ids.filter(
+            const newSettingsIds = settingsIds.filter(
               (id) => !prev.settings_ids.includes(id)
             );
             updates.settings_ids = [...prev.settings_ids, ...newSettingsIds];
@@ -514,37 +568,38 @@ function DepartmentComponent({
     // patchDepartmentDraftAction and setDraftId are accessed via refs
   ]);
 
-  // Helper function to determine agent_type from resource types
-  // Departments don't have basic/content agents, so return individual agent IDs
-  const determineAgentType = useCallback(
-    (resourceTypes: ResourceType[]): string | null => {
-      if (resourceTypes.length === 1) {
-        // Single resource type - map to agent_type
-        const agentTypeMap: Partial<Record<ResourceType, string>> = {
-          names: "name",
-          descriptions: "description",
-          flags: "flags",
-          settings: "settings",
-        };
-        const firstType = resourceTypes[0];
-        if (firstType && firstType in agentTypeMap) {
-          return agentTypeMap[firstType] ?? null;
-        }
-      }
-      return null;
+  // Map resource types to domain_ids from departmentData
+  const getDomainIds = useCallback(
+    (resourceTypes: ResourceType[]): string[] => {
+      if (!departmentData) return [];
+      const domainMap: Partial<Record<ResourceType, string | null | undefined>> = {
+        names: departmentData.name_domain_id,
+        descriptions: departmentData.description_domain_id,
+        flags: departmentData.flag_domain_id,
+        settings: departmentData.settings_domain_id,
+      };
+      return resourceTypes
+        .map((rt) => domainMap[rt])
+        .filter((id): id is string => !!id);
     },
-    []
+    [departmentData]
   );
 
   // Multi-generation handler - accepts list of resource types and optional user instructions
   const handleGenerateResources = useCallback(
     async (
       resourceTypes: ResourceType[],
-      agentType: string | null,
+      _agentType: string | null,
       userInstructions?: string
     ) => {
       if (!socket || !isConnected) {
         toast.error("WebSocket not connected");
+        return;
+      }
+
+      const domainIds = getDomainIds(resourceTypes);
+      if (domainIds.length === 0) {
+        toast.error("No AI agent configured for the selected resources");
         return;
       }
 
@@ -559,45 +614,36 @@ function DepartmentComponent({
       const formData = formDataRef.current;
       const draftId = (formData["draftId"] as string | undefined) ?? null;
 
-      // Emit department_generate event
+      // Emit department_generate event with domain_ids (server derives agent + resource_types)
       socket.emit("department_generate", {
-        resource_types: resourceTypes,
-        agent_type: agentType,
+        domain_ids: domainIds,
         user_instructions: userInstructions ? [userInstructions] : null,
         draft_id: draftId || null,
-        mcp: false,
         department_id: departmentId || null,
       });
     },
-    [socket, isConnected, departmentId]
+    [socket, isConnected, departmentId, getDomainIds]
   );
 
   // Individual generation handlers - generate directly without modals
   const handleGenerateName = useCallback(
-    async () =>
-      handleGenerateResources(["names"], determineAgentType(["names"])),
-    [handleGenerateResources, determineAgentType]
+    async () => handleGenerateResources(["names"], null),
+    [handleGenerateResources]
   );
 
   const handleGenerateDescription = useCallback(
-    async () =>
-      handleGenerateResources(
-        ["descriptions"],
-        determineAgentType(["descriptions"])
-      ),
-    [handleGenerateResources, determineAgentType]
+    async () => handleGenerateResources(["descriptions"], null),
+    [handleGenerateResources]
   );
 
   const handleGenerateFlags = useCallback(
-    async () =>
-      handleGenerateResources(["flags"], determineAgentType(["flags"])),
-    [handleGenerateResources, determineAgentType]
+    async () => handleGenerateResources(["flags"], null),
+    [handleGenerateResources]
   );
 
   const handleGenerateSettings = useCallback(
-    async () =>
-      handleGenerateResources(["settings"], determineAgentType(["settings"])),
-    [handleGenerateResources, determineAgentType]
+    async () => handleGenerateResources(["settings"], null),
+    [handleGenerateResources]
   );
 
   // Disabled logic based on can_edit flag - standardized for all resource components
@@ -609,7 +655,10 @@ function DepartmentComponent({
 
   // Set breadcrumb context when department data is loaded
   useEffect(() => {
-    const departmentName = departmentData?.name_resource?.name;
+    const nameResource = departmentData?.resources?.current?.names?.[0] as
+      | { name?: string }
+      | undefined;
+    const departmentName = nameResource?.name;
     if (departmentName && departmentId && isEditMode) {
       setEntityMetadata({
         entityId: departmentId,
@@ -655,14 +704,15 @@ function DepartmentComponent({
       try {
         await saveDepartmentAction({
           body: {
+            group_id: departmentData?.group_id ?? "",
             input_department_id:
               isEditMode && departmentId ? departmentId : null,
             name_id: formState.name_id,
             description_id: formState.description_id || null,
             active_flag_id: formState.active_flag_id || null,
-            settings_id:
+            settings_ids:
               formState.settings_ids && formState.settings_ids.length > 0
-                ? formState.settings_ids[0]
+                ? formState.settings_ids
                 : null,
           },
         });
@@ -685,6 +735,7 @@ function DepartmentComponent({
       saveDepartmentAction,
       router,
       departmentData?.name_required,
+      departmentData?.group_id,
     ]
   );
 
@@ -781,8 +832,8 @@ function DepartmentComponent({
       stepTitle,
       stepDescription,
       stepNumber,
-      formData: stepFormData,
-      setFormData: setStepFormData,
+      formData: _stepFormData,
+      setFormData: _setStepFormData,
       onReset,
     }: {
       stepId: string;
@@ -826,9 +877,11 @@ function DepartmentComponent({
                   defaultName="New Department"
                   required={currentDepartmentData?.name_required ?? false}
                   hideDescription={true}
-                  group_id={currentDepartmentData?.group_id ?? null}
-                  agent_id={currentDepartmentData?.name_agent_id ?? null}
+                  group_id={currentDepartmentData?.names_group_id ?? currentDepartmentData?.group_id ?? null}
+                  showAiGenerate={currentDepartmentData?.name_show_ai_generate ?? false}
                   createNamesAction={createNamesAction}
+                  create_tool_id={currentDepartmentData?.name_create_tool_id ?? null}
+                  link_tool_id={currentDepartmentData?.name_link_tool_id ?? null}
                 />
               }
               resetFields={["name", "description", "active", "settings"]}
@@ -865,9 +918,11 @@ function DepartmentComponent({
                   }
                   rows={4}
                   data-testid="input-department-description"
-                  group_id={currentDepartmentData?.group_id ?? null}
-                  agent_id={currentDepartmentData?.description_agent_id ?? null}
+                  group_id={currentDepartmentData?.descriptions_group_id ?? currentDepartmentData?.group_id ?? null}
+                  showAiGenerate={currentDepartmentData?.description_show_ai_generate ?? false}
                   createDescriptionsAction={createDescriptionsAction}
+                  create_tool_id={currentDepartmentData?.description_create_tool_id ?? null}
+                  link_tool_id={currentDepartmentData?.description_link_tool_id ?? null}
                 />
 
                 {/* Active Switch - using Flags resource component */}
@@ -888,9 +943,9 @@ function DepartmentComponent({
                   label="Active"
                   helpText="Inactive departments will not be visible to users"
                   required={currentDepartmentData?.flag_required ?? false}
-                  group_id={currentDepartmentData?.group_id ?? null}
-                  agent_id={currentDepartmentData?.flag_agent_id ?? null}
-                  createFlagsAction={createFlagsAction}
+                  group_id={currentDepartmentData?.flags_group_id ?? currentDepartmentData?.group_id ?? null}
+                  showAiGenerate={currentDepartmentData?.flag_show_ai_generate ?? false}
+                  link_tool_id={currentDepartmentData?.flag_link_tool_id ?? null}
                 />
 
                 {/* Settings Selection */}
@@ -911,9 +966,9 @@ function DepartmentComponent({
                   onGenerate={handleGenerateSettings}
                   isGenerating={isGenerating("settings")}
                   required={currentDepartmentData?.settings_required ?? false}
-                  group_id={currentDepartmentData?.group_id ?? null}
-                  agent_id={currentDepartmentData?.settings_agent_id ?? null}
-                  createSettingsAction={createSettingsAction}
+                  group_id={currentDepartmentData?.settings_group_id ?? currentDepartmentData?.group_id ?? null}
+                  showAiGenerate={currentDepartmentData?.settings_show_ai_generate ?? false}
+                  link_tool_id={currentDepartmentData?.settings_link_tool_id ?? null}
                 />
               </div>
             </StepCard>
@@ -937,8 +992,6 @@ function DepartmentComponent({
       formState.settings_ids,
       createNamesAction,
       createDescriptionsAction,
-      createFlagsAction,
-      createSettingsAction,
       handleGenerateName,
       handleGenerateDescription,
       handleGenerateFlags,

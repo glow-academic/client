@@ -5,12 +5,17 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.artifacts.eval.permissions import compute_can_duplicate
+from app.api.v4.artifacts.eval.types import (
+    DuplicateEvalApiRequest,
+    DuplicateEvalApiResponse,
+)
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
-    DuplicateEvalApiRequest,
-    DuplicateEvalApiResponse,
+    CheckEvalDuplicateAccessSqlParams,
+    CheckEvalDuplicateAccessSqlRow,
     DuplicateEvalSqlParams,
     DuplicateEvalSqlRow,
     load_sql_query,
@@ -18,8 +23,12 @@ from app.sql.types import (
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
-# Load SQL with types at module level - makes it clear what SQL file is used
-SQL_PATH = "app/sql/v4/queries/evals/duplicate_eval_complete.sql"
+# SQL paths
+ACCESS_CHECK_SQL_PATH = (
+    "app/sql/v4/queries/evals/check_eval_duplicate_access_complete.sql"
+)
+DUPLICATE_SQL_PATH = "app/sql/v4/queries/evals/duplicate_eval_complete.sql"
+
 
 router = APIRouter()
 
@@ -43,7 +52,7 @@ async def duplicate_eval(
     """Duplicate an eval."""
     tags = ["evals"]  # From router tags
 
-    sql_query = load_sql_query(SQL_PATH)
+    sql_query = load_sql_query(DUPLICATE_SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -55,47 +64,77 @@ async def duplicate_eval(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Convert API request to SQL params (add profile_id from header)
-        params = DuplicateEvalSqlParams(**request.model_dump(), profile_id=profile_id)
-        sql_params = params.to_tuple()
-
-        # Execute query with typed helper - automatically detects and calls function if present
-        result = cast(
-            DuplicateEvalSqlRow,
+        # Permission check: get user role using typed SQL
+        access_params = CheckEvalDuplicateAccessSqlParams(
+            profile_id=profile_id,
+        )
+        access_result = cast(
+            CheckEvalDuplicateAccessSqlRow,
             await execute_sql_typed(
                 conn,
-                SQL_PATH,
-                params=params,
+                ACCESS_CHECK_SQL_PATH,
+                params=access_params,
             ),
         )
 
-        if not result or not result.new_eval_id:
-            raise ValueError(f"Eval not found: {request.eval_id}")
-
-        original_name = result.original_name or "Unknown"
-
-        # Set audit context with data from SQL query
-        if result.actor_name:
-            audit_set(
-                http_request,
-                actor={"name": result.actor_name, "id": profile_id},
-                eval={"name": original_name, "id": str(request.eval_id)},
+        if not access_result:
+            raise HTTPException(
+                status_code=401,
+                detail="Unable to verify user permissions.",
             )
 
-        # Convert SQL result to API response
-        api_response = DuplicateEvalApiResponse.model_validate(
-            {
-                "success": True,
-                "evalId": str(result.new_eval_id),
-                "message": f"Eval '{original_name}' duplicated successfully",
-            }
-        )
+        can_duplicate = compute_can_duplicate(user_role=access_result.user_role)
 
-        # Invalidate cache after mutation
-        await invalidate_tags(tags)
-        response.headers["X-Invalidate-Tags"] = ",".join(tags)
+        if not can_duplicate:
+            raise HTTPException(
+                status_code=403,
+                detail="You don't have permission to duplicate this eval.",
+            )
 
-        return api_response
+        async with conn.transaction():
+            # Convert API request to SQL params (add profile_id from header)
+            params = DuplicateEvalSqlParams(
+                **request.model_dump(), profile_id=profile_id
+            )
+            sql_params = params.to_tuple()
+
+            # Execute SQL with typed helper
+            result = cast(
+                DuplicateEvalSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    DUPLICATE_SQL_PATH,
+                    params=params,
+                ),
+            )
+
+            if not result or not result.new_eval_id:
+                raise ValueError(f"Eval not found: {request.eval_id}")
+
+            original_name = result.original_name or "Unknown"
+
+            # Set audit context with data from SQL query
+            if result.actor_name:
+                audit_set(
+                    http_request,
+                    actor={"name": result.actor_name, "id": profile_id},
+                    eval={"name": original_name, "id": str(request.eval_id)},
+                )
+
+            # Convert SQL result to API response
+            api_response = DuplicateEvalApiResponse.model_validate(
+                {
+                    "success": True,
+                    "eval_id": str(result.new_eval_id),
+                    "message": f"Eval '{original_name}' duplicated successfully",
+                }
+            )
+
+            # Invalidate cache after mutation
+            await invalidate_tags(tags)
+            response.headers["X-Invalidate-Tags"] = ",".join(tags)
+
+            return api_response
     except HTTPException:
         raise
     except ValueError as e:

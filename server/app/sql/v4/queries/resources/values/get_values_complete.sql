@@ -18,7 +18,7 @@ BEGIN
     END LOOP;
 END $$;
 
--- Drop types WITHOUT CASCADE
+-- Drop types WITH CASCADE (search function depends on these types)
 DO $$
 DECLARE
     r RECORD;
@@ -29,7 +29,7 @@ BEGIN
         WHERE typname LIKE 'q_get_values_v4_%'
           AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
     LOOP
-        EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
+        EXECUTE format('DROP TYPE IF EXISTS types.%I CASCADE', r.typname);
     END LOOP;
 END $$;
 

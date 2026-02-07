@@ -114,6 +114,21 @@ function ProviderComponent({
     []
   );
 
+  // === Extract resources from nested structure ===
+  const currentResources = providerData?.resources?.current;
+  const allResources = providerData?.resources?.resources;
+
+  // Extract current resource objects
+  const currentNameResource = currentResources?.names?.[0] ?? null;
+  const currentDescriptionResource =
+    currentResources?.descriptions?.[0] ?? null;
+  const currentFlagResource = currentResources?.flags?.[0] ?? null;
+
+  // Extract all resources (for suggestions/options)
+  const allNames = allResources?.names ?? [];
+  const allDescriptions = allResources?.descriptions ?? [];
+  const allFlags = allResources?.flags ?? [];
+
   // Local form state (not in URL) - stores only resource IDs
   // Display values are managed inside resource components
   // Use ref to store providerData to prevent callback recreation on every render
@@ -128,45 +143,67 @@ function ProviderComponent({
     if (!providerData) return null;
     return {
       group_id: providerData.group_id,
-      name_resource: providerData.name_resource,
+      // Resources from nested structure
+      name_resource: currentNameResource,
       show_name: providerData.show_name,
       name_suggestions: providerData.name_suggestions,
-      names: providerData.names,
+      names: allNames,
       name_required: providerData.name_required,
-      name_agent_id: providerData.name_agent_id,
-      description_resource: providerData.description_resource,
+      name_show_ai_generate: providerData.name_show_ai_generate,
+      description_resource: currentDescriptionResource,
       show_description: providerData.show_description,
       description_suggestions: providerData.description_suggestions,
       description_required: providerData.description_required,
-      description_agent_id: providerData.description_agent_id,
-      descriptions: providerData.descriptions,
-      flag_resource: providerData.flag_resource,
+      description_show_ai_generate: providerData.description_show_ai_generate,
+      descriptions: allDescriptions,
+      flag_resource: currentFlagResource,
       show_flag: providerData.show_flag,
       flag_required: providerData.flag_required,
-      flag_agent_id: providerData.flag_agent_id,
-      flags: providerData.flags,
+      flag_show_ai_generate: providerData.flag_show_ai_generate,
+      flags: allFlags,
+      // Domain IDs for generation
+      name_domain_id: providerData.name_domain_id,
+      description_domain_id: providerData.description_domain_id,
+      flag_domain_id: providerData.flag_domain_id,
+      departments_domain_id: providerData.departments_domain_id,
+      value_domain_id: providerData.value_domain_id,
+      regenerates_domain_id: providerData.regenerates_domain_id,
+      // Step-level AI generation flag
+      basic_show_ai_generate: providerData.basic_show_ai_generate,
+      // Tool IDs for AI generation
+      name_create_tool_id: providerData.name_create_tool_id,
+      description_create_tool_id: providerData.description_create_tool_id,
     };
     // Intentionally depend on individual fields, not whole providerData object
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     providerData?.group_id,
-    providerData?.name_resource,
+    currentNameResource,
     providerData?.show_name,
     providerData?.name_suggestions,
-    providerData?.names,
+    allNames,
     providerData?.name_required,
-    providerData?.name_agent_id,
-    providerData?.description_resource,
+    providerData?.name_show_ai_generate,
+    currentDescriptionResource,
     providerData?.show_description,
     providerData?.description_suggestions,
     providerData?.description_required,
-    providerData?.description_agent_id,
-    providerData?.descriptions,
-    providerData?.flag_resource,
+    providerData?.description_show_ai_generate,
+    allDescriptions,
+    currentFlagResource,
     providerData?.show_flag,
     providerData?.flag_required,
-    providerData?.flag_agent_id,
-    providerData?.flags,
+    providerData?.flag_show_ai_generate,
+    allFlags,
+    providerData?.name_domain_id,
+    providerData?.description_domain_id,
+    providerData?.flag_domain_id,
+    providerData?.departments_domain_id,
+    providerData?.value_domain_id,
+    providerData?.regenerates_domain_id,
+    providerData?.basic_show_ai_generate,
+    providerData?.name_create_tool_id,
+    providerData?.description_create_tool_id,
   ]);
 
   // Helper to check if a resource type can be regenerated
@@ -189,21 +226,18 @@ function ProviderComponent({
     [stableProviderDataFields]
   );
 
+  // Extract current IDs from nested resources
+  const currentNameId = currentNameResource?.id ?? null;
+  const currentDescriptionId = currentDescriptionResource?.id ?? null;
+  const currentFlagId = currentFlagResource?.flag_option_id ?? null;
+
   const getInitialFormState = useCallback(() => {
-    const data = providerDataRef.current;
-    if (!data) {
-      return {
-        name_id: null as string | null,
-        description_id: null as string | null,
-        active_flag_id: null as string | null,
-      };
-    }
-    // Extract resource IDs from server data
     return {
-      name_id: data.name_id ?? null,
-      description_id: data.description_id ?? null,
-      active_flag_id: data.active_flag_id ?? null,
+      name_id: currentNameId,
+      description_id: currentDescriptionId,
+      active_flag_id: currentFlagId,
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const [formState, setFormState] = useState(getInitialFormState);
@@ -215,24 +249,22 @@ function ProviderComponent({
 
   // Update form state when server data changes
   useEffect(() => {
-    const newState = getInitialFormState();
     setFormState((prev) => {
       // Only update if resource IDs actually changed
       if (
-        prev.name_id !== newState.name_id ||
-        prev.description_id !== newState.description_id ||
-        prev.active_flag_id !== newState.active_flag_id
+        prev.name_id !== currentNameId ||
+        prev.description_id !== currentDescriptionId ||
+        prev.active_flag_id !== currentFlagId
       ) {
-        return newState;
+        return {
+          name_id: currentNameId,
+          description_id: currentDescriptionId,
+          active_flag_id: currentFlagId,
+        };
       }
       return prev;
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    providerData?.name_id,
-    providerData?.description_id,
-    providerData?.active_flag_id,
-  ]);
+  }, [currentNameId, currentDescriptionId, currentFlagId]);
 
   // Draft version tracking for optimistic concurrency control
   const [lastSavedVersion, setLastSavedVersion] = useState(0);
@@ -241,10 +273,7 @@ function ProviderComponent({
     lastSavedVersionRef.current = lastSavedVersion;
   }, [lastSavedVersion]);
   // Sync draft_version from server to avoid unintended draft forks.
-  const draftVersion =
-    providerData && "draft_version" in providerData
-      ? (providerData as { draft_version?: number | null }).draft_version
-      : null;
+  const draftVersion = providerData?.draft_version ?? null;
   React.useEffect(() => {
     if (
       typeof draftVersion === "number" &&
@@ -352,6 +381,28 @@ function ProviderComponent({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draftPatchKey]);
 
+  // === Domain-based generation helpers ===
+  // Map resource types to domain IDs for the new domain-based API
+  const resourceTypeToDomainId = useMemo(() => {
+    const map: Record<string, string | null | undefined> = {};
+    if (providerData) {
+      map["names"] = providerData.name_domain_id;
+      map["descriptions"] = providerData.description_domain_id;
+      map["flags"] = providerData.flag_domain_id;
+      map["departments"] = providerData.departments_domain_id;
+      map["values"] = providerData.value_domain_id;
+      map["regenerates"] = providerData.regenerates_domain_id;
+    }
+    return map;
+  }, [
+    providerData?.name_domain_id,
+    providerData?.description_domain_id,
+    providerData?.flag_domain_id,
+    providerData?.departments_domain_id,
+    providerData?.value_domain_id,
+    providerData?.regenerates_domain_id,
+  ]);
+
   // WebSocket handlers for AI generation
   useEffect(() => {
     if (!socket || !isConnected) return;
@@ -363,9 +414,24 @@ function ProviderComponent({
       artifact_type?: string;
       group_id?: string;
       resource_type?: string;
-      name_id?: string | null;
-      description_id?: string | null;
-      active_flag_id?: string | null;
+      // Full resource objects from typed completion event
+      name_resource?: { id?: string | null; [key: string]: unknown } | null;
+      description_resource?: {
+        id?: string | null;
+        [key: string]: unknown;
+      } | null;
+      flag_resource?: {
+        id?: string | null;
+        [key: string]: unknown;
+      } | null;
+      value_resource?: { id?: string | null; [key: string]: unknown } | null;
+      regenerates_resource?: {
+        id?: string | null;
+        [key: string]: unknown;
+      } | null;
+      department_resources?:
+        | { department_id?: string | null; [key: string]: unknown }[]
+        | null;
       message?: string;
       success?: boolean;
       [key: string]: unknown;
@@ -388,13 +454,15 @@ function ProviderComponent({
         data.resource_type &&
         validResourceTypes.includes(data.resource_type as ResourceType)
       ) {
-        // Update formState with the resource ID that was generated
+        // Update formState with the resource ID extracted from full resource objects
         setFormState((prev) => {
           const updates: Partial<typeof prev> = {};
 
-          if (data.name_id) updates.name_id = data.name_id;
-          if (data.description_id) updates.description_id = data.description_id;
-          if (data.active_flag_id) updates.active_flag_id = data.active_flag_id;
+          if (data.name_resource?.id) updates.name_id = data.name_resource.id;
+          if (data.description_resource?.id)
+            updates.description_id = data.description_resource.id;
+          if (data.flag_resource?.id)
+            updates.active_flag_id = data.flag_resource.id;
 
           return { ...prev, ...updates };
         });
@@ -480,11 +548,21 @@ function ProviderComponent({
     };
   }, [socket, isConnected, providerData?.group_id]);
 
-  // Generation handler - accepts list of resource types
+  // Generation handler - accepts list of resource types, converts to domain_ids
   const handleGenerateResources = useCallback(
     async (resourceTypes: ResourceType[], userInstructions?: string) => {
       if (!socket || !isConnected) {
         toast.error("WebSocket not connected");
+        return;
+      }
+
+      // Convert resource types to domain_ids
+      const domainIds = resourceTypes
+        .map((rt) => resourceTypeToDomainId[rt])
+        .filter((id): id is string => !!id);
+
+      if (domainIds.length === 0) {
+        toast.error("No AI generation configured for these resources");
         return;
       }
 
@@ -499,16 +577,15 @@ function ProviderComponent({
       const formData = formDataRef.current;
       const draftId = (formData["draftId"] as string | undefined) ?? null;
 
-      // Emit provider_generate event
+      // Emit provider_generate event with domain_ids (new API)
       socket.emit("provider_generate", {
-        resource_types: resourceTypes,
+        domain_ids: domainIds,
         user_instructions: userInstructions ? [userInstructions] : null,
         draft_id: draftId || null,
-        mcp: false,
         provider_id: providerId || null,
       });
     },
-    [socket, isConnected, providerId]
+    [socket, isConnected, providerId, resourceTypeToDomainId]
   );
 
   // Individual generation handlers
@@ -530,8 +607,8 @@ function ProviderComponent({
   // Listen for full-page-generate event from layout
   useEffect(() => {
     const handleFullPageGenerate = () => {
-      // Check if generation is available (provider has generation capability)
-      if (providerData?.general_agent_id) {
+      // Check if generation is available (any domain_id configured)
+      if (providerData?.basic_show_ai_generate) {
         // Generate all available resources
         handleGenerateResources(["names", "descriptions", "flags"]);
       }
@@ -539,7 +616,7 @@ function ProviderComponent({
     window.addEventListener("full-page-generate", handleFullPageGenerate);
     return () =>
       window.removeEventListener("full-page-generate", handleFullPageGenerate);
-  }, [providerData?.general_agent_id, handleGenerateResources]);
+  }, [providerData?.basic_show_ai_generate, handleGenerateResources]);
 
   // Disabled logic based on can_edit flag - check in both new and edit modes
   const disabled = useMemo(() => {
@@ -549,7 +626,7 @@ function ProviderComponent({
 
   // Set breadcrumb context when provider data is loaded
   useEffect(() => {
-    const providerName = providerData?.name_resource?.name;
+    const providerName = currentNameResource?.name;
     if (providerName && providerId && isEditMode) {
       setEntityMetadata({
         entityId: providerId,
@@ -559,7 +636,7 @@ function ProviderComponent({
     }
     return () => clearEntityMetadata();
   }, [
-    providerData,
+    currentNameResource,
     providerId,
     isEditMode,
     setEntityMetadata,
@@ -580,11 +657,19 @@ function ProviderComponent({
         throw new Error("Save action not available");
       }
 
+      // group_id is required for save
+      const groupId = providerData?.group_id;
+      if (!groupId) {
+        toast.error("Provider group not initialized");
+        throw new Error("Provider group not initialized");
+      }
+
       try {
         await saveProviderAction({
           body: {
+            group_id: groupId,
             input_provider_id: isEditMode && providerId ? providerId : null,
-            name_id: formState.name_id,
+            name_id: formState.name_id!,
             description_id: formState.description_id || null,
             active_flag_id: formState.active_flag_id || null,
           },
@@ -607,6 +692,7 @@ function ProviderComponent({
       isEditMode,
       providerId,
       providerData?.name_required,
+      providerData?.group_id,
       saveProviderAction,
       router,
     ]
@@ -747,7 +833,7 @@ function ProviderComponent({
                   required={currentProviderData?.name_required ?? false}
                   hideDescription={true}
                   group_id={currentProviderData?.group_id ?? null}
-                  agent_id={currentProviderData?.name_agent_id ?? null}
+                  agent_id={null}
                   createNamesAction={createNamesAction}
                 />
               }
@@ -820,7 +906,7 @@ function ProviderComponent({
                   required={currentProviderData?.description_required ?? false}
                   rows={3}
                   group_id={currentProviderData?.group_id ?? null}
-                  agent_id={currentProviderData?.description_agent_id ?? null}
+                  agent_id={null}
                   createDescriptionsAction={createDescriptionsAction}
                 />
 
@@ -843,7 +929,7 @@ function ProviderComponent({
                   helpText="Inactive providers will not be available for selection"
                   required={currentProviderData?.flag_required ?? false}
                   group_id={currentProviderData?.group_id ?? null}
-                  agent_id={currentProviderData?.flag_agent_id ?? null}
+                  agent_id={null}
                   createFlagsAction={createFlagsAction}
                 />
               </div>
@@ -913,16 +999,18 @@ function ProviderComponent({
 
 // Memoize component to prevent re-renders when only prop references change (content is same)
 export default React.memo(ProviderComponent, (prevProps, nextProps) => {
-  // Compare providerData by resource IDs, not object reference
+  // Compare providerData by resource IDs from nested structure, not object reference
+  const prevCurrent = prevProps.providerData?.resources?.current;
+  const nextCurrent = nextProps.providerData?.resources?.current;
   const prevIds = {
-    name_id: prevProps.providerData?.name_id,
-    description_id: prevProps.providerData?.description_id,
-    active_flag_id: prevProps.providerData?.active_flag_id,
+    name_id: prevCurrent?.names?.[0]?.id,
+    description_id: prevCurrent?.descriptions?.[0]?.id,
+    active_flag_id: prevCurrent?.flags?.[0]?.flag_option_id,
   };
   const nextIds = {
-    name_id: nextProps.providerData?.name_id,
-    description_id: nextProps.providerData?.description_id,
-    active_flag_id: nextProps.providerData?.active_flag_id,
+    name_id: nextCurrent?.names?.[0]?.id,
+    description_id: nextCurrent?.descriptions?.[0]?.id,
+    active_flag_id: nextCurrent?.flags?.[0]?.flag_option_id,
   };
 
   // Compare primitive props

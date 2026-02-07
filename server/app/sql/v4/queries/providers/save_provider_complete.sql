@@ -1,14 +1,13 @@
--- Unified save provider function - handles both create (provider_id = NULL) and update (provider_id provided)
--- Converted to function
--- 1) Drop function first (breaks dependency on types)
--- Drop all versions of the function using DO block to handle signature variations
+-- Unified save provider function - handles both create (input_provider_id = NULL) and update
+-- Accepts all resource IDs directly (no draft_id dependency)
+-- 1) Drop function first
 DO $$
 DECLARE
     r RECORD;
 BEGIN
-    FOR r IN 
-        SELECT oidvectortypes(proargtypes) as sig 
-        FROM pg_proc 
+    FOR r IN
+        SELECT oidvectortypes(proargtypes) as sig
+        FROM pg_proc
         WHERE proname = 'api_save_provider_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
@@ -17,9 +16,15 @@ BEGIN
 END $$;
 
 CREATE OR REPLACE FUNCTION api_save_provider_v4(
-    draft_id uuid,
     profile_id uuid,
-    input_provider_id uuid DEFAULT NULL
+    group_id uuid,
+    input_provider_id uuid DEFAULT NULL,
+    name_id uuid DEFAULT NULL,
+    description_id uuid DEFAULT NULL,
+    active_flag_id uuid DEFAULT NULL,
+    value_id uuid DEFAULT NULL,
+    regenerates_id uuid DEFAULT NULL,
+    department_ids uuid[] DEFAULT ARRAY[]::uuid[]
 )
 RETURNS TABLE (
     provider_id uuid,
@@ -31,174 +36,132 @@ AS $$
 DECLARE
     v_provider_id uuid;
     v_actor_name text;
-    v_group_id uuid;
-    v_draft_id uuid;
-    v_profile_id uuid;
-    v_input_provider_id uuid;
     is_create boolean;
-    v_name_id uuid;
-    v_description_id uuid;
-    v_active_flag_id uuid;
 BEGIN
-    v_draft_id := draft_id;
-    v_profile_id := profile_id;
-    v_input_provider_id := input_provider_id;
+    -- Get actor name
+    SELECT up.actor_name INTO v_actor_name
+    FROM view_user_profile_context up
+    WHERE up.profile_id = api_save_provider_v4.profile_id;
 
-    IF v_draft_id IS NULL THEN
-        RAISE EXCEPTION 'Draft ID is required';
+    -- Validate required resource IDs
+    IF name_id IS NULL THEN
+        RAISE EXCEPTION 'Name resource is required';
     END IF;
 
-    SELECT dde.group_id INTO v_group_id
-    FROM view_drafts_entry d
-    JOIN draft_domains_entry dde ON dde.draft_id = d.id AND dde.active = TRUE
-    WHERE d.id = v_draft_id;
-
-    IF v_group_id IS NULL THEN
-        RAISE EXCEPTION 'Draft group_id not found: %', v_draft_id;
+    IF name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names_resource WHERE id = name_id) THEN
+        RAISE EXCEPTION 'Name resource not found: %', name_id;
     END IF;
 
-    SELECT dn.names_id INTO v_name_id
-    FROM names_drafts_connection dn
-    WHERE dn.draft_id = v_draft_id
-    LIMIT 1;
+    IF description_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM descriptions_resource WHERE id = description_id) THEN
+        RAISE EXCEPTION 'Description resource not found: %', description_id;
+    END IF;
 
-    SELECT dd.descriptions_id INTO v_description_id
-    FROM descriptions_drafts_connection dd
-    WHERE dd.draft_id = v_draft_id
-    LIMIT 1;
+    IF active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = active_flag_id) THEN
+        RAISE EXCEPTION 'Flag resource not found: %', active_flag_id;
+    END IF;
 
-    SELECT df.flags_id INTO v_active_flag_id
-    FROM flags_drafts_connection df
-    WHERE df.draft_id = v_draft_id
-    LIMIT 1;
+    IF value_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM values_resource WHERE id = value_id) THEN
+        RAISE EXCEPTION 'Value resource not found: %', value_id;
+    END IF;
+
+    IF regenerates_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM regenerates_resource WHERE id = regenerates_id) THEN
+        RAISE EXCEPTION 'Regenerates resource not found: %', regenerates_id;
+    END IF;
+
     -- Determine if create or update
-    is_create := (v_input_provider_id IS NULL);
-    
-    -- Create or UPDATE provider_artifact first (outside CTE)
+    is_create := (input_provider_id IS NULL);
+
     IF is_create THEN
         -- CREATE path
         INSERT INTO provider_artifact (created_at, updated_at)
         VALUES (NOW(), NOW())
         RETURNING id INTO v_provider_id;
+
         -- Link group via junction table
         INSERT INTO provider_groups_junction (provider_id, group_id)
-        VALUES (v_provider_id, v_group_id)
+        VALUES (v_provider_id, group_id)
         ON CONFLICT DO NOTHING;
     ELSE
         -- UPDATE path
-        v_provider_id := v_input_provider_id;
+        v_provider_id := input_provider_id;
         UPDATE provider_artifact
         SET updated_at = NOW()
         WHERE id = v_provider_id;
-        -- Upsert group via junction table
-        INSERT INTO provider_groups_junction (provider_id, group_id)
-        VALUES (v_provider_id, v_group_id)
-        ON CONFLICT DO NOTHING;
-    END IF;
-    
-    -- Validate required resource IDs exist (same for both)
-    IF v_name_id IS NULL THEN
-        RAISE EXCEPTION 'Name resource is required';
-    END IF;
 
-    IF v_name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names_resource WHERE id = v_name_id) THEN
-        RAISE EXCEPTION 'Name resource not found: %', v_name_id;
-    END IF;
-    
-    IF v_description_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM descriptions_resource WHERE id = v_description_id) THEN
-        RAISE EXCEPTION 'Description resource not found: %', v_description_id;
-    END IF;
-    
-    IF v_active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = v_active_flag_id) THEN
-        RAISE EXCEPTION 'Flag resource not found: %', v_active_flag_id;
-    END IF;
-    
-    -- Conditional: For update, remove old links first (outside CTE since we need PL/pgSQL variable)
-    IF NOT is_create THEN
+        -- Upsert group
+        INSERT INTO provider_groups_junction (provider_id, group_id)
+        VALUES (v_provider_id, group_id)
+        ON CONFLICT DO NOTHING;
+
+        -- Remove old junction links
         DELETE FROM provider_names_junction WHERE provider_names_junction.provider_id = v_provider_id;
         DELETE FROM provider_descriptions_junction WHERE provider_descriptions_junction.provider_id = v_provider_id;
-        -- Update existing active flag if it exists
-        UPDATE provider_flags_junction SET
-            flag_id = COALESCE(v_active_flag_id, provider_flags_junction.flag_id),
-            value = CASE WHEN v_active_flag_id IS NOT NULL THEN true ELSE false END
-        WHERE provider_flags_junction.provider_id = v_provider_id
-          ;
+        DELETE FROM provider_values_junction WHERE provider_values_junction.provider_id = v_provider_id;
+        DELETE FROM provider_regenerates_junction WHERE provider_regenerates_junction.provider_id = v_provider_id;
+        DELETE FROM provider_departments_junction WHERE provider_departments_junction.provider_id = v_provider_id;
     END IF;
-    
-    -- Continue with provider save using SQL (provider already created/updated above)
-    RETURN QUERY
-    WITH params AS (
-        SELECT
-            v_provider_id AS p_provider_id,
-            v_name_id AS name_id,
-            v_description_id AS description_id,
-            v_active_flag_id AS active_flag_id,
-            v_profile_id AS profile_id
-    ),
-    user_profile AS (
-        SELECT role, actor_name
-        FROM view_user_profile_context
-        WHERE profile_id = (SELECT profile_id FROM params)
-    ),
-    actor_profile AS (
-        SELECT 
-            x.profile_id,
-            up.actor_name
-        FROM params x
-        CROSS JOIN user_profile up
-    ),
+
     -- Link provider to name
-    link_provider_name AS (
+    IF name_id IS NOT NULL THEN
         INSERT INTO provider_names_junction (provider_id, name_id, created_at)
-        SELECT 
-            x.p_provider_id,
-            x.name_id,
-            NOW()
-        FROM params x
-        WHERE x.name_id IS NOT NULL
-        ON CONFLICT ON CONSTRAINT provider_names_pkey DO NOTHING
-    ),
+        VALUES (v_provider_id, name_id, NOW())
+        ON CONFLICT ON CONSTRAINT provider_names_pkey DO NOTHING;
+    END IF;
+
     -- Link provider to description
-    link_provider_description AS (
+    IF description_id IS NOT NULL THEN
         INSERT INTO provider_descriptions_junction (provider_id, description_id, created_at)
-        SELECT 
-            x.p_provider_id,
-            x.description_id,
-            NOW()
-        FROM params x
-        WHERE x.description_id IS NOT NULL
-        ON CONFLICT ON CONSTRAINT provider_descriptions_pkey DO NOTHING
-    ),
-    -- Insert or UPDATE provider_artifact active flag (UPDATE handled above for update case, INSERT here handles both via ON CONFLICT)
-    insert_provider_active_flag AS (
-        INSERT INTO provider_flags_junction (provider_id, flag_id, value, created_at) SELECT x.p_provider_id,
-            COALESCE(x.active_flag_id, f.id),
-            CASE WHEN x.active_flag_id IS NOT NULL THEN true ELSE false END,
-            NOW()
-        FROM params x
-        CROSS JOIN flags_resource f
-        WHERE f.name = 'provider_active'
-        ON CONFLICT ON CONSTRAINT provider_flags_pkey DO UPDATE SET
-            flag_id = COALESCE(EXCLUDED.flag_id, provider_flags_junction.flag_id),
-            value = EXCLUDED.value
-    ),
+        VALUES (v_provider_id, description_id, NOW())
+        ON CONFLICT ON CONSTRAINT provider_descriptions_pkey DO NOTHING;
+    END IF;
+
+    -- Link provider to active flag
+    INSERT INTO provider_flags_junction (provider_id, flag_id, value, created_at)
+    SELECT v_provider_id,
+        COALESCE(active_flag_id, f.id),
+        CASE WHEN active_flag_id IS NOT NULL THEN true ELSE false END,
+        NOW()
+    FROM flags_resource f
+    WHERE f.name = 'provider_active'
+    ON CONFLICT ON CONSTRAINT provider_flags_pkey DO UPDATE SET
+        flag_id = COALESCE(EXCLUDED.flag_id, provider_flags_junction.flag_id),
+        value = EXCLUDED.value;
+
+    -- Link provider to value
+    IF value_id IS NOT NULL THEN
+        INSERT INTO provider_values_junction (provider_id, values_id, created_at)
+        VALUES (v_provider_id, value_id, NOW())
+        ON CONFLICT ON CONSTRAINT provider_values_pkey DO NOTHING;
+    END IF;
+
+    -- Link provider to regenerates
+    IF regenerates_id IS NOT NULL THEN
+        INSERT INTO provider_regenerates_junction (provider_id, regenerates_id, created_at)
+        VALUES (v_provider_id, regenerates_id, NOW())
+        ON CONFLICT ON CONSTRAINT provider_regenerates_junction_pkey DO NOTHING;
+    END IF;
+
+    -- Link provider to departments
+    IF department_ids IS NOT NULL AND array_length(department_ids, 1) > 0 THEN
+        INSERT INTO provider_departments_junction (provider_id, department_id, created_at)
+        SELECT v_provider_id, did, NOW()
+        FROM unnest(department_ids) AS did
+        ON CONFLICT ON CONSTRAINT provider_departments_pkey DO NOTHING;
+    END IF;
+
     -- Sync linked resources with name/description
-    sync_artifact_resources AS (
-        UPDATE providers_resource r
-        SET name = n.name,
-            description = d.description
-        FROM provider_providers_junction j
-        CROSS JOIN params p
-        LEFT JOIN names_resource n ON n.id = p.name_id
-        LEFT JOIN descriptions_resource d ON d.id = p.description_id
-        WHERE j.providers_id = r.id
-          AND j.provider_id = p.p_provider_id
-        RETURNING r.id
-    )
+    UPDATE providers_resource r
+    SET name = n.name,
+        description = d.description
+    FROM provider_providers_junction j
+    LEFT JOIN names_resource n ON n.id = name_id
+    LEFT JOIN descriptions_resource d ON d.id = description_id
+    WHERE j.providers_id = r.id
+      AND j.provider_id = v_provider_id;
+
+    RETURN QUERY
     SELECT
-        x.p_provider_id AS provider_id,
-        ap.actor_name AS actor_name
-    FROM params x
-    CROSS JOIN actor_profile ap;
+        v_provider_id AS provider_id,
+        v_actor_name AS actor_name;
 END;
 $$;

@@ -1,40 +1,32 @@
-"""Department generation handler - routes department generation through unified generate pipeline."""
+"""Department generation handler - domain-based generation through unified pipeline."""
 
 import uuid
-from typing import Any, cast
+from typing import Any
 
 from fastapi import APIRouter
 
+from app.api.v4.artifacts.department.get import get_department_websocket
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
+from app.socket.v4.artifacts.department.types import GenerateDepartmentPayload
 from app.socket.v4.artifacts.generation_common import (
     emit_generate_artifact,
     emit_generation_error,
-    extract_group_id,
-    pick_agent_id,
 )
-from app.sql.types import (
-    GetDepartmentApiRequest,
-    GetDepartmentSqlParams,
-    GetDepartmentSqlRow,
-)
-from app.utils.sql_helper import execute_sql_typed
 
 internal_sio = get_internal_sio()
 
 client_router = APIRouter()
 server_router = APIRouter()
 
-SQL_PATH = "app/sql/v4/queries/departments/get_department_complete.sql"
-
-
-class GenerateDepartmentPayload(GetDepartmentApiRequest):
-    """Request to generate department resources."""
-
-    agent_type: str | None = None
-    resource_types: list[str]
-    user_instructions: list[str] | None = None
+# Department resource types
+DEPARTMENT_RESOURCE_TYPES = [
+    "names",
+    "descriptions",
+    "flags",
+    "settings",
+]
 
 
 async def _generate_department_impl(
@@ -43,51 +35,85 @@ async def _generate_department_impl(
     profile_id: uuid.UUID,
 ) -> None:
     try:
-        if not data.resource_types:
+        # Validate domain_ids
+        if not data.domain_ids:
             await emit_generation_error(
                 sid=sid,
                 artifact_type="department",
-                message="resource_types must be provided",
+                message="domain_ids must be provided",
                 resource_id=str(data.department_id) if data.department_id else None,
                 resource_type="department",
             )
             return
 
+        # Step 1: Fetch department data for domain → agent mapping
+        result = await get_department_websocket(
+            profile_id=profile_id,
+            department_id=data.department_id,
+            draft_id=data.draft_id,
+        )
+
+        # Build domain_id → agent_id mapping from result.domains
+        domain_to_agent: dict[uuid.UUID, uuid.UUID | None] = {}
+        if result.domains:
+            for domain in result.domains:
+                domain_to_agent[domain.domain_id] = domain.agent_id
+
+        # Build domain_id → resource_type mapping from result
+        domain_to_resource: dict[uuid.UUID | None, str] = {
+            result.name_domain_id: "names",
+            result.description_domain_id: "descriptions",
+            result.flag_domain_id: "flags",
+            result.settings_domain_id: "settings",
+        }
+        # Remove None key if present
+        domain_to_resource.pop(None, None)
+
+        # Derive resource_types from domain_ids
+        resource_types: list[str] = []
+        for did in data.domain_ids:
+            if did in domain_to_resource:
+                resource_types.append(domain_to_resource[did])
+
+        if not resource_types:
+            await emit_generation_error(
+                sid=sid,
+                artifact_type="department",
+                message="No valid domain_ids provided",
+                resource_id=str(data.department_id) if data.department_id else None,
+                resource_type="department",
+            )
+            return
+
+        # Get agent_id from the first valid domain_id
+        agent_id: uuid.UUID | None = None
+        for did in data.domain_ids:
+            if did in domain_to_agent and domain_to_agent[did] is not None:
+                agent_id = domain_to_agent[did]
+                break
+
+        if not agent_id:
+            await emit_generation_error(
+                sid=sid,
+                artifact_type="department",
+                message="No agent configured for requested resources",
+                resource_id=str(data.department_id) if data.department_id else None,
+                group_id=str(result.group_id) if result.group_id else None,
+                resource_type=(resource_types or ["department"])[0],
+            )
+            return
+
         async with get_db_connection() as conn:
-            request_payload = GetDepartmentApiRequest.model_validate(data.model_dump())
-            params = GetDepartmentSqlParams(
-                profile_id=profile_id,
-                **request_payload.model_dump(),
-            )
-            result = cast(
-                GetDepartmentSqlRow,
-                await execute_sql_typed(conn, SQL_PATH, params=params),
-            )
-
-            agent_id = pick_agent_id(result, data.agent_type, data.resource_types)
-            if not agent_id:
-                await emit_generation_error(
-                    sid=sid,
-                    artifact_type="department",
-                    message="No agent configured for requested resources",
-                    resource_id=str(data.department_id) if data.department_id else None,
-                    group_id=str(extract_group_id(result))
-                    if extract_group_id(result)
-                    else None,
-                    resource_type=(data.resource_types or ["department"])[0],
-                )
-                return
-
             await emit_generate_artifact(
                 conn=conn,
                 sid=sid,
                 artifact_type="department",
                 resource_id=str(data.department_id) if data.department_id else None,
-                resource_types=data.resource_types,
+                resource_types=resource_types,
                 user_instructions=data.user_instructions,
                 profile_id=profile_id,
                 agent_id=agent_id,
-                group_id=extract_group_id(result),
+                group_id=result.group_id,
             )
 
     except Exception as e:

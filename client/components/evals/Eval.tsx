@@ -442,11 +442,8 @@ function EvalComponent({
   // Set breadcrumb context when eval data is loaded
   useEffect(() => {
     const evalName =
-      evalData?.name_resource?.name ??
-      (evalData?.name_id
-        ? (evalData?.names?.find((name) => name.id === evalData.name_id)
-            ?.name ?? null)
-        : null);
+      evalData?.resources?.current?.names?.[0]?.name ??
+      null;
     if (evalName && evalId && isEditMode) {
       setEntityMetadata({
         entityId: evalId,
@@ -458,16 +455,16 @@ function EvalComponent({
   }, [evalData, evalId, isEditMode, setEntityMetadata, clearEntityMetadata]);
 
   // Set generation capability when eval data is loaded
-  const generationAgentId =
-    evalData?.name_agent_id ||
-    evalData?.description_agent_id ||
-    evalData?.active_flag_agent_id ||
-    evalData?.dynamic_flag_agent_id ||
-    evalData?.groups_flag_agent_id ||
-    evalData?.departments_agent_id ||
-    evalData?.agents_agent_id ||
-    evalData?.rubrics_agent_id ||
-    null;
+  const hasAnyAiGenerate =
+    evalData?.name_show_ai_generate ||
+    evalData?.description_show_ai_generate ||
+    evalData?.active_flag_show_ai_generate ||
+    evalData?.dynamic_flag_show_ai_generate ||
+    evalData?.groups_flag_show_ai_generate ||
+    evalData?.departments_show_ai_generate ||
+    evalData?.agents_show_ai_generate ||
+    evalData?.rubrics_show_ai_generate ||
+    false;
 
   // Readonly logic using server-provided can_edit flag
   const disabled = useMemo(() => {
@@ -586,26 +583,21 @@ function EvalComponent({
   const canRegenerate = useCallback(
     (resourceType: EvalResourceType): boolean => {
       if (!evalData) return false;
+      const current = evalData.resources?.current;
+      if (!current) return false;
       switch (resourceType) {
         case "names":
-          return evalData.name_resource?.generated ?? false;
+          return current.names?.[0]?.generated ?? false;
         case "descriptions":
-          return evalData.description_resource?.generated ?? false;
+          return current.descriptions?.[0]?.generated ?? false;
         case "flags":
-          return (
-            evalData.active_flag_resource?.generated ||
-            evalData.dynamic_flag_resource?.generated ||
-            evalData.groups_flag_resource?.generated ||
-            false
-          );
+          return current.flags?.some((f) => f.generated) ?? false;
         case "departments":
-          return (
-            evalData.department_resources?.some((d) => d.generated) ?? false
-          );
+          return current.departments?.some((d) => d.generated) ?? false;
         case "agents":
-          return evalData.agent_resources?.some((a) => a.generated) ?? false;
+          return current.eval_agents?.some((a) => a.generated) ?? false;
         case "rubrics":
-          return evalData.rubric_resources?.some((r) => r.generated) ?? false;
+          return current.rubrics?.some((r) => r.generated) ?? false;
         default:
           return false;
       }
@@ -762,66 +754,37 @@ function EvalComponent({
     []
   );
 
-  const determineAgentType = useCallback(
-    (resourceTypes: EvalResourceType[]): string | null => {
-      const basicResources: EvalResourceType[] = [
-        "names",
-        "descriptions",
-        "flags",
-        "departments",
-      ];
-      const allResources: EvalResourceType[] = [
-        "names",
-        "descriptions",
-        "flags",
-        "departments",
-        "agents",
-        "rubrics",
-      ];
-
-      const isBasicCombo =
-        resourceTypes.length === basicResources.length &&
-        resourceTypes.every((rt) => basicResources.includes(rt));
-      const isAllResources =
-        resourceTypes.length === allResources.length &&
-        resourceTypes.every((rt) => allResources.includes(rt));
-
-      if (isAllResources) {
-        return "general";
-      }
-
-      if (isBasicCombo) {
-        return "basic";
-      }
-
-      if (resourceTypes.length === 1) {
-        const agentTypeMap: Partial<Record<EvalResourceType, string>> = {
-          names: "name",
-          descriptions: "description",
-          flags: "flags",
-          departments: "departments",
-          agents: "agents",
-          rubrics: "rubrics",
-        };
-        const firstType = resourceTypes[0];
-        if (firstType && firstType in agentTypeMap) {
-          return agentTypeMap[firstType] ?? null;
-        }
-      }
-
-      return null;
-    },
-    []
-  );
+  // Map resource types to domain_ids from server response
+  const resourceToDomainId = useMemo(() => {
+    if (!evalData) return {};
+    return {
+      names: evalData.name_domain_id,
+      descriptions: evalData.description_domain_id,
+      flags: evalData.active_flag_domain_id, // All flags share same domain
+      departments: evalData.departments_domain_id,
+      agents: evalData.agents_domain_id,
+      rubrics: evalData.rubrics_domain_id,
+    } as Record<string, string | null | undefined>;
+  }, [evalData]);
 
   const handleGenerateResources = useCallback(
     async (
       resourceTypes: EvalResourceType[],
-      agentType: string | null,
+      _agentType?: string | null,
       userInstructions?: string
     ) => {
       if (!socket || !isConnected) {
         toast.error("WebSocket not connected");
+        return;
+      }
+
+      // Convert resource types to domain_ids
+      const domainIds = resourceTypes
+        .map((rt) => resourceToDomainId[rt])
+        .filter(Boolean) as string[];
+
+      if (domainIds.length === 0) {
+        toast.error("No generation domains configured for these resources");
         return;
       }
 
@@ -833,63 +796,41 @@ function EvalComponent({
 
       const formData = formDataRef.current;
       const draftId = (formData["draftId"] as string | undefined) ?? null;
-      const agentSearch =
-        (formData["agentSearch"] as string | undefined) ?? null;
-      const groupSearch =
-        (formData["groupSearch"] as string | undefined) ?? null;
-      const modelRunSearch =
-        (formData["modelRunSearch"] as string | undefined) ?? null;
 
       socket.emit("eval_generate", {
-        resource_types: resourceTypes,
-        agent_type: agentType,
+        domain_ids: domainIds,
         user_instructions: userInstructions ? [userInstructions] : null,
         draft_id: draftId || null,
-        agent_search: agentSearch || null,
-        group_search: groupSearch || null,
-        available_model_runs_search: modelRunSearch || null,
-        mcp: false,
         eval_id: evalId || null,
       });
     },
-    [socket, isConnected, evalId]
+    [socket, isConnected, evalId, resourceToDomainId]
   );
 
   // Individual generation handlers
   const handleGenerateNames = useCallback(
-    async () =>
-      handleGenerateResources(["names"], determineAgentType(["names"])),
-    [handleGenerateResources, determineAgentType]
+    async () => handleGenerateResources(["names"]),
+    [handleGenerateResources]
   );
 
   const handleGenerateDescriptions = useCallback(
-    async () =>
-      handleGenerateResources(
-        ["descriptions"],
-        determineAgentType(["descriptions"])
-      ),
-    [handleGenerateResources, determineAgentType]
+    async () => handleGenerateResources(["descriptions"]),
+    [handleGenerateResources]
   );
 
   const handleGenerateFlags = useCallback(
-    async () =>
-      handleGenerateResources(["flags"], determineAgentType(["flags"])),
-    [handleGenerateResources, determineAgentType]
+    async () => handleGenerateResources(["flags"]),
+    [handleGenerateResources]
   );
 
   const handleGenerateDepartments = useCallback(
-    async () =>
-      handleGenerateResources(
-        ["departments"],
-        determineAgentType(["departments"])
-      ),
-    [handleGenerateResources, determineAgentType]
+    async () => handleGenerateResources(["departments"]),
+    [handleGenerateResources]
   );
 
   const handleGenerateAgents = useCallback(
-    async () =>
-      handleGenerateResources(["agents"], determineAgentType(["agents"])),
-    [handleGenerateResources, determineAgentType]
+    async () => handleGenerateResources(["agents"]),
+    [handleGenerateResources]
   );
 
   const handleOpenStepCardModal = useCallback(
@@ -914,25 +855,23 @@ function EvalComponent({
   const handleModalGenerate = useCallback(
     async (selectedResources: string[], instructions: string) => {
       const resourceTypes = selectedResources as EvalResourceType[];
-      const agentType = determineAgentType(resourceTypes);
       await handleGenerateResources(
         resourceTypes,
-        agentType,
+        null,
         instructions.trim() || undefined
       );
       setShowGenerateModal(false);
       setModalInstructions("");
     },
-    [handleGenerateResources, determineAgentType]
+    [handleGenerateResources]
   );
 
   // Listen for full-page-generate event from layout
   useEffect(() => {
     const handleFullPageGenerate = (
-      event: CustomEvent<{ agentId?: string }>
+      _event: CustomEvent<{ agentId?: string }>
     ) => {
-      const agentId = event.detail?.agentId;
-      if (agentId) {
+      if (hasAnyAiGenerate) {
         handleOpenStepCardModal("all", "generate");
       }
     };
@@ -1012,8 +951,14 @@ function EvalComponent({
       }
 
       try {
+        if (!formState.name_id) {
+          toast.error("Name is required");
+          throw new Error("Name is required");
+        }
+
         await saveAction({
           body: {
+            group_id: evalData?.group_id ?? "",
             input_eval_id: isEditMode && evalId ? evalId : null,
             name_id: formState.name_id,
             description_id: formState.description_id,
@@ -1022,13 +967,12 @@ function EvalComponent({
             groups_flag_id: formState.groups_flag_id,
             department_ids: formState.department_ids,
             agent_ids: formState.agent_ids,
-            run_rubric_links: buildRunRubricPayload(formState.run_rubric_links),
-            group_rubric_links: buildGroupRubricPayload(
+            run_rubrics: buildRunRubricPayload(formState.run_rubric_links),
+            group_rubrics: buildGroupRubricPayload(
               formState.group_rubric_links
             ),
             model_run_ids: formState.model_run_ids,
             group_ids: formState.group_ids,
-            use_groups: !!formState.groups_flag_id,
           },
         });
         toast.success(
@@ -1240,14 +1184,8 @@ function EvalComponent({
 
       switch (stepId) {
         case "basic": {
-          const basicAgentId =
-            evalData?.name_agent_id ||
-            evalData?.description_agent_id ||
-            evalData?.active_flag_agent_id ||
-            evalData?.dynamic_flag_agent_id ||
-            evalData?.groups_flag_agent_id ||
-            evalData?.departments_agent_id ||
-            null;
+          const basicHasAiGenerate =
+            evalData?.basic_show_ai_generate ?? false;
 
           return (
             <StepCard
@@ -1260,7 +1198,7 @@ function EvalComponent({
               actions={
                 stepResources["basic"] &&
                 stepResources["basic"].length > 0 &&
-                basicAgentId ? (
+                basicHasAiGenerate ? (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -1307,18 +1245,18 @@ function EvalComponent({
               customHeader={
                 <Names
                   name_id={formState.name_id ?? null}
-                  name_resource={evalData?.name_resource ?? null}
+                  name_resource={evalData?.resources?.current?.names?.[0] ?? null}
                   show_name={evalData?.show_name ?? true}
                   name_suggestions={evalData?.name_suggestions ?? []}
-                  names={evalData?.names ?? []}
+                  names={evalData?.resources?.resources?.names ?? []}
                   disabled={disabled}
                   onNameIdChange={(nameId) =>
                     setFormState((prev) => ({ ...prev, name_id: nameId }))
                   }
                   onGenerate={handleGenerateNames}
                   isGenerating={isGenerating("names")}
-                  group_id={evalData?.group_id ?? null}
-                  agent_id={evalData?.name_agent_id ?? null}
+                  group_id={evalData?.names_group_id ?? evalData?.group_id ?? null}
+                  agent_id={null}
                   createNamesAction={createNamesAction}
                   required={evalData?.name_required ?? false}
                 />
@@ -1327,12 +1265,12 @@ function EvalComponent({
               <div className="space-y-4">
                 <Descriptions
                   description_id={formState.description_id ?? null}
-                  description_resource={evalData?.description_resource ?? null}
+                  description_resource={evalData?.resources?.current?.descriptions?.[0] ?? null}
                   show_description={evalData?.show_description ?? true}
                   description_suggestions={
                     evalData?.description_suggestions ?? []
                   }
-                  descriptions={evalData?.descriptions ?? []}
+                  descriptions={evalData?.resources?.resources?.descriptions ?? []}
                   disabled={disabled}
                   onDescriptionIdChange={(descriptionId) =>
                     setFormState((prev) => ({
@@ -1343,14 +1281,19 @@ function EvalComponent({
                   onGenerate={handleGenerateDescriptions}
                   isGenerating={isGenerating("descriptions")}
                   required={evalData?.description_required ?? false}
-                  group_id={evalData?.group_id ?? null}
-                  agent_id={evalData?.description_agent_id ?? null}
+                  group_id={evalData?.descriptions_group_id ?? evalData?.group_id ?? null}
+                  agent_id={null}
                   createDescriptionsAction={createDescriptionsAction}
                 />
 
                 <Flags
                   flag_id={formState.active_flag_id ?? null}
-                  flag_resource={evalData?.active_flag_resource ?? null}
+                  flag_resource={evalData?.resources?.current?.flags?.find((f) => f.key === "eval_active") ? {
+                    id: evalData?.resources?.current?.flags?.find((f) => f.key === "eval_active")?.flag_option_id ?? null,
+                    name: "eval_active",
+                    description: evalData?.resources?.current?.flags?.find((f) => f.key === "eval_active")?.description ?? null,
+                    generated: evalData?.resources?.current?.flags?.find((f) => f.key === "eval_active")?.generated ?? null,
+                  } : null}
                   show_flag={evalData?.show_active_flag ?? false}
                   disabled={disabled}
                   onFlagIdChange={(flagId) =>
@@ -1364,14 +1307,19 @@ function EvalComponent({
                   label="Active"
                   helpText="Inactive evals will not be available for runs"
                   required={evalData?.active_flag_required ?? false}
-                  group_id={evalData?.group_id ?? null}
-                  agent_id={evalData?.active_flag_agent_id ?? null}
+                  group_id={evalData?.flags_group_id ?? evalData?.group_id ?? null}
+                  agent_id={null}
                   createFlagsAction={createFlagsAction}
                 />
 
                 <Flags
                   flag_id={formState.dynamic_flag_id ?? null}
-                  flag_resource={evalData?.dynamic_flag_resource ?? null}
+                  flag_resource={evalData?.resources?.current?.flags?.find((f) => f.key === "dynamic") ? {
+                    id: evalData?.resources?.current?.flags?.find((f) => f.key === "dynamic")?.flag_option_id ?? null,
+                    name: "dynamic",
+                    description: evalData?.resources?.current?.flags?.find((f) => f.key === "dynamic")?.description ?? null,
+                    generated: evalData?.resources?.current?.flags?.find((f) => f.key === "dynamic")?.generated ?? null,
+                  } : null}
                   show_flag={evalData?.show_dynamic_flag ?? false}
                   disabled={disabled}
                   onFlagIdChange={(flagId) =>
@@ -1385,14 +1333,19 @@ function EvalComponent({
                   label="Dynamic"
                   helpText="Enable dynamic evaluation settings"
                   required={evalData?.dynamic_flag_required ?? false}
-                  group_id={evalData?.group_id ?? null}
-                  agent_id={evalData?.dynamic_flag_agent_id ?? null}
+                  group_id={evalData?.flags_group_id ?? evalData?.group_id ?? null}
+                  agent_id={null}
                   createFlagsAction={createFlagsAction}
                 />
 
                 <Flags
                   flag_id={formState.groups_flag_id ?? null}
-                  flag_resource={evalData?.groups_flag_resource ?? null}
+                  flag_resource={evalData?.resources?.current?.flags?.find((f) => f.key === "groups") ? {
+                    id: evalData?.resources?.current?.flags?.find((f) => f.key === "groups")?.flag_option_id ?? null,
+                    name: "groups",
+                    description: evalData?.resources?.current?.flags?.find((f) => f.key === "groups")?.description ?? null,
+                    generated: evalData?.resources?.current?.flags?.find((f) => f.key === "groups")?.generated ?? null,
+                  } : null}
                   show_flag={evalData?.show_groups_flag ?? false}
                   disabled={disabled}
                   onFlagIdChange={(flagId) =>
@@ -1406,19 +1359,19 @@ function EvalComponent({
                   label="Use Groups"
                   helpText="Evaluate by group instead of individual runs"
                   required={evalData?.groups_flag_required ?? false}
-                  group_id={evalData?.group_id ?? null}
-                  agent_id={evalData?.groups_flag_agent_id ?? null}
+                  group_id={evalData?.flags_group_id ?? evalData?.group_id ?? null}
+                  agent_id={null}
                   createFlagsAction={createFlagsAction}
                 />
 
                 <Departments
                   department_ids={formState.department_ids ?? []}
-                  department_resources={evalData?.department_resources ?? []}
+                  department_resources={evalData?.resources?.current?.departments ?? []}
                   show_departments={evalData?.show_departments ?? false}
                   department_suggestions={
                     evalData?.department_suggestions ?? []
                   }
-                  departments={evalData?.departments ?? []}
+                  departments={evalData?.resources?.resources?.departments ?? []}
                   disabled={disabled}
                   onChange={(ids) =>
                     setFormState((prev) => ({ ...prev, department_ids: ids }))
@@ -1426,8 +1379,8 @@ function EvalComponent({
                   onGenerate={handleGenerateDepartments}
                   isGenerating={isGenerating("departments")}
                   required={evalData?.departments_required ?? false}
-                  group_id={evalData?.group_id ?? null}
-                  agent_id={evalData?.departments_agent_id ?? null}
+                  group_id={evalData?.departments_group_id ?? evalData?.group_id ?? null}
+                  agent_id={null}
                   createDepartmentsAction={createDepartmentsAction}
                 />
               </div>
@@ -1447,7 +1400,7 @@ function EvalComponent({
               actions={
                 stepResources["agents"] &&
                 stepResources["agents"].length > 0 &&
-                evalData?.agents_agent_id ? (
+                evalData?.agents_show_ai_generate ? (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -1502,10 +1455,20 @@ function EvalComponent({
             >
               <Agents
                 agent_ids={formState.agent_ids ?? []}
-                agent_resources={evalData?.agent_resources ?? []}
+                agent_resources={evalData?.resources?.current?.eval_agents?.map((a) => ({
+                  id: a.id,
+                  name: a.name,
+                  description: a.description,
+                  generated: a.generated,
+                })) ?? []}
                 show_agents={evalData?.show_agents ?? false}
                 agent_suggestions={evalData?.agent_suggestions ?? []}
-                agents={evalData?.agents ?? []}
+                agents={evalData?.resources?.resources?.eval_agents?.map((a) => ({
+                  id: a.id,
+                  name: a.name,
+                  description: a.description,
+                  generated: a.generated,
+                })) ?? []}
                 disabled={disabled}
                 onChange={(ids) =>
                   setFormState((prev) => ({ ...prev, agent_ids: ids }))
@@ -1513,8 +1476,8 @@ function EvalComponent({
                 onGenerate={handleGenerateAgents}
                 isGenerating={isGenerating("agents")}
                 required={evalData?.agents_required ?? false}
-                group_id={evalData?.group_id ?? null}
-                agent_id={evalData?.agents_agent_id ?? null}
+                group_id={evalData?.eval_agents_group_id ?? evalData?.group_id ?? null}
+                agent_id={null}
                 createAgentsAction={createAgentsAction}
               />
             </StepCard>
@@ -1545,7 +1508,7 @@ function EvalComponent({
               actions={
                 stepResources["runs"] &&
                 stepResources["runs"].length > 0 &&
-                evalData?.rubrics_agent_id ? (
+                evalData?.rubrics_show_ai_generate ? (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -1608,7 +1571,12 @@ function EvalComponent({
                         run_name={runLookup[runId]?.name ?? null}
                         run_description={runLookup[runId]?.description ?? null}
                         show_rubrics={evalData?.show_rubrics ?? false}
-                        rubrics={evalData?.rubrics ?? []}
+                        rubrics={evalData?.resources?.resources?.rubrics?.map((r) => ({
+                          id: r.id,
+                          name: r.name,
+                          description: r.description,
+                          generated: r.generated,
+                        })) ?? []}
                         disabled={disabled}
                         required={evalData?.rubrics_required ?? false}
                         selected_rubric_ids={
@@ -1648,7 +1616,7 @@ function EvalComponent({
               actions={
                 stepResources["groups"] &&
                 stepResources["groups"].length > 0 &&
-                evalData?.rubrics_agent_id ? (
+                evalData?.rubrics_show_ai_generate ? (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -1715,7 +1683,12 @@ function EvalComponent({
                           groupLookup[groupId]?.description ?? null
                         }
                         show_rubrics={evalData?.show_rubrics ?? false}
-                        rubrics={evalData?.rubrics ?? []}
+                        rubrics={evalData?.resources?.resources?.rubrics?.map((r) => ({
+                          id: r.id,
+                          name: r.name,
+                          description: r.description,
+                          generated: r.generated,
+                        })) ?? []}
                         disabled={disabled}
                         required={evalData?.rubrics_required ?? false}
                         selected_rubric_ids={
@@ -1764,9 +1737,9 @@ function EvalComponent({
       handleGroupRubricsChange,
       runLookup,
       groupLookup,
-      evalData?.rubrics,
+      evalData?.resources?.resources?.rubrics,
       evalData?.show_rubrics,
-      evalData?.rubrics_agent_id,
+      evalData?.rubrics_show_ai_generate,
     ]
   );
 

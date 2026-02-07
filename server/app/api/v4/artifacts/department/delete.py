@@ -1,16 +1,21 @@
-"""Department delete endpoint - v4 API."""
+"""Department delete endpoint - v4 API following DHH principles."""
 
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.v4.activity.audit import audit_activity, audit_set
-from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db, get_internal_sio
-from app.sql.types import (
+from app.api.v4.artifacts.department.permissions import compute_can_delete
+from app.api.v4.artifacts.department.types import (
     DeleteDepartmentApiRequest,
     DeleteDepartmentApiResponse,
+)
+from app.infra.v4.activity.audit import audit_activity, audit_set
+from app.infra.v4.error.handle_route_error import handle_route_error
+from app.main import get_db
+from app.sql.types import (
+    CheckDepartmentDeleteAccessSqlParams,
+    CheckDepartmentDeleteAccessSqlRow,
     DeleteDepartmentSqlParams,
     DeleteDepartmentSqlRow,
     load_sql_query,
@@ -18,10 +23,12 @@ from app.sql.types import (
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
-internal_sio = get_internal_sio()
+# SQL paths
+ACCESS_CHECK_SQL_PATH = (
+    "app/sql/v4/queries/departments/check_department_delete_access_complete.sql"
+)
+DELETE_SQL_PATH = "app/sql/v4/queries/departments/delete_department_complete.sql"
 
-# Load SQL with types at module level - makes it clear what SQL file is used
-SQL_PATH = "app/sql/v4/queries/departments/delete_department_complete.sql"
 
 router = APIRouter()
 
@@ -42,14 +49,13 @@ async def delete_department(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DeleteDepartmentApiResponse:
-    """Delete a department (with usage check)."""
-    tags = ["departments"]  # From router tags
+    """Delete a department."""
+    tags = ["departments"]
 
-    sql_query = load_sql_query(SQL_PATH)
+    sql_query = load_sql_query(DELETE_SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        # Get profile_id from header (set by router-level dependency)
         profile_id = http_request.state.profile_id
         if not profile_id:
             raise HTTPException(
@@ -57,63 +63,95 @@ async def delete_department(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Convert API request to SQL params (add profile_id from header)
-        params = DeleteDepartmentSqlParams(
-            **request.model_dump(), profile_id=profile_id
+        # Permission check: get user role and department info using typed SQL
+        access_params = CheckDepartmentDeleteAccessSqlParams(
+            profile_id=profile_id,
+            department_id=request.department_id,
         )
-        sql_params = params.to_tuple()
-
-        # Execute SQL with typed helper
-        result = cast(
-            DeleteDepartmentSqlRow,
+        access_result = cast(
+            CheckDepartmentDeleteAccessSqlRow,
             await execute_sql_typed(
                 conn,
-                SQL_PATH,
-                params=params,
+                ACCESS_CHECK_SQL_PATH,
+                params=access_params,
             ),
         )
 
-        # Check if department exists using SQL result
-        if not result.department_exists:
+        if not access_result:
             raise HTTPException(
-                status_code=404, detail=f"Department {request.department_id} not found"
+                status_code=401,
+                detail="Unable to verify user permissions.",
             )
 
-        # Check if department was deleted or is in use
-        if not result.deleted:
-            # Department exists but is in use
-            total_usage = result.total_usage
+        can_delete = compute_can_delete(
+            user_role=access_result.user_role,
+            total_usage=access_result.total_usage or 0,
+        )
+
+        if not can_delete:
             raise HTTPException(
-                status_code=400,
-                detail=f"Cannot delete department: in use by {total_usage} entities",
+                status_code=403,
+                detail="You don't have permission to delete this department.",
             )
 
-        # Set audit context with data from SQL query
-        actor_name = result.actor_name
-        department_title = result.title
-        if actor_name:
-            audit_set(
-                http_request,
-                actor={"name": actor_name, "id": profile_id},
-                department={
-                    "title": department_title or "Unknown",
-                    "id": str(request.department_id),
-                },
+        async with conn.transaction():
+            params = DeleteDepartmentSqlParams(
+                **request.model_dump(), profile_id=profile_id
+            )
+            sql_params = params.to_tuple()
+
+            result = cast(
+                DeleteDepartmentSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    DELETE_SQL_PATH,
+                    params=params,
+                ),
             )
 
-        result_response = DeleteDepartmentApiResponse.model_validate(
-            result.model_dump()
+            if not result:
+                raise ValueError("Failed to check department usage")
+
+            if not result.department_exists:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Department {request.department_id} not found",
+                )
+
+            if not result.deleted:
+                total_usage = result.total_usage
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Cannot delete department: in use by {total_usage} entities",
+                )
+
+            department_title = result.title or "Unknown"
+
+            # Set audit context
+            if result.actor_name:
+                audit_set(
+                    http_request,
+                    actor={"name": result.actor_name, "id": profile_id},
+                    department={
+                        "title": department_title,
+                        "id": str(request.department_id),
+                    },
+                )
+
+        api_response = DeleteDepartmentApiResponse(
+            success=True,
+            message=f"Department '{department_title}' deleted successfully",
         )
 
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
-        # Note: No Keycloak cleanup needed - organizations removed, client-id scoping handles routing
-
-        return result_response
+        return api_response
     except HTTPException:
         raise
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
         handle_route_error(
             error=e,

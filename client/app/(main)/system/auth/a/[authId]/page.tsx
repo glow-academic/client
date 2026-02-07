@@ -15,8 +15,8 @@ type GetAuthIn = InputOf<"/api/v4/auths/get", "post">;
 type GetAuthOut = OutputOf<"/api/v4/auths/get", "post">;
 type SaveAuthIn = InputOf<"/api/v4/auths/save", "post">;
 type SaveAuthOut = OutputOf<"/api/v4/auths/save", "post">;
-type PatchAuthDraftIn = InputOf<"/api/v4/auth/draft", "patch">;
-type PatchAuthDraftOut = OutputOf<"/api/v4/auth/draft", "patch">;
+type PatchAuthDraftIn = InputOf<"/api/v4/auths/draft", "patch">;
+type PatchAuthDraftOut = OutputOf<"/api/v4/auths/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
@@ -61,9 +61,11 @@ export async function generateMetadata(
       } as GetAuthIn["body"],
     };
     const auth = await getAuth(input);
+    const authName = auth?.resources?.current?.names?.[0]?.name;
+    const authDescription = auth?.resources?.current?.descriptions?.[0]?.description;
     return {
-      title: `${auth?.name_resource?.name || "Auth"} Auth`,
-      description: `${auth?.name_resource?.name ? `${auth.name_resource.name} - ` : ""}Authentication method configuration for teaching assistant training platform.${auth?.description_resource?.description ? ` ${auth.description_resource.description}` : ""} Manage identity providers and secure access mechanisms for educational institutions and L&D programs.`,
+      title: `${authName || "Auth"} Auth`,
+      description: `${authName ? `${authName} - ` : ""}Authentication method configuration for teaching assistant training platform.${authDescription ? ` ${authDescription}` : ""} Manage identity providers and secure access mechanisms for educational institutions and L&D programs.`,
     };
   } catch {
     // Fall through to default metadata
@@ -89,7 +91,7 @@ async function patchAuthDraft(
 ): Promise<PatchAuthDraftOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.patch("/auth/draft", input);
+  return api.patch("/auths/draft", input);
 }
 
 async function createDraftNames(
@@ -180,7 +182,7 @@ export default async function AuthEditPage({
           authId={authId}
           authData={authData}
           saveAuthAction={saveAuth}
-          patchAuthDraftAction={undefined}
+          patchAuthDraftAction={patchAuthDraft}
           createNamesAction={createDraftNames}
           createDescriptionsAction={createDraftDescriptions}
           createFlagsAction={createDraftFlags}
