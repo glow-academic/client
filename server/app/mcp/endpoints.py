@@ -285,31 +285,28 @@ def _get_export_handler_name(export_type: str) -> str | None:
 
 
 def discover_export_handlers() -> dict[str, Any]:
-    """Discover all export handlers by scanning export directory.
+    """Discover export handlers from their new locations.
 
     Returns:
         Dictionary mapping type to handler functions.
     """
-    export_dir = Path(__file__).parent.parent / "api" / "v4" / "export"
     handlers: dict[str, Any] = {}
 
-    if not export_dir.exists():
-        return handlers
+    # Report export is now in artifacts/reports/export.py
+    try:
+        module = importlib.import_module("app.api.v4.artifacts.reports.export")
+        if hasattr(module, "export_report"):
+            handlers["report"] = module.export_report
+    except (ImportError, AttributeError):
+        pass
 
-    # Scan for type files
-    for item in sorted(export_dir.iterdir()):
-        if item.is_file() and item.suffix == ".py" and not item.name.startswith("_"):
-            export_type = item.stem
-            if export_type == "__init__":
-                continue
-
-            try:
-                module = importlib.import_module(f"app.api.v4.export.{export_type}")
-                func_name = _get_export_handler_name(export_type)
-                if func_name and hasattr(module, func_name):
-                    handlers[export_type] = getattr(module, func_name)
-            except (ImportError, AttributeError):
-                pass
+    # Certificate export is in artifacts/attempt/certifficate.py
+    try:
+        module = importlib.import_module("app.api.v4.artifacts.attempt.certifficate")
+        if hasattr(module, "export_certificate"):
+            handlers["certificate"] = module.export_certificate
+    except (ImportError, AttributeError):
+        pass
 
     return handlers
 
@@ -323,7 +320,7 @@ def discover_decrypt_handlers() -> dict[str, Any]:
     handlers: dict[str, Any] = {}
 
     try:
-        module = importlib.import_module("app.api.v4.decrypt.key")
+        module = importlib.import_module("app.api.v4.resources.keys.decrypt")
         if hasattr(module, "decrypt_key"):
             handlers["decrypt"] = module.decrypt_key
     except (ImportError, AttributeError):
@@ -345,31 +342,28 @@ def _get_uploads_handler_name(operation: str) -> str | None:
 
 
 def discover_uploads_handlers() -> dict[str, Any]:
-    """Discover all uploads handlers by scanning uploads directory.
+    """Discover uploads handlers from their new locations.
 
     Returns:
         Dictionary mapping operation to handler functions.
     """
-    uploads_dir = Path(__file__).parent.parent / "api" / "v4" / "uploads"
     handlers: dict[str, Any] = {}
 
-    if not uploads_dir.exists():
-        return handlers
+    # Download (was get) - now in resources/uploads/download.py
+    try:
+        module = importlib.import_module("app.api.v4.resources.uploads.download")
+        if hasattr(module, "get_upload"):
+            handlers["get"] = module.get_upload
+    except (ImportError, AttributeError):
+        pass
 
-    # Scan for operation files
-    for item in sorted(uploads_dir.iterdir()):
-        if item.is_file() and item.suffix == ".py" and not item.name.startswith("_"):
-            operation = item.stem
-            if operation == "__init__":
-                continue
-
-            try:
-                module = importlib.import_module(f"app.api.v4.uploads.{operation}")
-                func_name = _get_uploads_handler_name(operation)
-                if func_name and hasattr(module, func_name):
-                    handlers[operation] = getattr(module, func_name)
-            except (ImportError, AttributeError):
-                pass
+    # Upload/finalize (was save) - now in resources/uploads/upload.py
+    try:
+        module = importlib.import_module("app.api.v4.resources.uploads.upload")
+        if hasattr(module, "save_upload"):
+            handlers["save"] = module.save_upload
+    except (ImportError, AttributeError):
+        pass
 
     return handlers
 

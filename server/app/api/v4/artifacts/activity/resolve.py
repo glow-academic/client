@@ -61,9 +61,7 @@ async def resolve_problem(
             )
 
         # Execute update query
-        sql_query = load_sql(
-            "app/sql/v4/queries/activity/resolve_problem_complete.sql"
-        )
+        sql_query = load_sql("app/sql/v4/queries/activity/resolve_problem_complete.sql")
         sql_params = (str(request.problem_id), request.resolved, profile_id)
         result = await conn.fetchrow(
             sql_query, request.problem_id, request.resolved, profile_id

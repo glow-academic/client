@@ -104,7 +104,9 @@ from app.api.v4.resources.flags.search import router as flags_search_router
 router.include_router(flags_get_router)
 router.include_router(flags_search_router)
 from app.api.v4.resources.group_positions.create import router as group_positions_router
-from app.api.v4.resources.group_positions.get import router as group_positions_get_router
+from app.api.v4.resources.group_positions.get import (
+    router as group_positions_get_router,
+)
 
 router.include_router(group_positions_router)
 router.include_router(group_positions_get_router)

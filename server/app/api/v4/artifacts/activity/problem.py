@@ -75,9 +75,7 @@ async def create_problem(
             )
 
         # Execute insert query
-        sql_query = load_sql(
-            "app/sql/v4/queries/activity/create_problem_complete.sql"
-        )
+        sql_query = load_sql("app/sql/v4/queries/activity/create_problem_complete.sql")
         sql_params = (request.type, request.message, profile_id)
         result = await conn.fetchrow(
             sql_query, request.type, request.message, profile_id
