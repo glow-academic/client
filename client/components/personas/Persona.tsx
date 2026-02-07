@@ -348,6 +348,28 @@ function PersonaComponent({
       parameter_fields_group_id: personaData.parameter_fields_group_id,
       examples_group_id: personaData.examples_group_id,
       parameters_group_id: personaData.parameters_group_id,
+      // Per-resource create tool IDs
+      name_create_tool_id: personaData.name_create_tool_id,
+      description_create_tool_id: personaData.description_create_tool_id,
+      color_create_tool_id: personaData.color_create_tool_id,
+      icon_create_tool_id: personaData.icon_create_tool_id,
+      instructions_create_tool_id: personaData.instructions_create_tool_id,
+      flag_create_tool_id: personaData.flag_create_tool_id,
+      departments_create_tool_id: personaData.departments_create_tool_id,
+      parameter_fields_create_tool_id: personaData.parameter_fields_create_tool_id,
+      examples_create_tool_id: personaData.examples_create_tool_id,
+      parameters_create_tool_id: personaData.parameters_create_tool_id,
+      // Per-resource link tool IDs
+      name_link_tool_id: personaData.name_link_tool_id,
+      description_link_tool_id: personaData.description_link_tool_id,
+      color_link_tool_id: personaData.color_link_tool_id,
+      icon_link_tool_id: personaData.icon_link_tool_id,
+      instructions_link_tool_id: personaData.instructions_link_tool_id,
+      flag_link_tool_id: personaData.flag_link_tool_id,
+      departments_link_tool_id: personaData.departments_link_tool_id,
+      parameter_fields_link_tool_id: personaData.parameter_fields_link_tool_id,
+      examples_link_tool_id: personaData.examples_link_tool_id,
+      parameters_link_tool_id: personaData.parameters_link_tool_id,
     };
     // Intentionally depend on individual fields, not whole personaData object
     // to prevent recreation when only object reference changes
@@ -418,6 +440,27 @@ function PersonaComponent({
     personaData?.parameter_fields_group_id,
     personaData?.examples_group_id,
     personaData?.parameters_group_id,
+    // Per-resource tool IDs
+    personaData?.name_create_tool_id,
+    personaData?.description_create_tool_id,
+    personaData?.color_create_tool_id,
+    personaData?.icon_create_tool_id,
+    personaData?.instructions_create_tool_id,
+    personaData?.flag_create_tool_id,
+    personaData?.departments_create_tool_id,
+    personaData?.parameter_fields_create_tool_id,
+    personaData?.examples_create_tool_id,
+    personaData?.parameters_create_tool_id,
+    personaData?.name_link_tool_id,
+    personaData?.description_link_tool_id,
+    personaData?.color_link_tool_id,
+    personaData?.icon_link_tool_id,
+    personaData?.instructions_link_tool_id,
+    personaData?.flag_link_tool_id,
+    personaData?.departments_link_tool_id,
+    personaData?.parameter_fields_link_tool_id,
+    personaData?.examples_link_tool_id,
+    personaData?.parameters_link_tool_id,
   ]);
 
   // Helper to check if a resource type can be regenerated
@@ -1940,6 +1983,8 @@ function PersonaComponent({
                   aiResource={aiFormData.name_resource}
                   onAccept={() => clearAiResource("name_resource")}
                   onReject={() => clearAiResource("name_resource")}
+                  create_tool_id={currentPersonaData?.name_create_tool_id ?? null}
+                  link_tool_id={currentPersonaData?.name_link_tool_id ?? null}
                 />
               }
               resetFields={["name", "description", "department_ids", "active"]}
@@ -2036,6 +2081,8 @@ function PersonaComponent({
                   aiResource={aiFormData.description_resource}
                   onAccept={() => clearAiResource("description_resource")}
                   onReject={() => clearAiResource("description_resource")}
+                  create_tool_id={currentPersonaData?.description_create_tool_id ?? null}
+                  link_tool_id={currentPersonaData?.description_link_tool_id ?? null}
                 />
 
                 {/* Department Selection */}
@@ -2065,6 +2112,7 @@ function PersonaComponent({
                   }
                   onAccept={() => clearAiResource("department_resources")}
                   onReject={() => clearAiResource("department_resources")}
+                  link_tool_id={currentPersonaData?.departments_link_tool_id ?? null}
                 />
 
                 {/* Active Switch - using server-driven Flags component */}
@@ -2090,6 +2138,8 @@ function PersonaComponent({
                   }
                   onAccept={() => clearAiResource("flag_resource")}
                   onReject={() => clearAiResource("flag_resource")}
+                  create_tool_id={currentPersonaData?.flag_create_tool_id ?? null}
+                  link_tool_id={currentPersonaData?.flag_link_tool_id ?? null}
                 />
               </div>
             </StepCard>
@@ -2209,6 +2259,8 @@ function PersonaComponent({
                   aiParameterResources={aiFormData.parameter_resources ?? null}
                   onAccept={() => clearAiResource("parameter_resources")}
                   onReject={() => clearAiResource("parameter_resources")}
+                  create_tool_id={currentPersonaData?.parameters_create_tool_id ?? null}
+                  link_tool_id={currentPersonaData?.parameters_link_tool_id ?? null}
                 />
                 <ParameterFields
                   parameter_field_ids={formState.parameter_field_ids}
@@ -2247,6 +2299,8 @@ function PersonaComponent({
                   aiParameterFieldResources={aiFormData.parameter_field_resources ?? null}
                   onAccept={() => clearAiResource("parameter_field_resources")}
                   onReject={() => clearAiResource("parameter_field_resources")}
+                  create_tool_id={currentPersonaData?.parameter_fields_create_tool_id ?? null}
+                  link_tool_id={currentPersonaData?.parameter_fields_link_tool_id ?? null}
                 />
               </div>
             </StepCard>
@@ -2363,6 +2417,8 @@ function PersonaComponent({
                 aiResource={aiFormData.color_resource}
                 onAccept={() => clearAiResource("color_resource")}
                 onReject={() => clearAiResource("color_resource")}
+                create_tool_id={currentPersonaData?.color_create_tool_id ?? null}
+                link_tool_id={currentPersonaData?.color_link_tool_id ?? null}
               />
             </StepCard>
           );
@@ -2475,6 +2531,7 @@ function PersonaComponent({
                 aiResource={aiFormData.icon_resource}
                 onAccept={() => clearAiResource("icon_resource")}
                 onReject={() => clearAiResource("icon_resource")}
+                link_tool_id={currentPersonaData?.icon_link_tool_id ?? null}
               />
             </StepCard>
           );
@@ -2588,6 +2645,8 @@ function PersonaComponent({
                 aiResource={aiFormData.instructions_resource}
                 onAccept={() => clearAiResource("instructions_resource")}
                 onReject={() => clearAiResource("instructions_resource")}
+                create_tool_id={currentPersonaData?.instructions_create_tool_id ?? null}
+                link_tool_id={currentPersonaData?.instructions_link_tool_id ?? null}
               />
 
               {/* Examples Section */}
@@ -2647,6 +2706,8 @@ function PersonaComponent({
                 aiExampleResources={aiFormData.example_resources ?? null}
                 onAccept={() => clearAiResource("example_resources")}
                 onReject={() => clearAiResource("example_resources")}
+                create_tool_id={currentPersonaData?.examples_create_tool_id ?? null}
+                link_tool_id={currentPersonaData?.examples_link_tool_id ?? null}
               />
             </StepCard>
           );

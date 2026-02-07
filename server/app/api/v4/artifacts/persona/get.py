@@ -144,6 +144,10 @@ class PersonaInternalData:
     # Per-resource group IDs (from draft MV)
     resource_group_ids: dict[str, UUID | None]
 
+    # Per-resource tool IDs (from selected agents)
+    create_tool_ids_map: dict[str, UUID | None]
+    link_tool_ids_map: dict[str, UUID | None]
+
 
 async def get_persona_internal(
     profile_id: UUID,
@@ -312,6 +316,23 @@ async def get_persona_internal(
         user_department_ids=user_dept_set,
         require_mcp=False,
     )
+
+    # === BUILD TOOL_IDS MAPS FROM SELECTED AGENTS ===
+    # For each resource, find the selected agent and extract its tool IDs
+    create_tool_ids_map: dict[str, UUID | None] = {}
+    link_tool_ids_map: dict[str, UUID | None] = {}
+
+    for resource in PERSONA_RESOURCES:
+        selected_agent_id = agent_ids.get(resource)
+        if selected_agent_id:
+            # Find the candidate agent with this ID
+            for candidate in candidate_agents:
+                if candidate.agent_id == selected_agent_id:
+                    create_tool_ids_map[resource] = candidate.create_tool_ids.get(
+                        resource
+                    )
+                    link_tool_ids_map[resource] = candidate.link_tool_ids.get(resource)
+                    break
 
     # === EXTRACT DOMAIN IDS FROM QUERY 2 ===
     domain_ids_map: dict[str, UUID | None] = {
@@ -843,6 +864,9 @@ async def get_persona_internal(
         resources_payload=resources_payload,
         # Per-resource group IDs
         resource_group_ids=resource_group_ids,
+        # Per-resource tool IDs
+        create_tool_ids_map=create_tool_ids_map,
+        link_tool_ids_map=link_tool_ids_map,
     )
 
 
@@ -992,6 +1016,28 @@ async def get_persona_client(
         domain_data=data.domain_data_list,
         # Resources
         resources=data.resources_payload,
+        # Per-resource CREATE tool IDs
+        name_create_tool_id=data.create_tool_ids_map.get("names"),
+        description_create_tool_id=data.create_tool_ids_map.get("descriptions"),
+        color_create_tool_id=data.create_tool_ids_map.get("colors"),
+        icon_create_tool_id=data.create_tool_ids_map.get("icons"),
+        instructions_create_tool_id=data.create_tool_ids_map.get("instructions"),
+        flag_create_tool_id=data.create_tool_ids_map.get("flags"),
+        departments_create_tool_id=data.create_tool_ids_map.get("departments"),
+        parameter_fields_create_tool_id=data.create_tool_ids_map.get("parameter_fields"),
+        examples_create_tool_id=data.create_tool_ids_map.get("examples"),
+        parameters_create_tool_id=data.create_tool_ids_map.get("parameters"),
+        # Per-resource LINK tool IDs
+        name_link_tool_id=data.link_tool_ids_map.get("names"),
+        description_link_tool_id=data.link_tool_ids_map.get("descriptions"),
+        color_link_tool_id=data.link_tool_ids_map.get("colors"),
+        icon_link_tool_id=data.link_tool_ids_map.get("icons"),
+        instructions_link_tool_id=data.link_tool_ids_map.get("instructions"),
+        flag_link_tool_id=data.link_tool_ids_map.get("flags"),
+        departments_link_tool_id=data.link_tool_ids_map.get("departments"),
+        parameter_fields_link_tool_id=data.link_tool_ids_map.get("parameter_fields"),
+        examples_link_tool_id=data.link_tool_ids_map.get("examples"),
+        parameters_link_tool_id=data.link_tool_ids_map.get("parameters"),
     )
 
 

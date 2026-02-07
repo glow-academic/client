@@ -2,19 +2,23 @@
 -- Fetches all resource IDs using user context from Query 1
 -- This query runs AFTER access check, BEFORE parallel resource fetching
 
--- Create composite type for candidate agents (if not exists)
+-- Drop and recreate composite type for candidate agents to add tool ID fields
 DO $$
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'persona_candidate_agent') THEN
-        CREATE TYPE persona_candidate_agent AS (
-            agent_id uuid,
-            agent_name text,
-            tool_resources text[],
-            department_ids uuid[],
-            updated_at timestamptz,
-            is_mcp boolean
-        );
-    END IF;
+    -- Drop the type if it exists (CASCADE will drop dependent functions)
+    DROP TYPE IF EXISTS persona_candidate_agent CASCADE;
+
+    -- Recreate with new fields for create/link tool IDs
+    CREATE TYPE persona_candidate_agent AS (
+        agent_id uuid,
+        agent_name text,
+        tool_resources text[],
+        create_tool_ids uuid[],
+        link_tool_ids uuid[],
+        department_ids uuid[],
+        updated_at timestamptz,
+        is_mcp boolean
+    );
 END $$;
 
 -- Drop function if exists (handles signature variations)
@@ -201,36 +205,70 @@ flag_resource_data AS (
     FROM params
 ),
 -- Candidate agents data (for Python-side agent scoring)
+-- First get per-agent, per-resource tool IDs with creatable flag
+agent_resource_tools AS (
+    SELECT
+        a.id as agent_id,
+        rt.resource::text as resource_name,
+        ta.id as tool_id,
+        COALESCE(tf_create.value, true) as is_creatable  -- Default true if flag not set
+    FROM agent_artifact a
+    JOIN agent_tools_junction at ON at.agent_id = a.id AND at.active = true
+    JOIN tools_resource tr ON tr.id = at.tool_id
+    JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
+    JOIN tool_artifact ta ON ta.id = ttj.tool_id
+    JOIN resource_tools_relation rt ON rt.tool_id = ta.id
+    LEFT JOIN tool_flags_junction tf_active ON tf_active.tool_id = ta.id
+    LEFT JOIN flags_resource f_active ON f_active.id = tf_active.flag_id AND f_active.name = 'tool_active'
+    LEFT JOIN tool_flags_junction tf_create ON tf_create.tool_id = ta.id
+    LEFT JOIN flags_resource f_create ON f_create.id = tf_create.flag_id AND f_create.name = 'tool_creatable'
+    LEFT JOIN agent_flags_junction af_agent ON af_agent.agent_id = a.id
+    LEFT JOIN flags_resource f_agent ON f_agent.id = af_agent.flag_id AND f_agent.name = 'agent_active'
+    WHERE COALESCE(af_agent.value, false) = true
+      AND (tf_active.tool_id IS NULL OR COALESCE(f_active.id, NULL) IS NULL OR COALESCE(tf_active.value, false) = true)
+),
+-- Aggregate tool IDs by agent with resource-aligned arrays
+agent_tool_arrays AS (
+    SELECT
+        art.agent_id,
+        ARRAY_AGG(DISTINCT art.resource_name) FILTER (WHERE art.resource_name IS NOT NULL) as tool_resources,
+        -- Create arrays aligned with tool_resources order
+        ARRAY_AGG(
+            CASE WHEN art.is_creatable = true THEN art.tool_id ELSE NULL END
+            ORDER BY art.resource_name
+        ) FILTER (WHERE art.resource_name IS NOT NULL) as create_tool_ids,
+        ARRAY_AGG(
+            CASE WHEN art.is_creatable = false THEN art.tool_id ELSE NULL END
+            ORDER BY art.resource_name
+        ) FILTER (WHERE art.resource_name IS NOT NULL) as link_tool_ids
+    FROM agent_resource_tools art
+    GROUP BY art.agent_id
+),
 candidate_agents_data AS (
     SELECT
         a.id as agent_id,
         n.name as agent_name,
-        COALESCE(ARRAY_AGG(DISTINCT rt.resource::text) FILTER (WHERE rt.resource IS NOT NULL), ARRAY[]::text[]) as tool_resources,
+        COALESCE(ata.tool_resources, ARRAY[]::text[]) as tool_resources,
+        COALESCE(ata.create_tool_ids, ARRAY[]::uuid[]) as create_tool_ids,
+        COALESCE(ata.link_tool_ids, ARRAY[]::uuid[]) as link_tool_ids,
         COALESCE(ARRAY_AGG(DISTINCT ad.department_id) FILTER (WHERE ad.department_id IS NOT NULL), ARRAY[]::uuid[]) as department_ids,
         a.updated_at,
         COALESCE(af_mcp.value, false) as is_mcp
     FROM agent_artifact a
     JOIN agent_names_junction anj ON anj.agent_id = a.id
     JOIN names_resource n ON n.id = anj.name_id
-    LEFT JOIN agent_tools_junction at ON at.agent_id = a.id AND at.active = true
-    LEFT JOIN tools_resource tr ON tr.id = at.tool_id
-    LEFT JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
-    LEFT JOIN tool_artifact ta ON ta.id = ttj.tool_id
-    LEFT JOIN resource_tools_relation rt ON rt.tool_id = ta.id
-    LEFT JOIN tool_flags_junction tf ON tf.tool_id = ta.id
-    LEFT JOIN flags_resource f_tool ON f_tool.id = tf.flag_id AND f_tool.name = 'tool_active'
+    LEFT JOIN agent_tool_arrays ata ON ata.agent_id = a.id
     LEFT JOIN agent_departments_junction ad ON ad.agent_id = a.id AND ad.active = true
     LEFT JOIN agent_flags_junction af_active ON af_active.agent_id = a.id
     LEFT JOIN flags_resource f_active ON f_active.id = af_active.flag_id AND f_active.name = 'agent_active'
     LEFT JOIN agent_flags_junction af_mcp ON af_mcp.agent_id = a.id
     LEFT JOIN flags_resource f_mcp ON f_mcp.id = af_mcp.flag_id AND f_mcp.name = 'mcp'
     WHERE COALESCE(af_active.value, false) = true
-      AND (tf.tool_id IS NULL OR COALESCE(f_tool.id, NULL) IS NULL OR COALESCE(tf.value, false) = true)
       AND (
           NOT EXISTS (SELECT 1 FROM agent_departments_junction ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
           OR EXISTS (SELECT 1 FROM agent_departments_junction ad3 WHERE ad3.agent_id = a.id AND ad3.active = true AND ad3.department_id = ANY(user_department_ids))
       )
-    GROUP BY a.id, n.name, a.updated_at, af_mcp.value
+    GROUP BY a.id, n.name, a.updated_at, af_mcp.value, ata.tool_resources, ata.create_tool_ids, ata.link_tool_ids
 ),
 -- Tools existence check
 tools_existence_check AS (
@@ -287,7 +325,7 @@ SELECT
 
     -- Candidate agents (for Python-side agent scoring)
     (SELECT COALESCE(
-        ARRAY_AGG(ROW(ca.agent_id, ca.agent_name, ca.tool_resources, ca.department_ids, ca.updated_at, ca.is_mcp)::persona_candidate_agent),
+        ARRAY_AGG(ROW(ca.agent_id, ca.agent_name, ca.tool_resources, ca.create_tool_ids, ca.link_tool_ids, ca.department_ids, ca.updated_at, ca.is_mcp)::persona_candidate_agent),
         ARRAY[]::persona_candidate_agent[]
     ) FROM candidate_agents_data ca) as candidate_agents,
 

@@ -171,6 +171,30 @@ class GetPersonaApiResponse(BaseModel):
     content_show_ai_generate: bool | None = None
     parameters_step_show_ai_generate: bool | None = None
 
+    # Per-resource CREATE tool IDs (for AI generation)
+    name_create_tool_id: UUID | None = None
+    description_create_tool_id: UUID | None = None
+    color_create_tool_id: UUID | None = None
+    icon_create_tool_id: UUID | None = None
+    instructions_create_tool_id: UUID | None = None
+    flag_create_tool_id: UUID | None = None
+    departments_create_tool_id: UUID | None = None
+    parameter_fields_create_tool_id: UUID | None = None
+    examples_create_tool_id: UUID | None = None
+    parameters_create_tool_id: UUID | None = None
+
+    # Per-resource LINK tool IDs (for AI suggestions)
+    name_link_tool_id: UUID | None = None
+    description_link_tool_id: UUID | None = None
+    color_link_tool_id: UUID | None = None
+    icon_link_tool_id: UUID | None = None
+    instructions_link_tool_id: UUID | None = None
+    flag_link_tool_id: UUID | None = None
+    departments_link_tool_id: UUID | None = None
+    parameter_fields_link_tool_id: UUID | None = None
+    examples_link_tool_id: UUID | None = None
+    parameters_link_tool_id: UUID | None = None
+
     # Rich domain metadata for client display in modals
     domain_data: list[DomainData] | None = None
 

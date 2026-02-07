@@ -14661,6 +14661,46 @@ export interface components {
             content_show_ai_generate?: boolean | null;
             /** Parameters Step Show Ai Generate */
             parameters_step_show_ai_generate?: boolean | null;
+            /** Name Create Tool Id */
+            name_create_tool_id?: string | null;
+            /** Description Create Tool Id */
+            description_create_tool_id?: string | null;
+            /** Color Create Tool Id */
+            color_create_tool_id?: string | null;
+            /** Icon Create Tool Id */
+            icon_create_tool_id?: string | null;
+            /** Instructions Create Tool Id */
+            instructions_create_tool_id?: string | null;
+            /** Flag Create Tool Id */
+            flag_create_tool_id?: string | null;
+            /** Departments Create Tool Id */
+            departments_create_tool_id?: string | null;
+            /** Parameter Fields Create Tool Id */
+            parameter_fields_create_tool_id?: string | null;
+            /** Examples Create Tool Id */
+            examples_create_tool_id?: string | null;
+            /** Parameters Create Tool Id */
+            parameters_create_tool_id?: string | null;
+            /** Name Link Tool Id */
+            name_link_tool_id?: string | null;
+            /** Description Link Tool Id */
+            description_link_tool_id?: string | null;
+            /** Color Link Tool Id */
+            color_link_tool_id?: string | null;
+            /** Icon Link Tool Id */
+            icon_link_tool_id?: string | null;
+            /** Instructions Link Tool Id */
+            instructions_link_tool_id?: string | null;
+            /** Flag Link Tool Id */
+            flag_link_tool_id?: string | null;
+            /** Departments Link Tool Id */
+            departments_link_tool_id?: string | null;
+            /** Parameter Fields Link Tool Id */
+            parameter_fields_link_tool_id?: string | null;
+            /** Examples Link Tool Id */
+            examples_link_tool_id?: string | null;
+            /** Parameters Link Tool Id */
+            parameters_link_tool_id?: string | null;
             /** Domain Data */
             domain_data?: components["schemas"]["DomainData"][] | null;
             resources?: components["schemas"]["PersonaResources"] | null;
