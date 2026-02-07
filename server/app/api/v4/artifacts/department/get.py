@@ -29,6 +29,55 @@ SQL_PATH = "app/sql/v4/queries/departments/get_department_complete.sql"
 router = APIRouter()
 
 
+def _extract_department_websocket_context(result: GetDepartmentSqlRow) -> dict[str, Any]:
+    """Build minimal generation context payload for websocket consumers."""
+    payload = result.model_dump()
+    context_keys = (
+        "group_id",
+        "trace_id",
+        "run_id",
+        "domains",
+        "tools",
+        "tool_ids",
+        "domain_ids",
+        "agent_ids",
+        "department_id",
+        "provider_id",
+        "model_id",
+        "resource_group_ids",
+        "generation_context",
+    )
+    return {key: payload.get(key) for key in context_keys if payload.get(key) is not None}
+
+
+async def get_department_internal(
+    conn: asyncpg.Connection,
+    params: GetDepartmentSqlParams,
+) -> GetDepartmentSqlRow:
+    """Internal SQL fetch layer for department get endpoint."""
+    return cast(
+        GetDepartmentSqlRow,
+        await execute_sql_typed(
+            conn,
+            SQL_PATH,
+            params=params,
+        ),
+    )
+
+
+def get_department_websocket(result: GetDepartmentSqlRow) -> dict[str, Any]:
+    """Websocket wrapper layer for department generation context."""
+    return _extract_department_websocket_context(result)
+
+
+def get_department_client(result: GetDepartmentSqlRow) -> GetDepartmentApiResponse:
+    """Client/BFF wrapper layer for department get response."""
+    payload = result.model_dump()
+    if "generation_context" in payload:
+        payload["generation_context"] = get_department_websocket(result)
+    return GetDepartmentApiResponse.model_validate(payload)
+
+
 @router.post(
     "/get",
     response_model=GetDepartmentApiResponse,
@@ -95,14 +144,7 @@ async def get_department(
         sql_params = params.to_tuple()
 
         # Execute SQL with typed helper
-        result = cast(
-            GetDepartmentSqlRow,
-            await execute_sql_typed(
-                conn,
-                SQL_PATH,
-                params=params,
-            ),
-        )
+        result = await get_department_internal(conn, params)
 
         # Set audit context
         if result.actor_name:
@@ -134,7 +176,7 @@ async def get_department(
                 )
 
         # Convert SQL result to API response
-        response_data = GetDepartmentApiResponse.model_validate(result.model_dump())
+        response_data = get_department_client(result)
 
         # Cache response (use mode='json' to serialize UUIDs and other types)
         await set_cached(

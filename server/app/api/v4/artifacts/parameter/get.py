@@ -29,6 +29,55 @@ SQL_PATH = "app/sql/v4/queries/parameters/get_parameter_complete.sql"
 router = APIRouter()
 
 
+def _extract_parameter_websocket_context(result: GetParameterSqlRow) -> dict[str, Any]:
+    """Build minimal generation context payload for websocket consumers."""
+    payload = result.model_dump()
+    context_keys = (
+        "group_id",
+        "trace_id",
+        "run_id",
+        "domains",
+        "tools",
+        "tool_ids",
+        "domain_ids",
+        "agent_ids",
+        "department_id",
+        "provider_id",
+        "model_id",
+        "resource_group_ids",
+        "generation_context",
+    )
+    return {key: payload.get(key) for key in context_keys if payload.get(key) is not None}
+
+
+async def get_parameter_internal(
+    conn: asyncpg.Connection,
+    params: GetParameterSqlParams,
+) -> GetParameterSqlRow:
+    """Internal SQL fetch layer for parameter get endpoint."""
+    return cast(
+        GetParameterSqlRow,
+        await execute_sql_typed(
+            conn,
+            SQL_PATH,
+            params=params,
+        ),
+    )
+
+
+def get_parameter_websocket(result: GetParameterSqlRow) -> dict[str, Any]:
+    """Websocket wrapper layer for parameter generation context."""
+    return _extract_parameter_websocket_context(result)
+
+
+def get_parameter_client(result: GetParameterSqlRow) -> GetParameterApiResponse:
+    """Client/BFF wrapper layer for parameter get response."""
+    payload = result.model_dump()
+    if "generation_context" in payload:
+        payload["generation_context"] = get_parameter_websocket(result)
+    return GetParameterApiResponse.model_validate(payload)
+
+
 @router.post(
     "/get",
     response_model=GetParameterApiResponse,
@@ -103,14 +152,7 @@ async def get_parameter(
         sql_params = params.to_tuple()
 
         # Execute SQL with typed helper
-        result = cast(
-            GetParameterSqlRow,
-            await execute_sql_typed(
-                conn,
-                SQL_PATH,
-                params=params,
-            ),
-        )
+        result = await get_parameter_internal(conn, params)
 
         # Set audit context
         if result.actor_name:
@@ -149,7 +191,7 @@ async def get_parameter(
                 )
 
         # Convert SQL result to API response
-        response_data = GetParameterApiResponse.model_validate(result.model_dump())
+        response_data = get_parameter_client(result)
 
         # Cache response (use mode='json' to serialize UUIDs and other types)
         await set_cached(

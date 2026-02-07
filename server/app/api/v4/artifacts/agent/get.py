@@ -29,6 +29,55 @@ SQL_PATH = "app/sql/v4/queries/agents/get_agent_complete.sql"
 router = APIRouter()
 
 
+def _extract_agent_websocket_context(result: GetAgentSqlRow) -> dict[str, Any]:
+    """Build minimal generation context payload for websocket consumers."""
+    payload = result.model_dump()
+    context_keys = (
+        "group_id",
+        "trace_id",
+        "run_id",
+        "domains",
+        "tools",
+        "tool_ids",
+        "domain_ids",
+        "agent_ids",
+        "department_id",
+        "provider_id",
+        "model_id",
+        "resource_group_ids",
+        "generation_context",
+    )
+    return {key: payload.get(key) for key in context_keys if payload.get(key) is not None}
+
+
+async def get_agent_internal(
+    conn: asyncpg.Connection,
+    params: GetAgentSqlParams,
+) -> GetAgentSqlRow:
+    """Internal SQL fetch layer for agent get endpoint."""
+    return cast(
+        GetAgentSqlRow,
+        await execute_sql_typed(
+            conn,
+            SQL_PATH,
+            params=params,
+        ),
+    )
+
+
+def get_agent_websocket(result: GetAgentSqlRow) -> dict[str, Any]:
+    """Websocket wrapper layer for agent generation context."""
+    return _extract_agent_websocket_context(result)
+
+
+def get_agent_client(result: GetAgentSqlRow) -> GetAgentApiResponse:
+    """Client/BFF wrapper layer for agent get response."""
+    payload = result.model_dump()
+    if "generation_context" in payload:
+        payload["generation_context"] = get_agent_websocket(result)
+    return GetAgentApiResponse.model_validate(payload)
+
+
 @router.post(
     "/get",
     response_model=GetAgentApiResponse,
@@ -101,14 +150,7 @@ async def get_agent(
         sql_params = params.to_tuple()
 
         # Execute SQL with typed helper
-        result = cast(
-            GetAgentSqlRow,
-            await execute_sql_typed(
-                conn,
-                SQL_PATH,
-                params=params,
-            ),
-        )
+        result = await get_agent_internal(conn, params)
 
         # Set audit context
         if result.actor_name:
@@ -147,11 +189,7 @@ async def get_agent(
                 )
 
         # Convert SQL result to API response
-        response_data = GetAgentApiResponse.model_validate(
-            {
-                **result.model_dump(),
-            }
-        )
+        response_data = get_agent_client(result)
 
         # Cache response (use mode='json' to serialize UUIDs and other types)
         await set_cached(

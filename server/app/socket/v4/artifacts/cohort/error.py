@@ -87,3 +87,12 @@ async def handle_cohorts_error(data: dict[str, Any]) -> None:
         },
         room=sid,
     )
+
+
+@server_router.post("/cohort_generation_error")
+async def cohort_generation_error_api(
+    request: dict[str, Any],
+) -> dict[str, bool]:
+    """Server-to-client event: cohort generation error."""
+    _ = request
+    return {"ok": True}

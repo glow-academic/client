@@ -29,6 +29,55 @@ SQL_PATH = "app/sql/v4/queries/tools/get_tool_complete.sql"
 router = APIRouter()
 
 
+def _extract_tool_websocket_context(result: GetToolSqlRow) -> dict[str, Any]:
+    """Build minimal generation context payload for websocket consumers."""
+    payload = result.model_dump()
+    context_keys = (
+        "group_id",
+        "trace_id",
+        "run_id",
+        "domains",
+        "tools",
+        "tool_ids",
+        "domain_ids",
+        "agent_ids",
+        "department_id",
+        "provider_id",
+        "model_id",
+        "resource_group_ids",
+        "generation_context",
+    )
+    return {key: payload.get(key) for key in context_keys if payload.get(key) is not None}
+
+
+async def get_tool_internal(
+    conn: asyncpg.Connection,
+    params: GetToolSqlParams,
+) -> GetToolSqlRow:
+    """Internal SQL fetch layer for tool get endpoint."""
+    return cast(
+        GetToolSqlRow,
+        await execute_sql_typed(
+            conn,
+            SQL_PATH,
+            params=params,
+        ),
+    )
+
+
+def get_tool_websocket(result: GetToolSqlRow) -> dict[str, Any]:
+    """Websocket wrapper layer for tool generation context."""
+    return _extract_tool_websocket_context(result)
+
+
+def get_tool_client(result: GetToolSqlRow) -> GetToolApiResponse:
+    """Client/BFF wrapper layer for tool get response."""
+    payload = result.model_dump()
+    if "generation_context" in payload:
+        payload["generation_context"] = get_tool_websocket(result)
+    return GetToolApiResponse.model_validate(payload)
+
+
 @router.post(
     "/get",
     response_model=GetToolApiResponse,
@@ -99,14 +148,7 @@ async def get_tool(
         sql_params = params.to_tuple()
 
         # Execute SQL with typed helper
-        result = cast(
-            GetToolSqlRow,
-            await execute_sql_typed(
-                conn,
-                SQL_PATH,
-                params=params,
-            ),
-        )
+        result = await get_tool_internal(conn, params)
 
         # Set audit context
         if result.actor_name:
@@ -129,7 +171,7 @@ async def get_tool(
                 raise HTTPException(status_code=404, detail=f"Tool {tool_id} not found")
 
         # Convert SQL result to API response
-        response_data = GetToolApiResponse.model_validate(result.model_dump())
+        response_data = get_tool_client(result)
 
         # Cache response (use mode='json' to serialize UUIDs and other types)
         await set_cached(

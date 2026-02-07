@@ -21,16 +21,22 @@ server_router = APIRouter()
 SQL_PATH = "app/sql/v4/queries/rubric/get_rubric_tool_call_results_complete.sql"
 
 
+@internal_sio.on("generate_call_complete")  # type: ignore
 @internal_sio.on("rubric_end")  # type: ignore
 async def handle_rubric_complete(data: dict[str, Any]) -> None:
     """Handle rubric_end internal event - fetch tool results and emit to client."""
+    if data.get("artifact_type") != "rubric":
+        return
+
     sid = data.get("sid", "")
     if not sid:
         return  # No socket ID, can't emit to client
 
-    completion_type = data.get("type", "run_complete")
+    completion_type = data.get("event_type") or data.get("type", "run_complete")
     resource_id = data.get("resource_id")
     run_id = data.get("run_id")
+    resource_type = data.get("resource_type")
+    group_id = data.get("group_id")
 
     try:
         if completion_type == "tool_call_complete":
@@ -126,19 +132,37 @@ async def handle_rubric_complete(data: dict[str, Any]) -> None:
                     room=sid,
                 )
 
-        elif completion_type == "run_complete":
+        elif completion_type in ("run_complete", "tool_result"):
             # Handle run completion - emit generation complete
+            complete_payload = {
+                "artifact_type": "rubric",
+                "group_id": group_id,
+                "resource_type": resource_type,
+                "resource_id": resource_id,
+                "run_id": run_id,
+                "success": True,
+                "message": "Rubric generation completed successfully",
+                "trace_id": data.get("trace_id"),
+            }
+            if resource_type == "names" and resource_id:
+                complete_payload["name_id"] = resource_id
+            elif resource_type == "descriptions" and resource_id:
+                complete_payload["description_id"] = resource_id
+            elif resource_type == "flags" and resource_id:
+                complete_payload["active_flag_id"] = resource_id
+            elif resource_type == "departments" and resource_id:
+                complete_payload["department_ids"] = [resource_id]
+            elif resource_type == "standards" and resource_id:
+                complete_payload["standard_ids"] = [resource_id]
+            elif resource_type == "standard_groups" and resource_id:
+                complete_payload["standard_group_ids"] = [resource_id]
+            elif resource_type == "points" and resource_id:
+                complete_payload["total_points_id"] = resource_id
+
+            await sio.emit("rubric_generation_complete", complete_payload, room=sid)
             await sio.emit(
                 "artifact_generation_complete",
-                {
-                    "resource_type": "rubric",
-                    "resource_id": resource_id,
-                    "run_id": run_id,
-                    "group_id": data.get("group_id"),
-                    "success": True,
-                    "message": "Rubric generation completed successfully",
-                    "trace_id": data.get("trace_id"),
-                },
+                complete_payload,
                 room=sid,
             )
 
@@ -147,6 +171,7 @@ async def handle_rubric_complete(data: dict[str, Any]) -> None:
         await sio.emit(
             "artifact_generation_error",
             {
+                "artifact_type": "rubric",
                 "resource_type": "rubric",
                 "resource_id": resource_id,
                 "group_id": data.get("group_id"),
@@ -156,3 +181,12 @@ async def handle_rubric_complete(data: dict[str, Any]) -> None:
             },
             room=sid,
         )
+
+
+@server_router.post("/rubric_generation_complete")
+async def rubric_generation_complete_api(
+    request: dict[str, Any],
+) -> dict[str, bool]:
+    """Server-to-client event: rubric generation complete."""
+    _ = request
+    return {"ok": True}

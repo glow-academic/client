@@ -11255,6 +11255,116 @@ class GetPersonaDocsJunctionsApiResponse(BaseModel):
 # Generated from: get_persona_generation_context
 
 
+# Generated from: get_persona_ids
+
+class GetPersonaIdsSqlParams(BaseModel):
+
+    profile_id: UUID
+    persona_id: UUID | None = None
+    draft_id: UUID | None = None
+    group_id: UUID | None = None
+    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.persona_id,
+            self.draft_id,
+            self.group_id,
+            self.user_department_ids,
+        )
+
+class GetPersonaIdsSqlRow(BaseModel):
+
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    color_id: UUID | None = None
+    icon_id: UUID | None = None
+    instructions_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    parameter_field_ids: list[UUID] | None = None
+    example_ids: list[UUID] | None = None
+    parameter_ids: list[UUID] | None = None
+    name_suggestions: list[UUID] | None = None
+    description_suggestions: list[UUID] | None = None
+    color_suggestions: list[UUID] | None = None
+    icon_suggestions: list[UUID] | None = None
+    instructions_suggestions: list[UUID] | None = None
+    department_suggestions: list[UUID] | None = None
+    parameter_field_suggestions: list[UUID] | None = None
+    example_suggestions: list[UUID] | None = None
+    parameter_suggestions: list[UUID] | None = None
+    candidate_agents: Any | None = None
+    names_has_tools: bool | None = None
+    colors_has_tools: bool | None = None
+    icons_has_tools: bool | None = None
+    instructions_has_tools: bool | None = None
+    departments_has_tools: bool | None = None
+    parameter_fields_has_tools: bool | None = None
+    examples_has_tools: bool | None = None
+    parameters_has_tools: bool | None = None
+    name_domain_id: UUID | None = None
+    description_domain_id: UUID | None = None
+    color_domain_id: UUID | None = None
+    icon_domain_id: UUID | None = None
+    instructions_domain_id: UUID | None = None
+    flag_domain_id: UUID | None = None
+    departments_domain_id: UUID | None = None
+    parameter_fields_domain_id: UUID | None = None
+    examples_domain_id: UUID | None = None
+    parameters_domain_id: UUID | None = None
+
+class GetPersonaIdsApiRequest(BaseModel):
+
+    persona_id: UUID | None = None
+    draft_id: UUID | None = None
+    group_id: UUID | None = None
+    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class GetPersonaIdsApiResponse(BaseModel):
+
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    color_id: UUID | None = None
+    icon_id: UUID | None = None
+    instructions_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    parameter_field_ids: list[UUID] | None = None
+    example_ids: list[UUID] | None = None
+    parameter_ids: list[UUID] | None = None
+    name_suggestions: list[UUID] | None = None
+    description_suggestions: list[UUID] | None = None
+    color_suggestions: list[UUID] | None = None
+    icon_suggestions: list[UUID] | None = None
+    instructions_suggestions: list[UUID] | None = None
+    department_suggestions: list[UUID] | None = None
+    parameter_field_suggestions: list[UUID] | None = None
+    example_suggestions: list[UUID] | None = None
+    parameter_suggestions: list[UUID] | None = None
+    candidate_agents: Any | None = None
+    names_has_tools: bool | None = None
+    colors_has_tools: bool | None = None
+    icons_has_tools: bool | None = None
+    instructions_has_tools: bool | None = None
+    departments_has_tools: bool | None = None
+    parameter_fields_has_tools: bool | None = None
+    examples_has_tools: bool | None = None
+    parameters_has_tools: bool | None = None
+    name_domain_id: UUID | None = None
+    description_domain_id: UUID | None = None
+    color_domain_id: UUID | None = None
+    icon_domain_id: UUID | None = None
+    instructions_domain_id: UUID | None = None
+    flag_domain_id: UUID | None = None
+    departments_domain_id: UUID | None = None
+    parameter_fields_domain_id: UUID | None = None
+    examples_domain_id: UUID | None = None
+    parameters_domain_id: UUID | None = None
+
+
+
 # Generated from: get_persona_resource_ids_by_group_id
 
 class GetPersonaResourceIdsByGroupIdSqlParams(BaseModel):
@@ -11843,6 +11953,37 @@ class DeleteProfileApiResponse(BaseModel):
     profile_id: UUID | None = None
     name: str | None = None
     deleted: bool | None = None
+    actor_name: str | None = None
+
+
+
+# Generated from: duplicate_profile
+
+class DuplicateProfileSqlParams(BaseModel):
+
+    target_profile_id: UUID
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.target_profile_id,
+            self.profile_id,
+        )
+
+class DuplicateProfileSqlRow(BaseModel):
+
+    new_profile_id: UUID | None = None
+    original_name: str | None = None
+    actor_name: str | None = None
+
+class DuplicateProfileApiRequest(BaseModel):
+
+    target_profile_id: UUID
+
+class DuplicateProfileApiResponse(BaseModel):
+
+    new_profile_id: UUID | None = None
+    original_name: str | None = None
     actor_name: str | None = None
 
 
@@ -19225,6 +19366,41 @@ class GetSchemaWithFieldsApiResponse(BaseModel):
 
 
 
+# Generated from: delete_setting
+
+class DeleteSettingSqlParams(BaseModel):
+
+    setting_id: UUID
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.setting_id,
+            self.profile_id,
+        )
+
+class DeleteSettingSqlRow(BaseModel):
+
+    setting_exists: bool | None = None
+    setting_id: UUID | None = None
+    name: str | None = None
+    deleted: bool | None = None
+    actor_name: str | None = None
+
+class DeleteSettingApiRequest(BaseModel):
+
+    setting_id: UUID
+
+class DeleteSettingApiResponse(BaseModel):
+
+    setting_exists: bool | None = None
+    setting_id: UUID | None = None
+    name: str | None = None
+    deleted: bool | None = None
+    actor_name: str | None = None
+
+
+
 # Generated from: duplicate_setting
 
 class DuplicateSettingSqlParams(BaseModel):
@@ -25009,6 +25185,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetPersonaGenerationContextApiRequest",
         "GetPersonaGenerationContextApiResponse",
     ),
+    "app/sql/v4/queries/personas/get_persona_ids_complete.sql": (
+        "GetPersonaIdsSqlParams",
+        "GetPersonaIdsSqlRow",
+        "GetPersonaIdsApiRequest",
+        "GetPersonaIdsApiResponse",
+    ),
     "app/sql/v4/queries/personas/get_persona_resource_ids_by_group_id_complete.sql": (
         "GetPersonaResourceIdsByGroupIdSqlParams",
         "GetPersonaResourceIdsByGroupIdSqlRow",
@@ -25080,6 +25262,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "DeleteProfileSqlRow",
         "DeleteProfileApiRequest",
         "DeleteProfileApiResponse",
+    ),
+    "app/sql/v4/queries/profile/duplicate_profile_complete.sql": (
+        "DuplicateProfileSqlParams",
+        "DuplicateProfileSqlRow",
+        "DuplicateProfileApiRequest",
+        "DuplicateProfileApiResponse",
     ),
     "app/sql/v4/queries/profile/get_profile_by_email_complete.sql": (
         "GetProfileByEmailSqlParams",
@@ -26124,6 +26312,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetSchemaWithFieldsSqlRow",
         "GetSchemaWithFieldsApiRequest",
         "GetSchemaWithFieldsApiResponse",
+    ),
+    "app/sql/v4/queries/settings/delete_setting_complete.sql": (
+        "DeleteSettingSqlParams",
+        "DeleteSettingSqlRow",
+        "DeleteSettingApiRequest",
+        "DeleteSettingApiResponse",
     ),
     "app/sql/v4/queries/settings/duplicate_setting_complete.sql": (
         "DuplicateSettingSqlParams",
@@ -27562,6 +27756,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/personas/get_persona_ids_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/personas/get_persona_resource_ids_by_group_id_complete.sql"]
     ) -> SqlString: ...
 
@@ -27618,6 +27817,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/profile/delete_profile_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/profile/duplicate_profile_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -28488,6 +28692,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/schemas/get_schema_with_fields_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/settings/delete_setting_complete.sql"]
     ) -> SqlString: ...
 
     @overload

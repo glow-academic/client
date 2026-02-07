@@ -76,3 +76,12 @@ async def handle_cohorts_call_progress(data: dict[str, Any]) -> None:
         },
         room=sid,
     )
+
+
+@server_router.post("/cohort_generation_progress")
+async def cohort_generation_progress_api(
+    request: dict[str, Any],
+) -> dict[str, bool]:
+    """Server-to-client event: cohort generation progress."""
+    _ = request
+    return {"ok": True}

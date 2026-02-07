@@ -76,3 +76,12 @@ async def handle_profiles_call_progress(data: dict[str, Any]) -> None:
         },
         room=sid,
     )
+
+
+@server_router.post("/profile_generation_progress")
+async def profile_generation_progress_api(
+    request: dict[str, Any],
+) -> dict[str, bool]:
+    """Server-to-client event: profile generation progress."""
+    _ = request
+    return {"ok": True}

@@ -16,8 +16,7 @@ server_router = APIRouter()
 @internal_sio.on("generate_call_progress")  # type: ignore
 async def handle_rubric_progress(data: dict[str, Any]) -> None:
     """Handle generate_* internal events - filter by resource_type and emit to client."""
-
-    if data.get("resource_type") != "rubric":
+    if data.get("artifact_type") != "rubric":
         return  # Not for us
 
     sid = data.get("sid", "")
@@ -42,17 +41,26 @@ async def handle_rubric_progress(data: dict[str, Any]) -> None:
         message = data.get("message", "Processing...")
 
     # Emit unified client event
-    await sio.emit(
-        "artifact_generation_progress",
-        {
-            "resource_type": "rubric",
-            "resource_id": data.get("resource_id"),
-            "run_id": data.get("run_id"),
-            "type": client_type,
-            "message": message,
-            "tool_call_id": data.get("tool_call_id"),
-            "tool_name": data.get("tool_name"),
-            "trace_id": data.get("trace_id"),
-        },
-        room=sid,
-    )
+    progress_payload = {
+        "artifact_type": "rubric",
+        "group_id": data.get("group_id"),
+        "resource_type": data.get("resource_type"),
+        "resource_id": data.get("resource_id"),
+        "run_id": data.get("run_id"),
+        "type": client_type,
+        "message": message,
+        "tool_call_id": data.get("tool_call_id"),
+        "tool_name": data.get("tool_name"),
+        "trace_id": data.get("trace_id"),
+    }
+    await sio.emit("rubric_generation_progress", progress_payload, room=sid)
+    await sio.emit("artifact_generation_progress", progress_payload, room=sid)
+
+
+@server_router.post("/rubric_generation_progress")
+async def rubric_generation_progress_api(
+    request: dict[str, Any],
+) -> dict[str, bool]:
+    """Server-to-client event: rubric generation progress."""
+    _ = request
+    return {"ok": True}

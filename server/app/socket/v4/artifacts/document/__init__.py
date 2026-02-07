@@ -1,8 +1,17 @@
-"""Document page handlers - handles document-specific logic (templates) then routes to artifacts."""
+"""Document socket routers - generation + progress/complete/error events."""
 
-from . import generate
+from fastapi import APIRouter
 
-__all__ = ["generate"]
+from . import complete, error, generate, progress
 
-client_router = generate.client_router
-server_router = generate.server_router
+__all__ = ["generate", "progress", "complete", "error"]
+
+client_router = APIRouter()
+server_router = APIRouter()
+
+client_router.include_router(generate.client_router)
+
+server_router.include_router(generate.server_router)
+server_router.include_router(progress.server_router)
+server_router.include_router(complete.server_router)
+server_router.include_router(error.server_router)

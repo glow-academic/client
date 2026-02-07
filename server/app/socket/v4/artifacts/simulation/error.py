@@ -89,3 +89,12 @@ async def handle_simulations_error(data: dict[str, Any]) -> None:
         event.model_dump(mode="json"),
         room=sid,
     )
+
+
+@server_router.post("/simulation_generation_error")
+async def simulation_generation_error_api(
+    request: dict[str, Any],
+) -> dict[str, bool]:
+    """Server-to-client event: simulation generation error."""
+    _ = request
+    return {"ok": True}

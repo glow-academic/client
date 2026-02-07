@@ -80,3 +80,12 @@ async def handle_simulations_call_progress(data: dict[str, Any]) -> None:
         event.model_dump(mode="json"),
         room=sid,
     )
+
+
+@server_router.post("/simulation_generation_progress")
+async def simulation_generation_progress_api(
+    request: dict[str, Any],
+) -> dict[str, bool]:
+    """Server-to-client event: simulation generation progress."""
+    _ = request
+    return {"ok": True}

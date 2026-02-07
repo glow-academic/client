@@ -153,3 +153,12 @@ async def handle_cohort_artifact_complete(data: dict[str, Any]) -> None:
         },
         room=sid,
     )
+
+
+@server_router.post("/cohort_generation_complete")
+async def cohort_generation_complete_api(
+    request: dict[str, Any],
+) -> dict[str, bool]:
+    """Server-to-client event: cohort generation complete."""
+    _ = request
+    return {"ok": True}

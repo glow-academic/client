@@ -29,6 +29,55 @@ SQL_PATH = "app/sql/v4/queries/auth/get_auth_complete.sql"
 router = APIRouter()
 
 
+def _extract_auth_websocket_context(result: GetAuthSqlRow) -> dict[str, Any]:
+    """Build minimal generation context payload for websocket consumers."""
+    payload = result.model_dump()
+    context_keys = (
+        "group_id",
+        "trace_id",
+        "run_id",
+        "domains",
+        "tools",
+        "tool_ids",
+        "domain_ids",
+        "agent_ids",
+        "department_id",
+        "provider_id",
+        "model_id",
+        "resource_group_ids",
+        "generation_context",
+    )
+    return {key: payload.get(key) for key in context_keys if payload.get(key) is not None}
+
+
+async def get_auth_internal(
+    conn: asyncpg.Connection,
+    params: GetAuthSqlParams,
+) -> GetAuthSqlRow:
+    """Internal SQL fetch layer for auth get endpoint."""
+    return cast(
+        GetAuthSqlRow,
+        await execute_sql_typed(
+            conn,
+            SQL_PATH,
+            params=params,
+        ),
+    )
+
+
+def get_auth_websocket(result: GetAuthSqlRow) -> dict[str, Any]:
+    """Websocket wrapper layer for auth generation context."""
+    return _extract_auth_websocket_context(result)
+
+
+def get_auth_client(result: GetAuthSqlRow) -> GetAuthApiResponse:
+    """Client/BFF wrapper layer for auth get response."""
+    payload = result.model_dump()
+    if "generation_context" in payload:
+        payload["generation_context"] = get_auth_websocket(result)
+    return GetAuthApiResponse.model_validate(payload)
+
+
 @router.post(
     "/get",
     response_model=GetAuthApiResponse,
@@ -94,14 +143,7 @@ async def get_auth(
         sql_params = params.to_tuple()
 
         # Execute SQL with typed helper
-        result = cast(
-            GetAuthSqlRow,
-            await execute_sql_typed(
-                conn,
-                SQL_PATH,
-                params=params,
-            ),
-        )
+        result = await get_auth_internal(conn, params)
 
         # Set audit context
         if result.actor_name:
@@ -131,7 +173,7 @@ async def get_auth(
                 )
 
         # Convert SQL result to API response
-        response_data = GetAuthApiResponse.model_validate(result.model_dump())
+        response_data = get_auth_client(result)
 
         # Cache response (use mode='json' to serialize UUIDs and other types)
         await set_cached(

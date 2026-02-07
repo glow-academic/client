@@ -76,3 +76,12 @@ async def handle_agents_call_progress(data: dict[str, Any]) -> None:
         },
         room=sid,
     )
+
+
+@server_router.post("/agent_generation_progress")
+async def agent_generation_progress_api(
+    request: dict[str, Any],
+) -> dict[str, bool]:
+    """Server-to-client event: agent generation progress."""
+    _ = request
+    return {"ok": True}

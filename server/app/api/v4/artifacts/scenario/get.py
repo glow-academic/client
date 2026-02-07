@@ -382,6 +382,46 @@ async def get_scenario_generation_context(
     )
 
 
+async def get_scenario_websocket(
+    conn: asyncpg.Connection,
+    profile_id: UUID,
+    scenario_id: UUID | None,
+    draft_id: UUID | None = None,
+) -> dict[str, Any]:
+    """Websocket wrapper layer for scenario generation context."""
+    context = await get_scenario_generation_context(
+        conn=conn,
+        profile_id=profile_id,
+        scenario_id=scenario_id,
+        draft_id=draft_id,
+    )
+    if not context:
+        return {}
+    return {
+        "group_id": context.group_id,
+        "name_agent_id": context.name_agent_id,
+        "description_agent_id": context.description_agent_id,
+        "basic_agent_id": context.basic_agent_id,
+        "content_agent_id": context.content_agent_id,
+        "general_agent_id": context.general_agent_id,
+        "resource_ids": context.resource_ids,
+    }
+
+
+def get_scenario_client(result: GetScenarioApiResponse) -> GetScenarioApiResponse:
+    """Client/BFF wrapper layer for scenario get response."""
+    payload = result.model_dump()
+    if "generation_context" in payload and payload.get("generation_context") is None:
+        payload["generation_context"] = {
+            "group_id": payload.get("group_id"),
+            "name_agent_id": payload.get("name_agent_id"),
+            "description_agent_id": payload.get("description_agent_id"),
+            "basic_agent_id": payload.get("basic_agent_id"),
+            "content_agent_id": payload.get("content_agent_id"),
+        }
+    return GetScenarioApiResponse.model_validate(payload)
+
+
 def _dedupe_by_id(items: list[Any], id_attr: str) -> list[Any]:
     """Preserve order while deduplicating by id attribute."""
     seen: set[UUID] = set()
@@ -1389,7 +1429,7 @@ async def get_scenario(
         response.headers["X-Cache-Hit"] = "0"
         response.headers["X-Two-Pass"] = "1"
 
-        return response_data
+        return get_scenario_client(response_data)
     except HTTPException:
         raise
     except ValueError as e:

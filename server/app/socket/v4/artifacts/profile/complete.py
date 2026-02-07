@@ -139,3 +139,12 @@ async def handle_profile_artifact_complete(data: dict[str, Any]) -> None:
         },
         room=sid,
     )
+
+
+@server_router.post("/profile_generation_complete")
+async def profile_generation_complete_api(
+    request: dict[str, Any],
+) -> dict[str, bool]:
+    """Server-to-client event: profile generation complete."""
+    _ = request
+    return {"ok": True}

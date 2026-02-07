@@ -162,3 +162,12 @@ async def handle_simulation_artifact_complete(data: dict[str, Any]) -> None:
         complete_event.model_dump(mode="json"),
         room=sid,
     )
+
+
+@server_router.post("/simulation_generation_complete")
+async def simulation_generation_complete_api(
+    request: dict[str, Any],
+) -> dict[str, bool]:
+    """Server-to-client event: simulation generation complete."""
+    _ = request
+    return {"ok": True}

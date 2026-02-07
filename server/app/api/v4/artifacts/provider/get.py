@@ -29,6 +29,55 @@ SQL_PATH = "app/sql/v4/queries/providers/get_provider_complete.sql"
 router = APIRouter()
 
 
+def _extract_provider_websocket_context(result: GetProviderSqlRow) -> dict[str, Any]:
+    """Build minimal generation context payload for websocket consumers."""
+    payload = result.model_dump()
+    context_keys = (
+        "group_id",
+        "trace_id",
+        "run_id",
+        "domains",
+        "tools",
+        "tool_ids",
+        "domain_ids",
+        "agent_ids",
+        "department_id",
+        "provider_id",
+        "model_id",
+        "resource_group_ids",
+        "generation_context",
+    )
+    return {key: payload.get(key) for key in context_keys if payload.get(key) is not None}
+
+
+async def get_provider_internal(
+    conn: asyncpg.Connection,
+    params: GetProviderSqlParams,
+) -> GetProviderSqlRow:
+    """Internal SQL fetch layer for provider get endpoint."""
+    return cast(
+        GetProviderSqlRow,
+        await execute_sql_typed(
+            conn,
+            SQL_PATH,
+            params=params,
+        ),
+    )
+
+
+def get_provider_websocket(result: GetProviderSqlRow) -> dict[str, Any]:
+    """Websocket wrapper layer for provider generation context."""
+    return _extract_provider_websocket_context(result)
+
+
+def get_provider_client(result: GetProviderSqlRow) -> GetProviderApiResponse:
+    """Client/BFF wrapper layer for provider get response."""
+    payload = result.model_dump()
+    if "generation_context" in payload:
+        payload["generation_context"] = get_provider_websocket(result)
+    return GetProviderApiResponse.model_validate(payload)
+
+
 @router.post(
     "/get",
     response_model=GetProviderApiResponse,
@@ -95,14 +144,7 @@ async def get_provider(
         sql_params = params.to_tuple()
 
         # Execute SQL with typed helper
-        result = cast(
-            GetProviderSqlRow,
-            await execute_sql_typed(
-                conn,
-                SQL_PATH,
-                params=params,
-            ),
-        )
+        result = await get_provider_internal(conn, params)
 
         # Set audit context
         if result.actor_name:
@@ -134,11 +176,7 @@ async def get_provider(
                 )
 
         # Convert SQL result to API response
-        response_data = GetProviderApiResponse.model_validate(
-            {
-                **result.model_dump(),
-            }
-        )
+        response_data = get_provider_client(result)
 
         # Cache response (use mode='json' to serialize UUIDs and other types)
         await set_cached(

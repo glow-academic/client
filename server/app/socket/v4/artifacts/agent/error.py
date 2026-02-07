@@ -87,3 +87,12 @@ async def handle_agents_error(data: dict[str, Any]) -> None:
         },
         room=sid,
     )
+
+
+@server_router.post("/agent_generation_error")
+async def agent_generation_error_api(
+    request: dict[str, Any],
+) -> dict[str, bool]:
+    """Server-to-client event: agent generation error."""
+    _ = request
+    return {"ok": True}

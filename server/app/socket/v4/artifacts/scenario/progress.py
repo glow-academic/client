@@ -135,3 +135,12 @@ async def handle_scenarios_media_progress(data: dict[str, Any]) -> None:
         },
         room=sid,
     )
+
+
+@server_router.post("/scenario_generation_progress")
+async def scenario_generation_progress_api(
+    request: dict[str, Any],
+) -> dict[str, bool]:
+    """Server-to-client event: scenario generation progress."""
+    _ = request
+    return {"ok": True}

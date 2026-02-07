@@ -21,11 +21,18 @@ from . import (
 from .artifacts import (
     agent,
     cohort,
+    department,
     document,
+    eval,
+    field,
+    model,
+    parameter,
     persona,
     profile,
+    provider,
     rubric,
     scenario,
+    tool,
 )
 
 # Create main router
@@ -66,6 +73,27 @@ server_router.include_router(cohort.server_router)
 
 client_router.include_router(profile.client_router)
 server_router.include_router(profile.server_router)
+
+client_router.include_router(parameter.client_router)
+server_router.include_router(parameter.server_router)
+
+client_router.include_router(field.client_router)
+server_router.include_router(field.server_router)
+
+client_router.include_router(model.client_router)
+server_router.include_router(model.server_router)
+
+client_router.include_router(tool.client_router)
+server_router.include_router(tool.server_router)
+
+client_router.include_router(department.client_router)
+server_router.include_router(department.server_router)
+
+client_router.include_router(provider.client_router)
+server_router.include_router(provider.server_router)
+
+client_router.include_router(eval.client_router)
+server_router.include_router(eval.server_router)
 
 # Include both routers in main router
 router.include_router(client_router)

@@ -146,3 +146,12 @@ async def handle_agent_artifact_complete(data: dict[str, Any]) -> None:
         },
         room=sid,
     )
+
+
+@server_router.post("/agent_generation_complete")
+async def agent_generation_complete_api(
+    request: dict[str, Any],
+) -> dict[str, bool]:
+    """Server-to-client event: agent generation complete."""
+    _ = request
+    return {"ok": True}

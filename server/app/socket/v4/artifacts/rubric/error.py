@@ -12,15 +12,22 @@ client_router = APIRouter()
 server_router = APIRouter()
 
 
+@internal_sio.on("generate_call_error")  # type: ignore
 @internal_sio.on("rubric_error")  # type: ignore
 async def handle_rubric_error(data: dict[str, Any]) -> None:
     """Handle rubric_error internal event - emit to client."""
+    if data.get("artifact_type") != "rubric":
+        return
+
     sid = data.get("sid", "")
     if not sid:
         return  # No socket ID, can't emit to client
 
-    error_message = data.get("message", "An error occurred during rubric generation")
+    error_message = data.get("error_message") or data.get(
+        "message", "An error occurred during rubric generation"
+    )
     error_payload = {
+        "artifact_type": "rubric",
         "resource_type": "rubric",
         "resource_id": data.get("resource_id"),
         "group_id": data.get("group_id"),
@@ -30,6 +37,11 @@ async def handle_rubric_error(data: dict[str, Any]) -> None:
     }
 
     # Emit unified error event to client (new architecture)
+    await sio.emit(
+        "rubric_generation_error",
+        error_payload,
+        room=sid,
+    )
     await sio.emit(
         "artifact_generation_error",
         error_payload,
@@ -46,3 +58,12 @@ async def handle_rubric_error(data: dict[str, Any]) -> None:
         },
         room=sid,
     )
+
+
+@server_router.post("/rubric_generation_error")
+async def rubric_generation_error_api(
+    request: dict[str, Any],
+) -> dict[str, bool]:
+    """Server-to-client event: rubric generation error."""
+    _ = request
+    return {"ok": True}

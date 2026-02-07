@@ -81,3 +81,12 @@ async def handle_profiles_error(data: dict[str, Any]) -> None:
         },
         room=sid,
     )
+
+
+@server_router.post("/profile_generation_error")
+async def profile_generation_error_api(
+    request: dict[str, Any],
+) -> dict[str, bool]:
+    """Server-to-client event: profile generation error."""
+    _ = request
+    return {"ok": True}

@@ -232,8 +232,8 @@ agent_resource_tool_pairs AS (
     SELECT
         art.agent_id,
         art.resource_name,
-        MAX(CASE WHEN art.is_creatable = true THEN art.tool_id END) as create_tool_id,
-        MAX(CASE WHEN art.is_creatable = false THEN art.tool_id END) as link_tool_id
+        (ARRAY_AGG(art.tool_id ORDER BY art.tool_id) FILTER (WHERE art.is_creatable = true))[1] as create_tool_id,
+        (ARRAY_AGG(art.tool_id ORDER BY art.tool_id) FILTER (WHERE art.is_creatable = false))[1] as link_tool_id
     FROM agent_resource_tools art
     GROUP BY art.agent_id, art.resource_name
 ),

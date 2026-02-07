@@ -96,6 +96,34 @@ def _dedupe_by_id(items: list[Any], id_attr: str) -> list[Any]:
     return output
 
 
+def get_simulation_websocket(result: GetSimulationApiResponse) -> dict[str, Any]:
+    """Websocket wrapper layer for simulation generation context."""
+    payload = result.model_dump()
+    context_keys = (
+        "group_id",
+        "name_agent_id",
+        "description_agent_id",
+        "flag_agent_id",
+        "departments_agent_id",
+        "scenarios_agent_id",
+        "scenario_flags_agent_id",
+        "scenario_positions_agent_id",
+        "scenario_rubrics_agent_id",
+        "scenario_personas_agent_id",
+        "scenario_time_limits_agent_id",
+        "general_agent_id",
+    )
+    return {key: payload.get(key) for key in context_keys if payload.get(key) is not None}
+
+
+def get_simulation_client(result: GetSimulationApiResponse) -> GetSimulationApiResponse:
+    """Client/BFF wrapper layer for simulation get response."""
+    payload = result.model_dump()
+    if "generation_context" in payload and payload.get("generation_context") is None:
+        payload["generation_context"] = get_simulation_websocket(result)
+    return GetSimulationApiResponse.model_validate(payload)
+
+
 @router.post(
     "/get",
     response_model=GetSimulationApiResponse,
@@ -701,7 +729,7 @@ async def get_simulation(
         response.headers["X-Cache-Hit"] = "0"
         response.headers["X-Two-Pass"] = "1"
 
-        return response_data
+        return get_simulation_client(response_data)
     except HTTPException:
         raise
     except ValueError as e:

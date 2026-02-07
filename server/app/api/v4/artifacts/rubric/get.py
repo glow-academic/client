@@ -29,6 +29,55 @@ SQL_PATH = "app/sql/v4/queries/rubrics/get_rubric_complete.sql"
 router = APIRouter()
 
 
+def _extract_rubric_websocket_context(result: GetRubricSqlRow) -> dict[str, Any]:
+    """Build minimal generation context payload for websocket consumers."""
+    payload = result.model_dump()
+    context_keys = (
+        "group_id",
+        "trace_id",
+        "run_id",
+        "domains",
+        "tools",
+        "tool_ids",
+        "domain_ids",
+        "agent_ids",
+        "department_id",
+        "provider_id",
+        "model_id",
+        "resource_group_ids",
+        "generation_context",
+    )
+    return {key: payload.get(key) for key in context_keys if payload.get(key) is not None}
+
+
+async def get_rubric_internal(
+    conn: asyncpg.Connection,
+    params: GetRubricSqlParams,
+) -> GetRubricSqlRow:
+    """Internal SQL fetch layer for rubric get endpoint."""
+    return cast(
+        GetRubricSqlRow,
+        await execute_sql_typed(
+            conn,
+            SQL_PATH,
+            params=params,
+        ),
+    )
+
+
+def get_rubric_websocket(result: GetRubricSqlRow) -> dict[str, Any]:
+    """Websocket wrapper layer for rubric generation context."""
+    return _extract_rubric_websocket_context(result)
+
+
+def get_rubric_client(result: GetRubricSqlRow) -> GetRubricApiResponse:
+    """Client/BFF wrapper layer for rubric get response."""
+    payload = result.model_dump()
+    if "generation_context" in payload:
+        payload["generation_context"] = get_rubric_websocket(result)
+    return GetRubricApiResponse.model_validate(payload)
+
+
 @router.post(
     "/get",
     response_model=GetRubricApiResponse,
@@ -103,14 +152,7 @@ async def get_rubric(
         sql_params = params.to_tuple()
 
         # Execute SQL with typed helper
-        result = cast(
-            GetRubricSqlRow,
-            await execute_sql_typed(
-                conn,
-                SQL_PATH,
-                params=params,
-            ),
-        )
+        result = await get_rubric_internal(conn, params)
 
         # Set audit context
         if result.actor_name:
@@ -149,11 +191,7 @@ async def get_rubric(
                 )
 
         # Convert SQL result to API response
-        response_data = GetRubricApiResponse.model_validate(
-            {
-                **result.model_dump(),
-            }
-        )
+        response_data = get_rubric_client(result)
 
         # Cache response (use mode='json' to serialize UUIDs and other types)
         await set_cached(

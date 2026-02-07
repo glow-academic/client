@@ -18,6 +18,7 @@ from app.socket.v4.artifacts.types import GenerateErrorApiRequest
 from app.sql.types import (
     GetDocumentAgentIdV4SqlParams,
     GetDocumentAgentIdV4SqlRow,
+    GetDocumentDepartmentV4SqlParams,
     GetDocumentDepartmentV4SqlRow,
 )
 from app.utils.sql_helper import execute_sql_typed
@@ -62,7 +63,7 @@ async def _generate_document_impl(
 
             # Get department_id from document if not provided
             if not data.department_id:
-                dept_params = SocketGetDocumentDepartmentSqlParams(
+                dept_params = GetDocumentDepartmentV4SqlParams(
                     document_id=uuid.UUID(data.document_id)
                 )
                 dept_result = cast(
@@ -85,9 +86,6 @@ async def _generate_document_impl(
                 document_description=data.document_description,
                 field_ids=None,  # Will be populated from document if needed
             )
-
-            from typing import cast
-
 
             result = cast(
                 GetDocumentRunContextAndCreateRunSqlRow,

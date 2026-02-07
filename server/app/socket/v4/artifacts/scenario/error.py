@@ -87,3 +87,12 @@ async def handle_scenarios_error(data: dict[str, Any]) -> None:
         },
         room=sid,
     )
+
+
+@server_router.post("/scenario_generation_error")
+async def scenario_generation_error_api(
+    request: dict[str, Any],
+) -> dict[str, bool]:
+    """Server-to-client event: scenario generation error."""
+    _ = request
+    return {"ok": True}

@@ -29,6 +29,55 @@ SQL_PATH = "app/sql/v4/queries/evals/get_eval_complete.sql"
 router = APIRouter()
 
 
+def _extract_eval_websocket_context(result: GetEvalSqlRow) -> dict[str, Any]:
+    """Build minimal generation context payload for websocket consumers."""
+    payload = result.model_dump()
+    context_keys = (
+        "group_id",
+        "trace_id",
+        "run_id",
+        "domains",
+        "tools",
+        "tool_ids",
+        "domain_ids",
+        "agent_ids",
+        "department_id",
+        "provider_id",
+        "model_id",
+        "resource_group_ids",
+        "generation_context",
+    )
+    return {key: payload.get(key) for key in context_keys if payload.get(key) is not None}
+
+
+async def get_eval_internal(
+    conn: asyncpg.Connection,
+    params: GetEvalSqlParams,
+) -> GetEvalSqlRow:
+    """Internal SQL fetch layer for eval get endpoint."""
+    return cast(
+        GetEvalSqlRow,
+        await execute_sql_typed(
+            conn,
+            SQL_PATH,
+            params=params,
+        ),
+    )
+
+
+def get_eval_websocket(result: GetEvalSqlRow) -> dict[str, Any]:
+    """Websocket wrapper layer for eval generation context."""
+    return _extract_eval_websocket_context(result)
+
+
+def get_eval_client(result: GetEvalSqlRow) -> GetEvalApiResponse:
+    """Client/BFF wrapper layer for eval get response."""
+    payload = result.model_dump()
+    if "generation_context" in payload:
+        payload["generation_context"] = get_eval_websocket(result)
+    return GetEvalApiResponse.model_validate(payload)
+
+
 @router.post(
     "/get",
     response_model=GetEvalApiResponse,
@@ -107,14 +156,7 @@ async def get_eval(
         sql_params = params.to_tuple()
 
         # Execute SQL with typed helper
-        result = cast(
-            GetEvalSqlRow,
-            await execute_sql_typed(
-                conn,
-                SQL_PATH,
-                params=params,
-            ),
-        )
+        result = await get_eval_internal(conn, params)
 
         # Set audit context
         if result.actor_name:

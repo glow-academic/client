@@ -490,6 +490,31 @@ async def get_cohort_internal(
     )
 
 
+def get_cohort_websocket(result: GetCohortApiResponse) -> dict[str, Any]:
+    """Websocket wrapper layer for cohort generation context."""
+    payload = result.model_dump()
+    context_keys = (
+        "group_id",
+        "name_agent_id",
+        "description_agent_id",
+        "flag_agent_id",
+        "departments_agent_id",
+        "simulations_agent_id",
+        "simulation_positions_agent_id",
+        "basic_agent_id",
+        "general_agent_id",
+    )
+    return {key: payload.get(key) for key in context_keys if payload.get(key) is not None}
+
+
+def get_cohort_client(result: GetCohortApiResponse) -> GetCohortApiResponse:
+    """Client/BFF wrapper layer for cohort get response."""
+    payload = result.model_dump()
+    if "generation_context" in payload:
+        payload["generation_context"] = get_cohort_websocket(result)
+    return GetCohortApiResponse.model_validate(payload)
+
+
 @router.post(
     "/get",
     response_model=GetCohortApiResponse,
@@ -527,12 +552,13 @@ async def get_cohort(
             )
 
         # Call the internal function
-        response_data = await get_cohort_internal(
+        internal_data = await get_cohort_internal(
             profile_id=profile_id,
             cohort_id=request.cohort_id,
             draft_id=request.draft_id,
             bypass_cache=bypass_cache,
         )
+        response_data = get_cohort_client(internal_data)
 
         # Set audit context
         if response_data.actor_name:
