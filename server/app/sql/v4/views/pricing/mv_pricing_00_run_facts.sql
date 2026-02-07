@@ -82,9 +82,22 @@ LEFT JOIN agent_models_junction amj ON amj.agent_id = arj.agent_id AND amj.activ
 LEFT JOIN groups_entry gi ON gi.id = r.group_id AND gi.active = TRUE
 LEFT JOIN profile_runs_junction prj ON prj.run_id = r.id AND prj.active = TRUE
 -- Name junctions (pre-resolve artifact IDs → name resource IDs)
-LEFT JOIN model_names_junction mnj ON mnj.model_id = amj.model_id
-LEFT JOIN agent_names_junction anj ON anj.agent_id = arj.agent_id
-LEFT JOIN profile_names_junction pnj ON pnj.profile_id = prj.profile_id
+-- Use DISTINCT ON to avoid row multiplication when multiple name entries exist
+LEFT JOIN LATERAL (
+    SELECT mnj.name_id FROM model_names_junction mnj
+    WHERE mnj.model_id = amj.model_id
+    ORDER BY mnj.created_at DESC LIMIT 1
+) mnj ON TRUE
+LEFT JOIN LATERAL (
+    SELECT anj.name_id FROM agent_names_junction anj
+    WHERE anj.agent_id = arj.agent_id
+    ORDER BY anj.created_at DESC LIMIT 1
+) anj ON TRUE
+LEFT JOIN LATERAL (
+    SELECT pnj.name_id FROM profile_names_junction pnj
+    WHERE pnj.profile_id = prj.profile_id
+    ORDER BY pnj.created_at DESC LIMIT 1
+) pnj ON TRUE
 WITH NO DATA;
 
 -- ============================================================================

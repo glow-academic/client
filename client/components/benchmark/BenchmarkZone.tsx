@@ -7,9 +7,9 @@ import { useCallback, useState } from "react";
 import type { ProfileItem } from "@/app/(main)/layout-server";
 import type { OutputOf } from "@/lib/api/types";
 
-// Extract types from API response (single source of truth)
-type EvalsListOut = OutputOf<"/api/v4/evals/list", "post">;
-type EvalsArray = NonNullable<EvalsListOut["evals"]>;
+// Extract eval item type from benchmark overview response (single source of truth)
+type BenchmarkOverviewOut = OutputOf<"/api/v4/artifacts/benchmark/get", "post">;
+type EvalsArray = NonNullable<BenchmarkOverviewOut["evals"]>;
 type EvalItem = EvalsArray extends Array<infer T> ? T : never;
 
 // Rubric mapping types

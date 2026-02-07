@@ -70,6 +70,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import * as React from "react";
 import { toast } from "sonner";
+import { PracticeCustomizeButton } from "@/components/practice/PracticeCustomizeButton";
 import { SingleProfileCertificateButton } from "./SingleProfileCertificateButton";
 
 // Use strong server types directly (union of all history endpoint types)
@@ -350,6 +351,9 @@ export interface SimulationHistoryProps {
 
   // Optional: whether to show the infinite/standard mode filter
   showModeFilter?: boolean;
+
+  // Optional: whether to show the customize button (for practice mode)
+  showCustomize?: boolean;
 }
 
 export default function SimulationHistory({
@@ -370,6 +374,7 @@ export default function SimulationHistory({
   simulationOptions,
   scenarioOptions,
   showModeFilter = true,
+  showCustomize = false,
 }: SimulationHistoryProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -1671,6 +1676,10 @@ export default function SimulationHistory({
                 profileOptions={filteredProfileOptions}
               />
             </div>
+          )}
+          {/* Customize button - show in history toolbar for practice mode */}
+          {showCustomize && (
+            <PracticeCustomizeButton />
           )}
           <DataTableViewOptions table={table} />
         </div>

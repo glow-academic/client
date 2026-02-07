@@ -10,9 +10,12 @@ import Practice from "@/components/practice/Practice";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
+import {
+  computeAnalyticsDefaults,
+  resolveAnalyticsFilters,
+} from "@/lib/search-params/analytics-defaults";
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { getLayoutContext } from "../layout-server";
 import { loadPracticeSearchParams } from "./searchParams";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -76,22 +79,9 @@ export default async function PracticePage({
   // Parse search params via nuqs loader
   const q = loadPracticeSearchParams(await searchParams);
 
-  // Get profileId and departmentIds from profile context with resolved UUIDs
-  let profileContext;
-  try {
-    profileContext = await getLayoutContext({
-      body: {},
-    });
-  } catch (error) {
-    if (
-      error instanceof Error &&
-      "status" in error &&
-      (error as { status: number }).status === 401
-    ) {
-      throw error;
-    }
-    throw error;
-  }
+  // Compute defaults and resolve filters (same as home page)
+  const { defaults, profileContext } = await computeAnalyticsDefaults();
+  const defaultFilters = resolveAnalyticsFilters(q, defaults, profileContext);
 
   // Cards endpoint (now includes all stats needed for simulation cards)
   const cardsFilters: PracticeCardsIn = {
@@ -114,19 +104,10 @@ export default async function PracticePage({
   // Fetch cards data (now includes all stats needed for simulation cards)
   const practiceData = await getPracticeCards(cardsFilters);
 
-  // Get profileId from profile context
-  const profileId = profileContext.id;
-
   // Check if user is a guest
-  const isGuest = !profileId || profileContext.role === "guest";
+  const isGuest = !profileContext.id || profileContext.role === "guest";
 
   // Create historyKey for Suspense boundary to trigger re-fetch on URL param changes
-  const analyticsStartDate = q.startDate || "";
-  const analyticsEndDate = q.endDate || "";
-  const analyticsCohortIds = (q.cohortIds || []).join(",");
-  const analyticsDepartmentIds = (q.departmentIds || []).join(",");
-  const analyticsRoles = (q.roles || []).join(",");
-  const analyticsSimulationFilters = (q.simulationFilters || ["general"]).join(",");
   const historyKey = [
     historyPage,
     historyPageSize,
@@ -141,12 +122,11 @@ export default async function PracticePage({
         : "std",
     historySortBy,
     historySortOrder,
-    analyticsStartDate,
-    analyticsEndDate,
-    analyticsCohortIds,
-    analyticsDepartmentIds,
-    analyticsRoles,
-    analyticsSimulationFilters,
+    defaultFilters.startDate,
+    defaultFilters.endDate,
+    defaultFilters.cohortIds.join(","),
+    defaultFilters.departmentIds.join(","),
+    defaultFilters.roles.join(","),
   ].join("|");
 
   return (
@@ -174,10 +154,12 @@ export default async function PracticePage({
                 scenarioOptions={[]}
                 isLoading={true}
                 showModeFilter={true}
+                showCustomize={true}
               />
             }
           >
             <PracticeHistorySection
+              defaultFilters={defaultFilters}
               historyPage={historyPage}
               historyPageSize={historyPageSize}
               historySearch={historySearch}
@@ -186,7 +168,6 @@ export default async function PracticePage({
               historyInfiniteMode={historyInfiniteMode}
               historySortBy={historySortBy}
               historySortOrder={historySortOrder}
-              departmentIds={profileContext.department_ids || []}
             />
           </Suspense>
         </div>
@@ -197,6 +178,7 @@ export default async function PracticePage({
 
 /** ---- Inline history section component (only used here) ---- */
 async function PracticeHistorySection({
+  defaultFilters,
   historyPage,
   historyPageSize,
   historySearch,
@@ -205,8 +187,14 @@ async function PracticeHistorySection({
   historyInfiniteMode,
   historySortBy,
   historySortOrder,
-  departmentIds,
 }: {
+  defaultFilters: {
+    startDate: string;
+    endDate: string;
+    cohortIds: string[];
+    departmentIds: string[];
+    roles: string[];
+  };
   historyPage: number;
   historyPageSize: number;
   historySearch?: string | undefined;
@@ -215,17 +203,14 @@ async function PracticeHistorySection({
   historyInfiniteMode?: boolean | undefined;
   historySortBy: string;
   historySortOrder: string;
-  departmentIds: string[];
 }) {
-  // Default date range: last year
-  const now = new Date();
-  const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
   const historyFilters: PracticeHistoryIn = {
     body: {
       practice: true,
-      start_date: oneYearAgo.toISOString(),
-      end_date: now.toISOString(),
-      department_ids: departmentIds,
+      start_date: defaultFilters.startDate,
+      end_date: defaultFilters.endDate,
+      cohort_ids: defaultFilters.cohortIds,
+      department_ids: defaultFilters.departmentIds,
       page: historyPage,
       page_size: historyPageSize,
       show_archived: false,
@@ -296,6 +281,7 @@ async function PracticeHistorySection({
       simulationOptions={simulationOptions}
       scenarioOptions={scenarioOptions}
       showModeFilter={true}
+      showCustomize={true}
     />
   );
 }

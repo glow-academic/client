@@ -20,7 +20,6 @@ import { AccessControl } from "@/components/common/layout/AccessControl";
 import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
 import { NavigationBreadcrumbs } from "@/components/common/layout/NavigationBreadcrumbs";
 import { UnifiedSidebar } from "@/components/common/layout/UnifiedSidebar";
-import { PracticeCustomizeButton } from "@/components/practice/PracticeCustomizeButton";
 import { ThemeHydrator } from "@/components/theme/ThemeHydrator";
 import {
   BreadcrumbProvider,
@@ -344,11 +343,6 @@ function MainLayoutContent({
           Create Tool
         </Button>
       );
-    }
-
-    // Practice page customize button
-    if (pathname === "/practice") {
-      return <PracticeCustomizeButton />;
     }
 
     // Chat components are now handled by AssistantChat

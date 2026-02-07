@@ -95,7 +95,7 @@ async def get_benchmark_tests_internal(
         param_idx += 1
 
     if department_ids:
-        conditions.append(f"department_ids && ${param_idx}::uuid[]")
+        conditions.append(f"(department_ids && ${param_idx}::uuid[] OR department_ids = '{{}}')")
         params.append(department_ids)
         param_idx += 1
 
