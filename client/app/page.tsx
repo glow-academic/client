@@ -1,21 +1,32 @@
 /**
  * app/page.tsx
- * This is the homepage.
- * @AshokSaravanan222 & @siladiea
- * 05/14/2025
+ * Root page - redirects to Keycloak login
  */
 
-import Info from "@/components/home/Info";
-import type { Metadata } from "next";
+"use client";
 
-export async function generateMetadata(): Promise<Metadata> {
-  return {
-    title: "GLOW",
-    description:
-      "GLOW - Graduate Learning Orientation Workshop. AI-powered simulation platform for teaching assistant training and pedagogical development. Practice student interactions, improve teaching techniques, and enhance learning and development skills through realistic educational scenarios.",
-  };
-}
+import { signIn } from "next-auth/react";
+import { useEffect, useRef } from "react";
 
-export default async function InfoPage() {
-  return <Info />;
+export default function RootPage() {
+  const hasRedirected = useRef(false);
+
+  useEffect(() => {
+    if (hasRedirected.current) return;
+    hasRedirected.current = true;
+
+    // Redirect to Keycloak login
+    signIn("keycloak", {
+      callbackUrl: "/home",
+    });
+  }, []);
+
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto" />
+        <p className="mt-4 text-muted-foreground">Redirecting to login...</p>
+      </div>
+    </div>
+  );
 }

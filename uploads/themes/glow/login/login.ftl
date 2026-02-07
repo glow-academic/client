@@ -26,21 +26,7 @@
       <#-- Sparkles background -->
       <div class="sparkles-background" id="sparkles-container"></div>
       
-      <#-- Back button -->
       <#assign appBase = client.baseUrl!"" />
-      <#if appBase?has_content>
-        <div class="back-button-container">
-          <a href="${appBase}" class="back-button">
-            <div class="back-button-shine-1"></div>
-            <div class="back-button-shine-2"></div>
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="back-icon">
-              <path d="m12 19-7-7 7-7"></path>
-              <path d="M19 12H5"></path>
-            </svg>
-            <span class="back-text">Back</span>
-          </a>
-        </div>
-      </#if>
       
       <#-- Centered card -->
       <div class="glow-card">
@@ -52,41 +38,22 @@
         <div class="glow-card-content">
           <#-- Logo section -->
           <div class="logo-section">
-            <#if appBase?has_content>
-              <a href="${appBase}/" class="logo-link">
-                <svg width="64" height="64" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" class="logo-icon">
-                  <defs>
-                    <linearGradient id="glow-gradient-login" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stop-color="#93C5FD"></stop>
-                      <stop offset="50%" stop-color="#60A5FA"></stop>
-                      <stop offset="100%" stop-color="#3B82F6"></stop>
-                    </linearGradient>
-                  </defs>
-                  <rect width="32" height="32" rx="8" fill="url(#glow-gradient-login)"></rect>
-                  <g transform="translate(16, 16) scale(0.667)">
-                    <path d="M0 -11L2.59 -2.59L11 0L2.59 2.59L0 11L-2.59 2.59L-11 0L-2.59 -2.59L0 -11Z" fill="white"></path>
-                  </g>
-                </svg>
-                <h1 class="glow-title">GLOW</h1>
-              </a>
-            <#else>
-              <div class="logo-link">
-                <svg width="64" height="64" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" class="logo-icon">
-                  <defs>
-                    <linearGradient id="glow-gradient-login" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stop-color="#93C5FD"></stop>
-                      <stop offset="50%" stop-color="#60A5FA"></stop>
-                      <stop offset="100%" stop-color="#3B82F6"></stop>
-                    </linearGradient>
-                  </defs>
-                  <rect width="32" height="32" rx="8" fill="url(#glow-gradient-login)"></rect>
-                  <g transform="translate(16, 16) scale(0.667)">
-                    <path d="M0 -11L2.59 -2.59L11 0L2.59 2.59L0 11L-2.59 2.59L-11 0L-2.59 -2.59L0 -11Z" fill="white"></path>
-                  </g>
-                </svg>
-                <h1 class="glow-title">GLOW</h1>
-              </div>
-            </#if>
+            <div class="logo-link">
+              <svg width="64" height="64" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" class="logo-icon">
+                <defs>
+                  <linearGradient id="glow-gradient-login" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#93C5FD"></stop>
+                    <stop offset="50%" stop-color="#60A5FA"></stop>
+                    <stop offset="100%" stop-color="#3B82F6"></stop>
+                  </linearGradient>
+                </defs>
+                <rect width="32" height="32" rx="8" fill="url(#glow-gradient-login)"></rect>
+                <g transform="translate(16, 16) scale(0.667)">
+                  <path d="M0 -11L2.59 -2.59L11 0L2.59 2.59L0 11L-2.59 2.59L-11 0L-2.59 -2.59L0 -11Z" fill="white"></path>
+                </g>
+              </svg>
+              <h1 class="glow-title">GLOW</h1>
+            </div>
           </div>
           
           <#-- Form content -->

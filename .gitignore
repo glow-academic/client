@@ -21,3 +21,5 @@ server/dump.rdb
 
 # SQL types compilation flag file
 .sql-types-checked
+# Allow theme files to be tracked
+!uploads/themes/
