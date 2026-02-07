@@ -56,6 +56,7 @@ export interface SimulationPositionsProps {
   link_tool_id?: string | null; // Tool ID for AI link suggestions
   onGenerate?: (() => void | Promise<void>) | undefined;
   isGenerating?: boolean;
+  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   createSimulationPositionsAction?:
     | ((input: {
         body: { group_id: string; simulation_id: string; value: number; mcp: boolean };
@@ -92,6 +93,7 @@ export function SimulationPositions({
   link_tool_id,
   onGenerate,
   isGenerating = false,
+  showAiGenerate = false,
   createSimulationPositionsAction,
   // AI diff view props
   aiSimulationPositionResources,
@@ -386,7 +388,7 @@ export function SimulationPositions({
               </span>
             )}
           </Label>
-          {onGenerate && create_tool_id && (
+          {onGenerate && showAiGenerate && create_tool_id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

@@ -91,6 +91,7 @@ export interface ScenarioFlagsProps {
     | undefined;
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
+  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created IDs */
@@ -128,6 +129,7 @@ export function ScenarioFlags({
   createScenarioFlagsAction,
   onGenerate,
   isGenerating = false,
+  showAiGenerate = false,
   isAutosaveEnabled = true,
   registerFlush,
   aiFlagResources,
@@ -481,7 +483,7 @@ export function ScenarioFlags({
               </span>
             )}
           </Label>
-          {onGenerate && create_tool_id && (
+          {onGenerate && showAiGenerate && create_tool_id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

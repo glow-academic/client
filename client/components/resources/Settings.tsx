@@ -55,6 +55,7 @@ export interface SettingsProps {
   link_tool_id?: string | null; // Tool ID for AI link suggestions
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
+  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   // Legacy props for backward compatibility
   settingsIds?: string[];
   // AI diff view props
@@ -83,6 +84,7 @@ export function Settings({
   link_tool_id,
   onGenerate,
   isGenerating = false,
+  showAiGenerate = false,
   // Legacy props for backward compatibility
   settingsIds,
   // AI diff view props
@@ -182,7 +184,7 @@ export function Settings({
               </span>
             )}
           </Label>
-          {onGenerate && link_tool_id && (
+          {onGenerate && showAiGenerate && link_tool_id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

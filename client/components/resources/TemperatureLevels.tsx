@@ -50,6 +50,7 @@ export interface TemperatureLevelsProps {
   ) => void; // Update temperature_level_id in parent form state
   onGenerate?: () => Promise<void>;
   isGenerating?: boolean;
+  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   label?: string;
   placeholder?: string;
   required?: boolean;
@@ -82,6 +83,7 @@ export function TemperatureLevels({
   onTemperatureLevelIdChange,
   onGenerate,
   isGenerating = false,
+  showAiGenerate = false,
   label = "Temperature Level",
   placeholder = "Select a temperature level",
   required = false,
@@ -200,7 +202,7 @@ export function TemperatureLevels({
             {label}
             {required && <span className="text-destructive">*</span>}
           </Label>
-          {onGenerate && link_tool_id && (
+          {onGenerate && showAiGenerate && link_tool_id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

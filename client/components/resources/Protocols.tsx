@@ -58,6 +58,7 @@ export interface ProtocolsProps {
     | undefined;
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
+  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   // AI diff view props
   aiProtocolResources?: Array<{ id?: string | null; value?: string | null }> | null;
   onAccept?: () => void;
@@ -87,6 +88,7 @@ export function Protocols({
   createProtocolsAction,
   onGenerate,
   isGenerating = false,
+  showAiGenerate = false,
   // AI diff view props
   aiProtocolResources,
   onAccept,
@@ -260,7 +262,7 @@ export function Protocols({
               </span>
             )}
           </Label>
-          {onGenerate && create_tool_id && (
+          {onGenerate && showAiGenerate && create_tool_id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

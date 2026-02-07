@@ -61,6 +61,7 @@ export interface RequestLimitsProps {
   onRequestLimitIdChange: (requestLimitId: string | null) => void; // Update request_limit_id in parent form state
   onGenerate?: () => Promise<void>;
   isGenerating?: boolean;
+  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   label?: string;
   id?: string;
   required?: boolean;
@@ -105,6 +106,7 @@ export function RequestLimits({
   onRequestLimitIdChange,
   onGenerate,
   isGenerating = false,
+  showAiGenerate = false,
   label = "Request Limit",
   id = "request_limit",
   required = false,
@@ -386,7 +388,7 @@ export function RequestLimits({
                 </span>
               )}
             </Label>
-            {onGenerate && create_tool_id && (
+            {onGenerate && showAiGenerate && create_tool_id && (
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>

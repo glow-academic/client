@@ -53,6 +53,7 @@ export interface RunsProps {
   link_tool_id?: string | null; // Tool ID for AI link suggestions
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
+  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   // AI diff view props
   aiRunResources?: Array<{
     run_id?: string | null;
@@ -78,6 +79,7 @@ export function Runs({
   link_tool_id,
   onGenerate,
   isGenerating = false,
+  showAiGenerate = false,
   // AI diff view props
   aiRunResources,
   onAccept,
@@ -172,7 +174,7 @@ export function Runs({
               </span>
             )}
           </Label>
-          {onGenerate && link_tool_id && (
+          {onGenerate && showAiGenerate && link_tool_id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

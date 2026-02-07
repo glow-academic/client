@@ -64,6 +64,7 @@ export interface ModelsProps {
   } | null;
   modelId?: string | null;
   suggestions?: string[];
+  link_tool_id?: string | null; // Tool ID for AI link suggestions
   // AI diff view props
   aiModelResources?: Array<{
     model_id?: string | null;
@@ -93,6 +94,7 @@ export function Models({
   modelResource: _modelResource,
   modelId: _modelId,
   suggestions,
+  link_tool_id,
   // AI diff view props
   aiModelResources,
   onAccept,

@@ -59,12 +59,14 @@ export interface UploadsProps {
   placeholder?: string;
   description?: string;
   group_id?: string | null; // Group ID for linking resources
-  uploads_agent_id?: string | null; // Agent ID for resource creation
+  create_tool_id?: string | null; // Tool ID for AI generation/creation
+  link_tool_id?: string | null; // Tool ID for AI link suggestions
   createUploadsAction?:
     | ((input: CreateDraftUploadsIn) => Promise<CreateDraftUploadsOut>)
     | undefined;
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
+  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   finalizeUploadAction?: (uploadId: string) => Promise<{
     success: boolean;
     upload_id?: string;
@@ -95,10 +97,12 @@ export function Uploads({
   placeholder = "Select files...",
   description,
   group_id,
-  uploads_agent_id,
+  create_tool_id,
+  link_tool_id,
   createUploadsAction,
   onGenerate,
   isGenerating = false,
+  showAiGenerate = false,
   finalizeUploadAction,
   searchTerm = "",
   isAutosaveEnabled: _isAutosaveEnabled = true,
@@ -287,9 +291,10 @@ export function Uploads({
               const databaseUploadId = finalizeResult.upload_id;
 
               // Create uploads_resource entry
+              // Note: agent_id is deprecated, server now routes via tool_id
               const createResult = await createUploadsAction({
                 body: {
-                  agent_id: uploads_agent_id || "",
+                  agent_id: "",
                   group_id: group_id,
                   upload_id: databaseUploadId,
                   mcp: false,
@@ -365,7 +370,6 @@ export function Uploads({
       finalizeUploadAction,
       createUploadsAction,
       group_id,
-      uploads_agent_id,
       ids,
       onChange,
     ]
@@ -407,7 +411,6 @@ export function Uploads({
       if (
         newlySelected.length > 0 &&
         createUploadsAction &&
-        uploads_agent_id &&
         group_id
       ) {
         // For existing uploads, we might need to create resources
@@ -418,7 +421,7 @@ export function Uploads({
         onChange(selectedIds);
       }
     },
-    [ids, createUploadsAction, uploads_agent_id, group_id, onChange]
+    [ids, createUploadsAction, group_id, onChange]
   );
 
   // AI suggestion state
@@ -480,7 +483,7 @@ export function Uploads({
           )}
         </div>
         <div className="flex items-center gap-2">
-          {onGenerate && uploads_agent_id && (
+          {onGenerate && showAiGenerate && create_tool_id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

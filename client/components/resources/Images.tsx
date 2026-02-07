@@ -74,6 +74,7 @@ export interface ImagesProps {
     | ((input: CreateDraftImagesIn) => Promise<CreateDraftImagesOut>)
     | undefined;
   onGenerate?: () => void | Promise<void>;
+  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   isGenerating?: boolean;
   multiSelect?: boolean; // Whether to allow multiple image selection
   maxImages?: number; // Maximum number of images allowed
@@ -118,6 +119,7 @@ export function Images({
   group_id,
   createImagesAction,
   onGenerate,
+  showAiGenerate = false,
   isGenerating = false,
   multiSelect = false,
   maxImages = 1,
@@ -606,7 +608,7 @@ export function Images({
                 <span className="text-destructive">*</span>
               )}
             </Label>
-            {onGenerate && create_tool_id && (
+            {onGenerate && showAiGenerate && create_tool_id && (
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>

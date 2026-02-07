@@ -56,6 +56,7 @@ export interface SimulationsProps {
   link_tool_id?: string | null; // Tool ID for AI link suggestions
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
+  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   searchTerm?: string; // Search term for filtering simulations
   showSelectedFilter?: boolean; // Whether to show only selected simulations
   // Legacy props for backward compatibility
@@ -86,6 +87,7 @@ export function Simulations({
   link_tool_id,
   onGenerate,
   isGenerating = false,
+  showAiGenerate = false,
   searchTerm = "",
   showSelectedFilter = false,
   // Legacy props for backward compatibility
@@ -230,7 +232,7 @@ export function Simulations({
               </span>
             )}
           </Label>
-          {onGenerate && link_tool_id && (
+          {onGenerate && showAiGenerate && link_tool_id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

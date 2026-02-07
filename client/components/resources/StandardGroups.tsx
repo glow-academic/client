@@ -88,6 +88,7 @@ export interface StandardGroupsProps {
     | undefined;
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
+  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created IDs */
@@ -120,6 +121,7 @@ export function StandardGroups({
   createStandardGroupsAction,
   onGenerate,
   isGenerating = false,
+  showAiGenerate = false,
   isAutosaveEnabled = true,
   registerFlush,
   // Legacy props for backward compatibility
@@ -346,7 +348,7 @@ export function StandardGroups({
               </span>
             )}
           </Label>
-          {onGenerate && create_tool_id && (
+          {onGenerate && showAiGenerate && create_tool_id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

@@ -62,6 +62,7 @@ export interface PricingProps {
     | ((input: CreateDraftPricingIn) => Promise<CreateDraftPricingOut>)
     | undefined;
   onGenerate?: () => void | Promise<void>;
+  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   isGenerating?: boolean;
   // AI diff view props
   aiPricingResources?: Array<{ id?: string | null; name?: string | null }> | null;
@@ -93,6 +94,7 @@ export function Pricing({
   link_tool_id,
   createPricingAction,
   onGenerate,
+  showAiGenerate = false,
   isGenerating = false,
   // AI diff view props
   aiPricingResources,
@@ -240,7 +242,7 @@ export function Pricing({
               </span>
             )}
           </Label>
-          {onGenerate && create_tool_id && (
+          {onGenerate && showAiGenerate && create_tool_id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

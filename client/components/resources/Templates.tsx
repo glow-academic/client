@@ -80,6 +80,7 @@ export interface TemplatesProps {
     | ((input: CreateDraftTemplatesIn) => Promise<CreateDraftTemplatesOut>)
     | undefined;
   onGenerate?: () => void | Promise<void>;
+  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   isGenerating?: boolean;
   searchTerm?: string; // Search term for filtering templates
   showSelectedFilter?: boolean; // Whether to show only selected templates
@@ -114,6 +115,7 @@ export function Templates({
   link_tool_id,
   createTemplatesAction,
   onGenerate,
+  showAiGenerate = false,
   isGenerating = false,
   searchTerm = "",
   showSelectedFilter = false,
@@ -673,7 +675,7 @@ export function Templates({
               </span>
             )}
           </Label>
-          {onGenerate && create_tool_id && (
+          {onGenerate && showAiGenerate && create_tool_id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

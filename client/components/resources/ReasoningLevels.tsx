@@ -45,6 +45,7 @@ export interface ReasoningLevelsProps {
   ) => void; // Update reasoning_level_id in parent form state
   onGenerate?: () => Promise<void>;
   isGenerating?: boolean;
+  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   label?: string;
   placeholder?: string;
   required?: boolean;
@@ -74,6 +75,7 @@ export function ReasoningLevels({
   onReasoningLevelIdChange,
   onGenerate,
   isGenerating = false,
+  showAiGenerate = false,
   label = "Reasoning Level",
   placeholder = "Select a reasoning level",
   required = false,
@@ -161,7 +163,7 @@ export function ReasoningLevels({
             {label}
             {required && <span className="text-destructive">*</span>}
           </Label>
-          {onGenerate && link_tool_id && (
+          {onGenerate && showAiGenerate && link_tool_id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

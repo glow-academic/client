@@ -164,6 +164,7 @@ export interface ProblemStatementsProps {
   disabled?: boolean; // Based on can_edit flag
   onProblemStatementIdChange: (problemStatementId: string | null) => void; // Update problem_statement_id in parent form state
   onGenerate?: () => Promise<void>;
+  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   isGenerating?: boolean;
   label?: string;
   placeholder?: string;
@@ -207,6 +208,7 @@ export function ProblemStatements({
   disabled = false,
   onProblemStatementIdChange,
   onGenerate,
+  showAiGenerate = false,
   isGenerating = false,
   label = "Problem Statement",
   placeholder = "Enter problem statement",
@@ -501,7 +503,7 @@ export function ProblemStatements({
             {label}
             {required && <span className="text-destructive">*</span>}
           </Label>
-          {onGenerate && create_tool_id && (
+          {onGenerate && showAiGenerate && create_tool_id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

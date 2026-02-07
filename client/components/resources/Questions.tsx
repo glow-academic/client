@@ -75,6 +75,7 @@ export interface QuestionsProps {
     | undefined;
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
+  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   // Optional: mapping of question_id -> question text (for initial display)
   questionMapping?: Record<string, string>;
   // Optional: video length for time slider (when questions are associated with videos)
@@ -127,6 +128,7 @@ export function Questions({
   createQuestionsAction,
   onGenerate,
   isGenerating = false,
+  showAiGenerate = false,
   questionMapping = {},
   videoLength = null,
   isAutosaveEnabled = true,
@@ -754,7 +756,7 @@ export function Questions({
               <span className="text-destructive">*</span>
             )}
           </Label>
-          {onGenerate && create_tool_id && (
+          {onGenerate && showAiGenerate && create_tool_id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

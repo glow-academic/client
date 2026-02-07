@@ -77,6 +77,7 @@ export interface VideosProps {
     | ((input: CreateDraftVideosIn) => Promise<CreateDraftVideosOut>)
     | undefined;
   onGenerate?: () => void | Promise<void>;
+  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   isGenerating?: boolean;
   onVideoUpload?: (e: React.ChangeEvent<HTMLInputElement>) => void; // Upload handler
   videoInputRef?: React.RefObject<HTMLInputElement>; // Ref for file input
@@ -119,6 +120,7 @@ export function Videos({
   group_id,
   createVideosAction,
   onGenerate,
+  showAiGenerate = false,
   isGenerating = false,
   onVideoUpload,
   videoInputRef,
@@ -571,7 +573,7 @@ export function Videos({
                 <span className="text-destructive">*</span>
               )}
             </Label>
-            {onGenerate && create_tool_id && (
+            {onGenerate && showAiGenerate && create_tool_id && (
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>

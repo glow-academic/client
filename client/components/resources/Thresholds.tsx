@@ -34,6 +34,7 @@ export interface ThresholdsProps {
   group_id?: string | null;
   link_tool_id?: string | null; // Tool ID for AI link suggestions
   onGenerate?: () => void | Promise<void>;
+  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   isGenerating?: boolean;
   // AI diff view props
   aiThresholdResources?: Array<{
@@ -56,6 +57,7 @@ export function Thresholds({
   description,
   link_tool_id,
   onGenerate,
+  showAiGenerate = false,
   isGenerating = false,
   // AI diff view props
   aiThresholdResources,
@@ -116,7 +118,7 @@ export function Thresholds({
               </span>
             )}
           </Label>
-          {onGenerate && link_tool_id && (
+          {onGenerate && showAiGenerate && link_tool_id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

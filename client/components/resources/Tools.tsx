@@ -56,6 +56,7 @@ export interface ToolsProps {
   group_id?: string | null; // Group ID for linking resources
   link_tool_id?: string | null; // Tool ID for AI link suggestions
   onGenerate?: () => void | Promise<void>;
+  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   isGenerating?: boolean;
   searchTerm?: string; // Search term for filtering tools
   onSearchChange?: (term: string) => void; // Callback when search term changes
@@ -86,6 +87,7 @@ export function Tools({
   group_id,
   link_tool_id,
   onGenerate,
+  showAiGenerate = false,
   isGenerating = false,
   searchTerm = "",
   onSearchChange,

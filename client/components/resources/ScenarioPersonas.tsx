@@ -106,6 +106,7 @@ export interface ScenarioPersonasProps {
   onPersonaIdsChange?: (ids: string[]) => void;
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
+  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   isAutosaveEnabled?: boolean;
   registerFlush?: (
     flush: () => Promise<{ scenario_persona_ids: string[] } | void>
@@ -144,6 +145,7 @@ export function ScenarioPersonas({
   onPersonaIdsChange,
   onGenerate,
   isGenerating = false,
+  showAiGenerate = false,
   isAutosaveEnabled = true,
   registerFlush,
   // AI diff view props
@@ -434,7 +436,7 @@ export function ScenarioPersonas({
               </span>
             )}
           </Label>
-          {onGenerate && create_tool_id && (
+          {onGenerate && showAiGenerate && create_tool_id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

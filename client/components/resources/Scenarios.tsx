@@ -62,6 +62,7 @@ export interface ScenariosProps {
   link_tool_id?: string | null; // Tool ID for AI link suggestions
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
+  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   showSelectedOnly?: boolean;
   // AI diff view props
   aiScenarioResources?: Array<{
@@ -90,6 +91,7 @@ export function Scenarios({
   link_tool_id,
   onGenerate,
   isGenerating = false,
+  showAiGenerate = false,
   searchTerm,
   showSelectedOnly = false,
   // AI diff view props
@@ -231,7 +233,7 @@ export function Scenarios({
               </span>
             )}
           </Label>
-          {onGenerate && link_tool_id && (
+          {onGenerate && showAiGenerate && link_tool_id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

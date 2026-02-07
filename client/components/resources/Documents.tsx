@@ -79,6 +79,7 @@ export interface DocumentsProps {
     | undefined;
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
+  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   videoEnabled?: boolean; // Whether video mode is enabled (for filtering)
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
@@ -112,6 +113,7 @@ export function Documents({
   createDocumentsAction,
   onGenerate,
   isGenerating = false,
+  showAiGenerate = false,
   videoEnabled = false,
   isAutosaveEnabled = true,
   registerFlush,
@@ -306,7 +308,7 @@ export function Documents({
               </span>
             )}
           </Label>
-          {onGenerate && create_tool_id && (
+          {onGenerate && showAiGenerate && create_tool_id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

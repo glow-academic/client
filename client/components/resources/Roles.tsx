@@ -65,6 +65,7 @@ export interface RolesProps {
       color_hex: string;
     }
   ) => void;
+  link_tool_id?: string | null; // Tool ID for AI link suggestions
   // AI diff view props
   aiRoleResources?: Array<{
     role_id?: string | null;
@@ -241,6 +242,7 @@ export function Roles({
   showSelectedFilter = false,
   emptyMessage = "No roles found. Try adjusting your search.",
   onRoleResourceChange,
+  link_tool_id,
   // AI diff view props
   aiRoleResources,
   onAccept,

@@ -64,6 +64,7 @@ export interface ValuesProps {
     | ((input: CreateDraftValuesIn) => Promise<CreateDraftValuesOut>)
     | undefined;
   onGenerate?: () => void | Promise<void>;
+  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   isGenerating?: boolean;
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
@@ -95,6 +96,7 @@ export function Values({
   link_tool_id,
   createValuesAction,
   onGenerate,
+  showAiGenerate = false,
   isGenerating = false,
   isAutosaveEnabled: _isAutosaveEnabled = true,
   registerFlush,
@@ -219,7 +221,7 @@ export function Values({
               </span>
             )}
           </Label>
-          {onGenerate && create_tool_id && (
+          {onGenerate && showAiGenerate && create_tool_id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

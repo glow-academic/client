@@ -56,6 +56,7 @@ export interface CohortsProps {
   link_tool_id?: string | null; // Tool ID for AI link suggestions
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
+  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   cohortIds?: string[];
   // AI diff view props
   aiCohortResources?: Array<{
@@ -86,6 +87,7 @@ export function Cohorts({
   link_tool_id,
   onGenerate,
   isGenerating = false,
+  showAiGenerate = false,
   cohortIds,
   // AI diff view props
   aiCohortResources,
@@ -205,7 +207,7 @@ export function Cohorts({
               </span>
             )}
           </Label>
-          {onGenerate && link_tool_id && (
+          {onGenerate && showAiGenerate && link_tool_id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

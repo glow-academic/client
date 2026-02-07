@@ -37,6 +37,7 @@ export interface GroupRubricsProps {
   required?: boolean;
   selected_rubric_ids?: string[];
   onChange: (groupId: string, rubricIds: string[]) => void;
+  link_tool_id?: string | null; // Tool ID for AI link suggestions
   // AI diff view props
   aiRubricResources?: Array<{
     id?: string | null;
@@ -57,6 +58,7 @@ export function GroupRubrics({
   required = false,
   selected_rubric_ids,
   onChange,
+  link_tool_id,
   // AI diff view props
   aiRubricResources,
   onAccept,

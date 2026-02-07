@@ -52,6 +52,7 @@ export interface ProfilesProps {
   group_id?: string | null; // Group ID for linking resources
   link_tool_id?: string | null; // Tool ID for AI link suggestions
   onGenerate?: () => void | Promise<void>;
+  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   isGenerating?: boolean;
   // AI diff view props
   aiProfileResources?: Array<{
@@ -78,6 +79,7 @@ export function Profiles({
   group_id,
   link_tool_id,
   onGenerate,
+  showAiGenerate = false,
   isGenerating = false,
   // AI diff view props
   aiProfileResources,
@@ -170,7 +172,7 @@ export function Profiles({
               </span>
             )}
           </Label>
-          {onGenerate && link_tool_id && (
+          {onGenerate && showAiGenerate && link_tool_id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

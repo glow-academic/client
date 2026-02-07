@@ -60,6 +60,7 @@ export interface ProvidersProps {
   multiSelect?: boolean; // Whether to use multi-select mode
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
+  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   label?: string;
   id?: string;
   required?: boolean;
@@ -89,6 +90,7 @@ export function Providers({
   multiSelect = false,
   onGenerate,
   isGenerating = false,
+  showAiGenerate = false,
   label = "Provider",
   id = "provider",
   required = false,
@@ -204,7 +206,7 @@ export function Providers({
             {label}
             {required && <span className="text-destructive">*</span>}
           </Label>
-          {onGenerate && link_tool_id && multiSelect && (
+          {onGenerate && showAiGenerate && link_tool_id && multiSelect && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

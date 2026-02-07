@@ -42,6 +42,7 @@ export interface PointsProps {
   disabled?: boolean; // Based on can_edit flag
   onPointsIdChange: (pointsId: string | null) => void; // Update points_id in parent form state
   onGenerate?: () => Promise<void>;
+  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   isGenerating?: boolean;
   label?: string;
   id?: string;
@@ -83,6 +84,7 @@ export function Points({
   disabled = false,
   onPointsIdChange,
   onGenerate,
+  showAiGenerate = false,
   isGenerating = false,
   label = "Points",
   id = "points",
@@ -391,7 +393,7 @@ export function Points({
             {required && <span className="text-destructive">*</span>}
           </Label>
         )}
-        {onGenerate && create_tool_id && (
+        {onGenerate && showAiGenerate && create_tool_id && (
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>

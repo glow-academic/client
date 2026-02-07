@@ -46,6 +46,7 @@ export interface FlagsProps {
   link_tool_id?: string | null; // Tool ID for AI link suggestions
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
+  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   // AI diff view props
   aiFlagResources?: Array<{ id?: string | null; key?: string | null }> | null;
   onAccept?: () => void;
@@ -69,6 +70,7 @@ export function Flags({
   icon,
   onGenerate,
   isGenerating = false,
+  showAiGenerate = false,
   aiFlagResources,
   onAccept,
   onReject,
@@ -185,7 +187,7 @@ export function Flags({
             onCheckedChange={handleChange}
             disabled={disabled || !flagOptionId}
           />
-          {onGenerate && (
+          {onGenerate && showAiGenerate && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

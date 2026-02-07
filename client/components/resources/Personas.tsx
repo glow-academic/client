@@ -91,6 +91,7 @@ export interface PersonasProps {
     | ((input: CreateDraftPersonasIn) => Promise<CreateDraftPersonasOut>)
     | undefined;
   onGenerate?: () => void | Promise<void>;
+  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   isGenerating?: boolean;
   videoEnabled?: boolean; // Whether video mode is enabled (for filtering)
   /** When false, skip automatic resource creation (manual save mode) */
@@ -124,6 +125,7 @@ export function Personas({
   link_tool_id,
   createPersonasAction,
   onGenerate,
+  showAiGenerate = false,
   isGenerating = false,
   videoEnabled = false,
   isAutosaveEnabled = true,
@@ -318,7 +320,7 @@ export function Personas({
               </span>
             )}
           </Label>
-          {onGenerate && create_tool_id && (
+          {onGenerate && showAiGenerate && create_tool_id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

@@ -60,6 +60,7 @@ export interface StandardsProps {
   link_tool_id?: string | null; // Tool ID for AI link suggestions
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
+  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   // AI diff view props
   aiStandardResources?: Array<{
     standard_id?: string | null;
@@ -86,6 +87,7 @@ export function Standards({
   link_tool_id: _link_tool_id,
   onGenerate,
   isGenerating = false,
+  showAiGenerate = false,
   // AI diff view props
   aiStandardResources,
   onAccept,
@@ -174,7 +176,7 @@ export function Standards({
             {required && <span className="text-destructive">*</span>}
           </Label>
         )}
-        {onGenerate && (
+        {onGenerate && showAiGenerate && (
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>

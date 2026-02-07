@@ -55,6 +55,7 @@ export interface QualitiesProps {
   link_tool_id?: string | null; // Tool ID for AI link suggestions
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
+  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   // AI diff view props
   aiQualityResources?: Array<{
     quality_id?: string | null;
@@ -83,6 +84,7 @@ export function Qualities({
   link_tool_id,
   onGenerate,
   isGenerating = false,
+  showAiGenerate = false,
   // AI diff view props
   aiQualityResources,
   onAccept,
@@ -186,7 +188,7 @@ export function Qualities({
               </span>
             )}
           </Label>
-          {onGenerate && link_tool_id && (
+          {onGenerate && showAiGenerate && link_tool_id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

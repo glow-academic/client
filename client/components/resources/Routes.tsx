@@ -43,6 +43,7 @@ export interface RoutesProps {
   description?: string;
   searchTerm?: string;
   searchPlaceholder?: string;
+  link_tool_id?: string | null; // Tool ID for AI link suggestions
   // AI diff view props
   aiRouteResources?: Array<{
     route_id?: string | null;
@@ -68,6 +69,7 @@ export function Routes({
   description,
   searchTerm,
   searchPlaceholder = "Search routes...",
+  link_tool_id,
   // AI diff view props
   aiRouteResources,
   onAccept,

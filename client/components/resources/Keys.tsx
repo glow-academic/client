@@ -68,6 +68,7 @@ export interface KeysProps {
   onChange?: (ids: string[]) => void; // Update key_ids in parent form state (multi-select)
   multiSelect?: boolean; // Whether to use multi-select mode
   onGenerate?: () => void | Promise<void>;
+  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   isGenerating?: boolean;
   label?: string;
   id?: string;
@@ -102,6 +103,7 @@ export function Keys({
   onChange,
   multiSelect = false,
   onGenerate,
+  showAiGenerate = false,
   isGenerating = false,
   label = "Key",
   id = "key",
@@ -295,7 +297,7 @@ export function Keys({
             {label}
             {required && <span className="text-destructive">*</span>}
           </Label>
-          {onGenerate && create_tool_id && multiSelect && (
+          {onGenerate && showAiGenerate && create_tool_id && multiSelect && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
