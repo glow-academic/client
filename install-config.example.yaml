@@ -1,0 +1,74 @@
+# =============================================================================
+# Glow Install Configuration
+# =============================================================================
+# Copy this file to install-config.yaml and fill in your values.
+#
+# Usage:
+#   cp install-config.example.yaml install-config.yaml
+#   # Edit install-config.yaml with your values
+#   make configure                          # Generates .env from YAML
+#   docker compose up -d --build            # Start services
+#
+# Or run interactively (prompts for values):
+#   make configure INTERACTIVE=1
+
+# -----------------------------------------------------------------------------
+# Instance
+# -----------------------------------------------------------------------------
+instance:
+  name: "glow"                              # COMPOSE_PROJECT_NAME (Docker prefix)
+  port: 3000                                # CLIENT_PORT (nginx external port)
+
+# -----------------------------------------------------------------------------
+# Domain
+# -----------------------------------------------------------------------------
+domain:
+  origin: "https://glow.university.edu"     # ORIGIN (public URL)
+  prefix: ""                                # APP_PREFIX (e.g. "/glow" or empty)
+
+# -----------------------------------------------------------------------------
+# Institution
+# -----------------------------------------------------------------------------
+institution:
+  name: "University Name"                   # NEXT_PUBLIC_CAMPUS
+  email_domain: "university.edu"            # NEXT_PUBLIC_CAMPUS_EMAIL
+
+# -----------------------------------------------------------------------------
+# Database
+# -----------------------------------------------------------------------------
+database:
+  user: "myuser"                            # DB_USER
+  password: "mypassword"                    # DB_PASSWORD
+  name: "mydb"                              # DB_NAME
+  operation: "RESTORE"                      # DB_OPERATION:
+                                            #   "RESTORE"         — restore from latest backup
+                                            #   "seed_*.sql"      — load specific seed file
+                                            #   ""                — use existing database (no init)
+
+# -----------------------------------------------------------------------------
+# Auth
+# -----------------------------------------------------------------------------
+auth:
+  secret: ""                                # AUTH_SECRET (auto-generated if blank)
+  secret_key: ""                            # SECRET_KEY for JWT signing (auto-generated if blank)
+  keycloak:
+    admin_password: "admin"                 # KEYCLOAK_ADMIN_PASSWORD
+    realm: "master"                         # KEYCLOAK_REALM
+    client_id: "glow-client"                # AUTH_KEYCLOAK_ID
+  microsoft:
+    client_id: ""                           # AUTH_MICROSOFT_ENTRA_ID_ID
+    client_secret: ""                       # AUTH_MICROSOFT_ENTRA_ID_SECRET
+
+# -----------------------------------------------------------------------------
+# AI Providers
+# -----------------------------------------------------------------------------
+providers:
+  openai_api_key: ""                        # OPENAI_API_KEY
+  gemini_api_key: ""                        # GEMINI_API_KEY
+
+# -----------------------------------------------------------------------------
+# Install Mode (for pre-built GHCR images vs source build)
+# -----------------------------------------------------------------------------
+install:
+  use_prebuilt_images: false                # true = docker pull from GHCR, false = build from source
+  image_tag: "latest"                       # GHCR tag: "latest", "v1.0.0", etc.

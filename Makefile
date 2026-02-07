@@ -1,4 +1,4 @@
-.PHONY: help setup install clean format lint typecheck run run-test test test-unit test-integration test-cov cleanup generate-tests generate-test-schema stop stop-keycloak install-client install-e2e restore-db migrate-db migrate-db-all connect-db fresh-db export-db typecheck-client build-client openapi-gen gen-client-types sql-compile sql-format watch-sql-types
+.PHONY: help setup install clean format lint typecheck run run-test test test-unit test-integration test-cov cleanup generate-tests generate-test-schema stop stop-keycloak install-client install-e2e restore-db migrate-db migrate-db-all connect-db fresh-db export-db typecheck-client build-client openapi-gen gen-client-types sql-compile sql-format watch-sql-types configure
 
 # Default Python interpreter
 PYTHON := python3.11
@@ -33,6 +33,19 @@ setup: check-python
 	@$(PYTHON) -m venv $(VENV)
 	@echo "✅ Virtual environment created at $(VENV)"
 	@echo "To activate: source $(VENV_BIN)/activate"
+
+# Generate .env from install-config.yaml (or interactively)
+#   make configure                          — reads install-config.yaml → .env
+#   make configure INTERACTIVE=1            — prompts for values interactively
+#   make configure CONFIG=my-config.yaml    — reads specified YAML file
+configure:
+	@if [ "$(INTERACTIVE)" = "1" ]; then \
+		python3 scripts/generate-env.py --interactive; \
+	elif [ -n "$(CONFIG)" ]; then \
+		python3 scripts/generate-env.py --config "$(CONFIG)"; \
+	else \
+		python3 scripts/generate-env.py; \
+	fi
 
 # Install all dependencies
 install: check-venv
@@ -425,6 +438,7 @@ help:
 	@echo "GLOW - Graduate Learning Orientation Workshop"
 	@echo ""
 	@echo "Environment setup:"
+	@echo "  configure    - Generate .env from install-config.yaml (or INTERACTIVE=1)"
 	@echo "  setup        - Create virtual environment at .venv"
 	@echo "  install      - Install all dependencies in venv"
 	@echo "  clean        - Remove virtual environment"
