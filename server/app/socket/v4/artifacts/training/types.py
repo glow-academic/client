@@ -18,7 +18,6 @@ from app.socket.v4.artifacts.types import (
     GenerationProgressEvent,
 )
 
-
 # =============================================================================
 # Entry type constants (predefined per handler, not in payload)
 # =============================================================================
@@ -69,7 +68,9 @@ class TrainingStartedEvent(BaseModel):
     attempt_id: str
     chat_id: str
     scenario_id: str | None = None
-    scenario_data: dict | None = None  # {problem_statement, objectives, persona, video_ids, image_ids}
+    scenario_data: dict | None = (
+        None  # {problem_statement, objectives, persona, video_ids, image_ids}
+    )
 
 
 class TrainingProgressEvent(GenerationProgressEvent):

@@ -52,9 +52,7 @@ async def list_test_artifacts(
         page_offset = request.page * request.page_size
 
         # Convert string eval_ids to UUIDs
-        eval_uuids = (
-            [UUID(e) for e in request.eval_ids] if request.eval_ids else None
-        )
+        eval_uuids = [UUID(e) for e in request.eval_ids] if request.eval_ids else None
         department_uuids = (
             [UUID(d) for d in request.department_ids]
             if request.department_ids
@@ -122,17 +120,13 @@ async def list_test_artifacts(
         eval_id_to_name: dict[str, str | None] = {}
 
         for row in result.items:
-            eval_name = (
-                name_map.get(row.eval_name_id) if row.eval_name_id else None
-            )
+            eval_name = name_map.get(row.eval_name_id) if row.eval_name_id else None
             eval_desc = (
                 desc_map.get(row.eval_description_id)
                 if row.eval_description_id
                 else None
             )
-            rubric_name = (
-                rubric_name_map.get(row.rubric_id) if row.rubric_id else None
-            )
+            rubric_name = rubric_name_map.get(row.rubric_id) if row.rubric_id else None
 
             total_runs = row.num_chats
             completed_runs = row.num_chats_completed
@@ -153,9 +147,7 @@ async def list_test_artifacts(
                     rubric_id=str(row.rubric_id) if row.rubric_id else None,
                     rubric_name=rubric_name,
                     created_at=(
-                        row.test_created_at.isoformat()
-                        if row.test_created_at
-                        else None
+                        row.test_created_at.isoformat() if row.test_created_at else None
                     ),
                     archived=row.archived,
                     status=compute_test_status(row.num_chats, row.num_chats_completed),

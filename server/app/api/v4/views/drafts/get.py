@@ -40,7 +40,9 @@ async def get_draft_resources_internal(
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
         if cached:
-            return [DraftResourcesViewItem.model_validate(item) for item in cached["items"]]
+            return [
+                DraftResourcesViewItem.model_validate(item) for item in cached["items"]
+            ]
 
     params = GetDraftResourcesViewSqlParams(draft_ids=draft_ids)
     result = await execute_sql_typed(conn, SQL_PATH, params=params)
@@ -81,32 +83,52 @@ async def get_draft_resources_internal(
                     personas_group_id=item.personas_group_id,
                     scenarios_group_id=item.scenarios_group_id,
                     simulations_group_id=item.simulations_group_id,
-                    resource_types=[str(t) for t in item.resource_types] if item.resource_types else [],
+                    resource_types=[str(t) for t in item.resource_types]
+                    if item.resource_types
+                    else [],
                     resource_ids=list(item.resource_ids) if item.resource_ids else [],
                     name_ids=list(item.name_ids) if item.name_ids else [],
-                    description_ids=list(item.description_ids) if item.description_ids else [],
+                    description_ids=list(item.description_ids)
+                    if item.description_ids
+                    else [],
                     flag_ids=list(item.flag_ids) if item.flag_ids else [],
                     color_ids=list(item.color_ids) if item.color_ids else [],
                     icon_ids=list(item.icon_ids) if item.icon_ids else [],
                     auth_ids=list(item.auth_ids) if item.auth_ids else [],
                     tool_ids=list(item.tool_ids) if item.tool_ids else [],
-                    instruction_ids=list(item.instruction_ids) if item.instruction_ids else [],
+                    instruction_ids=list(item.instruction_ids)
+                    if item.instruction_ids
+                    else [],
                     document_ids=list(item.document_ids) if item.document_ids else [],
-                    department_ids=list(item.department_ids) if item.department_ids else [],
-                    parameter_ids=list(item.parameter_ids) if item.parameter_ids else [],
-                    parameter_field_ids=list(item.parameter_field_ids) if item.parameter_field_ids else [],
+                    department_ids=list(item.department_ids)
+                    if item.department_ids
+                    else [],
+                    parameter_ids=list(item.parameter_ids)
+                    if item.parameter_ids
+                    else [],
+                    parameter_field_ids=list(item.parameter_field_ids)
+                    if item.parameter_field_ids
+                    else [],
                     field_ids=list(item.field_ids) if item.field_ids else [],
                     example_ids=list(item.example_ids) if item.example_ids else [],
                     question_ids=list(item.question_ids) if item.question_ids else [],
                     template_ids=list(item.template_ids) if item.template_ids else [],
                     text_ids=list(item.text_ids) if item.text_ids else [],
-                    run_rubric_ids=list(item.run_rubric_ids) if item.run_rubric_ids else [],
-                    group_rubric_ids=list(item.group_rubric_ids) if item.group_rubric_ids else [],
+                    run_rubric_ids=list(item.run_rubric_ids)
+                    if item.run_rubric_ids
+                    else [],
+                    group_rubric_ids=list(item.group_rubric_ids)
+                    if item.group_rubric_ids
+                    else [],
                     binding_ids=list(item.binding_ids) if item.binding_ids else [],
-                    conditional_parameter_ids=list(item.conditional_parameter_ids) if item.conditional_parameter_ids else [],
+                    conditional_parameter_ids=list(item.conditional_parameter_ids)
+                    if item.conditional_parameter_ids
+                    else [],
                     persona_ids=list(item.persona_ids) if item.persona_ids else [],
                     scenario_ids=list(item.scenario_ids) if item.scenario_ids else [],
-                    simulation_ids=list(item.simulation_ids) if item.simulation_ids else [],
+                    simulation_ids=list(item.simulation_ids)
+                    if item.simulation_ids
+                    else [],
                 )
             )
 

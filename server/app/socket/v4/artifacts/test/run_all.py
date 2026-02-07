@@ -99,7 +99,8 @@ async def _test_run_all_impl(
                 attempt_exists=getattr(context_row, "attempt_exists", False) or False,
                 group_id=getattr(context_row, "group_id", None),
                 group_exists=getattr(context_row, "group_exists", False) or False,
-                has_pending_runs=getattr(context_row, "has_pending_runs", False) or False,
+                has_pending_runs=getattr(context_row, "has_pending_runs", False)
+                or False,
                 next_run_resource_id=getattr(context_row, "next_run_resource_id", None),
                 total_runs=getattr(context_row, "total_runs", 0) or 0,
                 completed_runs=getattr(context_row, "completed_runs", 0) or 0,

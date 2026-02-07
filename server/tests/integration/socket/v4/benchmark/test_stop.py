@@ -4,8 +4,8 @@ import asyncpg  # type: ignore
 import pytest
 from tests.integration.socket.v4.conftest import MockSocketIO
 
-from app.socket.v4.artifacts.test.control import test_stop
 from app.infra.v4.websocket.set_socket_owner import set_socket_owner
+from app.socket.v4.artifacts.test.control import test_stop
 
 pytestmark = pytest.mark.asyncio
 

@@ -67,7 +67,9 @@ async def _generate_tool_impl(
                     artifact_type="tool",
                     message="No agent configured for requested resources",
                     resource_id=str(data.tool_id) if data.tool_id else None,
-                    group_id=str(extract_group_id(result)) if extract_group_id(result) else None,
+                    group_id=str(extract_group_id(result))
+                    if extract_group_id(result)
+                    else None,
                     resource_type=(data.resource_types or ["tool"])[0],
                 )
                 return

@@ -12,7 +12,10 @@ from app.infra.v4.activity.audit import audit_activity
 from app.main import get_db
 from app.utils.cache.invalidate_tags import invalidate_tags
 
-MV_SQL_PATH = Path(__file__).parent.parent.parent.parent.parent / "sql/v4/views/simulation/simulation_chats_view.sql"
+MV_SQL_PATH = (
+    Path(__file__).parent.parent.parent.parent.parent
+    / "sql/v4/views/simulation/simulation_chats_view.sql"
+)
 
 router = APIRouter()
 

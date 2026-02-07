@@ -52,6 +52,59 @@ COHORT_RESOURCES: set[str] = {
 
 # Multi-resource agent definitions for cohort
 COHORT_BASIC_RESOURCES: set[str] = {"names", "descriptions", "flags", "departments"}
+COHORT_SIMULATIONS_RESOURCES: set[str] = {"simulations", "simulation_positions"}
+
+# ========== Domain Metadata - for client-side display in modals ==========
+
+COHORT_DOMAIN_METADATA: dict[str, dict[str, str | bool]] = {
+    "names": {
+        "name": "Name",
+        "description": "The cohort display name",
+        "icon": "type",
+    },
+    "descriptions": {
+        "name": "Description",
+        "description": "A description of the cohort",
+        "icon": "align-left",
+    },
+    "flags": {
+        "name": "Status",
+        "description": "Active/inactive status flag",
+        "icon": "flag",
+    },
+    "departments": {
+        "name": "Departments",
+        "description": "Departments assigned to cohort",
+        "icon": "building-2",
+    },
+    "simulations": {
+        "name": "Simulations",
+        "description": "Simulations included in cohort",
+        "icon": "play-circle",
+    },
+    "simulation_positions": {
+        "name": "Simulation Order",
+        "description": "Order of simulations",
+        "icon": "list-ordered",
+    },
+}
+
+
+def build_domain_data(
+    domain_ids: dict[str, UUID | None],
+    show_flags: dict[str, bool],
+    required_flags: dict[str, bool],
+) -> list:
+    """Build rich domain metadata for client display.
+
+    Delegates to shared build_domain_data with cohort-specific metadata.
+    """
+    from app.api.v4.types import build_domain_data as _build_domain_data
+
+    return _build_domain_data(
+        domain_ids, show_flags, required_flags, COHORT_DOMAIN_METADATA
+    )
+
 
 # =============================================================================
 # Core Permission Functions

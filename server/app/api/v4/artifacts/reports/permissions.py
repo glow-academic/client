@@ -569,9 +569,11 @@ def compute_history_section(
     rows: list[ReportsHistoryRow] = []
     for attempt in sorted(
         attempts,
-        key=lambda row: row.attempt_created_at
-        if row.attempt_created_at is not None
-        else datetime.min,
+        key=lambda row: (
+            row.attempt_created_at
+            if row.attempt_created_at is not None
+            else datetime.min
+        ),
         reverse=True,
     ):
         rows.append(

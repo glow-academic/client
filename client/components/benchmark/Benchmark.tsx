@@ -98,7 +98,7 @@ export default function Benchmark({
       const { attemptId } = event.detail;
       // Server-side Redis cache is already invalidated by the WebSocket handler
       router.refresh(); // Refresh current page data so it's updated when user returns
-      router.push(`/benchmark/a/${attemptId}`);
+      router.push(`/benchmark/t/${attemptId}`);
     };
 
     // Listen for eval errors to reset loading state

@@ -45,7 +45,8 @@ async def get_voices_internal(
         cached = await get_cached(cache_key_val)
         if cached:
             return [
-                QGetVoicesV4Item.model_validate(item) for item in cached.get("items", [])
+                QGetVoicesV4Item.model_validate(item)
+                for item in cached.get("items", [])
             ]
 
     params = GetVoicesSqlParams(ids=ids)

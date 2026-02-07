@@ -53,9 +53,7 @@ async def activity_refresh(
             )
 
         request_dict = request.model_dump(mode="json")
-        params = RefreshMvSessionsSqlParams(
-            **request_dict, profile_id=profile_id
-        )  # type: ignore[arg-type]
+        params = RefreshMvSessionsSqlParams(**request_dict, profile_id=profile_id)  # type: ignore[arg-type]
         sql_params = params.to_tuple()
 
         result = cast(
@@ -64,9 +62,7 @@ async def activity_refresh(
         )
 
         if result.actor_name:
-            audit_set(
-                http_request, actor={"name": result.actor_name, "id": profile_id}
-            )
+            audit_set(http_request, actor={"name": result.actor_name, "id": profile_id})
 
         api_response = RefreshMvSessionsApiResponse.model_validate(result.model_dump())
 

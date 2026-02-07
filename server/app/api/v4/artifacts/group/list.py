@@ -15,7 +15,9 @@ from app.api.v4.artifacts.group.types import (
     GetGroupListResponse,
     GroupListItem,
 )
-from app.api.v4.views.pricing.group_summary.get import get_pricing_group_summary_internal
+from app.api.v4.views.pricing.group_summary.get import (
+    get_pricing_group_summary_internal,
+)
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
@@ -102,7 +104,11 @@ async def get_group_list_internal(
         conn, "model_artifact", "model_id", "model_names_junction", list(all_model_ids)
     )
     profile_meta = await _fetch_names_by_ids(
-        conn, "profile_artifact", "profile_id", "profile_names_junction", list(all_profile_ids)
+        conn,
+        "profile_artifact",
+        "profile_id",
+        "profile_names_junction",
+        list(all_profile_ids),
     )
 
     # Transform view items to artifact items with hydration
@@ -122,7 +128,9 @@ async def get_group_list_internal(
             ]
             model_names = model_names if model_names else None
 
-        profile_name = profile_meta.get(view_item.profile_id) if view_item.profile_id else None
+        profile_name = (
+            profile_meta.get(view_item.profile_id) if view_item.profile_id else None
+        )
 
         items.append(
             GroupListItem(
@@ -168,9 +176,7 @@ async def get_group_list_internal(
     "/list",
     response_model=GetGroupListResponse,
     dependencies=[
-        audit_activity(
-            "artifacts.group.list", "{{ actor.name }} fetched group list"
-        )
+        audit_activity("artifacts.group.list", "{{ actor.name }} fetched group list")
     ],
 )
 async def list_groups(

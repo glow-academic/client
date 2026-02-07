@@ -45,7 +45,8 @@ async def get_values_internal(
         cached = await get_cached(cache_key_val)
         if cached:
             return [
-                QGetValuesV4Item.model_validate(item) for item in cached.get("items", [])
+                QGetValuesV4Item.model_validate(item)
+                for item in cached.get("items", [])
             ]
 
     params = GetValuesSqlParams(ids=ids)

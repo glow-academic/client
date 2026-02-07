@@ -284,7 +284,9 @@ async def get_pricing_analytics_internal(
     "/get",
     response_model=GetPricingAnalyticsResponse,
     dependencies=[
-        audit_activity("analytics.pricing.get", "{{ actor.name }} viewed pricing analytics")
+        audit_activity(
+            "analytics.pricing.get", "{{ actor.name }} viewed pricing analytics"
+        )
     ],
 )
 async def get_pricing_analytics(

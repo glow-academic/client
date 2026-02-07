@@ -26,7 +26,6 @@ from app.sql.types import (
     QGetParametersV4Item,
 )
 
-
 # =============================================================================
 # Client-to-Server Events (persona_generate)
 # =============================================================================
@@ -40,7 +39,9 @@ class GeneratePersonaPayload(GetPersonaApiRequest):
     """
 
     # Generation-specific fields - domain-based API
-    domain_ids: list[UUID]  # Required: which domains to generate (client passes these through)
+    domain_ids: list[
+        UUID
+    ]  # Required: which domains to generate (client passes these through)
     user_instructions: list[str] | None = None  # Optional: user instructions
 
     # Note: current selections are derived from draft-backed API response.

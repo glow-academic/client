@@ -18,41 +18,30 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useProfile } from "@/contexts/profile-context";
-import type { InputOf, OutputOf } from "@/lib/api/types";
+import type { OutputOf } from "@/lib/api/types";
 import { AlertCircle, CheckCircle2, Clock, Play, Square, PlaySquare } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { AgentConfigCards } from "./AgentConfigCards";
-import type {
-  AgentsListOut,
-} from "@/app/(main)/benchmark/a/[attemptId]/page";
 
-type EvalAttemptFullOut = OutputOf<"/api/v4/attempts/benchmark/get", "post">;
-type PatchAttemptDraftIn = InputOf<"/api/v4/attempts/draft", "patch">;
-type PatchAttemptDraftOut = OutputOf<"/api/v4/attempts/draft", "patch">;
+type TestArtifactOut = OutputOf<"/api/v4/artifacts/test/get", "post">;
+
+type RunItem = NonNullable<TestArtifactOut["runs"]>[number];
 
 export interface EvalAttemptStatusProps {
   attemptId: string;
-  attemptData: EvalAttemptFullOut;
-  agentsList: AgentsListOut;
-  patchAttemptDraftAction?: (input: PatchAttemptDraftIn) => Promise<PatchAttemptDraftOut>;
+  attemptData: TestArtifactOut;
 }
 
 export default function EvalAttemptStatus({
   attemptId,
   attemptData,
-  agentsList,
-  patchAttemptDraftAction,
 }: EvalAttemptStatusProps) {
   const { socket, isConnected, profile } = useProfile();
-  const [runs, setRuns] = useState(attemptData.runs || []);
+  const [runs, setRuns] = useState<RunItem[]>(attemptData.runs || []);
   const [startingRunIds, setStartingRunIds] = useState<Set<string>>(new Set());
   const [stoppingRunIds, setStoppingRunIds] = useState<Set<string>>(new Set());
-  
-  // Attempt and eval info
-  const attempt = attemptData.attempt ?? null;
-  const evalInfo = attemptData.eval ?? null;
-  const [infiniteMode] = useState(attempt?.infinite_mode || false);
+
+  const [infiniteMode] = useState(attemptData.infinite_mode || false);
 
     // Join benchmark room on mount for real-time updates
   useEffect(() => {
@@ -76,7 +65,6 @@ export default function EvalAttemptStatus({
             return {
               ...run,
               status: data.status || run.status,
-              test_id: data.test_id ?? run.test_id ?? null,
             };
           }
           return run;
@@ -98,7 +86,6 @@ export default function EvalAttemptStatus({
             return {
               ...run,
               status: "completed",
-              test_id: data.test_id,
             };
           }
           return run;
@@ -254,9 +241,6 @@ export default function EvalAttemptStatus({
       const profileIdForEmit =
         profile?.role === "guest" ? "" : String(profile!.id);
 
-      // TODO: These individual run start/stop events may need to be removed
-      // The new benchmark architecture orchestrates runs via benchmark_start/next/end
-      // For now, keeping for backward compatibility but updating event names
       socket.emit("benchmark_run_start", {
         attempt_id: attemptId,
         run_id: runId,
@@ -330,72 +314,57 @@ export default function EvalAttemptStatus({
     [runs]
   );
 
-  // Note: Update functionality removed - use websocket events instead if needed
-
   return (
     <div className="space-y-6">
       {/* Eval Info Card */}
-      {evalInfo && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{evalInfo.name ?? "Unknown Eval"}</CardTitle>
-            <p className="text-sm text-muted-foreground mt-2">
-              {evalInfo.description ?? ""}
-            </p>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-4 text-sm">
-              <div>
-                <span className="text-muted-foreground">Rubric: </span>
-                <span className="font-medium">{evalInfo.rubric_name ?? "N/A"}</span>
-              </div>
-              {statusSummary && (
-                <>
-                  <div>
-                    <span className="text-muted-foreground">Total Runs: </span>
-                    <span className="font-medium">{statusSummary.total ?? 0}</span>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Completed: </span>
-                    <span className="font-medium text-green-600">
-                      {statusSummary.completed ?? 0}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">In Progress: </span>
-                    <span className="font-medium text-blue-600">
-                      {statusSummary.in_progress ?? 0}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Not Started: </span>
-                    <span className="font-medium text-gray-600">
-                      {statusSummary.not_started ?? 0}
-                    </span>
-                  </div>
-                </>
-              )}
-              {infiniteMode && (
-                <div>
-                  <span className="text-muted-foreground">Infinite Mode: </span>
-                  <Badge variant="secondary">Enabled</Badge>
-                </div>
-              )}
+      <Card>
+        <CardHeader>
+          <CardTitle>{attemptData.eval_name ?? "Unknown Eval"}</CardTitle>
+          <p className="text-sm text-muted-foreground mt-2">
+            {attemptData.eval_description ?? ""}
+          </p>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-4 text-sm">
+            <div>
+              <span className="text-muted-foreground">Rubric: </span>
+              <span className="font-medium">{attemptData.rubric_name ?? "N/A"}</span>
             </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Agent Configuration Cards */}
-      {evalInfo && (
-        <AgentConfigCards
-          attemptId={attemptId}
-          evalInfo={evalInfo}
-          agentsList={agentsList}
-          isDynamic={evalInfo.dynamic ?? false}
-          {...(patchAttemptDraftAction ? { patchAttemptDraftAction } : {})}
-        />
-      )}
+            {statusSummary && (
+              <>
+                <div>
+                  <span className="text-muted-foreground">Total Runs: </span>
+                  <span className="font-medium">{statusSummary.total ?? 0}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Completed: </span>
+                  <span className="font-medium text-green-600">
+                    {statusSummary.completed ?? 0}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">In Progress: </span>
+                  <span className="font-medium text-blue-600">
+                    {statusSummary.in_progress ?? 0}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Not Started: </span>
+                  <span className="font-medium text-gray-600">
+                    {statusSummary.not_started ?? 0}
+                  </span>
+                </div>
+              </>
+            )}
+            {infiniteMode && (
+              <div>
+                <span className="text-muted-foreground">Infinite Mode: </span>
+                <Badge variant="secondary">Enabled</Badge>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Runs Table */}
       <Card>
@@ -421,7 +390,7 @@ export default function EvalAttemptStatus({
               <TableRow>
                 <TableHead>Run ID</TableHead>
                 <TableHead>Model</TableHead>
-                <TableHead>Agent/Persona</TableHead>
+                <TableHead>Agent</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Score</TableHead>
                 <TableHead>Actions</TableHead>
@@ -436,17 +405,15 @@ export default function EvalAttemptStatus({
                 </TableRow>
               ) : (
                 runs.map((run) => (
-                  <TableRow key={run.run_id}>
+                  <TableRow key={run.chat_id}>
                     <TableCell className="font-mono text-xs">
                       {run.run_id ? `${run.run_id.substring(0, 8)}...` : "N/A"}
                     </TableCell>
                     <TableCell>{run.model_name || "N/A"}</TableCell>
-                    <TableCell>
-                      {run.agent_name || run.persona_name || "N/A"}
-                    </TableCell>
+                    <TableCell>{run.agent_name || "N/A"}</TableCell>
                     <TableCell>{getStatusBadge(run.status || "")}</TableCell>
                     <TableCell>
-                      {run.status === "completed" && run.grade_score !== null
+                      {run.status === "completed" && run.grade_score !== null && run.grade_score !== undefined
                         ? `${run.grade_score}${run.grade_passed ? " ✓" : ""}`
                         : "-"}
                     </TableCell>
@@ -488,4 +455,3 @@ export default function EvalAttemptStatus({
     </div>
   );
 }
-

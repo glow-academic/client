@@ -1,13 +1,13 @@
 """Types for pricing artifact."""
 
-from datetime import datetime, date
+from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
 from app.api.v4.artifacts.types import FilterOption
-from app.api.v4.views.pricing.group_summary.types import PricingGroupSummaryItem
 from app.api.v4.views.pricing.daily.types import PricingDailyItem
+from app.api.v4.views.pricing.group_summary.types import PricingGroupSummaryItem
 
 
 class PricingRequest(BaseModel):

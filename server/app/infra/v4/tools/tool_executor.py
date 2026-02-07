@@ -69,10 +69,12 @@ async def execute_tool_call(
         )
 
         if not tool_result or not getattr(tool_result, "tool_id", None):
-            return json.dumps({
-                "success": False,
-                "message": f"Tool not found: {tool_name}",
-            })
+            return json.dumps(
+                {
+                    "success": False,
+                    "message": f"Tool not found: {tool_name}",
+                }
+            )
 
         tool_id = tool_result.tool_id
 
@@ -108,10 +110,12 @@ async def execute_tool_call(
 
     except Exception as e:
         logger.exception(f"Error executing tool {tool_name}: {e}")
-        return json.dumps({
-            "success": False,
-            "message": f"Tool execution error: {str(e)}",
-        })
+        return json.dumps(
+            {
+                "success": False,
+                "message": f"Tool execution error: {str(e)}",
+            }
+        )
 
 
 async def _execute_entry_tool(
@@ -147,10 +151,12 @@ async def _execute_entry_tool(
         )
 
         if not mapped_values:
-            return json.dumps({
-                "success": False,
-                "message": f"No values to insert for {tool_name}. Check tool configuration.",
-            })
+            return json.dumps(
+                {
+                    "success": False,
+                    "message": f"No values to insert for {tool_name}. Check tool configuration.",
+                }
+            )
 
         call_id = await _create_tool_call_record(
             conn=conn,
@@ -180,32 +186,40 @@ async def _execute_entry_tool(
             entry_id = str(entry_row.id)
             already_exists = bool(entry_row.already_exists)
             if already_exists:
-                return json.dumps({
+                return json.dumps(
+                    {
+                        "success": True,
+                        "message": f"Entry already exists, using existing {entry_type} entry",
+                        "entry_id": entry_id,
+                        "entry_type": entry_type,
+                        "call_id": str(call_id) if call_id else None,
+                    }
+                )
+            return json.dumps(
+                {
                     "success": True,
-                    "message": f"Entry already exists, using existing {entry_type} entry",
+                    "message": f"Successfully created {entry_type} entry",
                     "entry_id": entry_id,
                     "entry_type": entry_type,
                     "call_id": str(call_id) if call_id else None,
-                })
-            return json.dumps({
-                "success": True,
-                "message": f"Successfully created {entry_type} entry",
-                "entry_id": entry_id,
-                "entry_type": entry_type,
-                "call_id": str(call_id) if call_id else None,
-            })
+                }
+            )
         else:
-            return json.dumps({
-                "success": False,
-                "message": f"Failed to create {entry_type} entry",
-            })
+            return json.dumps(
+                {
+                    "success": False,
+                    "message": f"Failed to create {entry_type} entry",
+                }
+            )
 
     except Exception as e:
         logger.exception(f"Error executing entry tool {tool_name}: {e}")
-        return json.dumps({
-            "success": False,
-            "message": f"Entry tool execution error: {str(e)}",
-        })
+        return json.dumps(
+            {
+                "success": False,
+                "message": f"Entry tool execution error: {str(e)}",
+            }
+        )
 
 
 async def _execute_resource_tool(
@@ -249,10 +263,12 @@ async def _execute_resource_tool(
         )
 
         if not resource_result or not getattr(resource_result, "resource_type", None):
-            return json.dumps({
-                "success": False,
-                "message": f"No resource_type configured for tool: {tool_name}",
-            })
+            return json.dumps(
+                {
+                    "success": False,
+                    "message": f"No resource_type configured for tool: {tool_name}",
+                }
+            )
 
         resource_type = resource_result.resource_type
 
@@ -275,10 +291,12 @@ async def _execute_resource_tool(
         if is_creatable:
             # CREATE tool: INSERT new record
             if not mapped_values:
-                return json.dumps({
-                    "success": False,
-                    "message": f"No values to insert for {tool_name}. Check tool configuration.",
-                })
+                return json.dumps(
+                    {
+                        "success": False,
+                        "message": f"No values to insert for {tool_name}. Check tool configuration.",
+                    }
+                )
 
             create_resource_sql = load_sql(
                 "app/sql/v4/queries/resources/create_resource_record_complete.sql"
@@ -299,25 +317,31 @@ async def _execute_resource_tool(
                 already_exists = resource_row.get("already_exists", False)
                 if already_exists:
                     # Resource already existed, return it as a "use" action
-                    return json.dumps({
-                        "success": True,
-                        "message": f"Resource already exists, using existing {resource_type} entry",
-                        "resource_id": resource_id,
-                    })
+                    return json.dumps(
+                        {
+                            "success": True,
+                            "message": f"Resource already exists, using existing {resource_type} entry",
+                            "resource_id": resource_id,
+                        }
+                    )
             else:
-                return json.dumps({
-                    "success": False,
-                    "message": f"Failed to create {resource_type} resource",
-                })
+                return json.dumps(
+                    {
+                        "success": False,
+                        "message": f"Failed to create {resource_type} resource",
+                    }
+                )
 
         else:
             # USE tool: SELECT existing record by ID
             existing_id = mapped_values.get("id")
             if not existing_id:
-                return json.dumps({
-                    "success": False,
-                    "message": f"Use tool {tool_name} requires an id argument. Please provide a valid {resource_type} id.",
-                })
+                return json.dumps(
+                    {
+                        "success": False,
+                        "message": f"Use tool {tool_name} requires an id argument. Please provide a valid {resource_type} id.",
+                    }
+                )
 
             # Validate the resource exists
             table_name = f"{resource_type}_resource"
@@ -325,34 +349,42 @@ async def _execute_resource_tool(
                 check_sql = f"SELECT id FROM {table_name} WHERE id = $1"
                 existing_row = await conn.fetchrow(check_sql, uuid.UUID(existing_id))
             except ValueError:
-                return json.dumps({
-                    "success": False,
-                    "message": f"Invalid id format: {existing_id}. Expected a valid UUID.",
-                })
+                return json.dumps(
+                    {
+                        "success": False,
+                        "message": f"Invalid id format: {existing_id}. Expected a valid UUID.",
+                    }
+                )
 
             if not existing_row:
-                return json.dumps({
-                    "success": False,
-                    "message": f"Resource not found: {resource_type} with id {existing_id}. Please check the available resources and try again.",
-                })
+                return json.dumps(
+                    {
+                        "success": False,
+                        "message": f"Resource not found: {resource_type} with id {existing_id}. Please check the available resources and try again.",
+                    }
+                )
 
             resource_id = existing_id
 
         # Success!
         action = "created" if is_creatable else "used"
-        return json.dumps({
-            "success": True,
-            "message": f"Successfully {action} {resource_type} entry",
-            "resource_id": resource_id,
-            "call_id": str(call_id) if call_id else None,
-        })
+        return json.dumps(
+            {
+                "success": True,
+                "message": f"Successfully {action} {resource_type} entry",
+                "resource_id": resource_id,
+                "call_id": str(call_id) if call_id else None,
+            }
+        )
 
     except Exception as e:
         logger.exception(f"Error executing resource tool {tool_name}: {e}")
-        return json.dumps({
-            "success": False,
-            "message": f"Resource tool execution error: {str(e)}",
-        })
+        return json.dumps(
+            {
+                "success": False,
+                "message": f"Resource tool execution error: {str(e)}",
+            }
+        )
 
 
 async def _create_tool_call_record(

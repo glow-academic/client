@@ -32,13 +32,24 @@ from app.api.v4.artifacts.simulation.permissions import (
     compute_show_scenarios,
     has_access,
 )
+from app.api.v4.artifacts.simulation.types import (
+    GetSimulationAccessSqlParams,
+    GetSimulationAccessSqlRow,
+    GetSimulationApiRequest,
+    GetSimulationApiResponse,
+    GetSimulationIdsSqlParams,
+    GetSimulationIdsSqlRow,
+    SimulationDepartment,
+    SimulationFlagConfig,
+    SimulationScenario,
+)
 from app.api.v4.permissions import select_agents_for_artifact
-from app.api.v4.types import CandidateAgent
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.departments.search import search_departments_internal
 from app.api.v4.resources.descriptions.get import get_descriptions_internal
 from app.api.v4.resources.descriptions.search import search_descriptions_internal
 from app.api.v4.resources.flags.get import get_flags_internal
+from app.api.v4.resources.flags.search import search_flags_internal
 from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.names.search import search_names_internal
 from app.api.v4.resources.rubrics.get import get_rubrics_internal
@@ -53,27 +64,20 @@ from app.api.v4.resources.scenario_positions.search import (
     search_scenario_positions_internal,
 )
 from app.api.v4.resources.scenario_rubrics.get import get_scenario_rubrics_internal
-from app.api.v4.resources.scenario_rubrics.search import search_scenario_rubrics_internal
-from app.api.v4.resources.scenario_time_limits.get import get_scenario_time_limits_internal
+from app.api.v4.resources.scenario_rubrics.search import (
+    search_scenario_rubrics_internal,
+)
+from app.api.v4.resources.scenario_time_limits.get import (
+    get_scenario_time_limits_internal,
+)
 from app.api.v4.resources.scenario_time_limits.search import (
     search_scenario_time_limits_internal,
 )
 from app.api.v4.resources.scenarios.search import search_scenarios_internal
+from app.api.v4.types import CandidateAgent
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
-from app.api.v4.artifacts.simulation.types import (
-    GetSimulationAccessSqlParams,
-    GetSimulationAccessSqlRow,
-    GetSimulationApiRequest,
-    GetSimulationApiResponse,
-    GetSimulationIdsSqlParams,
-    GetSimulationIdsSqlRow,
-    SimulationDepartment,
-    SimulationFlagConfig,
-    SimulationScenario,
-)
-from app.api.v4.resources.flags.search import search_flags_internal
 from app.sql.types import load_sql_query
 from app.utils.sql_helper import execute_sql_typed
 
@@ -113,7 +117,9 @@ def get_simulation_websocket(result: GetSimulationApiResponse) -> dict[str, Any]
         "scenario_time_limits_agent_id",
         "general_agent_id",
     )
-    return {key: payload.get(key) for key in context_keys if payload.get(key) is not None}
+    return {
+        key: payload.get(key) for key in context_keys if payload.get(key) is not None
+    }
 
 
 def get_simulation_client(result: GetSimulationApiResponse) -> GetSimulationApiResponse:
@@ -418,9 +424,7 @@ async def get_simulation(
             async with pool.acquire() as c:
                 # Always fetch ALL available rubrics (like parameters in Persona)
                 # The selection is tracked via scenario_rubrics junction
-                return await get_rubrics_internal(
-                    c, None, bypass_cache
-                )
+                return await get_rubrics_internal(c, None, bypass_cache)
 
         # Parallel fetch all resources
         (
@@ -596,11 +600,21 @@ async def get_simulation(
         show_scenarios = compute_show_scenarios(len(scenarios))
 
         # Show scenario-related fields when scenarios exist or are available
-        show_scenario_flags = bool(effective_scenario_ids or scenario_flags or scenarios)
-        show_scenario_personas = bool(effective_scenario_ids or scenario_personas or scenarios)
-        show_scenario_positions = bool(effective_scenario_ids or scenario_positions or scenarios)
-        show_scenario_rubrics = bool(effective_scenario_ids or scenario_rubrics or scenarios)
-        show_scenario_time_limits = bool(effective_scenario_ids or scenario_time_limits or scenarios)
+        show_scenario_flags = bool(
+            effective_scenario_ids or scenario_flags or scenarios
+        )
+        show_scenario_personas = bool(
+            effective_scenario_ids or scenario_personas or scenarios
+        )
+        show_scenario_positions = bool(
+            effective_scenario_ids or scenario_positions or scenarios
+        )
+        show_scenario_rubrics = bool(
+            effective_scenario_ids or scenario_rubrics or scenarios
+        )
+        show_scenario_time_limits = bool(
+            effective_scenario_ids or scenario_time_limits or scenarios
+        )
 
         # Set audit context
         if access_result.actor_name:
@@ -687,7 +701,9 @@ async def get_simulation(
             scenario_flags=[_to_dict(sf) for sf in scenario_flags],
             # Scenario positions
             scenario_position_ids=ids_result.scenario_position_ids or [],
-            scenario_position_resources=[_to_dict(sp) for sp in scenario_positions_selected],
+            scenario_position_resources=[
+                _to_dict(sp) for sp in scenario_positions_selected
+            ],
             show_scenario_positions=show_scenario_positions,
             scenario_positions_agent_id=scenario_positions_agent_id,
             scenario_positions_required=False,
@@ -695,7 +711,9 @@ async def get_simulation(
             scenario_positions=[_to_dict(sp) for sp in scenario_positions],
             # Scenario rubrics
             scenario_rubric_ids=ids_result.scenario_rubric_ids or [],
-            scenario_rubric_resources=[_to_dict(sr) for sr in scenario_rubrics_selected],
+            scenario_rubric_resources=[
+                _to_dict(sr) for sr in scenario_rubrics_selected
+            ],
             show_scenario_rubrics=show_scenario_rubrics,
             scenario_rubrics_agent_id=scenario_rubrics_agent_id,
             scenario_rubrics_required=True,
@@ -704,7 +722,9 @@ async def get_simulation(
             rubrics=[_to_dict(r) for r in rubrics],
             # Scenario personas
             scenario_persona_ids=ids_result.scenario_persona_ids or [],
-            scenario_persona_resources=[_to_dict(sp) for sp in scenario_personas_selected],
+            scenario_persona_resources=[
+                _to_dict(sp) for sp in scenario_personas_selected
+            ],
             show_scenario_personas=show_scenario_personas,
             scenario_personas_agent_id=scenario_personas_agent_id,
             scenario_personas_required=False,

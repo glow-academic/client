@@ -7,9 +7,9 @@ import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.views.health.metrics_hourly.types import (
-    HealthMetricsHourlyItem,
     GetHealthMetricsHourlyRequest,
     GetHealthMetricsHourlyResponse,
+    HealthMetricsHourlyItem,
 )
 from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
@@ -79,12 +79,24 @@ async def get_health_metrics_hourly_internal(
         HealthMetricsHourlyItem(
             date_hour=row["date_hour"],
             sample_count=row["sample_count"] or 0,
-            avg_cpu_percent=float(row["avg_cpu_percent"]) if row["avg_cpu_percent"] else 0.0,
-            min_cpu_percent=float(row["min_cpu_percent"]) if row["min_cpu_percent"] else 0.0,
-            max_cpu_percent=float(row["max_cpu_percent"]) if row["max_cpu_percent"] else 0.0,
-            avg_latency_ms=float(row["avg_latency_ms"]) if row["avg_latency_ms"] else 0.0,
-            min_latency_ms=float(row["min_latency_ms"]) if row["min_latency_ms"] else 0.0,
-            max_latency_ms=float(row["max_latency_ms"]) if row["max_latency_ms"] else 0.0,
+            avg_cpu_percent=float(row["avg_cpu_percent"])
+            if row["avg_cpu_percent"]
+            else 0.0,
+            min_cpu_percent=float(row["min_cpu_percent"])
+            if row["min_cpu_percent"]
+            else 0.0,
+            max_cpu_percent=float(row["max_cpu_percent"])
+            if row["max_cpu_percent"]
+            else 0.0,
+            avg_latency_ms=float(row["avg_latency_ms"])
+            if row["avg_latency_ms"]
+            else 0.0,
+            min_latency_ms=float(row["min_latency_ms"])
+            if row["min_latency_ms"]
+            else 0.0,
+            max_latency_ms=float(row["max_latency_ms"])
+            if row["max_latency_ms"]
+            else 0.0,
             avg_memory_bytes=row["avg_memory_bytes"] or 0,
             min_memory_bytes=row["min_memory_bytes"] or 0,
             max_memory_bytes=row["max_memory_bytes"] or 0,

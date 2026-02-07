@@ -1,14 +1,18 @@
-"""Cohort get endpoint - Two-pass architecture.
+"""Cohort get endpoint - Two-pass architecture with three-layer BFF.
 
-This implements the refactored two-pass approach:
+This implements the refactored approach matching the persona gold standard:
 1. Query 1: Access check (user context, cohort state)
-2. Query 2: ID fetching (resource IDs, suggestions, agents)
+2. Query 2: ID fetching (resource IDs, suggestions, agents, domain IDs, tool IDs)
 3. Pass 2: Parallel resource fetching (per-resource caching)
 
-Business logic (permissions, UI flags) is computed in Python.
+Three output layers:
+- get_cohort_internal() -> CohortInternalData (shared dataclass)
+- get_cohort_websocket() -> GetCohortWebsocketResponse (minimal, for AI generation)
+- get_cohort_client() -> GetCohortApiResponse (full BFF response for HTTP/frontend)
 """
 
 import asyncio
+from dataclasses import dataclass
 from typing import Annotated, Any, cast
 from uuid import UUID
 
@@ -18,6 +22,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from app.api.v4.artifacts.cohort.permissions import (
     COHORT_BASIC_RESOURCES,
     COHORT_RESOURCES,
+    build_domain_data,
     compute_can_edit,
     compute_departments_required,
     compute_description_required,
@@ -39,18 +44,18 @@ from app.api.v4.artifacts.cohort.types import (
     CohortDescriptionResource,
     CohortFlagResource,
     CohortNameResource,
+    CohortResourceBucket,
+    CohortResources,
     CohortSimulation,
+    CohortSimulationPosition,
     GetCohortApiRequest,
     GetCohortApiResponse,
+    GetCohortWebsocketResponse,
 )
-from app.sql.types import (
-    GetCohortAccessSqlParams,
-    GetCohortAccessSqlRow,
-    GetCohortIdsSqlParams,
-    GetCohortIdsSqlRow,
+from app.api.v4.permissions import (
+    select_agents_for_artifact,
+    select_multi_resource_agent,
 )
-from app.api.v4.permissions import select_agents_for_artifact, select_multi_resource_agent
-from app.api.v4.types import CandidateAgent
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.departments.search import search_departments_internal
 from app.api.v4.resources.descriptions.get import get_descriptions_internal
@@ -64,10 +69,17 @@ from app.api.v4.resources.simulation_positions.get import (
 )
 from app.api.v4.resources.simulations.get import get_simulation_internal
 from app.api.v4.resources.simulations.search import search_simulations_internal
+from app.api.v4.types import CandidateAgent, DomainAgent
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
-from app.sql.types import load_sql_query
+from app.sql.types import (
+    GetCohortAccessSqlParams,
+    GetCohortAccessSqlRow,
+    GetCohortIdsSqlParams,
+    GetCohortIdsSqlRow,
+    load_sql_query,
+)
 from app.utils.sql_helper import execute_sql_typed
 
 # SQL paths
@@ -90,16 +102,85 @@ def _dedupe_by_id(items: list[Any], id_attr: str) -> list[Any]:
     return output
 
 
+@dataclass
+class CohortInternalData:
+    """Internal data from core cohort fetching (cacheable layer).
+
+    This dataclass contains all computed data needed by both:
+    - get_cohort_websocket() - minimal data for WebSocket handlers
+    - get_cohort_client() - full BFF response for HTTP/frontend
+    """
+
+    # Access/context
+    actor_name: str | None
+    cohort_exists: bool | None
+    can_edit: bool
+    disabled_reason: str | None
+    draft_version: int | None
+    group_id: UUID | None
+
+    # Domain mappings
+    domain_ids_map: dict[str, UUID | None]
+    agent_ids: dict[str, UUID | None]
+    domains_list: list[DomainAgent]
+
+    # Show/required flags
+    show_flags_map: dict[str, bool]
+    required_flags_map: dict[str, bool]
+
+    # Suggestions (resource -> list of suggestion IDs)
+    suggestions_map: dict[str, list[UUID]]
+
+    # Show AI generate flags (computed: domain_id exists AND agent exists)
+    show_ai_generate_map: dict[str, bool]
+    basic_show_ai_generate: bool
+    simulations_step_show_ai_generate: bool
+
+    # Domain data for modals
+    domain_data_list: list[Any]
+
+    # Resources payload
+    resources_payload: CohortResources
+
+    # Per-resource group IDs
+    resource_group_ids: dict[str, UUID | None]
+
+    # Per-resource tool IDs (from selected agents)
+    create_tool_ids_map: dict[str, UUID | None]
+    link_tool_ids_map: dict[str, UUID | None]
+
+    # Raw data for backward-compat fields in API response
+    name_id: UUID | None
+    description_id: UUID | None
+    active_flag_id: UUID | None
+    department_ids: list[UUID]
+    simulation_ids: list[UUID]
+
+    # Selected resources for API response
+    name_resource: CohortNameResource | None
+    description_resource: CohortDescriptionResource | None
+    flag_resource: CohortFlagResource | None
+    department_resources: list[CohortDepartment]
+    simulation_resources: list[CohortSimulation]
+    simulation_positions: list[CohortSimulationPosition]
+
+    # Multi-resource agent IDs (legacy)
+    basic_agent_id: UUID | None
+    general_agent_id: UUID | None
+
+
 async def get_cohort_internal(
     profile_id: UUID,
     cohort_id: UUID | None,
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
-) -> GetCohortApiResponse:
-    """Internal function to fetch cohort data using two-pass architecture.
+) -> CohortInternalData:
+    """Core data fetching layer (cacheable).
 
-    This is the core logic extracted for reuse by both the HTTP endpoint
-    and potential WebSocket generate handlers.
+    Fetches all cohort data using two-pass architecture and returns
+    a dataclass with all computed values. This is the shared layer used by:
+    - get_cohort_websocket() - minimal data for WebSocket handlers
+    - get_cohort_client() - full BFF response for HTTP/frontend
 
     Args:
         profile_id: The authenticated user's profile ID
@@ -108,12 +189,11 @@ async def get_cohort_internal(
         bypass_cache: Whether to bypass resource caching
 
     Returns:
-        GetCohortApiResponse with all cohort data
+        CohortInternalData with all computed values
 
     Raises:
         HTTPException: For validation errors (404, 403, 400)
     """
-    from app.main import get_pool
 
     # === QUERY 1: Access Check (always fresh, no cache) ===
     pool = get_pool()
@@ -136,7 +216,6 @@ async def get_cohort_internal(
         user_role = access_result.user_role
         user_department_ids = access_result.user_department_ids or []
         cohort_department_ids = access_result.cohort_department_ids or []
-        usage_count = access_result.usage_count or 0
 
         # Early validation: check cohort exists
         if cohort_id is not None:
@@ -167,13 +246,6 @@ async def get_cohort_internal(
             await execute_sql_typed(conn, QUERY2_SQL_PATH, params=query2_params),
         )
 
-    # Get tools existence flags from Query 2 (used for show_* UI flags)
-    names_has_tools = ids_result.names_has_tools or False
-    descriptions_has_tools = ids_result.descriptions_has_tools or False
-    flags_has_tools = ids_result.flags_has_tools or False
-    departments_has_tools = ids_result.departments_has_tools or False
-    simulations_has_tools = ids_result.simulations_has_tools or False
-
     # === PARSE CANDIDATE AGENTS FROM QUERY 2 AND COMPUTE AGENT IDS IN PYTHON ===
     candidate_agents = CandidateAgent.from_sql_rows(ids_result.candidate_agents)
 
@@ -188,19 +260,61 @@ async def get_cohort_internal(
         require_mcp=False,
     )
 
-    # Extract agent IDs for each resource
-    name_agent_id = agent_ids.get("names")
-    description_agent_id = agent_ids.get("descriptions")
-    flag_agent_id = agent_ids.get("flags")
-    departments_agent_id = agent_ids.get("departments")
-    simulations_agent_id = agent_ids.get("simulations")
+    # === BUILD TOOL_IDS MAPS FROM SELECTED AGENTS ===
+    create_tool_ids_map: dict[str, UUID | None] = {}
+    link_tool_ids_map: dict[str, UUID | None] = {}
 
-    # Multi-resource agent IDs
-    basic_agent_id = select_multi_resource_agent(
-        candidate_agents, COHORT_BASIC_RESOURCES, COHORT_RESOURCES, user_dept_set
+    for resource in COHORT_RESOURCES:
+        selected_agent_id = agent_ids.get(resource)
+        if selected_agent_id:
+            for candidate in candidate_agents:
+                if candidate.agent_id == selected_agent_id:
+                    create_tool_ids_map[resource] = candidate.create_tool_ids.get(
+                        resource
+                    )
+                    link_tool_ids_map[resource] = candidate.link_tool_ids.get(resource)
+                    break
+
+    # === EXTRACT DOMAIN IDS FROM QUERY 2 ===
+    domain_ids_map: dict[str, UUID | None] = {
+        "names": ids_result.names_domain_id,
+        "descriptions": ids_result.descriptions_domain_id,
+        "flags": ids_result.flags_domain_id,
+        "departments": ids_result.departments_domain_id,
+        "simulations": ids_result.simulations_domain_id,
+        "simulation_positions": ids_result.simulation_positions_domain_id,
+    }
+
+    # === COMPUTE SHOW_AI_GENERATE FLAGS ===
+    def compute_show_ai_generate(resource: str) -> bool:
+        """Returns True if domain_id exists AND agent exists for that resource."""
+        domain_id = domain_ids_map.get(resource)
+        agent_id = agent_ids.get(resource)
+        return domain_id is not None and agent_id is not None
+
+    name_show_ai_generate = compute_show_ai_generate("names")
+    description_show_ai_generate = compute_show_ai_generate("descriptions")
+    flag_show_ai_generate = compute_show_ai_generate("flags")
+    departments_show_ai_generate = compute_show_ai_generate("departments")
+    simulations_show_ai_generate = compute_show_ai_generate("simulations")
+    simulation_positions_show_ai_generate = compute_show_ai_generate(
+        "simulation_positions"
     )
-    general_agent_id = select_multi_resource_agent(
-        candidate_agents, COHORT_RESOURCES, COHORT_RESOURCES, user_dept_set
+
+    # Step-level flags
+    basic_show_ai_generate = any(
+        [
+            name_show_ai_generate,
+            description_show_ai_generate,
+            flag_show_ai_generate,
+            departments_show_ai_generate,
+        ]
+    )
+    simulations_step_show_ai_generate = any(
+        [
+            simulations_show_ai_generate,
+            simulation_positions_show_ai_generate,
+        ]
     )
 
     # === PYTHON BUSINESS LOGIC ===
@@ -208,6 +322,14 @@ async def get_cohort_internal(
     # Compute permissions
     can_edit = compute_can_edit(user_role, cohort_department_ids)
     disabled_reason = compute_disabled_reason(user_role, cohort_department_ids)
+
+    # Multi-resource agent IDs (legacy)
+    basic_agent_id = select_multi_resource_agent(
+        candidate_agents, COHORT_BASIC_RESOURCES, COHORT_RESOURCES, user_dept_set
+    )
+    general_agent_id = select_multi_resource_agent(
+        candidate_agents, COHORT_RESOURCES, COHORT_RESOURCES, user_dept_set
+    )
 
     # === PASS 2: Parallel Resource Fetching (each endpoint handles own cache) ===
 
@@ -292,7 +414,9 @@ async def get_cohort_internal(
             # Fetch each selected simulation
             selected = []
             for sim_id in simulation_ids:
-                sim = await get_simulation_internal(c, sim_id, bypass_cache=bypass_cache)
+                sim = await get_simulation_internal(
+                    c, sim_id, bypass_cache=bypass_cache
+                )
                 if sim:
                     selected.append(sim)
             # Search for suggestions
@@ -394,17 +518,11 @@ async def get_cohort_internal(
         (d for d in descriptions if d.id == ids_result.description_id),
         None,
     )
-    flag_resource = next(
-        (f for f in flags if f.id == ids_result.active_flag_id), None
-    )
+    flag_resource = next((f for f in flags if f.id == ids_result.active_flag_id), None)
 
     # Selected multi-select resources
-    department_resources = [
-        d for d in departments if d.department_id in department_ids
-    ]
-    simulation_resources = [
-        s for s in simulations if s.simulation_id in simulation_ids
-    ]
+    department_resources = [d for d in departments if d.department_id in department_ids]
+    simulation_resources = [s for s in simulations if s.simulation_id in simulation_ids]
 
     # Suggestion IDs
     name_suggestions_ids = [n.id for n in names_suggestions]
@@ -422,97 +540,312 @@ async def get_cohort_internal(
         len(simulation_positions or [])
     )
 
-    # Convert flags to CohortFlagResource format
     # Validation for new mode
     if cohort_id is None:
-        # New mode: check for valid departments
         if not departments:
             raise HTTPException(
                 status_code=400, detail="No accessible departments found for user"
             )
 
-    # === Construct Response ===
-    return GetCohortApiResponse(
-        # Required fields
+    # Build show/required flags maps
+    show_flags_map = {
+        "names": show_name,
+        "descriptions": show_description_flag,
+        "flags": show_flag,
+        "departments": show_departments_flag,
+        "simulations": show_simulations_flag,
+        "simulation_positions": show_simulation_positions_flag,
+    }
+    required_flags_map = {
+        "names": compute_name_required(),
+        "descriptions": compute_description_required(),
+        "flags": compute_flag_required(),
+        "departments": compute_departments_required(show_departments_flag),
+        "simulations": compute_simulations_required(),
+        "simulation_positions": compute_simulation_positions_required(),
+    }
+
+    # Build show_ai_generate map
+    show_ai_generate_map = {
+        "names": name_show_ai_generate,
+        "descriptions": description_show_ai_generate,
+        "flags": flag_show_ai_generate,
+        "departments": departments_show_ai_generate,
+        "simulations": simulations_show_ai_generate,
+        "simulation_positions": simulation_positions_show_ai_generate,
+    }
+
+    # Build suggestions map
+    suggestions_map: dict[str, list[UUID]] = {
+        "names": name_suggestions_ids,
+        "descriptions": description_suggestions_ids,
+        "departments": department_suggestions_ids,
+        "simulations": simulation_suggestions_ids,
+    }
+
+    # Build domain data for modals
+    domain_data_list = build_domain_data(
+        domain_ids_map, show_flags_map, required_flags_map
+    )
+
+    # Build resources payload
+    resources_payload = CohortResources(
+        resources=CohortResourceBucket(
+            names=names,
+            descriptions=descriptions,
+            flags=flags,
+            departments=departments,
+            simulations=simulations,
+            simulation_positions=simulation_positions or [],
+        ),
+        current=CohortResourceBucket(
+            names=[name_resource] if name_resource else [],
+            descriptions=[description_resource] if description_resource else [],
+            flags=[flag_resource] if flag_resource else [],
+            departments=department_resources or [],
+            simulations=simulation_resources or [],
+            simulation_positions=simulation_positions or [],
+        ),
+    )
+
+    # Per-resource group IDs (cohort uses single group_id for all resources)
+    effective_group_id = access_result.group_id
+    resource_group_ids: dict[str, UUID | None] = {
+        "names": effective_group_id,
+        "descriptions": effective_group_id,
+        "flags": effective_group_id,
+        "departments": effective_group_id,
+        "simulations": effective_group_id,
+        "simulation_positions": effective_group_id,
+    }
+
+    # Build domains list for WebSocket handler
+    domains_list: list[DomainAgent] = []
+    for resource, domain_id in domain_ids_map.items():
+        if domain_id is not None:
+            domains_list.append(
+                DomainAgent(
+                    domain_id=domain_id,
+                    agent_id=agent_ids.get(resource),
+                    group_id=resource_group_ids.get(resource),
+                )
+            )
+
+    return CohortInternalData(
+        # Access/context
         actor_name=access_result.actor_name,
         cohort_exists=access_result.cohort_exists,
         can_edit=can_edit,
         disabled_reason=disabled_reason,
         draft_version=access_result.draft_version,
-        group_id=access_result.group_id,
-        # Name
+        group_id=effective_group_id,
+        # Domain mappings
+        domain_ids_map=domain_ids_map,
+        agent_ids=agent_ids,
+        domains_list=domains_list,
+        # Show/required flags
+        show_flags_map=show_flags_map,
+        required_flags_map=required_flags_map,
+        # Suggestions
+        suggestions_map=suggestions_map,
+        # Show AI generate
+        show_ai_generate_map=show_ai_generate_map,
+        basic_show_ai_generate=basic_show_ai_generate,
+        simulations_step_show_ai_generate=simulations_step_show_ai_generate,
+        # Domain data and resources
+        domain_data_list=domain_data_list,
+        resources_payload=resources_payload,
+        # Per-resource group IDs
+        resource_group_ids=resource_group_ids,
+        # Per-resource tool IDs
+        create_tool_ids_map=create_tool_ids_map,
+        link_tool_ids_map=link_tool_ids_map,
+        # Raw IDs
         name_id=ids_result.name_id,
-        name_resource=name_resource,
-        show_name=show_name,
-        name_agent_id=name_agent_id,  # Python-computed
-        name_required=compute_name_required(),
-        name_suggestions=name_suggestions_ids,
-        names=names,
-        # Description
         description_id=ids_result.description_id,
-        description_resource=description_resource,
-        show_description=show_description_flag,
-        description_agent_id=description_agent_id,  # Python-computed
-        description_required=compute_description_required(),
-        description_suggestions=description_suggestions_ids,
-        descriptions=descriptions,
-        # Flag
         active_flag_id=ids_result.active_flag_id,
+        department_ids=department_ids,
+        simulation_ids=simulation_ids,
+        # Selected resources
+        name_resource=name_resource,
+        description_resource=description_resource,
         flag_resource=flag_resource,
-        show_flag=show_flag,
-        flag_agent_id=flag_agent_id,  # Python-computed
-        flag_required=compute_flag_required(),
-        flags=flags,
-        # Departments
-        department_ids=ids_result.department_ids,
         department_resources=department_resources,
-        show_departments=show_departments_flag,
-        departments_agent_id=departments_agent_id,  # Python-computed
-        departments_required=compute_departments_required(show_departments_flag),
-        department_suggestions=department_suggestions_ids,
-        departments=departments,
-        # Simulations
-        simulation_ids=ids_result.simulation_ids,
         simulation_resources=simulation_resources,
-        show_simulations=show_simulations_flag,
-        simulations_agent_id=simulations_agent_id,  # Python-computed
-        simulations_required=compute_simulations_required(),
-        simulation_suggestions=simulation_suggestions_ids,
-        simulations=simulations,
-        # Simulation positions
         simulation_positions=simulation_positions or [],
-        show_simulation_positions=show_simulation_positions_flag,
-        simulation_positions_agent_id=None,  # No separate agent for positions
-        simulation_positions_required=compute_simulation_positions_required(),
-        # Multi-resource agent IDs (Python-computed)
+        # Multi-resource agent IDs (legacy)
         basic_agent_id=basic_agent_id,
         general_agent_id=general_agent_id,
     )
 
 
-def get_cohort_websocket(result: GetCohortApiResponse) -> dict[str, Any]:
-    """Websocket wrapper layer for cohort generation context."""
-    payload = result.model_dump()
-    context_keys = (
-        "group_id",
-        "name_agent_id",
-        "description_agent_id",
-        "flag_agent_id",
-        "departments_agent_id",
-        "simulations_agent_id",
-        "simulation_positions_agent_id",
-        "basic_agent_id",
-        "general_agent_id",
+async def get_cohort_websocket(
+    profile_id: UUID,
+    cohort_id: UUID | None,
+    draft_id: UUID | None = None,
+    bypass_cache: bool = False,
+) -> GetCohortWebsocketResponse:
+    """Minimal response for WebSocket handlers.
+
+    Returns only what's needed for AI generation:
+    - Domain IDs (for domain_to_resource mapping)
+    - Domains list (for agent_id lookup)
+    - Group ID (for existing group context)
+    - Resources (for Jinja template context)
+    """
+    data = await get_cohort_internal(
+        profile_id=profile_id,
+        cohort_id=cohort_id,
+        draft_id=draft_id,
+        bypass_cache=bypass_cache,
     )
-    return {key: payload.get(key) for key in context_keys if payload.get(key) is not None}
+
+    return GetCohortWebsocketResponse(
+        group_id=data.group_id,
+        # Domain IDs for domain_to_resource mapping
+        names_domain_id=data.domain_ids_map.get("names"),
+        descriptions_domain_id=data.domain_ids_map.get("descriptions"),
+        flags_domain_id=data.domain_ids_map.get("flags"),
+        departments_domain_id=data.domain_ids_map.get("departments"),
+        simulations_domain_id=data.domain_ids_map.get("simulations"),
+        simulation_positions_domain_id=data.domain_ids_map.get("simulation_positions"),
+        # Domains mapping for agent lookup
+        domains=data.domains_list,
+        # Resources for Jinja context
+        resources=data.resources_payload,
+    )
 
 
-def get_cohort_client(result: GetCohortApiResponse) -> GetCohortApiResponse:
-    """Client/BFF wrapper layer for cohort get response."""
-    payload = result.model_dump()
-    if "generation_context" in payload:
-        payload["generation_context"] = get_cohort_websocket(result)
-    return GetCohortApiResponse.model_validate(payload)
+async def get_cohort_client(
+    profile_id: UUID,
+    cohort_id: UUID | None,
+    draft_id: UUID | None = None,
+    bypass_cache: bool = False,
+) -> GetCohortApiResponse:
+    """BFF response for HTTP endpoint/frontend.
+
+    Returns the full response with all UI fields, suggestions, and
+    computed *_show_ai_generate flags. Does NOT include domains
+    (agent lookup is server-side only).
+    """
+    data = await get_cohort_internal(
+        profile_id=profile_id,
+        cohort_id=cohort_id,
+        draft_id=draft_id,
+        bypass_cache=bypass_cache,
+    )
+
+    return GetCohortApiResponse(
+        # Required fields
+        actor_name=data.actor_name,
+        cohort_exists=data.cohort_exists,
+        can_edit=data.can_edit,
+        disabled_reason=data.disabled_reason,
+        draft_version=data.draft_version,
+        group_id=data.group_id,
+        # Per-resource group IDs
+        names_group_id=data.resource_group_ids.get("names"),
+        descriptions_group_id=data.resource_group_ids.get("descriptions"),
+        flags_group_id=data.resource_group_ids.get("flags"),
+        departments_group_id=data.resource_group_ids.get("departments"),
+        simulations_group_id=data.resource_group_ids.get("simulations"),
+        simulation_positions_group_id=data.resource_group_ids.get(
+            "simulation_positions"
+        ),
+        # Name
+        name_id=data.name_id,
+        name_resource=data.name_resource,
+        show_name=data.show_flags_map.get("names"),
+        name_domain_id=data.domain_ids_map.get("names"),
+        name_agent_id=data.agent_ids.get("names"),
+        name_required=data.required_flags_map.get("names"),
+        name_suggestions=data.suggestions_map.get("names"),
+        name_show_ai_generate=data.show_ai_generate_map.get("names"),
+        names=data.resources_payload.resources.names
+        if data.resources_payload.resources
+        else None,
+        # Description
+        description_id=data.description_id,
+        description_resource=data.description_resource,
+        show_description=data.show_flags_map.get("descriptions"),
+        description_domain_id=data.domain_ids_map.get("descriptions"),
+        description_agent_id=data.agent_ids.get("descriptions"),
+        description_required=data.required_flags_map.get("descriptions"),
+        description_suggestions=data.suggestions_map.get("descriptions"),
+        description_show_ai_generate=data.show_ai_generate_map.get("descriptions"),
+        descriptions=data.resources_payload.resources.descriptions
+        if data.resources_payload.resources
+        else None,
+        # Flag
+        active_flag_id=data.active_flag_id,
+        flag_resource=data.flag_resource,
+        show_flag=data.show_flags_map.get("flags"),
+        flag_domain_id=data.domain_ids_map.get("flags"),
+        flag_agent_id=data.agent_ids.get("flags"),
+        flag_required=data.required_flags_map.get("flags"),
+        flag_show_ai_generate=data.show_ai_generate_map.get("flags"),
+        flags=data.resources_payload.resources.flags
+        if data.resources_payload.resources
+        else None,
+        # Departments
+        department_ids=data.department_ids,
+        department_resources=data.department_resources,
+        show_departments=data.show_flags_map.get("departments"),
+        departments_domain_id=data.domain_ids_map.get("departments"),
+        departments_agent_id=data.agent_ids.get("departments"),
+        departments_required=data.required_flags_map.get("departments"),
+        department_suggestions=data.suggestions_map.get("departments"),
+        departments_show_ai_generate=data.show_ai_generate_map.get("departments"),
+        departments=data.resources_payload.resources.departments
+        if data.resources_payload.resources
+        else None,
+        # Simulations
+        simulation_ids=data.simulation_ids,
+        simulation_resources=data.simulation_resources,
+        show_simulations=data.show_flags_map.get("simulations"),
+        simulations_domain_id=data.domain_ids_map.get("simulations"),
+        simulations_agent_id=data.agent_ids.get("simulations"),
+        simulations_required=data.required_flags_map.get("simulations"),
+        simulation_suggestions=data.suggestions_map.get("simulations"),
+        simulations_show_ai_generate=data.show_ai_generate_map.get("simulations"),
+        simulations=data.resources_payload.resources.simulations
+        if data.resources_payload.resources
+        else None,
+        # Simulation positions
+        simulation_positions=data.simulation_positions,
+        show_simulation_positions=data.show_flags_map.get("simulation_positions"),
+        simulation_positions_domain_id=data.domain_ids_map.get("simulation_positions"),
+        simulation_positions_agent_id=None,
+        simulation_positions_required=data.required_flags_map.get(
+            "simulation_positions"
+        ),
+        simulation_positions_show_ai_generate=data.show_ai_generate_map.get(
+            "simulation_positions"
+        ),
+        # Step-level AI generation flags
+        basic_show_ai_generate=data.basic_show_ai_generate,
+        simulations_step_show_ai_generate=data.simulations_step_show_ai_generate,
+        # Multi-resource agent IDs (legacy)
+        basic_agent_id=data.basic_agent_id,
+        general_agent_id=data.general_agent_id,
+        # Per-resource CREATE tool IDs
+        name_create_tool_id=data.create_tool_ids_map.get("names"),
+        description_create_tool_id=data.create_tool_ids_map.get("descriptions"),
+        simulations_create_tool_id=data.create_tool_ids_map.get("simulations"),
+        # Per-resource LINK tool IDs
+        name_link_tool_id=data.link_tool_ids_map.get("names"),
+        description_link_tool_id=data.link_tool_ids_map.get("descriptions"),
+        flag_link_tool_id=data.link_tool_ids_map.get("flags"),
+        departments_link_tool_id=data.link_tool_ids_map.get("departments"),
+        simulations_link_tool_id=data.link_tool_ids_map.get("simulations"),
+        simulation_positions_link_tool_id=data.link_tool_ids_map.get(
+            "simulation_positions"
+        ),
+        # Domain metadata for client display in modals
+        domain_data=data.domain_data_list,
+        # Resources
+        resources=data.resources_payload,
+    )
 
 
 @router.post(
@@ -533,7 +866,7 @@ async def get_cohort(
 ) -> GetCohortApiResponse:
     """Get cohort information using two-pass architecture.
 
-    This is a thin HTTP wrapper around get_cohort_internal().
+    This is a thin HTTP wrapper around get_cohort_client().
 
     Query 1: Access check (user role, departments, cohort state)
     Query 2: ID fetching (resource IDs, suggestions, agents)
@@ -551,14 +884,13 @@ async def get_cohort(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Call the internal function
-        internal_data = await get_cohort_internal(
+        # Call the client function (calls internal itself)
+        response_data = await get_cohort_client(
             profile_id=profile_id,
             cohort_id=request.cohort_id,
             draft_id=request.draft_id,
             bypass_cache=bypass_cache,
         )
-        response_data = get_cohort_client(internal_data)
 
         # Set audit context
         if response_data.actor_name:

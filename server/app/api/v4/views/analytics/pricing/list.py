@@ -237,8 +237,7 @@ async def _fetch_agent_rows(
         agent_ids,
     )
     return [
-        PricingAgentItem(agent_id=row["agent_id"], name=row["name"])
-        for row in rows
+        PricingAgentItem(agent_id=row["agent_id"], name=row["name"]) for row in rows
     ]
 
 
@@ -482,18 +481,16 @@ async def get_pricing_runs_internal(
         for row in actor_option_rows
     ]
 
-    page = (
-        request.offset_count // request.limit_count
-        if request.limit_count
-        else 0
-    )
+    page = request.offset_count // request.limit_count if request.limit_count else 0
     total_pages = (
         (int(total_count) + request.limit_count - 1) // request.limit_count
         if request.limit_count
         else 0
     )
 
-    ordered_groups = [group_map[row["group_id"]] for row in group_rows if row["group_id"] in group_map]
+    ordered_groups = [
+        group_map[row["group_id"]] for row in group_rows if row["group_id"] in group_map
+    ]
 
     response = GetPricingRunsResponse(
         actor_name=actor_name or "System",

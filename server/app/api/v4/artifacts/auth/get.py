@@ -47,7 +47,9 @@ def _extract_auth_websocket_context(result: GetAuthSqlRow) -> dict[str, Any]:
         "resource_group_ids",
         "generation_context",
     )
-    return {key: payload.get(key) for key in context_keys if payload.get(key) is not None}
+    return {
+        key: payload.get(key) for key in context_keys if payload.get(key) is not None
+    }
 
 
 async def get_auth_internal(

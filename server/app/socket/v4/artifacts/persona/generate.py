@@ -102,7 +102,11 @@ def _serialize_resource_item(item: Any) -> Any:
 def _serialize_resource_list(items: list[Any] | None) -> list[Any]:
     if not items:
         return []
-    return [serialized for item in items if (serialized := _serialize_resource_item(item)) is not None]
+    return [
+        serialized
+        for item in items
+        if (serialized := _serialize_resource_item(item)) is not None
+    ]
 
 
 def _build_persona_jinja_context(
@@ -429,7 +433,9 @@ async def _persona_generate_impl(
                     p_agent_id=agent_id,
                     p_group_id=existing_group_id,
                     p_resources=resources if resources else None,
-                    p_current_resources=current_resources if current_resources else None,
+                    p_current_resources=current_resources
+                    if current_resources
+                    else None,
                     p_resource_types=resource_types,  # For tool filtering
                 )
                 prepare_row = cast(
@@ -498,7 +504,9 @@ async def _persona_generate_impl(
             voice = prepare_row.voice
             quality = prepare_row.quality
             tools = prepare_row.tools
-            developer_instruction_templates = prepare_row.developer_instruction_templates
+            developer_instruction_templates = (
+                prepare_row.developer_instruction_templates
+            )
             jinja_context = persona_jinja_context
 
             # Step 5: Render developer instructions with Jinja

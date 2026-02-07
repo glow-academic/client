@@ -19,7 +19,9 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/v4/queries/views/simulation/groups/get_simulation_groups_view_complete.sql"
+SQL_PATH = (
+    "app/sql/v4/queries/views/simulation/groups/get_simulation_groups_view_complete.sql"
+)
 
 router = APIRouter()
 
@@ -74,7 +76,9 @@ async def get_simulation_groups_internal(
                     endpoints_id=item.endpoints_id,
                     keys_id=item.keys_id,
                     prompts_id=item.prompts_id,
-                    instructions_ids=list(item.instructions_ids) if item.instructions_ids else None,
+                    instructions_ids=list(item.instructions_ids)
+                    if item.instructions_ids
+                    else None,
                     temperature_levels_id=item.temperature_levels_id,
                     reasoning_levels_id=item.reasoning_levels_id,
                     qualities_id=item.qualities_id,

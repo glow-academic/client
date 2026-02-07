@@ -202,9 +202,7 @@ async def get_pricing_group_detail_internal(
                         )
                     )
 
-            contents = [
-                GroupDetailContent(content=c) for c in (msg["contents"] or [])
-            ]
+            contents = [GroupDetailContent(content=c) for c in (msg["contents"] or [])]
             # If no simulation contents, use empty content
             if not contents:
                 contents = [GroupDetailContent(content=None)]

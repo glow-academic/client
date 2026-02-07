@@ -13,10 +13,8 @@ from app.api.v4.artifacts.session.types import (
     GetSessionDetailRequest,
     GetSessionDetailResponse,
 )
-from app.api.v4.views.artifacts.session_detail.get import get_artifact_session_detail_internal
-from app.api.v4.views.artifacts.session_detail.types import (
-    ArtifactSessionAudit,
-    ArtifactSessionGroup,
+from app.api.v4.views.artifacts.session_detail.get import (
+    get_artifact_session_detail_internal,
 )
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
@@ -85,7 +83,9 @@ async def get_session(
 
         # Set audit context
         if view_result.actor_name:
-            audit_set(http_request, actor={"name": view_result.actor_name, "id": profile_id})
+            audit_set(
+                http_request, actor={"name": view_result.actor_name, "id": profile_id}
+            )
 
         api_response = GetSessionDetailResponse(
             actor_name=view_result.actor_name,

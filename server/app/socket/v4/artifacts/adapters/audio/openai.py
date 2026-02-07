@@ -46,7 +46,9 @@ class OpenAIRealtimeAdapter(BaseAudioAdapter):
     """
 
     def __init__(self) -> None:
-        self._tasks: dict[str, list[asyncio.Task[Any]]] = {}  # group_id -> [uplink_task, downlink_task]
+        self._tasks: dict[
+            str, list[asyncio.Task[Any]]
+        ] = {}  # group_id -> [uplink_task, downlink_task]
 
     def get_implementation_type(self) -> Literal["webrtc", "websocket"]:
         """This adapter uses WebSocket (server-side connection)."""
@@ -94,7 +96,9 @@ class OpenAIRealtimeAdapter(BaseAudioAdapter):
             ws = await websockets.connect(ws_url, additional_headers=headers)
             session.oa_ws_connection = ws
 
-            logger.info(f"Connected to OpenAI Realtime API - group_id={session.group_id}")
+            logger.info(
+                f"Connected to OpenAI Realtime API - group_id={session.group_id}"
+            )
 
             # Configure the session
             session_config: dict[str, Any] = {
@@ -105,12 +109,15 @@ class OpenAIRealtimeAdapter(BaseAudioAdapter):
                 "input_audio_transcription": {
                     "model": "whisper-1",
                 },
-                "turn_detection": kwargs.get("turn_detection", {
-                    "type": "server_vad",
-                    "threshold": 0.5,
-                    "prefix_padding_ms": 300,
-                    "silence_duration_ms": 500,
-                }),
+                "turn_detection": kwargs.get(
+                    "turn_detection",
+                    {
+                        "type": "server_vad",
+                        "threshold": 0.5,
+                        "prefix_padding_ms": 300,
+                        "silence_duration_ms": 500,
+                    },
+                ),
             }
 
             if instructions:
@@ -121,10 +128,14 @@ class OpenAIRealtimeAdapter(BaseAudioAdapter):
                 session_config["tool_choice"] = "auto"
 
             # Send session.update to configure
-            await ws.send(json.dumps({
-                "type": "session.update",
-                "session": session_config,
-            }))
+            await ws.send(
+                json.dumps(
+                    {
+                        "type": "session.update",
+                        "session": session_config,
+                    }
+                )
+            )
 
             # Start uplink and downlink loops
             uplink_task = asyncio.create_task(
@@ -207,10 +218,14 @@ class OpenAIRealtimeAdapter(BaseAudioAdapter):
                             # Already base64 string
                             audio_b64 = audio_data
 
-                        await ws.send(json.dumps({
-                            "type": "input_audio_buffer.append",
-                            "audio": audio_b64,
-                        }))
+                        await ws.send(
+                            json.dumps(
+                                {
+                                    "type": "input_audio_buffer.append",
+                                    "audio": audio_b64,
+                                }
+                            )
+                        )
 
                 elif msg_type == "mic.set_muted":
                     session.muted = msg.get("muted", False)
@@ -218,9 +233,13 @@ class OpenAIRealtimeAdapter(BaseAudioAdapter):
 
                     # If unmuting, clear the buffer to start fresh
                     if not session.muted:
-                        await ws.send(json.dumps({
-                            "type": "input_audio_buffer.clear",
-                        }))
+                        await ws.send(
+                            json.dumps(
+                                {
+                                    "type": "input_audio_buffer.clear",
+                                }
+                            )
+                        )
 
         except asyncio.CancelledError:
             logger.info(f"Uplink loop cancelled - group_id={group_id}")
@@ -268,25 +287,36 @@ class OpenAIRealtimeAdapter(BaseAudioAdapter):
                     item_id = event.get("item_id", f"user-{group_id}")
                     current_user_item_id = item_id
 
-                    await internal_sio.emit("generate_user_speech_start", {
-                        "group_id": group_id,
-                        "item_id": item_id,
-                    })
+                    await internal_sio.emit(
+                        "generate_user_speech_start",
+                        {
+                            "group_id": group_id,
+                            "item_id": item_id,
+                        },
+                    )
 
                 elif event_type == "input_audio_buffer.speech_stopped":
                     # User stopped speaking - VAD detected end
                     pass  # Transcription will come separately
 
-                elif event_type == "conversation.item.input_audio_transcription.completed":
+                elif (
+                    event_type
+                    == "conversation.item.input_audio_transcription.completed"
+                ):
                     # User speech transcribed
                     transcript = event.get("transcript", "")
-                    item_id = event.get("item_id", current_user_item_id or f"user-{group_id}")
+                    item_id = event.get(
+                        "item_id", current_user_item_id or f"user-{group_id}"
+                    )
 
-                    await internal_sio.emit("generate_user_speech_delta", {
-                        "group_id": group_id,
-                        "item_id": item_id,
-                        "transcript": transcript,
-                    })
+                    await internal_sio.emit(
+                        "generate_user_speech_delta",
+                        {
+                            "group_id": group_id,
+                            "item_id": item_id,
+                            "transcript": transcript,
+                        },
+                    )
 
                 elif event_type == "response.audio.delta":
                     # Assistant audio chunk
@@ -295,19 +325,25 @@ class OpenAIRealtimeAdapter(BaseAudioAdapter):
                         # Decode base64 to bytes for client
                         audio_bytes = base64.b64decode(audio_b64)
 
-                        await internal_sio.emit("generate_audio_delta", {
-                            "group_id": group_id,
-                            "audio": audio_bytes,
-                        })
+                        await internal_sio.emit(
+                            "generate_audio_delta",
+                            {
+                                "group_id": group_id,
+                                "audio": audio_bytes,
+                            },
+                        )
 
                 elif event_type == "response.audio_transcript.delta":
                     # Assistant transcript delta (optional - for display)
                     transcript = event.get("delta", "")
                     if transcript:
-                        await internal_sio.emit("generate_assistant_transcript_delta", {
-                            "group_id": group_id,
-                            "transcript": transcript,
-                        })
+                        await internal_sio.emit(
+                            "generate_assistant_transcript_delta",
+                            {
+                                "group_id": group_id,
+                                "transcript": transcript,
+                            },
+                        )
 
                 elif event_type == "response.done":
                     # Response completed
@@ -333,10 +369,13 @@ class OpenAIRealtimeAdapter(BaseAudioAdapter):
 
     async def _emit_error(self, session: AudioSession, message: str) -> None:
         """Emit an error event."""
-        await internal_sio.emit("generate_audio_error", {
-            "group_id": session.group_id,
-            "error_message": message,
-        })
+        await internal_sio.emit(
+            "generate_audio_error",
+            {
+                "group_id": session.group_id,
+                "error_message": message,
+            },
+        )
 
     def _format_tools(self, tools: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Format tools for OpenAI Realtime API.
@@ -351,10 +390,12 @@ class OpenAIRealtimeAdapter(BaseAudioAdapter):
             elif "function" in tool:
                 # Convert from Chat Completions format
                 func = tool["function"]
-                formatted.append({
-                    "type": "function",
-                    "name": func.get("name"),
-                    "description": func.get("description"),
-                    "parameters": func.get("parameters", {}),
-                })
+                formatted.append(
+                    {
+                        "type": "function",
+                        "name": func.get("name"),
+                        "description": func.get("description"),
+                        "parameters": func.get("parameters", {}),
+                    }
+                )
         return formatted

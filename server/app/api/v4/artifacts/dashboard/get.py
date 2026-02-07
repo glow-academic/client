@@ -340,32 +340,30 @@ async def get_dashboard(
                 ids=list(persona_ids),
                 bypass_cache=bypass_cache,
             )
-            cohort_name_rows = await c.fetch(
-                """
+            cohort_name_rows = (
+                await c.fetch(
+                    """
                 SELECT id, name FROM cohorts_resource
                 WHERE id = ANY($1::uuid[])
                 """,
-                list(cohort_ids),
-            ) if cohort_ids else []
+                    list(cohort_ids),
+                )
+                if cohort_ids
+                else []
+            )
             scenarios = await get_scenarios_internal(
                 conn=c,
                 ids=list(scenario_ids),
                 bypass_cache=bypass_cache,
             )
         persona_name_map: dict[str, str] = {
-            str(p.persona_id): p.name
-            for p in personas
-            if p.persona_id and p.name
+            str(p.persona_id): p.name for p in personas if p.persona_id and p.name
         }
         cohort_name_map: dict[str, str] = {
-            str(r["id"]): r["name"]
-            for r in cohort_name_rows
-            if r["id"] and r["name"]
+            str(r["id"]): r["name"] for r in cohort_name_rows if r["id"] and r["name"]
         }
         scenario_name_map: dict[str, str] = {
-            str(s.scenario_id): s.name
-            for s in scenarios
-            if s.scenario_id and s.name
+            str(s.scenario_id): s.name for s in scenarios if s.scenario_id and s.name
         }
         simulation_name_map: dict[str, str] = {
             str(s.simulation_id): s.title

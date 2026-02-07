@@ -94,7 +94,9 @@ from app.utils.cache.set_cached import set_cached
 router = APIRouter()
 
 
-def _format_timer(elapsed: int, limit_seconds: int | None, infinite_mode: bool, negative: bool = False) -> TimerData:
+def _format_timer(
+    elapsed: int, limit_seconds: int | None, infinite_mode: bool, negative: bool = False
+) -> TimerData:
     """Format timer data.
 
     Args:
@@ -235,7 +237,9 @@ async def get_attempt_internal(
             async with pool.acquire() as c:
                 # Fetch images
                 if image_ids:
-                    items = await get_images_internal(c, image_ids, bypass_cache=bypass_cache)
+                    items = await get_images_internal(
+                        c, image_ids, bypass_cache=bypass_cache
+                    )
                     for item in items:
                         if item.image_id:
                             result["images"][item.image_id] = {
@@ -246,7 +250,9 @@ async def get_attempt_internal(
 
                 # Fetch videos
                 if video_ids:
-                    items = await get_videos_internal(c, video_ids, bypass_cache=bypass_cache)
+                    items = await get_videos_internal(
+                        c, video_ids, bypass_cache=bypass_cache
+                    )
                     for item in items:
                         if item.video_id:
                             result["videos"][item.video_id] = {
@@ -258,7 +264,9 @@ async def get_attempt_internal(
 
                 # Fetch documents
                 if document_ids:
-                    items = await get_documents_internal(c, document_ids, bypass_cache=bypass_cache)
+                    items = await get_documents_internal(
+                        c, document_ids, bypass_cache=bypass_cache
+                    )
                     for item in items:
                         if item.document_id:
                             result["documents"][item.document_id] = {
@@ -269,7 +277,9 @@ async def get_attempt_internal(
 
                 # Fetch templates
                 if template_ids:
-                    items = await get_templates_internal(c, template_ids, bypass_cache=bypass_cache)
+                    items = await get_templates_internal(
+                        c, template_ids, bypass_cache=bypass_cache
+                    )
                     for item in items:
                         if item.template_id:
                             result["templates"][item.template_id] = {
@@ -279,7 +289,9 @@ async def get_attempt_internal(
 
                 # Fetch personas
                 if persona_ids:
-                    items = await get_personas_internal(c, persona_ids, bypass_cache=bypass_cache)
+                    items = await get_personas_internal(
+                        c, persona_ids, bypass_cache=bypass_cache
+                    )
                     for item in items:
                         if item.persona_id:
                             result["personas"][item.persona_id] = {
@@ -292,7 +304,9 @@ async def get_attempt_internal(
 
                 # Fetch objectives
                 if objective_ids:
-                    items = await get_objectives_internal(c, objective_ids, bypass_cache=bypass_cache)
+                    items = await get_objectives_internal(
+                        c, objective_ids, bypass_cache=bypass_cache
+                    )
                     for item in items:
                         if item.objective_id:
                             result["objectives"][item.objective_id] = {
@@ -301,7 +315,9 @@ async def get_attempt_internal(
 
                 # Fetch questions
                 if question_ids:
-                    items = await get_questions_internal(c, question_ids, bypass_cache=bypass_cache)
+                    items = await get_questions_internal(
+                        c, question_ids, bypass_cache=bypass_cache
+                    )
                     for item in items:
                         if item.question_id:
                             result["questions"][item.question_id] = {
@@ -312,7 +328,9 @@ async def get_attempt_internal(
 
                 # Fetch options
                 if option_ids:
-                    items = await get_options_internal(c, option_ids, bypass_cache=bypass_cache)
+                    items = await get_options_internal(
+                        c, option_ids, bypass_cache=bypass_cache
+                    )
                     for item in items:
                         if item.option_id:
                             result["options"][item.option_id] = {
@@ -334,7 +352,9 @@ async def get_attempt_internal(
 
                 # Fetch scenarios
                 if scenario_ids:
-                    items = await get_scenarios_internal(c, scenario_ids, bypass_cache=bypass_cache)
+                    items = await get_scenarios_internal(
+                        c, scenario_ids, bypass_cache=bypass_cache
+                    )
                     for item in items:
                         if item.scenario_id:
                             result["scenarios"][item.scenario_id] = {
@@ -344,7 +364,9 @@ async def get_attempt_internal(
 
                 # Fetch rubrics
                 if rubric_ids:
-                    items = await get_rubrics_batch_internal(c, rubric_ids, bypass_cache=bypass_cache)
+                    items = await get_rubrics_batch_internal(
+                        c, rubric_ids, bypass_cache=bypass_cache
+                    )
                     for item in items:
                         if item.rubric_id:
                             result["rubrics"][item.rubric_id] = {
@@ -370,7 +392,9 @@ async def get_attempt_internal(
 
                 # Fetch standards
                 if standard_ids:
-                    items = await get_standards_internal(c, standard_ids, bypass_cache=bypass_cache)
+                    items = await get_standards_internal(
+                        c, standard_ids, bypass_cache=bypass_cache
+                    )
                     for item in items:
                         if item.standard_id:
                             result["standards"][item.standard_id] = {
@@ -421,7 +445,9 @@ async def get_attempt_internal(
             if not sim_id:
                 return None
             async with pool.acquire() as c:
-                items = await get_simulations_batch_internal(c, [sim_id], bypass_cache=bypass_cache)
+                items = await get_simulations_batch_internal(
+                    c, [sim_id], bypass_cache=bypass_cache
+                )
                 if items and items[0].title:
                     return items[0].title
             return None
@@ -430,7 +456,9 @@ async def get_attempt_internal(
             if not prof_id:
                 return None
             async with pool.acquire() as c:
-                items = await get_profiles_internal(c, [prof_id], bypass_cache=bypass_cache)
+                items = await get_profiles_internal(
+                    c, [prof_id], bypass_cache=bypass_cache
+                )
                 if items and items[0].name:
                     return items[0].name
             return None
@@ -528,9 +556,13 @@ async def get_attempt_internal(
             images={
                 str(image_id): ImageEntry(
                     image_id=image_id,
-                    upload_id=resource_meta["images"].get(image_id, {}).get("upload_id"),
+                    upload_id=resource_meta["images"]
+                    .get(image_id, {})
+                    .get("upload_id"),
                     name=resource_meta["images"].get(image_id, {}).get("name"),
-                    description=resource_meta["images"].get(image_id, {}).get("description"),
+                    description=resource_meta["images"]
+                    .get(image_id, {})
+                    .get("description"),
                 )
                 for image_id in resource_meta["images"].keys()
             }
@@ -539,10 +571,16 @@ async def get_attempt_internal(
             videos={
                 str(video_id): VideoEntry(
                     video_id=video_id,
-                    upload_id=resource_meta["videos"].get(video_id, {}).get("upload_id"),
+                    upload_id=resource_meta["videos"]
+                    .get(video_id, {})
+                    .get("upload_id"),
                     name=resource_meta["videos"].get(video_id, {}).get("name"),
-                    description=resource_meta["videos"].get(video_id, {}).get("description"),
-                    length_seconds=resource_meta["videos"].get(video_id, {}).get("length_seconds"),
+                    description=resource_meta["videos"]
+                    .get(video_id, {})
+                    .get("description"),
+                    length_seconds=resource_meta["videos"]
+                    .get(video_id, {})
+                    .get("length_seconds"),
                 )
                 for video_id in resource_meta["videos"].keys()
             }
@@ -551,9 +589,13 @@ async def get_attempt_internal(
             documents={
                 str(document_id): DocumentEntry(
                     document_id=document_id,
-                    upload_id=resource_meta["documents"].get(document_id, {}).get("upload_id"),
+                    upload_id=resource_meta["documents"]
+                    .get(document_id, {})
+                    .get("upload_id"),
                     name=resource_meta["documents"].get(document_id, {}).get("name"),
-                    description=resource_meta["documents"].get(document_id, {}).get("description"),
+                    description=resource_meta["documents"]
+                    .get(document_id, {})
+                    .get("description"),
                 )
                 for document_id in resource_meta["documents"].keys()
             }
@@ -563,7 +605,9 @@ async def get_attempt_internal(
                 str(template_id): TemplateEntry(
                     template_id=template_id,
                     name=resource_meta["templates"].get(template_id, {}).get("name"),
-                    description=resource_meta["templates"].get(template_id, {}).get("description"),
+                    description=resource_meta["templates"]
+                    .get(template_id, {})
+                    .get("description"),
                 )
                 for template_id in resource_meta["templates"].keys()
             }
@@ -575,8 +619,12 @@ async def get_attempt_internal(
                     name=resource_meta["personas"].get(persona_id, {}).get("name"),
                     icon=resource_meta["personas"].get(persona_id, {}).get("icon"),
                     color=resource_meta["personas"].get(persona_id, {}).get("color"),
-                    instructions=resource_meta["personas"].get(persona_id, {}).get("instructions"),
-                    examples=resource_meta["personas"].get(persona_id, {}).get("examples"),
+                    instructions=resource_meta["personas"]
+                    .get(persona_id, {})
+                    .get("instructions"),
+                    examples=resource_meta["personas"]
+                    .get(persona_id, {})
+                    .get("examples"),
                 )
                 for persona_id in resource_meta["personas"].keys()
             }
@@ -585,7 +633,9 @@ async def get_attempt_internal(
             objectives={
                 str(objective_id): ObjectiveEntry(
                     objective_id=objective_id,
-                    objective=resource_meta["objectives"].get(objective_id, {}).get("objective"),
+                    objective=resource_meta["objectives"]
+                    .get(objective_id, {})
+                    .get("objective"),
                 )
                 for objective_id in resource_meta["objectives"].keys()
             }
@@ -594,11 +644,16 @@ async def get_attempt_internal(
             questions={
                 str(question_id): QuestionEntry(
                     question_id=question_id,
-                    question_text=resource_meta["questions"].get(question_id, {}).get("question_text"),
-                    allow_multiple=resource_meta["questions"].get(question_id, {}).get("allow_multiple"),
+                    question_text=resource_meta["questions"]
+                    .get(question_id, {})
+                    .get("question_text"),
+                    allow_multiple=resource_meta["questions"]
+                    .get(question_id, {})
+                    .get("allow_multiple"),
                     times=(
                         [resource_meta["questions"].get(question_id, {}).get("time")]
-                        if resource_meta["questions"].get(question_id, {}).get("time") is not None
+                        if resource_meta["questions"].get(question_id, {}).get("time")
+                        is not None
                         else None
                     ),
                 )
@@ -609,9 +664,15 @@ async def get_attempt_internal(
             options={
                 str(option_id): OptionEntry(
                     option_id=option_id,
-                    question_id=resource_meta["options"].get(option_id, {}).get("question_id"),
-                    option_text=resource_meta["options"].get(option_id, {}).get("option_text"),
-                    is_correct=resource_meta["options"].get(option_id, {}).get("is_correct"),
+                    question_id=resource_meta["options"]
+                    .get(option_id, {})
+                    .get("question_id"),
+                    option_text=resource_meta["options"]
+                    .get(option_id, {})
+                    .get("option_text"),
+                    is_correct=resource_meta["options"]
+                    .get(option_id, {})
+                    .get("is_correct"),
                 )
                 for option_id in resource_meta["options"].keys()
             }
@@ -632,7 +693,9 @@ async def get_attempt_internal(
                 str(scenario_id): ScenarioEntry(
                     scenario_id=scenario_id,
                     name=resource_meta["scenarios"].get(scenario_id, {}).get("name"),
-                    description=resource_meta["scenarios"].get(scenario_id, {}).get("description"),
+                    description=resource_meta["scenarios"]
+                    .get(scenario_id, {})
+                    .get("description"),
                 )
                 for scenario_id in resource_meta["scenarios"].keys()
             }
@@ -642,9 +705,15 @@ async def get_attempt_internal(
                 str(rubric_id): RubricEntry(
                     rubric_id=rubric_id,
                     name=resource_meta["rubrics"].get(rubric_id, {}).get("name"),
-                    description=resource_meta["rubrics"].get(rubric_id, {}).get("description"),
-                    total_points=resource_meta["rubrics"].get(rubric_id, {}).get("total_points"),
-                    pass_points=resource_meta["rubrics"].get(rubric_id, {}).get("pass_points"),
+                    description=resource_meta["rubrics"]
+                    .get(rubric_id, {})
+                    .get("description"),
+                    total_points=resource_meta["rubrics"]
+                    .get(rubric_id, {})
+                    .get("total_points"),
+                    pass_points=resource_meta["rubrics"]
+                    .get(rubric_id, {})
+                    .get("pass_points"),
                 )
                 for rubric_id in resource_meta["rubrics"].keys()
             }
@@ -653,10 +722,18 @@ async def get_attempt_internal(
             standard_groups={
                 str(standard_group_id): StandardGroupEntry(
                     standard_group_id=standard_group_id,
-                    name=resource_meta["standard_groups"].get(standard_group_id, {}).get("name"),
-                    description=resource_meta["standard_groups"].get(standard_group_id, {}).get("description"),
-                    points=resource_meta["standard_groups"].get(standard_group_id, {}).get("points"),
-                    pass_points=resource_meta["standard_groups"].get(standard_group_id, {}).get("pass_points"),
+                    name=resource_meta["standard_groups"]
+                    .get(standard_group_id, {})
+                    .get("name"),
+                    description=resource_meta["standard_groups"]
+                    .get(standard_group_id, {})
+                    .get("description"),
+                    points=resource_meta["standard_groups"]
+                    .get(standard_group_id, {})
+                    .get("points"),
+                    pass_points=resource_meta["standard_groups"]
+                    .get(standard_group_id, {})
+                    .get("pass_points"),
                 )
                 for standard_group_id in resource_meta["standard_groups"].keys()
             }
@@ -669,8 +746,12 @@ async def get_attempt_internal(
                     .get(standard_id, {})
                     .get("standard_group_id"),
                     name=resource_meta["standards"].get(standard_id, {}).get("name"),
-                    description=resource_meta["standards"].get(standard_id, {}).get("description"),
-                    points=resource_meta["standards"].get(standard_id, {}).get("points"),
+                    description=resource_meta["standards"]
+                    .get(standard_id, {})
+                    .get("description"),
+                    points=resource_meta["standards"]
+                    .get(standard_id, {})
+                    .get("points"),
                 )
                 for standard_id in resource_meta["standards"].keys()
             }
@@ -730,16 +811,17 @@ async def get_attempt_internal(
 
             hints: list[HintEntry] | None = None
             if msg.hints:
-                hints = [
-                    HintEntry(hint=h.hint, idx=h.idx)
-                    for h in msg.hints
-                ]
+                hints = [HintEntry(hint=h.hint, idx=h.idx) for h in msg.hints]
 
             contents: list[ContentEntry] | None = None
             if msg.contents:
                 contents = []
                 for c in msg.contents:
-                    persona_meta = resource_meta["personas"].get(c.persona_id, {}) if c.persona_id else {}
+                    persona_meta = (
+                        resource_meta["personas"].get(c.persona_id, {})
+                        if c.persona_id
+                        else {}
+                    )
                     persona_name = persona_meta.get("name")
                     persona_color = persona_meta.get("color")
                     persona_icon = persona_meta.get("icon")
@@ -770,9 +852,7 @@ async def get_attempt_internal(
                     id=msg.message_id,
                     chat_id=msg.chat_id,
                     type=msg.type,
-                    created_at=(
-                        msg.created_at.isoformat() if msg.created_at else None
-                    ),
+                    created_at=(msg.created_at.isoformat() if msg.created_at else None),
                     completed=msg.completed,
                     contents=contents,
                     feedbacks=feedbacks if feedbacks else None,
@@ -785,7 +865,11 @@ async def get_attempt_internal(
         for chat_item in chats_result or []:
             grade = None
             if chat_item.grade:
-                rubric_meta = resource_meta["rubrics"].get(chat_item.rubric_id, {}) if chat_item.rubric_id else {}
+                rubric_meta = (
+                    resource_meta["rubrics"].get(chat_item.rubric_id, {})
+                    if chat_item.rubric_id
+                    else {}
+                )
                 grade = GradeData(
                     score=chat_item.grade.score,
                     passed=chat_item.grade.passed,
@@ -814,8 +898,7 @@ async def get_attempt_internal(
             analyses_entries: list[AnalysisEntry] | None = None
             if chat_item.analyses:
                 analyses_entries = [
-                    AnalysisEntry(content=a.content)
-                    for a in chat_item.analyses
+                    AnalysisEntry(content=a.content) for a in chat_item.analyses
                 ]
 
             grading_state_data: GradingStateData | None = None
@@ -908,9 +991,7 @@ async def get_attempt_internal(
         attempt = AttemptData(
             id=attempt_item.attempt_id,
             created_at=(
-                attempt_item.created_at.isoformat()
-                if attempt_item.created_at
-                else None
+                attempt_item.created_at.isoformat() if attempt_item.created_at else None
             ),
             infinite_mode=attempt_item.infinite_mode,
             profile_id=attempt_item.profile_id,
@@ -999,8 +1080,12 @@ async def get_attempt_internal(
 
             rubric_structure = RubricStructureData(
                 standard_groups=standard_groups_dict if standard_groups_dict else None,
-                standard_groups_mapping=standard_groups_mapping_dict if standard_groups_mapping_dict else None,
-                standards_mapping=standards_mapping_dict if standards_mapping_dict else None,
+                standard_groups_mapping=standard_groups_mapping_dict
+                if standard_groups_mapping_dict
+                else None,
+                standards_mapping=standards_mapping_dict
+                if standards_mapping_dict
+                else None,
             )
 
         all_chats_completed = all(chat.completed for chat in chats) if chats else False

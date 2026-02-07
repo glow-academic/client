@@ -106,7 +106,9 @@ async def _emit_modality_event(
     await internal_sio.emit(_event_name_for_modality(modality, phase), payload)
 
 
-def _validate_responses_tools(tools: list[dict[str, Any]] | list[ToolParam]) -> list[dict[str, Any]]:
+def _validate_responses_tools(
+    tools: list[dict[str, Any]] | list[ToolParam],
+) -> list[dict[str, Any]]:
     """Validate and convert tools to Responses API format."""
     validated_tools: list[dict[str, Any]] = []
     for tool in tools:
@@ -441,7 +443,8 @@ async def _generate_artifact_impl(
         responses_input: list[dict[str, Any]] = [
             {"role": m["role"], "content": m.get("content", "")}
             for m in messages
-            if m.get("role") in ("system", "user", "assistant", "developer") and not m.get("tool_calls")
+            if m.get("role") in ("system", "user", "assistant", "developer")
+            and not m.get("tool_calls")
         ]
 
         # Determine which API mode to use (try Responses first)
@@ -454,7 +457,9 @@ async def _generate_artifact_impl(
 
         while iteration < max_iterations:
             iteration += 1
-            logger.info(f"Agentic loop iteration {iteration}/{max_iterations} (mode: {api_mode})")
+            logger.info(
+                f"Agentic loop iteration {iteration}/{max_iterations} (mode: {api_mode})"
+            )
 
             # Call the appropriate API
             try:
@@ -509,7 +514,9 @@ async def _generate_artifact_impl(
             output_tokens = 0
             tool_call_states: dict[str, dict[str, Any]] = {}
             tool_results: list[dict[str, Any]] = []
-            output_items: list[dict[str, Any]] = []  # Raw output items for Responses API
+            output_items: list[
+                dict[str, Any]
+            ] = []  # Raw output items for Responses API
 
             async for event in stream_litellm_events(stream):
                 event_type = event.get("type")
@@ -576,7 +583,11 @@ async def _generate_artifact_impl(
                     raw_id = cast(str, event.get("tool_call_id"))
                     # Only truncate for chat completions (40 char limit)
                     # Responses API can handle longer IDs
-                    tool_call_id = raw_id[:40] if api_mode == "chat_completions" and len(raw_id) > 40 else raw_id
+                    tool_call_id = (
+                        raw_id[:40]
+                        if api_mode == "chat_completions" and len(raw_id) > 40
+                        else raw_id
+                    )
                     tool_call_states.setdefault(
                         tool_call_id,
                         {
@@ -605,7 +616,11 @@ async def _generate_artifact_impl(
 
                 elif event_type == "tool_call_delta":
                     raw_id = cast(str, event.get("tool_call_id"))
-                    tool_call_id = raw_id[:40] if api_mode == "chat_completions" and len(raw_id) > 40 else raw_id
+                    tool_call_id = (
+                        raw_id[:40]
+                        if api_mode == "chat_completions" and len(raw_id) > 40
+                        else raw_id
+                    )
                     delta = event.get("delta", "") or ""
                     tool_name = event.get("tool_name")
                     st = tool_call_states.setdefault(
@@ -642,7 +657,11 @@ async def _generate_artifact_impl(
 
                 elif event_type == "tool_call_complete":
                     raw_id = cast(str, event.get("tool_call_id"))
-                    tool_call_id = raw_id[:40] if api_mode == "chat_completions" and len(raw_id) > 40 else raw_id
+                    tool_call_id = (
+                        raw_id[:40]
+                        if api_mode == "chat_completions" and len(raw_id) > 40
+                        else raw_id
+                    )
                     tool_name = (
                         event.get("name")
                         or tool_call_states.get(tool_call_id, {}).get("tool_name")
@@ -652,7 +671,9 @@ async def _generate_artifact_impl(
                     arguments_str = event.get("arguments") or st.get("arguments", "")
 
                     try:
-                        arguments_dict = json.loads(arguments_str) if arguments_str else {}
+                        arguments_dict = (
+                            json.loads(arguments_str) if arguments_str else {}
+                        )
                     except json.JSONDecodeError:
                         arguments_dict = {}
 
@@ -695,15 +716,17 @@ async def _generate_artifact_impl(
                         tool_result = {"success": False, "message": tool_result_str}
 
                     # Store for agentic loop - we'll append to appropriate state
-                    tool_results.append({
-                        "tool_call_id": tool_call_id,
-                        "raw_id": raw_id,  # Original ID for responses API
-                        "tool_name": tool_name,
-                        "arguments": arguments_dict,
-                        "arguments_str": arguments_str,
-                        "result": tool_result,
-                        "result_str": tool_result_str,
-                    })
+                    tool_results.append(
+                        {
+                            "tool_call_id": tool_call_id,
+                            "raw_id": raw_id,  # Original ID for responses API
+                            "tool_name": tool_name,
+                            "arguments": arguments_dict,
+                            "arguments_str": arguments_str,
+                            "result": tool_result,
+                            "result_str": tool_result_str,
+                        }
+                    )
 
                     await _emit_modality_event(
                         "call",
@@ -747,7 +770,9 @@ async def _generate_artifact_impl(
             # Check if we need to continue the agentic loop
             if not tool_results:
                 # No tool calls in this iteration, we're done
-                logger.info(f"Agentic loop complete after {iteration} iterations (no tool calls)")
+                logger.info(
+                    f"Agentic loop complete after {iteration} iterations (no tool calls)"
+                )
                 break
 
             # Update conversation state based on API mode
@@ -759,11 +784,13 @@ async def _generate_artifact_impl(
 
                 # 2. Append our function_call_output items (our responses to the tool calls)
                 for tr in tool_results:
-                    responses_input.append({
-                        "type": "function_call_output",
-                        "call_id": tr["raw_id"],
-                        "output": tr["result_str"],
-                    })
+                    responses_input.append(
+                        {
+                            "type": "function_call_output",
+                            "call_id": tr["raw_id"],
+                            "output": tr["result_str"],
+                        }
+                    )
                 logger.info(
                     f"Agentic loop iteration {iteration}: {len(output_items)} output items, "
                     f"{len(tool_results)} tool outputs, "
@@ -773,28 +800,36 @@ async def _generate_artifact_impl(
                 # Chat Completions: append assistant message with tool_calls + tool messages
                 assistant_tool_calls = []
                 for tr in tool_results:
-                    assistant_tool_calls.append({
-                        "id": tr["tool_call_id"],  # Truncated ID for chat completions
-                        "type": "function",
-                        "function": {
-                            "name": tr["tool_name"],
-                            "arguments": tr["arguments_str"],
-                        },
-                    })
+                    assistant_tool_calls.append(
+                        {
+                            "id": tr[
+                                "tool_call_id"
+                            ],  # Truncated ID for chat completions
+                            "type": "function",
+                            "function": {
+                                "name": tr["tool_name"],
+                                "arguments": tr["arguments_str"],
+                            },
+                        }
+                    )
 
-                chat_messages.append({
-                    "role": "assistant",
-                    "content": assistant_output or "",
-                    "tool_calls": assistant_tool_calls,
-                })
+                chat_messages.append(
+                    {
+                        "role": "assistant",
+                        "content": assistant_output or "",
+                        "tool_calls": assistant_tool_calls,
+                    }
+                )
 
                 for tr in tool_results:
-                    chat_messages.append({
-                        "tool_call_id": tr["tool_call_id"],
-                        "role": "tool",
-                        "name": tr["tool_name"],
-                        "content": tr["result_str"],
-                    })
+                    chat_messages.append(
+                        {
+                            "tool_call_id": tr["tool_call_id"],
+                            "role": "tool",
+                            "name": tr["tool_name"],
+                            "content": tr["result_str"],
+                        }
+                    )
                 logger.info(
                     f"Agentic loop iteration {iteration}: {len(tool_results)} tool calls, "
                     f"continuing with {len(chat_messages)} chat messages"

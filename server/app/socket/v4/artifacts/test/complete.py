@@ -8,14 +8,12 @@ from typing import Any
 
 from fastapi import APIRouter
 
-from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
 from app.socket.v4.artifacts.test.types import (
     TestAllCompleteEvent,
     TestRunCompleteEvent,
 )
 from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
 
@@ -59,7 +57,9 @@ async def handle_test_run_complete(data: dict[str, Any]) -> None:
     event = TestRunCompleteEvent(
         chat_id=chat_id_str,
         run_id=str(run_id) if run_id else None,
-        original_run_resource_id=str(original_run_resource_id) if original_run_resource_id else None,
+        original_run_resource_id=str(original_run_resource_id)
+        if original_run_resource_id
+        else None,
         tool_calls=tool_calls,
         current_run=current_run,
         total_runs=total_runs,
@@ -78,8 +78,7 @@ async def handle_test_run_complete(data: dict[str, Any]) -> None:
     # If run_all and there are more runs, trigger next
     if run_all and remaining_runs > 0:
         logger.info(
-            f"Chaining to next run - chat_id={chat_id_str}, "
-            f"remaining={remaining_runs}"
+            f"Chaining to next run - chat_id={chat_id_str}, remaining={remaining_runs}"
         )
         await internal_sio.emit(
             "test_run",
@@ -107,7 +106,9 @@ async def handle_test_run_complete(data: dict[str, Any]) -> None:
             all_complete_event.model_dump(mode="json"),
             room=f"test_{chat_id_str}",
         )
-        logger.info(f"All test runs complete - chat_id={chat_id_str}, total={total_runs}")
+        logger.info(
+            f"All test runs complete - chat_id={chat_id_str}, total={total_runs}"
+        )
 
 
 # =============================================================================

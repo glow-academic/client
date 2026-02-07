@@ -49,8 +49,12 @@ server_router = APIRouter()
 
 
 # SQL paths
-SQL_PATH_CONTEXT = "app/sql/v4/queries/generate/attempt/get_attempt_message_context_complete.sql"
-SQL_PATH_PREPARE = "app/sql/v4/queries/generate/attempt/prepare_attempt_message_complete.sql"
+SQL_PATH_CONTEXT = (
+    "app/sql/v4/queries/generate/attempt/get_attempt_message_context_complete.sql"
+)
+SQL_PATH_PREPARE = (
+    "app/sql/v4/queries/generate/attempt/prepare_attempt_message_complete.sql"
+)
 
 
 def _build_attempt_jinja_context(
@@ -106,7 +110,8 @@ async def _attempt_message_impl(
                     "generate_call_error",
                     GenerateErrorApiRequest(
                         sid=sid,
-                        error_message=resolution.error_message or "Failed to resolve agent",
+                        error_message=resolution.error_message
+                        or "Failed to resolve agent",
                         artifact_type="attempt",
                         group_id=None,
                         resource_type="attempt",
@@ -178,7 +183,9 @@ async def _attempt_message_impl(
             if hints_enabled:
                 effective_entry_types = ATTEMPT_MESSAGE_ENTRY_TYPES
             else:
-                effective_entry_types = [t for t in ATTEMPT_MESSAGE_ENTRY_TYPES if t != "hints"]
+                effective_entry_types = [
+                    t for t in ATTEMPT_MESSAGE_ENTRY_TYPES if t != "hints"
+                ]
 
             # Validate using business logic
             is_valid, failures = validate_attempt_message_access(ctx)
@@ -298,7 +305,9 @@ async def _attempt_message_impl(
 
             # Add system prompt
             if prepare_row.system_prompt:
-                messages.append({"role": "system", "content": prepare_row.system_prompt})
+                messages.append(
+                    {"role": "system", "content": prepare_row.system_prompt}
+                )
 
             # Add rendered developer instructions
             for dm in rendered_developer_messages:
@@ -309,14 +318,19 @@ async def _attempt_message_impl(
                 for hist in prepare_row.chat_history:
                     if isinstance(hist, dict):
                         messages.append(
-                            {"role": hist.get("role", "user"), "content": hist.get("content", "")}
+                            {
+                                "role": hist.get("role", "user"),
+                                "content": hist.get("content", ""),
+                            }
                         )
 
             # Add current user message
             messages.append({"role": "user", "content": message_str})
 
             # Step 6: Emit attempt_user_complete for the user message
-            created_at_str = prepare_row.created_at.isoformat() if prepare_row.created_at else ""
+            created_at_str = (
+                prepare_row.created_at.isoformat() if prepare_row.created_at else ""
+            )
             user_complete_event = AttemptUserCompleteEvent(
                 chat_id=str(data.chat_id),
                 message_id=user_message_id,
@@ -494,12 +508,16 @@ async def attempt_message_api(request: AttemptMessagePayload) -> dict[str, bool]
 
 
 @server_router.post("/attempt/user_complete", response_model=dict[str, bool])
-async def attempt_user_complete_api(request: AttemptUserCompleteEvent) -> dict[str, bool]:
+async def attempt_user_complete_api(
+    request: AttemptUserCompleteEvent,
+) -> dict[str, bool]:
     """Server-to-client event: User message finalized."""
     return {"success": True}
 
 
 @server_router.post("/attempt/assistant_start", response_model=dict[str, bool])
-async def attempt_assistant_start_api(request: AttemptAssistantStartEvent) -> dict[str, bool]:
+async def attempt_assistant_start_api(
+    request: AttemptAssistantStartEvent,
+) -> dict[str, bool]:
     """Server-to-client event: Assistant message generation started."""
     return {"success": True}

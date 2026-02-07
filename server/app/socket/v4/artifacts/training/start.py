@@ -51,9 +51,15 @@ server_router = APIRouter()
 
 
 # SQL paths
-SQL_PATH_CONTEXT = "app/sql/v4/queries/generate/training/get_training_start_context_complete.sql"
-SQL_PATH_PREPARE_START = "app/sql/v4/queries/generate/training/prepare_training_start_complete.sql"
-SQL_PATH_PREPARE_GENERATION = "app/sql/v4/queries/generate/training/prepare_training_generation_complete.sql"
+SQL_PATH_CONTEXT = (
+    "app/sql/v4/queries/generate/training/get_training_start_context_complete.sql"
+)
+SQL_PATH_PREPARE_START = (
+    "app/sql/v4/queries/generate/training/prepare_training_start_complete.sql"
+)
+SQL_PATH_PREPARE_GENERATION = (
+    "app/sql/v4/queries/generate/training/prepare_training_generation_complete.sql"
+)
 
 # Resource types for training generation
 TRAINING_RESOURCE_TYPES = ["problem_statements", "objectives", "personas"]
@@ -237,7 +243,9 @@ async def _training_start_impl(
                 # Build messages for LLM
                 messages: list[dict[str, str]] = []
                 if gen_row.system_prompt:
-                    messages.append({"role": "system", "content": gen_row.system_prompt})
+                    messages.append(
+                        {"role": "system", "content": gen_row.system_prompt}
+                    )
                 for dev_msg in rendered_developer_messages:
                     messages.append({"role": "developer", "content": dev_msg})
                 if data.user_instructions:
@@ -342,7 +350,9 @@ async def _training_start_impl(
                 simulation_id=str(data.simulation_id),
                 attempt_id=str(prepare_row.attempt_id),
                 chat_id=str(prepare_row.chat_id),
-                scenario_id=str(prepare_row.scenario_id) if prepare_row.scenario_id else None,
+                scenario_id=str(prepare_row.scenario_id)
+                if prepare_row.scenario_id
+                else None,
                 scenario_data=scenario_data,
             )
 

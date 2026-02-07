@@ -19,7 +19,9 @@ import hashlib
 import re
 from pathlib import Path
 
-SCRATCH = Path("/private/tmp/claude-502/-Users-ashoksaravanan-Coding-glow/061e39ec-dd18-4961-9d79-33fb27f948f9/scratchpad")
+SCRATCH = Path(
+    "/private/tmp/claude-502/-Users-ashoksaravanan-Coding-glow/061e39ec-dd18-4961-9d79-33fb27f948f9/scratchpad"
+)
 OUTPUT_DIR = Path(__file__).parent.parent / "migrate"
 
 
@@ -33,7 +35,7 @@ def parse_messages_data(filepath: Path) -> tuple[dict, set]:
     messages = {}  # message_id -> {role, content, created_at}
     null_content_ids = set()  # message_ids with \N content
 
-    with open(filepath, 'r') as f:
+    with open(filepath) as f:
         in_copy = False
         for line in f:
             if line.startswith("COPY public.messages"):
@@ -45,15 +47,17 @@ def parse_messages_data(filepath: Path) -> tuple[dict, set]:
                 continue
 
             # Parse tab-separated: created_at, updated_at, content, role, completed, audio, id
-            parts = line.rstrip('\n').split('\t')
+            parts = line.rstrip("\n").split("\t")
             if len(parts) >= 7:
-                created_at, updated_at, content, role, completed, audio, msg_id = parts[:7]
-                if role in ('system', 'developer'):
-                    if content != '\\N':
+                created_at, updated_at, content, role, completed, audio, msg_id = parts[
+                    :7
+                ]
+                if role in ("system", "developer"):
+                    if content != "\\N":
                         messages[msg_id] = {
-                            'role': role,
-                            'content': content,
-                            'created_at': created_at,
+                            "role": role,
+                            "content": content,
+                            "created_at": created_at,
                         }
                     else:
                         null_content_ids.add(msg_id)
@@ -66,7 +70,7 @@ def parse_message_content_data(filepath: Path) -> dict:
     # message_id -> [(idx, content)]
     content_map = {}
 
-    with open(filepath, 'r') as f:
+    with open(filepath) as f:
         in_copy = False
         for line in f:
             if line.startswith("COPY public.message_content"):
@@ -78,7 +82,7 @@ def parse_message_content_data(filepath: Path) -> dict:
                 continue
 
             # Parse: idx, content, created_at, updated_at, message_id
-            parts = line.rstrip('\n').split('\t')
+            parts = line.rstrip("\n").split("\t")
             if len(parts) >= 5:
                 idx, content, created_at, updated_at, msg_id = parts[:5]
                 if msg_id not in content_map:
@@ -97,7 +101,7 @@ def parse_message_runs_data(filepath: Path) -> dict:
     # message_id -> [run_id]
     msg_to_runs = {}
 
-    with open(filepath, 'r') as f:
+    with open(filepath) as f:
         in_copy = False
         for line in f:
             if line.startswith("COPY public.message_runs"):
@@ -109,7 +113,7 @@ def parse_message_runs_data(filepath: Path) -> dict:
                 continue
 
             # Parse: created_at, updated_at, message_id, run_id
-            parts = line.rstrip('\n').split('\t')
+            parts = line.rstrip("\n").split("\t")
             if len(parts) >= 4:
                 created_at, updated_at, msg_id, run_id = parts[:4]
                 if msg_id not in msg_to_runs:
@@ -123,15 +127,15 @@ def escape_sql_string(s: str) -> str:
     """Escape a string for SQL, handling postgres COPY format escapes."""
     # COPY format uses \n for newline, \t for tab, \\ for backslash
     # Convert to SQL string literal escapes
-    s = s.replace('\\\\', '\x00BACKSLASH\x00')  # Temp placeholder
-    s = s.replace('\\n', '\n')
-    s = s.replace('\\t', '\t')
-    s = s.replace('\\r', '\r')
-    s = s.replace('\x00BACKSLASH\x00', '\\')
+    s = s.replace("\\\\", "\x00BACKSLASH\x00")  # Temp placeholder
+    s = s.replace("\\n", "\n")
+    s = s.replace("\\t", "\t")
+    s = s.replace("\\r", "\r")
+    s = s.replace("\x00BACKSLASH\x00", "\\")
 
     # Now escape for SQL string literal
     s = s.replace("'", "''")
-    s = s.replace('\\', '\\\\')
+    s = s.replace("\\", "\\\\")
 
     return s
 
@@ -141,7 +145,9 @@ def content_hash(s: str) -> str:
     return hashlib.md5(s.encode()).hexdigest()[:16]
 
 
-def generate_migration(messages: dict, null_content_ids: set, message_content: dict, msg_to_runs: dict) -> str:
+def generate_migration(
+    messages: dict, null_content_ids: set, message_content: dict, msg_to_runs: dict
+) -> str:
     """Generate the migration SQL with deduplicated content."""
 
     # Step 1: Build unique content table
@@ -156,12 +162,12 @@ def generate_migration(messages: dict, null_content_ids: set, message_content: d
         if msg_id not in msg_to_runs:
             continue
 
-        role = msg_data['role']
-        content = msg_data['content']
+        role = msg_data["role"]
+        content = msg_data["content"]
         c_hash = content_hash(content)
 
         if c_hash not in unique_contents:
-            unique_contents[c_hash] = {'role': role, 'idx': 0, 'content': content}
+            unique_contents[c_hash] = {"role": role, "idx": 0, "content": content}
 
         for run_id in msg_to_runs[msg_id]:
             if run_id not in run_to_content:
@@ -178,15 +184,21 @@ def generate_migration(messages: dict, null_content_ids: set, message_content: d
 
         content_parts = message_content[msg_id]
         for idx, content in content_parts:
-            c_hash = content_hash(content + str(idx))  # Include idx in hash for uniqueness
+            c_hash = content_hash(
+                content + str(idx)
+            )  # Include idx in hash for uniqueness
 
             if c_hash not in unique_contents:
-                unique_contents[c_hash] = {'role': 'developer', 'idx': idx, 'content': content}
+                unique_contents[c_hash] = {
+                    "role": "developer",
+                    "idx": idx,
+                    "content": content,
+                }
 
             for run_id in msg_to_runs[msg_id]:
                 if run_id not in run_to_content:
                     run_to_content[run_id] = []
-                run_to_content[run_id].append(('developer', c_hash, idx))
+                run_to_content[run_id].append(("developer", c_hash, idx))
 
     print(f"  Unique content pieces: {len(unique_contents)}")
     print(f"  Runs with content: {len(run_to_content)}")
@@ -231,19 +243,27 @@ CREATE INDEX ON _run_content_map (run_id, role);
     sql_parts.append("\n-- Insert unique content (deduplicated)")
     batch = []
     for c_hash, data in unique_contents.items():
-        escaped = escape_sql_string(data['content'])
+        escaped = escape_sql_string(data["content"])
         batch.append(f"('{c_hash}', '{data['role']}', {data['idx']}, E'{escaped}')")
 
         if len(batch) >= 50:
-            sql_parts.append("INSERT INTO _unique_content (content_hash, role, idx, content) VALUES\n" +
-                           ",\n".join(batch) + ";")
+            sql_parts.append(
+                "INSERT INTO _unique_content (content_hash, role, idx, content) VALUES\n"
+                + ",\n".join(batch)
+                + ";"
+            )
             batch = []
 
     if batch:
-        sql_parts.append("INSERT INTO _unique_content (content_hash, role, idx, content) VALUES\n" +
-                        ",\n".join(batch) + ";")
+        sql_parts.append(
+            "INSERT INTO _unique_content (content_hash, role, idx, content) VALUES\n"
+            + ",\n".join(batch)
+            + ";"
+        )
 
-    sql_parts.append(f"\nDO $$ BEGIN RAISE NOTICE 'Inserted {len(unique_contents)} unique content pieces'; END $$;\n")
+    sql_parts.append(
+        f"\nDO $$ BEGIN RAISE NOTICE 'Inserted {len(unique_contents)} unique content pieces'; END $$;\n"
+    )
 
     # Insert run -> content mapping
     sql_parts.append("\n-- Insert run -> content mapping")
@@ -255,13 +275,19 @@ CREATE INDEX ON _run_content_map (run_id, role);
             total_mappings += 1
 
             if len(batch) >= 500:
-                sql_parts.append("INSERT INTO _run_content_map (run_id, role, content_hash, idx) VALUES\n" +
-                               ",\n".join(batch) + ";")
+                sql_parts.append(
+                    "INSERT INTO _run_content_map (run_id, role, content_hash, idx) VALUES\n"
+                    + ",\n".join(batch)
+                    + ";"
+                )
                 batch = []
 
     if batch:
-        sql_parts.append("INSERT INTO _run_content_map (run_id, role, content_hash, idx) VALUES\n" +
-                        ",\n".join(batch) + ";")
+        sql_parts.append(
+            "INSERT INTO _run_content_map (run_id, role, content_hash, idx) VALUES\n"
+            + ",\n".join(batch)
+            + ";"
+        )
 
     sql_parts.append(f"""
 DO $$ BEGIN RAISE NOTICE 'Inserted {total_mappings} run->content mappings'; END $$;
@@ -370,7 +396,9 @@ def main():
 
     messages, null_content_ids = parse_messages_data(messages_file)
     print(f"  Found {len(messages)} system/developer messages with inline content")
-    print(f"  Found {len(null_content_ids)} system/developer messages needing message_content lookup")
+    print(
+        f"  Found {len(null_content_ids)} system/developer messages needing message_content lookup"
+    )
 
     message_content = parse_message_content_data(message_content_file)
     print(f"  Found {len(message_content)} messages with multi-part content (total)")
@@ -392,7 +420,7 @@ def main():
     next_num = max_num + 1
     output_file = OUTPUT_DIR / f"{next_num}_backfill_system_developer_content.sql"
 
-    with open(output_file, 'w') as f:
+    with open(output_file, "w") as f:
         f.write(sql)
 
     print(f"\nGenerated: {output_file}")

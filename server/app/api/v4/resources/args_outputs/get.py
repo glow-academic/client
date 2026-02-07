@@ -55,9 +55,7 @@ async def get_args_outputs_internal(
         await execute_sql_typed(conn, SQL_PATH, params=params),
     )
 
-    items: list[QGetArgsOutputsV4Item] = (
-        result.items if result and result.items else []
-    )
+    items: list[QGetArgsOutputsV4Item] = result.items if result and result.items else []
 
     await set_cached(
         cache_key_val,

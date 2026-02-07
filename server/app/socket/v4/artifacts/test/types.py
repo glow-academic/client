@@ -17,7 +17,6 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-
 # =============================================================================
 # Entry type constants (predefined per handler, not in payload)
 # =============================================================================

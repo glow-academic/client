@@ -67,7 +67,9 @@ async def _generate_eval_impl(
                     artifact_type="eval",
                     message="No agent configured for requested resources",
                     resource_id=str(data.eval_id) if data.eval_id else None,
-                    group_id=str(extract_group_id(result)) if extract_group_id(result) else None,
+                    group_id=str(extract_group_id(result))
+                    if extract_group_id(result)
+                    else None,
                     resource_type=(data.resource_types or ["eval"])[0],
                 )
                 return

@@ -12,12 +12,8 @@ from app.utils.sql_helper import load_sql
 
 internal_sio = get_internal_sio()
 
-CREATE_RUN_SQL_PATH = (
-    "app/sql/v4/queries/generate/start/get_generation_run_context_and_create_run_complete.sql"
-)
-TEXT_RUN_CONTEXT_SQL_PATH = (
-    "app/sql/v4/queries/generate/text/get_text_run_context_for_existing_run_complete.sql"
-)
+CREATE_RUN_SQL_PATH = "app/sql/v4/queries/generate/start/get_generation_run_context_and_create_run_complete.sql"
+TEXT_RUN_CONTEXT_SQL_PATH = "app/sql/v4/queries/generate/text/get_text_run_context_for_existing_run_complete.sql"
 
 
 def _normalize_key(value: str | None) -> str:
@@ -65,7 +61,11 @@ def pick_agent_id(
 
     for resource_type in resource_types or []:
         normalized_resource = _normalize_key(resource_type)
-        singular = normalized_resource[:-1] if normalized_resource.endswith("s") else normalized_resource
+        singular = (
+            normalized_resource[:-1]
+            if normalized_resource.endswith("s")
+            else normalized_resource
+        )
         for candidate in (normalized_resource, singular):
             if candidate in agent_fields:
                 return agent_fields[candidate]

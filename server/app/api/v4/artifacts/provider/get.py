@@ -47,7 +47,9 @@ def _extract_provider_websocket_context(result: GetProviderSqlRow) -> dict[str, 
         "resource_group_ids",
         "generation_context",
     )
-    return {key: payload.get(key) for key in context_keys if payload.get(key) is not None}
+    return {
+        key: payload.get(key) for key in context_keys if payload.get(key) is not None
+    }
 
 
 async def get_provider_internal(

@@ -6,7 +6,7 @@ Individual test progress is handled by test/progress.py.
 
 from fastapi import APIRouter
 
-from app.main import get_internal_sio, sio
+from app.main import get_internal_sio
 from app.socket.v4.artifacts.benchmark.types import BenchmarkProgressEvent
 
 internal_sio = get_internal_sio()

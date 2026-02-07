@@ -6,7 +6,7 @@ Actual test completion is handled by test/complete.py.
 
 from fastapi import APIRouter
 
-from app.main import get_internal_sio, sio
+from app.main import get_internal_sio
 from app.socket.v4.artifacts.benchmark.types import BenchmarkCompleteEvent
 
 internal_sio = get_internal_sio()

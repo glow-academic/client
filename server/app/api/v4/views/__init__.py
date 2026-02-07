@@ -6,14 +6,14 @@ This consolidates home/practice/dashboard/reports into unified views with filter
 
 from fastapi import APIRouter
 
-from app.api.v4.views.analytics import router as analytics_router
-from app.api.v4.views.simulation import router as simulation_router
-from app.api.v4.views.pricing import router as pricing_router
 from app.api.v4.views.activity import router as activity_router
-from app.api.v4.views.health import router as health_router
-from app.api.v4.views.benchmark import router as benchmark_router
+from app.api.v4.views.analytics import router as analytics_router
 from app.api.v4.views.artifacts import router as artifacts_router
+from app.api.v4.views.benchmark import router as benchmark_router
 from app.api.v4.views.drafts import router as drafts_router
+from app.api.v4.views.health import router as health_router
+from app.api.v4.views.pricing import router as pricing_router
+from app.api.v4.views.simulation import router as simulation_router
 
 router = APIRouter(prefix="/views", tags=["views"])
 

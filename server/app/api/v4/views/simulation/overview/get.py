@@ -63,9 +63,13 @@ async def get_simulation_overview_internal(
         "views/simulation/overview/get",
         {
             "profile_id": str(profile_id) if profile_id else None,
-            "simulation_ids": [str(s) for s in simulation_ids] if simulation_ids else None,
+            "simulation_ids": [str(s) for s in simulation_ids]
+            if simulation_ids
+            else None,
             "cohort_ids": [str(c) for c in cohort_ids] if cohort_ids else None,
-            "department_ids": [str(d) for d in department_ids] if department_ids else None,
+            "department_ids": [str(d) for d in department_ids]
+            if department_ids
+            else None,
             "practice": practice,
             "start_date": start_date,
             "end_date": end_date,

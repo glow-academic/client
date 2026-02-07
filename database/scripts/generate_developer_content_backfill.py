@@ -14,7 +14,9 @@ import re
 import subprocess
 from pathlib import Path
 
-SCRATCH = Path("/private/tmp/claude-502/-Users-ashoksaravanan-Coding-glow/061e39ec-dd18-4961-9d79-33fb27f948f9/scratchpad")
+SCRATCH = Path(
+    "/private/tmp/claude-502/-Users-ashoksaravanan-Coding-glow/061e39ec-dd18-4961-9d79-33fb27f948f9/scratchpad"
+)
 OUTPUT_DIR = Path(__file__).parent.parent / "migrate"
 
 
@@ -28,7 +30,7 @@ def parse_developer_messages(filepath: Path) -> tuple[dict, set]:
     messages_with_content = {}
     null_content_ids = set()
 
-    with open(filepath, 'r') as f:
+    with open(filepath) as f:
         in_copy = False
         for line in f:
             if line.startswith("COPY public.messages"):
@@ -38,11 +40,11 @@ def parse_developer_messages(filepath: Path) -> tuple[dict, set]:
                 break
             if not in_copy:
                 continue
-            parts = line.rstrip('\n').split('\t')
+            parts = line.rstrip("\n").split("\t")
             if len(parts) >= 7:
                 content, role, msg_id = parts[2], parts[3], parts[6]
-                if role == 'developer':
-                    if content != '\\N':
+                if role == "developer":
+                    if content != "\\N":
                         messages_with_content[msg_id] = content
                     else:
                         null_content_ids.add(msg_id)
@@ -57,7 +59,7 @@ def parse_message_content(filepath: Path, target_msg_ids: set) -> dict:
     """
     content_map = {}  # msg_id -> [(idx, content)]
 
-    with open(filepath, 'r') as f:
+    with open(filepath) as f:
         in_copy = False
         for line in f:
             if line.startswith("COPY public.message_content"):
@@ -67,7 +69,7 @@ def parse_message_content(filepath: Path, target_msg_ids: set) -> dict:
                 break
             if not in_copy:
                 continue
-            parts = line.rstrip('\n').split('\t')
+            parts = line.rstrip("\n").split("\t")
             if len(parts) >= 5:
                 idx, content, _, _, msg_id = parts[:5]
                 if msg_id in target_msg_ids:
@@ -79,7 +81,7 @@ def parse_message_content(filepath: Path, target_msg_ids: set) -> dict:
     result = {}
     for msg_id, parts in content_map.items():
         parts.sort(key=lambda x: x[0])
-        concatenated = '\n\n'.join(p[1] for p in parts)
+        concatenated = "\n\n".join(p[1] for p in parts)
         result[msg_id] = concatenated
 
     return result
@@ -95,7 +97,7 @@ def parse_message_runs(filepath: Path) -> tuple[dict, dict]:
     msg_to_run = {}
     msg_to_all_runs = {}
 
-    with open(filepath, 'r') as f:
+    with open(filepath) as f:
         in_copy = False
         for line in f:
             if line.startswith("COPY public.message_runs"):
@@ -105,7 +107,7 @@ def parse_message_runs(filepath: Path) -> tuple[dict, dict]:
                 break
             if not in_copy:
                 continue
-            parts = line.rstrip('\n').split('\t')
+            parts = line.rstrip("\n").split("\t")
             if len(parts) >= 4:
                 msg_id, run_id = parts[2], parts[3]
                 if msg_id not in msg_to_run:
@@ -119,8 +121,14 @@ def parse_message_runs(filepath: Path) -> tuple[dict, dict]:
 
 def get_current_user_messages_per_first_run() -> dict:
     """Query current DB to get first_run_id -> user_message_id for runs with developer messages."""
-    result = subprocess.run([
-        'psql', 'postgresql://myuser:mypassword@localhost:5432/mydb', '-t', '-A', '-c', '''
+    result = subprocess.run(
+        [
+            "psql",
+            "postgresql://myuser:mypassword@localhost:5432/mydb",
+            "-t",
+            "-A",
+            "-c",
+            """
         SELECT DISTINCT ON (r.id)
             r.id as run_id,
             me_user.id as user_msg_id
@@ -128,26 +136,29 @@ def get_current_user_messages_per_first_run() -> dict:
         JOIN messages_entry me ON me.run_id = r.id AND me.role = 'developer'
         JOIN messages_entry me_user ON me_user.run_id = r.id AND me_user.role = 'user'
         ORDER BY r.id, me_user.created_at
-        '''
-    ], capture_output=True, text=True)
+        """,
+        ],
+        capture_output=True,
+        text=True,
+    )
 
     run_to_user_msg = {}
-    for line in result.stdout.strip().split('\n'):
-        if '|' in line:
-            run_id, user_msg_id = line.split('|')
+    for line in result.stdout.strip().split("\n"):
+        if "|" in line:
+            run_id, user_msg_id = line.split("|")
             run_to_user_msg[run_id] = user_msg_id
     return run_to_user_msg
 
 
 def escape_sql_string(s: str) -> str:
     """Escape a string for SQL."""
-    s = s.replace('\\\\', '\x00BACKSLASH\x00')
-    s = s.replace('\\n', '\n')
-    s = s.replace('\\t', '\t')
-    s = s.replace('\\r', '\r')
-    s = s.replace('\x00BACKSLASH\x00', '\\')
+    s = s.replace("\\\\", "\x00BACKSLASH\x00")
+    s = s.replace("\\n", "\n")
+    s = s.replace("\\t", "\t")
+    s = s.replace("\\r", "\r")
+    s = s.replace("\x00BACKSLASH\x00", "\\")
     s = s.replace("'", "''")
-    s = s.replace('\\', '\\\\')
+    s = s.replace("\\", "\\\\")
     return s
 
 
@@ -183,13 +194,19 @@ CREATE TEMP TABLE _developer_content (
         batch.append(f"('{run_id}', E'{escaped}')")
 
         if len(batch) >= 20:
-            sql_parts.append("INSERT INTO _developer_content (run_id, content) VALUES\n" +
-                           ",\n".join(batch) + "\nON CONFLICT (run_id) DO NOTHING;")
+            sql_parts.append(
+                "INSERT INTO _developer_content (run_id, content) VALUES\n"
+                + ",\n".join(batch)
+                + "\nON CONFLICT (run_id) DO NOTHING;"
+            )
             batch = []
 
     if batch:
-        sql_parts.append("INSERT INTO _developer_content (run_id, content) VALUES\n" +
-                        ",\n".join(batch) + "\nON CONFLICT (run_id) DO NOTHING;")
+        sql_parts.append(
+            "INSERT INTO _developer_content (run_id, content) VALUES\n"
+            + ",\n".join(batch)
+            + "\nON CONFLICT (run_id) DO NOTHING;"
+        )
 
     sql_parts.append(f"""
 DO $$ BEGIN RAISE NOTICE 'Loaded {len(run_to_content)} run->content mappings'; END $$;
@@ -254,7 +271,9 @@ def main():
     # Step 1: Get developer messages from backup
     dev_with_content, dev_null_content = parse_developer_messages(messages_file)
     print(f"  Developer messages with inline content: {len(dev_with_content)}")
-    print(f"  Developer messages needing message_content lookup: {len(dev_null_content)}")
+    print(
+        f"  Developer messages needing message_content lookup: {len(dev_null_content)}"
+    )
 
     # Step 2: Get multi-part content for developer messages with NULL content
     multi_part_content = parse_message_content(message_content_file, dev_null_content)
@@ -280,7 +299,9 @@ def main():
     # Step 6: Get current DB mapping
     print("\nQuerying current database...")
     current_run_to_user_msg = get_current_user_messages_per_first_run()
-    print(f"  Current runs with developer+user messages: {len(current_run_to_user_msg)}")
+    print(
+        f"  Current runs with developer+user messages: {len(current_run_to_user_msg)}"
+    )
 
     # Step 7: Build final mapping via user messages
     current_run_to_content = {}
@@ -288,9 +309,13 @@ def main():
         if user_msg_id in msg_to_run:
             backup_run_id = msg_to_run[user_msg_id]
             if backup_run_id in backup_run_to_content:
-                current_run_to_content[current_run_id] = backup_run_to_content[backup_run_id]
+                current_run_to_content[current_run_id] = backup_run_to_content[
+                    backup_run_id
+                ]
 
-    print(f"  Matched {len(current_run_to_content)} current runs to backup developer content")
+    print(
+        f"  Matched {len(current_run_to_content)} current runs to backup developer content"
+    )
 
     if not current_run_to_content:
         print("\nNo matches found! Cannot generate migration.")
@@ -311,7 +336,7 @@ def main():
     next_num = max_num + 1
     output_file = OUTPUT_DIR / f"{next_num}_fix_developer_content.sql"
 
-    with open(output_file, 'w') as f:
+    with open(output_file, "w") as f:
         f.write(sql)
 
     print(f"\nGenerated: {output_file}")

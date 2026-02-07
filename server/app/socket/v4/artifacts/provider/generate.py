@@ -67,7 +67,9 @@ async def _generate_provider_impl(
                     artifact_type="provider",
                     message="No agent configured for requested resources",
                     resource_id=str(data.provider_id) if data.provider_id else None,
-                    group_id=str(extract_group_id(result)) if extract_group_id(result) else None,
+                    group_id=str(extract_group_id(result))
+                    if extract_group_id(result)
+                    else None,
                     resource_type=(data.resource_types or ["provider"])[0],
                 )
                 return
@@ -116,6 +118,8 @@ async def provider_generate(sid: str, data: dict[str, Any]) -> None:
             sid=sid,
             artifact_type="provider",
             message=f"Invalid request: {str(e)}",
-            resource_id=str(data.get("provider_id")) if data.get("provider_id") else None,
+            resource_id=str(data.get("provider_id"))
+            if data.get("provider_id")
+            else None,
             resource_type="provider",
         )

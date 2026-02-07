@@ -40,6 +40,8 @@ async def handle_department_call_progress(data: dict[str, Any]) -> None:
 
 
 @server_router.post("/department_generation_progress")
-async def department_generation_progress_api(request: dict[str, Any]) -> dict[str, bool]:
+async def department_generation_progress_api(
+    request: dict[str, Any],
+) -> dict[str, bool]:
     _ = request
     return {"ok": True}

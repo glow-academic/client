@@ -150,7 +150,11 @@ async def save_simulation(
             else:
                 # Create mode
                 # Use department_ids from request (explicit values, not from draft)
-                request_department_ids = [str(d) for d in request.department_ids] if request.department_ids else []
+                request_department_ids = (
+                    [str(d) for d in request.department_ids]
+                    if request.department_ids
+                    else []
+                )
                 if not compute_can_create(user_role, request_department_ids):
                     raise HTTPException(
                         status_code=403,

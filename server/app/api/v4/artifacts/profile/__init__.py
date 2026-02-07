@@ -4,8 +4,8 @@ from fastapi import APIRouter
 
 from app.api.v4.artifacts.profile.bulk import router as bulk_router
 from app.api.v4.artifacts.profile.delete import router as delete_router
-from app.api.v4.artifacts.profile.duplicate import router as duplicate_router
 from app.api.v4.artifacts.profile.draft import router as draft_router
+from app.api.v4.artifacts.profile.duplicate import router as duplicate_router
 from app.api.v4.artifacts.profile.get import router as get_router
 from app.api.v4.artifacts.profile.list import router as list_router
 from app.api.v4.artifacts.profile.save import router as save_router

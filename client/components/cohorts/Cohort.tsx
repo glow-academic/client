@@ -163,34 +163,41 @@ function CohortComponent({
       name_suggestions: cohortData.name_suggestions,
       names: cohortData.names,
       name_required: cohortData.name_required,
-      name_agent_id: cohortData.name_agent_id,
+      name_show_ai_generate: cohortData.name_show_ai_generate,
+      name_domain_id: cohortData.name_domain_id,
       description_resource: cohortData.description_resource,
       show_description: cohortData.show_description,
       description_suggestions: cohortData.description_suggestions,
       description_required: cohortData.description_required,
-      description_agent_id: cohortData.description_agent_id,
+      description_show_ai_generate: cohortData.description_show_ai_generate,
+      description_domain_id: cohortData.description_domain_id,
       descriptions: cohortData.descriptions,
       department_resources: cohortData.department_resources,
       show_departments: cohortData.show_departments,
       department_suggestions: cohortData.department_suggestions,
       departments_required: cohortData.departments_required,
-      departments_agent_id: cohortData.departments_agent_id,
+      departments_show_ai_generate: cohortData.departments_show_ai_generate,
+      departments_domain_id: cohortData.departments_domain_id,
       departments: cohortData.departments,
       flag_resource: cohortData.flag_resource,
       show_flag: cohortData.show_flag,
       flag_required: cohortData.flag_required,
-      flag_agent_id: cohortData.flag_agent_id,
+      flag_show_ai_generate: cohortData.flag_show_ai_generate,
+      flag_domain_id: cohortData.flag_domain_id,
       simulation_resources: cohortData.simulation_resources,
       show_simulations: cohortData.show_simulations,
       simulation_suggestions: cohortData.simulation_suggestions,
       simulations_required: cohortData.simulations_required,
-      simulations_agent_id: cohortData.simulations_agent_id,
+      simulations_show_ai_generate: cohortData.simulations_show_ai_generate,
+      simulations_domain_id: cohortData.simulations_domain_id,
       simulations: cohortData.simulations,
       simulation_positions: cohortData.simulation_positions,
       show_simulation_positions: cohortData.show_simulation_positions,
       simulation_positions_required: cohortData.simulation_positions_required,
-      simulation_positions_agent_id: cohortData.simulation_positions_agent_id,
-      basic_agent_id: cohortData.basic_agent_id,
+      simulation_positions_show_ai_generate: cohortData.simulation_positions_show_ai_generate,
+      simulation_positions_domain_id: cohortData.simulation_positions_domain_id,
+      basic_show_ai_generate: cohortData.basic_show_ai_generate,
+      simulations_step_show_ai_generate: cohortData.simulations_step_show_ai_generate,
     };
     // Intentionally depend on individual fields, not whole cohortData object
     // to prevent recreation when only object reference changes
@@ -202,34 +209,41 @@ function CohortComponent({
     cohortData?.name_suggestions,
     cohortData?.names,
     cohortData?.name_required,
-    cohortData?.name_agent_id,
+    cohortData?.name_show_ai_generate,
+    cohortData?.name_domain_id,
     cohortData?.description_resource,
     cohortData?.show_description,
     cohortData?.description_suggestions,
     cohortData?.description_required,
-    cohortData?.description_agent_id,
+    cohortData?.description_show_ai_generate,
+    cohortData?.description_domain_id,
     cohortData?.descriptions,
     cohortData?.department_resources,
     cohortData?.show_departments,
     cohortData?.department_suggestions,
     cohortData?.departments_required,
-    cohortData?.departments_agent_id,
+    cohortData?.departments_show_ai_generate,
+    cohortData?.departments_domain_id,
     cohortData?.departments,
     cohortData?.flag_resource,
     cohortData?.show_flag,
     cohortData?.flag_required,
-    cohortData?.flag_agent_id,
+    cohortData?.flag_show_ai_generate,
+    cohortData?.flag_domain_id,
     cohortData?.simulation_resources,
     cohortData?.show_simulations,
     cohortData?.simulation_suggestions,
     cohortData?.simulations_required,
-    cohortData?.simulations_agent_id,
+    cohortData?.simulations_show_ai_generate,
+    cohortData?.simulations_domain_id,
     cohortData?.simulations,
     cohortData?.simulation_positions,
     cohortData?.show_simulation_positions,
     cohortData?.simulation_positions_required,
-    cohortData?.simulation_positions_agent_id,
-    cohortData?.basic_agent_id,
+    cohortData?.simulation_positions_show_ai_generate,
+    cohortData?.simulation_positions_domain_id,
+    cohortData?.basic_show_ai_generate,
+    cohortData?.simulations_step_show_ai_generate,
   ]);
 
   // Helper to check if a resource type can be regenerated
@@ -799,60 +813,28 @@ function CohortComponent({
     };
   }, [socket, isConnected, cohortData?.group_id, router]);
 
-  // Multi-generation handler - accepts list of resource types and optional user instructions
-  // Helper function to determine agent_type from resource types
-  const determineAgentType = useCallback(
-    (resourceTypes: ResourceType[]): string | null => {
-      const basicResources: ResourceType[] = [
-        "names",
-        "descriptions",
-        "flags",
-        "departments",
-      ];
-      const allResourceTypes: ResourceType[] = [
-        "names",
-        "descriptions",
-        "flags",
-        "departments",
-        "simulations",
-        "simulation_positions",
-      ];
-
-      const isBasicCombo =
-        resourceTypes.length === basicResources.length &&
-        resourceTypes.every((rt) => basicResources.includes(rt));
-      const isAllResources =
-        resourceTypes.length === allResourceTypes.length &&
-        resourceTypes.every((rt) => allResourceTypes.includes(rt));
-
-      if (isAllResources) {
-        return "general";
-      } else if (isBasicCombo) {
-        return "basic";
-      } else if (resourceTypes.length === 1) {
-        // Single resource type - map to agent_type
-        const agentTypeMap: Record<ResourceType, string> = {
-          names: "name",
-          descriptions: "description",
-          flags: "flags",
-          departments: "departments",
-          simulations: "simulations",
-          simulation_positions: "simulation_positions",
-        };
-        const firstType = resourceTypes[0];
-        if (firstType && firstType in agentTypeMap) {
-          return agentTypeMap[firstType];
-        }
-      }
-      return null;
+  // Domain-based generation: map resource types to domain_ids
+  const getDomainIds = useCallback(
+    (resourceTypes: ResourceType[]): string[] => {
+      if (!cohortData) return [];
+      const domainIdMap: Partial<Record<ResourceType, string | null | undefined>> = {
+        names: cohortData.name_domain_id,
+        descriptions: cohortData.description_domain_id,
+        flags: cohortData.flag_domain_id,
+        departments: cohortData.departments_domain_id,
+        simulations: cohortData.simulations_domain_id,
+        simulation_positions: cohortData.simulation_positions_domain_id,
+      };
+      return resourceTypes
+        .map((rt) => domainIdMap[rt])
+        .filter((id): id is string => id != null);
     },
-    []
+    [cohortData]
   );
 
   const handleGenerateResources = useCallback(
     async (
       resourceTypes: ResourceType[],
-      agentType: string | null,
       userInstructions?: string
     ) => {
       if (!socket || !isConnected) {
@@ -877,71 +859,50 @@ function CohortComponent({
       const simulationShowSelected =
         (formData["simulationShowSelected"] as boolean | undefined) ?? false;
 
-      // Emit cohort_generate event with GetCohortApiRequest fields
-      // Note: This event may not exist yet, but structure is ready
+      // Emit cohort_generate with domain_ids (new pattern)
       socket.emit("cohort_generate", {
-        resource_types: resourceTypes, // Simple array of strings
-        agent_type: agentType,
+        domain_ids: getDomainIds(resourceTypes),
         user_instructions: userInstructions ? [userInstructions] : null,
         // GetCohortApiRequest fields from formData
         draft_id: draftId || null,
         descriptions_search: descriptionSearch || null,
         simulation_search: simulationSearch || null,
         simulation_show_selected: simulationShowSelected || false,
-        mcp: false,
         cohort_id: cohortId || null,
       });
     },
-    [socket, isConnected, cohortId]
+    [socket, isConnected, cohortId, getDomainIds]
   );
 
   // Individual generation handlers - generate directly without modals
   const handleGenerateName = useCallback(
-    async () =>
-      handleGenerateResources(["names"], determineAgentType(["names"])),
-    [handleGenerateResources, determineAgentType]
+    async () => handleGenerateResources(["names"]),
+    [handleGenerateResources]
   );
 
   const handleGenerateDescription = useCallback(
-    async () =>
-      handleGenerateResources(
-        ["descriptions"],
-        determineAgentType(["descriptions"])
-      ),
-    [handleGenerateResources, determineAgentType]
+    async () => handleGenerateResources(["descriptions"]),
+    [handleGenerateResources]
   );
 
   const handleGenerateDepartments = useCallback(
-    async () =>
-      handleGenerateResources(
-        ["departments"],
-        determineAgentType(["departments"])
-      ),
-    [handleGenerateResources, determineAgentType]
+    async () => handleGenerateResources(["departments"]),
+    [handleGenerateResources]
   );
 
   const handleGenerateFlags = useCallback(
-    async () =>
-      handleGenerateResources(["flags"], determineAgentType(["flags"])),
-    [handleGenerateResources, determineAgentType]
+    async () => handleGenerateResources(["flags"]),
+    [handleGenerateResources]
   );
 
   const handleGenerateSimulations = useCallback(
-    async () =>
-      handleGenerateResources(
-        ["simulations"],
-        determineAgentType(["simulations"])
-      ),
-    [handleGenerateResources, determineAgentType]
+    async () => handleGenerateResources(["simulations"]),
+    [handleGenerateResources]
   );
 
   const handleGenerateSimulationPositions = useCallback(
-    async () =>
-      handleGenerateResources(
-        ["simulation_positions"],
-        determineAgentType(["simulation_positions"])
-      ),
-    [handleGenerateResources, determineAgentType]
+    async () => handleGenerateResources(["simulation_positions"]),
+    [handleGenerateResources]
   );
 
   // Disabled logic based on can_edit flag - standardized for all resource components
@@ -1147,16 +1108,14 @@ function CohortComponent({
   const handleModalGenerate = useCallback(
     async (selectedResources: string[], instructions: string) => {
       const resourceTypes = selectedResources as ResourceType[];
-      const agentType = determineAgentType(resourceTypes);
       await handleGenerateResources(
         resourceTypes,
-        agentType,
         instructions.trim() || undefined
       );
       setShowGenerateModal(false);
       setModalInstructions("");
     },
-    [handleGenerateResources, determineAgentType]
+    [handleGenerateResources]
   );
 
   // Listen for full-page-generate event from layout
@@ -1318,7 +1277,7 @@ function CohortComponent({
                   required={currentCohortData?.name_required ?? false}
                   hideDescription={true}
                   group_id={currentCohortData?.group_id ?? null}
-                  agent_id={currentCohortData?.name_agent_id ?? null}
+                  showAiGenerate={currentCohortData?.name_show_ai_generate ?? false}
                   createNamesAction={
                     createNamesAction as
                       | ((
@@ -1332,7 +1291,7 @@ function CohortComponent({
               actions={
                 stepResources["basic"] &&
                 stepResources["basic"].length > 0 &&
-                currentCohortData?.basic_agent_id ? (
+                (currentCohortData?.basic_show_ai_generate ?? false) ? (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -1413,7 +1372,7 @@ function CohortComponent({
                   rows={4}
                   data-testid="input-cohort-description"
                   group_id={currentCohortData?.group_id ?? null}
-                  agent_id={currentCohortData?.description_agent_id ?? null}
+                  showAiGenerate={currentCohortData?.description_show_ai_generate ?? false}
                   createDescriptionsAction={createDescriptionsAction}
                 />
 
@@ -1438,7 +1397,7 @@ function CohortComponent({
                   isGenerating={isGenerating("departments")}
                   required={currentCohortData?.departments_required ?? false}
                   group_id={currentCohortData?.group_id ?? null}
-                  agent_id={currentCohortData?.departments_agent_id ?? null}
+                  showAiGenerate={currentCohortData?.departments_show_ai_generate ?? false}
                 />
 
                 {/* Active Switch - using Flags resource component */}
@@ -1459,7 +1418,7 @@ function CohortComponent({
                   helpText="Inactive cohorts will not be available for selection"
                   required={currentCohortData?.flag_required ?? false}
                   group_id={currentCohortData?.group_id ?? null}
-                  agent_id={currentCohortData?.flag_agent_id ?? null}
+                  showAiGenerate={currentCohortData?.flag_show_ai_generate ?? false}
                 />
               </div>
             </StepCard>
@@ -1509,7 +1468,7 @@ function CohortComponent({
               actions={
                 stepResources["simulations"] &&
                 stepResources["simulations"].length > 0 &&
-                currentCohortData?.simulations_agent_id ? (
+                (currentCohortData?.simulations_step_show_ai_generate ?? false) ? (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -1576,7 +1535,7 @@ function CohortComponent({
                 label="Simulations"
                 required={currentCohortData?.simulations_required ?? false}
                 group_id={currentCohortData?.group_id ?? null}
-                agent_id={currentCohortData?.simulations_agent_id ?? null}
+                showAiGenerate={currentCohortData?.simulations_show_ai_generate ?? false}
                 searchTerm={simulationSearchTerm}
                 showSelectedFilter={simulationShowSelected}
               />
@@ -1609,9 +1568,7 @@ function CohortComponent({
                   currentCohortData?.simulation_positions_required ?? false
                 }
                 group_id={currentCohortData?.group_id ?? null}
-                agent_id={
-                  currentCohortData?.simulation_positions_agent_id ?? null
-                }
+                showAiGenerate={currentCohortData?.simulation_positions_show_ai_generate ?? false}
                 onGenerate={
                   isEditMode ? handleGenerateSimulationPositions : undefined
                 }

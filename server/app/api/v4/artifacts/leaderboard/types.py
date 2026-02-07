@@ -122,7 +122,9 @@ class LeaderboardSections(BaseModel):
         default_factory=LeaderboardHeaderMetrics
     )
     rankings: LeaderboardSectionStatus = Field(default_factory=LeaderboardSectionStatus)
-    accolades: LeaderboardSectionStatus = Field(default_factory=LeaderboardSectionStatus)
+    accolades: LeaderboardSectionStatus = Field(
+        default_factory=LeaderboardSectionStatus
+    )
     trends: LeaderboardSectionStatus = Field(default_factory=LeaderboardSectionStatus)
     filters: LeaderboardSectionStatus = Field(default_factory=LeaderboardSectionStatus)
     accolade_winners: LeaderboardAccoladeWinners = Field(

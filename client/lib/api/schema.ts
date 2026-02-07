@@ -785,7 +785,7 @@ export interface paths {
          * Get Cohort
          * @description Get cohort information using two-pass architecture.
          *
-         *     This is a thin HTTP wrapper around get_cohort_internal().
+         *     This is a thin HTTP wrapper around get_cohort_client().
          *
          *     Query 1: Access check (user role, departments, cohort state)
          *     Query 2: ID fetching (resource IDs, suggestions, agents)
@@ -10984,6 +10984,32 @@ export interface components {
             generated?: boolean | null;
         };
         /**
+         * CohortResourceBucket
+         * @description Generic resources bucket with full objects (always plural lists).
+         */
+        CohortResourceBucket: {
+            /** Names */
+            names?: components["schemas"]["CohortNameResource"][] | null;
+            /** Descriptions */
+            descriptions?: components["schemas"]["CohortDescriptionResource"][] | null;
+            /** Flags */
+            flags?: components["schemas"]["CohortFlagResource"][] | null;
+            /** Departments */
+            departments?: components["schemas"]["CohortDepartment"][] | null;
+            /** Simulations */
+            simulations?: components["schemas"]["CohortSimulation"][] | null;
+            /** Simulation Positions */
+            simulation_positions?: components["schemas"]["CohortSimulationPosition"][] | null;
+        };
+        /**
+         * CohortResources
+         * @description Full resources + current selections.
+         */
+        CohortResources: {
+            resources?: components["schemas"]["CohortResourceBucket"] | null;
+            current?: components["schemas"]["CohortResourceBucket"] | null;
+        };
+        /**
          * CohortSimulation
          * @description Simulation for cohort.
          */
@@ -13960,17 +13986,33 @@ export interface components {
             draft_version?: number | null;
             /** Group Id */
             group_id?: string | null;
+            /** Names Group Id */
+            names_group_id?: string | null;
+            /** Descriptions Group Id */
+            descriptions_group_id?: string | null;
+            /** Flags Group Id */
+            flags_group_id?: string | null;
+            /** Departments Group Id */
+            departments_group_id?: string | null;
+            /** Simulations Group Id */
+            simulations_group_id?: string | null;
+            /** Simulation Positions Group Id */
+            simulation_positions_group_id?: string | null;
             /** Name Id */
             name_id?: string | null;
             name_resource?: components["schemas"]["CohortNameResource"] | null;
             /** Show Name */
             show_name?: boolean | null;
+            /** Name Domain Id */
+            name_domain_id?: string | null;
             /** Name Agent Id */
             name_agent_id?: string | null;
             /** Name Required */
             name_required?: boolean | null;
             /** Name Suggestions */
             name_suggestions?: string[] | null;
+            /** Name Show Ai Generate */
+            name_show_ai_generate?: boolean | null;
             /** Names */
             names?: components["schemas"]["CohortNameResource"][] | null;
             /** Description Id */
@@ -13978,12 +14020,16 @@ export interface components {
             description_resource?: components["schemas"]["CohortDescriptionResource"] | null;
             /** Show Description */
             show_description?: boolean | null;
+            /** Description Domain Id */
+            description_domain_id?: string | null;
             /** Description Agent Id */
             description_agent_id?: string | null;
             /** Description Required */
             description_required?: boolean | null;
             /** Description Suggestions */
             description_suggestions?: string[] | null;
+            /** Description Show Ai Generate */
+            description_show_ai_generate?: boolean | null;
             /** Descriptions */
             descriptions?: components["schemas"]["CohortDescriptionResource"][] | null;
             /** Active Flag Id */
@@ -13991,10 +14037,14 @@ export interface components {
             flag_resource?: components["schemas"]["CohortFlagResource"] | null;
             /** Show Flag */
             show_flag?: boolean | null;
+            /** Flag Domain Id */
+            flag_domain_id?: string | null;
             /** Flag Agent Id */
             flag_agent_id?: string | null;
             /** Flag Required */
             flag_required?: boolean | null;
+            /** Flag Show Ai Generate */
+            flag_show_ai_generate?: boolean | null;
             /** Flags */
             flags?: components["schemas"]["CohortFlagResource"][] | null;
             /** Department Ids */
@@ -14003,12 +14053,16 @@ export interface components {
             department_resources?: components["schemas"]["CohortDepartment"][] | null;
             /** Show Departments */
             show_departments?: boolean | null;
+            /** Departments Domain Id */
+            departments_domain_id?: string | null;
             /** Departments Agent Id */
             departments_agent_id?: string | null;
             /** Departments Required */
             departments_required?: boolean | null;
             /** Department Suggestions */
             department_suggestions?: string[] | null;
+            /** Departments Show Ai Generate */
+            departments_show_ai_generate?: boolean | null;
             /** Departments */
             departments?: components["schemas"]["CohortDepartment"][] | null;
             /** Simulation Ids */
@@ -14017,26 +14071,59 @@ export interface components {
             simulation_resources?: components["schemas"]["CohortSimulation"][] | null;
             /** Show Simulations */
             show_simulations?: boolean | null;
+            /** Simulations Domain Id */
+            simulations_domain_id?: string | null;
             /** Simulations Agent Id */
             simulations_agent_id?: string | null;
             /** Simulations Required */
             simulations_required?: boolean | null;
             /** Simulation Suggestions */
             simulation_suggestions?: string[] | null;
+            /** Simulations Show Ai Generate */
+            simulations_show_ai_generate?: boolean | null;
             /** Simulations */
             simulations?: components["schemas"]["CohortSimulation"][] | null;
             /** Simulation Positions */
             simulation_positions?: components["schemas"]["CohortSimulationPosition"][] | null;
             /** Show Simulation Positions */
             show_simulation_positions?: boolean | null;
+            /** Simulation Positions Domain Id */
+            simulation_positions_domain_id?: string | null;
             /** Simulation Positions Agent Id */
             simulation_positions_agent_id?: string | null;
             /** Simulation Positions Required */
             simulation_positions_required?: boolean | null;
+            /** Simulation Positions Show Ai Generate */
+            simulation_positions_show_ai_generate?: boolean | null;
+            /** Basic Show Ai Generate */
+            basic_show_ai_generate?: boolean | null;
+            /** Simulations Step Show Ai Generate */
+            simulations_step_show_ai_generate?: boolean | null;
             /** Basic Agent Id */
             basic_agent_id?: string | null;
             /** General Agent Id */
             general_agent_id?: string | null;
+            /** Name Create Tool Id */
+            name_create_tool_id?: string | null;
+            /** Description Create Tool Id */
+            description_create_tool_id?: string | null;
+            /** Simulations Create Tool Id */
+            simulations_create_tool_id?: string | null;
+            /** Name Link Tool Id */
+            name_link_tool_id?: string | null;
+            /** Description Link Tool Id */
+            description_link_tool_id?: string | null;
+            /** Flag Link Tool Id */
+            flag_link_tool_id?: string | null;
+            /** Departments Link Tool Id */
+            departments_link_tool_id?: string | null;
+            /** Simulations Link Tool Id */
+            simulations_link_tool_id?: string | null;
+            /** Simulation Positions Link Tool Id */
+            simulation_positions_link_tool_id?: string | null;
+            /** Domain Data */
+            domain_data?: components["schemas"]["DomainData"][] | null;
+            resources?: components["schemas"]["CohortResources"] | null;
         };
         /**
          * GetCohortsApiRequest
@@ -18085,6 +18172,20 @@ export interface components {
              * @default pending
              */
             status: string;
+            /** Eval Name */
+            eval_name?: string | null;
+            /** Eval Description */
+            eval_description?: string | null;
+            /** Rubric Name */
+            rubric_name?: string | null;
+            /**
+             * Infinite Mode
+             * @default false
+             */
+            infinite_mode: boolean;
+            /** Runs */
+            runs?: components["schemas"]["TestRunItem"][];
+            status_summary?: components["schemas"]["TestStatusSummary"] | null;
         };
         /**
          * GetTestListRequest
@@ -28537,6 +28638,31 @@ export interface components {
             remaining_runs: number;
         };
         /**
+         * TestRunItem
+         * @description A single run row for the UI table, derived from a benchmark chat.
+         */
+        TestRunItem: {
+            /** Chat Id */
+            chat_id: string;
+            /** Run Id */
+            run_id?: string | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Model Name */
+            model_name?: string | null;
+            /** Agent Name */
+            agent_name?: string | null;
+            /**
+             * Status
+             * @default not_started
+             */
+            status: string;
+            /** Grade Score */
+            grade_score?: number | null;
+            /** Grade Passed */
+            grade_passed?: boolean | null;
+        };
+        /**
          * TestRunPayload
          * @description Request payload for test_run WebSocket event.
          *
@@ -28568,6 +28694,29 @@ export interface components {
             total_runs: number;
             /** Created At */
             created_at: string;
+        };
+        /** TestStatusSummary */
+        TestStatusSummary: {
+            /**
+             * Total
+             * @default 0
+             */
+            total: number;
+            /**
+             * Completed
+             * @default 0
+             */
+            completed: number;
+            /**
+             * In Progress
+             * @default 0
+             */
+            in_progress: number;
+            /**
+             * Not Started
+             * @default 0
+             */
+            not_started: number;
         };
         /**
          * TestStopPayload

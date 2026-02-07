@@ -5,7 +5,6 @@ Handles WebSocket events for joining/leaving chat rooms:
 - attempt_leave: Leave a chat room
 """
 
-import uuid
 from typing import Any
 
 from fastapi import APIRouter

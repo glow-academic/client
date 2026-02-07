@@ -1,8 +1,6 @@
 /**
- * app/benchmark/a/[attemptId]/loading.tsx
- * Loading skeleton for eval attempt status page
- * @AshokSaravanan222 & @siladiea
- * 01/XX/2025
+ * app/benchmark/t/[testId]/loading.tsx
+ * Loading skeleton for benchmark test detail page
  */
 
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -16,7 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-export default function BenchmarkAttemptLoading() {
+export default function BenchmarkTestLoading() {
   return (
     <div className="space-y-6">
       {/* Eval Info Card Skeleton */}
@@ -77,4 +75,3 @@ export default function BenchmarkAttemptLoading() {
     </div>
   );
 }
-

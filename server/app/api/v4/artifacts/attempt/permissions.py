@@ -19,7 +19,9 @@ DEFAULT_ASSISTANT_COLOR = "#06b6d4"  # Cyan
 DEFAULT_ASSISTANT_ICON = "Bot"
 
 
-def check_attempt_access(attempt_profile_id: UUID | None, request_profile_id: UUID) -> bool:
+def check_attempt_access(
+    attempt_profile_id: UUID | None, request_profile_id: UUID
+) -> bool:
     """Check if the requesting user has access to the attempt.
 
     Args:
@@ -83,7 +85,7 @@ def compute_content_display(
 # =============================================================================
 
 
-def compute_chat_position_and_current(chats: list["ChatData"]) -> None:
+def compute_chat_position_and_current(chats: list[ChatData]) -> None:
     """Compute position and is_current for each chat in-place.
 
     Position is the 0-based index in the list (ordered by created_at).
@@ -109,7 +111,7 @@ def compute_chat_position_and_current(chats: list["ChatData"]) -> None:
         chats[-1].is_current = True
 
 
-def compute_attempt_aggregates(chats: list["ChatData"]) -> dict:
+def compute_attempt_aggregates(chats: list[ChatData]) -> dict:
     """Compute attempt-level aggregates from chats.
 
     Args:
@@ -148,7 +150,7 @@ def compute_attempt_aggregates(chats: list["ChatData"]) -> dict:
     }
 
 
-def compute_total_possible_points(chats: list["ChatData"]) -> float:
+def compute_total_possible_points(chats: list[ChatData]) -> float:
     """Compute total possible points from completed chats' grade total_points.
 
     Args:
@@ -179,7 +181,7 @@ def compute_percentage(total_score: float, total_possible: float) -> float:
     return 0.0
 
 
-def compute_current_chat_index(chats: list["ChatData"]) -> int:
+def compute_current_chat_index(chats: list[ChatData]) -> int:
     """Compute the current chat index (first incomplete, or last if all complete).
 
     Args:
@@ -194,7 +196,7 @@ def compute_current_chat_index(chats: list["ChatData"]) -> int:
     return len(chats) - 1 if chats else 0
 
 
-def compute_total_time_limit(chats: list["ChatData"]) -> int:
+def compute_total_time_limit(chats: list[ChatData]) -> int:
     """Compute total time limit from all chats' time_limit_seconds.
 
     Args:
@@ -225,10 +227,12 @@ def compute_achieved_standards(
     for fb in feedbacks:
         standard_id = fb.get("standard_id")
         if standard_id:
-            achieved.append({
-                "standard_id": standard_id,
-                "achieved": True,
-            })
+            achieved.append(
+                {
+                    "standard_id": standard_id,
+                    "achieved": True,
+                }
+            )
     return achieved
 
 
@@ -265,8 +269,10 @@ def compute_passed_standards(
                 sg_meta = standard_groups_meta.get(sg_id, {})
                 pass_points = sg_meta.get("pass_points") or 0.0
 
-            passed.append({
-                "standard_id": standard_id,
-                "passed": total >= pass_points,
-            })
+            passed.append(
+                {
+                    "standard_id": standard_id,
+                    "passed": total >= pass_points,
+                }
+            )
     return passed

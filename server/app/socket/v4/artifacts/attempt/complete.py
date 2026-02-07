@@ -33,14 +33,8 @@ internal_sio = get_internal_sio()
 
 server_router = APIRouter()
 
-SQL_PATH_GET_MESSAGE_CONTEXT = (
-    "app/sql/v4/queries/generate/attempt/get_attempt_message_completion_context_complete.sql"
-)
-SQL_PATH_GET_GRADE_CONTEXT = (
-    "app/sql/v4/queries/generate/attempt/get_attempt_grade_completion_context_complete.sql"
-)
-
-
+SQL_PATH_GET_MESSAGE_CONTEXT = "app/sql/v4/queries/generate/attempt/get_attempt_message_completion_context_complete.sql"
+SQL_PATH_GET_GRADE_CONTEXT = "app/sql/v4/queries/generate/attempt/get_attempt_grade_completion_context_complete.sql"
 
 
 @internal_sio.on("generate_call_complete")  # type: ignore
@@ -82,9 +76,7 @@ async def handle_attempt_complete(data: dict[str, Any]) -> None:
         await _handle_message_complete(sid, data)
 
 
-async def _handle_message_complete(
-    sid: str, data: dict[str, Any]
-) -> None:
+async def _handle_message_complete(sid: str, data: dict[str, Any]) -> None:
     """Handle message generation completion.
 
     Only processes the final run_complete event (not mid-loop text_complete).
@@ -198,7 +190,9 @@ async def _handle_message_complete(
         # Refresh MVs so the new message is immediately visible
         try:
             async with get_db_connection() as conn:
-                await conn.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY mv_simulation_messages")
+                await conn.execute(
+                    "REFRESH MATERIALIZED VIEW CONCURRENTLY mv_simulation_messages"
+                )
         except Exception as mv_err:
             logger.warning(f"MV refresh failed (non-fatal): {mv_err}")
 
@@ -231,7 +225,9 @@ async def _handle_grade_complete(sid: str, data: dict[str, Any]) -> None:
     feedback = _extract_grade_feedback(tool_results)
 
     async with get_db_connection() as conn:
-        context_row = await conn.fetchrow(load_sql(SQL_PATH_GET_GRADE_CONTEXT), run_uuid)
+        context_row = await conn.fetchrow(
+            load_sql(SQL_PATH_GET_GRADE_CONTEXT), run_uuid
+        )
         if not context_row:
             return
 

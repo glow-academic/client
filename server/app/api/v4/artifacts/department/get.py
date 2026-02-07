@@ -29,7 +29,9 @@ SQL_PATH = "app/sql/v4/queries/departments/get_department_complete.sql"
 router = APIRouter()
 
 
-def _extract_department_websocket_context(result: GetDepartmentSqlRow) -> dict[str, Any]:
+def _extract_department_websocket_context(
+    result: GetDepartmentSqlRow,
+) -> dict[str, Any]:
     """Build minimal generation context payload for websocket consumers."""
     payload = result.model_dump()
     context_keys = (
@@ -47,7 +49,9 @@ def _extract_department_websocket_context(result: GetDepartmentSqlRow) -> dict[s
         "resource_group_ids",
         "generation_context",
     )
-    return {key: payload.get(key) for key in context_keys if payload.get(key) is not None}
+    return {
+        key: payload.get(key) for key in context_keys if payload.get(key) is not None
+    }
 
 
 async def get_department_internal(

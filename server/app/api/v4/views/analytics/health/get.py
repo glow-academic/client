@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Annotated
 from uuid import UUID
 
@@ -72,14 +72,17 @@ async def get_health_analytics_internal(
     start_date: datetime | None = None,
     end_date: datetime | None = None,
 ) -> GetHealthAnalyticsResponse:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     date_from = start_date or (now - timedelta(days=7))
     date_to = end_date or now
 
-    cache_key_val = cache_key("analytics/health/get", {
-        "date_from": date_from.isoformat(),
-        "date_to": date_to.isoformat(),
-    })
+    cache_key_val = cache_key(
+        "analytics/health/get",
+        {
+            "date_from": date_from.isoformat(),
+            "date_to": date_to.isoformat(),
+        },
+    )
 
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
@@ -163,7 +166,9 @@ async def get_health_analytics_internal(
 @router.post(
     "/get",
     response_model=GetHealthAnalyticsResponse,
-    dependencies=[audit_activity("analytics.health.get", "{{ actor.name }} viewed health")],
+    dependencies=[
+        audit_activity("analytics.health.get", "{{ actor.name }} viewed health")
+    ],
 )
 async def get_health_analytics(
     request: GetHealthAnalyticsRequest,

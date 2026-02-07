@@ -1,7 +1,7 @@
 """Get endpoint for artifact session detail (api_get_artifact_session_detail_v4)."""
 
 from decimal import Decimal
-from typing import Annotated, Any, cast
+from typing import Annotated, cast
 from uuid import UUID
 
 import asyncpg
@@ -19,14 +19,15 @@ from app.main import get_db
 from app.sql.types import (
     GetArtifactSessionDetailSqlParams,
     GetArtifactSessionDetailSqlRow,
-    load_sql_query,
 )
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/v4/queries/artifacts/session/get_artifact_session_detail_complete.sql"
+SQL_PATH = (
+    "app/sql/v4/queries/artifacts/session/get_artifact_session_detail_complete.sql"
+)
 
 router = APIRouter()
 
@@ -92,7 +93,9 @@ async def get_artifact_session_detail_internal(
                     last_run_at=g.last_run_at,
                     run_count=g.run_count or 0,
                     total_tokens=g.total_tokens or 0,
-                    total_cost=Decimal(str(g.total_cost)) if g.total_cost else Decimal("0"),
+                    total_cost=Decimal(str(g.total_cost))
+                    if g.total_cost
+                    else Decimal("0"),
                 )
             )
 

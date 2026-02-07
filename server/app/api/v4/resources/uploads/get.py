@@ -45,7 +45,8 @@ async def get_uploads_internal(
         cached = await get_cached(cache_key_val)
         if cached:
             return [
-                QGetUploadsV4Item.model_validate(item) for item in cached.get("items", [])
+                QGetUploadsV4Item.model_validate(item)
+                for item in cached.get("items", [])
             ]
 
     params = GetUploadsSqlParams(ids=ids)

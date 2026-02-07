@@ -12,7 +12,6 @@ Scoped by user's cohorts based on practice mode.
 """
 
 from typing import Annotated, Any, cast
-from uuid import UUID
 
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response

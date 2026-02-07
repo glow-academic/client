@@ -19,9 +19,7 @@ from app.utils.sql_helper import execute_sql_typed
 logger = get_logger(__name__)
 
 # Use the output schema fields directly - this queries args_outputs_resource via tool_args_outputs_junction
-GET_OUTPUT_SCHEMA_FIELDS_SQL_PATH = (
-    "app/sql/v4/queries/infra/artifacts/discovery/get_resource_output_schema_fields_complete.sql"
-)
+GET_OUTPUT_SCHEMA_FIELDS_SQL_PATH = "app/sql/v4/queries/infra/artifacts/discovery/get_resource_output_schema_fields_complete.sql"
 GET_TOOL_CALL_RESULT_SQL_PATH = (
     "app/sql/v4/queries/infrastructure/tools/get_tool_call_result_v4_complete.sql"
 )
@@ -174,9 +172,7 @@ async def render_tool_template(
             # Continue with other fields even if one fails
             continue
 
-    logger.info(
-        f"Rendered {len(rendered_values)} fields for tool {tool_id}"
-    )
+    logger.info(f"Rendered {len(rendered_values)} fields for tool {tool_id}")
 
     return rendered_values
 

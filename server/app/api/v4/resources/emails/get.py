@@ -45,7 +45,8 @@ async def get_emails_internal(
         cached = await get_cached(cache_key_val)
         if cached:
             return [
-                QGetEmailsV4Item.model_validate(item) for item in cached.get("items", [])
+                QGetEmailsV4Item.model_validate(item)
+                for item in cached.get("items", [])
             ]
 
     params = GetEmailsSqlParams(ids=ids)

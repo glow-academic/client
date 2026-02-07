@@ -4,8 +4,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-from app.api.v4.views.health.service_hourly.types import HealthServiceHourlyItem
 from app.api.v4.views.health.metrics_hourly.types import HealthMetricsHourlyItem
+from app.api.v4.views.health.service_hourly.types import HealthServiceHourlyItem
 
 
 class HealthRequest(BaseModel):

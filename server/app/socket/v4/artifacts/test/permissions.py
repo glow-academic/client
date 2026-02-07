@@ -8,7 +8,7 @@ Checks:
 - There are pending runs to execute
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from uuid import UUID
 
 from app.socket.v4.artifacts.permissions import (

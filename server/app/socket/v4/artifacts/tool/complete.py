@@ -76,11 +76,15 @@ async def handle_tool_artifact_complete(data: dict[str, Any]) -> None:
 
     payload: dict[str, Any] = {
         "artifact_type": "tool",
-        "group_id": str(getattr(result, "group_id", None)) if getattr(result, "group_id", None) else data.get("group_id"),
+        "group_id": str(getattr(result, "group_id", None))
+        if getattr(result, "group_id", None)
+        else data.get("group_id"),
         "resource_type": resource_type,
         "run_id": data.get("run_id"),
         "success": bool(generated_resource_id),
-        "message": f"{resource_type} generation completed" if generated_resource_id else "Missing resource_id in tool result",
+        "message": f"{resource_type} generation completed"
+        if generated_resource_id
+        else "Missing resource_id in tool result",
         "type": data.get("type", "complete"),
     }
 
@@ -88,7 +92,6 @@ async def handle_tool_artifact_complete(data: dict[str, Any]) -> None:
     payload["args_ids"] = [str(v) for v in values if v]
     values = getattr(result, "args_outputs_ids", None) or []
     payload["args_outputs_ids"] = [str(v) for v in values if v]
-
 
     await sio.emit(
         "tool_generation_complete",

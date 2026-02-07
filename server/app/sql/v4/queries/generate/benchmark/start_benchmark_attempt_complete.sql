@@ -42,11 +42,22 @@ DECLARE
     v_first_group_id uuid;
     v_run_resource_id uuid;
     v_total_runs integer;
+    v_profiles_resource_id uuid;
 BEGIN
     -- Validate eval exists
     IF NOT EXISTS (SELECT 1 FROM eval_artifact WHERE id = p_eval_id) THEN
         RETURN QUERY SELECT NULL::uuid, NULL::uuid, false, '[]'::jsonb;
         RETURN;
+    END IF;
+
+    -- Resolve profile_artifact ID → profiles_resource ID
+    SELECT ppj.profiles_id INTO v_profiles_resource_id
+    FROM profile_profiles_junction ppj
+    WHERE ppj.profile_id = p_profile_id AND ppj.active = true
+    LIMIT 1;
+
+    IF v_profiles_resource_id IS NULL THEN
+        RAISE EXCEPTION 'Profile resource not found for profile_id %', p_profile_id;
     END IF;
 
     -- Determine if eval uses groups or individual runs
@@ -59,9 +70,9 @@ BEGIN
     VALUES (p_infinite_mode, false, false, NOW(), NOW())
     RETURNING id INTO v_attempt_id;
 
-    -- Link attempt to profile
-    INSERT INTO benchmark_tests_profiles_connection (attempt_id, profile_id, active)
-    VALUES (v_attempt_id, p_profile_id, true);
+    -- Link attempt to profile (using resource ID)
+    INSERT INTO benchmark_tests_profiles_connection (attempt_id, profiles_id, active)
+    VALUES (v_attempt_id, v_profiles_resource_id, true);
 
     -- Link attempt to eval
     INSERT INTO benchmark_tests_evals_connection (attempt_id, eval_id, active)

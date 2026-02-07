@@ -47,7 +47,9 @@ def _extract_setting_websocket_context(result: GetSettingSqlRow) -> dict[str, An
         "resource_group_ids",
         "generation_context",
     )
-    return {key: payload.get(key) for key in context_keys if payload.get(key) is not None}
+    return {
+        key: payload.get(key) for key in context_keys if payload.get(key) is not None
+    }
 
 
 async def get_setting_internal(

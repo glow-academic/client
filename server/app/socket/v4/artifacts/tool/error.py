@@ -29,7 +29,9 @@ async def handle_tool_generation_error(data: dict[str, Any]) -> None:
             "resource_type": data.get("resource_type"),
             "resource_types": data.get("resource_types"),
             "group_id": data.get("group_id"),
-            "message": data.get("error_message") or data.get("message") or "Generation failed",
+            "message": data.get("error_message")
+            or data.get("message")
+            or "Generation failed",
             "success": False,
         },
         room=sid,

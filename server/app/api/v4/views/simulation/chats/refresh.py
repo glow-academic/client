@@ -34,9 +34,7 @@ async def refresh_chats_view(
     try:
         start_time = time.time()
 
-        await conn.execute(
-            "REFRESH MATERIALIZED VIEW CONCURRENTLY mv_simulation_chats"
-        )
+        await conn.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY mv_simulation_chats")
 
         duration_ms = int((time.time() - start_time) * 1000)
 

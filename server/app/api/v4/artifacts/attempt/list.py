@@ -456,19 +456,17 @@ async def list_attempts(
                     cache_key_path=http_request.url.path,
                 ),
                 fetch_cohort_filter_options(pool, request.accessible_cohort_ids),
-                fetch_department_filter_options(pool, request.accessible_department_ids),
+                fetch_department_filter_options(
+                    pool, request.accessible_department_ids
+                ),
                 fetch_date_range_from_mv(pool, request.accessible_department_ids),
             )
             result.cohort_options = [
-                AttemptListFilterOption(
-                    value=o.value, label=o.label, count=o.count
-                )
+                AttemptListFilterOption(value=o.value, label=o.label, count=o.count)
                 for o in cohort_opts
             ]
             result.department_options = [
-                AttemptListFilterOption(
-                    value=o.value, label=o.label, count=o.count
-                )
+                AttemptListFilterOption(value=o.value, label=o.label, count=o.count)
                 for o in dept_opts
             ]
             result.date_range_earliest = date_range[0]

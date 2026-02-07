@@ -46,8 +46,12 @@ server_router = APIRouter()
 
 
 # SQL paths
-SQL_PATH_CONTEXT = "app/sql/v4/queries/generate/attempt/get_attempt_grade_context_complete.sql"
-SQL_PATH_PREPARE = "app/sql/v4/queries/generate/attempt/prepare_attempt_grade_complete.sql"
+SQL_PATH_CONTEXT = (
+    "app/sql/v4/queries/generate/attempt/get_attempt_grade_context_complete.sql"
+)
+SQL_PATH_PREPARE = (
+    "app/sql/v4/queries/generate/attempt/prepare_attempt_grade_complete.sql"
+)
 
 
 async def _attempt_grade_impl(
@@ -74,7 +78,8 @@ async def _attempt_grade_impl(
                     "generate_call_error",
                     GenerateErrorApiRequest(
                         sid=sid,
-                        error_message=resolution.error_message or "Failed to resolve agent",
+                        error_message=resolution.error_message
+                        or "Failed to resolve agent",
                         artifact_type="attempt",
                         group_id=None,
                         resource_type="attempt",
@@ -222,7 +227,9 @@ async def _attempt_grade_impl(
 
             # Add system prompt
             if prepare_row.system_prompt:
-                messages.append({"role": "system", "content": prepare_row.system_prompt})
+                messages.append(
+                    {"role": "system", "content": prepare_row.system_prompt}
+                )
 
             # Add rendered developer instructions (contains rubric, messages, etc.)
             for dm in rendered_developer_messages:

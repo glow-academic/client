@@ -49,7 +49,9 @@ async def get_benchmark_tests_internal(
             "eval_ids": [str(e) for e in eval_ids] if eval_ids else None,
             "profile_id": str(profile_id) if profile_id else None,
             "archived": archived,
-            "department_ids": [str(d) for d in department_ids] if department_ids else None,
+            "department_ids": [str(d) for d in department_ids]
+            if department_ids
+            else None,
             "date_from": date_from.isoformat() if date_from else None,
             "date_to": date_to.isoformat() if date_to else None,
             "search": search,
@@ -95,7 +97,9 @@ async def get_benchmark_tests_internal(
         param_idx += 1
 
     if department_ids:
-        conditions.append(f"(department_ids && ${param_idx}::uuid[] OR department_ids = '{{}}')")
+        conditions.append(
+            f"(department_ids && ${param_idx}::uuid[] OR department_ids = '{{}}')"
+        )
         params.append(department_ids)
         param_idx += 1
 

@@ -67,7 +67,9 @@ async def _generate_field_impl(
                     artifact_type="field",
                     message="No agent configured for requested resources",
                     resource_id=str(data.field_id) if data.field_id else None,
-                    group_id=str(extract_group_id(result)) if extract_group_id(result) else None,
+                    group_id=str(extract_group_id(result))
+                    if extract_group_id(result)
+                    else None,
                     resource_type=(data.resource_types or ["field"])[0],
                 )
                 return

@@ -100,7 +100,9 @@ async def get_profile_metrics_internal(
                     attempt_type=item.attempt_type or "general",
                     is_archived=item.is_archived or False,
                     total_attempts=item.total_attempts or 0,
-                    avg_score=float(item.avg_score) if item.avg_score is not None else None,
+                    avg_score=float(item.avg_score)
+                    if item.avg_score is not None
+                    else None,
                     highest_score=float(item.highest_score)
                     if item.highest_score is not None
                     else None,

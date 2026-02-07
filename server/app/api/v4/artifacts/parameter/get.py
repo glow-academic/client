@@ -47,7 +47,9 @@ def _extract_parameter_websocket_context(result: GetParameterSqlRow) -> dict[str
         "resource_group_ids",
         "generation_context",
     )
-    return {key: payload.get(key) for key in context_keys if payload.get(key) is not None}
+    return {
+        key: payload.get(key) for key in context_keys if payload.get(key) is not None
+    }
 
 
 async def get_parameter_internal(

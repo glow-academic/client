@@ -39,7 +39,9 @@ internal_sio = get_internal_sio()
 client_router = APIRouter()
 server_router = APIRouter()
 
-SQL_PATH_START = "app/sql/v4/queries/generate/benchmark/start_benchmark_attempt_complete.sql"
+SQL_PATH_START = (
+    "app/sql/v4/queries/generate/benchmark/start_benchmark_attempt_complete.sql"
+)
 
 
 async def _benchmark_start_impl(
@@ -124,9 +126,9 @@ async def _benchmark_start_impl(
         logger.exception(f"Failed to start benchmark: {str(e)}")
         await sio.emit(
             "benchmark_error",
-            BenchmarkErrorEvent(message=f"Failed to start benchmark: {str(e)}").model_dump(
-                mode="json"
-            ),
+            BenchmarkErrorEvent(
+                message=f"Failed to start benchmark: {str(e)}"
+            ).model_dump(mode="json"),
             room=sid,
         )
 
@@ -144,9 +146,9 @@ async def benchmark_start(sid: str, data: dict[str, Any]) -> None:
         if not profile_id_str:
             await sio.emit(
                 "benchmark_error",
-                BenchmarkErrorEvent(message="Profile not found. Please reconnect.").model_dump(
-                    mode="json"
-                ),
+                BenchmarkErrorEvent(
+                    message="Profile not found. Please reconnect."
+                ).model_dump(mode="json"),
                 room=sid,
             )
             return
@@ -174,9 +176,9 @@ async def benchmark_start_internal(data: dict[str, Any]) -> None:
         if not profile_id_str:
             await sio.emit(
                 "benchmark_error",
-                BenchmarkErrorEvent(message="Profile not found. Please reconnect.").model_dump(
-                    mode="json"
-                ),
+                BenchmarkErrorEvent(
+                    message="Profile not found. Please reconnect."
+                ).model_dump(mode="json"),
                 room=sid,
             )
             return

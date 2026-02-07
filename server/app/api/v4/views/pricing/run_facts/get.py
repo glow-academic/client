@@ -9,9 +9,9 @@ import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.views.pricing.run_facts.types import (
-    PricingRunFactsItem,
     GetPricingRunFactsRequest,
     GetPricingRunFactsResponse,
+    PricingRunFactsItem,
 )
 from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
@@ -163,10 +163,18 @@ async def get_pricing_run_facts_internal(
             output_tokens=row["output_tokens"] or 0,
             cached_input_tokens=row["cached_input_tokens"] or 0,
             total_tokens=row["total_tokens"] or 0,
-            input_cost=Decimal(str(row["input_cost"])) if row["input_cost"] else Decimal("0"),
-            output_cost=Decimal(str(row["output_cost"])) if row["output_cost"] else Decimal("0"),
-            cached_cost=Decimal(str(row["cached_cost"])) if row["cached_cost"] else Decimal("0"),
-            total_cost=Decimal(str(row["total_cost"])) if row["total_cost"] else Decimal("0"),
+            input_cost=Decimal(str(row["input_cost"]))
+            if row["input_cost"]
+            else Decimal("0"),
+            output_cost=Decimal(str(row["output_cost"]))
+            if row["output_cost"]
+            else Decimal("0"),
+            cached_cost=Decimal(str(row["cached_cost"]))
+            if row["cached_cost"]
+            else Decimal("0"),
+            total_cost=Decimal(str(row["total_cost"]))
+            if row["total_cost"]
+            else Decimal("0"),
             run_created_at=row["run_created_at"],
             group_name=row["group_name"],
             trace_id=row["trace_id"],

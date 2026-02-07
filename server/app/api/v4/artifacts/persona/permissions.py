@@ -451,4 +451,6 @@ def build_domain_data(
     """
     from app.api.v4.types import build_domain_data as _build_domain_data
 
-    return _build_domain_data(domain_ids, show_flags, required_flags, PERSONA_DOMAIN_METADATA)
+    return _build_domain_data(
+        domain_ids, show_flags, required_flags, PERSONA_DOMAIN_METADATA
+    )

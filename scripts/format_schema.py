@@ -2,7 +2,6 @@
 """Format table schema data into markdown."""
 
 
-
 def format_table_markdown(line):
     """Format a single table line into markdown."""
     parts = line.strip().split("|")

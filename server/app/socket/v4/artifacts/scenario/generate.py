@@ -179,14 +179,29 @@ async def _scenario_generate_impl(
                         break
             elif data.agent_type == "basic":
                 # Try names agent first, then any basic resource agent
-                for res_type in ["names", "descriptions", "scenario_flags", "departments"]:
+                for res_type in [
+                    "names",
+                    "descriptions",
+                    "scenario_flags",
+                    "departments",
+                ]:
                     if resource_to_agent.get(res_type):
                         agent_id = resource_to_agent[res_type]
                         break
             elif data.agent_type == "content":
                 # Try personas first, then any content resource agent
-                for res_type in ["personas", "documents", "parameters", "fields", "templates",
-                                 "objectives", "images", "videos", "questions", "problem_statements"]:
+                for res_type in [
+                    "personas",
+                    "documents",
+                    "parameters",
+                    "fields",
+                    "templates",
+                    "objectives",
+                    "images",
+                    "videos",
+                    "questions",
+                    "problem_statements",
+                ]:
                     if resource_to_agent.get(res_type):
                         agent_id = resource_to_agent[res_type]
                         break
@@ -244,21 +259,35 @@ async def _scenario_generate_impl(
         resources: list[dict[str, Any]] = []
 
         # Helper to extract IDs from resource bucket
-        def add_resource_ids(resource_type: str, items: list[Any] | None, id_attr: str) -> None:
+        def add_resource_ids(
+            resource_type: str, items: list[Any] | None, id_attr: str
+        ) -> None:
             if items and resource_type in resource_types:
                 ids = []
                 for item in items:
-                    item_id = item.get(id_attr) if isinstance(item, dict) else getattr(item, id_attr, None)
+                    item_id = (
+                        item.get(id_attr)
+                        if isinstance(item, dict)
+                        else getattr(item, id_attr, None)
+                    )
                     if item_id:
                         ids.append(str(item_id))
                 if ids:
-                    resources.append({"resource_type": resource_type, "resource_ids": ids})
+                    resources.append(
+                        {"resource_type": resource_type, "resource_ids": ids}
+                    )
 
         if resources_bucket:
             add_resource_ids("names", resources_bucket.names, "id")
             add_resource_ids("descriptions", resources_bucket.descriptions, "id")
-            add_resource_ids("problem_statements", resources_bucket.problem_statements, "problem_statement_id")
-            add_resource_ids("departments", resources_bucket.departments, "department_id")
+            add_resource_ids(
+                "problem_statements",
+                resources_bucket.problem_statements,
+                "problem_statement_id",
+            )
+            add_resource_ids(
+                "departments", resources_bucket.departments, "department_id"
+            )
             add_resource_ids("personas", resources_bucket.personas, "persona_id")
             add_resource_ids("documents", resources_bucket.documents, "document_id")
             add_resource_ids("parameters", resources_bucket.parameters, "parameter_id")

@@ -9,9 +9,9 @@ import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.views.pricing.group_summary.types import (
-    PricingGroupSummaryItem,
     GetPricingGroupSummaryRequest,
     GetPricingGroupSummaryResponse,
+    PricingGroupSummaryItem,
 )
 from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
@@ -51,7 +51,9 @@ async def get_pricing_group_summary_internal(
             "date_from": date_from.isoformat() if date_from else None,
             "date_to": date_to.isoformat() if date_to else None,
             "cohort_ids": [str(c) for c in cohort_ids] if cohort_ids else None,
-            "department_ids": [str(d) for d in department_ids] if department_ids else None,
+            "department_ids": [str(d) for d in department_ids]
+            if department_ids
+            else None,
             "roles": roles if roles else None,
             "sort_by": sort_by,
             "sort_order": sort_order,
@@ -185,10 +187,18 @@ async def get_pricing_group_summary_internal(
             total_output_tokens=row["total_output_tokens"] or 0,
             total_cached_tokens=row["total_cached_tokens"] or 0,
             total_tokens=row["total_tokens"] or 0,
-            total_input_cost=Decimal(str(row["total_input_cost"])) if row["total_input_cost"] else Decimal("0"),
-            total_output_cost=Decimal(str(row["total_output_cost"])) if row["total_output_cost"] else Decimal("0"),
-            total_cached_cost=Decimal(str(row["total_cached_cost"])) if row["total_cached_cost"] else Decimal("0"),
-            total_cost=Decimal(str(row["total_cost"])) if row["total_cost"] else Decimal("0"),
+            total_input_cost=Decimal(str(row["total_input_cost"]))
+            if row["total_input_cost"]
+            else Decimal("0"),
+            total_output_cost=Decimal(str(row["total_output_cost"]))
+            if row["total_output_cost"]
+            else Decimal("0"),
+            total_cached_cost=Decimal(str(row["total_cached_cost"]))
+            if row["total_cached_cost"]
+            else Decimal("0"),
+            total_cost=Decimal(str(row["total_cost"]))
+            if row["total_cost"]
+            else Decimal("0"),
             group_name=row["group_name"],
             trace_id=row["trace_id"],
             agent_ids=row["agent_ids"],

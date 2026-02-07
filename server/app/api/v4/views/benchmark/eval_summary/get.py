@@ -38,7 +38,9 @@ async def get_benchmark_eval_summary_internal(
         {
             "rubric_id": str(rubric_id) if rubric_id else None,
             "status": status,
-            "department_ids": [str(d) for d in department_ids] if department_ids else None,
+            "department_ids": [str(d) for d in department_ids]
+            if department_ids
+            else None,
             "sort_by": sort_by,
             "sort_order": sort_order,
             "page_limit": page_limit,
@@ -66,7 +68,9 @@ async def get_benchmark_eval_summary_internal(
         param_idx += 1
 
     if department_ids:
-        conditions.append(f"(department_ids && ${param_idx}::uuid[] OR department_ids = '{{}}')")
+        conditions.append(
+            f"(department_ids && ${param_idx}::uuid[] OR department_ids = '{{}}')"
+        )
         params.append(department_ids)
         param_idx += 1
 

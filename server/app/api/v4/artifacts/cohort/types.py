@@ -10,6 +10,8 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from app.api.v4.types import DomainAgent, DomainData
+
 # =============================================================================
 # Resource Types (imported from SQL types for reuse)
 # =============================================================================
@@ -70,6 +72,29 @@ class CohortSimulationPosition(BaseModel):
 
 
 # =============================================================================
+# Resource Buckets (for WebSocket Jinja context)
+# =============================================================================
+
+
+class CohortResourceBucket(BaseModel):
+    """Generic resources bucket with full objects (always plural lists)."""
+
+    names: list[CohortNameResource] | None = None
+    descriptions: list[CohortDescriptionResource] | None = None
+    flags: list[CohortFlagResource] | None = None
+    departments: list[CohortDepartment] | None = None
+    simulations: list[CohortSimulation] | None = None
+    simulation_positions: list[CohortSimulationPosition] | None = None
+
+
+class CohortResources(BaseModel):
+    """Full resources + current selections."""
+
+    resources: CohortResourceBucket | None = None
+    current: CohortResourceBucket | None = None
+
+
+# =============================================================================
 # GET Endpoint Types
 # =============================================================================
 
@@ -96,59 +121,129 @@ class GetCohortApiResponse(BaseModel):
     draft_version: int | None = None
     group_id: UUID | None = None
 
+    # Per-resource group IDs (from draft MV)
+    names_group_id: UUID | None = None
+    descriptions_group_id: UUID | None = None
+    flags_group_id: UUID | None = None
+    departments_group_id: UUID | None = None
+    simulations_group_id: UUID | None = None
+    simulation_positions_group_id: UUID | None = None
+
     # Name resource
     name_id: UUID | None = None
     name_resource: CohortNameResource | None = None
     show_name: bool | None = None
+    name_domain_id: UUID | None = None
     name_agent_id: UUID | None = None
     name_required: bool | None = None
     name_suggestions: list[UUID] | None = None
+    name_show_ai_generate: bool | None = None
     names: list[CohortNameResource] | None = None
 
     # Description resource
     description_id: UUID | None = None
     description_resource: CohortDescriptionResource | None = None
     show_description: bool | None = None
+    description_domain_id: UUID | None = None
     description_agent_id: UUID | None = None
     description_required: bool | None = None
     description_suggestions: list[UUID] | None = None
+    description_show_ai_generate: bool | None = None
     descriptions: list[CohortDescriptionResource] | None = None
 
     # Flag resource
     active_flag_id: UUID | None = None
     flag_resource: CohortFlagResource | None = None
     show_flag: bool | None = None
+    flag_domain_id: UUID | None = None
     flag_agent_id: UUID | None = None
     flag_required: bool | None = None
+    flag_show_ai_generate: bool | None = None
     flags: list[CohortFlagResource] | None = None
 
     # Departments
     department_ids: list[UUID] | None = None
     department_resources: list[CohortDepartment] | None = None
     show_departments: bool | None = None
+    departments_domain_id: UUID | None = None
     departments_agent_id: UUID | None = None
     departments_required: bool | None = None
     department_suggestions: list[UUID] | None = None
+    departments_show_ai_generate: bool | None = None
     departments: list[CohortDepartment] | None = None
 
     # Simulations
     simulation_ids: list[UUID] | None = None
     simulation_resources: list[CohortSimulation] | None = None
     show_simulations: bool | None = None
+    simulations_domain_id: UUID | None = None
     simulations_agent_id: UUID | None = None
     simulations_required: bool | None = None
     simulation_suggestions: list[UUID] | None = None
+    simulations_show_ai_generate: bool | None = None
     simulations: list[CohortSimulation] | None = None
 
     # Simulation positions
     simulation_positions: list[CohortSimulationPosition] | None = None
     show_simulation_positions: bool | None = None
+    simulation_positions_domain_id: UUID | None = None
     simulation_positions_agent_id: UUID | None = None
     simulation_positions_required: bool | None = None
+    simulation_positions_show_ai_generate: bool | None = None
 
-    # Multi-resource combination agent IDs
+    # Step-level AI generation flags
+    basic_show_ai_generate: bool | None = None
+    simulations_step_show_ai_generate: bool | None = None
+
+    # Multi-resource combination agent IDs (legacy, kept for backward compat)
     basic_agent_id: UUID | None = None
     general_agent_id: UUID | None = None
+
+    # Per-resource CREATE tool IDs
+    name_create_tool_id: UUID | None = None
+    description_create_tool_id: UUID | None = None
+    simulations_create_tool_id: UUID | None = None
+
+    # Per-resource LINK tool IDs
+    name_link_tool_id: UUID | None = None
+    description_link_tool_id: UUID | None = None
+    flag_link_tool_id: UUID | None = None
+    departments_link_tool_id: UUID | None = None
+    simulations_link_tool_id: UUID | None = None
+    simulation_positions_link_tool_id: UUID | None = None
+
+    # Rich domain metadata for client display in modals
+    domain_data: list[DomainData] | None = None
+
+    # Generic resources payload (full objects + current selections)
+    resources: CohortResources | None = None
+
+
+class GetCohortWebsocketResponse(BaseModel):
+    """Minimal response for WebSocket handlers (get_cohort_websocket).
+
+    Contains only what's needed for AI generation:
+    - Domain IDs (for domain_to_resource mapping)
+    - Domains list (for agent_id lookup)
+    - Group ID (for existing group context)
+    - Resources (for Jinja template context)
+    """
+
+    group_id: UUID | None = None
+
+    # Domain IDs for domain_to_resource mapping
+    names_domain_id: UUID | None = None
+    descriptions_domain_id: UUID | None = None
+    flags_domain_id: UUID | None = None
+    departments_domain_id: UUID | None = None
+    simulations_domain_id: UUID | None = None
+    simulation_positions_domain_id: UUID | None = None
+
+    # Domains mapping (domain_id -> agent_id) for server-side agent lookup
+    domains: list[DomainAgent] | None = None
+
+    # Resources for Jinja template context
+    resources: CohortResources | None = None
 
 
 # =============================================================================

@@ -22,7 +22,9 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
-BATCH_SQL_PATH = "app/sql/v4/queries/resources/standard_groups/get_standard_groups_complete.sql"
+BATCH_SQL_PATH = (
+    "app/sql/v4/queries/resources/standard_groups/get_standard_groups_complete.sql"
+)
 
 router = APIRouter()
 
@@ -81,7 +83,9 @@ async def get_standard_groups_internal(
         await execute_sql_typed(conn, BATCH_SQL_PATH, params=params),
     )
 
-    items: list[QGetStandardGroupsV4Item] = result.items if result and result.items else []
+    items: list[QGetStandardGroupsV4Item] = (
+        result.items if result and result.items else []
+    )
 
     await set_cached(
         cache_key_val,

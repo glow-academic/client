@@ -23,8 +23,8 @@ from app.socket.v4.artifacts.attempt.types import (
     AttemptEndAllPayload,
     AttemptEndedEvent,
     AttemptEndPayload,
-    AttemptStoppedEvent,
     AttemptStopPayload,
+    AttemptStoppedEvent,
     AttemptUnifiedErrorEvent,
 )
 from app.utils.logging.db_logger import get_logger
@@ -160,7 +160,9 @@ async def attempt_stop(sid: str, data: dict[str, Any]) -> None:
         )
 
 
-async def _attempt_end_impl(sid: str, data: AttemptEndPayload, profile_id: uuid.UUID) -> None:
+async def _attempt_end_impl(
+    sid: str, data: AttemptEndPayload, profile_id: uuid.UUID
+) -> None:
     """Handle attempt_end - end current chat and transition to next.
 
     This is a simplified version that delegates to the simulation_text_end handler

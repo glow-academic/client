@@ -35,8 +35,12 @@ internal_sio = get_internal_sio()
 server_router = APIRouter()
 
 # SQL paths
-SQL_PATH_CONTEXT = "app/sql/v4/queries/generate/training/get_training_start_context_complete.sql"
-SQL_PATH_PREPARE_START = "app/sql/v4/queries/generate/training/prepare_training_start_complete.sql"
+SQL_PATH_CONTEXT = (
+    "app/sql/v4/queries/generate/training/get_training_start_context_complete.sql"
+)
+SQL_PATH_PREPARE_START = (
+    "app/sql/v4/queries/generate/training/prepare_training_start_complete.sql"
+)
 
 
 @internal_sio.on("generate_call_complete")  # type: ignore
@@ -184,7 +188,9 @@ async def handle_training_complete(data: dict[str, Any]) -> None:
                 simulation_id=str(simulation_id),
                 attempt_id=str(prepare_row.attempt_id),
                 chat_id=str(prepare_row.chat_id),
-                scenario_id=str(prepare_row.scenario_id) if prepare_row.scenario_id else None,
+                scenario_id=str(prepare_row.scenario_id)
+                if prepare_row.scenario_id
+                else None,
                 scenario_data=scenario_data,
             )
 

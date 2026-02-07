@@ -517,7 +517,9 @@ async def get_profile_context(
             departments=departments,
             cohorts=cohorts,
             simulations=simulations,
-            earliest_attempt_date=earliest_attempt_date.isoformat() if earliest_attempt_date else None,
+            earliest_attempt_date=earliest_attempt_date.isoformat()
+            if earliest_attempt_date
+            else None,
             scoped_roles=access_result.scoped_roles,
             role_resources=role_resources,
             # Settings - ID from Pass 1, colors/thresholds from lightweight theme query

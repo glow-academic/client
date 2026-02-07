@@ -14,14 +14,16 @@ import re
 import subprocess
 from pathlib import Path
 
-SCRATCH = Path("/private/tmp/claude-502/-Users-ashoksaravanan-Coding-glow/061e39ec-dd18-4961-9d79-33fb27f948f9/scratchpad")
+SCRATCH = Path(
+    "/private/tmp/claude-502/-Users-ashoksaravanan-Coding-glow/061e39ec-dd18-4961-9d79-33fb27f948f9/scratchpad"
+)
 OUTPUT_DIR = Path(__file__).parent.parent / "migrate"
 
 
 def parse_system_messages(filepath: Path) -> dict:
     """Parse messages.sql to get message_id -> content for system messages."""
     messages = {}
-    with open(filepath, 'r') as f:
+    with open(filepath) as f:
         in_copy = False
         for line in f:
             if line.startswith("COPY public.messages"):
@@ -31,10 +33,10 @@ def parse_system_messages(filepath: Path) -> dict:
                 break
             if not in_copy:
                 continue
-            parts = line.rstrip('\n').split('\t')
+            parts = line.rstrip("\n").split("\t")
             if len(parts) >= 7:
                 content, role, msg_id = parts[2], parts[3], parts[6]
-                if role == 'system' and content != '\\N':
+                if role == "system" and content != "\\N":
                     messages[msg_id] = content
     return messages
 
@@ -51,7 +53,7 @@ def parse_message_runs(filepath: Path) -> tuple[dict, dict, dict]:
     msg_to_run = {}
     msg_to_all_runs = {}
 
-    with open(filepath, 'r') as f:
+    with open(filepath) as f:
         in_copy = False
         for line in f:
             if line.startswith("COPY public.message_runs"):
@@ -61,7 +63,7 @@ def parse_message_runs(filepath: Path) -> tuple[dict, dict, dict]:
                 break
             if not in_copy:
                 continue
-            parts = line.rstrip('\n').split('\t')
+            parts = line.rstrip("\n").split("\t")
             if len(parts) >= 4:
                 msg_id, run_id = parts[2], parts[3]
                 if run_id not in run_to_msgs:
@@ -78,8 +80,14 @@ def parse_message_runs(filepath: Path) -> tuple[dict, dict, dict]:
 
 def get_current_user_messages_per_first_run() -> dict:
     """Query current DB to get first_run_id -> user_message_id for runs with system messages."""
-    result = subprocess.run([
-        'psql', 'postgresql://myuser:mypassword@localhost:5432/mydb', '-t', '-A', '-c', '''
+    result = subprocess.run(
+        [
+            "psql",
+            "postgresql://myuser:mypassword@localhost:5432/mydb",
+            "-t",
+            "-A",
+            "-c",
+            """
         SELECT DISTINCT ON (r.id)
             r.id as run_id,
             me_user.id as user_msg_id
@@ -87,26 +95,29 @@ def get_current_user_messages_per_first_run() -> dict:
         JOIN messages_entry me ON me.run_id = r.id AND me.role = 'system'
         JOIN messages_entry me_user ON me_user.run_id = r.id AND me_user.role = 'user'
         ORDER BY r.id, me_user.created_at
-        '''
-    ], capture_output=True, text=True)
+        """,
+        ],
+        capture_output=True,
+        text=True,
+    )
 
     run_to_user_msg = {}
-    for line in result.stdout.strip().split('\n'):
-        if '|' in line:
-            run_id, user_msg_id = line.split('|')
+    for line in result.stdout.strip().split("\n"):
+        if "|" in line:
+            run_id, user_msg_id = line.split("|")
             run_to_user_msg[run_id] = user_msg_id
     return run_to_user_msg
 
 
 def escape_sql_string(s: str) -> str:
     """Escape a string for SQL."""
-    s = s.replace('\\\\', '\x00BACKSLASH\x00')
-    s = s.replace('\\n', '\n')
-    s = s.replace('\\t', '\t')
-    s = s.replace('\\r', '\r')
-    s = s.replace('\x00BACKSLASH\x00', '\\')
+    s = s.replace("\\\\", "\x00BACKSLASH\x00")
+    s = s.replace("\\n", "\n")
+    s = s.replace("\\t", "\t")
+    s = s.replace("\\r", "\r")
+    s = s.replace("\x00BACKSLASH\x00", "\\")
     s = s.replace("'", "''")
-    s = s.replace('\\', '\\\\')
+    s = s.replace("\\", "\\\\")
     return s
 
 
@@ -142,13 +153,19 @@ CREATE TEMP TABLE _system_content (
         batch.append(f"('{run_id}', E'{escaped}')")
 
         if len(batch) >= 20:
-            sql_parts.append("INSERT INTO _system_content (run_id, content) VALUES\n" +
-                           ",\n".join(batch) + "\nON CONFLICT (run_id) DO NOTHING;")
+            sql_parts.append(
+                "INSERT INTO _system_content (run_id, content) VALUES\n"
+                + ",\n".join(batch)
+                + "\nON CONFLICT (run_id) DO NOTHING;"
+            )
             batch = []
 
     if batch:
-        sql_parts.append("INSERT INTO _system_content (run_id, content) VALUES\n" +
-                        ",\n".join(batch) + "\nON CONFLICT (run_id) DO NOTHING;")
+        sql_parts.append(
+            "INSERT INTO _system_content (run_id, content) VALUES\n"
+            + ",\n".join(batch)
+            + "\nON CONFLICT (run_id) DO NOTHING;"
+        )
 
     sql_parts.append(f"""
 DO $$ BEGIN RAISE NOTICE 'Loaded {len(run_to_content)} run->content mappings'; END $$;
@@ -277,7 +294,9 @@ def main():
         if user_msg_id in msg_to_run:
             backup_run_id = msg_to_run[user_msg_id]
             if backup_run_id in backup_run_to_content:
-                current_run_to_content[current_run_id] = backup_run_to_content[backup_run_id]
+                current_run_to_content[current_run_id] = backup_run_to_content[
+                    backup_run_id
+                ]
                 matched += 1
 
     print(f"  Matched {matched} current runs to backup system content")
@@ -299,9 +318,11 @@ def main():
             max_num = max(max_num, int(match.group(1)))
 
     next_num = max_num + 1
-    output_file = OUTPUT_DIR / f"{next_num}_backfill_system_content_via_user_mapping.sql"
+    output_file = (
+        OUTPUT_DIR / f"{next_num}_backfill_system_content_via_user_mapping.sql"
+    )
 
-    with open(output_file, 'w') as f:
+    with open(output_file, "w") as f:
         f.write(sql)
 
     print(f"\nGenerated: {output_file}")

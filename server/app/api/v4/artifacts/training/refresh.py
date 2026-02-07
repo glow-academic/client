@@ -62,9 +62,7 @@ async def training_refresh(
 
         # Convert API request to SQL params
         request_dict = request.model_dump(mode="json")
-        params = RefreshHomeMvsNewSqlParams(
-            **request_dict, profile_id=profile_id
-        )  # type: ignore[arg-type]
+        params = RefreshHomeMvsNewSqlParams(**request_dict, profile_id=profile_id)  # type: ignore[arg-type]
         sql_params = params.to_tuple()
 
         # Execute SQL function
@@ -75,9 +73,7 @@ async def training_refresh(
 
         # Set audit context
         if result.actor_name:
-            audit_set(
-                http_request, actor={"name": result.actor_name, "id": profile_id}
-            )
+            audit_set(http_request, actor={"name": result.actor_name, "id": profile_id})
 
         # Convert to API response
         api_response = RefreshHomeMvsNewApiResponse.model_validate(result.model_dump())

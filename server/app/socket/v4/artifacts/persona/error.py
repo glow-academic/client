@@ -36,6 +36,7 @@ async def persona_generation_error_api(
     """
     return {"success": True}
 
+
 SQL_PATH = "app/sql/v4/queries/personas/validate_persona_resource_error_complete.sql"
 
 

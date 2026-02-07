@@ -230,7 +230,9 @@ async def get_persona_internal(
             else access_result.group_id
         )
         effective_draft_version = (
-            draft_item.version if draft_item is not None else access_result.draft_version
+            draft_item.version
+            if draft_item is not None
+            else access_result.draft_version
         )
 
         # === QUERY 2: ID Fetching (using user_department_ids from Query 1) ===
@@ -292,7 +294,9 @@ async def get_persona_internal(
         "instructions": draft_item.instructions_group_id if draft_item else None,
         "flags": draft_item.flags_group_id if draft_item else None,
         "departments": draft_item.departments_group_id if draft_item else None,
-        "parameter_fields": draft_item.parameter_fields_group_id if draft_item else None,
+        "parameter_fields": draft_item.parameter_fields_group_id
+        if draft_item
+        else None,
         "examples": draft_item.examples_group_id if draft_item else None,
         "parameters": draft_item.parameters_group_id if draft_item else None,
     }
@@ -368,20 +372,26 @@ async def get_persona_internal(
     parameters_show_ai_generate = compute_show_ai_generate("parameters")
 
     # Step-level show_ai_generate flags
-    basic_show_ai_generate = any([
-        name_show_ai_generate,
-        description_show_ai_generate,
-        flag_show_ai_generate,
-        departments_show_ai_generate,
-    ])
-    content_show_ai_generate = any([
-        instructions_show_ai_generate,
-        examples_show_ai_generate,
-    ])
-    parameters_step_show_ai_generate = any([
-        parameters_show_ai_generate,
-        parameter_fields_show_ai_generate,
-    ])
+    basic_show_ai_generate = any(
+        [
+            name_show_ai_generate,
+            description_show_ai_generate,
+            flag_show_ai_generate,
+            departments_show_ai_generate,
+        ]
+    )
+    content_show_ai_generate = any(
+        [
+            instructions_show_ai_generate,
+            examples_show_ai_generate,
+        ]
+    )
+    parameters_step_show_ai_generate = any(
+        [
+            parameters_show_ai_generate,
+            parameter_fields_show_ai_generate,
+        ]
+    )
 
     # === PYTHON BUSINESS LOGIC ===
 
@@ -405,9 +415,7 @@ async def get_persona_internal(
     description_ids = [selected_description_id] if selected_description_id else []
     color_ids = [selected_color_id] if selected_color_id else []
     icon_ids = [selected_icon_id] if selected_icon_id else []
-    instructions_ids = (
-        [selected_instructions_id] if selected_instructions_id else []
-    )
+    instructions_ids = [selected_instructions_id] if selected_instructions_id else []
     flag_ids = [selected_active_flag_id] if selected_active_flag_id else []
     department_ids = selected_department_ids
     parameter_field_ids = selected_parameter_field_ids
@@ -480,7 +488,9 @@ async def get_persona_internal(
 
     async def fetch_instructions():
         async with pool.acquire() as c:
-            selected = await get_instructions_internal(c, instructions_ids, bypass_cache)
+            selected = await get_instructions_internal(
+                c, instructions_ids, bypass_cache
+            )
             suggestions = await search_instructions_internal(
                 c,
                 None,  # No search filter for internal calls
@@ -536,7 +546,9 @@ async def get_persona_internal(
             )
             # Get all available fields for ALL parameters (persona + conditional)
             # This enables instant UI when user selects a parameter
-            available = await search_parameter_fields_internal(c, param_ids, bypass_cache)
+            available = await search_parameter_fields_internal(
+                c, param_ids, bypass_cache
+            )
             return (selected, available)
 
     async def fetch_examples():
@@ -635,9 +647,7 @@ async def get_persona_internal(
     )
 
     names = _dedupe_by_id(names_selected + names_suggestions, "id")
-    descriptions = _dedupe_by_id(
-        descriptions_selected + descriptions_suggestions, "id"
-    )
+    descriptions = _dedupe_by_id(descriptions_selected + descriptions_suggestions, "id")
     colors = _dedupe_by_id(colors_selected + colors_suggestions, "id")
     icons = _dedupe_by_id(icons_selected + icons_suggestions, "id")
     instructions_list = _dedupe_by_id(
@@ -671,9 +681,7 @@ async def get_persona_internal(
         (i for i in instructions_list if i.id == selected_instructions_id),
         None,
     )
-    flag_resource = next(
-        (f for f in flags if f.id == selected_active_flag_id), None
-    )
+    flag_resource = next((f for f in flags if f.id == selected_active_flag_id), None)
 
     department_resources = [
         d for d in departments if d.department_id in selected_department_ids
@@ -736,7 +744,9 @@ async def get_persona_internal(
     }
 
     # Build rich domain metadata for client display
-    domain_data_list = build_domain_data(domain_ids_map, show_flags_map, required_flags_map)
+    domain_data_list = build_domain_data(
+        domain_ids_map, show_flags_map, required_flags_map
+    )
 
     # Transform flags to enriched format for client
     persona_flags = [
@@ -995,7 +1005,9 @@ async def get_persona_client(
         parameter_fields_domain_id=data.domain_ids_map.get("parameter_fields"),
         parameter_fields_required=data.required_flags_map.get("parameter_fields"),
         parameter_field_suggestions=data.suggestions_map.get("parameter_fields"),
-        parameter_fields_show_ai_generate=data.show_ai_generate_map.get("parameter_fields"),
+        parameter_fields_show_ai_generate=data.show_ai_generate_map.get(
+            "parameter_fields"
+        ),
         # Examples
         show_examples=data.show_flags_map.get("examples"),
         examples_domain_id=data.domain_ids_map.get("examples"),
@@ -1021,7 +1033,9 @@ async def get_persona_client(
         description_create_tool_id=data.create_tool_ids_map.get("descriptions"),
         color_create_tool_id=data.create_tool_ids_map.get("colors"),
         instructions_create_tool_id=data.create_tool_ids_map.get("instructions"),
-        parameter_fields_create_tool_id=data.create_tool_ids_map.get("parameter_fields"),
+        parameter_fields_create_tool_id=data.create_tool_ids_map.get(
+            "parameter_fields"
+        ),
         examples_create_tool_id=data.create_tool_ids_map.get("examples"),
         # Per-resource LINK tool IDs
         name_link_tool_id=data.link_tool_ids_map.get("names"),

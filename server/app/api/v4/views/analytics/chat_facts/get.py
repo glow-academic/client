@@ -129,7 +129,9 @@ async def get_chat_facts_internal(
                     parameter_field_ids=list(item.parameter_field_ids)
                     if item.parameter_field_ids
                     else [],
-                    parameter_ids=list(item.parameter_ids) if item.parameter_ids else [],
+                    parameter_ids=list(item.parameter_ids)
+                    if item.parameter_ids
+                    else [],
                     field_ids=list(item.field_ids) if item.field_ids else [],
                     persona_parameter_field_ids=list(item.persona_parameter_field_ids)
                     if item.persona_parameter_field_ids

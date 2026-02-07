@@ -59,7 +59,9 @@ async def get_benchmark(
     try:
         # Convert string department_ids to UUIDs for filtering
         department_uuids = (
-            [UUID(d) for d in request.department_ids] if request.department_ids else None
+            [UUID(d) for d in request.department_ids]
+            if request.department_ids
+            else None
         )
 
         # Step 1: Fetch eval summary from MV and date range in parallel
@@ -234,9 +236,7 @@ async def get_benchmark(
         # Step 7: Build enriched eval items
         evals: list[BenchmarkEvalItem] = []
         for item in eval_summary_result.items:
-            eval_name = (
-                name_map.get(item.eval_name_id) if item.eval_name_id else None
-            )
+            eval_name = name_map.get(item.eval_name_id) if item.eval_name_id else None
             eval_desc = (
                 desc_map.get(item.eval_description_id)
                 if item.eval_description_id
@@ -253,7 +253,9 @@ async def get_benchmark(
                     description=eval_desc,
                     rubric_id=str(item.rubric_id) if item.rubric_id else None,
                     rubric_name=rubric_name,
-                    agent_ids=[str(a) for a in item.agent_ids] if item.agent_ids else [],
+                    agent_ids=[str(a) for a in item.agent_ids]
+                    if item.agent_ids
+                    else [],
                     department_ids=(
                         [str(d) for d in item.department_ids]
                         if item.department_ids
@@ -323,7 +325,9 @@ async def get_benchmark(
         standard_items = [
             BenchmarkStandardItem(
                 standard_id=str(s.standard_id),
-                standard_group_id=str(s.standard_group_id) if s.standard_group_id else None,
+                standard_group_id=str(s.standard_group_id)
+                if s.standard_group_id
+                else None,
                 name=s.name,
                 description=s.description,
                 points=s.points,

@@ -1,6 +1,6 @@
 """Internal query for first-attempt pass rows (beta parity semantics)."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import cast
 
 import asyncpg
@@ -24,8 +24,10 @@ async def get_first_attempt_pass_internal(
     request: GetFirstAttemptPassRequest,
 ) -> GetFirstAttemptPassResponse:
     """Fetch earliest attempt rows all-time, then apply date window filter."""
-    now = datetime.now(timezone.utc)
-    date_from = request.date_from or now.replace(hour=0, minute=0, second=0, microsecond=0)
+    now = datetime.now(UTC)
+    date_from = request.date_from or now.replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
     date_to = request.date_to or now
 
     result = cast(

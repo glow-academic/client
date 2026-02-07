@@ -8,7 +8,11 @@ from fastapi import APIRouter
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
-from app.sql.types import GetDepartmentApiRequest, GetDepartmentSqlParams, GetDepartmentSqlRow
+from app.sql.types import (
+    GetDepartmentApiRequest,
+    GetDepartmentSqlParams,
+    GetDepartmentSqlRow,
+)
 from app.utils.sql_helper import execute_sql_typed
 
 internal_sio = get_internal_sio()
@@ -76,11 +80,15 @@ async def handle_department_artifact_complete(data: dict[str, Any]) -> None:
 
     payload: dict[str, Any] = {
         "artifact_type": "department",
-        "group_id": str(getattr(result, "group_id", None)) if getattr(result, "group_id", None) else data.get("group_id"),
+        "group_id": str(getattr(result, "group_id", None))
+        if getattr(result, "group_id", None)
+        else data.get("group_id"),
         "resource_type": resource_type,
         "run_id": data.get("run_id"),
         "success": bool(generated_resource_id),
-        "message": f"{resource_type} generation completed" if generated_resource_id else "Missing resource_id in tool result",
+        "message": f"{resource_type} generation completed"
+        if generated_resource_id
+        else "Missing resource_id in tool result",
         "type": data.get("type", "complete"),
     }
 
@@ -93,7 +101,6 @@ async def handle_department_artifact_complete(data: dict[str, Any]) -> None:
     values = getattr(result, "settings_ids", None) or []
     payload["settings_ids"] = [str(v) for v in values if v]
 
-
     await sio.emit(
         "department_generation_complete",
         payload,
@@ -102,6 +109,8 @@ async def handle_department_artifact_complete(data: dict[str, Any]) -> None:
 
 
 @server_router.post("/department_generation_complete")
-async def department_generation_complete_api(request: dict[str, Any]) -> dict[str, bool]:
+async def department_generation_complete_api(
+    request: dict[str, Any],
+) -> dict[str, bool]:
     _ = request
     return {"ok": True}

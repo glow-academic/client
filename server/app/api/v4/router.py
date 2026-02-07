@@ -16,41 +16,41 @@ See `AGENTS.md` for overall architecture principles.
 # ============================================================================
 from fastapi import APIRouter, Depends
 
+from app.api.v4.artifacts.activity import router as activity_artifact_router
+
 # ============================================================================
 # Artifacts (19 total)
 # ============================================================================
 from app.api.v4.artifacts.agent import router as agents_router
+from app.api.v4.artifacts.attempt import router as attempt_artifact_router
 from app.api.v4.artifacts.auth import router as auth_artifact_router
+from app.api.v4.artifacts.benchmark import router as benchmark_artifact_router
 from app.api.v4.artifacts.cohort import router as cohorts_router
+
+# View-based artifact handlers (aggregated data for UI sections)
+from app.api.v4.artifacts.dashboard import router as dashboard_artifact_router
 from app.api.v4.artifacts.department import router as departments_router
 from app.api.v4.artifacts.document import router as documents_router
 from app.api.v4.artifacts.eval import router as evals_router
 from app.api.v4.artifacts.field import router as fields_router
 from app.api.v4.artifacts.group import router as group_router
-from app.api.v4.artifacts.session import router as session_router
+from app.api.v4.artifacts.health import router as health_artifact_router
+from app.api.v4.artifacts.leaderboard import router as leaderboard_artifact_router
 from app.api.v4.artifacts.model import router as models_router
 from app.api.v4.artifacts.parameter import router as parameters_router
 from app.api.v4.artifacts.persona import router as personas_router
-from app.api.v4.artifacts.training import router as training_artifact_router
-from app.api.v4.artifacts.attempt import router as attempt_artifact_router
-from app.api.v4.artifacts.test import router as test_artifact_router
+from app.api.v4.artifacts.pricing import router as pricing_artifact_router
 from app.api.v4.artifacts.profile import router as profile_router
 from app.api.v4.artifacts.provider import router as providers_router
+from app.api.v4.artifacts.reports import router as reports_artifact_router
 from app.api.v4.artifacts.rubric import router as rubrics_router
 from app.api.v4.artifacts.scenario import router as scenarios_router
+from app.api.v4.artifacts.session import router as session_router
 from app.api.v4.artifacts.setting import router as settings_router
 from app.api.v4.artifacts.simulation import router as simulations_router
+from app.api.v4.artifacts.test import router as test_artifact_router
 from app.api.v4.artifacts.tool import router as tools_router
-
-# View-based artifact handlers (aggregated data for UI sections)
-from app.api.v4.artifacts.dashboard import router as dashboard_artifact_router
-from app.api.v4.artifacts.reports import router as reports_artifact_router
-from app.api.v4.artifacts.leaderboard import router as leaderboard_artifact_router
-from app.api.v4.artifacts.pricing import router as pricing_artifact_router
-from app.api.v4.artifacts.activity import router as activity_artifact_router
-from app.api.v4.artifacts.health import router as health_artifact_router
-from app.api.v4.artifacts.benchmark import router as benchmark_artifact_router
-
+from app.api.v4.artifacts.training import router as training_artifact_router
 
 # ============================================================================
 # Auth (not available to MCP)

@@ -14,7 +14,11 @@ from app.socket.v4.artifacts.generation_common import (
     extract_group_id,
     pick_agent_id,
 )
-from app.sql.types import GetDepartmentApiRequest, GetDepartmentSqlParams, GetDepartmentSqlRow
+from app.sql.types import (
+    GetDepartmentApiRequest,
+    GetDepartmentSqlParams,
+    GetDepartmentSqlRow,
+)
 from app.utils.sql_helper import execute_sql_typed
 
 internal_sio = get_internal_sio()
@@ -67,7 +71,9 @@ async def _generate_department_impl(
                     artifact_type="department",
                     message="No agent configured for requested resources",
                     resource_id=str(data.department_id) if data.department_id else None,
-                    group_id=str(extract_group_id(result)) if extract_group_id(result) else None,
+                    group_id=str(extract_group_id(result))
+                    if extract_group_id(result)
+                    else None,
                     resource_type=(data.resource_types or ["department"])[0],
                 )
                 return
@@ -105,7 +111,9 @@ async def department_generate(sid: str, data: dict[str, Any]) -> None:
                 sid=sid,
                 artifact_type="department",
                 message="Profile not found. Please reconnect.",
-                resource_id=str(payload.department_id) if payload.department_id else None,
+                resource_id=str(payload.department_id)
+                if payload.department_id
+                else None,
                 resource_type="department",
             )
             return
@@ -116,6 +124,8 @@ async def department_generate(sid: str, data: dict[str, Any]) -> None:
             sid=sid,
             artifact_type="department",
             message=f"Invalid request: {str(e)}",
-            resource_id=str(data.get("department_id")) if data.get("department_id") else None,
+            resource_id=str(data.get("department_id"))
+            if data.get("department_id")
+            else None,
             resource_type="department",
         )

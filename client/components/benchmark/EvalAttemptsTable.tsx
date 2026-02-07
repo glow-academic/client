@@ -458,7 +458,7 @@ export default function EvalAttemptsTable({
           const attemptId = row.original.attempt_id;
           return (
             <div className="text-right">
-              <Link href={`/benchmark/a/${attemptId}`}>
+              <Link href={`/benchmark/t/${attemptId}`}>
                 <Button variant="ghost" size="sm">
                   View
                   <ArrowRight className="h-4 w-4 ml-2" />

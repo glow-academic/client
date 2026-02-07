@@ -1,6 +1,5 @@
 """Types for simulation overview view."""
 
-from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -71,9 +70,7 @@ class GetOverviewRequest(BaseModel):
     end_date: str | None = Field(
         default=None, description="End date for filtering (ISO format)"
     )
-    profile_id: UUID | None = Field(
-        default=None, description="Filter by profile ID"
-    )
+    profile_id: UUID | None = Field(default=None, description="Filter by profile ID")
     simulation_ids: list[UUID] | None = Field(
         default=None, description="Filter by simulation IDs"
     )

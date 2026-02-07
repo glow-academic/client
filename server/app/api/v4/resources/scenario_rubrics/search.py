@@ -24,7 +24,9 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/v4/queries/resources/scenario_rubrics/search_scenario_rubrics_complete.sql"
+SQL_PATH = (
+    "app/sql/v4/queries/resources/scenario_rubrics/search_scenario_rubrics_complete.sql"
+)
 
 
 router = APIRouter()

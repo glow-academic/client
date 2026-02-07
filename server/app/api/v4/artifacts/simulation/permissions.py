@@ -389,7 +389,9 @@ def compute_scenario_show_flags(
         Dictionary of show_* flags for the scenario
     """
     # Default to True if None (backwards compatibility)
-    ps_enabled = problem_statement_enabled if problem_statement_enabled is not None else True
+    ps_enabled = (
+        problem_statement_enabled if problem_statement_enabled is not None else True
+    )
     obj_enabled = objectives_enabled if objectives_enabled is not None else True
     vid_enabled = video_enabled if video_enabled is not None else False
     img_enabled = images_enabled if images_enabled is not None else False

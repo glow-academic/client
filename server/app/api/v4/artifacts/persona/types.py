@@ -13,7 +13,6 @@ from app.sql.types import (
     QGetDepartmentsV4Item,
     QGetDescriptionsV4Item,
     QGetExamplesV4Item,
-    QGetFlagsV4Item,
     QGetIconsV4Item,
     QGetInstructionsV4Item,
     QGetNamesV4Item,

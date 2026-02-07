@@ -127,7 +127,9 @@ async def get_artifact_session_list_internal(
             first_run_at=row["first_run_at"],
             last_run_at=row["last_run_at"],
             total_tokens=row["total_tokens"] or 0,
-            total_cost=Decimal(str(row["total_cost"])) if row["total_cost"] else Decimal("0"),
+            total_cost=Decimal(str(row["total_cost"]))
+            if row["total_cost"]
+            else Decimal("0"),
             audit_count=row["audit_count"] or 0,
             last_audit_at=row["last_audit_at"],
             error_count=row["error_count"] or 0,

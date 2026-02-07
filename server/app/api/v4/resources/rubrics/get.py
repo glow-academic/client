@@ -77,7 +77,9 @@ async def get_rubrics_batch_internal(
         await execute_sql_typed(conn, BATCH_SQL_PATH, params=params),
     )
 
-    items: list[QGetRubricsBatchV4Item] = result.items if result and result.items else []
+    items: list[QGetRubricsBatchV4Item] = (
+        result.items if result and result.items else []
+    )
 
     await set_cached(
         cache_key_val,
@@ -105,7 +107,9 @@ async def get_rubrics_internal(
         List of rubric items
     """
     # Use sentinel UUID when simulation_id is None to fetch all rubrics
-    effective_simulation_id = simulation_id or UUID("00000000-0000-0000-0000-000000000000")
+    effective_simulation_id = simulation_id or UUID(
+        "00000000-0000-0000-0000-000000000000"
+    )
 
     # Generate cache key
     cache_key_val = cache_key(

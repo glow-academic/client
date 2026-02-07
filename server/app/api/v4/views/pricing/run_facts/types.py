@@ -49,11 +49,17 @@ class GetPricingRunFactsRequest(BaseModel):
     model_id: UUID | None = Field(default=None, description="Filter by model ID")
     profile_id: UUID | None = Field(default=None, description="Filter by profile ID")
     session_id: UUID | None = Field(default=None, description="Filter by session ID")
-    date_from: datetime | None = Field(default=None, description="Filter by date range start")
-    date_to: datetime | None = Field(default=None, description="Filter by date range end")
+    date_from: datetime | None = Field(
+        default=None, description="Filter by date range start"
+    )
+    date_to: datetime | None = Field(
+        default=None, description="Filter by date range end"
+    )
 
     # Sorting
-    sort_by: str = Field(default="date", description="Sort field: 'date' | 'cost' | 'tokens'")
+    sort_by: str = Field(
+        default="date", description="Sort field: 'date' | 'cost' | 'tokens'"
+    )
     sort_order: str = Field(default="desc", description="Sort order: 'asc' | 'desc'")
 
     # Pagination

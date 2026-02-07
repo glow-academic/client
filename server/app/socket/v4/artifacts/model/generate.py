@@ -67,7 +67,9 @@ async def _generate_model_impl(
                     artifact_type="model",
                     message="No agent configured for requested resources",
                     resource_id=str(data.model_id) if data.model_id else None,
-                    group_id=str(extract_group_id(result)) if extract_group_id(result) else None,
+                    group_id=str(extract_group_id(result))
+                    if extract_group_id(result)
+                    else None,
                     resource_type=(data.resource_types or ["model"])[0],
                 )
                 return

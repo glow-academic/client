@@ -1,6 +1,5 @@
 """Types for benchmark test artifacts endpoints."""
 
-from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -16,6 +15,26 @@ class GetTestArtifactRequest(BaseModel):
     test_id: UUID
 
 
+class TestRunItem(BaseModel):
+    """A single run row for the UI table, derived from a benchmark chat."""
+
+    chat_id: str
+    run_id: str | None = None
+    group_id: str | None = None
+    model_name: str | None = None
+    agent_name: str | None = None
+    status: str = "not_started"
+    grade_score: int | None = None
+    grade_passed: bool | None = None
+
+
+class TestStatusSummary(BaseModel):
+    total: int = 0
+    completed: int = 0
+    in_progress: int = 0
+    not_started: int = 0
+
+
 class GetTestArtifactResponse(BaseModel):
     """Response for benchmark test artifact detail."""
 
@@ -23,6 +42,18 @@ class GetTestArtifactResponse(BaseModel):
     chats: list[BenchmarkChatViewItem] = Field(default_factory=list)
     messages: list[BenchmarkMessageViewItem] = Field(default_factory=list)
     status: str = "pending"
+
+    # Hydrated eval info
+    eval_name: str | None = None
+    eval_description: str | None = None
+    rubric_name: str | None = None
+    infinite_mode: bool = False
+
+    # Runs derived from chats
+    runs: list[TestRunItem] = Field(default_factory=list)
+
+    # Status summary
+    status_summary: TestStatusSummary | None = None
 
 
 class GetTestListRequest(BaseModel):

@@ -16,8 +16,9 @@ from app.sql.types import (
 )
 from app.utils.sql_helper import execute_sql_typed
 
-
-SQL_PATH_RESOLVE = "app/sql/v4/queries/generate/attempt/resolve_agent_by_entry_types_complete.sql"
+SQL_PATH_RESOLVE = (
+    "app/sql/v4/queries/generate/attempt/resolve_agent_by_entry_types_complete.sql"
+)
 
 
 @dataclass

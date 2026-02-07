@@ -71,9 +71,7 @@ class RefreshResponse(BaseModel):
     """Response for refresh/recreate operations."""
 
     success: bool = Field(description="Whether the operation succeeded")
-    method: Literal["concurrent", "recreate"] = Field(
-        description="Refresh method used"
-    )
+    method: Literal["concurrent", "recreate"] = Field(description="Refresh method used")
     message: str | None = Field(default=None, description="Additional message")
     duration_ms: int | None = Field(
         default=None, description="Duration of the operation in milliseconds"

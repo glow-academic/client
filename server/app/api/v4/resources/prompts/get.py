@@ -45,7 +45,8 @@ async def get_prompts_internal(
         cached = await get_cached(cache_key_val)
         if cached:
             return [
-                QGetPromptsV4Item.model_validate(item) for item in cached.get("items", [])
+                QGetPromptsV4Item.model_validate(item)
+                for item in cached.get("items", [])
             ]
 
     params = GetPromptsSqlParams(ids=ids)

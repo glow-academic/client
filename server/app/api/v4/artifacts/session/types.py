@@ -10,7 +10,6 @@ from app.api.v4.views.artifacts.session_detail.types import (
     ArtifactSessionAudit,
     ArtifactSessionGroup,
 )
-from app.api.v4.views.artifacts.session_list.types import ArtifactSessionListItem
 
 
 class SessionListItem(BaseModel):
@@ -45,7 +44,9 @@ class GetSessionListRequest(BaseModel):
     date_from: datetime | None = Field(default=None)
     date_to: datetime | None = Field(default=None)
 
-    sort_by: str = Field(default="date", description="'date' | 'cost' | 'tokens' | 'groups' | 'runs'")
+    sort_by: str = Field(
+        default="date", description="'date' | 'cost' | 'tokens' | 'groups' | 'runs'"
+    )
     sort_order: str = Field(default="desc")
 
     page_limit: int = Field(default=50, ge=1, le=100)

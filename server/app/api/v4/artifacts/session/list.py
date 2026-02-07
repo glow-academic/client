@@ -15,7 +15,9 @@ from app.api.v4.artifacts.session.types import (
     GetSessionListResponse,
     SessionListItem,
 )
-from app.api.v4.views.artifacts.session_list.get import get_artifact_session_list_internal
+from app.api.v4.views.artifacts.session_list.get import (
+    get_artifact_session_list_internal,
+)
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db

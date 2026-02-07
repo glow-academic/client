@@ -1,10 +1,22 @@
-"""Cohort generation router - unified handler for all cohort resource types."""
+"""Cohort generation router - unified handler for all cohort resource types.
+
+Uses domain-based generation pattern (matching persona gold standard):
+1. Validates domain_ids from client
+2. Fetches cohort data via get_cohort_websocket() (not monolithic SQL)
+3. Derives resource_types + agent_id from domain_ids
+4. Builds Jinja context from resources bucket
+5. Creates run + renders messages + emits generate_artifact
+"""
 
 import uuid
-from typing import Any, cast
+from typing import Any
 
 from fastapi import APIRouter
 
+from app.api.v4.artifacts.cohort.get import get_cohort_websocket
+from app.api.v4.artifacts.cohort.types import (
+    GetCohortApiRequest,
+)
 from app.infra.v4.generation import convert_tools_to_dict, render_developer_instructions
 from app.infra.v4.generation.resource_utils import normalize_resources_for_sql
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
@@ -12,9 +24,8 @@ from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
 from app.socket.v4.artifacts.types import GenerateErrorApiRequest
-from app.sql.types import GetCohortApiRequest, GetCohortSqlParams, GetCohortSqlRow
 from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import execute_sql_typed, load_sql
+from app.utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
 
@@ -23,7 +34,6 @@ internal_sio = get_internal_sio()
 client_router = APIRouter()
 server_router = APIRouter()
 
-SQL_PATH = "app/sql/v4/queries/cohorts/get_cohort_complete.sql"
 CREATE_RUN_SQL_PATH = "app/sql/v4/queries/generate/start/get_generation_run_context_and_create_run_complete.sql"
 TEXT_RUN_CONTEXT_SQL_PATH = "app/sql/v4/queries/generate/text/get_text_run_context_for_existing_run_complete.sql"
 
@@ -41,36 +51,110 @@ COHORT_RESOURCE_TYPES = [
 class GenerateCohortPayload(GetCohortApiRequest):
     """Request to generate cohort resources - extends GET API request with generation-specific fields."""
 
-    agent_type: str | None = (
-        None  # Optional: "name", "description", "basic", "general"/"all", "flags", "departments", "simulations"
-    )
-    resource_types: list[str]  # Required: which resource types to generate
-    user_instructions: list[str] | None = None  # Optional: user instructions
+    # Domain-based API (new)
+    domain_ids: list[uuid.UUID] | None = None
+    # Legacy fields (backward compat)
+    agent_type: str | None = None
+    resource_types: list[str] | None = None
+    # Optional user instructions
+    user_instructions: list[str] | None = None
 
 
 async def _cohort_generate_impl(
     sid: str, data: GenerateCohortPayload, profile_id: uuid.UUID
 ) -> None:
-    """Handle cohort generation - emit generate_artifact for each resource type, then emit client event."""
+    """Handle cohort generation - supports both domain-based (new) and agent_type (legacy) modes."""
     try:
-        # Validate resource types
-        resource_types = data.resource_types
-        error_resource_type = resource_types[0] if resource_types else None
-        if not resource_types:
+        error_resource_type: str | None = None
+
+        # Step 1: Fetch cohort data via websocket function
+        result = await get_cohort_websocket(
+            profile_id=profile_id,
+            cohort_id=data.cohort_id,
+            draft_id=data.draft_id,
+        )
+
+        # Build domain_id -> agent_id mapping from result.domains
+        domain_to_agent: dict[uuid.UUID, uuid.UUID | None] = {}
+        if result.domains:
+            for domain in result.domains:
+                domain_to_agent[domain.domain_id] = domain.agent_id
+
+        # Build domain_id -> resource_type mapping from result
+        domain_to_resource: dict[uuid.UUID | None, str] = {
+            result.names_domain_id: "names",
+            result.descriptions_domain_id: "descriptions",
+            result.flags_domain_id: "flags",
+            result.departments_domain_id: "departments",
+            result.simulations_domain_id: "simulations",
+            result.simulation_positions_domain_id: "simulation_positions",
+        }
+        # Remove None key if present
+        domain_to_resource.pop(None, None)
+
+        # Determine resource_types and agent_id
+        resource_types: list[str] = []
+        agent_id: uuid.UUID | None = None
+
+        if data.domain_ids:
+            # === Domain-based mode (new) ===
+            for did in data.domain_ids:
+                if did in domain_to_resource:
+                    resource_types.append(domain_to_resource[did])
+
+            if not resource_types:
+                await emit_to_internal(
+                    "generate_call_error",
+                    GenerateErrorApiRequest(
+                        sid=sid,
+                        error_message="No valid domain_ids provided",
+                        artifact_type="cohort",
+                        group_id=None,
+                        resource_type=None,
+                    ),
+                    sid=sid,
+                )
+                return
+
+            # Get agent_id from the first valid domain_id
+            for did in data.domain_ids:
+                if did in domain_to_agent and domain_to_agent[did] is not None:
+                    agent_id = domain_to_agent[did]
+                    break
+
+        elif data.resource_types and data.agent_type:
+            # === Legacy mode (backward compat) ===
+            resource_types = data.resource_types
+
+            # Build agent_type -> agent_id mapping from domains
+            # Find the agent associated with the first resource type
+            resource_to_domain: dict[str, uuid.UUID | None] = {
+                v: k for k, v in domain_to_resource.items()
+            }
+            for rt in resource_types:
+                domain_id = resource_to_domain.get(rt)
+                if domain_id and domain_id in domain_to_agent:
+                    agent_id = domain_to_agent[domain_id]
+                    if agent_id:
+                        break
+
+        else:
             await emit_to_internal(
                 "generate_call_error",
                 GenerateErrorApiRequest(
                     sid=sid,
-                    error_message="resource_types must be provided",
+                    error_message="Either domain_ids or (resource_types + agent_type) must be provided",
                     artifact_type="cohort",
                     group_id=None,
-                    resource_type=error_resource_type,
-                    resource_types=resource_types,
+                    resource_type=None,
                 ),
                 sid=sid,
             )
             return
 
+        error_resource_type = resource_types[0] if resource_types else None
+
+        # Validate resource types
         invalid_types = [rt for rt in resource_types if rt not in COHORT_RESOURCE_TYPES]
         if invalid_types:
             await emit_to_internal(
@@ -87,122 +171,87 @@ async def _cohort_generate_impl(
             )
             return
 
-        # Call get_cohort_v4 SQL function (same as GET API endpoint)
-        async with get_db_connection() as conn:
-            # Convert payload to SQL params (same as GET endpoint)
-            params = GetCohortSqlParams(
-                profile_id=profile_id,
-                cohort_id=data.cohort_id,
-                descriptions_search=data.descriptions_search,
-                simulation_search=data.simulation_search,
-                simulation_show_selected=data.simulation_show_selected,
-                current_simulation_ids=data.current_simulation_ids,
-                draft_id=data.draft_id,
-                mcp=getattr(data, "mcp", False) or False,
-            )
-
-            result = cast(
-                GetCohortSqlRow,
-                await execute_sql_typed(conn, SQL_PATH, params=params),
-            )
-
-            # Map agent_type to agent_id from response
-            agent_id: uuid.UUID | None = None
-            if data.agent_type:
-                agent_type_map = {
-                    "name": result.name_agent_id,
-                    "description": result.description_agent_id,
-                    "basic": result.basic_agent_id,
-                    "general": result.general_agent_id,
-                    "all": result.general_agent_id,
-                    "flags": result.flag_agent_id,
-                    "departments": result.departments_agent_id,
-                    "simulations": result.simulations_agent_id,
-                    "simulation_positions": result.simulation_positions_agent_id,
-                }
-                agent_id = agent_type_map.get(data.agent_type)
-
-            if not agent_id:
-                await emit_to_internal(
-                    "generate_call_error",
-                    GenerateErrorApiRequest(
-                        sid=sid,
-                        error_message=f"No agent found for agent_type: {data.agent_type}",
-                        artifact_type="cohort",
-                        group_id=None,
-                        resource_type=error_resource_type,
-                        resource_types=resource_types,
-                    ),
+        if not agent_id:
+            await emit_to_internal(
+                "generate_call_error",
+                GenerateErrorApiRequest(
                     sid=sid,
-                )
-                return
+                    error_message="No agent found for the requested domains",
+                    artifact_type="cohort",
+                    group_id=None,
+                    resource_type=error_resource_type,
+                    resource_types=resource_types,
+                ),
+                sid=sid,
+            )
+            return
 
-            # Extract resource IDs from arrays and build resources array (composite type format)
-            resources: list[dict[str, Any]] = []
+        # Build resources array for SQL
+        resources: list[dict[str, Any]] = []
+        resources_bucket = result.resources.resources if result.resources else None
 
-            # Extract IDs from each resource array
-            if result.names:
-                resources.append(
-                    {
-                        "resource_type": "names",
-                        "resource_ids": [str(n.id) for n in result.names if n.id],
-                    }
-                )
-            if result.descriptions:
-                resources.append(
-                    {
-                        "resource_type": "descriptions",
-                        "resource_ids": [
-                            str(d.id) for d in result.descriptions if d.id
-                        ],
-                    }
-                )
-            if result.flag_resource and result.flag_resource.id:
-                resources.append(
-                    {
-                        "resource_type": "flags",
-                        "resource_ids": [str(result.flag_resource.id)],
-                    }
-                )
-            if result.departments:
-                resources.append(
-                    {
-                        "resource_type": "departments",
-                        "resource_ids": [
-                            str(d.department_id)
-                            for d in result.departments
-                            if d.department_id
-                        ],
-                    }
-                )
-            if result.simulations:
-                resources.append(
-                    {
-                        "resource_type": "simulations",
-                        "resource_ids": [
-                            str(s.simulation_id)
-                            for s in result.simulations
-                            if s.simulation_id
-                        ],
-                    }
-                )
-            if result.simulation_positions:
-                resources.append(
-                    {
-                        "resource_type": "simulation_positions",
-                        "resource_ids": [
-                            f"{sp.simulation_id}-{sp.value}"
-                            for sp in result.simulation_positions
-                            if sp.simulation_id is not None and sp.value is not None
-                        ],
-                    }
-                )
+        if resources_bucket and resources_bucket.names:
+            resources.append(
+                {
+                    "resource_type": "names",
+                    "resource_ids": [str(n.id) for n in resources_bucket.names if n.id],
+                }
+            )
+        if resources_bucket and resources_bucket.descriptions:
+            resources.append(
+                {
+                    "resource_type": "descriptions",
+                    "resource_ids": [
+                        str(d.id) for d in resources_bucket.descriptions if d.id
+                    ],
+                }
+            )
+        if resources_bucket and resources_bucket.flags:
+            resources.append(
+                {
+                    "resource_type": "flags",
+                    "resource_ids": [str(f.id) for f in resources_bucket.flags if f.id],
+                }
+            )
+        if resources_bucket and resources_bucket.departments:
+            resources.append(
+                {
+                    "resource_type": "departments",
+                    "resource_ids": [
+                        str(d.department_id)
+                        for d in resources_bucket.departments
+                        if d.department_id
+                    ],
+                }
+            )
+        if resources_bucket and resources_bucket.simulations:
+            resources.append(
+                {
+                    "resource_type": "simulations",
+                    "resource_ids": [
+                        str(s.simulation_id)
+                        for s in resources_bucket.simulations
+                        if s.simulation_id
+                    ],
+                }
+            )
+        if resources_bucket and resources_bucket.simulation_positions:
+            resources.append(
+                {
+                    "resource_type": "simulation_positions",
+                    "resource_ids": [
+                        f"{sp.simulation_id}-{sp.value}"
+                        for sp in resources_bucket.simulation_positions
+                        if sp.simulation_id is not None and sp.value is not None
+                    ],
+                }
+            )
 
-            # Get group_id from response if available
-            group_id: uuid.UUID | None = result.group_id
+        group_id: uuid.UUID | None = result.group_id
 
-            resources_sql = normalize_resources_for_sql(resources)
+        resources_sql = normalize_resources_for_sql(resources)
 
+        async with get_db_connection() as conn:
             create_run_sql = load_sql(CREATE_RUN_SQL_PATH)
             create_run_row = await conn.fetchrow(
                 create_run_sql,
@@ -314,7 +363,7 @@ async def _cohort_generate_impl(
                 artifact_type="cohort",
                 group_id=None,
                 resource_type=error_resource_type,
-                resource_types=resource_types,
+                resource_types=resource_types if "resource_types" in dir() else None,
             ),
             sid=sid,
         )
@@ -325,9 +374,14 @@ async def cohort_generate(sid: str, data: dict[str, Any]) -> None:
     """Handle cohort_generate event (client-to-server)."""
     try:
         payload = GenerateCohortPayload(**data)
-        error_resource_type = (
-            payload.resource_types[0] if payload.resource_types else None
-        )
+        error_resource_type = None
+        if payload.resource_types:
+            error_resource_type = (
+                payload.resource_types[0] if payload.resource_types else None
+            )
+        elif payload.domain_ids:
+            error_resource_type = "cohort"
+
         profile_id_str = await find_profile_by_socket(sid)
         if not profile_id_str:
             await emit_to_internal(
@@ -388,9 +442,6 @@ async def cohort_generate_internal(data: dict[str, Any]) -> None:
 
         profile_id = uuid.UUID(profile_id_str)
         payload = GenerateCohortPayload(**data)
-        error_resource_type = (
-            payload.resource_types[0] if payload.resource_types else None
-        )
         await _cohort_generate_impl(sid, payload, profile_id)
     except Exception as e:
         await emit_to_internal(

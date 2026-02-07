@@ -35,6 +35,7 @@ async def persona_generation_progress_api(
     """
     return {"success": True}
 
+
 SQL_PATH = "app/sql/v4/queries/personas/validate_persona_resource_progress_complete.sql"
 
 

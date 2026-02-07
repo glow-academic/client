@@ -7,9 +7,9 @@ import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.views.health.service_hourly.types import (
-    HealthServiceHourlyItem,
     GetHealthServiceHourlyRequest,
     GetHealthServiceHourlyResponse,
+    HealthServiceHourlyItem,
 )
 from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
@@ -89,10 +89,18 @@ async def get_health_service_hourly_internal(
             check_count=row["check_count"] or 0,
             ok_count=row["ok_count"] or 0,
             fail_count=row["fail_count"] or 0,
-            uptime_percent=float(row["uptime_percent"]) if row["uptime_percent"] else 0.0,
-            avg_latency_ms=float(row["avg_latency_ms"]) if row["avg_latency_ms"] else 0.0,
-            min_latency_ms=float(row["min_latency_ms"]) if row["min_latency_ms"] else 0.0,
-            max_latency_ms=float(row["max_latency_ms"]) if row["max_latency_ms"] else 0.0,
+            uptime_percent=float(row["uptime_percent"])
+            if row["uptime_percent"]
+            else 0.0,
+            avg_latency_ms=float(row["avg_latency_ms"])
+            if row["avg_latency_ms"]
+            else 0.0,
+            min_latency_ms=float(row["min_latency_ms"])
+            if row["min_latency_ms"]
+            else 0.0,
+            max_latency_ms=float(row["max_latency_ms"])
+            if row["max_latency_ms"]
+            else 0.0,
             latest_ok=row["latest_ok"],
             latest_error=row["latest_error"],
         )

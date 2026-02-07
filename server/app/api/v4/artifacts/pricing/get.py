@@ -9,14 +9,16 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.artifacts.pricing.types import (
     PricingRequest,
+    PricingResources,
     PricingResponse,
     PricingViews,
-    PricingResources,
 )
 from app.api.v4.artifacts.types import FilterOption
 from app.api.v4.resources.names.get import get_names_internal
-from app.api.v4.views.pricing.group_summary.get import get_pricing_group_summary_internal
 from app.api.v4.views.pricing.daily.get import get_pricing_daily_internal
+from app.api.v4.views.pricing.group_summary.get import (
+    get_pricing_group_summary_internal,
+)
 from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -74,7 +76,9 @@ async def get_pricing(
                     conn=c,
                     model_id=request.model_id,
                     agent_id=request.agent_id,
-                    date_from=effective_date_from.date() if effective_date_from else None,
+                    date_from=effective_date_from.date()
+                    if effective_date_from
+                    else None,
                     date_to=effective_date_to.date() if effective_date_to else None,
                     cohort_ids=request.cohort_ids,
                     department_ids=request.department_ids,
@@ -126,7 +130,12 @@ async def get_pricing(
                     )
                 return (None, None)
 
-        group_summary_result, daily_result, pricing_dept_options, pricing_date_range = await asyncio.gather(
+        (
+            group_summary_result,
+            daily_result,
+            pricing_dept_options,
+            pricing_date_range,
+        ) = await asyncio.gather(
             fetch_group_summary(),
             fetch_daily(),
             fetch_pricing_department_options(),
@@ -146,17 +155,23 @@ async def get_pricing(
             if item.primary_agent_id:
                 agent_ids.add(str(item.primary_agent_id))
                 if item.primary_agent_name_id:
-                    agent_artifact_to_name_id[str(item.primary_agent_id)] = item.primary_agent_name_id
+                    agent_artifact_to_name_id[str(item.primary_agent_id)] = (
+                        item.primary_agent_name_id
+                    )
                     all_name_ids.add(item.primary_agent_name_id)
             if item.primary_model_id:
                 model_ids.add(str(item.primary_model_id))
                 if item.primary_model_name_id:
-                    model_artifact_to_name_id[str(item.primary_model_id)] = item.primary_model_name_id
+                    model_artifact_to_name_id[str(item.primary_model_id)] = (
+                        item.primary_model_name_id
+                    )
                     all_name_ids.add(item.primary_model_name_id)
             if item.profile_id:
                 profile_ids.add(str(item.profile_id))
                 if item.profile_name_id:
-                    profile_artifact_to_name_id[str(item.profile_id)] = item.profile_name_id
+                    profile_artifact_to_name_id[str(item.profile_id)] = (
+                        item.profile_name_id
+                    )
                     all_name_ids.add(item.profile_name_id)
             # Collect from arrays for complete coverage
             if item.agent_name_ids:
@@ -188,7 +203,9 @@ async def get_pricing(
                     name_id_to_str[ni.id] = ni.name
 
         # Build artifact_id → name_string maps
-        def resolve_name(artifact_to_name: dict[str, UUID], artifact_id: str) -> str | None:
+        def resolve_name(
+            artifact_to_name: dict[str, UUID], artifact_id: str
+        ) -> str | None:
             name_id = artifact_to_name.get(artifact_id)
             return name_id_to_str.get(name_id) if name_id else None
 

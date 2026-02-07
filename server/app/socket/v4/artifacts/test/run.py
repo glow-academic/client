@@ -8,14 +8,13 @@ Entry types: ['replays'] - Replay response tools
 """
 
 import uuid
-from typing import Any, cast
+from typing import Any
 
 from fastapi import APIRouter
 
 from app.infra.v4.generation import convert_tools_to_dict, render_developer_instructions
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
-from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
 from app.socket.v4.artifacts.test.permissions import (
     TestRunContext,
@@ -23,12 +22,10 @@ from app.socket.v4.artifacts.test.permissions import (
     validate_test_run_access,
 )
 from app.socket.v4.artifacts.test.types import (
-    TEST_RUN_ENTRY_TYPES,
     TestErrorEvent,
     TestRunPayload,
     TestRunStartEvent,
 )
-from app.socket.v4.artifacts.types import GenerateErrorApiRequest
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed
 
@@ -98,9 +95,7 @@ def _build_messages_from_conversation(
     return messages
 
 
-async def _test_run_impl(
-    sid: str, data: TestRunPayload, profile_id: uuid.UUID
-) -> None:
+async def _test_run_impl(sid: str, data: TestRunPayload, profile_id: uuid.UUID) -> None:
     """Handle test run with all business logic.
 
     This function:
@@ -157,7 +152,8 @@ async def _test_run_impl(
                 attempt_exists=getattr(context_row, "attempt_exists", False) or False,
                 group_id=getattr(context_row, "group_id", None),
                 group_exists=getattr(context_row, "group_exists", False) or False,
-                has_pending_runs=getattr(context_row, "has_pending_runs", False) or False,
+                has_pending_runs=getattr(context_row, "has_pending_runs", False)
+                or False,
                 next_run_resource_id=getattr(context_row, "next_run_resource_id", None),
                 total_runs=getattr(context_row, "total_runs", 0) or 0,
                 completed_runs=getattr(context_row, "completed_runs", 0) or 0,
@@ -223,7 +219,9 @@ async def _test_run_impl(
                 "model": prepare_row.model_name or "",
                 "api_key": prepare_row.api_key or "",
                 "base_url": prepare_row.base_url or "",
-                "temperature": prepare_row.temperature if prepare_row.temperature is not None else 0.0,
+                "temperature": prepare_row.temperature
+                if prepare_row.temperature is not None
+                else 0.0,
                 "reasoning": prepare_row.reasoning or "",
                 "provider": prepare_row.provider_name or "",
             }
@@ -238,6 +236,7 @@ async def _test_run_impl(
             original_conversation = prepare_row.original_conversation or []
             if isinstance(original_conversation, str):
                 import json
+
                 original_conversation = json.loads(original_conversation)
 
             messages = _build_messages_from_conversation(
@@ -247,11 +246,15 @@ async def _test_run_impl(
             )
 
             # Step 6: Emit test_run_start event
-            created_at_str = prepare_row.created_at.isoformat() if prepare_row.created_at else ""
+            created_at_str = (
+                prepare_row.created_at.isoformat() if prepare_row.created_at else ""
+            )
             start_event = TestRunStartEvent(
                 chat_id=chat_id_str,
                 run_id=run_id,
-                original_run_resource_id=str(ctx.next_run_resource_id) if ctx.next_run_resource_id else None,
+                original_run_resource_id=str(ctx.next_run_resource_id)
+                if ctx.next_run_resource_id
+                else None,
                 current_run=current_run,
                 total_runs=total_runs,
                 created_at=created_at_str,
@@ -286,7 +289,9 @@ async def _test_run_impl(
                         "chat_id": chat_id_str,
                         "current_run": current_run,
                         "total_runs": total_runs,
-                        "original_run_resource_id": str(ctx.next_run_resource_id) if ctx.next_run_resource_id else None,
+                        "original_run_resource_id": str(ctx.next_run_resource_id)
+                        if ctx.next_run_resource_id
+                        else None,
                     },
                     "eval_mode": True,
                 },

@@ -23,7 +23,9 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/v4/queries/views/simulation/chats/get_simulation_chats_view_complete.sql"
+SQL_PATH = (
+    "app/sql/v4/queries/views/simulation/chats/get_simulation_chats_view_complete.sql"
+)
 
 router = APIRouter()
 
@@ -107,10 +109,7 @@ async def get_simulation_chats_internal(
             # Transform analyses
             analyses = None
             if item.analyses:
-                analyses = [
-                    AnalysisItem(content=a.content)
-                    for a in item.analyses
-                ]
+                analyses = [AnalysisItem(content=a.content) for a in item.analyses]
 
             items.append(
                 ChatViewItem(
@@ -139,7 +138,9 @@ async def get_simulation_chats_internal(
                     analyses=analyses,
                     # Resource IDs - Normal/General View
                     persona_ids=list(item.persona_ids) if item.persona_ids else None,
-                    objective_ids=list(item.objective_ids) if item.objective_ids else None,
+                    objective_ids=list(item.objective_ids)
+                    if item.objective_ids
+                    else None,
                     # Resource IDs - Video/Quiz View
                     question_ids=list(item.question_ids) if item.question_ids else None,
                     option_ids=list(item.option_ids) if item.option_ids else None,
@@ -150,7 +151,9 @@ async def get_simulation_chats_internal(
                     video_ids=list(item.video_ids) if item.video_ids else None,
                     document_ids=list(item.document_ids) if item.document_ids else None,
                     # Rubric/Grade resource IDs
-                    standard_group_ids=list(item.standard_group_ids) if item.standard_group_ids else None,
+                    standard_group_ids=list(item.standard_group_ids)
+                    if item.standard_group_ids
+                    else None,
                     standard_ids=list(item.standard_ids) if item.standard_ids else None,
                 )
             )

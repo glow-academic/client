@@ -9,9 +9,9 @@ import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.views.pricing.daily.types import (
-    PricingDailyItem,
     GetPricingDailyRequest,
     GetPricingDailyResponse,
+    PricingDailyItem,
 )
 from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
@@ -29,8 +29,10 @@ async def get_pricing_daily_internal(
     agent_id: UUID | None = None,
     date_from: date | None = None,
     date_to: date | None = None,
-    cohort_ids: list[UUID] | None = None,  # Not used - MV doesn't have profile-level data
-    department_ids: list[UUID] | None = None,  # Not used - MV doesn't have profile-level data
+    cohort_ids: list[UUID]
+    | None = None,  # Not used - MV doesn't have profile-level data
+    department_ids: list[UUID]
+    | None = None,  # Not used - MV doesn't have profile-level data
     roles: list[str] | None = None,  # Not used - MV doesn't have profile-level data
     page_limit: int = 30,
     page_offset: int = 0,
@@ -109,12 +111,24 @@ async def get_pricing_daily_internal(
             total_output_tokens=row["total_output_tokens"] or 0,
             total_cached_tokens=row["total_cached_tokens"] or 0,
             total_tokens=row["total_tokens"] or 0,
-            total_input_cost=Decimal(str(row["total_input_cost"])) if row["total_input_cost"] else Decimal("0"),
-            total_output_cost=Decimal(str(row["total_output_cost"])) if row["total_output_cost"] else Decimal("0"),
-            total_cached_cost=Decimal(str(row["total_cached_cost"])) if row["total_cached_cost"] else Decimal("0"),
-            total_cost=Decimal(str(row["total_cost"])) if row["total_cost"] else Decimal("0"),
-            avg_tokens_per_run=float(row["avg_tokens_per_run"]) if row["avg_tokens_per_run"] else 0.0,
-            avg_cost_per_run=Decimal(str(row["avg_cost_per_run"])) if row["avg_cost_per_run"] else Decimal("0"),
+            total_input_cost=Decimal(str(row["total_input_cost"]))
+            if row["total_input_cost"]
+            else Decimal("0"),
+            total_output_cost=Decimal(str(row["total_output_cost"]))
+            if row["total_output_cost"]
+            else Decimal("0"),
+            total_cached_cost=Decimal(str(row["total_cached_cost"]))
+            if row["total_cached_cost"]
+            else Decimal("0"),
+            total_cost=Decimal(str(row["total_cost"]))
+            if row["total_cost"]
+            else Decimal("0"),
+            avg_tokens_per_run=float(row["avg_tokens_per_run"])
+            if row["avg_tokens_per_run"]
+            else 0.0,
+            avg_cost_per_run=Decimal(str(row["avg_cost_per_run"]))
+            if row["avg_cost_per_run"]
+            else Decimal("0"),
         )
         for row in rows
     ]

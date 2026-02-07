@@ -45,7 +45,8 @@ async def get_points_internal(
         cached = await get_cached(cache_key_val)
         if cached:
             return [
-                QGetPointsV4Item.model_validate(item) for item in cached.get("items", [])
+                QGetPointsV4Item.model_validate(item)
+                for item in cached.get("items", [])
             ]
 
     params = GetPointsSqlParams(ids=ids)

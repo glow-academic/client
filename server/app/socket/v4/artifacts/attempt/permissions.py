@@ -94,7 +94,9 @@ def validate_attempt_access(ctx: AttemptGenerationContext) -> tuple[bool, list[s
     return len(failures) == 0, failures
 
 
-def validate_attempt_message_access(ctx: AttemptGenerationContext) -> tuple[bool, list[str]]:
+def validate_attempt_message_access(
+    ctx: AttemptGenerationContext,
+) -> tuple[bool, list[str]]:
     """Validate prerequisites for attempt_message event.
 
     In addition to attempt_access validation, checks:
@@ -131,7 +133,9 @@ def validate_attempt_message_access(ctx: AttemptGenerationContext) -> tuple[bool
     return len(failures) == 0, failures
 
 
-def validate_attempt_grade_access(ctx: AttemptGenerationContext) -> tuple[bool, list[str]]:
+def validate_attempt_grade_access(
+    ctx: AttemptGenerationContext,
+) -> tuple[bool, list[str]]:
     """Validate prerequisites for attempt_grade event (grading).
 
     In addition to attempt_access validation, checks:

@@ -67,7 +67,9 @@ class DashboardHeaderMetrics(BaseModel):
     session_efficiency: DashboardHeaderMetric = Field(
         default_factory=DashboardHeaderMetric
     )
-    stagnation_rate: DashboardHeaderMetric = Field(default_factory=DashboardHeaderMetric)
+    stagnation_rate: DashboardHeaderMetric = Field(
+        default_factory=DashboardHeaderMetric
+    )
     time_spent: DashboardHeaderMetric = Field(default_factory=DashboardHeaderMetric)
     total_attempts: DashboardHeaderMetric = Field(default_factory=DashboardHeaderMetric)
 
@@ -328,7 +330,9 @@ class FooterNumericScenarioFact(BaseModel):
 
 class FooterScenarioStats(BaseModel):
     numeric_attempt_facts: list[FooterNumericAttemptFact] = Field(default_factory=list)
-    numeric_scenario_facts: list[FooterNumericScenarioFact] = Field(default_factory=list)
+    numeric_scenario_facts: list[FooterNumericScenarioFact] = Field(
+        default_factory=list
+    )
     valid_numeric_parameter_ids: list[str] = Field(default_factory=list)
     status: str = "neutral"
 
@@ -455,14 +459,18 @@ class DashboardThresholds(BaseModel):
 class DashboardBundleResponse(BaseModel):
     """Target dashboard bundle shape expected by dashboard client."""
 
-    header_metrics: DashboardHeaderMetrics = Field(default_factory=DashboardHeaderMetrics)
+    header_metrics: DashboardHeaderMetrics = Field(
+        default_factory=DashboardHeaderMetrics
+    )
     primary_metrics: DashboardPrimaryMetrics = Field(
         default_factory=DashboardPrimaryMetrics
     )
     secondary_metrics: DashboardSecondaryMetrics = Field(
         default_factory=DashboardSecondaryMetrics
     )
-    footer_metrics: DashboardFooterMetrics = Field(default_factory=DashboardFooterMetrics)
+    footer_metrics: DashboardFooterMetrics = Field(
+        default_factory=DashboardFooterMetrics
+    )
 
     simulations: list[DashboardSimulationMeta] = Field(default_factory=list)
     rubrics: list[DashboardRubricMeta] = Field(default_factory=list)

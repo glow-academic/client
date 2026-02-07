@@ -64,7 +64,9 @@ def create_rubric_via_ui(
     submit_button.click()
 
     # Wait for redirect to edit page (rubrics redirect to edit page after creation)
-    page.wait_for_url(re.compile(r".*/intelligence/rubrics/r/[a-f0-9-]+"), timeout=20000)
+    page.wait_for_url(
+        re.compile(r".*/intelligence/rubrics/r/[a-f0-9-]+"), timeout=20000
+    )
     page.wait_for_load_state("networkidle")
     print(f"[E2E] Landed on URL after rubric create: {page.url}", file=sys.stdout)
 

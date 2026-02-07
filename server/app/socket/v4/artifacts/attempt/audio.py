@@ -62,7 +62,9 @@ client_router = APIRouter()
 server_router = APIRouter()
 
 # SQL path for voice session context
-SQL_PATH_VOICE_CONTEXT = "app/sql/v4/queries/audio/get_voice_session_context_complete.sql"
+SQL_PATH_VOICE_CONTEXT = (
+    "app/sql/v4/queries/audio/get_voice_session_context_complete.sql"
+)
 
 
 # Global adapter instance (singleton)
@@ -215,7 +217,9 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
             room=sid,
         )
 
-        logger.info(f"Audio session started - chat_id={chat_id}, group_id={group_id}, model={model_name}")
+        logger.info(
+            f"Audio session started - chat_id={chat_id}, group_id={group_id}, model={model_name}"
+        )
 
         # Log activity
         try:
@@ -273,7 +277,9 @@ async def attempt_audio_stop(sid: str, data: dict[str, Any]) -> None:
 
             # Remove from session store (cleans up by both sid and group_id)
             remove_session(group_id)
-            logger.info(f"Audio session stopped - chat_id={chat_id}, group_id={group_id}")
+            logger.info(
+                f"Audio session stopped - chat_id={chat_id}, group_id={group_id}"
+            )
 
             # Clear accumulated message IDs for this group
             async with _voice_message_ids_lock:
@@ -663,6 +669,8 @@ async def attempt_user_delta_api(request: AttemptUserDeltaEvent) -> dict[str, bo
 
 
 @server_router.post("/attempt/assistant_audio", response_model=dict[str, bool])
-async def attempt_assistant_audio_api(request: AttemptAssistantAudioEvent) -> dict[str, bool]:
+async def attempt_assistant_audio_api(
+    request: AttemptAssistantAudioEvent,
+) -> dict[str, bool]:
     """Server-to-client event: Audio chunk from assistant in voice mode."""
     return {"success": True}
