@@ -348,17 +348,13 @@ function PersonaComponent({
       parameter_fields_group_id: personaData.parameter_fields_group_id,
       examples_group_id: personaData.examples_group_id,
       parameters_group_id: personaData.parameters_group_id,
-      // Per-resource create tool IDs
+      // Per-resource create tool IDs (only for resources with actual create tools)
       name_create_tool_id: personaData.name_create_tool_id,
       description_create_tool_id: personaData.description_create_tool_id,
       color_create_tool_id: personaData.color_create_tool_id,
-      icon_create_tool_id: personaData.icon_create_tool_id,
       instructions_create_tool_id: personaData.instructions_create_tool_id,
-      flag_create_tool_id: personaData.flag_create_tool_id,
-      departments_create_tool_id: personaData.departments_create_tool_id,
       parameter_fields_create_tool_id: personaData.parameter_fields_create_tool_id,
       examples_create_tool_id: personaData.examples_create_tool_id,
-      parameters_create_tool_id: personaData.parameters_create_tool_id,
       // Per-resource link tool IDs
       name_link_tool_id: personaData.name_link_tool_id,
       description_link_tool_id: personaData.description_link_tool_id,
@@ -440,17 +436,13 @@ function PersonaComponent({
     personaData?.parameter_fields_group_id,
     personaData?.examples_group_id,
     personaData?.parameters_group_id,
-    // Per-resource tool IDs
+    // Per-resource tool IDs (only for resources with actual create tools)
     personaData?.name_create_tool_id,
     personaData?.description_create_tool_id,
     personaData?.color_create_tool_id,
-    personaData?.icon_create_tool_id,
     personaData?.instructions_create_tool_id,
-    personaData?.flag_create_tool_id,
-    personaData?.departments_create_tool_id,
     personaData?.parameter_fields_create_tool_id,
     personaData?.examples_create_tool_id,
-    personaData?.parameters_create_tool_id,
     personaData?.name_link_tool_id,
     personaData?.description_link_tool_id,
     personaData?.color_link_tool_id,
@@ -2138,7 +2130,6 @@ function PersonaComponent({
                   }
                   onAccept={() => clearAiResource("flag_resource")}
                   onReject={() => clearAiResource("flag_resource")}
-                  create_tool_id={currentPersonaData?.flag_create_tool_id ?? null}
                   link_tool_id={currentPersonaData?.flag_link_tool_id ?? null}
                 />
               </div>
@@ -2259,7 +2250,6 @@ function PersonaComponent({
                   aiParameterResources={aiFormData.parameter_resources ?? null}
                   onAccept={() => clearAiResource("parameter_resources")}
                   onReject={() => clearAiResource("parameter_resources")}
-                  create_tool_id={currentPersonaData?.parameters_create_tool_id ?? null}
                   link_tool_id={currentPersonaData?.parameters_link_tool_id ?? null}
                 />
                 <ParameterFields

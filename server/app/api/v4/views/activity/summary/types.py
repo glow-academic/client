@@ -13,6 +13,7 @@ class ActivitySummaryItem(BaseModel):
     total_active_profiles: int = 0
     total_logins: int = 0
     total_content_created: int = 0
+    total_drafts: int = 0
     total_problems: int = 0
     unresolved_problems: int = 0
 

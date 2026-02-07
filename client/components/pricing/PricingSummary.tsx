@@ -128,6 +128,10 @@ export function PricingSummary({ pricingData }: PricingSummaryProps) {
     () => pricingData?.views?.daily || [],
     [pricingData]
   );
+  const modelResources = useMemo(
+    () => pricingData?.resources?.models || {},
+    [pricingData]
+  );
   // Note: group_summary is available at pricingData?.views?.group_summary
   // but we use dailyItems for totals since it's not paginated
 
@@ -211,8 +215,9 @@ export function PricingSummary({ pricingData }: PricingSummaryProps) {
     const config: Record<string, { label: string; color: string }> = {};
     let colorIdx = 0;
     for (const id of modelIds) {
+      const resolved = modelResources[id];
       config[id] = {
-        label: id, // Model ID as label (could be enhanced with name lookup)
+        label: resolved?.name || id,
         color: chartColors[colorIdx % chartColors.length] ?? "#999999",
       };
       colorIdx += 1;
@@ -228,7 +233,7 @@ export function PricingSummary({ pricingData }: PricingSummaryProps) {
       },
       chartConfig: config,
     };
-  }, [dailyItems, chartColors, mutedColor]);
+  }, [dailyItems, chartColors, mutedColor, modelResources]);
 
   // Get model IDs for chart rendering
   const modelIds = useMemo(() => {

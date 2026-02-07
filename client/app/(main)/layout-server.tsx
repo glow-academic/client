@@ -14,8 +14,8 @@ type LayoutContextIn = InputOf<"/api/v4/auth/context", "post">;
 type LayoutContextOut = OutputOf<"/api/v4/auth/context", "post">;
 type CreateEmulationGrantIn = InputOf<"/api/v4/auth/emulate", "post">;
 type CreateEmulationGrantOut = OutputOf<"/api/v4/auth/emulate", "post">;
-type CreateFeedbackIn = InputOf<"/api/v4/debug/debug", "post">;
-type CreateFeedbackOut = OutputOf<"/api/v4/debug/debug", "post">;
+type CreateFeedbackIn = InputOf<"/api/v4/artifacts/activity/problem", "post">;
+type CreateFeedbackOut = OutputOf<"/api/v4/artifacts/activity/problem", "post">;
 /** Page-specific refresh endpoint mapping */
 const REFRESH_ENDPOINT_MAP: Record<string, string> = {
   training: "/training/refresh",
@@ -34,15 +34,15 @@ type SearchSimulatableProfilesOut = OutputOf<
   "/api/v4/auth/simulatable",
   "post"
 >;
-type SearchStaffIn = InputOf<"/api/v4/bulk/staff/search", "post">;
-type SearchStaffOut = OutputOf<"/api/v4/bulk/staff/search", "post">;
+type SearchStaffIn = InputOf<"/api/v4/profiles/bulk/search", "post">;
+type SearchStaffOut = OutputOf<"/api/v4/profiles/bulk/search", "post">;
 // Use profiles/get with null target_profile_id to get create staff data (replaces staff/data/create)
 type GetProfileIn = InputOf<"/api/v4/profiles/get", "post">;
 type GetProfileOut = OutputOf<"/api/v4/profiles/get", "post">;
-type ProcessCSVIn = InputOf<"/api/v4/bulk/staff/process", "post">;
-type ProcessCSVOut = OutputOf<"/api/v4/bulk/staff/process", "post">;
-type BulkCreateOrUpdateStaffIn = InputOf<"/api/v4/bulk/staff/save", "post">;
-type BulkCreateOrUpdateStaffOut = OutputOf<"/api/v4/bulk/staff/save", "post">;
+type ProcessCSVIn = InputOf<"/api/v4/profiles/bulk/process", "post">;
+type ProcessCSVOut = OutputOf<"/api/v4/profiles/bulk/process", "post">;
+type BulkCreateOrUpdateStaffIn = InputOf<"/api/v4/profiles/bulk/save", "post">;
+type BulkCreateOrUpdateStaffOut = OutputOf<"/api/v4/profiles/bulk/save", "post">;
 /** ---- Client-side settings type (excludes guestProfileId) ----
  * guestProfileId is server-side only and should not be exposed to client components
  *
@@ -399,7 +399,7 @@ export async function clearSessionCookies(): Promise<void> {
 export async function createFeedback(
   input: CreateFeedbackIn
 ): Promise<CreateFeedbackOut> {
-  return api.post("/debug/debug", input);
+  return api.post("/artifacts/activity/problem", input);
 }
 
 /** ---- Strongly-typed server actions for Analytics (single source of truth) ---- */
@@ -425,7 +425,7 @@ export async function searchStaff(
   input: SearchStaffIn
 ): Promise<SearchStaffOut> {
   "use server";
-  return api.post("/bulk/staff/search", input);
+  return api.post("/profiles/bulk/search", input);
 }
 
 export async function getCreateStaffData(
@@ -437,7 +437,7 @@ export async function getCreateStaffData(
 
 export async function processCSV(input: ProcessCSVIn): Promise<ProcessCSVOut> {
   "use server";
-  return api.post("/bulk/staff/process", input);
+  return api.post("/profiles/bulk/process", input);
 }
 
 export async function bulkCreateOrUpdateStaff(
@@ -445,7 +445,7 @@ export async function bulkCreateOrUpdateStaff(
 ): Promise<BulkCreateOrUpdateStaffOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/bulk/staff/save", input);
+  return api.post("/profiles/bulk/save", input);
 }
 
 /** ---- Export types for client component (type-only imports) ---- */

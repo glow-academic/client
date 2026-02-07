@@ -1,47 +1,101 @@
 """Types for benchmark artifact."""
 
-from datetime import datetime
-from uuid import UUID
-
 from pydantic import BaseModel, Field
 
 from app.api.v4.artifacts.types import FilterOption
-from app.api.v4.views.benchmark.attempt_facts.types import BenchmarkAttemptFactsItem
-from app.api.v4.views.benchmark.eval_summary.types import BenchmarkEvalSummaryItem
 
 
 class BenchmarkRequest(BaseModel):
     """Request for getting benchmark data."""
 
-    eval_id: UUID | None = Field(default=None)
-    rubric_id: UUID | None = Field(default=None)
-    status: str | None = Field(default=None)
-    date_from: datetime | None = Field(default=None)
-    date_to: datetime | None = Field(default=None)
-    page_limit: int = Field(default=50, ge=1, le=100)
-    page_offset: int = Field(default=0, ge=0)
+    department_ids: list[str] = Field(default_factory=list)
 
 
-class BenchmarkViews(BaseModel):
-    """Benchmark view data."""
+class BenchmarkEvalItem(BaseModel):
+    """Enriched eval item for benchmark overview."""
 
-    attempt_facts: list[BenchmarkAttemptFactsItem] = Field(default_factory=list)
-    eval_summary: list[BenchmarkEvalSummaryItem] = Field(default_factory=list)
+    eval_id: str
+    name: str | None = None
+    description: str | None = None
+    rubric_id: str | None = None
+    rubric_name: str | None = None
+    agent_ids: list[str] = Field(default_factory=list)
+    department_ids: list[str] = Field(default_factory=list)
+    use_groups: bool = False
+    dynamic: bool = False
+    total_runs: int = 0
+    completed_runs: int = 0
+    pending_runs: int = 0
+    status: str = "pending"
 
 
-class BenchmarkResources(BaseModel):
-    """Benchmark resource metadata."""
+class BenchmarkRubricItem(BaseModel):
+    """Rubric resource for benchmark."""
 
-    evals: dict[str, dict] = Field(default_factory=dict)
-    rubrics: dict[str, dict] = Field(default_factory=dict)
+    rubric_id: str
+    name: str | None = None
+    description: str | None = None
+    points: float | None = None
+    pass_points: float | None = None
+
+
+class BenchmarkDepartmentItem(BaseModel):
+    """Department resource for benchmark."""
+
+    department_id: str
+    name: str | None = None
+    description: str | None = None
+
+
+class BenchmarkAgentItem(BaseModel):
+    """Agent resource for benchmark."""
+
+    agent_id: str
+    name: str | None = None
+    description: str | None = None
+
+
+class BenchmarkStandardGroupItem(BaseModel):
+    """Standard group resource for benchmark."""
+
+    standard_group_id: str
+    name: str | None = None
+    description: str | None = None
+    points: float | None = None
+    pass_points: float | None = None
+
+
+class BenchmarkStandardItem(BaseModel):
+    """Standard resource for benchmark."""
+
+    standard_id: str
+    standard_group_id: str | None = None
+    name: str | None = None
+    description: str | None = None
+    points: float | None = None
+
+
+class BenchmarkRubricStandardGroupItem(BaseModel):
+    """Mapping of rubric → standard_group → standard_ids."""
+
+    rubric_id: str
+    standard_group_id: str
+    standard_ids: list[str] = Field(default_factory=list)
 
 
 class BenchmarkResponse(BaseModel):
     """Response with benchmark data."""
 
-    views: BenchmarkViews = Field(default_factory=BenchmarkViews)
-    resources: BenchmarkResources = Field(default_factory=BenchmarkResources)
-    total_count: int = Field(default=0)
+    evals: list[BenchmarkEvalItem] = Field(default_factory=list)
+    rubrics: list[BenchmarkRubricItem] = Field(default_factory=list)
+    departments: list[BenchmarkDepartmentItem] = Field(default_factory=list)
+    agents: list[BenchmarkAgentItem] = Field(default_factory=list)
+    standard_groups: list[BenchmarkStandardGroupItem] = Field(default_factory=list)
+    standards: list[BenchmarkStandardItem] = Field(default_factory=list)
+    rubric_standard_groups: list[BenchmarkRubricStandardGroupItem] = Field(
+        default_factory=list
+    )
 
-    eval_options: list[FilterOption] = Field(default_factory=list)
     rubric_options: list[FilterOption] = Field(default_factory=list)
+    department_options: list[FilterOption] = Field(default_factory=list)
+    agent_options: list[FilterOption] = Field(default_factory=list)

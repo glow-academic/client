@@ -31,7 +31,7 @@ import {
 import SessionsMetric from "./header/SessionsMetric";
 import ActiveProfilesMetric from "./header/ActiveProfilesMetric";
 import LoginsMetric from "./header/LoginsMetric";
-import ContentCreatedMetric from "./header/ContentCreatedMetric";
+import DraftsMetric from "./header/ContentCreatedMetric";
 import ActivityMetricsGraph from "./ActivityMetricsGraph";
 
 interface ActivityProps {
@@ -289,7 +289,7 @@ export default function Activity({
         <SessionsMetric sessionsCount={bundleData?.sessions_count ?? 0} />
         <ActiveProfilesMetric activeProfilesCount={bundleData?.active_profiles_count ?? 0} />
         <LoginsMetric loginsCount={bundleData?.logins_count ?? 0} />
-        <ContentCreatedMetric contentCreatedCount={bundleData?.content_created_count ?? 0} />
+        <DraftsMetric draftsCount={bundleData?.drafts_count ?? 0} />
       </div>
 
       {/* Main Content: Graph (2/3) + Problems List (1/3) */}

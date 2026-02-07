@@ -76,117 +76,92 @@ export default function Reports({
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Extract data from API response
-  // Type guard to ensure reportsData has expected structure
+  // Extract data from API response - read from normalized three-layer structure
   const profiles = useMemo(() => {
-    if (
-      reportsData &&
-      typeof reportsData === "object" &&
-      "data" in reportsData &&
-      Array.isArray(reportsData.data)
-    ) {
-      // Transform API response to match ProfileRow type (snake_case -> camelCase)
-      return reportsData.data.map((row: unknown) => {
-        if (typeof row === "object" && row !== null) {
-          const rowObj = row as Record<string, unknown>;
-          const primaryEmail = rowObj["primary_email"] as
-            | string
-            | null
-            | undefined;
-          const emails = rowObj["emails"] as string[] | undefined;
-          
-          // Transform metrics from snake_case to camelCase
-          const metrics = rowObj["metrics_entry"] as Record<string, unknown> | undefined;
-          const transformedMetrics: Record<string, {
-            hasData: boolean;
-            method: string;
-            currentValue: number;
-            status: string;
-            valueField?: string | null;
-            hover?: Record<string, unknown> | null;
-          }> = {};
-          
-          if (metrics) {
-            // Map snake_case metric keys to camelCase
-            const metricKeyMap: Record<string, string> = {
-              average_score: "averageScore",
-              completion_percentage: "completionPercentage",
-              first_attempt_pass_rate: "firstAttemptPassRate",
-              highest_score: "highestScore",
-              messages_per_session: "messagesPerSession",
-              persona_response_times: "personaResponseTimes",
-              session_efficiency: "sessionEfficiency",
-              stagnation_rate: "stagnationRate",
-              time_spent: "timeSpent",
-              total_attempts: "totalAttempts",
+    const leaderboardRows = reportsData?.sections?.leaderboard?.rows;
+    if (!leaderboardRows || !Array.isArray(leaderboardRows)) return [];
+
+    const profileResources = reportsData?.resources?.profiles ?? {};
+
+    // Map snake_case metric keys to camelCase
+    const metricKeyMap: Record<string, string> = {
+      average_score: "averageScore",
+      completion_percentage: "completionPercentage",
+      first_attempt_pass_rate: "firstAttemptPassRate",
+      highest_score: "highestScore",
+      messages_per_session: "messagesPerSession",
+      persona_response_times: "personaResponseTimes",
+      session_efficiency: "sessionEfficiency",
+      stagnation_rate: "stagnationRate",
+      time_spent: "timeSpent",
+      total_attempts: "totalAttempts",
+    };
+
+    return leaderboardRows.map((row) => {
+      const profileId = row.profile_id ?? "";
+      const resource = profileResources[profileId];
+      const profileMetrics = row.profile_metrics;
+
+      // Transform profile_metrics object to camelCase metrics map
+      const transformedMetrics: Record<string, {
+        hasData: boolean;
+        method: string;
+        currentValue: number;
+        status: string;
+        hover?: Record<string, unknown> | null;
+      }> = {};
+
+      if (profileMetrics && typeof profileMetrics === "object") {
+        Object.entries(profileMetrics).forEach(([key, value]) => {
+          const camelKey = metricKeyMap[key] || key;
+          if (value && typeof value === "object") {
+            const metric = value as Record<string, unknown>;
+            transformedMetrics[camelKey] = {
+              hasData: Boolean(metric["has_data"]),
+              method: String(metric["method"] || ""),
+              currentValue: Number(metric["current_value"] || 0),
+              status: String(metric["status"] || "neutral"),
+              hover: (metric["hover"] as Record<string, unknown> | null) ?? null,
             };
-            
-            Object.entries(metrics).forEach(([key, value]) => {
-              const camelKey = metricKeyMap[key] || key;
-              if (value && typeof value === "object") {
-                const metric = value as Record<string, unknown>;
-                transformedMetrics[camelKey] = {
-                  hasData: Boolean(metric.has_data),
-                  method: String(metric.method || ""),
-                  currentValue: Number(metric.current_value || 0),
-                  status: String(metric.status || "neutral"),
-                  valueField: metric.value_field as string | null | undefined,
-                  hover: metric.hover as Record<string, unknown> | null | undefined,
-                };
-              }
-            });
           }
-          
-          return {
-            profileId: String(rowObj["profile_id"] || ""),
-            name: String(rowObj["name"] || ""),
-            email: primaryEmail || (emails && emails.length > 0 ? emails[0] : ""),
-            emails: emails,
-            primary_email: primaryEmail,
-            role: String(rowObj["role"] || ""),
-            scenarioIds: rowObj["scenario_ids"] as string[] | undefined,
-            simulationIds: rowObj["simulation_ids"] as string[] | undefined,
-            metrics: transformedMetrics,
-          } as ProfileRow;
-        }
-        return row as ProfileRow;
-      });
-    }
-    return [];
+        });
+      }
+
+      const emails = resource?.emails ?? [];
+      const primaryEmail = resource?.primary_email ?? null;
+
+      return {
+        profileId,
+        name: resource?.name ?? "",
+        email: primaryEmail || (emails.length > 0 ? emails[0] : ""),
+        emails,
+        primary_email: primaryEmail,
+        role: resource?.role ?? "",
+        simulationIds: row.simulation_ids ?? [],
+        scenarioIds: row.scenario_ids ?? [],
+        metrics: transformedMetrics,
+      } as ProfileRow;
+    });
   }, [reportsData]);
 
-  // Use simulations array directly (composite types pattern)
+  // Extract simulations from resources dict
   const simulations = useMemo(() => {
-    if (
-      reportsData &&
-      typeof reportsData === "object" &&
-      "simulations" in reportsData &&
-      Array.isArray(reportsData.simulations)
-    ) {
-      return reportsData.simulations as Array<{
-        simulation_id: string;
-        name: string | null;
-        description: string | null;
-      }>;
-    }
-    return [];
+    const simResources = reportsData?.resources?.simulations;
+    if (!simResources || typeof simResources !== "object") return [];
+    return Object.values(simResources) as Array<{
+      simulation_id?: string | null;
+      name?: string | null;
+      description?: string | null;
+    }>;
   }, [reportsData]);
 
-  // Extract pagination metadata from server response (snake_case)
-  const page =
-    reportsData && typeof reportsData === "object" && "page" in reportsData
-      ? (reportsData as { page: number }).page || 0
-      : 0;
-  const pageSize =
-    reportsData && typeof reportsData === "object" && "page_size" in reportsData
-      ? (reportsData as { page_size: number }).page_size || 100
-      : 100;
-  const totalPages =
-    reportsData &&
-    typeof reportsData === "object" &&
-    "total_pages" in reportsData
-      ? (reportsData as { total_pages: number }).total_pages || 0
-      : 0;
+  // Extract pagination metadata from server response
+  const totalCount = reportsData?.total_count ?? 0;
+  const pageFromUrl = Number(searchParams.get("reportsPage") || "0");
+  const pageSizeFromUrl = Number(searchParams.get("reportsPageSize") || "100");
+  const page = pageFromUrl;
+  const pageSize = pageSizeFromUrl;
+  const totalPages = pageSize > 0 ? Math.ceil(totalCount / pageSize) : 0;
 
   // Export state
   const [exportPopoverOpen, setExportPopoverOpen] = useState(false);
@@ -387,7 +362,6 @@ export default function Reports({
         method: string;
         currentValue: number;
         status: string;
-        valueField?: string | null;
         hover?: Record<string, unknown> | null;
       }
     >;
@@ -395,15 +369,19 @@ export default function Reports({
 
   // Define columns using typeof pattern
   const columns: ColumnDef<ProfileRow>[] = useMemo(() => {
+    const percentMetrics = new Set([
+      "averageScore", "highestScore", "completionPercentage",
+      "firstAttemptPassRate", "stagnationRate",
+    ]);
     const formatValue = (
-      metric: ProfileRow["metrics"][keyof ProfileRow["metrics"]]
+      metric: ProfileRow["metrics"][keyof ProfileRow["metrics"]],
+      metricKey?: string
     ): string => {
       if (!metric?.hasData) return "N/A";
       if (metric.currentValue == null) return "N/A";
-      const valueField = metric.valueField;
-      if (valueField === "percent") return `${metric.currentValue}%`;
-      if (valueField === "seconds") return `${metric.currentValue}s`;
-      if (valueField === "minutes") return `${metric.currentValue}m`;
+      if (metricKey && percentMetrics.has(metricKey)) return `${metric.currentValue}%`;
+      if (metricKey === "personaResponseTimes") return `${metric.currentValue}s`;
+      if (metricKey === "timeSpent") return `${metric.currentValue}m`;
       return String(metric.currentValue);
     };
 
@@ -424,6 +402,10 @@ export default function Reports({
       return "text-muted-foreground";
     };
 
+    // Helper: read hover field with snake_case/camelCase fallback
+    const h = (hover: Record<string, unknown>, snake: string, camel: string) =>
+      hover[snake] ?? hover[camel];
+
     const getHoverBullets = (
       metricKey: string,
       profile: ProfileRow
@@ -436,11 +418,7 @@ export default function Reports({
 
       switch (metricKey) {
         case "averageScore":
-          if (
-            hover["mean"] != null &&
-            hover["median"] != null &&
-            hover["mode"] != null
-          ) {
+          if (hover["mean"] != null && hover["median"] != null && hover["mode"] != null) {
             bullets.push(
               `Mean: ${hover["mean"]}%`,
               `Median: ${hover["median"]}%`,
@@ -458,11 +436,7 @@ export default function Reports({
           }
           break;
         case "completionPercentage":
-          if (
-            hover["completed"] != null &&
-            hover["total"] != null &&
-            hover["percent"] != null
-          ) {
+          if (hover["completed"] != null && hover["total"] != null && hover["percent"] != null) {
             bullets.push(
               `Completed: ${hover["completed"]}/${hover["total"]}`,
               `Rate: ${hover["percent"]}%`
@@ -470,23 +444,12 @@ export default function Reports({
           }
           break;
         case "firstAttemptPassRate":
-          if (
-            hover["passed"] != null &&
-            hover["total"] != null &&
-            hover["percent"] != null
-          ) {
-            bullets.push(
-              `First-pass: ${hover["passed"]}/${hover["total"]}`,
-              `Rate: ${hover["percent"]}%`
-            );
+          if (hover["percent"] != null) {
+            bullets.push(`Rate: ${hover["percent"]}%`);
           }
           break;
         case "messagesPerSession":
-          if (
-            hover["mean"] != null &&
-            hover["median"] != null &&
-            hover["count"] != null
-          ) {
+          if (hover["mean"] != null && hover["median"] != null && hover["count"] != null) {
             bullets.push(
               `Mean msgs/chat: ${hover["mean"]}`,
               `Median msgs/chat: ${hover["median"]}`,
@@ -494,69 +457,59 @@ export default function Reports({
             );
           }
           break;
-        case "personaResponseTimes":
-          if (
-            hover["meanSeconds"] != null &&
-            hover["medianSeconds"] != null &&
-            hover["samples"] != null
-          ) {
+        case "personaResponseTimes": {
+          const meanSec = h(hover, "mean_seconds", "meanSeconds");
+          const medianSec = h(hover, "median_seconds", "medianSeconds");
+          if (meanSec != null && medianSec != null) {
             bullets.push(
-              `Mean: ${hover["meanSeconds"]}s`,
-              `Median: ${hover["medianSeconds"]}s`,
-              `Samples: ${hover["samples"]}`
+              `Mean: ${meanSec}s`,
+              `Median: ${medianSec}s`
             );
+            if (hover["samples"] != null) bullets.push(`Samples: ${hover["samples"]}`);
           }
           break;
-        case "sessionEfficiency":
-          if (
-            hover["avgScorePercent"] != null &&
-            hover["avgMinutes"] != null &&
-            hover["efficiency"] != null
-          ) {
-            bullets.push(
-              `Avg score: ${hover["avgScorePercent"]}%`,
-              `Avg time: ${hover["avgMinutes"]}m`,
-              `Efficiency: ${hover["efficiency"]}`
-            );
+        }
+        case "sessionEfficiency": {
+          const avgScore = h(hover, "avg_score_percent", "avgScorePercent");
+          const avgMins = h(hover, "avg_minutes", "avgMinutes");
+          const eff = hover["efficiency"];
+          if (eff != null) {
+            if (avgScore != null) bullets.push(`Avg score: ${avgScore}%`);
+            if (avgMins != null) bullets.push(`Avg time: ${avgMins}m`);
+            bullets.push(`Efficiency: ${eff}`);
           }
           break;
-        case "stagnationRate":
-          if (
-            hover["tracked"] != null &&
-            hover["stagnant"] != null &&
-            hover["ratePercent"] != null
-          ) {
+        }
+        case "stagnationRate": {
+          const ratePct = h(hover, "rate_percent", "ratePercent");
+          if (hover["tracked"] != null && hover["stagnant"] != null) {
             bullets.push(
               `Tracked: ${hover["tracked"]}`,
-              `Stagnant: ${hover["stagnant"]}`,
-              `Rate: ${hover["ratePercent"]}%`
+              `Stagnant: ${hover["stagnant"]}`
             );
+            if (ratePct != null) bullets.push(`Rate: ${ratePct}%`);
           }
           break;
-        case "timeSpent":
-          if (
-            hover["avgSessionMinutes"] != null &&
-            hover["avgChatMinutes"] != null &&
-            hover["avgOverallMinutes"] != null
-          ) {
-            bullets.push(
-              `Avg session: ${hover["avgSessionMinutes"]}m`,
-              `Avg chat: ${hover["avgChatMinutes"]}m`,
-              `Avg time spent: ${hover["avgOverallMinutes"]}m`
-            );
+        }
+        case "timeSpent": {
+          const totalMins = h(hover, "total_minutes", "totalMinutes");
+          const totalHrs = h(hover, "total_hours", "totalHours");
+          if (totalMins != null) {
+            bullets.push(`Total: ${totalMins}m`);
+            if (totalHrs != null) bullets.push(`Hours: ${totalHrs}h`);
           }
           break;
-        case "totalAttempts":
+        }
+        case "totalAttempts": {
           if (hover["attempts"] != null) {
             bullets.push(`Attempts: ${hover["attempts"]}`);
-            if (hover["uniqueSims"] != null) {
-              bullets.push(`Unique sims: ${hover["uniqueSims"]}`);
-            }
-            if (hover["meanPerSim"] != null) {
-              bullets.push(`Mean/Sim: ${hover["meanPerSim"]}`);
-            }
+            const uniqueSims = h(hover, "unique_simulations", "uniqueSims");
+            if (uniqueSims != null) bullets.push(`Unique sims: ${uniqueSims}`);
+            const meanPerSim = h(hover, "per_simulation_mean", "meanPerSim");
+            if (meanPerSim != null) bullets.push(`Mean/Sim: ${meanPerSim}`);
           }
           break;
+        }
       }
 
       return bullets;
@@ -666,7 +619,7 @@ export default function Reports({
             <div
               className={`text-center px-1 py-0.5 rounded text-xs font-medium ${gradientClasses} ${textClasses}`}
             >
-              {formatValue(metric)}
+              {formatValue(metric, "averageScore")}
             </div>
           );
           return bullets.length > 0 ? (
@@ -715,7 +668,7 @@ export default function Reports({
             <div
               className={`text-center px-1 py-0.5 rounded text-xs font-medium ${gradientClasses} ${textClasses}`}
             >
-              {formatValue(metric)}
+              {formatValue(metric, "highestScore")}
             </div>
           );
           return bullets.length > 0 ? (
@@ -765,7 +718,7 @@ export default function Reports({
             <div
               className={`text-center px-1 py-0.5 rounded text-xs font-medium ${gradientClasses} ${textClasses}`}
             >
-              {formatValue(metric)}
+              {formatValue(metric, "completionPercentage")}
             </div>
           );
           return bullets.length > 0 ? (
@@ -815,7 +768,7 @@ export default function Reports({
             <div
               className={`text-center px-1 py-0.5 rounded text-xs font-medium ${gradientClasses} ${textClasses}`}
             >
-              {formatValue(metric)}
+              {formatValue(metric, "firstAttemptPassRate")}
             </div>
           );
           return bullets.length > 0 ? (
@@ -866,7 +819,7 @@ export default function Reports({
               className={`text-center px-1 py-0.5 rounded text-xs font-medium flex items-center justify-center gap-0.5 ${gradientClasses} ${textClasses}`}
             >
               <MessageCircle className={`h-2.5 w-2.5 ${textClasses}`} />
-              {formatValue(metric)}
+              {formatValue(metric, "messagesPerSession")}
             </div>
           );
           return bullets.length > 0 ? (
@@ -917,7 +870,7 @@ export default function Reports({
               className={`text-center px-1 py-0.5 rounded text-xs font-medium flex items-center justify-center gap-0.5 ${gradientClasses} ${textClasses}`}
             >
               <Clock className={`h-2.5 w-2.5 ${textClasses}`} />
-              {formatValue(metric)}
+              {formatValue(metric, "personaResponseTimes")}
             </div>
           );
           return bullets.length > 0 ? (
@@ -967,7 +920,7 @@ export default function Reports({
             <div
               className={`text-center px-1 py-0.5 rounded text-xs font-medium ${gradientClasses} ${textClasses}`}
             >
-              {formatValue(metric)}
+              {formatValue(metric, "sessionEfficiency")}
             </div>
           );
           return bullets.length > 0 ? (
@@ -1016,7 +969,7 @@ export default function Reports({
             <div
               className={`text-center px-1 py-0.5 rounded text-xs font-medium ${gradientClasses} ${textClasses}`}
             >
-              {formatValue(metric)}
+              {formatValue(metric, "stagnationRate")}
             </div>
           );
           return bullets.length > 0 ? (
@@ -1066,7 +1019,7 @@ export default function Reports({
               className={`text-center px-1 py-0.5 rounded text-xs font-medium flex items-center justify-center gap-0.5 ${gradientClasses} ${textClasses}`}
             >
               <Timer className={`h-2.5 w-2.5 ${textClasses}`} />
-              {formatValue(metric)}
+              {formatValue(metric, "timeSpent")}
             </div>
           );
           return bullets.length > 0 ? (
@@ -1116,7 +1069,7 @@ export default function Reports({
               className={`text-center px-1 py-0.5 rounded text-xs font-medium flex items-center justify-center gap-0.5 ${gradientClasses} ${textClasses}`}
             >
               <Target className={`h-2.5 w-2.5 ${textClasses}`} />
-              {formatValue(metric)}
+              {formatValue(metric, "totalAttempts")}
             </div>
           );
           return bullets.length > 0 ? (

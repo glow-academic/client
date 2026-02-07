@@ -86,6 +86,31 @@ eval_flags AS (
     FROM eval_flags_junction ef
     JOIN flags_resource f ON f.id = ef.flag_id
     GROUP BY ef.eval_id
+),
+-- Get eval name_id (active name from junction)
+eval_name_ids AS (
+    SELECT
+        enj.eval_id,
+        enj.name_id AS eval_name_id
+    FROM eval_names_junction enj
+    WHERE enj.active = true
+),
+-- Get eval description_id (active description from junction)
+eval_description_ids AS (
+    SELECT
+        edj.eval_id,
+        edj.description_id AS eval_description_id
+    FROM eval_descriptions_junction edj
+    WHERE edj.active = true
+),
+-- Get agent name_ids per eval (via eval_agents_junction + agent_names_junction)
+eval_agent_name_ids AS (
+    SELECT
+        eaj.eval_id,
+        ARRAY_AGG(anj.name_id ORDER BY eaj.created_at) FILTER (WHERE anj.name_id IS NOT NULL) AS agent_name_ids
+    FROM eval_agents_junction eaj
+    JOIN agent_names_junction anj ON anj.agent_id = eaj.agent_id AND anj.active = true
+    GROUP BY eaj.eval_id
 )
 SELECT
     -- Primary key
@@ -95,6 +120,11 @@ SELECT
     er.rubric_id,
     COALESCE(ea.agent_ids, ARRAY[]::uuid[]) AS agent_ids,
     COALESCE(ed.department_ids, ARRAY[]::uuid[]) AS department_ids,
+
+    -- Name/description IDs for hydration
+    eni.eval_name_id,
+    edi.eval_description_id,
+    COALESCE(eani.agent_name_ids, ARRAY[]::uuid[]) AS agent_name_ids,
 
     -- Timestamps
     e.created_at,
@@ -123,6 +153,9 @@ LEFT JOIN eval_agents ea ON ea.eval_id = e.id
 LEFT JOIN eval_departments ed ON ed.eval_id = e.id
 LEFT JOIN eval_flags ef ON ef.eval_id = e.id
 LEFT JOIN eval_run_counts erc ON erc.eval_id = e.id
+LEFT JOIN eval_name_ids eni ON eni.eval_id = e.id
+LEFT JOIN eval_description_ids edi ON edi.eval_id = e.id
+LEFT JOIN eval_agent_name_ids eani ON eani.eval_id = e.id
 WITH NO DATA;
 
 -- ============================================================================

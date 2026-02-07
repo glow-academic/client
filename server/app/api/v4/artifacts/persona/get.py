@@ -1016,17 +1016,13 @@ async def get_persona_client(
         domain_data=data.domain_data_list,
         # Resources
         resources=data.resources_payload,
-        # Per-resource CREATE tool IDs
+        # Per-resource CREATE tool IDs (only for resources with actual create tools)
         name_create_tool_id=data.create_tool_ids_map.get("names"),
         description_create_tool_id=data.create_tool_ids_map.get("descriptions"),
         color_create_tool_id=data.create_tool_ids_map.get("colors"),
-        icon_create_tool_id=data.create_tool_ids_map.get("icons"),
         instructions_create_tool_id=data.create_tool_ids_map.get("instructions"),
-        flag_create_tool_id=data.create_tool_ids_map.get("flags"),
-        departments_create_tool_id=data.create_tool_ids_map.get("departments"),
         parameter_fields_create_tool_id=data.create_tool_ids_map.get("parameter_fields"),
         examples_create_tool_id=data.create_tool_ids_map.get("examples"),
-        parameters_create_tool_id=data.create_tool_ids_map.get("parameters"),
         # Per-resource LINK tool IDs
         name_link_tool_id=data.link_tool_ids_map.get("names"),
         description_link_tool_id=data.link_tool_ids_map.get("descriptions"),

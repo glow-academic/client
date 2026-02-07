@@ -5,7 +5,7 @@ export async function OPTIONS(request: NextRequest) {
   // Proxy TUS OPTIONS request to backend
   try {
     const response = await fetch(
-      `${INTERNAL_HTTP_BASE}/api/v4/uploads/save`,
+      `${INTERNAL_HTTP_BASE}/api/v4/resources/uploads/upload`,
       {
         method: "OPTIONS",
         headers: {
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
         : null;
 
     const response = await fetch(
-      `${INTERNAL_HTTP_BASE}/api/v4/uploads/save`,
+      `${INTERNAL_HTTP_BASE}/api/v4/resources/uploads/upload`,
       {
         method: "POST",
         headers: tusHeaders,
@@ -73,8 +73,8 @@ export async function POST(request: NextRequest) {
       if (key.toLowerCase() === "location") {
         // Rewrite backend location to BFF location
         const location = value.replace(
-          /\/api\/v4\/uploads\/save\//,
-          "/api/uploads/save/",
+          /\/api\/v4\/resources\/uploads\/upload\//,
+          "/api/uploads/upload/",
         );
         headers.set(key, location);
       } else {

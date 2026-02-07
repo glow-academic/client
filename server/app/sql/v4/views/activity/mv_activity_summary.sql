@@ -109,6 +109,10 @@ last_7d_active_profiles AS (
     WHERE created_at >= NOW() - INTERVAL '7 days'
       AND profile_id IS NOT NULL
 ),
+-- Total active drafts
+drafts_total AS (
+    SELECT COUNT(*)::bigint AS cnt FROM drafts_entry WHERE active = TRUE
+),
 -- Snapshot timestamp
 snapshot AS (
     SELECT NOW() AS refreshed_at
@@ -135,6 +139,9 @@ SELECT
     (SELECT cnt FROM last_7d_sessions) AS sessions_last_7d,
     (SELECT cnt FROM last_7d_logins) AS logins_last_7d,
     (SELECT cnt FROM last_7d_active_profiles) AS active_profiles_last_7d,
+
+    -- Drafts
+    (SELECT cnt FROM drafts_total) AS total_drafts,
 
     -- Snapshot metadata
     (SELECT refreshed_at FROM snapshot) AS refreshed_at

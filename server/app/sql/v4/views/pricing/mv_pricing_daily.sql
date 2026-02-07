@@ -45,6 +45,10 @@ SELECT
     rpf.model_id,
     rpf.agent_id,
 
+    -- Name resource IDs (pre-resolved, 1:1 with model_id/agent_id within each group)
+    MODE() WITHIN GROUP (ORDER BY rpf.model_name_id) AS model_name_id,
+    MODE() WITHIN GROUP (ORDER BY rpf.agent_name_id) AS agent_name_id,
+
     -- Aggregated counts
     COUNT(*)::int AS run_count,
     COUNT(DISTINCT rpf.group_id)::int AS group_count,

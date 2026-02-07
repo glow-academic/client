@@ -289,6 +289,8 @@ async def get_reports(
                     persona_ids.add(str(persona_id))
 
         for row in profile_rows:
+            if row.profile_id:
+                profile_ids.add(str(row.profile_id))
             if row.simulation_ids:
                 for simulation_id in row.simulation_ids:
                     simulation_ids.add(str(simulation_id))
@@ -389,6 +391,8 @@ async def get_reports(
                     profile_id=key,
                     name=item.name,
                     role=None,
+                    emails=item.emails or [],
+                    primary_email=item.primary_email,
                 )
 
         for item in scenarios:

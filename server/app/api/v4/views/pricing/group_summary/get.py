@@ -173,6 +173,9 @@ async def get_pricing_group_summary_internal(
             profile_id=row["profile_id"],
             primary_agent_id=row["primary_agent_id"],
             primary_model_id=row["primary_model_id"],
+            primary_model_name_id=row["primary_model_name_id"],
+            primary_agent_name_id=row["primary_agent_name_id"],
+            profile_name_id=row["profile_name_id"],
             first_run_at=row["first_run_at"],
             last_run_at=row["last_run_at"],
             run_count=row["run_count"] or 0,
@@ -190,6 +193,8 @@ async def get_pricing_group_summary_internal(
             trace_id=row["trace_id"],
             agent_ids=row["agent_ids"],
             model_ids=row["model_ids"],
+            agent_name_ids=row["agent_name_ids"],
+            model_name_ids=row["model_name_ids"],
         )
         for row in rows
     ]

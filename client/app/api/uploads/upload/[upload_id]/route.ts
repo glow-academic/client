@@ -9,7 +9,7 @@ export async function OPTIONS(
   try {
     const { upload_id } = await params;
     const response = await fetch(
-      `${INTERNAL_HTTP_BASE}/api/v4/uploads/save/${upload_id}`,
+      `${INTERNAL_HTTP_BASE}/api/v4/resources/uploads/upload/${upload_id}`,
       {
         method: "OPTIONS",
         headers: {
@@ -45,7 +45,7 @@ export async function HEAD(
   try {
     const { upload_id } = await params;
     const response = await fetch(
-      `${INTERNAL_HTTP_BASE}/api/v4/uploads/save/${upload_id}`,
+      `${INTERNAL_HTTP_BASE}/api/v4/resources/uploads/upload/${upload_id}`,
       {
         method: "HEAD",
         headers: {
@@ -97,7 +97,7 @@ export async function PATCH(
     const body = await request.arrayBuffer();
 
     const response = await fetch(
-      `${INTERNAL_HTTP_BASE}/api/v4/uploads/save/${upload_id}`,
+      `${INTERNAL_HTTP_BASE}/api/v4/resources/uploads/upload/${upload_id}`,
       {
         method: "PATCH",
         headers: tusHeaders,

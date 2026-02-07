@@ -58,6 +58,12 @@ SELECT
     amj.model_id,
     prj.profile_id,
     gi.session_id,
+
+    -- Name resource IDs (pre-resolved for lightweight hydration via get_names_internal)
+    mnj.name_id AS model_name_id,
+    anj.name_id AS agent_name_id,
+    pnj.name_id AS profile_name_id,
+
     COALESCE(r.input_tokens, 0) AS input_tokens,
     COALESCE(r.output_tokens, 0) AS output_tokens,
     COALESCE(r.cached_input_tokens, 0) AS cached_input_tokens,
@@ -75,6 +81,10 @@ LEFT JOIN agent_runs_junction arj ON arj.run_id = r.id AND arj.active = TRUE
 LEFT JOIN agent_models_junction amj ON amj.agent_id = arj.agent_id AND amj.active = TRUE
 LEFT JOIN groups_entry gi ON gi.id = r.group_id AND gi.active = TRUE
 LEFT JOIN profile_runs_junction prj ON prj.run_id = r.id AND prj.active = TRUE
+-- Name junctions (pre-resolve artifact IDs → name resource IDs)
+LEFT JOIN model_names_junction mnj ON mnj.model_id = amj.model_id
+LEFT JOIN agent_names_junction anj ON anj.agent_id = arj.agent_id
+LEFT JOIN profile_names_junction pnj ON pnj.profile_id = prj.profile_id
 WITH NO DATA;
 
 -- ============================================================================

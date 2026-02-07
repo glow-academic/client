@@ -131,6 +131,24 @@ async def get_chat_facts_internal(
                     else [],
                     parameter_ids=list(item.parameter_ids) if item.parameter_ids else [],
                     field_ids=list(item.field_ids) if item.field_ids else [],
+                    persona_parameter_field_ids=list(item.persona_parameter_field_ids)
+                    if item.persona_parameter_field_ids
+                    else [],
+                    persona_parameter_ids=list(item.persona_parameter_ids)
+                    if item.persona_parameter_ids
+                    else [],
+                    persona_field_ids=list(item.persona_field_ids)
+                    if item.persona_field_ids
+                    else [],
+                    document_parameter_field_ids=list(item.document_parameter_field_ids)
+                    if item.document_parameter_field_ids
+                    else [],
+                    document_parameter_ids=list(item.document_parameter_ids)
+                    if item.document_parameter_ids
+                    else [],
+                    document_field_ids=list(item.document_field_ids)
+                    if item.document_field_ids
+                    else [],
                     attempt_created_at=item.attempt_created_at,
                     chat_created_at=item.chat_created_at,
                     grade_created_at=item.grade_created_at,

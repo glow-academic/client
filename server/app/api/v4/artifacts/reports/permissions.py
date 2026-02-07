@@ -498,6 +498,8 @@ def compute_leaderboard_section(
                     thresholds=thresholds,
                     stagnation_stats=stagnation_stats,
                 ),
+                simulation_ids=[str(sid) for sid in row.simulation_ids or []],
+                scenario_ids=[str(sid) for sid in row.scenario_ids or []],
             )
         )
 

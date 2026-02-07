@@ -24,6 +24,12 @@ class ChatFactsItem(BaseModel):
     parameter_field_ids: list[UUID] = Field(default_factory=list)
     parameter_ids: list[UUID] = Field(default_factory=list)
     field_ids: list[UUID] = Field(default_factory=list)
+    persona_parameter_field_ids: list[UUID] = Field(default_factory=list)
+    persona_parameter_ids: list[UUID] = Field(default_factory=list)
+    persona_field_ids: list[UUID] = Field(default_factory=list)
+    document_parameter_field_ids: list[UUID] = Field(default_factory=list)
+    document_parameter_ids: list[UUID] = Field(default_factory=list)
+    document_field_ids: list[UUID] = Field(default_factory=list)
 
     attempt_created_at: datetime
     chat_created_at: datetime

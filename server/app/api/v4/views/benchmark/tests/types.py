@@ -21,6 +21,10 @@ class BenchmarkTestViewItem(BaseModel):
     num_chats_completed: int = 0
     num_messages: int = 0
 
+    eval_name_id: UUID | None = None
+    eval_description_id: UUID | None = None
+    rubric_id: UUID | None = None
+
 
 class GetBenchmarkTestsRequest(BaseModel):
     """Request for benchmark tests view filtering."""

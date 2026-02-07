@@ -3,6 +3,7 @@
 import asyncio
 from datetime import datetime
 from typing import Annotated
+from uuid import UUID
 
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -16,7 +17,10 @@ from app.api.v4.artifacts.types import FilterOption
 from app.api.v4.resources.fields.get import get_fields_internal
 from app.api.v4.resources.parameter_fields.get import get_parameter_fields_internal
 from app.api.v4.resources.parameters.get import get_parameters_internal
+from app.api.v4.resources.personas.get import get_personas_internal
+from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.rubrics.get import get_rubrics_batch_internal
+from app.api.v4.resources.scenarios.get import get_scenarios_internal
 from app.api.v4.resources.simulations.get import get_simulations_batch_internal
 from app.api.v4.views.analytics.attempts.get import get_attempt_facts_internal
 from app.api.v4.views.analytics.chat_facts.get import (
@@ -242,19 +246,36 @@ async def get_dashboard(
         simulation_ids: set = set()
         rubric_ids: set = set()
         parameter_field_ids: set = set()
+        persona_ids: set = set()
+        cohort_ids: set = set()
+        scenario_ids: set = set()
         for item in attempts:
             if item.simulation_id:
                 simulation_ids.add(item.simulation_id)
         for row in daily_rows:
             if row.simulation_id:
                 simulation_ids.add(row.simulation_id)
+            if row.cohort_id:
+                cohort_ids.add(row.cohort_id)
         for row in chat_rows:
             if row.simulation_id:
                 simulation_ids.add(row.simulation_id)
             if row.rubric_id:
                 rubric_ids.add(row.rubric_id)
+            if row.persona_id:
+                persona_ids.add(row.persona_id)
+            if row.cohort_id:
+                cohort_ids.add(row.cohort_id)
+            if row.scenario_id:
+                scenario_ids.add(row.scenario_id)
             parameter_field_ids.update(
                 pfid for pfid in row.parameter_field_ids if pfid is not None
+            )
+            parameter_field_ids.update(
+                pfid for pfid in row.persona_parameter_field_ids if pfid is not None
+            )
+            parameter_field_ids.update(
+                pfid for pfid in row.document_parameter_field_ids if pfid is not None
             )
 
         async with pool.acquire() as c:
@@ -301,6 +322,46 @@ async def get_dashboard(
                 bypass_cache=bypass_cache,
             )
 
+        # Resolve resource names via batch fetch
+        async with pool.acquire() as c:
+            personas = await get_personas_internal(
+                conn=c,
+                ids=list(persona_ids),
+                bypass_cache=bypass_cache,
+            )
+            cohort_name_rows = await c.fetch(
+                """
+                SELECT id, name FROM cohorts_resource
+                WHERE id = ANY($1::uuid[])
+                """,
+                list(cohort_ids),
+            ) if cohort_ids else []
+            scenarios = await get_scenarios_internal(
+                conn=c,
+                ids=list(scenario_ids),
+                bypass_cache=bypass_cache,
+            )
+        persona_name_map: dict[str, str] = {
+            str(p.persona_id): p.name
+            for p in personas
+            if p.persona_id and p.name
+        }
+        cohort_name_map: dict[str, str] = {
+            str(r["id"]): r["name"]
+            for r in cohort_name_rows
+            if r["id"] and r["name"]
+        }
+        scenario_name_map: dict[str, str] = {
+            str(s.scenario_id): s.name
+            for s in scenarios
+            if s.scenario_id and s.name
+        }
+        simulation_name_map: dict[str, str] = {
+            str(s.simulation_id): s.title
+            for s in simulations
+            if s.simulation_id and s.title
+        }
+
         # Assemble business calculations from MV slices (+ resource metadata for footer logic)
         bundle = build_dashboard_bundle(
             attempts=attempts,
@@ -316,6 +377,10 @@ async def get_dashboard(
                 str(i.simulation_id): i.scenario_count
                 for i in simulation_scenario_counts.items
             },
+            persona_name_map=persona_name_map,
+            cohort_name_map=cohort_name_map,
+            simulation_name_map=simulation_name_map,
+            scenario_name_map=scenario_name_map,
             thresholds={
                 "success": threshold_success,
                 "warning": threshold_warning,
@@ -389,6 +454,20 @@ async def get_dashboard(
             for item in simulations
             if item.simulation_id
         ]
+
+        # Hydrate target profile metadata (for single-profile report pages)
+        if request.target_profile_id:
+            async with pool.acquire() as c:
+                target_profiles = await get_profiles_internal(
+                    conn=c,
+                    ids=[UUID(str(request.target_profile_id))],
+                    bypass_cache=bypass_cache,
+                )
+                if target_profiles:
+                    tp = target_profiles[0]
+                    bundle.profile_name = tp.name
+                    bundle.profile_emails = tp.emails
+                    bundle.profile_primary_email = tp.primary_email
 
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return bundle

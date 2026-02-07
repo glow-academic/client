@@ -12,7 +12,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
 import { useChartColors, chartColorFallbacks } from "@/lib/utils/chartColors";
 import { Database } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -107,20 +106,18 @@ export default function RedisKPI({
   return (
     <>
       <Card
-        className="cursor-pointer hover:shadow-md transition-shadow h-full flex flex-col dark:bg-opacity-10"
+        className="cursor-pointer hover:shadow-md transition-shadow h-full flex flex-col relative dark:bg-opacity-10"
         style={gradientStyle}
         onClick={() => setIsDialogOpen(true)}
       >
+        <div
+          className={`absolute top-2 right-2 w-2 h-2 rounded-full ${ok ? "bg-success" : "bg-destructive"}`}
+        />
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Redis</CardTitle>
           <Database className="h-4 w-4" style={{ color: displayColor }} />
         </CardHeader>
         <CardContent className="flex-1 flex flex-col justify-center">
-          <div className="flex items-center gap-2 mb-1">
-            <Badge variant={ok ? "default" : "destructive"}>
-              {ok ? "Healthy" : "Unhealthy"}
-            </Badge>
-          </div>
           <div className="text-sm" style={{ color: displayColor }}>
             {formatLatency(latency_ms)}
           </div>
@@ -139,9 +136,10 @@ export default function RedisKPI({
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <div className="text-sm text-muted-foreground">Status</div>
-                <Badge variant={ok ? "default" : "destructive"}>
-                  {ok ? "Healthy" : "Unhealthy"}
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <div className={`w-2 h-2 rounded-full ${ok ? "bg-success" : "bg-destructive"}`} />
+                  <span className="text-sm font-medium">{ok ? "Healthy" : "Unhealthy"}</span>
+                </div>
               </div>
               <div>
                 <div className="text-sm text-muted-foreground">

@@ -25,6 +25,7 @@ async def get_benchmark_eval_summary_internal(
     conn: asyncpg.Connection,
     rubric_id: UUID | None = None,
     status: str | None = None,
+    department_ids: list[UUID] | None = None,
     sort_by: str = "date",
     sort_order: str = "desc",
     page_limit: int = 50,
@@ -37,6 +38,7 @@ async def get_benchmark_eval_summary_internal(
         {
             "rubric_id": str(rubric_id) if rubric_id else None,
             "status": status,
+            "department_ids": [str(d) for d in department_ids] if department_ids else None,
             "sort_by": sort_by,
             "sort_order": sort_order,
             "page_limit": page_limit,
@@ -61,6 +63,11 @@ async def get_benchmark_eval_summary_internal(
     if status:
         conditions.append(f"status = ${param_idx}")
         params.append(status)
+        param_idx += 1
+
+    if department_ids:
+        conditions.append(f"department_ids && ${param_idx}::uuid[]")
+        params.append(department_ids)
         param_idx += 1
 
     where_clause = " AND ".join(conditions) if conditions else "TRUE"
@@ -93,6 +100,9 @@ async def get_benchmark_eval_summary_internal(
             rubric_id=row["rubric_id"],
             agent_ids=row["agent_ids"],
             department_ids=row["department_ids"],
+            eval_name_id=row["eval_name_id"],
+            eval_description_id=row["eval_description_id"],
+            agent_name_ids=row["agent_name_ids"],
             created_at=row["created_at"],
             updated_at=row["updated_at"],
             use_groups=row["use_groups"] or False,

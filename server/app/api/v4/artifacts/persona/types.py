@@ -172,16 +172,13 @@ class GetPersonaApiResponse(BaseModel):
     parameters_step_show_ai_generate: bool | None = None
 
     # Per-resource CREATE tool IDs (for AI generation)
+    # Only for resources that have actual create_* tools in the DB
     name_create_tool_id: UUID | None = None
     description_create_tool_id: UUID | None = None
     color_create_tool_id: UUID | None = None
-    icon_create_tool_id: UUID | None = None
     instructions_create_tool_id: UUID | None = None
-    flag_create_tool_id: UUID | None = None
-    departments_create_tool_id: UUID | None = None
     parameter_fields_create_tool_id: UUID | None = None
     examples_create_tool_id: UUID | None = None
-    parameters_create_tool_id: UUID | None = None
 
     # Per-resource LINK tool IDs (for AI suggestions)
     name_link_tool_id: UUID | None = None

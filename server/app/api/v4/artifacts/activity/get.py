@@ -1,12 +1,15 @@
 """Get endpoint for activity artifact."""
 
 import asyncio
+from collections import defaultdict
 from typing import Annotated
 
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.artifacts.activity.types import (
+    ActivityAvailableEvent,
+    ActivityChartPoint,
     ActivityRequest,
     ActivityResources,
     ActivityResponse,
@@ -20,6 +23,8 @@ from app.api.v4.views.activity.feedbacks.get import get_activity_feedbacks_inter
 from app.api.v4.views.activity.feedbacks.types import GetActivityFeedbacksResponse
 from app.api.v4.views.activity.logins.get import get_activity_logins_internal
 from app.api.v4.views.activity.logins.types import GetActivityLoginsResponse
+from app.api.v4.views.activity.problems.get import get_activity_problems_internal
+from app.api.v4.views.activity.problems.types import GetActivityProblemsResponse
 from app.api.v4.views.activity.session_facts.get import (
     get_activity_session_facts_internal,
 )
@@ -117,6 +122,16 @@ async def get_activity(
                     bypass_cache=bypass_cache,
                 )
 
+        async def fetch_problems() -> GetActivityProblemsResponse:
+            async with pool.acquire() as c:
+                return await get_activity_problems_internal(
+                    conn=c,
+                    profile_id=request.profile_id,
+                    date_from=request.date_from,
+                    date_to=request.date_to,
+                    bypass_cache=bypass_cache,
+                )
+
         (
             session_facts_result,
             daily_result,
@@ -124,6 +139,7 @@ async def get_activity(
             logins_result,
             audits_result,
             feedbacks_result,
+            problems_result,
         ) = await asyncio.gather(
             fetch_session_facts(),
             fetch_daily(),
@@ -131,6 +147,7 @@ async def get_activity(
             fetch_logins(),
             fetch_audits(),
             fetch_feedbacks(),
+            fetch_problems(),
         )
 
         profile_ids: set[str] = set()
@@ -159,8 +176,49 @@ async def get_activity(
             profiles={pid: {} for pid in profile_ids},
         )
 
+        # Compute flat chart_data from daily items
+        chart_data = [
+            ActivityChartPoint(
+                date=str(item.date_key),
+                event_id=item.event_type,
+                count=item.event_count,
+            )
+            for item in daily_result.items
+        ]
+
+        # Compute available_events by aggregating daily items by event_type
+        event_totals: dict[str, int] = defaultdict(int)
+        for item in daily_result.items:
+            event_totals[item.event_type] += item.event_count
+        available_events = sorted(
+            [
+                ActivityAvailableEvent(
+                    id=event_type,
+                    name=event_type,
+                    total_count=total,
+                )
+                for event_type, total in event_totals.items()
+            ],
+            key=lambda e: e.total_count,
+            reverse=True,
+        )
+
+        # Flatten summary metrics
+        summary = summary_result.summary
+        sessions_count = summary.total_sessions if summary else 0
+        active_profiles_count = summary.total_active_profiles if summary else 0
+        logins_count = summary.total_logins if summary else 0
+        drafts_count = summary.total_drafts if summary else 0
+
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return ActivityResponse(
+            sessions_count=sessions_count,
+            active_profiles_count=active_profiles_count,
+            logins_count=logins_count,
+            drafts_count=drafts_count,
+            chart_data=chart_data,
+            available_events=available_events,
+            problems=problems_result.items,
             views=views,
             resources=resources,
             total_count=session_facts_result.total_count,

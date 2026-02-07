@@ -246,44 +246,28 @@ def _get_bulk_handler_name(bulk_type: str, operation: str) -> str | None:
 
 
 def discover_bulk_handlers() -> dict[tuple[str, str], Any]:
-    """Discover all bulk handlers by scanning bulk directory.
+    """Discover all bulk handlers by scanning artifact bulk directories.
 
     Returns:
         Dictionary mapping (type, operation) tuples to handler functions.
     """
-    bulk_dir = Path(__file__).parent.parent / "api" / "v4" / "bulk"
     handlers: dict[tuple[str, str], Any] = {}
 
-    if not bulk_dir.exists():
-        return handlers
+    # Map bulk types to their new artifact locations
+    bulk_locations = {
+        "document": "app.api.v4.artifacts.document.bulk",
+        "staff": "app.api.v4.artifacts.profile.bulk",
+    }
 
-    # Scan subdirectories for type/operation pairs
-    for item in sorted(bulk_dir.iterdir()):
-        if item.is_dir() and not item.name.startswith("_"):
-            bulk_type = item.name
-
-            # Check for operation files
-            for op_file in sorted(item.iterdir()):
-                if (
-                    op_file.is_file()
-                    and op_file.suffix == ".py"
-                    and not op_file.name.startswith("_")
-                ):
-                    operation = op_file.stem
-                    if operation == "__init__":
-                        continue
-
-                    try:
-                        module = importlib.import_module(
-                            f"app.api.v4.bulk.{bulk_type}.{operation}"
-                        )
-                        func_name = _get_bulk_handler_name(bulk_type, operation)
-                        if func_name and hasattr(module, func_name):
-                            handlers[(bulk_type, operation)] = getattr(
-                                module, func_name
-                            )
-                    except (ImportError, AttributeError):
-                        pass
+    for bulk_type, module_base in bulk_locations.items():
+        for operation in ["process", "search", "save", "delete"]:
+            try:
+                module = importlib.import_module(f"{module_base}.{operation}")
+                func_name = _get_bulk_handler_name(bulk_type, operation)
+                if func_name and hasattr(module, func_name):
+                    handlers[(bulk_type, operation)] = getattr(module, func_name)
+            except (ImportError, AttributeError):
+                pass
 
     return handlers
 
@@ -399,12 +383,9 @@ def discover_debug_handlers() -> dict[str, Any]:
     handlers: dict[str, Any] = {}
 
     try:
-        module = importlib.import_module("app.api.v4.debug")
-        # Try create_feedback first (current name), fallback to debug
-        if hasattr(module, "create_feedback"):
-            handlers["debug"] = module.create_feedback
-        elif hasattr(module, "debug"):
-            handlers["debug"] = module.debug
+        module = importlib.import_module("app.api.v4.artifacts.activity.problem")
+        if hasattr(module, "create_problem"):
+            handlers["debug"] = module.create_problem
     except (ImportError, AttributeError):
         pass
 

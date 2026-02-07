@@ -3,12 +3,8 @@
 --
 -- Dependency Graph:
 -- Layer 1 (Base - Independent):
---   1. mv_health_hourly_agg
---   2. mv_metrics_hourly_agg
---
--- Layer 2 (Depends on Layer 1):
---   3. mv_health_daily_agg
---   4. mv_metrics_daily_agg
+--   1. mv_health_service_hourly
+--   2. mv_health_metrics_hourly
 --
 -- Uses safe drop/recreate pattern: drop function first, then recreate
 -- ============================================================================
@@ -52,25 +48,13 @@ BEGIN
     -- Layer 1: Base MVs (Independent)
     -- ===========================================
 
-    -- Health hourly aggregates
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_health_hourly_agg;
-    refreshed := array_append(refreshed, 'mv_health_hourly_agg');
+    -- Health service hourly aggregates
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_health_service_hourly;
+    refreshed := array_append(refreshed, 'mv_health_service_hourly');
 
-    -- Metrics hourly aggregates
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_metrics_hourly_agg;
-    refreshed := array_append(refreshed, 'mv_metrics_hourly_agg');
-
-    -- ===========================================
-    -- Layer 2: MVs dependent on Layer 1
-    -- ===========================================
-
-    -- Health daily aggregates
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_health_daily_agg;
-    refreshed := array_append(refreshed, 'mv_health_daily_agg');
-
-    -- Metrics daily aggregates
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_metrics_daily_agg;
-    refreshed := array_append(refreshed, 'mv_metrics_daily_agg');
+    -- Health metrics hourly aggregates
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_health_metrics_hourly;
+    refreshed := array_append(refreshed, 'mv_health_metrics_hourly');
 
     -- Get actor_name from profile_artifact using profile_names_junction junction table
     SELECT COALESCE(

@@ -69,8 +69,17 @@ async def get_health_analytics_internal(
     conn: asyncpg.Connection,
     profile_id: UUID | None,
     bypass_cache: bool = False,
+    start_date: datetime | None = None,
+    end_date: datetime | None = None,
 ) -> GetHealthAnalyticsResponse:
-    cache_key_val = cache_key("analytics/health/get", {})
+    now = datetime.now(timezone.utc)
+    date_from = start_date or (now - timedelta(days=7))
+    date_to = end_date or now
+
+    cache_key_val = cache_key("analytics/health/get", {
+        "date_from": date_from.isoformat(),
+        "date_to": date_to.isoformat(),
+    })
 
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
@@ -90,23 +99,24 @@ async def get_health_analytics_internal(
             profile_id,
         )
 
-    now = datetime.now(timezone.utc)
-    date_from = now - timedelta(days=7)
+    # Calculate page_limit based on date range (hours between dates)
+    range_hours = max(int((date_to - date_from).total_seconds() / 3600), 1)
+    page_limit = min(range_hours + 1, 8760)  # Cap at 1 year of hourly data
 
     service_hourly = await get_health_service_hourly_internal(
         conn=conn,
         service=None,
         date_from=date_from,
-        date_to=now,
-        page_limit=168,
+        date_to=date_to,
+        page_limit=page_limit,
         page_offset=0,
         bypass_cache=bypass_cache,
     )
     metrics_hourly = await get_health_metrics_hourly_internal(
         conn=conn,
         date_from=date_from,
-        date_to=now,
-        page_limit=168,
+        date_to=date_to,
+        page_limit=page_limit,
         page_offset=0,
         bypass_cache=bypass_cache,
     )
@@ -173,6 +183,8 @@ async def get_health_analytics(
             conn=conn,
             profile_id=profile_id,
             bypass_cache=bypass_cache,
+            start_date=request.start_date,
+            end_date=request.end_date,
         )
 
         response.headers["X-Cache-Tags"] = ",".join(tags)

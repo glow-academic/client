@@ -9,7 +9,6 @@
 import { DataTableColumnHeader } from "@/components/common/table/DataTableColumnHeader";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -38,18 +37,18 @@ import {
 
 /** ---- Types ---- */
 type EvalAttemptItem = {
-  attempt_id: string | null;
-  eval_id: string | null;
-  eval_name: string | null;
-  eval_description: string | null;
-  rubric_id: string | null;
-  rubric_name: string | null;
-  created_at: string | null;
-  archived: boolean | null;
-  status: string | null;
-  total_runs: number | null;
-  completed_runs: number | null;
-  pending_runs: number | null;
+  attempt_id: string;
+  eval_id?: string | null;
+  eval_name?: string | null;
+  eval_description?: string | null;
+  rubric_id?: string | null;
+  rubric_name?: string | null;
+  created_at?: string | null;
+  archived?: boolean;
+  status?: string;
+  total_runs?: number;
+  completed_runs?: number;
+  pending_runs?: number;
 };
 
 export interface EvalHistoryProps {
@@ -129,7 +128,7 @@ export default function EvalHistory({
       setSorting(newSorting);
 
       const params = new URLSearchParams(searchParams?.toString() || "");
-      if (newSorting.length > 0) {
+      if (newSorting.length > 0 && newSorting[0]) {
         params.set("historySortBy", newSorting[0].id);
         params.set("historySortOrder", newSorting[0].desc ? "desc" : "asc");
       } else {
@@ -142,7 +141,7 @@ export default function EvalHistory({
   );
 
   // Status badge component
-  const StatusBadge = ({ status }: { status: string | null }) => {
+  const StatusBadge = ({ status }: { status: string | null | undefined }) => {
     if (!status) return null;
     const statusConfig = {
       pending: { label: "Pending", icon: Clock, variant: "secondary" as const },

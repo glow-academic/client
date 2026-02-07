@@ -123,6 +123,10 @@ function MainLayoutContent({
     return pathname.startsWith("/analytics/pricing/g");
   }, [pathname]);
 
+  const isHealthPage = useMemo(() => {
+    return pathname === "/health";
+  }, [pathname]);
+
   const canShowAnalyticsFilters = useMemo(() => {
     // Show filters on leaderboard page for all authorized users
     if (pathname === "/leaderboard") {
@@ -130,6 +134,11 @@ function MainLayoutContent({
       return (
         profile?.role && allowedRoles.includes(profile.role)
       );
+    }
+    // Show filters on health page for authorized users
+    if (isHealthPage) {
+      const allowedRoles = ["instructional", "admin", "superadmin"];
+      return profile?.role && allowedRoles.includes(profile.role);
     }
     const allowedRoles = ["instructional", "admin", "superadmin"];
     return (
@@ -146,6 +155,7 @@ function MainLayoutContent({
     isHomePage,
     isPracticePage,
     isPricingGroupPage,
+    isHealthPage,
   ]);
 
   const handleSectionChange = createSectionChangeHandler(router, pathname);
@@ -415,6 +425,7 @@ function MainLayoutContent({
                 homePage={isHomePage}
                 reportPage={isReportPage}
                 practicePage={isPracticePage}
+                healthPage={isHealthPage}
                 refreshPage={refreshPageAction}
               />
             )}

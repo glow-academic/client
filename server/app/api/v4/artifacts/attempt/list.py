@@ -406,6 +406,9 @@ async def list_attempts(
                 detail="Profile not found. Please sign in again.",
             )
 
+        # Use target_profile_id when viewing another user's report
+        query_profile_id = request.target_profile_id or profile_resource_id
+
         if request.practice:
             context = cast(
                 GetPracticeContextSqlRow,
@@ -433,7 +436,7 @@ async def list_attempts(
         result = await get_attempt_list_internal(
             conn=conn,
             request=request,
-            profile_resource_id=profile_resource_id,
+            profile_resource_id=query_profile_id,
             pass_threshold=context.pass_threshold,
             actor_name=context.actor_name,
             bypass_cache=bypass_cache,

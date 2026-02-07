@@ -14,6 +14,10 @@ class BenchmarkEvalSummaryItem(BaseModel):
     agent_ids: list[UUID] | None = None
     department_ids: list[UUID] | None = None
 
+    eval_name_id: UUID | None = None
+    eval_description_id: UUID | None = None
+    agent_name_ids: list[UUID] | None = None
+
     created_at: datetime | None = None
     updated_at: datetime | None = None
 

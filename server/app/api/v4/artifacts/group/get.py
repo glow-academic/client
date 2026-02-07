@@ -1,6 +1,7 @@
 """Group artifact endpoint - POST /artifacts/group/get
 
-Uses views-layer internal function and hydrates resource names.
+Uses views-layer internal function and hydrates resource names
+via get_names_internal (cached, lightweight).
 """
 
 from typing import Annotated
@@ -19,6 +20,7 @@ from app.api.v4.artifacts.group.types import (
     GroupDetailRunItem,
     GroupDetailRunWithMessages,
 )
+from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.views.pricing.group_detail.get import get_pricing_group_detail_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
@@ -28,29 +30,6 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 
 router = APIRouter()
-
-
-async def _fetch_names_by_ids(
-    conn: asyncpg.Connection,
-    table: str,
-    id_column: str,
-    name_junction: str,
-    ids: list[UUID],
-) -> dict[UUID, str]:
-    """Fetch names for artifact IDs via naming junction tables."""
-    if not ids:
-        return {}
-    rows = await conn.fetch(
-        f"""
-        SELECT a.id, n.name
-        FROM {table} a
-        JOIN {name_junction} an ON an.{id_column} = a.id
-        JOIN names_resource n ON an.name_id = n.id
-        WHERE a.id = ANY($1)
-        """,
-        ids,
-    )
-    return {row["id"]: row["name"] for row in rows if row["name"]}
 
 
 @router.post(
@@ -120,28 +99,33 @@ async def get_group(
                 detail="You don't have access to this group. It may be restricted to other departments.",
             )
 
-        # Collect unique resource IDs from runs
-        all_model_ids: set[UUID] = set()
-        all_agent_ids: set[UUID] = set()
-        all_profile_ids: set[UUID] = set()
-        for run_with_msgs in view_result.runs:
-            if run_with_msgs.run.model_id:
-                all_model_ids.add(run_with_msgs.run.model_id)
-            if run_with_msgs.run.agent_id:
-                all_agent_ids.add(run_with_msgs.run.agent_id)
-            if run_with_msgs.run.profile_id:
-                all_profile_ids.add(run_with_msgs.run.profile_id)
+        # Collect unique name resource IDs and build artifact_id → name_id mappings
+        all_name_ids: set[UUID] = set()
+        model_artifact_to_name_id: dict[UUID, UUID] = {}
+        agent_artifact_to_name_id: dict[UUID, UUID] = {}
+        profile_artifact_to_name_id: dict[UUID, UUID] = {}
 
-        # Hydrate resource names
-        model_names = await _fetch_names_by_ids(
-            conn, "model_artifact", "model_id", "model_names_junction", list(all_model_ids)
-        )
-        agent_names = await _fetch_names_by_ids(
-            conn, "agent_artifact", "agent_id", "agent_names_junction", list(all_agent_ids)
-        )
-        profile_names = await _fetch_names_by_ids(
-            conn, "profile_artifact", "profile_id", "profile_names_junction", list(all_profile_ids)
-        )
+        for run_with_msgs in view_result.runs:
+            run = run_with_msgs.run
+            if run.model_id and run.model_name_id:
+                model_artifact_to_name_id[run.model_id] = run.model_name_id
+                all_name_ids.add(run.model_name_id)
+            if run.agent_id and run.agent_name_id:
+                agent_artifact_to_name_id[run.agent_id] = run.agent_name_id
+                all_name_ids.add(run.agent_name_id)
+            if run.profile_id and run.profile_name_id:
+                profile_artifact_to_name_id[run.profile_id] = run.profile_name_id
+                all_name_ids.add(run.profile_name_id)
+
+        # Hydrate names via get_names_internal (cached, lightweight)
+        name_id_to_str: dict[UUID, str] = {}
+        if all_name_ids:
+            name_items = await get_names_internal(
+                conn, list(all_name_ids), bypass_cache
+            )
+            for ni in name_items:
+                if ni.id and ni.name:
+                    name_id_to_str[ni.id] = ni.name
 
         # Build runs with artifact-layer types
         runs: list[GroupDetailRunWithMessages] = []
@@ -188,18 +172,18 @@ async def get_group(
                 )
             )
 
-        # Build resource arrays
+        # Build resource arrays from hydrated names
         models = [
-            GroupDetailResourceItem(model_id=mid, name=name)
-            for mid, name in model_names.items()
+            GroupDetailResourceItem(model_id=mid, name=name_id_to_str.get(nid))
+            for mid, nid in model_artifact_to_name_id.items()
         ]
         agents = [
-            GroupDetailResourceItem(agent_id=aid, name=name)
-            for aid, name in agent_names.items()
+            GroupDetailResourceItem(agent_id=aid, name=name_id_to_str.get(nid))
+            for aid, nid in agent_artifact_to_name_id.items()
         ]
         profiles = [
-            GroupDetailResourceItem(profile_id=pid, name=name)
-            for pid, name in profile_names.items()
+            GroupDetailResourceItem(profile_id=pid, name=name_id_to_str.get(nid))
+            for pid, nid in profile_artifact_to_name_id.items()
         ]
 
         api_response = GetGroupDetailResponse(

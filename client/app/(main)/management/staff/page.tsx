@@ -16,22 +16,22 @@ type StaffListIn = InputOf<"/api/v4/profiles/list", "post">;
 type StaffListOut = OutputOf<"/api/v4/profiles/list", "post">;
 type DeleteStaffIn = InputOf<"/api/v4/profiles/delete", "post">;
 type DeleteStaffOut = OutputOf<"/api/v4/profiles/delete", "post">;
-type BulkDeleteStaffIn = InputOf<"/api/v4/bulk/staff/delete", "post">;
-type BulkDeleteStaffOut = OutputOf<"/api/v4/bulk/staff/delete", "post">;
+type BulkDeleteStaffIn = InputOf<"/api/v4/profiles/bulk/delete", "post">;
+type BulkDeleteStaffOut = OutputOf<"/api/v4/profiles/bulk/delete", "post">;
 // profile/update doesn't exist - use profiles/save instead
 // type UpdateStaffIn = InputOf<"/api/v4/profile/update", "post">;
 // type UpdateStaffOut = OutputOf<"/api/v4/profile/update", "post">;
-type BulkUpdateStaffIn = InputOf<"/api/v4/bulk/staff/save", "post">;
-type BulkUpdateStaffOut = OutputOf<"/api/v4/bulk/staff/save", "post">;
-type SearchStaffIn = InputOf<"/api/v4/bulk/staff/search", "post">;
-type SearchStaffOut = OutputOf<"/api/v4/bulk/staff/search", "post">;
+type BulkUpdateStaffIn = InputOf<"/api/v4/profiles/bulk/save", "post">;
+type BulkUpdateStaffOut = OutputOf<"/api/v4/profiles/bulk/save", "post">;
+type SearchStaffIn = InputOf<"/api/v4/profiles/bulk/search", "post">;
+type SearchStaffOut = OutputOf<"/api/v4/profiles/bulk/search", "post">;
 // Use profiles/get with null target_profile_id to get create staff data
 type GetProfileIn = InputOf<"/api/v4/profiles/get", "post">;
 type GetProfileOut = OutputOf<"/api/v4/profiles/get", "post">;
-type ProcessCSVIn = InputOf<"/api/v4/bulk/staff/process", "post">;
-type ProcessCSVOut = OutputOf<"/api/v4/bulk/staff/process", "post">;
-type BulkCreateOrUpdateStaffIn = InputOf<"/api/v4/bulk/staff/save", "post">;
-type BulkCreateOrUpdateStaffOut = OutputOf<"/api/v4/bulk/staff/save", "post">;
+type ProcessCSVIn = InputOf<"/api/v4/profiles/bulk/process", "post">;
+type ProcessCSVOut = OutputOf<"/api/v4/profiles/bulk/process", "post">;
+type BulkCreateOrUpdateStaffIn = InputOf<"/api/v4/profiles/bulk/save", "post">;
+type BulkCreateOrUpdateStaffOut = OutputOf<"/api/v4/profiles/bulk/save", "post">;
 /** ---- Derived types from server responses ---- */
 type ProfileListItem = NonNullable<StaffListOut["staff"]>[number];
 type SearchStaffItem = NonNullable<SearchStaffOut["staff"]>[number];
@@ -67,7 +67,7 @@ async function bulkDeleteStaff(
 ): Promise<BulkDeleteStaffOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/bulk/staff/delete", input);
+  return api.post("/profiles/bulk/delete", input);
 }
 
 // Use profiles/get with null target_profile_id to get create staff data (replaces staff/data/create)
@@ -85,7 +85,7 @@ async function getCreateStaffData(
 
 async function processCSV(input: ProcessCSVIn): Promise<ProcessCSVOut> {
   "use server";
-  return api.post("/bulk/staff/process", input);
+  return api.post("/profiles/bulk/process", input);
 }
 
 async function bulkCreateOrUpdateStaff(
@@ -93,7 +93,7 @@ async function bulkCreateOrUpdateStaff(
 ): Promise<BulkCreateOrUpdateStaffOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/bulk/staff/save", input);
+  return api.post("/profiles/bulk/save", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {

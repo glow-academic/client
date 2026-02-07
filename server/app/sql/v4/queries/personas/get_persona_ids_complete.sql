@@ -227,22 +227,25 @@ agent_resource_tools AS (
     WHERE COALESCE(af_agent.value, false) = true
       AND (tf_active.tool_id IS NULL OR COALESCE(f_active.id, NULL) IS NULL OR COALESCE(tf_active.value, false) = true)
 ),
--- Aggregate tool IDs by agent with resource-aligned arrays
-agent_tool_arrays AS (
+-- Step 1: Pick one create and one link tool per (agent, resource)
+agent_resource_tool_pairs AS (
     SELECT
         art.agent_id,
-        ARRAY_AGG(DISTINCT art.resource_name) FILTER (WHERE art.resource_name IS NOT NULL) as tool_resources,
-        -- Create arrays aligned with tool_resources order
-        ARRAY_AGG(
-            CASE WHEN art.is_creatable = true THEN art.tool_id ELSE NULL END
-            ORDER BY art.resource_name
-        ) FILTER (WHERE art.resource_name IS NOT NULL) as create_tool_ids,
-        ARRAY_AGG(
-            CASE WHEN art.is_creatable = false THEN art.tool_id ELSE NULL END
-            ORDER BY art.resource_name
-        ) FILTER (WHERE art.resource_name IS NOT NULL) as link_tool_ids
+        art.resource_name,
+        MAX(CASE WHEN art.is_creatable = true THEN art.tool_id END) as create_tool_id,
+        MAX(CASE WHEN art.is_creatable = false THEN art.tool_id END) as link_tool_id
     FROM agent_resource_tools art
-    GROUP BY art.agent_id
+    GROUP BY art.agent_id, art.resource_name
+),
+-- Step 2: Aggregate into aligned arrays (all same length, same order)
+agent_tool_arrays AS (
+    SELECT
+        agent_id,
+        ARRAY_AGG(resource_name ORDER BY resource_name) as tool_resources,
+        ARRAY_AGG(create_tool_id ORDER BY resource_name) as create_tool_ids,
+        ARRAY_AGG(link_tool_id ORDER BY resource_name) as link_tool_ids
+    FROM agent_resource_tool_pairs
+    GROUP BY agent_id
 ),
 candidate_agents_data AS (
     SELECT

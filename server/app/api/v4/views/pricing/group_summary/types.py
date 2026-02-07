@@ -16,6 +16,11 @@ class PricingGroupSummaryItem(BaseModel):
     primary_agent_id: UUID | None = None
     primary_model_id: UUID | None = None
 
+    # Name resource IDs (pre-resolved for lightweight hydration)
+    primary_model_name_id: UUID | None = None
+    primary_agent_name_id: UUID | None = None
+    profile_name_id: UUID | None = None
+
     first_run_at: datetime | None = None
     last_run_at: datetime | None = None
 
@@ -38,6 +43,10 @@ class PricingGroupSummaryItem(BaseModel):
 
     agent_ids: list[UUID] | None = None
     model_ids: list[UUID] | None = None
+
+    # Name resource ID arrays (for batch hydration)
+    agent_name_ids: list[UUID] | None = None
+    model_name_ids: list[UUID] | None = None
 
 
 class GetPricingGroupSummaryRequest(BaseModel):

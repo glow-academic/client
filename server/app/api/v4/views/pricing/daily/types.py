@@ -14,6 +14,10 @@ class PricingDailyItem(BaseModel):
     model_id: UUID | None = None
     agent_id: UUID | None = None
 
+    # Name resource IDs (pre-resolved for lightweight hydration)
+    model_name_id: UUID | None = None
+    agent_name_id: UUID | None = None
+
     run_count: int = 0
     group_count: int = 0
     unique_profiles: int = 0

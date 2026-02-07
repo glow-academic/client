@@ -40,7 +40,7 @@ all_attempt_simulations AS (
 chat_scenario_info AS (
     SELECT DISTINCT
         c.id AS chat_id,
-        ssj.scenario_id,
+        ssj.scenarios_id AS scenario_id,
         sim_ssj.simulation_id
     FROM all_chats c
     JOIN all_chat_scenarios acs ON acs.chat_id = c.id
@@ -118,6 +118,7 @@ FROM latest_grade lg
 JOIN feedbacks_entry fe ON fe.grade_id = lg.grade_id
 JOIN feedbacks_standards_connection fsc ON fsc.feedbacks_id = fe.id
 JOIN standards_resource s ON s.id = fsc.standard_id
-JOIN rubric_standard_groups_junction rsg ON rsg.rubric_id = lg.rubric_id AND rsg.active = true
+JOIN rubric_rubrics_junction rrj ON rrj.rubrics_id = lg.rubric_id
+JOIN rubric_standard_groups_junction rsg ON rsg.rubric_id = rrj.rubric_id AND rsg.active = true
 JOIN standard_groups_resource sg ON sg.id = rsg.standard_group_id AND sg.id = s.standard_group_id
 GROUP BY lg.chat_id, lg.rubric_id, sg.id, sg.name, sg.short_name, sg.points;

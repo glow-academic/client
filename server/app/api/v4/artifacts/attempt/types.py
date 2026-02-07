@@ -617,6 +617,7 @@ class GetAttemptListRequest(BaseModel):
     """Request for unified attempt list/history fetch."""
 
     practice: bool = False
+    target_profile_id: UUID | None = None
     start_date: str | None = None
     end_date: str | None = None
     cohort_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]

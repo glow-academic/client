@@ -68,6 +68,7 @@ async def get_pricing_group_detail_internal(
         """
         SELECT
             run_id, group_id, agent_id, model_id, profile_id,
+            model_name_id, agent_name_id, profile_name_id,
             input_tokens, output_tokens, cached_input_tokens,
             total_cost, run_created_at
         FROM mv_pricing_run_facts
@@ -177,6 +178,9 @@ async def get_pricing_group_detail_internal(
             model_id=run_row["model_id"],
             agent_id=run_row["agent_id"],
             profile_id=run_row["profile_id"],
+            model_name_id=run_row["model_name_id"],
+            agent_name_id=run_row["agent_name_id"],
+            profile_name_id=run_row["profile_name_id"],
         )
 
         # Build messages list with calls attached

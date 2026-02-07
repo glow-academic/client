@@ -26,10 +26,13 @@ async def get_benchmark_tests_internal(
     conn: asyncpg.Connection,
     test_ids: list[UUID] | None = None,
     eval_id: UUID | None = None,
+    eval_ids: list[UUID] | None = None,
     profile_id: UUID | None = None,
     archived: bool | None = None,
+    department_ids: list[UUID] | None = None,
     date_from: datetime | None = None,
     date_to: datetime | None = None,
+    search: str | None = None,
     sort_by: str = "date",
     sort_order: str = "desc",
     page_limit: int = 50,
@@ -43,10 +46,13 @@ async def get_benchmark_tests_internal(
         {
             "test_ids": [str(t) for t in normalized_test_ids],
             "eval_id": str(eval_id) if eval_id else None,
+            "eval_ids": [str(e) for e in eval_ids] if eval_ids else None,
             "profile_id": str(profile_id) if profile_id else None,
             "archived": archived,
+            "department_ids": [str(d) for d in department_ids] if department_ids else None,
             "date_from": date_from.isoformat() if date_from else None,
             "date_to": date_to.isoformat() if date_to else None,
+            "search": search,
             "sort_by": sort_by,
             "sort_order": sort_order,
             "page_limit": page_limit,
@@ -73,6 +79,11 @@ async def get_benchmark_tests_internal(
         params.append(eval_id)
         param_idx += 1
 
+    if eval_ids:
+        conditions.append(f"eval_id = ANY(${param_idx}::uuid[])")
+        params.append(eval_ids)
+        param_idx += 1
+
     if profile_id:
         conditions.append(f"profile_id = ${param_idx}")
         params.append(profile_id)
@@ -83,6 +94,11 @@ async def get_benchmark_tests_internal(
         params.append(archived)
         param_idx += 1
 
+    if department_ids:
+        conditions.append(f"department_ids && ${param_idx}::uuid[]")
+        params.append(department_ids)
+        param_idx += 1
+
     if date_from:
         conditions.append(f"test_created_at >= ${param_idx}")
         params.append(date_from)
@@ -91,6 +107,13 @@ async def get_benchmark_tests_internal(
     if date_to:
         conditions.append(f"test_created_at < ${param_idx}")
         params.append(date_to)
+        param_idx += 1
+
+    if search:
+        conditions.append(
+            f"eval_name_id IN (SELECT id FROM names_resource WHERE name ILIKE ${param_idx})"
+        )
+        params.append(f"%{search}%")
         param_idx += 1
 
     where_clause = " AND ".join(conditions) if conditions else "TRUE"
@@ -128,6 +151,9 @@ async def get_benchmark_tests_internal(
             num_chats=row["num_chats"] or 0,
             num_chats_completed=row["num_chats_completed"] or 0,
             num_messages=row["num_messages"] or 0,
+            eval_name_id=row["eval_name_id"],
+            eval_description_id=row["eval_description_id"],
+            rubric_id=row["rubric_id"],
         )
         for row in rows
     ]

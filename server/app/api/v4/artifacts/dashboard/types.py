@@ -471,3 +471,9 @@ class DashboardBundleResponse(BaseModel):
     insights: DashboardInsights | None = None
 
     simulation_options: list[FilterOption] = Field(default_factory=list)
+
+    # Profile metadata (populated when target_profile_id is provided)
+    profile_name: str | None = None
+    profile_emails: list[str] | None = None
+    profile_primary_email: str | None = None
+    profile_role: str | None = None

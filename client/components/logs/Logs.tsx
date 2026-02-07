@@ -61,7 +61,7 @@ export default function Logs({ bundleData: serverBundleData }: LogsProps) {
   }, [metrics]);
 
   return (
-    <div className="space-y-6" data-page="logs-dashboard">
+    <div className="flex flex-col gap-6 h-[calc(100vh-7rem)]" data-page="logs-dashboard">
       {/* Top Section - 5 KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {healthKPIs && (
@@ -136,12 +136,12 @@ export default function Logs({ bundleData: serverBundleData }: LogsProps) {
       </div>
 
       {/* Middle Section - Metrics Graph */}
-      <Card>
+      <Card className="flex-1 flex flex-col min-h-0">
         <CardHeader>
           <CardTitle>Application Metrics</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="h-80">
+        <CardContent className="flex-1 min-h-0">
+          <div className="h-full">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={metricsChartData}>
                 <CartesianGrid strokeDasharray="3 3" />

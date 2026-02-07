@@ -44,6 +44,11 @@ class GroupDetailRunMetadata(BaseModel):
     agent_id: UUID | None = None
     profile_id: UUID | None = None
 
+    # Name resource IDs (pre-resolved for lightweight hydration)
+    model_name_id: UUID | None = None
+    agent_name_id: UUID | None = None
+    profile_name_id: UUID | None = None
+
 
 class GroupDetailRunWithMessages(BaseModel):
     """A run with its ordered messages and context boundary."""

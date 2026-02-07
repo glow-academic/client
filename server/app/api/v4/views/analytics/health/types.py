@@ -1,5 +1,7 @@
 """Types for analytics health endpoint."""
 
+from datetime import datetime
+
 from pydantic import BaseModel, Field
 
 
@@ -46,7 +48,8 @@ class HealthMetricsItem(BaseModel):
 class GetHealthAnalyticsRequest(BaseModel):
     """Request for health analytics bundle."""
 
-    pass
+    start_date: datetime | None = None
+    end_date: datetime | None = None
 
 
 class GetHealthAnalyticsResponse(BaseModel):

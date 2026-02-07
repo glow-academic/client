@@ -50,6 +50,7 @@ export interface AnalyticsFiltersProps {
   homePage?: boolean;
   reportPage?: boolean;
   practicePage?: boolean;
+  healthPage?: boolean;
   refreshPage: RefreshPageFn;
 }
 
@@ -57,6 +58,7 @@ export function AnalyticsFilters({
   homePage = false,
   reportPage = false,
   practicePage = false,
+  healthPage = false,
   refreshPage,
 }: AnalyticsFiltersProps) {
   const isMobile = useIsMobile();
@@ -348,8 +350,8 @@ export function AnalyticsFilters({
               </Button>
             )}
 
-            {/* General/Practice/Archived Selector - hide on home and practice pages */}
-            {!homePage && !practicePage && (
+            {/* General/Practice/Archived Selector - hide on home, practice, and health pages */}
+            {!homePage && !practicePage && !healthPage && (
               <AttemptSelector
                 selected={attemptSelected}
                 onChange={(vals) => {
@@ -366,8 +368,8 @@ export function AnalyticsFilters({
               />
             )}
 
-            {/* Role Picker - hide on home, report, and practice pages */}
-            {!homePage && !reportPage && !practicePage && (
+            {/* Role Picker - hide on home, report, practice, and health pages */}
+            {!homePage && !reportPage && !practicePage && !healthPage && (
               <RoleSelector
                 roles={
                   selectedCohortIds.length > 0
@@ -383,8 +385,8 @@ export function AnalyticsFilters({
               />
             )}
 
-            {/* Cohort Picker - hide on practice page */}
-            {!practicePage && activeCohorts.length > 1 && (
+            {/* Cohort Picker - hide on practice and health pages */}
+            {!practicePage && !healthPage && activeCohorts.length > 1 && (
               <CohortSelector
                 cohorts={cohortOptions}
                 selectedCohorts={selectedCohorts}
@@ -394,8 +396,8 @@ export function AnalyticsFilters({
               />
             )}
 
-            {/* Department Picker - only show if more than 1 department */}
-            {departments.length > 1 && (
+            {/* Department Picker - hide on health page, only show if more than 1 department */}
+            {!healthPage && departments.length > 1 && (
               <DepartmentSelector
                 departments={departmentOptions}
                 selectedDepartments={selectedDepartments}

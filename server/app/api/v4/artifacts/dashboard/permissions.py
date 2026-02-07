@@ -570,6 +570,7 @@ def compute_primary_metrics(
     chat_rows: list[ChatFactsItem],
     profile_rows: list[ProfileMetricsItem],
     rubric_group_scores: list[RubricGroupScoreItem] | None = None,
+    persona_name_map: dict[str, str] | None = None,
     thresholds: dict[str, int] | None = None,
 ) -> DashboardPrimaryMetrics:
     """Compute primary section metrics for dashboard get bundle."""
@@ -701,7 +702,8 @@ def compute_primary_metrics(
         "status": _section_status(bool(growth_chart_data)),
     }
 
-    # Persona performance (uses persona_id as stable label until persona metadata join is added)
+    # Persona performance
+    persona_name_map = persona_name_map or {}
     persona_rows: dict[str, dict] = defaultdict(
         lambda: {
             "scores": [],
@@ -744,9 +746,10 @@ def compute_primary_metrics(
         sim_ids = sorted(data["simulation_ids"])
         valid_simulation_ids.update(sim_ids)
         color = persona_color(pid)
+        persona_name = persona_name_map.get(pid, pid)
         persona_chart_data.append(
             {
-                "name": pid,
+                "name": persona_name,
                 "score": _round2(mean(data["scores"])) if data["scores"] else None,
                 "sessions": data["sessions"],
                 "color": color,
@@ -755,7 +758,7 @@ def compute_primary_metrics(
                 "status": "neutral",
             }
         )
-        persona_color_junction.append({"persona_name": pid, "color": color})
+        persona_color_junction.append({"persona_name": persona_name, "color": color})
 
     persona_performance = {
         "chart_data": persona_chart_data,
@@ -916,11 +919,14 @@ def compute_secondary_metrics(
     daily_rows: list[DailyMetricsItem],
     chat_rows: list[ChatFactsItem],
     profile_rows: list[ProfileMetricsItem],
+    cohort_name_map: dict[str, str] | None = None,
+    rubric_group_scores: list[RubricGroupScoreItem] | None = None,
     thresholds: dict[str, int] | None = None,
 ) -> DashboardSecondaryMetrics:
     """Compute secondary section metrics for dashboard get bundle."""
     _ = profile_rows
     success_threshold, warning_threshold, _danger_threshold = _thresholds(thresholds)
+    cohort_name_map = cohort_name_map or {}
 
     # Cohort performance
     cohort_acc: dict[str, dict] = defaultdict(
@@ -1001,7 +1007,7 @@ def compute_secondary_metrics(
         cohort_data.append(
             {
                 "id": cohort_id,
-                "name": cohort_id,
+                "name": cohort_name_map.get(cohort_id, cohort_id),
                 "pass_rate": _round2(pass_rate),
                 "avg_percentage_score": _round2(avg_score),
                 "total_students": c["max_students"],
@@ -1160,58 +1166,72 @@ def compute_secondary_metrics(
         "status": attempt_status,
     }
 
-    # Skill performance (rubric-level package)
-    rubric_sim_scores: dict[tuple[str, str], list[float]] = defaultdict(list)
-    rubric_points: dict[str, list[float]] = defaultdict(list)
-    for row in chat_rows:
-        if row.rubric_id is None or row.score is None:
+    # Skill performance (per-standard-group radar from rubric_group_scores)
+    rubric_group_scores = rubric_group_scores or []
+
+    # Aggregate scores per rubric × standard group
+    group_scores: dict[str, dict[str, list[float]]] = defaultdict(
+        lambda: defaultdict(list)
+    )
+    group_info: dict[tuple[str, str], dict] = {}
+    for row in rubric_group_scores:
+        if row.score_percent is None:
             continue
         rid = str(row.rubric_id)
-        sim_id = str(row.simulation_id)
-        if row.grade_percent is not None:
-            rubric_sim_scores[(rid, sim_id)].append(float(row.grade_percent))
-        if row.rubric_total_points is not None:
-            rubric_points[rid].append(float(row.rubric_total_points))
+        gid = str(row.standard_group_id)
+        group_scores[rid][gid].append(float(row.score_percent))
+        group_info[(rid, gid)] = {
+            "name": row.group_name,
+            "short_name": row.group_short_name,
+        }
 
-    rubric_packages: dict[str, dict] = defaultdict(
-        lambda: {"group_facts": [], "scores": []}
-    )
-    for (rid, sim_id), vals in sorted(rubric_sim_scores.items()):
-        avg_pct = mean(vals) if vals else 0.0
-        points = mean(rubric_points[rid]) if rubric_points[rid] else 0.0
-        rubric_packages[rid]["scores"].append(avg_pct)
-        rubric_packages[rid]["group_facts"].append(
-            {
-                "group_id": rid,
-                "group_name": "Rubric Aggregate",
-                "group_description": None,
-                "simulation_id": sim_id,
-                "score": _round2(avg_pct),
-                "points": _round2(points),
-                "avg_pct": _round2(avg_pct),
-            }
-        )
+    # Also collect per-rubric × simulation group_facts for the detail table
+    rubric_sim_group: dict[tuple[str, str, str], list[float]] = defaultdict(list)
+    for row in rubric_group_scores:
+        if row.score_percent is None or row.chat_id is None:
+            continue
+        rid = str(row.rubric_id)
+        gid = str(row.standard_group_id)
+        # Map chat_id back to simulation_id via chat_rows lookup
+        rubric_sim_group[(rid, gid, "all")].append(float(row.score_percent))
 
     skill_packages = []
-    valid_rubrics = sorted(rubric_packages.keys())
+    valid_rubrics = sorted(group_scores.keys())
     for rid in valid_rubrics:
-        avg_overall = (
-            mean(rubric_packages[rid]["scores"])
-            if rubric_packages[rid]["scores"]
-            else 0.0
-        )
+        radar_data = []
+        for gid, scores in sorted(group_scores[rid].items()):
+            avg_pct = mean(scores) if scores else 0.0
+            info = group_info.get((rid, gid), {})
+            radar_data.append(
+                {
+                    "metric": info.get("short_name") or info.get("name") or gid,
+                    "description": info.get("name"),
+                    "value": _round2(avg_pct / 100.0),
+                    "full_mark": 1.0,
+                }
+            )
+
+        group_facts = []
+        for gid, scores in sorted(group_scores[rid].items()):
+            avg_pct = mean(scores) if scores else 0.0
+            info = group_info.get((rid, gid), {})
+            group_facts.append(
+                {
+                    "group_id": gid,
+                    "group_name": info.get("name") or gid,
+                    "group_description": None,
+                    "simulation_id": None,
+                    "score": _round2(avg_pct),
+                    "points": _round2(100.0),
+                    "avg_pct": _round2(avg_pct),
+                }
+            )
+
         skill_packages.append(
             {
                 "rubric_id": rid,
-                "radar_data": [
-                    {
-                        "metric": "Overall",
-                        "description": "Average rubric performance",
-                        "value": _round2(avg_overall),
-                        "full_mark": 100.0,
-                    }
-                ],
-                "group_facts": rubric_packages[rid]["group_facts"],
+                "radar_data": radar_data,
+                "group_facts": group_facts,
             }
         )
 
@@ -1227,13 +1247,14 @@ def compute_secondary_metrics(
         if skill_packages
         else None
     )
+    skill_avg_pct = skill_avg * 100.0 if skill_avg is not None else None
     skill_status = (
         "neutral"
-        if skill_avg is None
+        if skill_avg_pct is None
         else "success"
-        if skill_avg >= success_threshold
+        if skill_avg_pct >= success_threshold
         else "warning"
-        if skill_avg >= warning_threshold
+        if skill_avg_pct >= warning_threshold
         else "danger"
     )
     skill_performance = {
@@ -1257,11 +1278,15 @@ def compute_footer_metrics(
     parameter_fields: list[Any] | None = None,
     parameters: list[Any] | None = None,
     fields: list[Any] | None = None,
+    simulation_name_map: dict[str, str] | None = None,
+    scenario_name_map: dict[str, str] | None = None,
     thresholds: dict[str, int] | None = None,
 ) -> DashboardFooterMetrics:
     """Compute footer section metrics for dashboard get bundle."""
     _ = (daily_rows, profile_rows)
     success_threshold, warning_threshold, _danger_threshold = _thresholds(thresholds)
+    simulation_name_map = simulation_name_map or {}
+    scenario_name_map = scenario_name_map or {}
 
     parameter_fields = parameter_fields or []
     parameters = parameters or []
@@ -1282,7 +1307,7 @@ def compute_footer_metrics(
         if field_id and name:
             field_name_by_id[str(field_id)] = str(name)
 
-    numeric_parameter_ids: set[str] = set()
+    persona_doc_parameter_ids: set[str] = set()
     for p in parameters:
         pid = getattr(p, "parameter_id", None)
         if not pid:
@@ -1290,7 +1315,7 @@ def compute_footer_metrics(
         if bool(getattr(p, "document_parameter", False)) or bool(
             getattr(p, "persona_parameter", False)
         ):
-            numeric_parameter_ids.add(str(pid))
+            persona_doc_parameter_ids.add(str(pid))
 
     scenario_to_param_items: dict[str, set[tuple[str, str]]] = defaultdict(set)
     for row in chat_rows:
@@ -1304,9 +1329,24 @@ def compute_footer_metrics(
             for pid in row.parameter_ids:
                 for fid in row.field_ids:
                     scenario_to_param_items[scenario_id].add((str(pid), str(fid)))
+        if row.persona_parameter_field_ids:
+            for pfid in row.persona_parameter_field_ids:
+                pair = pf_lookup.get(str(pfid))
+                if pair:
+                    scenario_to_param_items[scenario_id].add(pair)
+        if row.document_parameter_field_ids:
+            for pfid in row.document_parameter_field_ids:
+                pair = pf_lookup.get(str(pfid))
+                if pair:
+                    scenario_to_param_items[scenario_id].add(pair)
 
     valid_parameter_ids = sorted(
-        {pid for pairs in scenario_to_param_items.values() for (pid, _fid) in pairs}
+        {
+            pid
+            for pairs in scenario_to_param_items.values()
+            for (pid, _fid) in pairs
+            if pid not in persona_doc_parameter_ids
+        }
     )
 
     # Simulation performance by scenario
@@ -1338,7 +1378,7 @@ def compute_footer_metrics(
             {
                 "simulation_id": sim_id,
                 "scenario_id": scenario_id,
-                "scenario_name": scenario_id,
+                "scenario_name": scenario_name_map.get(scenario_id, scenario_id),
                 "avg_score": _round2(
                     d["sum_score"] / d["score_count"] if d["score_count"] else 0
                 ),
@@ -1408,7 +1448,7 @@ def compute_footer_metrics(
         simulation_facts.append(
             {
                 "simulation_id": sim_id,
-                "title": sim_id,
+                "title": simulation_name_map.get(sim_id, sim_id),
                 "avg_score": _round2(
                     d["sum_score"] / d["score_count"] if d["score_count"] else 0
                 ),
@@ -1445,11 +1485,12 @@ def compute_footer_metrics(
         "status": comp_status,
     }
 
-    # Scenario performance categorical facts
+    # Scenario performance categorical facts (scenario parameters only, not persona/document)
     cat_map_seen = [
         (pid, fid, scenario_id)
         for scenario_id, pairs in scenario_to_param_items.items()
         for (pid, fid) in sorted(pairs)
+        if pid not in persona_doc_parameter_ids
     ]
     attempt_daily: dict[tuple[str, str, str], dict] = defaultdict(
         lambda: {"scores": [], "attempts": 0, "passed_attempts": 0}
@@ -1460,6 +1501,8 @@ def compute_footer_metrics(
         day = _iso(row.attempt_created_at.date())
         scenario_id = str(row.scenario_id)
         for pid, fid in scenario_to_param_items.get(scenario_id, set()):
+            if pid in persona_doc_parameter_ids:
+                continue
             k = (pid, fid, day)
             attempt_daily[k]["scores"].append(float(row.grade_percent))
             attempt_daily[k]["attempts"] += 1
@@ -1515,7 +1558,7 @@ def compute_footer_metrics(
     param_levels: dict[str, list[str]] = defaultdict(list)
     for pairs in scenario_to_param_items.values():
         for pid, fid in pairs:
-            if pid in numeric_parameter_ids and fid not in param_levels[pid]:
+            if pid in persona_doc_parameter_ids and fid not in param_levels[pid]:
                 param_levels[pid].append(fid)
     for pid in param_levels:
         param_levels[pid].sort()
@@ -1523,7 +1566,7 @@ def compute_footer_metrics(
     scenario_numeric_map: dict[str, list[tuple[str, int, str]]] = defaultdict(list)
     for scenario_id, pairs in scenario_to_param_items.items():
         for pid, fid in pairs:
-            if pid not in numeric_parameter_ids:
+            if pid not in persona_doc_parameter_ids:
                 continue
             level = param_levels[pid].index(fid) + 1 if fid in param_levels[pid] else 1
             scenario_numeric_map[scenario_id].append((pid, level, fid))
@@ -1566,7 +1609,7 @@ def compute_footer_metrics(
                 }
             )
 
-    valid_numeric_parameter_ids = sorted(
+    valid_persona_doc_parameter_ids = sorted(
         {f["parameter_id"] for f in numeric_attempt_facts}
     )
     num_avg = (
@@ -1586,7 +1629,7 @@ def compute_footer_metrics(
     scenario_stats = {
         "numeric_attempt_facts": numeric_attempt_facts,
         "numeric_scenario_facts": numeric_scenario_facts,
-        "valid_numeric_parameter_ids": valid_numeric_parameter_ids,
+        "valid_persona_doc_parameter_ids": valid_persona_doc_parameter_ids,
         "status": scenario_stats_status,
     }
 
@@ -1609,6 +1652,10 @@ def build_dashboard_bundle(
     parameters: list[Any] | None = None,
     fields: list[Any] | None = None,
     rubric_group_scores: list[RubricGroupScoreItem] | None = None,
+    persona_name_map: dict[str, str] | None = None,
+    cohort_name_map: dict[str, str] | None = None,
+    simulation_name_map: dict[str, str] | None = None,
+    scenario_name_map: dict[str, str] | None = None,
     thresholds: dict[str, int] | None = None,
 ) -> DashboardBundleResponse:
     """Build full dashboard get response skeleton from MV slices.
@@ -1631,6 +1678,7 @@ def build_dashboard_bundle(
             chat_rows=chat_rows,
             profile_rows=profile_rows,
             rubric_group_scores=rubric_group_scores,
+            persona_name_map=persona_name_map,
             thresholds=thresholds,
         ),
         secondary_metrics=compute_secondary_metrics(
@@ -1638,6 +1686,8 @@ def build_dashboard_bundle(
             daily_rows=daily_rows,
             chat_rows=chat_rows,
             profile_rows=profile_rows,
+            cohort_name_map=cohort_name_map,
+            rubric_group_scores=rubric_group_scores,
             thresholds=thresholds,
         ),
         footer_metrics=compute_footer_metrics(
@@ -1648,6 +1698,8 @@ def build_dashboard_bundle(
             parameter_fields=parameter_fields,
             parameters=parameters,
             fields=fields,
+            simulation_name_map=simulation_name_map,
+            scenario_name_map=scenario_name_map,
             thresholds=thresholds,
         ),
     )

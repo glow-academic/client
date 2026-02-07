@@ -41,6 +41,7 @@ async def get_activity_summary_internal(
             total_active_profiles=row["total_active_profiles"] or 0,
             total_logins=row["total_logins"] or 0,
             total_content_created=row["total_content_created"] or 0,
+            total_drafts=row["total_drafts"] or 0,
             total_problems=row["total_problems"] or 0,
             unresolved_problems=row["unresolved_problems"] or 0,
             sessions_last_24h=row["sessions_last_24h"] or 0,

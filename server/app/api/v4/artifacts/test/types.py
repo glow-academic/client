@@ -28,14 +28,15 @@ class GetTestArtifactResponse(BaseModel):
 class GetTestListRequest(BaseModel):
     """Request for benchmark test list artifact."""
 
-    eval_id: UUID | None = Field(default=None)
+    eval_ids: list[str] = Field(default_factory=list)
+    department_ids: list[str] = Field(default_factory=list)
+    page: int = Field(default=0, ge=0)
+    page_size: int = Field(default=10, ge=1, le=200)
+    search: str | None = Field(default=None)
+    status: str | None = Field(default=None)
     archived: bool | None = Field(default=None)
-    date_from: datetime | None = Field(default=None)
-    date_to: datetime | None = Field(default=None)
     sort_by: str = Field(default="date")
     sort_order: str = Field(default="desc")
-    page_limit: int = Field(default=50, ge=1, le=200)
-    page_offset: int = Field(default=0, ge=0)
 
 
 class TestListFilterOption(BaseModel):
@@ -49,15 +50,18 @@ class TestListFilterOption(BaseModel):
 class TestListItem(BaseModel):
     """List row for benchmark tests."""
 
-    test_id: UUID
-    eval_id: UUID | None = None
-    profile_id: UUID | None = None
+    attempt_id: str
+    eval_id: str | None = None
+    eval_name: str | None = None
+    eval_description: str | None = None
+    rubric_id: str | None = None
+    rubric_name: str | None = None
+    created_at: str | None = None
     archived: bool = False
-    created_at: datetime | None = None
-    num_chats: int = 0
-    num_chats_completed: int = 0
-    num_messages: int = 0
     status: str = "pending"
+    total_runs: int = 0
+    completed_runs: int = 0
+    pending_runs: int = 0
 
 
 class GetTestListResponse(BaseModel):
@@ -65,8 +69,8 @@ class GetTestListResponse(BaseModel):
 
     data: list[TestListItem] = Field(default_factory=list)
     total_count: int = 0
-    page_limit: int = 50
-    page_offset: int = 0
+    page: int = 0
+    page_size: int = 10
     eval_options: list[TestListFilterOption] = Field(default_factory=list)
 
 

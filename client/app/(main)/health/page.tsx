@@ -7,17 +7,32 @@
 import Logs from "@/components/logs/Logs";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import { isHardRefresh } from "@/lib/cache-utils";
+import {
+  computeAnalyticsDefaults,
+  resolveAnalyticsFilters,
+} from "@/lib/search-params/analytics-defaults";
 import type { Metadata } from "next";
 import { cache } from "react";
+import { loadHealthSearchParams } from "./searchParams";
 
 /** ---- Strong types from OpenAPI ---- */
-type HealthBundleIn = InputOf<"/api/v4/artifacts/health/get", "post">;
-type HealthBundleOut = OutputOf<"/api/v4/artifacts/health/get", "post">;
+type HealthBundleIn = InputOf<"/api/v4/views/analytics/health/get", "post">;
+type HealthBundleOut = OutputOf<"/api/v4/views/analytics/health/get", "post">;
 
 /** ---- Cached fetch used by page (prevents duplicate requests) ---- */
 const getHealthBundle = cache(
   async (input: HealthBundleIn): Promise<HealthBundleOut> => {
-    return api.post("/artifacts/health/get", input);
+    const bypassCache = await isHardRefresh();
+
+    return api.post("/views/analytics/health/get", input, {
+      cache: "no-store",
+      ...(bypassCache && {
+        headers: {
+          "X-Bypass-Cache": "1",
+        },
+      }),
+    });
   },
 );
 
@@ -33,13 +48,20 @@ interface HealthPageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-export default async function HealthPage(_props: HealthPageProps) {
-  // Access control is handled server-side in layout
-  // profileId removed - comes from X-Profile-Id header (auto-injected)
+export default async function HealthPage({ searchParams }: HealthPageProps) {
+  // Parse search params via nuqs loader
+  const q = loadHealthSearchParams(await searchParams);
+
+  // Compute defaults and resolve filters (only startDate/endDate used for health)
+  const { defaults, profileContext } = await computeAnalyticsDefaults();
+  const filters = resolveAnalyticsFilters(q, defaults, profileContext);
 
   // Fetch bundle data server-side (for KPIs and metrics)
   const bundleData = await getHealthBundle({
-    body: {},
+    body: {
+      start_date: filters.startDate,
+      end_date: filters.endDate,
+    },
   });
 
   return (

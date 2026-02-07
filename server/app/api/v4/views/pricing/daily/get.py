@@ -99,6 +99,8 @@ async def get_pricing_daily_internal(
             date_key=row["date_key"],
             model_id=row["model_id"],
             agent_id=row["agent_id"],
+            model_name_id=row["model_name_id"],
+            agent_name_id=row["agent_name_id"],
             run_count=row["run_count"] or 0,
             group_count=row["group_count"] or 0,
             unique_profiles=row["unique_profiles"] or 0,

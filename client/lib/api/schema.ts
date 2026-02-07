@@ -545,6 +545,86 @@ export interface paths {
         patch: operations["patch_document_draft_api_v4_documents_draft_patch"];
         trace?: never;
     };
+    "/api/v4/documents/bulk/process": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Process Document
+         * @description Process CSV file and map columns to target fields for documents.
+         */
+        post: operations["process_document_api_v4_documents_bulk_process_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/documents/bulk/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Document
+         * @description Search documents for bulk operations.
+         */
+        post: operations["search_document_api_v4_documents_bulk_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/documents/bulk/save": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Save Document
+         * @description Bulk create or update documents.
+         */
+        post: operations["save_document_api_v4_documents_bulk_save_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/documents/bulk/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Delete Document
+         * @description Bulk delete documents.
+         */
+        post: operations["delete_document_api_v4_documents_bulk_delete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/departments/get": {
         parameters: {
             query?: never;
@@ -1871,6 +1951,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/profiles/bulk/process": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Process Staff
+         * @description Process CSV file and map columns to target fields.
+         */
+        post: operations["process_staff_api_v4_profiles_bulk_process_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/profiles/bulk/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Staff
+         * @description Search staff with query and filters.
+         */
+        post: operations["search_staff_api_v4_profiles_bulk_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/profiles/bulk/save": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Save Staff
+         * @description Bulk create or update staff members (upsert).
+         */
+        post: operations["save_staff_api_v4_profiles_bulk_save_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/profiles/bulk/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Delete Staff
+         * @description Bulk delete profiles.
+         */
+        post: operations["delete_staff_api_v4_profiles_bulk_delete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/auths/get": {
         parameters: {
             query?: never;
@@ -2384,6 +2544,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/artifacts/reports/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Export Report
+         * @description Export reports data as CSV or ZIP file.
+         */
+        post: operations["export_report_api_v4_artifacts_reports_export_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/artifacts/reports/get": {
         parameters: {
             query?: never;
@@ -2529,6 +2709,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/artifacts/activity/problem": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Problem
+         * @description Create new problem entry.
+         */
+        post: operations["create_problem_api_v4_artifacts_activity_problem_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/artifacts/activity/refresh": {
         parameters: {
             query?: never;
@@ -2543,6 +2743,26 @@ export interface paths {
          * @description Refresh all activity section materialized views.
          */
         post: operations["activity_refresh_api_v4_artifacts_activity_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/artifacts/activity/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resolve Problem
+         * @description Resolve or unresolve a problem entry.
+         */
+        post: operations["resolve_problem_api_v4_artifacts_activity_resolve_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2600,7 +2820,7 @@ export interface paths {
         put?: never;
         /**
          * Get Benchmark
-         * @description Get benchmark artifact data.
+         * @description Get benchmark artifact data with full resource hydration.
          */
         post: operations["get_benchmark_api_v4_artifacts_benchmark_get_post"];
         delete?: never;
@@ -2660,7 +2880,7 @@ export interface paths {
         put?: never;
         /**
          * List Test Artifacts
-         * @description List benchmark tests with minimal filter metadata.
+         * @description List benchmark tests with enriched names.
          */
         post: operations["list_test_artifacts_api_v4_artifacts_test_list_post"];
         delete?: never;
@@ -3521,6 +3741,26 @@ export interface paths {
          * @description Create keys resource (always INSERT).
          */
         post: operations["create_keys_api_v4_resources_keys_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/keys/decrypt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Decrypt Key
+         * @description Decrypt a key's encrypted value.
+         */
+        post: operations["decrypt_key_api_v4_resources_keys_decrypt_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4912,6 +5152,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/uploads/download/{upload_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Upload
+         * @description Download an upload by ID. If preview=True and file is PDF, returns first page as PNG.
+         */
+        get: operations["get_upload_api_v4_resources_uploads_download__upload_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/uploads/get": {
         parameters: {
             query?: never;
@@ -4926,6 +5186,78 @@ export interface paths {
          * @description Get uploads resources by IDs.
          */
         post: operations["get_uploads_api_v4_resources_uploads_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/uploads/upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Tus Creation
+         * @description Handle POST request for tus protocol - create upload.
+         */
+        post: operations["tus_creation_api_v4_resources_uploads_upload_post"];
+        delete?: never;
+        /**
+         * Tus Options
+         * @description Handle OPTIONS request for tus protocol discovery.
+         */
+        options: operations["tus_options_api_v4_resources_uploads_upload_options"];
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/uploads/upload/{upload_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        /**
+         * Tus Options Upload Id
+         * @description Handle OPTIONS request for specific upload.
+         */
+        options: operations["tus_options_upload_id_api_v4_resources_uploads_upload__upload_id__options"];
+        /**
+         * Tus Head
+         * @description Handle HEAD request for tus protocol - get upload info.
+         */
+        head: operations["tus_head_api_v4_resources_uploads_upload__upload_id__head"];
+        /**
+         * Tus Patch
+         * @description Handle PATCH request for tus protocol - upload chunk.
+         */
+        patch: operations["tus_patch_api_v4_resources_uploads_upload__upload_id__patch"];
+        trace?: never;
+    };
+    "/api/v4/resources/uploads/upload/{upload_id}/finalize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Save Upload
+         * @description Finalize a TUS upload and create upload record.
+         */
+        post: operations["save_upload_api_v4_resources_uploads_upload__upload_id__finalize_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5530,6 +5862,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/views/activity/problems/problems/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Activity Problems
+         * @description Get activity problems data from mv_activity_problems.
+         */
+        post: operations["get_activity_problems_api_v4_views_activity_problems_problems_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/views/activity/summary/get": {
         parameters: {
             query?: never;
@@ -5810,318 +6162,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/bulk/staff/process": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Process Staff
-         * @description Process CSV file and map columns to target fields.
-         */
-        post: operations["process_staff_api_v4_bulk_staff_process_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/bulk/staff/search": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Search Staff
-         * @description Search staff with query and filters.
-         */
-        post: operations["search_staff_api_v4_bulk_staff_search_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/bulk/staff/save": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Save Staff
-         * @description Bulk create or update staff members (upsert).
-         */
-        post: operations["save_staff_api_v4_bulk_staff_save_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/bulk/staff/delete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Delete Staff
-         * @description Bulk delete profiles.
-         */
-        post: operations["delete_staff_api_v4_bulk_staff_delete_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/bulk/document/process": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Process Document
-         * @description Process CSV file and map columns to target fields for documents.
-         */
-        post: operations["process_document_api_v4_bulk_document_process_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/bulk/document/search": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Search Document
-         * @description Search documents for bulk operations.
-         */
-        post: operations["search_document_api_v4_bulk_document_search_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/bulk/document/save": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Save Document
-         * @description Bulk create or update documents.
-         */
-        post: operations["save_document_api_v4_bulk_document_save_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/bulk/document/delete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Delete Document
-         * @description Bulk delete documents.
-         */
-        post: operations["delete_document_api_v4_bulk_document_delete_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/decrypt/key": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Decrypt Key
-         * @description Decrypt a key's encrypted value.
-         */
-        post: operations["decrypt_key_api_v4_decrypt_key_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/export/certificate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Export Certificate
-         * @description Generate a certificate PDF/text for a profile.
-         */
-        post: operations["export_certificate_api_v4_export_certificate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/export/report": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Export Report
-         * @description Export reports data as CSV or ZIP file.
-         */
-        post: operations["export_report_api_v4_export_report_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/uploads/get/{upload_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Upload
-         * @description Download an upload by ID. If preview=True and file is PDF, returns first page as PNG.
-         */
-        get: operations["get_upload_api_v4_uploads_get__upload_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/uploads/save": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Tus Creation
-         * @description Handle POST request for tus protocol - create upload.
-         */
-        post: operations["tus_creation_api_v4_uploads_save_post"];
-        delete?: never;
-        /**
-         * Tus Options
-         * @description Handle OPTIONS request for tus protocol discovery.
-         */
-        options: operations["tus_options_api_v4_uploads_save_options"];
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/uploads/save/{upload_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        /**
-         * Tus Options Upload Id
-         * @description Handle OPTIONS request for specific upload.
-         */
-        options: operations["tus_options_upload_id_api_v4_uploads_save__upload_id__options"];
-        /**
-         * Tus Head
-         * @description Handle HEAD request for tus protocol - get upload info.
-         */
-        head: operations["tus_head_api_v4_uploads_save__upload_id__head"];
-        /**
-         * Tus Patch
-         * @description Handle PATCH request for tus protocol - upload chunk.
-         */
-        patch: operations["tus_patch_api_v4_uploads_save__upload_id__patch"];
-        trace?: never;
-    };
-    "/api/v4/uploads/save/{upload_id}/finalize": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Save Upload
-         * @description Finalize a TUS upload and create upload record.
-         */
-        post: operations["save_upload_api_v4_uploads_save__upload_id__finalize_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v4/auth/login": {
         parameters: {
             query?: never;
@@ -6243,26 +6283,6 @@ export interface paths {
          * @description Create emulation grant and return default-idp redirect URL.
          */
         post: operations["authorize_emulation_api_v4_auth_emulate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/debug/debug": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Feedback
-         * @description Create new app feedback entry.
-         */
-        post: operations["create_feedback_api_v4_debug_debug_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7746,6 +7766,36 @@ export interface components {
             profile_id?: string | null;
         };
         /**
+         * ActivityAvailableEvent
+         * @description Available event type for the activity chart selector.
+         */
+        ActivityAvailableEvent: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /**
+             * Total Count
+             * @default 0
+             */
+            total_count: number;
+        };
+        /**
+         * ActivityChartPoint
+         * @description Single chart data point for activity metrics graph.
+         */
+        ActivityChartPoint: {
+            /** Date */
+            date: string;
+            /** Event Id */
+            event_id: string;
+            /**
+             * Count
+             * @default 0
+             */
+            count: number;
+        };
+        /**
          * ActivityDailyItem
          * @description Single day from mv_activity_daily.
          */
@@ -7863,6 +7913,34 @@ export interface components {
             call_id?: string | null;
         };
         /**
+         * ActivityProblemItem
+         * @description Single problem row from mv_activity_problems.
+         */
+        ActivityProblemItem: {
+            /**
+             * Problem Id
+             * Format: uuid
+             */
+            problem_id: string;
+            /** Type */
+            type?: string | null;
+            /** Message */
+            message?: string | null;
+            /**
+             * Resolved
+             * @default false
+             */
+            resolved: boolean;
+            /** Created At */
+            created_at?: string | null;
+            /** Updated At */
+            updated_at?: string | null;
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Profile Name */
+            profile_name?: string | null;
+        };
+        /**
          * ActivityRequest
          * @description Request for getting activity data.
          */
@@ -7901,6 +7979,32 @@ export interface components {
          * @description Response with activity data.
          */
         ActivityResponse: {
+            /**
+             * Sessions Count
+             * @default 0
+             */
+            sessions_count: number;
+            /**
+             * Active Profiles Count
+             * @default 0
+             */
+            active_profiles_count: number;
+            /**
+             * Logins Count
+             * @default 0
+             */
+            logins_count: number;
+            /**
+             * Drafts Count
+             * @default 0
+             */
+            drafts_count: number;
+            /** Chart Data */
+            chart_data?: components["schemas"]["ActivityChartPoint"][];
+            /** Available Events */
+            available_events?: components["schemas"]["ActivityAvailableEvent"][];
+            /** Problems */
+            problems?: components["schemas"]["ActivityProblemItem"][];
             views?: components["schemas"]["ActivityViews"];
             resources?: components["schemas"]["ActivityResources"];
             /**
@@ -7980,6 +8084,11 @@ export interface components {
              * @default 0
              */
             total_content_created: number;
+            /**
+             * Total Drafts
+             * @default 0
+             */
+            total_drafts: number;
             /**
              * Total Problems
              * @default 0
@@ -9147,6 +9256,18 @@ export interface components {
             next_sequential_options?: components["schemas"]["ContinuationOption"][] | null;
         };
         /**
+         * BenchmarkAgentItem
+         * @description Agent resource for benchmark.
+         */
+        BenchmarkAgentItem: {
+            /** Agent Id */
+            agent_id: string;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+        };
+        /**
          * BenchmarkAttemptFactsItem
          * @description Single attempt from mv_benchmark_attempt_facts.
          */
@@ -9290,6 +9411,18 @@ export interface components {
             passed_chats?: number | null;
         };
         /**
+         * BenchmarkDepartmentItem
+         * @description Department resource for benchmark.
+         */
+        BenchmarkDepartmentItem: {
+            /** Department Id */
+            department_id: string;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+        };
+        /**
          * BenchmarkErrorEvent
          * @description Server-to-client event: benchmark_error.
          *
@@ -9316,6 +9449,56 @@ export interface components {
             error_type?: string | null;
         };
         /**
+         * BenchmarkEvalItem
+         * @description Enriched eval item for benchmark overview.
+         */
+        BenchmarkEvalItem: {
+            /** Eval Id */
+            eval_id: string;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Rubric Id */
+            rubric_id?: string | null;
+            /** Rubric Name */
+            rubric_name?: string | null;
+            /** Agent Ids */
+            agent_ids?: string[];
+            /** Department Ids */
+            department_ids?: string[];
+            /**
+             * Use Groups
+             * @default false
+             */
+            use_groups: boolean;
+            /**
+             * Dynamic
+             * @default false
+             */
+            dynamic: boolean;
+            /**
+             * Total Runs
+             * @default 0
+             */
+            total_runs: number;
+            /**
+             * Completed Runs
+             * @default 0
+             */
+            completed_runs: number;
+            /**
+             * Pending Runs
+             * @default 0
+             */
+            pending_runs: number;
+            /**
+             * Status
+             * @default pending
+             */
+            status: string;
+        };
+        /**
          * BenchmarkEvalSummaryItem
          * @description Single eval from mv_benchmark_eval_summary.
          */
@@ -9331,6 +9514,12 @@ export interface components {
             agent_ids?: string[] | null;
             /** Department Ids */
             department_ids?: string[] | null;
+            /** Eval Name Id */
+            eval_name_id?: string | null;
+            /** Eval Description Id */
+            eval_description_id?: string | null;
+            /** Agent Name Ids */
+            agent_name_ids?: string[] | null;
             /** Created At */
             created_at?: string | null;
             /** Updated At */
@@ -9430,61 +9619,94 @@ export interface components {
          * @description Request for getting benchmark data.
          */
         BenchmarkRequest: {
-            /** Eval Id */
-            eval_id?: string | null;
-            /** Rubric Id */
-            rubric_id?: string | null;
-            /** Status */
-            status?: string | null;
-            /** Date From */
-            date_from?: string | null;
-            /** Date To */
-            date_to?: string | null;
-            /**
-             * Page Limit
-             * @default 50
-             */
-            page_limit: number;
-            /**
-             * Page Offset
-             * @default 0
-             */
-            page_offset: number;
-        };
-        /**
-         * BenchmarkResources
-         * @description Benchmark resource metadata.
-         */
-        BenchmarkResources: {
-            /** Evals */
-            evals?: {
-                [key: string]: {
-                    [key: string]: unknown;
-                };
-            };
-            /** Rubrics */
-            rubrics?: {
-                [key: string]: {
-                    [key: string]: unknown;
-                };
-            };
+            /** Department Ids */
+            department_ids?: string[];
         };
         /**
          * BenchmarkResponse
          * @description Response with benchmark data.
          */
         BenchmarkResponse: {
-            views?: components["schemas"]["BenchmarkViews"];
-            resources?: components["schemas"]["BenchmarkResources"];
-            /**
-             * Total Count
-             * @default 0
-             */
-            total_count: number;
-            /** Eval Options */
-            eval_options?: components["schemas"]["app__api__v4__artifacts__types__FilterOption"][];
+            /** Evals */
+            evals?: components["schemas"]["BenchmarkEvalItem"][];
+            /** Rubrics */
+            rubrics?: components["schemas"]["BenchmarkRubricItem"][];
+            /** Departments */
+            departments?: components["schemas"]["BenchmarkDepartmentItem"][];
+            /** Agents */
+            agents?: components["schemas"]["BenchmarkAgentItem"][];
+            /** Standard Groups */
+            standard_groups?: components["schemas"]["BenchmarkStandardGroupItem"][];
+            /** Standards */
+            standards?: components["schemas"]["BenchmarkStandardItem"][];
+            /** Rubric Standard Groups */
+            rubric_standard_groups?: components["schemas"]["BenchmarkRubricStandardGroupItem"][];
             /** Rubric Options */
             rubric_options?: components["schemas"]["app__api__v4__artifacts__types__FilterOption"][];
+            /** Department Options */
+            department_options?: components["schemas"]["app__api__v4__artifacts__types__FilterOption"][];
+            /** Agent Options */
+            agent_options?: components["schemas"]["app__api__v4__artifacts__types__FilterOption"][];
+        };
+        /**
+         * BenchmarkRubricItem
+         * @description Rubric resource for benchmark.
+         */
+        BenchmarkRubricItem: {
+            /** Rubric Id */
+            rubric_id: string;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Points */
+            points?: number | null;
+            /** Pass Points */
+            pass_points?: number | null;
+        };
+        /**
+         * BenchmarkRubricStandardGroupItem
+         * @description Mapping of rubric → standard_group → standard_ids.
+         */
+        BenchmarkRubricStandardGroupItem: {
+            /** Rubric Id */
+            rubric_id: string;
+            /** Standard Group Id */
+            standard_group_id: string;
+            /** Standard Ids */
+            standard_ids?: string[];
+        };
+        /**
+         * BenchmarkStandardGroupItem
+         * @description Standard group resource for benchmark.
+         */
+        BenchmarkStandardGroupItem: {
+            /** Standard Group Id */
+            standard_group_id: string;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Points */
+            points?: number | null;
+            /** Pass Points */
+            pass_points?: number | null;
+        };
+        /**
+         * BenchmarkStandardItem
+         * @description Standard resource for benchmark.
+         */
+        BenchmarkStandardItem: {
+            /** Standard Id */
+            standard_id: string;
+            /** Standard Group Id */
+            standard_group_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Points */
+            points?: number | null;
         };
         /**
          * BenchmarkStartPayload
@@ -9585,16 +9807,12 @@ export interface components {
              * @default 0
              */
             num_messages: number;
-        };
-        /**
-         * BenchmarkViews
-         * @description Benchmark view data.
-         */
-        BenchmarkViews: {
-            /** Attempt Facts */
-            attempt_facts?: components["schemas"]["BenchmarkAttemptFactsItem"][];
-            /** Eval Summary */
-            eval_summary?: components["schemas"]["BenchmarkEvalSummaryItem"][];
+            /** Eval Name Id */
+            eval_name_id?: string | null;
+            /** Eval Description Id */
+            eval_description_id?: string | null;
+            /** Rubric Id */
+            rubric_id?: string | null;
         };
         /** Body_token_default_idp_token_post */
         Body_token_default_idp_token_post: {
@@ -9776,6 +9994,18 @@ export interface components {
             parameter_ids?: string[];
             /** Field Ids */
             field_ids?: string[];
+            /** Persona Parameter Field Ids */
+            persona_parameter_field_ids?: string[];
+            /** Persona Parameter Ids */
+            persona_parameter_ids?: string[];
+            /** Persona Field Ids */
+            persona_field_ids?: string[];
+            /** Document Parameter Field Ids */
+            document_parameter_field_ids?: string[];
+            /** Document Parameter Ids */
+            document_parameter_ids?: string[];
+            /** Document Field Ids */
+            document_field_ids?: string[];
             /**
              * Attempt Created At
              * Format: date-time
@@ -10128,22 +10358,6 @@ export interface components {
             /** Emulate Page Url */
             emulate_page_url?: string | null;
         };
-        /** CreateFeedbackRequest */
-        CreateFeedbackRequest: {
-            /** Type */
-            type: string;
-            /** Message */
-            message: string;
-        };
-        /** CreateFeedbackResponse */
-        CreateFeedbackResponse: {
-            /** Feedback Id */
-            feedback_id: string;
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
         /** CreateOrUpdateProfileApiRequest */
         CreateOrUpdateProfileApiRequest: {
             /** Name */
@@ -10181,6 +10395,22 @@ export interface components {
             actor_name?: string | null;
             /** Session Id */
             session_id?: string | null;
+        };
+        /** CreateProblemRequest */
+        CreateProblemRequest: {
+            /** Type */
+            type: string;
+            /** Message */
+            message: string;
+        };
+        /** CreateProblemResponse */
+        CreateProblemResponse: {
+            /** Problem Id */
+            problem_id: string;
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
         };
         /**
          * DailyMetricsItem
@@ -10257,6 +10487,14 @@ export interface components {
             insights?: components["schemas"]["DashboardInsights"] | null;
             /** Simulation Options */
             simulation_options?: components["schemas"]["app__api__v4__artifacts__types__FilterOption"][];
+            /** Profile Name */
+            profile_name?: string | null;
+            /** Profile Emails */
+            profile_emails?: string[] | null;
+            /** Profile Primary Email */
+            profile_primary_email?: string | null;
+            /** Profile Role */
+            profile_role?: string | null;
         };
         /** DashboardFieldMeta */
         DashboardFieldMeta: {
@@ -11752,6 +11990,48 @@ export interface components {
             total_count: number;
         };
         /**
+         * GetActivityProblemsRequest
+         * @description Request for activity problems view.
+         */
+        GetActivityProblemsRequest: {
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Resolved */
+            resolved?: boolean | null;
+            /** Date From */
+            date_from?: string | null;
+            /** Date To */
+            date_to?: string | null;
+            /**
+             * Sort Order
+             * @default desc
+             */
+            sort_order: string;
+            /**
+             * Page Limit
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @default 0
+             */
+            page_offset: number;
+        };
+        /**
+         * GetActivityProblemsResponse
+         * @description Response for activity problems view.
+         */
+        GetActivityProblemsResponse: {
+            /** Items */
+            items?: components["schemas"]["ActivityProblemItem"][];
+            /**
+             * Total Count
+             * @default 0
+             */
+            total_count: number;
+        };
+        /**
          * GetActivitySessionFactsRequest
          * @description Request for getting activity session facts.
          */
@@ -12286,6 +12566,8 @@ export interface components {
              * @default false
              */
             practice: boolean;
+            /** Target Profile Id */
+            target_profile_id?: string | null;
             /** Start Date */
             start_date?: string | null;
             /** End Date */
@@ -13770,7 +14052,12 @@ export interface components {
          * GetHealthAnalyticsRequest
          * @description Request for health analytics bundle.
          */
-        GetHealthAnalyticsRequest: Record<string, never>;
+        GetHealthAnalyticsRequest: {
+            /** Start Date */
+            start_date?: string | null;
+            /** End Date */
+            end_date?: string | null;
+        };
         /**
          * GetHealthAnalyticsResponse
          * @description Response for health analytics bundle.
@@ -14667,20 +14954,12 @@ export interface components {
             description_create_tool_id?: string | null;
             /** Color Create Tool Id */
             color_create_tool_id?: string | null;
-            /** Icon Create Tool Id */
-            icon_create_tool_id?: string | null;
             /** Instructions Create Tool Id */
             instructions_create_tool_id?: string | null;
-            /** Flag Create Tool Id */
-            flag_create_tool_id?: string | null;
-            /** Departments Create Tool Id */
-            departments_create_tool_id?: string | null;
             /** Parameter Fields Create Tool Id */
             parameter_fields_create_tool_id?: string | null;
             /** Examples Create Tool Id */
             examples_create_tool_id?: string | null;
-            /** Parameters Create Tool Id */
-            parameters_create_tool_id?: string | null;
             /** Name Link Tool Id */
             name_link_tool_id?: string | null;
             /** Description Link Tool Id */
@@ -16795,14 +17074,26 @@ export interface components {
          * @description Request for benchmark test list artifact.
          */
         GetTestListRequest: {
-            /** Eval Id */
-            eval_id?: string | null;
+            /** Eval Ids */
+            eval_ids?: string[];
+            /** Department Ids */
+            department_ids?: string[];
+            /**
+             * Page
+             * @default 0
+             */
+            page: number;
+            /**
+             * Page Size
+             * @default 10
+             */
+            page_size: number;
+            /** Search */
+            search?: string | null;
+            /** Status */
+            status?: string | null;
             /** Archived */
             archived?: boolean | null;
-            /** Date From */
-            date_from?: string | null;
-            /** Date To */
-            date_to?: string | null;
             /**
              * Sort By
              * @default date
@@ -16813,16 +17104,6 @@ export interface components {
              * @default desc
              */
             sort_order: string;
-            /**
-             * Page Limit
-             * @default 50
-             */
-            page_limit: number;
-            /**
-             * Page Offset
-             * @default 0
-             */
-            page_offset: number;
         };
         /**
          * GetTestListResponse
@@ -16837,15 +17118,15 @@ export interface components {
              */
             total_count: number;
             /**
-             * Page Limit
-             * @default 50
-             */
-            page_limit: number;
-            /**
-             * Page Offset
+             * Page
              * @default 0
              */
-            page_offset: number;
+            page: number;
+            /**
+             * Page Size
+             * @default 10
+             */
+            page_size: number;
             /** Eval Options */
             eval_options?: components["schemas"]["TestListFilterOption"][];
         };
@@ -17296,6 +17577,12 @@ export interface components {
             agent_id?: string | null;
             /** Profile Id */
             profile_id?: string | null;
+            /** Model Name Id */
+            model_name_id?: string | null;
+            /** Agent Name Id */
+            agent_name_id?: string | null;
+            /** Profile Name Id */
+            profile_name_id?: string | null;
         };
         /**
          * GroupListItem
@@ -19777,6 +20064,10 @@ export interface components {
             model_id?: string | null;
             /** Agent Id */
             agent_id?: string | null;
+            /** Model Name Id */
+            model_name_id?: string | null;
+            /** Agent Name Id */
+            agent_name_id?: string | null;
             /**
              * Run Count
              * @default 0
@@ -19931,6 +20222,12 @@ export interface components {
             primary_agent_id?: string | null;
             /** Primary Model Id */
             primary_model_id?: string | null;
+            /** Primary Model Name Id */
+            primary_model_name_id?: string | null;
+            /** Primary Agent Name Id */
+            primary_agent_name_id?: string | null;
+            /** Profile Name Id */
+            profile_name_id?: string | null;
             /** First Run At */
             first_run_at?: string | null;
             /** Last Run At */
@@ -19998,6 +20295,10 @@ export interface components {
             agent_ids?: string[] | null;
             /** Model Ids */
             model_ids?: string[] | null;
+            /** Agent Name Ids */
+            agent_name_ids?: string[] | null;
+            /** Model Name Ids */
+            model_name_ids?: string[] | null;
         };
         /**
          * PricingModelItem
@@ -23992,6 +24293,10 @@ export interface components {
             /** First Attempt Pass Rate */
             first_attempt_pass_rate?: number | null;
             profile_metrics?: components["schemas"]["ReportsProfileMetrics"] | null;
+            /** Simulation Ids */
+            simulation_ids?: string[];
+            /** Scenario Ids */
+            scenario_ids?: string[];
         };
         /**
          * ReportsLeaderboardSection
@@ -24211,6 +24516,10 @@ export interface components {
             name?: string | null;
             /** Role */
             role?: string | null;
+            /** Emails */
+            emails?: string[];
+            /** Primary Email */
+            primary_email?: string | null;
         };
         /**
          * ReportsRequest
@@ -24444,6 +24753,34 @@ export interface components {
         RequestLimitsApiResponse: {
             /** Request Limits Id */
             request_limits_id?: string | null;
+        };
+        /** ResolveProblemRequest */
+        ResolveProblemRequest: {
+            /**
+             * Problem Id
+             * Format: uuid
+             */
+            problem_id: string;
+            /**
+             * Resolved
+             * @default true
+             */
+            resolved: boolean;
+        };
+        /** ResolveProblemResponse */
+        ResolveProblemResponse: {
+            /**
+             * Problem Id
+             * Format: uuid
+             */
+            problem_id: string;
+            /** Resolved */
+            resolved: boolean;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /**
          * ResponseItem
@@ -27011,42 +27348,45 @@ export interface components {
          * @description List row for benchmark tests.
          */
         TestListItem: {
-            /**
-             * Test Id
-             * Format: uuid
-             */
-            test_id: string;
+            /** Attempt Id */
+            attempt_id: string;
             /** Eval Id */
             eval_id?: string | null;
-            /** Profile Id */
-            profile_id?: string | null;
+            /** Eval Name */
+            eval_name?: string | null;
+            /** Eval Description */
+            eval_description?: string | null;
+            /** Rubric Id */
+            rubric_id?: string | null;
+            /** Rubric Name */
+            rubric_name?: string | null;
+            /** Created At */
+            created_at?: string | null;
             /**
              * Archived
              * @default false
              */
             archived: boolean;
-            /** Created At */
-            created_at?: string | null;
-            /**
-             * Num Chats
-             * @default 0
-             */
-            num_chats: number;
-            /**
-             * Num Chats Completed
-             * @default 0
-             */
-            num_chats_completed: number;
-            /**
-             * Num Messages
-             * @default 0
-             */
-            num_messages: number;
             /**
              * Status
              * @default pending
              */
             status: string;
+            /**
+             * Total Runs
+             * @default 0
+             */
+            total_runs: number;
+            /**
+             * Completed Runs
+             * @default 0
+             */
+            completed_runs: number;
+            /**
+             * Pending Runs
+             * @default 0
+             */
+            pending_runs: number;
         };
         /**
          * TestProgressEvent
@@ -28761,6 +29101,154 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PatchDocumentDraftApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    process_document_api_v4_documents_bulk_process_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProcessDocumentCsvApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProcessDocumentCsvApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_document_api_v4_documents_bulk_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetDocumentsListApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetDocumentsListApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_document_api_v4_documents_bulk_save_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveDocumentApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SaveDocumentApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_document_api_v4_documents_bulk_delete_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeleteDocumentApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeleteDocumentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -31142,6 +31630,154 @@ export interface operations {
             };
         };
     };
+    process_staff_api_v4_profiles_bulk_process_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProcessCsvApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProcessCsvApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_staff_api_v4_profiles_bulk_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetStaffSearchApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetStaffSearchApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_staff_api_v4_profiles_bulk_save_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpsertStaffApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UpsertStaffApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_staff_api_v4_profiles_bulk_delete_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkDeleteStaffApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkDeleteStaffApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_auth_api_v4_auths_get_post: {
         parameters: {
             query?: never;
@@ -32030,6 +32666,43 @@ export interface operations {
             };
         };
     };
+    export_report_api_v4_artifacts_reports_export_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExportRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_reports_api_v4_artifacts_reports_get_post: {
         parameters: {
             query?: never;
@@ -32289,6 +32962,43 @@ export interface operations {
             };
         };
     };
+    create_problem_api_v4_artifacts_activity_problem_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateProblemRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateProblemResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     activity_refresh_api_v4_artifacts_activity_refresh_post: {
         parameters: {
             query?: never;
@@ -32313,6 +33023,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RefreshMvSessionsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resolve_problem_api_v4_artifacts_activity_resolve_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResolveProblemRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResolveProblemResponse"];
                 };
             };
             /** @description Validation Error */
@@ -34126,6 +34873,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["KeysApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    decrypt_key_api_v4_resources_keys_decrypt_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetKeyForDecryptApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetKeyForDecryptApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -36692,6 +37476,44 @@ export interface operations {
             };
         };
     };
+    get_upload_api_v4_resources_uploads_download__upload_id__get: {
+        parameters: {
+            query?: {
+                /** @description Return preview image for PDFs */
+                preview?: boolean;
+            };
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path: {
+                upload_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_uploads_api_v4_resources_uploads_get_post: {
         parameters: {
             query?: never;
@@ -36716,6 +37538,212 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetUploadsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    tus_creation_api_v4_resources_uploads_upload_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    tus_options_api_v4_resources_uploads_upload_options: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    tus_options_upload_id_api_v4_resources_uploads_upload__upload_id__options: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path: {
+                upload_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    tus_head_api_v4_resources_uploads_upload__upload_id__head: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path: {
+                upload_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    tus_patch_api_v4_resources_uploads_upload__upload_id__patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path: {
+                upload_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_upload_api_v4_resources_uploads_upload__upload_id__finalize_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path: {
+                upload_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FinalizeUploadApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -37733,6 +38761,43 @@ export interface operations {
             };
         };
     };
+    get_activity_problems_api_v4_views_activity_problems_problems_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetActivityProblemsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetActivityProblemsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_activity_summary_api_v4_views_activity_summary_get_post: {
         parameters: {
             query?: never;
@@ -38241,657 +39306,6 @@ export interface operations {
             };
         };
     };
-    process_staff_api_v4_bulk_staff_process_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ProcessCsvApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProcessCsvApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    search_staff_api_v4_bulk_staff_search_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetStaffSearchApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetStaffSearchApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    save_staff_api_v4_bulk_staff_save_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpsertStaffApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UpsertStaffApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_staff_api_v4_bulk_staff_delete_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BulkDeleteStaffApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BulkDeleteStaffApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    process_document_api_v4_bulk_document_process_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ProcessDocumentCsvApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProcessDocumentCsvApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    search_document_api_v4_bulk_document_search_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetDocumentsListApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetDocumentsListApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    save_document_api_v4_bulk_document_save_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SaveDocumentApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SaveDocumentApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_document_api_v4_bulk_document_delete_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DeleteDocumentApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DeleteDocumentApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    decrypt_key_api_v4_decrypt_key_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetKeyForDecryptApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetKeyForDecryptApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    export_certificate_api_v4_export_certificate_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetCertificateDataApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    export_report_api_v4_export_report_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ExportRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_upload_api_v4_uploads_get__upload_id__get: {
-        parameters: {
-            query?: {
-                /** @description Return preview image for PDFs */
-                preview?: boolean;
-            };
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path: {
-                upload_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    tus_creation_api_v4_uploads_save_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    tus_options_api_v4_uploads_save_options: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    tus_options_upload_id_api_v4_uploads_save__upload_id__options: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path: {
-                upload_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    tus_head_api_v4_uploads_save__upload_id__head: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path: {
-                upload_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    tus_patch_api_v4_uploads_save__upload_id__patch: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path: {
-                upload_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    save_upload_api_v4_uploads_save__upload_id__finalize_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path: {
-                upload_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FinalizeUploadApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_login_providers_api_v4_auth_login_post: {
         parameters: {
             query?: never;
@@ -39101,43 +39515,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CreateEmulationGrantApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_feedback_api_v4_debug_debug_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateFeedbackRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateFeedbackResponse"];
                 };
             };
             /** @description Validation Error */

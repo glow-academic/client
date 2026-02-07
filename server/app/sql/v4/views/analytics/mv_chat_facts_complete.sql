@@ -102,6 +102,52 @@ chat_parameter_fields AS (
        AND pfr.active = TRUE
     WHERE cpfc.active = TRUE
     GROUP BY cpfc.chat_id
+),
+-- Persona parameter/field resource IDs per chat (bridge entry→resource via persona_personas_junction)
+chat_persona_parameter_fields AS (
+    SELECT
+        cpc.chat_id,
+        ARRAY_AGG(DISTINCT ppfj.parameter_field_id ORDER BY ppfj.parameter_field_id)
+            FILTER (WHERE ppfj.parameter_field_id IS NOT NULL) AS persona_parameter_field_ids,
+        ARRAY_AGG(DISTINCT pfr.parameter_id ORDER BY pfr.parameter_id)
+            FILTER (WHERE pfr.parameter_id IS NOT NULL) AS persona_parameter_ids,
+        ARRAY_AGG(DISTINCT pfr.field_id ORDER BY pfr.field_id)
+            FILTER (WHERE pfr.field_id IS NOT NULL) AS persona_field_ids
+    FROM simulation_chats_personas_connection cpc
+    JOIN persona_personas_junction ppj
+        ON ppj.personas_id = cpc.personas_id
+       AND ppj.active = TRUE
+    JOIN persona_parameter_fields_junction ppfj
+        ON ppfj.persona_id = ppj.persona_id
+       AND ppfj.active = TRUE
+    LEFT JOIN parameter_fields_resource pfr
+        ON pfr.id = ppfj.parameter_field_id
+       AND pfr.active = TRUE
+    WHERE cpc.active = TRUE
+    GROUP BY cpc.chat_id
+),
+-- Document parameter/field resource IDs per chat (bridge entry→resource via document_documents_junction)
+chat_document_parameter_fields AS (
+    SELECT
+        cdc.chat_id,
+        ARRAY_AGG(DISTINCT dpfj.parameter_field_id ORDER BY dpfj.parameter_field_id)
+            FILTER (WHERE dpfj.parameter_field_id IS NOT NULL) AS document_parameter_field_ids,
+        ARRAY_AGG(DISTINCT pfr.parameter_id ORDER BY pfr.parameter_id)
+            FILTER (WHERE pfr.parameter_id IS NOT NULL) AS document_parameter_ids,
+        ARRAY_AGG(DISTINCT pfr.field_id ORDER BY pfr.field_id)
+            FILTER (WHERE pfr.field_id IS NOT NULL) AS document_field_ids
+    FROM simulation_chats_documents_connection cdc
+    JOIN document_documents_junction ddj
+        ON ddj.documents_id = cdc.documents_id
+       AND ddj.active = TRUE
+    JOIN document_parameter_fields_junction dpfj
+        ON dpfj.document_id = ddj.document_id
+       AND dpfj.active = TRUE
+    LEFT JOIN parameter_fields_resource pfr
+        ON pfr.id = dpfj.parameter_field_id
+       AND pfr.active = TRUE
+    WHERE cdc.active = TRUE
+    GROUP BY cdc.chat_id
 )
 SELECT
     -- Primary key
@@ -123,6 +169,12 @@ SELECT
     COALESCE(cpf.parameter_field_ids, ARRAY[]::uuid[]) AS parameter_field_ids,
     COALESCE(cpf.parameter_ids, ARRAY[]::uuid[]) AS parameter_ids,
     COALESCE(cpf.field_ids, ARRAY[]::uuid[]) AS field_ids,
+    COALESCE(cppf.persona_parameter_field_ids, ARRAY[]::uuid[]) AS persona_parameter_field_ids,
+    COALESCE(cppf.persona_parameter_ids, ARRAY[]::uuid[]) AS persona_parameter_ids,
+    COALESCE(cppf.persona_field_ids, ARRAY[]::uuid[]) AS persona_field_ids,
+    COALESCE(cdpf.document_parameter_field_ids, ARRAY[]::uuid[]) AS document_parameter_field_ids,
+    COALESCE(cdpf.document_parameter_ids, ARRAY[]::uuid[]) AS document_parameter_ids,
+    COALESCE(cdpf.document_field_ids, ARRAY[]::uuid[]) AS document_field_ids,
 
     -- Timestamps
     a.created_at AS attempt_created_at,
@@ -166,6 +218,8 @@ JOIN simulation_chats_scenarios_connection csc ON csc.chat_id = c.id
 -- Chat connections (optional)
 LEFT JOIN chat_persona cp ON cp.chat_id = c.id
 LEFT JOIN chat_parameter_fields cpf ON cpf.chat_id = c.id
+LEFT JOIN chat_persona_parameter_fields cppf ON cppf.chat_id = c.id
+LEFT JOIN chat_document_parameter_fields cdpf ON cdpf.chat_id = c.id
 -- Grade data (optional)
 LEFT JOIN latest_grade lg ON lg.chat_id = c.id
 LEFT JOIN grade_rubric gr ON gr.grade_id = lg.grade_id
@@ -225,6 +279,24 @@ CREATE INDEX mv_chat_facts_parameter_ids_gin_idx
 
 CREATE INDEX mv_chat_facts_field_ids_gin_idx
     ON mv_chat_facts USING GIN (field_ids);
+
+CREATE INDEX mv_chat_facts_persona_parameter_field_ids_gin_idx
+    ON mv_chat_facts USING GIN (persona_parameter_field_ids);
+
+CREATE INDEX mv_chat_facts_persona_parameter_ids_gin_idx
+    ON mv_chat_facts USING GIN (persona_parameter_ids);
+
+CREATE INDEX mv_chat_facts_persona_field_ids_gin_idx
+    ON mv_chat_facts USING GIN (persona_field_ids);
+
+CREATE INDEX mv_chat_facts_document_parameter_field_ids_gin_idx
+    ON mv_chat_facts USING GIN (document_parameter_field_ids);
+
+CREATE INDEX mv_chat_facts_document_parameter_ids_gin_idx
+    ON mv_chat_facts USING GIN (document_parameter_ids);
+
+CREATE INDEX mv_chat_facts_document_field_ids_gin_idx
+    ON mv_chat_facts USING GIN (document_field_ids);
 
 -- Time indexes
 CREATE INDEX mv_chat_facts_attempt_created_at_idx

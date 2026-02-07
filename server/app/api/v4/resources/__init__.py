@@ -143,9 +143,11 @@ from app.api.v4.resources.items.get import router as items_get_router
 router.include_router(items_router)
 router.include_router(items_get_router)
 from app.api.v4.resources.keys.create import router as keys_router
+from app.api.v4.resources.keys.decrypt import router as keys_decrypt_router
 from app.api.v4.resources.keys.get import router as keys_get_router
 
 router.include_router(keys_router)
+router.include_router(keys_decrypt_router)
 router.include_router(keys_get_router)
 # NOTE: modalities removed - non-creatable (migration 328)
 # NOTE: models removed - non-creatable, sync via artifact save (migration 328)
@@ -378,7 +380,11 @@ from app.api.v4.resources.voices.get import router as voices_get_router
 router.include_router(voices_router)
 router.include_router(voices_get_router)
 from app.api.v4.resources.uploads.create import router as uploads_router
+from app.api.v4.resources.uploads.download import router as uploads_download_router
 from app.api.v4.resources.uploads.get import router as uploads_get_router
+from app.api.v4.resources.uploads.upload import router as uploads_upload_router
 
 router.include_router(uploads_router)
+router.include_router(uploads_download_router)
 router.include_router(uploads_get_router)
+router.include_router(uploads_upload_router)

@@ -50,6 +50,11 @@ SELECT
     MODE() WITHIN GROUP (ORDER BY rpf.agent_id) AS primary_agent_id,
     MODE() WITHIN GROUP (ORDER BY rpf.model_id) AS primary_model_id,
 
+    -- Name resource IDs (pre-resolved for lightweight hydration via get_names_internal)
+    MODE() WITHIN GROUP (ORDER BY rpf.model_name_id) AS primary_model_name_id,
+    MODE() WITHIN GROUP (ORDER BY rpf.agent_name_id) AS primary_agent_name_id,
+    MODE() WITHIN GROUP (ORDER BY rpf.profile_name_id) AS profile_name_id,
+
     -- Timestamps
     MIN(rpf.run_created_at) AS first_run_at,
     MAX(rpf.run_created_at) AS last_run_at,
@@ -77,7 +82,11 @@ SELECT
 
     -- Arrays of distinct IDs for filtering
     ARRAY_AGG(DISTINCT rpf.agent_id) FILTER (WHERE rpf.agent_id IS NOT NULL) AS agent_ids,
-    ARRAY_AGG(DISTINCT rpf.model_id) FILTER (WHERE rpf.model_id IS NOT NULL) AS model_ids
+    ARRAY_AGG(DISTINCT rpf.model_id) FILTER (WHERE rpf.model_id IS NOT NULL) AS model_ids,
+
+    -- Arrays of distinct name resource IDs for batch hydration
+    ARRAY_AGG(DISTINCT rpf.agent_name_id) FILTER (WHERE rpf.agent_name_id IS NOT NULL) AS agent_name_ids,
+    ARRAY_AGG(DISTINCT rpf.model_name_id) FILTER (WHERE rpf.model_name_id IS NOT NULL) AS model_name_ids
 
 FROM mv_pricing_run_facts rpf
 WHERE rpf.group_id IS NOT NULL

@@ -212,6 +212,7 @@ export default async function ReportsPage({
           }
         >
           <ReportHistorySection
+            profileId={profileId}
             defaultFilters={filters}
             historyPage={historyPage}
             historyPageSize={historyPageSize}
@@ -230,6 +231,7 @@ export default async function ReportsPage({
 
 /** ---- Inline history section component (only used here) ---- */
 async function ReportHistorySection({
+  profileId,
   defaultFilters,
   historyPage,
   historyPageSize,
@@ -240,6 +242,7 @@ async function ReportHistorySection({
   historySortBy,
   historySortOrder,
 }: {
+  profileId: string;
   defaultFilters: {
     startDate: string;
     endDate: string;
@@ -262,6 +265,7 @@ async function ReportHistorySection({
   const historyFilters: ReportHistoryIn = {
     body: {
       practice: false,
+      target_profile_id: profileId,
       start_date: defaultFilters.startDate,
       end_date: defaultFilters.endDate,
       department_ids: defaultFilters.departmentIds,
@@ -340,4 +344,10 @@ async function ReportHistorySection({
 }
 
 /** ---- Export types for client component (type-only imports) ---- */
+export type GetProfileOut = {
+  name: string | null;
+  emails: string[] | null;
+  primary_email: string | null;
+  role: string | null;
+};
 export type { ReportHistoryIn, ReportHistoryOut, ReportsOverviewIn, ReportsOverviewOut };

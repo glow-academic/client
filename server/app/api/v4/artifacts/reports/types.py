@@ -146,6 +146,8 @@ class ReportsLeaderboardRow(BaseModel):
     completion_percentage: float | None = None
     first_attempt_pass_rate: float | None = None
     profile_metrics: ReportsProfileMetrics | None = None
+    simulation_ids: list[str] = Field(default_factory=list)
+    scenario_ids: list[str] = Field(default_factory=list)
 
 
 class ReportsLeaderboardSection(BaseModel):
@@ -231,6 +233,8 @@ class ReportsProfileResource(BaseModel):
     profile_id: str | None = None
     name: str | None = None
     role: str | None = None
+    emails: list[str] = Field(default_factory=list)
+    primary_email: str | None = None
 
 
 class ReportsScenarioResource(BaseModel):
