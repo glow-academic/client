@@ -1629,7 +1629,7 @@ def compute_footer_metrics(
     scenario_stats = {
         "numeric_attempt_facts": numeric_attempt_facts,
         "numeric_scenario_facts": numeric_scenario_facts,
-        "valid_persona_doc_parameter_ids": valid_persona_doc_parameter_ids,
+        "valid_numeric_parameter_ids": valid_persona_doc_parameter_ids,
         "status": scenario_stats_status,
     }
 
