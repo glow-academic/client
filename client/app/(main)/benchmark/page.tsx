@@ -10,9 +10,12 @@ import EvalHistory from "@/components/benchmark/EvalHistory";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
+import {
+  computeAnalyticsDefaults,
+  resolveAnalyticsFilters,
+} from "@/lib/search-params/analytics-defaults";
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { getLayoutContext } from "../layout-server";
 import { loadBenchmarkSearchParams } from "./searchParams";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -91,27 +94,14 @@ export default async function BenchmarkPage({
   // Parse search params via nuqs loader
   const q = loadBenchmarkSearchParams(await searchParams);
 
-  // Get profileId and departmentIds from profile context
-  let profileContext;
-  try {
-    profileContext = await getLayoutContext({
-      body: {},
-    });
-  } catch (error) {
-    if (
-      error instanceof Error &&
-      "status" in error &&
-      (error as { status: number }).status === 401
-    ) {
-      throw error;
-    }
-    throw error;
-  }
+  // Compute defaults and resolve filters (departments, date range)
+  const { defaults, profileContext } = await computeAnalyticsDefaults();
+  const defaultFilters = resolveAnalyticsFilters(q, defaults, profileContext);
 
   // Build benchmark overview filters (department_ids only)
   const overviewFilters: BenchmarkOverviewIn = {
     body: {
-      department_ids: profileContext.department_ids || [],
+      department_ids: defaultFilters.departmentIds,
     },
   };
 
@@ -237,6 +227,9 @@ export default async function BenchmarkPage({
     historyArchived === undefined ? "all" : historyArchived ? "true" : "false",
     historySortBy,
     historySortOrder,
+    defaultFilters.startDate,
+    defaultFilters.endDate,
+    defaultFilters.departmentIds.join(","),
   ].join("|");
 
   // Build rubric mappings from evals list response
@@ -324,6 +317,7 @@ export default async function BenchmarkPage({
           }
         >
           <BenchmarkHistorySection
+            defaultFilters={defaultFilters}
             historyPage={historyPage}
             historyPageSize={historyPageSize}
             historySearch={historySearch}
@@ -332,7 +326,6 @@ export default async function BenchmarkPage({
             historyArchived={historyArchived}
             historySortBy={historySortBy}
             historySortOrder={historySortOrder}
-            departmentIds={profileContext.department_ids || []}
           />
         </Suspense>
       </div>
@@ -342,6 +335,7 @@ export default async function BenchmarkPage({
 
 /** ---- Inline history section component (only used here) ---- */
 async function BenchmarkHistorySection({
+  defaultFilters,
   historyPage,
   historyPageSize,
   historySearch,
@@ -350,8 +344,12 @@ async function BenchmarkHistorySection({
   historyArchived,
   historySortBy,
   historySortOrder,
-  departmentIds,
 }: {
+  defaultFilters: {
+    startDate: string;
+    endDate: string;
+    departmentIds: string[];
+  };
   historyPage: number;
   historyPageSize: number;
   historySearch?: string | undefined;
@@ -360,11 +358,10 @@ async function BenchmarkHistorySection({
   historyArchived?: boolean | undefined;
   historySortBy: string;
   historySortOrder: string;
-  departmentIds: string[];
 }) {
   const historyFilters: BenchmarkHistoryIn = {
     body: {
-      department_ids: departmentIds,
+      department_ids: defaultFilters.departmentIds,
       page: historyPage,
       page_size: historyPageSize,
       ...(historySearch && { search: historySearch }),
@@ -391,6 +388,7 @@ async function BenchmarkHistorySection({
         pageIndex={historyPage}
         pageSize={historyPageSize}
         isLoading={false}
+        showCustomize={true}
       />
     </div>
   );

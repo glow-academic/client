@@ -126,6 +126,10 @@ function MainLayoutContent({
     return pathname === "/health";
   }, [pathname]);
 
+  const isBenchmarkPage = useMemo(() => {
+    return pathname === "/benchmark";
+  }, [pathname]);
+
   const canShowAnalyticsFilters = useMemo(() => {
     // Show filters on leaderboard page for all authorized users
     if (pathname === "/leaderboard") {
@@ -143,7 +147,7 @@ function MainLayoutContent({
     return (
       profile?.role &&
       allowedRoles.includes(profile.role) &&
-      (isAnalyticsPage || isHomePage || isPracticePage) &&
+      (isAnalyticsPage || isHomePage || isPracticePage || isBenchmarkPage) &&
       !pathname.includes("/edit") &&
       !isPricingGroupPage
     );
@@ -153,6 +157,7 @@ function MainLayoutContent({
     pathname,
     isHomePage,
     isPracticePage,
+    isBenchmarkPage,
     isPricingGroupPage,
     isHealthPage,
   ]);
@@ -419,6 +424,7 @@ function MainLayoutContent({
                 homePage={isHomePage}
                 reportPage={isReportPage}
                 practicePage={isPracticePage}
+                benchmarkPage={isBenchmarkPage}
                 healthPage={isHealthPage}
                 refreshPage={refreshPageAction}
               />

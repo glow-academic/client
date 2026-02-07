@@ -50,6 +50,7 @@ export interface AnalyticsFiltersProps {
   homePage?: boolean;
   reportPage?: boolean;
   practicePage?: boolean;
+  benchmarkPage?: boolean;
   healthPage?: boolean;
   refreshPage: RefreshPageFn;
 }
@@ -58,6 +59,7 @@ export function AnalyticsFilters({
   homePage = false,
   reportPage = false,
   practicePage = false,
+  benchmarkPage = false,
   healthPage = false,
   refreshPage,
 }: AnalyticsFiltersProps) {
@@ -65,6 +67,10 @@ export function AnalyticsFilters({
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  // Derive pricing/activity page from pathname (these are analytics sub-pages)
+  const isPricingPage = pathname.startsWith("/analytics/pricing");
+  const isActivityPage = pathname.startsWith("/analytics/activity");
   const {
     startDate,
     endDate,
@@ -346,16 +352,17 @@ export function AnalyticsFilters({
               </Button>
             )}
 
-            {/* General/Practice/Archived Selector - hide on home, practice, and health pages */}
-            {!homePage && !practicePage && !healthPage && (
+            {/* General/Practice/Archived Selector - hide on home, practice, pricing, activity, and health pages */}
+            {!homePage && !practicePage && !isPricingPage && !isActivityPage && !healthPage && (
               <AttemptSelector
+                options={benchmarkPage ? ["general", "archived"] : ["general", "practice", "archived"]}
                 selected={attemptSelected}
                 onChange={(vals) => {
                   // Update UI state first
                   setAttemptSelected(vals);
-                  // Empty selection means all attempts (all three modes on)
+                  // Empty selection means all attempts (all available modes on)
                   if (vals.length === 0) {
-                    setSimulationFilters(["general", "practice", "archived"]);
+                    setSimulationFilters(benchmarkPage ? ["general", "archived"] : ["general", "practice", "archived"]);
                     return;
                   }
                   setSimulationFilters(vals);
@@ -364,8 +371,8 @@ export function AnalyticsFilters({
               />
             )}
 
-            {/* Role Picker - hide on home, report, practice, and health pages */}
-            {!homePage && !reportPage && !practicePage && !healthPage && (
+            {/* Role Picker - hide on home, report, practice, benchmark, and health pages */}
+            {!homePage && !reportPage && !practicePage && !benchmarkPage && !healthPage && (
               <RoleSelector
                 roles={
                   selectedCohortIds.length > 0
@@ -381,8 +388,8 @@ export function AnalyticsFilters({
               />
             )}
 
-            {/* Cohort Picker - hide on health page */}
-            {!healthPage && activeCohorts.length > 1 && (
+            {/* Cohort Picker - hide on benchmark, pricing, activity, and health pages */}
+            {!benchmarkPage && !isPricingPage && !isActivityPage && !healthPage && activeCohorts.length > 1 && (
               <CohortSelector
                 cohorts={cohortOptions}
                 selectedCohorts={selectedCohorts}

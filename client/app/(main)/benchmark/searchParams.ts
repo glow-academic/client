@@ -3,7 +3,10 @@
  * Uses nuqs/server for type-safe URL search param parsing.
  */
 
-import { parseAsCommaSeparatedArray } from "@/lib/search-params/analytics";
+import {
+  analyticsSearchParams,
+  parseAsCommaSeparatedArray,
+} from "@/lib/search-params/analytics";
 import {
   createLoader,
   parseAsBoolean,
@@ -12,6 +15,7 @@ import {
 } from "nuqs/server";
 
 export const benchmarkSearchParams = {
+  ...analyticsSearchParams,
   historyPage: parseAsInteger,
   historyPageSize: parseAsInteger,
   historySearch: parseAsString,
