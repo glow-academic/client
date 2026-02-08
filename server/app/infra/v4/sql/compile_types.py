@@ -193,23 +193,117 @@ async def _recover_from_transaction_abort(conn: asyncpg.Connection) -> bool:
         return False
 
 
-def _sort_sql_files(sql_file: Path, server_root: Path) -> tuple[int, str]:
+def _build_view_dependency_order(
+    sql_files: list[Path], server_root: Path
+) -> dict[str, int]:
+    """Auto-detect view/MV dependencies and return execution order levels.
+
+    Parses SQL files to find CREATE VIEW / CREATE MATERIALIZED VIEW statements,
+    then detects cross-file references and computes a topological ordering.
+
+    Args:
+        sql_files: List of all SQL file paths
+        server_root: Server root directory
+
+    Returns:
+        Dict mapping relative sql_path -> level (0 = no view deps, higher = later)
+    """
+    view_prefix = f"app/sql/{VERSION}/views/"
+
+    # Filter to view files only
+    view_files: list[tuple[str, Path]] = []
+    for f in sql_files:
+        rel = str(f.relative_to(server_root))
+        if rel.startswith(view_prefix):
+            view_files.append((rel, f))
+
+    # Pass 1: parse CREATE statements to build object_name -> sql_path map
+    create_re = re.compile(
+        r"CREATE\s+(?:OR\s+REPLACE\s+)?(?:MATERIALIZED\s+)?VIEW\s+(?:IF\s+NOT\s+EXISTS\s+)?(\w+)",
+        re.IGNORECASE,
+    )
+    # object_name -> set of sql_paths that create it
+    name_to_file: dict[str, str] = {}
+    # sql_path -> set of object names it creates
+    file_creates: dict[str, set[str]] = {}
+    # sql_path -> full SQL text (cached for pass 2)
+    file_sql: dict[str, str] = {}
+
+    for rel_path, full_path in view_files:
+        try:
+            sql_text = full_path.read_text()
+        except Exception:
+            continue
+        file_sql[rel_path] = sql_text
+        creates: set[str] = set()
+        for m in create_re.finditer(sql_text):
+            obj_name = m.group(1).lower()
+            creates.add(obj_name)
+            name_to_file[obj_name] = rel_path
+        file_creates[rel_path] = creates
+
+    # Pass 2: detect cross-file dependencies via word-boundary matching
+    # For each file, check which other files' created objects appear in its SQL
+    # deps: sql_path -> set of sql_paths it depends on
+    deps: dict[str, set[str]] = {}
+    all_names = list(name_to_file.keys())
+
+    for rel_path in file_sql:
+        sql_text = file_sql[rel_path].lower()
+        own_names = file_creates.get(rel_path, set())
+        file_deps: set[str] = set()
+        for obj_name in all_names:
+            # Skip self-references (same file creates and references it, e.g. DROP then CREATE)
+            if obj_name in own_names:
+                continue
+            # Word-boundary check to avoid false matches on substrings
+            if re.search(r"\b" + re.escape(obj_name) + r"\b", sql_text):
+                dep_file = name_to_file[obj_name]
+                if dep_file != rel_path:
+                    file_deps.add(dep_file)
+        deps[rel_path] = file_deps
+
+    # Topological sort: compute levels
+    levels: dict[str, int] = {}
+    computing: set[str] = set()  # cycle detection
+
+    def _compute_level(path: str) -> int:
+        if path in levels:
+            return levels[path]
+        if path in computing:
+            # Cycle detected — treat as level 0
+            levels[path] = 0
+            return 0
+        computing.add(path)
+        dep_paths = deps.get(path, set())
+        if not dep_paths:
+            level = 0
+        else:
+            level = max(_compute_level(d) for d in dep_paths) + 1
+        levels[path] = level
+        computing.discard(path)
+        return level
+
+    for rel_path, _ in view_files:
+        _compute_level(rel_path)
+
+    return levels
+
+
+def _sort_sql_files(sql_file: Path, server_root: Path, view_order: dict[str, int] | None = None) -> tuple[int, str]:
     """Sort SQL files with proper dependency ordering for views and MVs.
 
     Args:
         sql_file: Path to SQL file
         server_root: Server root directory
+        view_order: Auto-detected view dependency levels from _build_view_dependency_order()
 
     Returns:
         Tuple of (priority, path) for sorting where lower priority = earlier execution.
 
-    View/MV Dependency Ordering:
-        Priority 0: Base MVs with no MV dependencies (mv_simulation_analytics, mv_benchmark_analytics, etc.)
-        Priority 1: First-level dependent MVs (mv_dashboard_facts, mv_run_pricing_facts, etc.)
-        Priority 2: Second-level dependent MVs (mv_dashboard_*, mv_group_pricing_facts, etc.)
-        Priority 3: Third-level dependent MVs (mv_session_facts)
-        Priority 4: MVs that depend on missing tables (skipped but ordered last in views)
-        Priority 5: Other views (regular views, not MVs)
+    View/MV Dependency Ordering (auto-detected):
+        Levels are computed by _build_view_dependency_order() via topological sort.
+        Level 0 = no view/MV dependencies, Level N = depends on Level N-1.
 
     Query Ordering:
         Priority 10: Analytics queries
@@ -219,152 +313,11 @@ def _sort_sql_files(sql_file: Path, server_root: Path) -> tuple[int, str]:
         Priority 20: All other queries
     """
     sql_path = str(sql_file.relative_to(server_root))
-    filename = sql_file.name
 
-    # Handle views/ directory with detailed MV dependency ordering
+    # Handle views/ directory — use auto-detected dependency levels
     if sql_path.startswith(f"app/sql/{VERSION}/views/"):
-        # Base MVs - no MV dependencies (Level 0)
-        base_mvs = [
-            "mv_general_analytics_complete.sql",
-            "mv_practice_analytics_complete.sql",
-            "mv_benchmark_analytics_complete.sql",
-            "mv_model_pricing_ppm_complete.sql",
-            "mv_call_facts_complete.sql",
-            # Analytics base MV (depends only on entry/connection tables)
-            "mv_chat_facts_complete.sql",
-        ]
-        if filename in base_mvs:
-            return (0, sql_path)
-
-        # First-level dependent MVs (Level 1)
-        # mv_dashboard_facts depends on mv_simulation_analytics
-        # mv_run_pricing_facts depends on mv_model_pricing_ppm
-        # mv_call_metrics_daily depends on mv_call_facts
-        # mv_attempt_facts, mv_daily_metrics, mv_profile_metrics depend on mv_chat_facts
-        level1_mvs = [
-            "mv_dashboard_facts_complete.sql",
-            "mv_run_pricing_facts_complete.sql",
-            "mv_call_metrics_daily_complete.sql",
-            # Analytics MVs that depend on mv_chat_facts
-            "mv_attempt_facts_complete.sql",
-            "mv_daily_metrics_complete.sql",
-            "mv_profile_metrics_complete.sql",
-        ]
-        if filename in level1_mvs:
-            return (1, sql_path)
-
-        # Second-level dependent MVs (Level 2)
-        # These depend on mv_dashboard_facts or mv_run_pricing_facts
-        level2_mvs = [
-            "mv_dashboard_attempt_seq_complete.sql",
-            "mv_dashboard_cohort_facts_complete.sql",
-            "mv_dashboard_daily_agg_complete.sql",
-            "mv_dashboard_persona_agg_complete.sql",
-            "mv_dashboard_rubric_facts_complete.sql",
-            "mv_persona_response_times_complete.sql",
-            "mv_profile_analytics_complete.sql",
-            "mv_group_pricing_facts_complete.sql",
-            "mv_run_costs_daily_complete.sql",
-        ]
-        if filename in level2_mvs:
-            return (2, sql_path)
-
-        # Third-level dependent MVs (Level 3)
-        # mv_session_facts depends on mv_group_pricing_facts
-        level3_mvs = [
-            "mv_session_facts_complete.sql",
-        ]
-        if filename in level3_mvs:
-            return (3, sql_path)
-
-        # MVs that depend on missing tables (will fail but ordered last in views)
-        # These reference tables like service_health, app_metrics that may not exist
-        missing_table_mvs = [
-            "mv_health_hourly_agg_complete.sql",
-            "mv_health_daily_agg_complete.sql",
-            "mv_metrics_hourly_agg_complete.sql",
-            "mv_metrics_daily_agg_complete.sql",
-        ]
-        if filename in missing_table_mvs:
-            return (4, sql_path)
-
-        # Union views - must be created first (before views that depend on them)
-        # These combine general/practice/benchmark tables into unified views
-        union_views = [
-            "create_union_view_grades_entry_complete.sql",
-            "create_union_view_messages_entry_complete.sql",
-            "create_union_view_feedbacks_entry_complete.sql",
-            "create_union_view_contents_entry_complete.sql",
-            "create_union_view_hints_entry_complete.sql",
-            "create_union_view_strengths_entry_complete.sql",
-            "create_union_view_message_tree_entry_complete.sql",
-            "create_union_view_improvements_entry_complete.sql",
-        ]
-        if filename in union_views:
-            return (
-                4,
-                "a_" + sql_path,
-            )  # 'a_' prefix ensures they come before level 5 views
-
-        # Regular views - Level 0 (base views with no view dependencies)
-        base_views = [
-            "create_view_attempts_complete.sql",
-            "create_view_chats_complete.sql",
-            "create_view_drafts_complete.sql",
-            "create_view_runs_complete.sql",
-            "create_view_audits_complete.sql",
-            "create_view_tests_complete.sql",
-            "create_view_problems_complete.sql",
-            "create_view_grants_complete.sql",
-            "create_view_scenario_roots_complete.sql",
-            "create_view_logins_complete.sql",
-            "create_view_activity_complete.sql",
-            "create_view_calls_complete.sql",
-            "create_view_uploads_complete.sql",
-            "create_view_sessions_complete.sql",
-            "create_view_emulations_complete.sql",
-            "create_view_groups_complete.sql",
-            "create_view_run_pricing_complete.sql",
-            "create_view_simulation_cohorts_complete.sql",
-            "create_user_profile_view_complete.sql",
-            "create_view_profile_department_complete.sql",
-            "create_scenario_edit_state_view_complete.sql",
-            "create_persona_edit_state_view_complete.sql",
-            "create_simulation_edit_state_view_complete.sql",
-            "create_cohort_edit_state_view_complete.sql",
-        ]
-        if filename in base_views:
-            return (5, sql_path)
-
-        # Regular views - Level 1 (depend on base views, but not on missing union views)
-        level1_views = [
-            "create_view_attempt_context_complete.sql",  # depends on view_attempts
-        ]
-        if filename in level1_views:
-            return (6, sql_path)
-
-        # Regular views that depend on union views (grades_entry, messages_entry, feedbacks_entry)
-        # These now work since we create the union views first
-        union_dependent_views = [
-            "create_view_grades_complete.sql",  # depends on grades_entry union view
-            "create_view_messages_complete.sql",  # depends on messages_entry union view
-            "create_view_grade_feedback_complete.sql",  # depends on feedbacks_entry union view
-            "create_grade_per_standard_group_view_complete.sql",  # depends on grades_entry
-            "create_view_message_feedback_complete.sql",  # may depend on feedbacks_entry
-        ]
-        if filename in union_dependent_views:
-            return (6, "b_" + sql_path)  # After base views, before derived views
-
-        # Views that depend on views created from union views (second level)
-        derived_views = [
-            "create_view_chat_grades_complete.sql",  # depends on view_grades
-            "create_view_chat_messages_stats_complete.sql",  # depends on view_messages_complete
-        ]
-        if filename in derived_views:
-            return (7, sql_path)
-
-        # All other regular views
-        return (6, sql_path)
+        level = (view_order or {}).get(sql_path, 0)
+        return (level, sql_path)
 
     # Other analytics routes come next
     if sql_path.startswith(f"app/sql/{VERSION}/queries/analytics/"):
@@ -399,6 +352,20 @@ def _sort_sql_files(sql_file: Path, server_root: Path) -> tuple[int, str]:
         == f"app/sql/{VERSION}/queries/settings/get_active_settings_complete.sql"
     ):
         return (13, "b_" + sql_path)  # 'b_' prefix ensures it sorts after detail
+
+    # Profile: get_profile_complete creates types.q_get_profile_v4_role_resource
+    # that get_profile_access_complete depends on — must execute first
+    if (
+        sql_path
+        == f"app/sql/{VERSION}/queries/profile/get_profile_complete.sql"
+    ):
+        return (14, sql_path)
+
+    if (
+        sql_path
+        == f"app/sql/{VERSION}/queries/profile/get_profile_access_complete.sql"
+    ):
+        return (15, sql_path)
 
     # All other routes sorted alphabetically
     return (20, sql_path)
@@ -1394,9 +1361,10 @@ async def compile_sql_types(
 
         print(f"🔍 Found {len(sql_file_paths)} SQL files to process")
 
-    # Sort SQL files with analytics routes first
+    # Auto-detect view dependency order, then sort
+    view_order = _build_view_dependency_order(sql_file_paths, server_root)
     sorted_sql_files = sorted(
-        sql_file_paths, key=lambda f: _sort_sql_files(f, server_root)
+        sql_file_paths, key=lambda f: _sort_sql_files(f, server_root, view_order)
     )
 
     # Connect to database
@@ -1452,9 +1420,10 @@ async def compile_sql_types(
                         True,
                         f"No SQL files found in app/sql/{VERSION}/ or tests/sql/{VERSION}/integration/",
                     )
-                # Re-sort SQL files with analytics routes first
+                # Re-sort SQL files with auto-detected view dependency order
+                view_order = _build_view_dependency_order(sql_file_paths, server_root)
                 sorted_sql_files = sorted(
-                    sql_file_paths, key=lambda f: _sort_sql_files(f, server_root)
+                    sql_file_paths, key=lambda f: _sort_sql_files(f, server_root, view_order)
                 )
                 print(
                     f"🔍 Found {len(sql_file_paths)} SQL files to process (full compilation mode)"
