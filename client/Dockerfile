@@ -62,8 +62,9 @@ ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1
 
 
-# non-root user (no curl/wget — hardened against RCE exploitation)
-RUN addgroup -S nodejs && adduser -S nextjs -G nodejs
+# non-root user, remove busybox wget (hardened against RCE exploitation)
+RUN addgroup -S nodejs && adduser -S nextjs -G nodejs && \
+    rm -f /usr/bin/wget
 
 # copy the standalone server output
 COPY --from=builder /app/.next/standalone ./
