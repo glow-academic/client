@@ -22749,6 +22749,48 @@ class GetActiveSettingsApiResponse(BaseModel):
 
 
 
+# Generated from: get_setting_access
+
+class GetSettingAccessSqlParams(BaseModel):
+
+    profile_id: UUID
+    setting_id: UUID | None = None
+    draft_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.setting_id,
+            self.draft_id,
+        )
+
+class GetSettingAccessSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    user_role: str | None = None
+    user_department_ids: list[UUID] | None = None
+    setting_department_ids: list[UUID] | None = None
+    setting_exists: bool | None = None
+    draft_version: int | None = None
+    group_id: UUID | None = None
+
+class GetSettingAccessApiRequest(BaseModel):
+
+    setting_id: UUID | None = None
+    draft_id: UUID | None = None
+
+class GetSettingAccessApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    user_role: str | None = None
+    user_department_ids: list[UUID] | None = None
+    setting_department_ids: list[UUID] | None = None
+    setting_exists: bool | None = None
+    draft_version: int | None = None
+    group_id: UUID | None = None
+
+
+
 # Generated from: get_setting
 
 class GetSettingSqlParams(BaseModel):
@@ -23087,6 +23129,68 @@ class GetSettingApiResponse(BaseModel):
     role_route_resources: list[QGetSettingV4RoleRoute] | None = None
     show_role_routes: bool | None = None
     role_routes: list[QGetSettingV4RoleRoute] | None = None
+
+
+
+# Generated from: get_setting_ids
+
+class GetSettingIdsSqlParams(BaseModel):
+
+    profile_id: UUID
+    setting_id: UUID | None = None
+    color_search: str | None = None
+    draft_id: UUID | None = None
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.setting_id,
+            self.color_search,
+            self.draft_id,
+            self.mcp,
+        )
+
+class GetSettingIdsSqlRow(BaseModel):
+
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    color_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    name_agent_id: UUID | None = None
+    description_agent_id: UUID | None = None
+    colors_agent_id: UUID | None = None
+    flag_agent_id: UUID | None = None
+    departments_agent_id: UUID | None = None
+    profiles_agent_id: UUID | None = None
+    auths_agent_id: UUID | None = None
+    providers_agent_id: UUID | None = None
+    keys_agent_id: UUID | None = None
+
+class GetSettingIdsApiRequest(BaseModel):
+
+    setting_id: UUID | None = None
+    color_search: str | None = None
+    draft_id: UUID | None = None
+    mcp: bool | None = False
+
+class GetSettingIdsApiResponse(BaseModel):
+
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    color_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    name_agent_id: UUID | None = None
+    description_agent_id: UUID | None = None
+    colors_agent_id: UUID | None = None
+    flag_agent_id: UUID | None = None
+    departments_agent_id: UUID | None = None
+    profiles_agent_id: UUID | None = None
+    auths_agent_id: UUID | None = None
+    providers_agent_id: UUID | None = None
+    keys_agent_id: UUID | None = None
 
 
 
@@ -30256,11 +30360,23 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetActiveSettingsApiRequest",
         "GetActiveSettingsApiResponse",
     ),
+    "app/sql/v4/queries/settings/get_setting_access_complete.sql": (
+        "GetSettingAccessSqlParams",
+        "GetSettingAccessSqlRow",
+        "GetSettingAccessApiRequest",
+        "GetSettingAccessApiResponse",
+    ),
     "app/sql/v4/queries/settings/get_setting_complete.sql": (
         "GetSettingSqlParams",
         "GetSettingSqlRow",
         "GetSettingApiRequest",
         "GetSettingApiResponse",
+    ),
+    "app/sql/v4/queries/settings/get_setting_ids_complete.sql": (
+        "GetSettingIdsSqlParams",
+        "GetSettingIdsSqlRow",
+        "GetSettingIdsApiRequest",
+        "GetSettingIdsApiResponse",
     ),
     "app/sql/v4/queries/settings/get_settings_list_complete.sql": (
         "GetSettingsListSqlParams",
@@ -33081,7 +33197,17 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/settings/get_setting_access_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/settings/get_setting_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/settings/get_setting_ids_complete.sql"]
     ) -> SqlString: ...
 
     @overload

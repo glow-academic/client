@@ -32,6 +32,7 @@ from .artifacts import (
     provider,
     rubric,
     scenario,
+    setting,
     tool,
 )
 
@@ -94,6 +95,9 @@ server_router.include_router(provider.server_router)
 
 client_router.include_router(eval.client_router)
 server_router.include_router(eval.server_router)
+
+client_router.include_router(setting.client_router)
+server_router.include_router(setting.server_router)
 
 # Include both routers in main router
 router.include_router(client_router)

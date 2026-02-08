@@ -7,12 +7,31 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.artifacts.setting.permissions import (
+    compute_can_edit,
+    compute_colors_required,
+    compute_departments_required,
+    compute_description_required,
+    compute_disabled_reason,
+    compute_flag_required,
+    compute_name_required,
+    compute_show_colors,
+    compute_show_departments,
+    compute_show_description,
+    compute_show_flag,
+    compute_show_name,
+    has_access,
+)
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
+    GetSettingAccessSqlParams,
+    GetSettingAccessSqlRow,
     GetSettingApiRequest,
     GetSettingApiResponse,
+    GetSettingIdsSqlParams,
+    GetSettingIdsSqlRow,
     GetSettingSqlParams,
     GetSettingSqlRow,
     load_sql_query,
@@ -22,8 +41,10 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
-# Load SQL with types at module level - makes it clear what SQL file is used
-SQL_PATH = "app/sql/v4/queries/settings/get_setting_complete.sql"
+# SQL paths
+ACCESS_SQL_PATH = "app/sql/v4/queries/settings/get_setting_access_complete.sql"
+IDS_SQL_PATH = "app/sql/v4/queries/settings/get_setting_ids_complete.sql"
+CONFIG_SQL_PATH = "app/sql/v4/queries/settings/get_setting_complete.sql"
 
 
 router = APIRouter()
@@ -61,7 +82,7 @@ async def get_setting_internal(
         GetSettingSqlRow,
         await execute_sql_typed(
             conn,
-            SQL_PATH,
+            CONFIG_SQL_PATH,
             params=params,
         ),
     )
@@ -117,7 +138,7 @@ async def get_setting(
         response.headers["X-Cache-Hit"] = "1"
         return GetSettingApiResponse.model_validate(cached["data"])
 
-    sql_query = load_sql_query(SQL_PATH)
+    sql_query = load_sql_query(ACCESS_SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -137,34 +158,87 @@ async def get_setting(
         # Get mcp flag from header (set by router-level dependency)
         mcp = getattr(http_request.state, "mcp", False) or False
 
-        # Convert API request to SQL params (add profile_id and mcp from header)
-        params = GetSettingSqlParams(
+        access_params = GetSettingAccessSqlParams(
+            profile_id=profile_id,
+            setting_id=settings_id,
+            draft_id=draft_id,
+        )
+        sql_params = access_params.to_tuple()
+        access_result = cast(
+            GetSettingAccessSqlRow,
+            await execute_sql_typed(conn, ACCESS_SQL_PATH, params=access_params),
+        )
+
+        user_role = access_result.user_role
+        user_department_ids = access_result.user_department_ids or []
+        setting_department_ids = access_result.setting_department_ids or []
+
+        if settings_id is not None:
+            if access_result.setting_exists is False:
+                raise HTTPException(
+                    status_code=404, detail=f"Setting {settings_id} not found"
+                )
+            if not has_access(user_role, user_department_ids, setting_department_ids):
+                raise HTTPException(
+                    status_code=403,
+                    detail="You don't have access to this setting. It may be restricted to other departments.",
+                )
+
+        ids_params = GetSettingIdsSqlParams(
             settings_id=settings_id,
             profile_id=profile_id,
             color_search=color_search,
             draft_id=draft_id,
             mcp=mcp,
         )
-        sql_params = params.to_tuple()
+        sql_query = load_sql_query(IDS_SQL_PATH)
+        sql_params = ids_params.to_tuple()
+        ids_result = cast(
+            GetSettingIdsSqlRow,
+            await execute_sql_typed(conn, IDS_SQL_PATH, params=ids_params),
+        )
 
-        # Execute SQL with typed helper
-        result = await get_setting_internal(conn, params)
+        # Config payload (non-generation resources) is preserved from existing SQL contract.
+        config_params = GetSettingSqlParams(
+            settings_id=settings_id,
+            profile_id=profile_id,
+            color_search=color_search,
+            draft_id=draft_id,
+            mcp=mcp,
+        )
+        sql_query = load_sql_query(CONFIG_SQL_PATH)
+        sql_params = config_params.to_tuple()
+        config_result = await get_setting_internal(conn, config_params)
+
+        can_edit = compute_can_edit(
+            user_role=user_role,
+            user_department_ids=user_department_ids,
+            setting_department_ids=setting_department_ids,
+        )
+        disabled_reason = compute_disabled_reason(
+            user_role=user_role,
+            user_department_ids=user_department_ids,
+            setting_department_ids=setting_department_ids,
+        )
 
         # Set audit context
-        if result.actor_name:
-            audit_ctx = {"actor": {"name": result.actor_name, "id": profile_id}}
+        if access_result.actor_name:
+            audit_ctx = {"actor": {"name": access_result.actor_name, "id": profile_id}}
             # Only add setting to audit context if settings_id was provided (detail mode)
-            if settings_id and result.name_resource and result.name_resource.name:
+            if (
+                settings_id
+                and config_result.name_resource
+                and config_result.name_resource.name
+            ):
                 audit_ctx["setting"] = {
-                    "name": result.name_resource.name,
+                    "name": config_result.name_resource.name,
                     "id": str(settings_id),
                 }
             audit_set(http_request, **audit_ctx)
 
-        # Conditional validation based on mode
         if settings_id is None:
             # New mode: check for valid departments (derive from departments array)
-            departments_list = result.departments or []
+            departments_list = config_result.departments or []
             valid_department_ids = [
                 d.department_id for d in departments_list if d.department_id
             ]
@@ -172,22 +246,47 @@ async def get_setting(
                 raise HTTPException(
                     status_code=400, detail="No accessible departments found for user"
                 )
-        else:
-            # Detail mode: check if setting exists and has access
-            if result.setting_exists is False:
-                raise HTTPException(
-                    status_code=404, detail=f"Setting {settings_id} not found"
-                )
+        payload = config_result.model_dump()
+        payload.update(
+            {
+                "actor_name": access_result.actor_name,
+                "setting_exists": access_result.setting_exists,
+                "can_edit": can_edit,
+                "disabled_reason": disabled_reason,
+                "draft_version": access_result.draft_version,
+                "group_id": access_result.group_id or payload.get("group_id"),
+                "name_id": ids_result.name_id,
+                "description_id": ids_result.description_id,
+                "active_flag_id": ids_result.active_flag_id,
+                "color_ids": ids_result.color_ids or [],
+                "department_ids": ids_result.department_ids or [],
+                "name_agent_id": ids_result.name_agent_id,
+                "description_agent_id": ids_result.description_agent_id,
+                "colors_agent_id": ids_result.colors_agent_id,
+                "flag_agent_id": ids_result.flag_agent_id,
+                "departments_agent_id": ids_result.departments_agent_id,
+                "profiles_agent_id": ids_result.profiles_agent_id,
+                "auths_agent_id": ids_result.auths_agent_id,
+                "providers_agent_id": ids_result.providers_agent_id,
+                "keys_agent_id": ids_result.keys_agent_id,
+                "show_name": compute_show_name(),
+                "show_description": compute_show_description(),
+                "show_colors": compute_show_colors(len(payload.get("colors") or [])),
+                "show_flag": compute_show_flag(),
+                "show_departments": compute_show_departments(
+                    len(payload.get("departments") or [])
+                ),
+                "name_required": compute_name_required(),
+                "description_required": compute_description_required(),
+                "colors_required": compute_colors_required(),
+                "flag_required": compute_flag_required(),
+                "departments_required": compute_departments_required(
+                    compute_show_departments(len(payload.get("departments") or []))
+                ),
+            }
+        )
 
-            if not result.name_resource or not result.name_resource.name:
-                # Setting exists but user doesn't have access
-                raise HTTPException(
-                    status_code=403,
-                    detail="You don't have access to this setting. It may be restricted to other departments.",
-                )
-
-        # Convert SQL result to API response
-        response_data = get_setting_client(result)
+        response_data = GetSettingApiResponse.model_validate(payload)
 
         # Cache response (use mode='json' to serialize UUIDs and other types)
         await set_cached(

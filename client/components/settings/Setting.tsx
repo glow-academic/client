@@ -860,6 +860,201 @@ function SettingComponent({
     []
   );
 
+  const determineAgentType = useCallback(
+    (resourceTypes: ResourceType[]): string | null => {
+      const basicResources: ResourceType[] = [
+        "names",
+        "descriptions",
+        "departments",
+        "flags",
+      ];
+      const allResources: ResourceType[] = [
+        "names",
+        "descriptions",
+        "colors",
+        "flags",
+        "departments",
+      ];
+
+      const isBasicCombo =
+        resourceTypes.length === basicResources.length &&
+        resourceTypes.every((rt) => basicResources.includes(rt));
+      const isAllCombo =
+        resourceTypes.length === allResources.length &&
+        resourceTypes.every((rt) => allResources.includes(rt));
+
+      if (isAllCombo) return "general";
+      if (isBasicCombo) return "basic";
+      if (resourceTypes.length === 1) {
+        const agentTypeMap: Partial<Record<ResourceType, string>> = {
+          names: "name",
+          descriptions: "description",
+          colors: "colors",
+          flags: "flags",
+          departments: "departments",
+        };
+        const firstType = resourceTypes[0];
+        if (firstType && firstType in agentTypeMap) {
+          return agentTypeMap[firstType] ?? null;
+        }
+      }
+      return null;
+    },
+    []
+  );
+
+  const handleGenerateResources = useCallback(
+    async (
+      resourceTypes: ResourceType[],
+      agentType: string | null,
+      userInstructions?: string
+    ) => {
+      if (!socket || !isConnected) {
+        toast.error("WebSocket not connected");
+        return;
+      }
+
+      setGeneratingResources((prev) => {
+        const next = new Set(prev);
+        resourceTypes.forEach((rt) => next.add(rt));
+        return next;
+      });
+
+      const formData = formDataRef.current;
+      const draftId = (formData["draftId"] as string | undefined) ?? null;
+      const colorSearch = (formData["colorSearch"] as string | undefined) ?? null;
+
+      socket.emit("setting_generate", {
+        resource_types: resourceTypes,
+        agent_type: agentType,
+        user_instructions: userInstructions ? [userInstructions] : null,
+        draft_id: draftId || null,
+        color_search: colorSearch || null,
+        mcp: false,
+        setting_id: settingId || null,
+      });
+    },
+    [socket, isConnected, settingId]
+  );
+
+  useEffect(() => {
+    if (!socket || !isConnected) return;
+
+    const currentGroupId = settingData?.group_id;
+    const validResourceTypes: ResourceType[] = [
+      "names",
+      "descriptions",
+      "colors",
+      "flags",
+      "departments",
+    ];
+
+    const handleGenerationComplete = (data: {
+      artifact_type?: string;
+      group_id?: string;
+      resource_type?: string;
+      name_id?: string | null;
+      description_id?: string | null;
+      active_flag_id?: string | null;
+      color_ids?: string[];
+      department_ids?: string[];
+      message?: string;
+      success?: boolean;
+    }) => {
+      if (
+        data.artifact_type !== "setting" ||
+        !data.group_id ||
+        data.group_id !== currentGroupId
+      ) {
+        return;
+      }
+
+      if (
+        data.resource_type &&
+        validResourceTypes.includes(data.resource_type as ResourceType)
+      ) {
+        setFormState((prev) => ({
+          ...prev,
+          name_id: data.name_id ?? prev.name_id,
+          description_id: data.description_id ?? prev.description_id,
+          active_flag_id: data.active_flag_id ?? prev.active_flag_id,
+          color_ids: data.color_ids ?? prev.color_ids,
+          department_ids: data.department_ids ?? prev.department_ids,
+        }));
+      }
+
+      const completedTypes = data.resource_type ? [data.resource_type] : [];
+      setGeneratingResources((prev) => {
+        const next = new Set(prev);
+        completedTypes.forEach((rt) => {
+          if (validResourceTypes.includes(rt as ResourceType)) {
+            next.delete(rt as ResourceType);
+          }
+        });
+        return next;
+      });
+
+      if (data.success) {
+        toast.success(data.message || "Generation completed");
+      } else {
+        toast.error(data.message || "Generation failed");
+      }
+    };
+
+    const handleGenerationError = (data: {
+      artifact_type?: string;
+      group_id?: string;
+      resource_type?: string;
+      resource_types?: string[];
+      message?: string;
+    }) => {
+      if (
+        data.artifact_type !== "setting" ||
+        !data.group_id ||
+        data.group_id !== currentGroupId
+      ) {
+        return;
+      }
+
+      const resourceTypes =
+        data.resource_types || (data.resource_type ? [data.resource_type] : []);
+
+      setGeneratingResources((prev) => {
+        const next = new Set(prev);
+        resourceTypes.forEach((rt) => {
+          if (validResourceTypes.includes(rt as ResourceType)) {
+            next.delete(rt as ResourceType);
+          }
+        });
+        return next;
+      });
+      toast.error(data.message || "Generation failed");
+    };
+
+    const handleGenerationProgress = (data: {
+      artifact_type?: string;
+      group_id?: string;
+    }) => {
+      if (
+        data.artifact_type !== "setting" ||
+        !data.group_id ||
+        data.group_id !== currentGroupId
+      ) {
+        return;
+      }
+    };
+
+    socket.on("setting_generation_progress", handleGenerationProgress);
+    socket.on("setting_generation_complete", handleGenerationComplete);
+    socket.on("setting_generation_error", handleGenerationError);
+
+    return () => {
+      socket.off("setting_generation_progress", handleGenerationProgress);
+      socket.off("setting_generation_complete", handleGenerationComplete);
+      socket.off("setting_generation_error", handleGenerationError);
+    };
+  }, [socket, isConnected, settingData?.group_id]);
+
   // Handler to open modal for step card generation
   const handleOpenStepCardModal = useCallback(
     (stepId: string, mode: "generate" | "regenerate") => {
@@ -883,13 +1078,17 @@ function SettingComponent({
   // Handler for modal generate/regenerate action
   const handleModalGenerate = useCallback(
     async (selectedResources: string[], instructions: string) => {
-      // TODO: Implement WebSocket generation for settings
-      // For now, just close the modal
-      toast.info("Generation not yet implemented for settings");
+      const resourceTypes = selectedResources as ResourceType[];
+      const agentType = determineAgentType(resourceTypes);
+      await handleGenerateResources(
+        resourceTypes,
+        agentType,
+        instructions.trim() || undefined
+      );
       setShowGenerateModal(false);
       setModalInstructions("");
     },
-    []
+    [determineAgentType, handleGenerateResources]
   );
 
   // Listen for full-page-generate event from layout
@@ -1099,7 +1298,10 @@ function SettingComponent({
               actions={
                 stepResources["basic"] &&
                 stepResources["basic"].length > 0 &&
-                currentSettingData?.basic_agent_id ? (
+                (currentSettingData?.name_agent_id ||
+                  currentSettingData?.description_agent_id ||
+                  currentSettingData?.departments_agent_id ||
+                  currentSettingData?.flag_agent_id) ? (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>

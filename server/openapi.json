@@ -38462,6 +38462,150 @@
         }
       }
     },
+    "/socket/v4/server/setting_generation_progress": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server"
+        ],
+        "summary": "Setting Generation Progress Api",
+        "operationId": "setting_generation_progress_api_socket_v4_server_setting_generation_progress_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "type": "object",
+                "title": "Request"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Setting Generation Progress Api Socket V4 Server Setting Generation Progress Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/socket/v4/server/setting_generation_complete": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server"
+        ],
+        "summary": "Setting Generation Complete Api",
+        "operationId": "setting_generation_complete_api_socket_v4_server_setting_generation_complete_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "type": "object",
+                "title": "Request"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Setting Generation Complete Api Socket V4 Server Setting Generation Complete Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/socket/v4/server/setting_generation_error": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server"
+        ],
+        "summary": "Setting Generation Error Api",
+        "operationId": "setting_generation_error_api_socket_v4_server_setting_generation_error_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "type": "object",
+                "title": "Request"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Setting Generation Error Api Socket V4 Server Setting Generation Error Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/default-idp/.well-known/openid-configuration": {
       "get": {
         "tags": [

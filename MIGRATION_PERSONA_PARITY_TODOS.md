@@ -190,12 +190,12 @@ Legend:
 ### Settings
 
 #### Setting
-- `API6`: ⚠️
-- `3PhaseGet`: ⚠️
-- `SocketReady`: ⚠️
+- `API6`: ✅
+- `3PhaseGet`: ✅
+- `SocketReady`: ✅
 - TODO:
-- [ ] Implement 3-phase `get`.
-- [ ] Define explicit generation context contract (supported vs unsupported), no ambiguity.
+- [x] Implement 3-phase `get`.
+- [x] Define explicit generation context contract (supported vs unsupported), no ambiguity.
 
 ## Execution Waves (Updated)
 
