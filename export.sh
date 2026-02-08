@@ -5,13 +5,14 @@
 #
 # Usage:
 #   Interactive mode: ./export.sh
-#   Remote:  ./export.sh --env alpha --destination user@host:/path [--yes]
-#   Local:   ./export.sh --env alpha --destination /path/to/folder [--yes]
+#   Remote:  ./export.sh --env alpha --destination user@host:/path [--yes] [--bare]
+#   Local:   ./export.sh --env alpha --destination /path/to/folder [--yes] [--bare]
 #
 # Options:
 #   -e, --env ENV          Environment (alpha, beta, prod, or local)
 #   -d, --destination DEST Destination path (user@host:/path for remote, /path/to/folder for local)
 #   -y, --yes              Skip confirmation prompt
+#   -b, --bare              Create minimal export (themes only, no history, essential files only)
 #   -h, --help             Show this help message
 
 set -e  # Exit on error
@@ -65,6 +66,7 @@ fi
 ENV=""
 SCP_DEST=""
 SKIP_CONFIRM=false
+BARE_MODE=false
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -80,6 +82,10 @@ while [[ $# -gt 0 ]]; do
             SKIP_CONFIRM=true
             shift
             ;;
+        -b|--bare)
+            BARE_MODE=true
+            shift
+            ;;
         -h|--help)
             echo "Usage: $0 [OPTIONS]"
             echo ""
@@ -87,6 +93,7 @@ while [[ $# -gt 0 ]]; do
             echo "  -e, --env ENV          Environment (alpha, beta, prod, or local)"
             echo "  -d, --destination DEST Destination path (user@host:/path for remote, /path/to/folder for local)"
             echo "  -y, --yes              Skip confirmation prompt"
+            echo "  -b, --bare             Create minimal export (themes only, no history, essential files only)"
             echo "  -h, --help             Show this help message"
             echo ""
             echo "Examples:"
@@ -95,6 +102,7 @@ while [[ $# -gt 0 ]]; do
             echo "  $0 -e alpha -d ./exports              # Local directory"
             echo "  $0 -e local -d ./exports             # Use local .env file"
             echo "  $0 -e prod -d user@host:/path -y     # Remote with auto-confirm"
+            echo "  $0 -e alpha -d ./exports --bare       # Minimal export (bare mode)"
             exit 0
             ;;
         *)
@@ -245,6 +253,38 @@ copy_with_gitignore() {
                 continue
             fi
             
+            # Always allow .dockerignore and .gitignore files (they're needed)
+            # Skip exclusion checks for these files
+            if [[ "$file" == *"/.dockerignore" ]] || [[ "$file" == ".dockerignore" ]] || \
+               [[ "$file" == *"/.gitignore" ]] || [[ "$file" == ".gitignore" ]]; then
+                # These files should be included, skip exclusion checks
+                :
+            elif [ "$BARE_MODE" = true ]; then
+                # In bare mode, apply exclusions
+                
+                # Skip migration files (database/migrate/ directory)
+                if [[ "$file" =~ /migrate/ ]] || [[ "$file" =~ ^migrate/ ]]; then
+                    continue
+                fi
+                
+                # Skip all dot-prefixed directories (except .github and .git which are handled separately)
+                # Check if file path contains a dot-prefixed directory
+                # Skip if path contains "/." (dot-prefixed subdirectory) or starts with "." (dot-prefixed root)
+                # But allow .github and .git specifically
+                if [[ "$file" =~ /\. ]] || [[ "$file" =~ ^\. ]]; then
+                    # Allow .github and .git directories
+                    if [[ "$file" =~ /\.github/ ]] || [[ "$file" =~ ^\.github/ ]] || \
+                       [[ "$file" =~ /\.git/ ]] || [[ "$file" =~ ^\.git/ ]] || \
+                       [[ "$file" == ".github" ]] || [[ "$file" == ".git" ]]; then
+                        # Allow these specific directories
+                        :
+                    else
+                        # Skip all other dot-prefixed directories
+                        continue
+                    fi
+                fi
+            fi
+            
             if [ -f "$file" ]; then
                 # Calculate relative path from src_dir
                 # Remove src_dir prefix (with trailing slash if present)
@@ -267,23 +307,41 @@ copy_with_gitignore() {
     else
         # Fallback: use rsync with common exclusions if not a git repo
         warning "Not a git repository, using rsync with common exclusions..."
-        rsync -av \
-            --exclude='.git/' \
-            --exclude='.git' \
-            --exclude='node_modules' \
-            --exclude='.next' \
-            --exclude='__pycache__' \
-            --exclude='*.pyc' \
-            --exclude='.venv' \
-            --exclude='.pytest_cache' \
-            --exclude='.mypy_cache' \
-            --exclude='.ruff_cache' \
-            --exclude='htmlcov' \
-            --exclude='.coverage' \
-            --exclude='*.tsbuildinfo' \
-            --exclude='.DS_Store' \
-            --exclude='*.log' \
-            "$src_dir/" "$dest_dir/" || {
+        RSYNC_EXCLUDES=(
+            '--exclude=.git/'
+            '--exclude=.git'
+            '--exclude=node_modules'
+            '--exclude=.next'
+            '--exclude=__pycache__'
+            '--exclude=*.pyc'
+            '--exclude=.venv'
+            '--exclude=.pytest_cache'
+            '--exclude=.mypy_cache'
+            '--exclude=.ruff_cache'
+            '--exclude=htmlcov'
+            '--exclude=.coverage'
+            '--exclude=*.tsbuildinfo'
+            '--exclude=.DS_Store'
+            '--exclude=*.log'
+        )
+        
+        # In bare mode, exclude all dot-prefixed directories and migration files
+        if [ "$BARE_MODE" = true ]; then
+            RSYNC_EXCLUDES+=(
+                '--exclude=/.claude'
+                '--exclude=/.cursor'
+                '--exclude=/.codex'
+                '--exclude=/.pytest_cache'
+                '--exclude=/.mypy_cache'
+                '--exclude=/.ruff_cache'
+                '--exclude=/.venv'
+                '--exclude=/.vscode'
+                '--exclude=/.trash'
+                '--exclude=**/migrate/'
+            )
+        fi
+        
+        rsync -av "${RSYNC_EXCLUDES[@]}" "$src_dir/" "$dest_dir/" || {
             error "Failed to copy $src_dir"
             exit 1
         }
@@ -306,115 +364,176 @@ copy_with_gitignore "web" "$EXPORT_DIR/web"
 copy_with_gitignore "notify" "$EXPORT_DIR/notify"
 
 # Copy uploads directory selectively
-info "Copying uploads directory (selective)..."
-if [ -d "uploads" ]; then
-    mkdir -p "$EXPORT_DIR/uploads"
-    
-    # Copy root files in uploads
-    find uploads -maxdepth 1 -type f -exec cp {} "$EXPORT_DIR/uploads/" \; 2>/dev/null || true
-    
-    # Copy image subfolder
-    if [ -d "uploads/image" ]; then
-        mkdir -p "$EXPORT_DIR/uploads/image"
-        rsync -av "uploads/image/" "$EXPORT_DIR/uploads/image/" || true
-    fi
-    
-    # Copy video subfolder
-    if [ -d "uploads/video" ]; then
-        mkdir -p "$EXPORT_DIR/uploads/video"
-        rsync -av "uploads/video/" "$EXPORT_DIR/uploads/video/" || true
-    fi
-    
-    # Copy audio subfolder
-    if [ -d "uploads/audio" ]; then
-        mkdir -p "$EXPORT_DIR/uploads/audio"
-        rsync -av "uploads/audio/" "$EXPORT_DIR/uploads/audio/" || true
-    fi
-    
-    # Copy themes subfolder
-    if [ -d "uploads/themes" ]; then
-        mkdir -p "$EXPORT_DIR/uploads/themes"
-        rsync -av "uploads/themes/" "$EXPORT_DIR/uploads/themes/" || true
+if [ "$BARE_MODE" = true ]; then
+    # Bare mode: only copy themes folder
+    info "Copying uploads directory (bare mode: themes only)..."
+    if [ -d "uploads" ]; then
+        mkdir -p "$EXPORT_DIR/uploads"
+        
+        # Copy themes subfolder only
+        if [ -d "uploads/themes" ]; then
+            mkdir -p "$EXPORT_DIR/uploads/themes"
+            rsync -av "uploads/themes/" "$EXPORT_DIR/uploads/themes/" || true
+            success "Copied themes folder"
+        else
+            warning "uploads/themes directory does not exist, skipping..."
+        fi
+    else
+        warning "uploads directory does not exist, skipping..."
     fi
 else
-    warning "uploads directory does not exist, skipping..."
+    # Normal mode: copy all uploads
+    info "Copying uploads directory (selective)..."
+    if [ -d "uploads" ]; then
+        mkdir -p "$EXPORT_DIR/uploads"
+        
+        # Copy root files in uploads
+        find uploads -maxdepth 1 -type f -exec cp {} "$EXPORT_DIR/uploads/" \; 2>/dev/null || true
+        
+        # Copy image subfolder
+        if [ -d "uploads/image" ]; then
+            mkdir -p "$EXPORT_DIR/uploads/image"
+            rsync -av "uploads/image/" "$EXPORT_DIR/uploads/image/" || true
+        fi
+        
+        # Copy video subfolder
+        if [ -d "uploads/video" ]; then
+            mkdir -p "$EXPORT_DIR/uploads/video"
+            rsync -av "uploads/video/" "$EXPORT_DIR/uploads/video/" || true
+        fi
+        
+        # Copy audio subfolder
+        if [ -d "uploads/audio" ]; then
+            mkdir -p "$EXPORT_DIR/uploads/audio"
+            rsync -av "uploads/audio/" "$EXPORT_DIR/uploads/audio/" || true
+        fi
+        
+        # Copy themes subfolder
+        if [ -d "uploads/themes" ]; then
+            mkdir -p "$EXPORT_DIR/uploads/themes"
+            rsync -av "uploads/themes/" "$EXPORT_DIR/uploads/themes/" || true
+        fi
+    else
+        warning "uploads directory does not exist, skipping..."
+    fi
 fi
 
 # Copy latest history file
-info "Finding latest history file..."
-if [ -d "history" ]; then
-    mkdir -p "$EXPORT_DIR/history"
-    
-    # Find file with highest restore number
-    # Handle both restore_N_*.sql.gz and restore__*.sql.gz patterns
-    LATEST_HISTORY=$(ls -1 history/restore_*.sql.gz 2>/dev/null | \
-        sed -E 's/.*restore_([0-9]+)_.*/\1/' | \
-        grep -E '^[0-9]+$' | \
-        sort -n | \
-        tail -1)
-    
-    if [ -n "$LATEST_HISTORY" ] && [ "$LATEST_HISTORY" != "" ]; then
-        # Find the actual file with this number
-        LATEST_FILE=$(ls -1t history/restore_${LATEST_HISTORY}_*.sql.gz 2>/dev/null | head -1)
-        if [ -n "$LATEST_FILE" ] && [ -f "$LATEST_FILE" ]; then
-            cp "$LATEST_FILE" "$EXPORT_DIR/history/"
-            success "Copied latest history file: $(basename "$LATEST_FILE")"
+if [ "$BARE_MODE" = true ]; then
+    # Bare mode: skip history entirely
+    info "Skipping history directory (bare mode)..."
+else
+    # Normal mode: copy latest history file
+    info "Finding latest history file..."
+    if [ -d "history" ]; then
+        mkdir -p "$EXPORT_DIR/history"
+        
+        # Find file with highest restore number
+        # Handle both restore_N_*.sql.gz and restore__*.sql.gz patterns
+        LATEST_HISTORY=$(ls -1 history/restore_*.sql.gz 2>/dev/null | \
+            sed -E 's/.*restore_([0-9]+)_.*/\1/' | \
+            grep -E '^[0-9]+$' | \
+            sort -n | \
+            tail -1)
+        
+        if [ -n "$LATEST_HISTORY" ] && [ "$LATEST_HISTORY" != "" ]; then
+            # Find the actual file with this number
+            LATEST_FILE=$(ls -1t history/restore_${LATEST_HISTORY}_*.sql.gz 2>/dev/null | head -1)
+            if [ -n "$LATEST_FILE" ] && [ -f "$LATEST_FILE" ]; then
+                cp "$LATEST_FILE" "$EXPORT_DIR/history/"
+                success "Copied latest history file: $(basename "$LATEST_FILE")"
+            else
+                warning "Could not find history file with number $LATEST_HISTORY"
+            fi
         else
-            warning "Could not find history file with number $LATEST_HISTORY"
+            # Fallback: get the most recently modified file
+            LATEST_FILE=$(ls -1t history/restore_*.sql.gz 2>/dev/null | head -1)
+            if [ -n "$LATEST_FILE" ] && [ -f "$LATEST_FILE" ]; then
+                cp "$LATEST_FILE" "$EXPORT_DIR/history/"
+                success "Copied latest history file (by mtime): $(basename "$LATEST_FILE")"
+            else
+                warning "No history files found matching pattern restore_*.sql.gz"
+            fi
         fi
     else
-        # Fallback: get the most recently modified file
-        LATEST_FILE=$(ls -1t history/restore_*.sql.gz 2>/dev/null | head -1)
-        if [ -n "$LATEST_FILE" ] && [ -f "$LATEST_FILE" ]; then
-            cp "$LATEST_FILE" "$EXPORT_DIR/history/"
-            success "Copied latest history file (by mtime): $(basename "$LATEST_FILE")"
-        else
-            warning "No history files found matching pattern restore_*.sql.gz"
-        fi
+        warning "history directory does not exist, skipping..."
     fi
-else
-    warning "history directory does not exist, skipping..."
 fi
 
 # Copy root files (all tracked and untracked files at root level)
 info "Copying root files..."
-if git rev-parse --git-dir > /dev/null 2>&1; then
-    # Get all tracked and untracked files at root level, remove duplicates
-    {
-        git ls-files | grep -E '^[^/]+$'
-        git ls-files --others --exclude-standard | grep -E '^[^/]+$'
-    } | sort -u | while IFS= read -r file; do
-        if [ -f "$file" ]; then
-            cp "$file" "$EXPORT_DIR/"
-            success "Copied $file"
+if [ "$BARE_MODE" = true ]; then
+    # Bare mode: only copy essential deployment files
+    info "Bare mode: copying essential files only..."
+    ESSENTIAL_FILES=(
+        "docker-compose.yml"
+        "Makefile"
+        "pyproject.toml"
+        ".env.example"
+        ".gitignore"
+        "install-config.example.yaml"
+        ".python-version"
+        ".mvric"
+    )
+    
+    # Also check for README.md (case-insensitive)
+    for readme_file in README.md readme.md README Readme; do
+        if [ -f "$readme_file" ]; then
+            ESSENTIAL_FILES+=("$readme_file")
+            break
         fi
     done
     
-    # Also copy .cursorignore if it exists (it's gitignored but may be needed)
-    if [ -f ".cursorignore" ]; then
-        cp ".cursorignore" "$EXPORT_DIR/"
-        success "Copied .cursorignore"
-    fi
-else
-    # Fallback: copy common root files if not a git repo
-    warning "Not a git repository, copying common root files..."
-    ROOT_FILES=(".gitignore" ".cursorignore" "AGENTS.md" "Makefile" "docker-compose.yml" "pyproject.toml" "README.md" ".env.example")
-    for file in "${ROOT_FILES[@]}"; do
+    for file in "${ESSENTIAL_FILES[@]}"; do
         if [ -f "$file" ]; then
             cp "$file" "$EXPORT_DIR/"
             success "Copied $file"
         fi
     done
+else
+    # Normal mode: copy all root files
+    if git rev-parse --git-dir > /dev/null 2>&1; then
+        # Get all tracked and untracked files at root level, remove duplicates
+        {
+            git ls-files | grep -E '^[^/]+$'
+            git ls-files --others --exclude-standard | grep -E '^[^/]+$'
+        } | sort -u | while IFS= read -r file; do
+            if [ -f "$file" ]; then
+                cp "$file" "$EXPORT_DIR/"
+                success "Copied $file"
+            fi
+        done
+        
+        # Also copy .cursorignore if it exists (it's gitignored but may be needed)
+        if [ -f ".cursorignore" ]; then
+            cp ".cursorignore" "$EXPORT_DIR/"
+            success "Copied .cursorignore"
+        fi
+    else
+        # Fallback: copy common root files if not a git repo
+        warning "Not a git repository, copying common root files..."
+        ROOT_FILES=(".gitignore" ".cursorignore" "AGENTS.md" "Makefile" "docker-compose.yml" "pyproject.toml" "README.md" ".env.example")
+        for file in "${ROOT_FILES[@]}"; do
+            if [ -f "$file" ]; then
+                cp "$file" "$EXPORT_DIR/"
+                success "Copied $file"
+            fi
+        done
+    fi
 fi
 
-# Create .env file from selected environment
-info "Creating .env file from $ENV_FILE..."
-if [ ! -f "$ENV_FILE" ]; then
-    error "Environment file $ENV_FILE not found"
-    exit 1
+# Create .env file from selected environment (skip in bare mode)
+if [ "$BARE_MODE" = true ]; then
+    info "Bare mode: skipping .env file creation (only .env.example included)"
+else
+    info "Creating .env file from $ENV_FILE..."
+    if [ ! -f "$ENV_FILE" ]; then
+        error "Environment file $ENV_FILE not found"
+        exit 1
+    fi
+    cp "$ENV_FILE" "$EXPORT_DIR/.env"
+    success "Created .env file"
 fi
-cp "$ENV_FILE" "$EXPORT_DIR/.env"
-success "Created .env file"
 
 # Validate export directory has content
 if [ ! -d "$EXPORT_DIR" ] || [ -z "$(ls -A "$EXPORT_DIR" 2>/dev/null)" ]; then
@@ -578,6 +697,7 @@ if [ "$IS_REMOTE" = true ]; then
         rm -rf client server database web notify 2>/dev/null || true && \
         rm -rf uploads history 2>/dev/null || true && \
         rm -f .gitignore .cursorignore AGENTS.md Makefile docker-compose.yml pyproject.toml README.md .env.example export.sh 2>/dev/null || true && \
+        # Note: .github folder is preserved (not deleted) && \
         unzip -q -o \"$ZIP_NAME\" && \
         rm \"$ZIP_NAME\" && \
         echo 'Extraction complete'"
@@ -617,6 +737,7 @@ else
     cd "$LOCAL_DEST_ABS"
     
     # Remove existing directories/files that will be replaced (matching remote behavior)
+    # Note: .github folder is preserved (not deleted)
     rm -rf client server database web notify 2>/dev/null || true
     rm -rf uploads history 2>/dev/null || true
     rm -f .gitignore .cursorignore AGENTS.md Makefile docker-compose.yml pyproject.toml README.md .env.example export.sh 2>/dev/null || true
