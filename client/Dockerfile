@@ -62,9 +62,8 @@ ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1
 
 
-# minimal utilities + non-root user
-RUN addgroup -S nodejs && adduser -S nextjs -G nodejs && \
-    apk add --no-cache curl
+# non-root user (no curl/wget — hardened against RCE exploitation)
+RUN addgroup -S nodejs && adduser -S nextjs -G nodejs
 
 # copy the standalone server output
 COPY --from=builder /app/.next/standalone ./
