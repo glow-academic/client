@@ -34,25 +34,26 @@ import { Instructions } from "@/components/resources/Instructions";
 import { Names } from "@/components/resources/Names";
 import { ParameterFields } from "@/components/resources/ParameterFields";
 import { Parameters } from "@/components/resources/Parameters";
-import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useSaveContext } from "@/contexts/save-context";
+import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
 import { useAiGeneration } from "@/hooks/use-ai-generation";
 import { useConditionalParameterToggle } from "@/hooks/use-conditional-parameter-toggle";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import { useGenerationModal } from "@/hooks/use-generation-modal";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import {
+  type ResourceConfig,
+  type ResourceSection,
+  buildResourceActions,
+  checkHasResourceIds,
+  computeEffectiveFormState,
+} from "@/lib/resources/action-builders";
 import type { ResourceType } from "@/lib/resources/types";
 import type { ServerToClientEvents } from "@/lib/ws/types";
-import { Loader2, Sparkles } from "lucide-react";
 import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
 // Socket event types (auto-generated from server)
@@ -100,45 +101,6 @@ type PatchPersonaDraftOut = OutputOf<
 >;
 
 type PersonaData = OutputOf<"/api/v4/artifacts/personas/get", "post">;
-
-// Shared shape for resource section metadata (group_id + tool call tracking)
-type ResourceSection = {
-  group_id?: string | null;
-  create_tool_id?: string | null;
-  link_tool_id?: string | null;
-};
-
-function buildSingleAction(opts: {
-  resourceId: string | null | undefined;
-  wasCreated: boolean;
-  changed: boolean;
-  section: ResourceSection | undefined;
-}) {
-  return {
-    resource_id: opts.resourceId ?? null,
-    group_id: opts.section?.group_id ?? null,
-    create_tool_id: opts.wasCreated
-      ? (opts.section?.create_tool_id ?? null)
-      : null,
-    link_tool_id: opts.changed ? (opts.section?.link_tool_id ?? null) : null,
-  };
-}
-
-function buildMultiAction(opts: {
-  resourceIds: string[];
-  wasCreated: boolean;
-  changed: boolean;
-  section: ResourceSection | undefined;
-}) {
-  return {
-    resource_ids: opts.resourceIds.length > 0 ? opts.resourceIds : null,
-    group_id: opts.section?.group_id ?? null,
-    create_tool_id: opts.wasCreated
-      ? (opts.section?.create_tool_id ?? null)
-      : null,
-    link_tool_id: opts.changed ? (opts.section?.link_tool_id ?? null) : null,
-  };
-}
 
 // Type for flush results - each resource returns its created ID(s)
 type FlushResult = {
@@ -227,6 +189,49 @@ const VALID_RESOURCE_TYPES: ResourceType[] = [
   "parameter_fields",
   "departments",
   "parameters",
+];
+
+const PERSONA_RESOURCES: ResourceConfig[] = [
+  { key: "names", formKey: "name_id", flushKey: "name_id", type: "single" },
+  {
+    key: "descriptions",
+    formKey: "description_id",
+    flushKey: "description_id",
+    type: "single",
+  },
+  { key: "colors", formKey: "color_id", flushKey: "color_id", type: "single" },
+  { key: "icons", formKey: "icon_id", flushKey: null, type: "single" },
+  {
+    key: "instructions",
+    formKey: "instructions_id",
+    flushKey: "instructions_id",
+    type: "single",
+  },
+  { key: "flags", formKey: "active_flag_id", flushKey: null, type: "single" },
+  {
+    key: "departments",
+    formKey: "department_ids",
+    flushKey: null,
+    type: "multi",
+  },
+  {
+    key: "parameter_fields",
+    formKey: "parameter_field_ids",
+    flushKey: "parameter_field_ids",
+    type: "multi",
+  },
+  {
+    key: "examples",
+    formKey: "example_ids",
+    flushKey: "example_ids",
+    type: "multi",
+  },
+  {
+    key: "parameters",
+    formKey: "parameter_ids",
+    flushKey: null,
+    type: "multi",
+  },
 ];
 
 function PersonaComponent({
@@ -658,17 +663,9 @@ function PersonaComponent({
     ],
   );
 
-  const hasResourceIds = !!(
-    formState.name_id ||
-    formState.description_id ||
-    formState.color_id ||
-    formState.icon_id ||
-    formState.instructions_id ||
-    formState.active_flag_id ||
-    formState.department_ids.length > 0 ||
-    formState.parameter_field_ids.length > 0 ||
-    formState.example_ids.length > 0 ||
-    formState.parameter_ids.length > 0
+  const hasResourceIds = checkHasResourceIds(
+    PERSONA_RESOURCES,
+    formState as unknown as Record<string, unknown>,
   );
 
   const buildPatchPayload = useCallback(
@@ -677,81 +674,17 @@ function PersonaComponent({
       expectedVersion: number,
       flushResults?: Record<string, unknown>,
     ): Record<string, unknown> => {
-      const current = formStateRef.current as unknown as PersonaFormState;
-      const lastPatched = lastPatchedFormStateRef.current;
-      const fr = (flushResults ?? {}) as Partial<FlushResult>;
-      const s = stablePersonaDataFields;
-
-      const single = (
-        key: keyof PersonaFormState,
-        flushKey: keyof FlushResult,
-        sectionKey: string,
-      ) => {
-        const effectiveId =
-          fr[flushKey] !== undefined ? fr[flushKey] : current[key];
-        return buildSingleAction({
-          resourceId: (effectiveId as string | null | undefined) ?? null,
-          wasCreated: fr[flushKey] !== undefined && fr[flushKey] !== null,
-          changed: lastPatched
-            ? effectiveId !== lastPatched[key]
-            : !!effectiveId,
-          section: s?.[sectionKey as keyof typeof s] as
-            | ResourceSection
-            | undefined,
-        });
-      };
-
-      const multi = (
-        key: keyof PersonaFormState,
-        flushKey: keyof FlushResult | null,
-        sectionKey: string,
-      ) => {
-        const ids = current[key] as string[];
-        const effectiveIds =
-          flushKey && fr[flushKey as keyof FlushResult] !== undefined
-            ? (fr[flushKey as keyof FlushResult] as string[])
-            : ids;
-        const lastIds = lastPatched ? (lastPatched[key] as string[]) : [];
-        return buildMultiAction({
-          resourceIds: (effectiveIds as string[]) ?? [],
-          wasCreated:
-            flushKey !== null &&
-            fr[flushKey as keyof FlushResult] !== undefined,
-          changed: JSON.stringify(effectiveIds) !== JSON.stringify(lastIds),
-          section: s?.[sectionKey as keyof typeof s] as
-            | ResourceSection
-            | undefined,
-        });
-      };
-
       return {
         input_draft_id: draftId || null,
-        names: single("name_id", "name_id", "names"),
-        descriptions: single(
-          "description_id",
-          "description_id",
-          "descriptions",
-        ),
-        colors: single("color_id", "color_id", "colors"),
-        icons: single("icon_id", "icon_id" as keyof FlushResult, "icons"),
-        instructions: single(
-          "instructions_id",
-          "instructions_id",
-          "instructions",
-        ),
-        flags: single(
-          "active_flag_id",
-          "active_flag_id" as keyof FlushResult,
-          "flags",
-        ),
-        departments: multi("department_ids", null, "departments"),
-        parameter_fields: multi(
-          "parameter_field_ids",
-          "parameter_field_ids",
-          "parameter_fields",
-        ),
-        examples: multi("example_ids", "example_ids", "examples"),
-        parameters: multi("parameter_ids", null, "parameters"),
+        ...buildResourceActions(PERSONA_RESOURCES, {
+          formState: formStateRef.current,
+          referenceState: lastPatchedFormStateRef.current as unknown as Record<
+            string,
+            unknown
+          > | null,
+          flushResults: (flushResults ?? {}) as Record<string, unknown>,
+          entityData: stablePersonaDataFields as Record<string, unknown> | null,
+        }),
         expected_version: expectedVersion,
       };
     },
@@ -857,44 +790,14 @@ function PersonaComponent({
     ],
   );
 
-  const handleGenerateName = useCallback(
-    async () => handleGenerateResources(["names"]),
-    [handleGenerateResources],
-  );
-  const handleGenerateDescription = useCallback(
-    async () => handleGenerateResources(["descriptions"]),
-    [handleGenerateResources],
-  );
-  const handleGenerateInstructions = useCallback(
-    async () => handleGenerateResources(["instructions"]),
-    [handleGenerateResources],
-  );
-  const handleGenerateDepartments = useCallback(
-    async () => handleGenerateResources(["departments"]),
-    [handleGenerateResources],
-  );
-  const handleGenerateFlags = useCallback(
-    async () => handleGenerateResources(["flags"]),
-    [handleGenerateResources],
-  );
-  const handleGenerateExamples = useCallback(
-    async () => handleGenerateResources(["examples"]),
-    [handleGenerateResources],
-  );
-  const handleGenerateColors = useCallback(
-    async () => handleGenerateResources(["colors"]),
-    [handleGenerateResources],
-  );
-  const handleGenerateIcons = useCallback(
-    async () => handleGenerateResources(["icons"]),
-    [handleGenerateResources],
-  );
-  const handleGenerateParameters = useCallback(
-    async () => handleGenerateResources(["parameters"]),
-    [handleGenerateResources],
-  );
-  const handleGenerateParameterFields = useCallback(
-    async () => handleGenerateResources(["parameter_fields"]),
+  const generateHandlers = useMemo(
+    () =>
+      Object.fromEntries(
+        VALID_RESOURCE_TYPES.map((rt) => [
+          rt,
+          () => handleGenerateResources([rt]),
+        ]),
+      ) as Record<ResourceType, () => Promise<void>>,
     [handleGenerateResources],
   );
 
@@ -987,37 +890,11 @@ function PersonaComponent({
         flushResults = await flushAllResources();
       }
 
-      const baseFormState = formStateRef.current as unknown as PersonaFormState;
-      const effectiveFormState = {
-        name_id:
-          flushResults.name_id !== undefined
-            ? flushResults.name_id
-            : baseFormState.name_id,
-        description_id:
-          flushResults.description_id !== undefined
-            ? flushResults.description_id
-            : baseFormState.description_id,
-        color_id:
-          flushResults.color_id !== undefined
-            ? flushResults.color_id
-            : baseFormState.color_id,
-        icon_id: baseFormState.icon_id,
-        instructions_id:
-          flushResults.instructions_id !== undefined
-            ? flushResults.instructions_id
-            : baseFormState.instructions_id,
-        active_flag_id: baseFormState.active_flag_id,
-        department_ids: baseFormState.department_ids,
-        parameter_field_ids:
-          flushResults.parameter_field_ids !== undefined
-            ? flushResults.parameter_field_ids
-            : baseFormState.parameter_field_ids,
-        example_ids:
-          flushResults.example_ids !== undefined
-            ? flushResults.example_ids
-            : baseFormState.example_ids,
-        parameter_ids: baseFormState.parameter_ids,
-      };
+      const effectiveFormState = computeEffectiveFormState(
+        PERSONA_RESOURCES,
+        formStateRef.current,
+        flushResults as Record<string, unknown>,
+      ) as unknown as PersonaFormState;
 
       if (personaData?.names?.required && !effectiveFormState.name_id) {
         toast.error("Persona name is required");
@@ -1082,93 +959,19 @@ function PersonaComponent({
       }
 
       try {
-        // Compare against initial server state for tool call tracking
         const initialState = getInitialFormState();
 
         await savePersonaAction({
           body: {
             input_persona_id: isEditMode && personaId ? personaId : null,
-            names: buildSingleAction({
-              resourceId: effectiveFormState.name_id,
-              wasCreated:
-                flushResults.name_id !== undefined &&
-                flushResults.name_id !== null,
-              changed: effectiveFormState.name_id !== initialState.name_id,
-              section: personaData?.names,
-            }),
-            descriptions: buildSingleAction({
-              resourceId: effectiveFormState.description_id,
-              wasCreated:
-                flushResults.description_id !== undefined &&
-                flushResults.description_id !== null,
-              changed:
-                effectiveFormState.description_id !==
-                initialState.description_id,
-              section: personaData?.descriptions,
-            }),
-            colors: buildSingleAction({
-              resourceId: effectiveFormState.color_id,
-              wasCreated:
-                flushResults.color_id !== undefined &&
-                flushResults.color_id !== null,
-              changed: effectiveFormState.color_id !== initialState.color_id,
-              section: personaData?.colors,
-            }),
-            icons: buildSingleAction({
-              resourceId: effectiveFormState.icon_id,
-              wasCreated: false,
-              changed: effectiveFormState.icon_id !== initialState.icon_id,
-              section: personaData?.icons,
-            }),
-            instructions: buildSingleAction({
-              resourceId: effectiveFormState.instructions_id,
-              wasCreated:
-                flushResults.instructions_id !== undefined &&
-                flushResults.instructions_id !== null,
-              changed:
-                effectiveFormState.instructions_id !==
-                initialState.instructions_id,
-              section: personaData?.instructions,
-            }),
-            flags: buildSingleAction({
-              resourceId: effectiveFormState.active_flag_id,
-              wasCreated: false,
-              changed:
-                effectiveFormState.active_flag_id !==
-                initialState.active_flag_id,
-              section: personaData?.flags,
-            }),
-            departments: buildMultiAction({
-              resourceIds: effectiveFormState.department_ids,
-              wasCreated: false,
-              changed:
-                JSON.stringify(effectiveFormState.department_ids) !==
-                JSON.stringify(initialState.department_ids),
-              section: personaData?.departments,
-            }),
-            parameter_fields: buildMultiAction({
-              resourceIds: effectiveFormState.parameter_field_ids,
-              wasCreated: flushResults.parameter_field_ids !== undefined,
-              changed:
-                JSON.stringify(effectiveFormState.parameter_field_ids) !==
-                JSON.stringify(initialState.parameter_field_ids),
-              section: personaData?.parameter_fields,
-            }),
-            examples: buildMultiAction({
-              resourceIds: effectiveFormState.example_ids,
-              wasCreated: flushResults.example_ids !== undefined,
-              changed:
-                JSON.stringify(effectiveFormState.example_ids) !==
-                JSON.stringify(initialState.example_ids),
-              section: personaData?.examples,
-            }),
-            parameters: buildMultiAction({
-              resourceIds: effectiveFormState.parameter_ids,
-              wasCreated: false,
-              changed:
-                JSON.stringify(effectiveFormState.parameter_ids) !==
-                JSON.stringify(initialState.parameter_ids),
-              section: personaData?.parameters,
+            ...buildResourceActions(PERSONA_RESOURCES, {
+              formState: formStateRef.current,
+              referenceState: initialState as unknown as Record<
+                string,
+                unknown
+              >,
+              flushResults: flushResults as Record<string, unknown>,
+              entityData: personaData as Record<string, unknown> | null,
             }),
           },
         });
@@ -1374,7 +1177,7 @@ function PersonaComponent({
                   onNameIdChange={(nameId) =>
                     setFormState((prev) => ({ ...prev, name_id: nameId }))
                   }
-                  onGenerate={handleGenerateName}
+                  onGenerate={generateHandlers["names"]}
                   isGenerating={isGenerating("names")}
                   placeholder="e.g., Enthusiastic Student"
                   defaultName="New Persona"
@@ -1400,48 +1203,16 @@ function PersonaComponent({
               }
               resetFields={["name", "description", "department_ids", "active"]}
               actions={
-                stepResources["basic"] &&
-                stepResources["basic"].length > 0 &&
+                stepResources["basic"]?.length &&
                 (s?.basic_show_ai_generate ?? false) ? (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            const hasRegeneratable = stepResources[
-                              "basic"
-                            ]!.some((rt) => canRegenerate(rt));
-                            handleOpenStepCardModal(
-                              "basic",
-                              hasRegeneratable ? "regenerate" : "generate",
-                            );
-                          }}
-                          disabled={
-                            disabled ||
-                            stepResources["basic"]!.some((rt) =>
-                              isGenerating(rt),
-                            )
-                          }
-                        >
-                          {stepResources["basic"]!.some((rt) =>
-                            isGenerating(rt),
-                          ) ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Sparkles className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {stepResources["basic"]!.some((rt) => canRegenerate(rt))
-                          ? "Regenerate"
-                          : "Generate"}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                  <StepCardAiButton
+                    stepId="basic"
+                    resourceTypes={stepResources["basic"]!}
+                    canRegenerate={canRegenerate}
+                    isGenerating={isGenerating}
+                    onOpenModal={handleOpenStepCardModal}
+                    disabled={disabled}
+                  />
                 ) : undefined
               }
               {...(onReset ? { onReset } : {})}
@@ -1470,7 +1241,7 @@ function PersonaComponent({
                   onSearchChange={(term: string) =>
                     setStepFormData({ descriptionSearch: term || null })
                   }
-                  onGenerate={handleGenerateDescription}
+                  onGenerate={generateHandlers["descriptions"]}
                   isGenerating={isGenerating("descriptions")}
                   label="Description"
                   placeholder="Detailed behavior description and personality traits"
@@ -1498,7 +1269,7 @@ function PersonaComponent({
                   onChange={(ids) =>
                     setFormState((prev) => ({ ...prev, department_ids: ids }))
                   }
-                  onGenerate={handleGenerateDepartments}
+                  onGenerate={generateHandlers["departments"]}
                   isGenerating={isGenerating("departments")}
                   required={s?.departments?.required ?? false}
                   group_id={s?.departments?.group_id ?? null}
@@ -1525,7 +1296,7 @@ function PersonaComponent({
                       active_flag_id: flagId,
                     }))
                   }
-                  onGenerate={handleGenerateFlags}
+                  onGenerate={generateHandlers["flags"]}
                   isGenerating={isGenerating("flags")}
                   aiFlagResources={
                     aiFormData.flag_resource ? [aiFormData.flag_resource] : null
@@ -1579,50 +1350,16 @@ function PersonaComponent({
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
               actions={
-                stepResources["parameters"] &&
-                stepResources["parameters"].length > 0 &&
+                stepResources["parameters"]?.length &&
                 (s?.parameters_step_show_ai_generate ?? false) ? (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            const hasRegeneratable = stepResources[
-                              "parameters"
-                            ]!.some((rt) => canRegenerate(rt));
-                            handleOpenStepCardModal(
-                              "parameters",
-                              hasRegeneratable ? "regenerate" : "generate",
-                            );
-                          }}
-                          disabled={
-                            disabled ||
-                            stepResources["parameters"]!.some((rt) =>
-                              isGenerating(rt),
-                            )
-                          }
-                        >
-                          {stepResources["parameters"]!.some((rt) =>
-                            isGenerating(rt),
-                          ) ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Sparkles className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {stepResources["parameters"]!.some((rt) =>
-                          canRegenerate(rt),
-                        )
-                          ? "Regenerate"
-                          : "Generate"}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                  <StepCardAiButton
+                    stepId="parameters"
+                    resourceTypes={stepResources["parameters"]!}
+                    canRegenerate={canRegenerate}
+                    isGenerating={isGenerating}
+                    onOpenModal={handleOpenStepCardModal}
+                    disabled={disabled}
+                  />
                 ) : undefined
               }
             >
@@ -1637,7 +1374,7 @@ function PersonaComponent({
                   onChange={(ids) =>
                     setFormState((prev) => ({ ...prev, parameter_ids: ids }))
                   }
-                  onGenerate={handleGenerateParameters}
+                  onGenerate={generateHandlers["parameters"]}
                   isGenerating={isGenerating("parameters")}
                   label="Parameters"
                   required={s?.parameters?.required ?? false}
@@ -1674,7 +1411,7 @@ function PersonaComponent({
                   }
                   required={s?.parameter_fields?.required ?? false}
                   createParameterFieldsAction={createParameterFieldsAction}
-                  onGenerate={handleGenerateParameterFields}
+                  onGenerate={generateHandlers["parameter_fields"]}
                   isGenerating={isGenerating("parameter_fields")}
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["parameter_fields"]}
@@ -1724,46 +1461,15 @@ function PersonaComponent({
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
               actions={
-                stepResources["color"] && stepResources["color"].length > 0 ? (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            const hasRegeneratable = stepResources[
-                              "color"
-                            ]!.some((rt) => canRegenerate(rt));
-                            handleOpenStepCardModal(
-                              "color",
-                              hasRegeneratable ? "regenerate" : "generate",
-                            );
-                          }}
-                          disabled={
-                            disabled ||
-                            stepResources["color"]!.some((rt) =>
-                              isGenerating(rt),
-                            )
-                          }
-                        >
-                          {stepResources["color"]!.some((rt) =>
-                            isGenerating(rt),
-                          ) ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Sparkles className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {stepResources["color"]!.some((rt) => canRegenerate(rt))
-                          ? "Regenerate"
-                          : "Generate"}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                stepResources["color"]?.length ? (
+                  <StepCardAiButton
+                    stepId="color"
+                    resourceTypes={stepResources["color"]!}
+                    canRegenerate={canRegenerate}
+                    isGenerating={isGenerating}
+                    onOpenModal={handleOpenStepCardModal}
+                    disabled={disabled}
+                  />
                 ) : undefined
               }
             >
@@ -1777,7 +1483,7 @@ function PersonaComponent({
                 onColorIdChange={(colorId) =>
                   setFormState((prev) => ({ ...prev, color_id: colorId }))
                 }
-                onGenerate={handleGenerateColors}
+                onGenerate={generateHandlers["colors"]}
                 isGenerating={isGenerating("colors")}
                 searchTerm={
                   (stepFormData["colorSearch"] as string | null | undefined) ||
@@ -1839,46 +1545,15 @@ function PersonaComponent({
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
               actions={
-                stepResources["icon"] && stepResources["icon"].length > 0 ? (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            const hasRegeneratable = stepResources[
-                              "icon"
-                            ]!.some((rt) => canRegenerate(rt));
-                            handleOpenStepCardModal(
-                              "icon",
-                              hasRegeneratable ? "regenerate" : "generate",
-                            );
-                          }}
-                          disabled={
-                            disabled ||
-                            stepResources["icon"]!.some((rt) =>
-                              isGenerating(rt),
-                            )
-                          }
-                        >
-                          {stepResources["icon"]!.some((rt) =>
-                            isGenerating(rt),
-                          ) ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Sparkles className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {stepResources["icon"]!.some((rt) => canRegenerate(rt))
-                          ? "Regenerate"
-                          : "Generate"}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                stepResources["icon"]?.length ? (
+                  <StepCardAiButton
+                    stepId="icon"
+                    resourceTypes={stepResources["icon"]!}
+                    canRegenerate={canRegenerate}
+                    isGenerating={isGenerating}
+                    onOpenModal={handleOpenStepCardModal}
+                    disabled={disabled}
+                  />
                 ) : undefined
               }
             >
@@ -1892,7 +1567,7 @@ function PersonaComponent({
                 onIconIdChange={(iconId) =>
                   setFormState((prev) => ({ ...prev, icon_id: iconId }))
                 }
-                onGenerate={handleGenerateIcons}
+                onGenerate={generateHandlers["icons"]}
                 isGenerating={isGenerating("icons")}
                 searchTerm={
                   (stepFormData["iconSearch"] as string | null | undefined) ||
@@ -1930,50 +1605,16 @@ function PersonaComponent({
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
               actions={
-                stepResources["content"] &&
-                stepResources["content"].length > 0 &&
+                stepResources["content"]?.length &&
                 (s?.content_show_ai_generate ?? false) ? (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            const hasRegeneratable = stepResources[
-                              "content"
-                            ]!.some((rt) => canRegenerate(rt));
-                            handleOpenStepCardModal(
-                              "content",
-                              hasRegeneratable ? "regenerate" : "generate",
-                            );
-                          }}
-                          disabled={
-                            disabled ||
-                            stepResources["content"]!.some((rt) =>
-                              isGenerating(rt),
-                            )
-                          }
-                        >
-                          {stepResources["content"]!.some((rt) =>
-                            isGenerating(rt),
-                          ) ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Sparkles className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {stepResources["content"]!.some((rt) =>
-                          canRegenerate(rt),
-                        )
-                          ? "Regenerate"
-                          : "Generate"}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                  <StepCardAiButton
+                    stepId="content"
+                    resourceTypes={stepResources["content"]!}
+                    canRegenerate={canRegenerate}
+                    isGenerating={isGenerating}
+                    onOpenModal={handleOpenStepCardModal}
+                    disabled={disabled}
+                  />
                 ) : undefined
               }
             >
@@ -2003,7 +1644,7 @@ function PersonaComponent({
                 onSearchChange={(term: string) =>
                   setStepFormData({ instructionsSearch: term || null })
                 }
-                onGenerate={handleGenerateInstructions}
+                onGenerate={generateHandlers["instructions"]}
                 isGenerating={isGenerating("instructions")}
                 label="Instructions"
                 placeholder="Instructions that define how the persona should behave and respond."
@@ -2032,7 +1673,7 @@ function PersonaComponent({
                 onChange={(ids) =>
                   setFormState((prev) => ({ ...prev, example_ids: ids }))
                 }
-                onGenerate={handleGenerateExamples}
+                onGenerate={generateHandlers["examples"]}
                 isGenerating={isGenerating("examples")}
                 maxItems={10}
                 addButtonLabel="Add example"
@@ -2086,16 +1727,7 @@ function PersonaComponent({
       stablePersonaDataFields,
       disabled,
       isEditMode,
-      handleGenerateName,
-      handleGenerateDescription,
-      handleGenerateInstructions,
-      handleGenerateDepartments,
-      handleGenerateFlags,
-      handleGenerateExamples,
-      handleGenerateColors,
-      handleGenerateIcons,
-      handleGenerateParameters,
-      handleGenerateParameterFields,
+      generateHandlers,
       handleConditionalParameterToggle,
       isGenerating,
       stepResources,
