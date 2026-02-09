@@ -308,18 +308,8 @@ function PersonaComponent({
     return { aiUpdates, formStateUpdates };
   }, []);
 
-  // Derive groupId from first non-null section group_id
-  const groupId =
-    personaData?.names?.group_id ??
-    personaData?.descriptions?.group_id ??
-    personaData?.colors?.group_id ??
-    personaData?.icons?.group_id ??
-    personaData?.instructions?.group_id ??
-    personaData?.flags?.group_id ??
-    personaData?.departments?.group_id ??
-    personaData?.parameter_fields?.group_id ??
-    personaData?.examples?.group_id ??
-    personaData?.parameters?.group_id;
+  // Top-level group_id from server response
+  const groupId = personaData?.group_id;
 
   const { setGeneratingResources, isGenerating, aiFormData, clearAiResource } =
     useAiGeneration<ResourceType, PersonaAiFormData>({
@@ -367,6 +357,7 @@ function PersonaComponent({
       parameter_fields: personaData.parameter_fields,
       examples: personaData.examples,
       parameters: personaData.parameters,
+      group_id: personaData.group_id,
       basic_show_ai_generate: personaData.basic_show_ai_generate,
       content_show_ai_generate: personaData.content_show_ai_generate,
       parameters_step_show_ai_generate:
@@ -384,6 +375,7 @@ function PersonaComponent({
     personaData?.parameter_fields,
     personaData?.examples,
     personaData?.parameters,
+    personaData?.group_id,
     personaData?.basic_show_ai_generate,
     personaData?.content_show_ai_generate,
     personaData?.parameters_step_show_ai_generate,
@@ -1183,7 +1175,7 @@ function PersonaComponent({
                   defaultName="New Persona"
                   required={s?.names?.required ?? false}
                   hideDescription={true}
-                  group_id={s?.names?.group_id ?? null}
+                  group_id={s?.group_id ?? null}
                   showAiGenerate={s?.names?.show_ai_generate ?? false}
                   createNamesAction={
                     createNamesAction as
@@ -1248,7 +1240,7 @@ function PersonaComponent({
                   required={s?.descriptions?.required ?? false}
                   rows={4}
                   data-testid="input-persona-description"
-                  group_id={s?.descriptions?.group_id ?? null}
+                  group_id={s?.group_id ?? null}
                   showAiGenerate={s?.descriptions?.show_ai_generate ?? false}
                   createDescriptionsAction={createDescriptionsAction}
                   isAutosaveEnabled={isAutosaveEnabled}
@@ -1272,7 +1264,7 @@ function PersonaComponent({
                   onGenerate={generateHandlers["departments"]}
                   isGenerating={isGenerating("departments")}
                   required={s?.departments?.required ?? false}
-                  group_id={s?.departments?.group_id ?? null}
+                  group_id={s?.group_id ?? null}
                   showAiGenerate={s?.departments?.show_ai_generate ?? false}
                   aiDepartmentResources={
                     aiFormData.department_resources ?? null
@@ -1288,7 +1280,7 @@ function PersonaComponent({
                   columns={1}
                   label="Flags"
                   disabled={disabled}
-                  group_id={s?.flags?.group_id ?? null}
+                  group_id={s?.group_id ?? null}
                   showAiGenerate={s?.flags?.show_ai_generate ?? false}
                   onChange={(flagId) =>
                     setFormState((prev) => ({
@@ -1378,7 +1370,7 @@ function PersonaComponent({
                   isGenerating={isGenerating("parameters")}
                   label="Parameters"
                   required={s?.parameters?.required ?? false}
-                  group_id={s?.parameters?.group_id ?? null}
+                  group_id={s?.group_id ?? null}
                   showAiGenerate={s?.parameters?.show_ai_generate ?? false}
                   searchTerm={parameterSearchTerm}
                   showSelectedFilter={parameterShowSelected}
@@ -1405,7 +1397,7 @@ function PersonaComponent({
                   onConditionalParameterToggle={
                     handleConditionalParameterToggle
                   }
-                  group_id={s?.parameter_fields?.group_id ?? null}
+                  group_id={s?.group_id ?? null}
                   showAiGenerate={
                     s?.parameter_fields?.show_ai_generate ?? false
                   }
@@ -1496,7 +1488,7 @@ function PersonaComponent({
                 onShowSelectedChange={(value) =>
                   setStepFormData({ colorShowSelected: value || null })
                 }
-                group_id={s?.colors?.group_id ?? null}
+                group_id={s?.group_id ?? null}
                 showAiGenerate={s?.colors?.show_ai_generate ?? false}
                 createColorsAction={createColorsAction}
                 required={s?.colors?.required ?? false}
@@ -1580,7 +1572,7 @@ function PersonaComponent({
                 onShowSelectedChange={(value) =>
                   setStepFormData({ iconShowSelected: value || null })
                 }
-                group_id={s?.icons?.group_id ?? null}
+                group_id={s?.group_id ?? null}
                 showAiGenerate={s?.icons?.show_ai_generate ?? false}
                 required={s?.icons?.required ?? false}
                 aiResource={aiFormData.icon_resource}
@@ -1652,7 +1644,7 @@ function PersonaComponent({
                 rows={8}
                 helpText="Define the persona's behavior, communication style, and response patterns"
                 data-testid="input-instructions"
-                group_id={s?.instructions?.group_id ?? null}
+                group_id={s?.group_id ?? null}
                 showAiGenerate={s?.instructions?.show_ai_generate ?? false}
                 createInstructionsAction={createInstructionsAction}
                 isAutosaveEnabled={isAutosaveEnabled}
@@ -1678,7 +1670,7 @@ function PersonaComponent({
                 maxItems={10}
                 addButtonLabel="Add example"
                 itemPlaceholder="Message"
-                group_id={s?.examples?.group_id ?? null}
+                group_id={s?.group_id ?? null}
                 showAiGenerate={s?.examples?.show_ai_generate ?? false}
                 createExamplesAction={
                   createExamplesAction
