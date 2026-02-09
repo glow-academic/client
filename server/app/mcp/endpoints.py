@@ -2164,7 +2164,7 @@ def register_endpoints(server: FastMCP) -> None:
             scope = {
                 "type": "http",
                 "method": "POST",
-                "path": f"/api/v4/uploads/save/{upload_id}",
+                "path": f"/api/v4/resources/uploads/upload/{upload_id}/finalize",
                 "headers": [],
                 "query_string": b"",
                 "server": ("localhost", 8000),

@@ -6,6 +6,7 @@ Business logic for computing display values and derived fields is centralized he
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 from uuid import UUID
 
@@ -128,14 +129,28 @@ def compute_attempt_aggregates(chats: list[ChatData]) -> dict:
     all_passed = True
     elapsed_seconds = 0
 
+    now = datetime.now(timezone.utc)
     for chat in chats:
-        if chat.grade:
+        if chat.grade and chat.grade.time_taken is not None:
+            # Graded chat: use the recorded time_taken
             if chat.grade.score is not None:
                 total_score += chat.grade.score
             if chat.grade.passed is False:
                 all_passed = False
-            if chat.grade.time_taken is not None:
-                elapsed_seconds += chat.grade.time_taken
+            elapsed_seconds += chat.grade.time_taken
+        elif chat.created_at and not chat.completed:
+            # Active ungraded chat: compute elapsed from created_at
+            try:
+                created = datetime.fromisoformat(chat.created_at)
+                elapsed_seconds += max(int((now - created).total_seconds()), 0)
+            except (ValueError, TypeError):
+                pass
+        elif chat.grade:
+            # Graded but no time_taken recorded
+            if chat.grade.score is not None:
+                total_score += chat.grade.score
+            if chat.grade.passed is False:
+                all_passed = False
 
     # If no chats or no completed chats, all_passed is False
     if total_chats == 0 or completed_chats == 0:

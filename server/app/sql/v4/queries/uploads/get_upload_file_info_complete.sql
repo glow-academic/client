@@ -37,17 +37,17 @@ WITH params AS (
 ),
 upload_exists_check AS (
     SELECT EXISTS(
-        SELECT 1 FROM view_uploads_entry WHERE id = (SELECT upload_id FROM params)
+        SELECT 1 FROM view_uploads_entry WHERE upload_id = (SELECT upload_id FROM params)
     )::boolean as upload_exists
 ),
 upload_info AS (
-    SELECT 
-        u.id,
+    SELECT
+        u.upload_id as id,
         u.file_path,
         u.mime_type,
         u.size
     FROM view_uploads_entry u
-    WHERE u.id = (SELECT upload_id FROM params)
+    WHERE u.upload_id = (SELECT upload_id FROM params)
 ),
 actor_profile AS (
     SELECT COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = profile_artifact.id LIMIT 1), 'System') as actor_name

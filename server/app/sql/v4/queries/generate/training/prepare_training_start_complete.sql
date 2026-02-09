@@ -58,6 +58,7 @@ DECLARE
     v_entry_type text;
     v_entry_agent_id uuid;
     v_idx int;
+    v_time_limit_seconds int;
 BEGIN
     -- Look up profiles_resource ID from profile_artifact ID
     SELECT ppj.profiles_id INTO v_profiles_resource_id
@@ -147,6 +148,16 @@ BEGIN
       AND ssrj.active = true
     LIMIT 1;
 
+    -- Look up time limit for this scenario in this simulation
+    SELECT stlr.time_limit_seconds INTO v_time_limit_seconds
+    FROM simulation_scenario_time_limits_junction sstlj
+    JOIN scenario_time_limits_resource stlr ON stlr.id = sstlj.scenario_time_limit_id
+    WHERE sstlj.simulation_id = v_simulation_artifact_id
+      AND stlr.scenario_id = v_scenarios_resource_id
+      AND sstlj.active = true
+      AND stlr.active = true
+    LIMIT 1;
+
     -- Create attempt entry
     INSERT INTO simulation_attempts_entry (created_at, updated_at, practice)
     VALUES (NOW(), NOW(), false)
@@ -179,8 +190,8 @@ BEGIN
     END IF;
 
     -- Create chat entry (chat has attempt_id directly)
-    INSERT INTO simulation_chats_entry (attempt_id, created_at, updated_at, title)
-    VALUES (v_attempt_id, NOW(), NOW(), 'Chat')
+    INSERT INTO simulation_chats_entry (attempt_id, created_at, updated_at, title, time_limit_seconds)
+    VALUES (v_attempt_id, NOW(), NOW(), 'Chat', COALESCE(v_time_limit_seconds, 0))
     RETURNING id INTO v_chat_id;
 
     -- Link chat to scenario (using resource ID)
