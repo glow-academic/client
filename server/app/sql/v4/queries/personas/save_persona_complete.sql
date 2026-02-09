@@ -129,15 +129,6 @@ BEGIN
         UPDATE persona_artifact
         SET updated_at = NOW()
         WHERE id = v_persona_id;
-        -- Remove old group links before re-inserting
-        DELETE FROM persona_groups_junction WHERE persona_id = v_persona_id;
-    END IF;
-
-    -- Link group ID via junction table
-    IF group_id IS NOT NULL THEN
-        INSERT INTO persona_groups_junction (persona_id, group_id)
-        VALUES (v_persona_id, group_id)
-        ON CONFLICT DO NOTHING;
     END IF;
 
     -- Validate resource IDs exist
@@ -544,18 +535,44 @@ BEGIN
         ON CONFLICT ON CONSTRAINT persona_parameters_pkey DO UPDATE SET
             active = true
     ),
-    -- Sync linked resources with name/description
-    sync_artifact_resources AS (
-        UPDATE personas_resource r
-        SET name = n.name,
-            description = d.description
-        FROM persona_personas_junction j
-        CROSS JOIN params p
+    -- Deactivate old persona resource junction entries
+    deactivate_old_resource AS (
+        UPDATE persona_personas_junction
+        SET active = false
+        FROM params p
+        WHERE persona_personas_junction.persona_id = p.persona_id
+          AND persona_personas_junction.active = true
+    ),
+    -- Create new personas_resource with denormalized fields
+    create_new_resource AS (
+        INSERT INTO personas_resource (name, description, icon, color, department_ids, instructions, examples)
+        SELECT
+            n.name,
+            d.description,
+            ic.value,
+            c.hex_code,
+            p.department_ids,
+            ins.template,
+            COALESCE(
+                (SELECT ARRAY_AGG(e.example ORDER BY ewi.idx)
+                 FROM examples_with_index ewi
+                 JOIN examples_resource e ON e.id = ewi.ex_id),
+                ARRAY[]::text[]
+            )
+        FROM params p
         LEFT JOIN names_resource n ON n.id = p.name_id
         LEFT JOIN descriptions_resource d ON d.id = p.description_id
-        WHERE j.personas_id = r.id
-          AND j.persona_id = p.persona_id
-        RETURNING r.id
+        LEFT JOIN icons_resource ic ON ic.id = p.icon_id
+        LEFT JOIN colors_resource c ON c.id = p.color_id
+        LEFT JOIN instructions_resource ins ON ins.id = p.instructions_id
+        RETURNING id AS new_personas_resource_id
+    ),
+    -- Link new resource to persona artifact
+    link_new_resource AS (
+        INSERT INTO persona_personas_junction (persona_id, personas_id, active)
+        SELECT p.persona_id, cnr.new_personas_resource_id, true
+        FROM params p
+        CROSS JOIN create_new_resource cnr
     )
     SELECT
         x.persona_id AS persona_id,
