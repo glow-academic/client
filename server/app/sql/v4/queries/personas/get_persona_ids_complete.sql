@@ -81,7 +81,12 @@ RETURNS TABLE (
     departments_has_tools boolean,
     parameter_fields_has_tools boolean,
     examples_has_tools boolean,
-    parameters_has_tools boolean
+    parameters_has_tools boolean,
+
+    -- Config chain resource IDs (for pre-fetched generation config)
+    config_agent_resource_ids uuid[],
+    config_model_resource_ids uuid[],
+    config_provider_resource_ids uuid[]
 )
 LANGUAGE sql
 STABLE
@@ -261,6 +266,55 @@ candidate_agents_data AS (
       )
     GROUP BY a.id, n.name, a.updated_at, af_mcp.value, ata.tool_resources, ata.create_tool_ids, ata.link_tool_ids
 ),
+-- Config chain: user departments → settings → agents/providers → models
+-- Resolves the denormalized resource chain for generation config pre-fetching
+config_settings AS (
+    SELECT DISTINCT unnest(dr.setting_ids) as setting_id
+    FROM departments_resource dr
+    WHERE dr.id = ANY(user_department_ids)
+      AND dr.active = true
+      AND dr.setting_ids IS NOT NULL
+      AND dr.setting_ids != ARRAY[]::uuid[]
+),
+config_settings_data AS (
+    SELECT sr.id, sr.agent_ids, sr.provider_ids
+    FROM settings_resource sr
+    JOIN config_settings cs ON sr.id = cs.setting_id
+    WHERE sr.active = true
+),
+config_agent_resource_ids_data AS (
+    SELECT COALESCE(
+        ARRAY_AGG(DISTINCT agent_id),
+        ARRAY[]::uuid[]
+    ) as ids
+    FROM (
+        SELECT unnest(csd.agent_ids) as agent_id
+        FROM config_settings_data csd
+        WHERE csd.agent_ids IS NOT NULL AND csd.agent_ids != ARRAY[]::uuid[]
+    ) sub
+),
+config_provider_resource_ids_data AS (
+    SELECT COALESCE(
+        ARRAY_AGG(DISTINCT provider_id),
+        ARRAY[]::uuid[]
+    ) as ids
+    FROM (
+        SELECT unnest(csd.provider_ids) as provider_id
+        FROM config_settings_data csd
+        WHERE csd.provider_ids IS NOT NULL AND csd.provider_ids != ARRAY[]::uuid[]
+    ) sub
+),
+-- Resolve model_ids from agents_resource.model_id (fully parallel fetch in Python)
+config_model_resource_ids_data AS (
+    SELECT COALESCE(
+        ARRAY_AGG(DISTINCT ar.model_id),
+        ARRAY[]::uuid[]
+    ) as ids
+    FROM config_agent_resource_ids_data cari
+    JOIN LATERAL unnest(cari.ids) AS agent_res_id ON true
+    JOIN agents_resource ar ON ar.id = agent_res_id
+    WHERE ar.model_id IS NOT NULL
+),
 -- Tools existence check
 tools_existence_check AS (
     SELECT
@@ -314,7 +368,12 @@ SELECT
     tec.departments_has_tools,
     tec.parameter_fields_has_tools,
     tec.examples_has_tools,
-    tec.parameters_has_tools
+    tec.parameters_has_tools,
+
+    -- Config chain resource IDs (for pre-fetched generation config)
+    (SELECT ids FROM config_agent_resource_ids_data) as config_agent_resource_ids,
+    (SELECT ids FROM config_model_resource_ids_data) as config_model_resource_ids,
+    (SELECT ids FROM config_provider_resource_ids_data) as config_provider_resource_ids
 FROM params x
 CROSS JOIN tools_existence_check tec;
 $$;

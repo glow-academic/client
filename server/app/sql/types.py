@@ -8412,47 +8412,56 @@ class PrepareParameterGenerationApiResponse(BaseModel):
 
 
 
+# Generated from: get_agent_tools
+
+class GetAgentToolsSqlParams(BaseModel):
+
+    p_agent_id: UUID
+    p_resource_types: list[str] | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_agent_id,
+            self.p_resource_types,
+        )
+
+class GetAgentToolsSqlRow(BaseModel):
+
+    tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
+
+class GetAgentToolsApiRequest(BaseModel):
+
+    p_agent_id: UUID
+    p_resource_types: list[str] | None = None
+
+class GetAgentToolsApiResponse(BaseModel):
+
+    tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
+
+
+
 # Generated from: get_persona_generation_context
 
 class GetPersonaGenerationContextSqlParams(BaseModel):
 
     p_profile_id: UUID
-    p_agent_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.p_profile_id,
-            self.p_agent_id,
         )
 
 class GetPersonaGenerationContextSqlRow(BaseModel):
 
-    agent_exists: bool | None = None
-    agent_name: str | None = None
-    agent_is_active: bool | None = None
-    model_id: UUID | None = None
-    model_name: str | None = None
-    provider_id: UUID | None = None
-    provider_name: str | None = None
-    has_api_key: bool | None = None
     requests_per_day: int | None = None
     runs_today: int | None = None
 
 class GetPersonaGenerationContextApiRequest(BaseModel):
 
     p_profile_id: UUID
-    p_agent_id: UUID
 
 class GetPersonaGenerationContextApiResponse(BaseModel):
 
-    agent_exists: bool | None = None
-    agent_name: str | None = None
-    agent_is_active: bool | None = None
-    model_id: UUID | None = None
-    model_name: str | None = None
-    provider_id: UUID | None = None
-    provider_name: str | None = None
-    has_api_key: bool | None = None
     requests_per_day: int | None = None
     runs_today: int | None = None
 
@@ -8496,30 +8505,18 @@ class InsertGenerationMessagesApiResponse(BaseModel):
 class PreparePersonaGenerationSqlParams(BaseModel):
 
     p_profile_id: UUID
-    p_agent_id: UUID
     p_group_id: UUID | None = None
-    p_resources: list[IPersonaResourceV4] | None = None
-    p_current_resources: list[IPersonaResourceV4] | None = None
-    p_resource_types: list[str] | None = None
+    p_agents_resource_id: UUID | None = None
+    p_models_resource_id: UUID | None = None
+    p_providers_resource_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
-        # Convert p_resources composite array to tuples for asyncpg
-        p_resources_tuples = [
-            (conn.resource_type, conn.resource_ids)
-            for conn in (self.p_resources or [])
-        ]
-        # Convert p_current_resources composite array to tuples for asyncpg
-        p_current_resources_tuples = [
-            (conn.resource_type, conn.resource_ids)
-            for conn in (self.p_current_resources or [])
-        ]
         return (
             self.p_profile_id,
-            self.p_agent_id,
             self.p_group_id,
-            p_resources_tuples,
-            p_current_resources_tuples,
-            self.p_resource_types,
+            self.p_agents_resource_id,
+            self.p_models_resource_id,
+            self.p_providers_resource_id,
         )
 
 class PreparePersonaGenerationSqlRow(BaseModel):
@@ -8527,50 +8524,21 @@ class PreparePersonaGenerationSqlRow(BaseModel):
     run_id: UUID | None = None
     group_id: UUID | None = None
     trace_id: str | None = None
-    agent_name: str | None = None
-    system_prompt: str | None = None
-    model_name: str | None = None
-    provider_name: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    voice: str | None = None
-    quality: str | None = None
-    tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
-    developer_instruction_templates: list[str] | None = None
-    jinja_context: Any | None = None
-    output_modalities: list[str] | None = None
     config_id: UUID | None = None
 
 class PreparePersonaGenerationApiRequest(BaseModel):
 
     p_profile_id: UUID
-    p_agent_id: UUID
     p_group_id: UUID | None = None
-    p_resources: list[IPersonaResourceV4] | None = None
-    p_current_resources: list[IPersonaResourceV4] | None = None
-    p_resource_types: list[str] | None = None
+    p_agents_resource_id: UUID | None = None
+    p_models_resource_id: UUID | None = None
+    p_providers_resource_id: UUID | None = None
 
 class PreparePersonaGenerationApiResponse(BaseModel):
 
     run_id: UUID | None = None
     group_id: UUID | None = None
     trace_id: str | None = None
-    agent_name: str | None = None
-    system_prompt: str | None = None
-    model_name: str | None = None
-    provider_name: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    voice: str | None = None
-    quality: str | None = None
-    tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
-    developer_instruction_templates: list[str] | None = None
-    jinja_context: Any | None = None
-    output_modalities: list[str] | None = None
     config_id: UUID | None = None
 
 
@@ -13068,6 +13036,9 @@ class GetPersonaIdsSqlRow(BaseModel):
     parameter_fields_has_tools: bool | None = None
     examples_has_tools: bool | None = None
     parameters_has_tools: bool | None = None
+    config_agent_resource_ids: list[UUID] | None = None
+    config_model_resource_ids: list[UUID] | None = None
+    config_provider_resource_ids: list[UUID] | None = None
 
 class GetPersonaIdsApiRequest(BaseModel):
 
@@ -13106,6 +13077,9 @@ class GetPersonaIdsApiResponse(BaseModel):
     parameter_fields_has_tools: bool | None = None
     examples_has_tools: bool | None = None
     parameters_has_tools: bool | None = None
+    config_agent_resource_ids: list[UUID] | None = None
+    config_model_resource_ids: list[UUID] | None = None
+    config_provider_resource_ids: list[UUID] | None = None
 
 
 
@@ -15281,6 +15255,47 @@ class SaveProviderApiResponse(BaseModel):
 
 
 
+# Generated from: get_agents
+
+class GetAgentsSqlParams(BaseModel):
+
+    ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.ids,
+        )
+
+class QGetAgentsV4Item(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    model_id: UUID | None
+    temperature: float | None
+    reasoning: str | None
+    tool_ids: list[UUID] | None
+    quality: str | None
+    voice: str | None
+    prompt_id: UUID | None
+    instruction_ids: list[UUID] | None
+    active: bool | None
+    generated: bool | None
+
+class GetAgentsSqlRow(BaseModel):
+
+    items: list[QGetAgentsV4Item] | None = None
+
+class GetAgentsApiRequest(BaseModel):
+
+    ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class GetAgentsApiResponse(BaseModel):
+
+    items: list[QGetAgentsV4Item] | None = None
+
+
+
 # Generated from: get_args
 
 class GetArgsSqlParams(BaseModel):
@@ -17073,6 +17088,10 @@ class QGetModelsV4Item(BaseModel):
     id: UUID | None
     name: str | None
     description: str | None
+    value: str | None
+    endpoint: str | None
+    key: str | None
+    modality: str | None
     active: bool | None
     generated: bool | None
 
@@ -18236,6 +18255,40 @@ class ProtocolsApiRequest(BaseModel):
 class ProtocolsApiResponse(BaseModel):
 
     protocols_id: UUID | None = None
+
+
+
+# Generated from: get_providers
+
+class GetProvidersSqlParams(BaseModel):
+
+    ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.ids,
+        )
+
+class QGetProvidersV4Item(BaseModel):
+
+    id: UUID | None
+    value: str | None
+    name: str | None
+    description: str | None
+    active: bool | None
+    generated: bool | None
+
+class GetProvidersSqlRow(BaseModel):
+
+    items: list[QGetProvidersV4Item] | None = None
+
+class GetProvidersApiRequest(BaseModel):
+
+    ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class GetProvidersApiResponse(BaseModel):
+
+    items: list[QGetProvidersV4Item] | None = None
 
 
 
@@ -28361,6 +28414,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "PrepareParameterGenerationApiRequest",
         "PrepareParameterGenerationApiResponse",
     ),
+    "app/sql/v4/queries/generate/persona/get_agent_tools_complete.sql": (
+        "GetAgentToolsSqlParams",
+        "GetAgentToolsSqlRow",
+        "GetAgentToolsApiRequest",
+        "GetAgentToolsApiResponse",
+    ),
     "app/sql/v4/queries/generate/persona/get_persona_generation_context_complete.sql": (
         "GetPersonaGenerationContextSqlParams",
         "GetPersonaGenerationContextSqlRow",
@@ -29219,6 +29278,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SaveProviderApiRequest",
         "SaveProviderApiResponse",
     ),
+    "app/sql/v4/queries/resources/agents/get_agents_complete.sql": (
+        "GetAgentsSqlParams",
+        "GetAgentsSqlRow",
+        "GetAgentsApiRequest",
+        "GetAgentsApiResponse",
+    ),
     "app/sql/v4/queries/resources/args/get_args_complete.sql": (
         "GetArgsSqlParams",
         "GetArgsSqlRow",
@@ -29722,6 +29787,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "ProtocolsSqlRow",
         "ProtocolsApiRequest",
         "ProtocolsApiResponse",
+    ),
+    "app/sql/v4/queries/resources/providers/get_providers_complete.sql": (
+        "GetProvidersSqlParams",
+        "GetProvidersSqlRow",
+        "GetProvidersApiRequest",
+        "GetProvidersApiResponse",
     ),
     "app/sql/v4/queries/resources/qualities/get_qualities_complete.sql": (
         "GetQualitiesSqlParams",
@@ -31535,6 +31606,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/persona/get_agent_tools_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/generate/persona/get_persona_generation_context_complete.sql"]
     ) -> SqlString: ...
 
@@ -32250,6 +32326,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/agents/get_agents_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/args/get_args_complete.sql"]
     ) -> SqlString: ...
 
@@ -32666,6 +32747,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/protocols_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/providers/get_providers_complete.sql"]
     ) -> SqlString: ...
 
     @overload

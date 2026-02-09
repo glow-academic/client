@@ -1,6 +1,6 @@
--- Get context data for persona generation validation
--- This SQL fetches RAW DATA only - no business logic
--- Python applies the validation rules in permissions.py
+-- Get rate limit context for persona generation validation
+-- Agent/model/provider validation is now done in Python from pre-fetched resources
+-- This SQL only provides rate limit data
 -- 1) Drop function first
 DO $$
 DECLARE
@@ -16,28 +16,11 @@ BEGIN
     END LOOP;
 END $$;
 
--- 2) Create the function
+-- 2) Create the function (rate limit only)
 CREATE OR REPLACE FUNCTION socket_get_persona_generation_context_v4(
-    p_profile_id uuid,
-    p_agent_id uuid
+    p_profile_id uuid
 )
 RETURNS TABLE (
-    -- Agent context
-    agent_exists boolean,
-    agent_name text,
-    agent_is_active boolean,
-
-    -- Model context (via junction traversal)
-    model_id uuid,
-    model_name text,
-
-    -- Provider context (via full junction chain)
-    provider_id uuid,
-    provider_name text,
-
-    -- API key context
-    has_api_key boolean,
-
     -- Rate limit context (raw data, not computed)
     requests_per_day integer,  -- NULL = unlimited
     runs_today bigint
@@ -46,48 +29,7 @@ LANGUAGE sql
 STABLE
 AS $$
 WITH params AS (
-    SELECT
-        p_profile_id AS profile_id,
-        p_agent_id AS agent_id
-),
--- Check if agent exists
-agent_data AS (
-    SELECT
-        a.id as agent_id,
-        TRUE as agent_exists,
-        (SELECT n.name FROM agent_names_junction an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) as agent_name,
-        EXISTS (
-            SELECT 1 FROM agent_flags_junction af
-            JOIN flags_resource f ON af.flag_id = f.id
-            WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true
-        ) as agent_is_active
-    FROM agent_artifact a
-    CROSS JOIN params p
-    WHERE a.id = p.agent_id
-    LIMIT 1
-),
--- Get model via denormalized agents_resource.model_id
-model_data AS (
-    SELECT mr.id as model_id, mr.value as model_name, mr.key as model_key
-    FROM params p
-    JOIN agent_agents_junction aaj ON aaj.agent_id = p.agent_id
-    JOIN agents_resource ar ON ar.id = aaj.agents_id
-    JOIN models_resource mr ON mr.id = ar.model_id
-    LIMIT 1
-),
--- Get provider via provider_models_junction
-provider_data AS (
-    SELECT
-        pm.provider_id as provider_id,
-        (SELECT n.name FROM provider_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.provider_id = pm.provider_id LIMIT 1) as provider_name
-    FROM model_data md
-    JOIN provider_models_junction pm ON pm.model_id = md.model_id
-    LIMIT 1
-),
--- Check if model has API key (denormalized on models_resource.key)
-api_key_check AS (
-    SELECT (md.model_key IS NOT NULL AND md.model_key != '') as has_api_key
-    FROM model_data md
+    SELECT p_profile_id AS profile_id
 ),
 -- Get rate limit for profile (raw data)
 rate_limit_data AS (
@@ -108,21 +50,9 @@ runs_today_data AS (
     WHERE mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
 )
 SELECT
-    COALESCE(ad.agent_exists, FALSE) as agent_exists,
-    ad.agent_name,
-    COALESCE(ad.agent_is_active, FALSE) as agent_is_active,
-    md.model_id,
-    md.model_name,
-    pd.provider_id,
-    pd.provider_name,
-    COALESCE(akc.has_api_key, FALSE) as has_api_key,
     rld.requests_per_day,
     COALESCE(rtd.runs_today, 0) as runs_today
 FROM params p
-LEFT JOIN agent_data ad ON TRUE
-LEFT JOIN model_data md ON TRUE
-LEFT JOIN provider_data pd ON TRUE
-LEFT JOIN api_key_check akc ON TRUE
 LEFT JOIN rate_limit_data rld ON TRUE
 LEFT JOIN runs_today_data rtd ON TRUE
 $$;

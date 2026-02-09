@@ -64,6 +64,7 @@ from app.api.v4.artifacts.persona.types import (
     PersonaResources,
 )
 from app.api.v4.permissions import select_agents_for_artifact
+from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.colors.get import get_colors_internal
 from app.api.v4.resources.colors.search import search_colors_internal
 from app.api.v4.resources.departments.get import get_departments_internal
@@ -79,11 +80,13 @@ from app.api.v4.resources.icons.get import get_icons_internal
 from app.api.v4.resources.icons.search import search_icons_internal
 from app.api.v4.resources.instructions.get import get_instructions_internal
 from app.api.v4.resources.instructions.search import search_instructions_internal
+from app.api.v4.resources.models.get import get_models_internal
 from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.names.search import search_names_internal
 from app.api.v4.resources.parameter_fields.get import get_parameter_fields_internal
 from app.api.v4.resources.parameters.get import get_parameters_internal
 from app.api.v4.resources.parameters.search import search_parameters_internal
+from app.api.v4.resources.providers.get import get_providers_internal
 from app.api.v4.types import CandidateAgent
 from app.api.v4.views.drafts.get import get_draft_resources_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
@@ -240,6 +243,11 @@ async def get_persona_internal(
             selected_example_ids = draft_item.example_ids
         if draft_item.parameter_ids:
             selected_parameter_ids = draft_item.parameter_ids
+
+    # Config chain resource IDs (for pre-fetched generation config)
+    config_agent_resource_ids = ids_result.config_agent_resource_ids or []
+    config_model_resource_ids = ids_result.config_model_resource_ids or []
+    config_provider_resource_ids = ids_result.config_provider_resource_ids or []
 
     # Get tools existence flags from Query 2 (used for show_* UI flags)
     names_has_tools = ids_result.names_has_tools or False
@@ -519,6 +527,20 @@ async def get_persona_internal(
             )
             return (selected, suggestions)
 
+    async def fetch_config_agents():
+        async with pool.acquire() as c:
+            return await get_agents_internal(c, config_agent_resource_ids, bypass_cache)
+
+    async def fetch_config_models():
+        async with pool.acquire() as c:
+            return await get_models_internal(c, config_model_resource_ids, bypass_cache)
+
+    async def fetch_config_providers():
+        async with pool.acquire() as c:
+            return await get_providers_internal(
+                c, config_provider_resource_ids, bypass_cache
+            )
+
     # === PARALLEL FETCH (all resources at once) ===
     # Fields are now a top-level catalog resource. Parameters carry field_ids and
     # fields carry conditional_parameter_ids, so no two-phase fetch is needed.
@@ -534,6 +556,9 @@ async def get_persona_internal(
         (examples_selected, examples_suggestions),
         (parameters_selected, parameters_suggestions),
         fields_catalog,
+        config_agents_result,
+        config_models_result,
+        config_providers_result,
     ) = await asyncio.gather(
         fetch_names(),
         fetch_descriptions(),
@@ -546,6 +571,9 @@ async def get_persona_internal(
         fetch_examples(),
         fetch_parameters(),
         fetch_fields(),
+        fetch_config_agents(),
+        fetch_config_models(),
+        fetch_config_providers(),
     )
 
     names = _dedupe_by_id(names_selected + names_suggestions, "id")
@@ -750,6 +778,10 @@ async def get_persona_internal(
         # Per-resource tool IDs
         create_tool_ids_map=create_tool_ids_map,
         link_tool_ids_map=link_tool_ids_map,
+        # Config resources
+        config_agent_resources=config_agents_result or None,
+        config_model_resources=config_models_result or None,
+        config_provider_resources=config_providers_result or None,
     )
 
 
@@ -780,6 +812,10 @@ async def get_persona_websocket(
         group_id=data.group_id,
         # Resources for Jinja context
         resources=data.resources_payload,
+        # Config resources for generation
+        config_agents=data.config_agent_resources,
+        config_models=data.config_model_resources,
+        config_providers=data.config_provider_resources,
     )
 
 

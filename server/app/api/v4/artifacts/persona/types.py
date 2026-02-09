@@ -9,6 +9,7 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from app.sql.types import (
+    QGetAgentsV4Item,
     QGetColorsV4Item,
     QGetDepartmentsV4Item,
     QGetDescriptionsV4Item,
@@ -16,9 +17,11 @@ from app.sql.types import (
     QGetFieldsV4Item,
     QGetIconsV4Item,
     QGetInstructionsV4Item,
+    QGetModelsV4Item,
     QGetNamesV4Item,
     QGetParameterFieldsV4Item,
     QGetParametersV4Item,
+    QGetProvidersV4Item,
 )
 
 
@@ -157,6 +160,7 @@ class GetPersonaWebsocketResponse(BaseModel):
     - Resource-to-agent mapping (for agent_id lookup by resource type)
     - Group ID (for existing group context)
     - Resources (for Jinja template context)
+    - Config resources (pre-fetched generation config from denormalized chain)
     """
 
     # Resource type -> agent_id mapping (server resolves domains internally)
@@ -167,6 +171,11 @@ class GetPersonaWebsocketResponse(BaseModel):
 
     # Resources for Jinja template context
     resources: PersonaResources | None = None
+
+    # Config resources for generation (pre-fetched from denormalized chain)
+    config_agents: list[QGetAgentsV4Item] | None = None
+    config_models: list[QGetModelsV4Item] | None = None
+    config_providers: list[QGetProvidersV4Item] | None = None
 
 
 class PersonaResourceBucket(BaseModel):
@@ -234,6 +243,11 @@ class PersonaInternalData:
     # Per-resource tool IDs (from selected agents)
     create_tool_ids_map: dict[str, UUID | None]
     link_tool_ids_map: dict[str, UUID | None]
+
+    # Config resources (from denormalized chain, for generation)
+    config_agent_resources: list[QGetAgentsV4Item] | None
+    config_model_resources: list[QGetModelsV4Item] | None
+    config_provider_resources: list[QGetProvidersV4Item] | None
 
 
 # ========== List Endpoint Types ==========

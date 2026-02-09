@@ -32,13 +32,13 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (q.id, q.name, q.description, q.active, q.generated)::types.q_get_models_v4_item
+        (q.id, q.name, q.description, q.value, q.endpoint, q.key, q.modality, q.active, q.generated)::types.q_get_models_v4_item
         ORDER BY q.name
     ),
     ARRAY[]::types.q_get_models_v4_item[]
 ) as items
 FROM (
-    SELECT m.id, m.name, m.description, COALESCE(m.active, true) AS active, COALESCE(m.generated, false) AS generated
+    SELECT m.id, m.name, m.description, m.value, m.endpoint, m.key, m.modality::text, COALESCE(m.active, true) AS active, COALESCE(m.generated, false) AS generated
     FROM models_resource m
     WHERE m.name IS NOT NULL
       AND m.name != ''
