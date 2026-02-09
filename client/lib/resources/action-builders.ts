@@ -3,13 +3,11 @@
  *
  * Each resource in a save/patch payload carries:
  * - resource_id / resource_ids — the actual ID(s)
- * - group_id — from the server's entity data section
  * - create_tool_id — set when the resource was freshly created (flushed)
  * - link_tool_id — set when the resource changed from its reference state
  */
 
 export type ResourceSection = {
-  group_id?: string | null;
   create_tool_id?: string | null;
   link_tool_id?: string | null;
 };
@@ -33,7 +31,6 @@ export function buildSingleAction(opts: {
 }) {
   return {
     resource_id: opts.resourceId ?? null,
-    group_id: opts.section?.group_id ?? null,
     create_tool_id: opts.wasCreated
       ? (opts.section?.create_tool_id ?? null)
       : null,
@@ -49,7 +46,6 @@ export function buildMultiAction(opts: {
 }) {
   return {
     resource_ids: opts.resourceIds.length > 0 ? opts.resourceIds : null,
-    group_id: opts.section?.group_id ?? null,
     create_tool_id: opts.wasCreated
       ? (opts.section?.create_tool_id ?? null)
       : null,
