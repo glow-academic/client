@@ -145,12 +145,13 @@ BEGIN
         SELECT
             m.value as model_name,
             m.id as model_id,
-            (SELECT n.name FROM provider_models_junction pmj JOIN provider_names_junction pn ON pn.provider_id = pmj.provider_id JOIN names_resource n ON pn.name_id = n.id WHERE pmj.model_id = m.id LIMIT 1) as provider_name,
-            COALESCE(m.endpoint, '') as base_url,
-            m.key as api_key
+            (SELECT n.name FROM provider_providers_junction ppj JOIN provider_names_junction pn ON pn.provider_id = ppj.provider_id JOIN names_resource n ON pn.name_id = n.id WHERE ppj.providers_id = pr.id LIMIT 1) as provider_name,
+            COALESCE(pr.endpoint, '') as base_url,
+            pr.key as api_key
         FROM agent_agents_junction aaj
         JOIN agents_resource ar ON ar.id = aaj.agents_id
         JOIN models_resource m ON m.id = ar.model_id
+        LEFT JOIN providers_resource pr ON pr.id = m.provider_id
         WHERE aaj.agent_id = v_agent_id AND aaj.active = true
         LIMIT 1
     ),

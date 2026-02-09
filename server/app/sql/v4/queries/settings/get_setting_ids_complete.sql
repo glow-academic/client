@@ -35,7 +35,7 @@ RETURNS TABLE (
     departments_agent_id uuid,
     profiles_agent_id uuid,
     auths_agent_id uuid,
-    providers_agent_id uuid,
+    provider_key_ids uuid[],
     keys_agent_id uuid
 )
 LANGUAGE sql
@@ -54,7 +54,7 @@ SELECT
     s.departments_agent_id,
     s.profiles_agent_id,
     s.auths_agent_id,
-    s.providers_agent_id,
+    s.provider_key_ids,
     s.keys_agent_id
 FROM api_get_setting_v4(
     profile_id => profile_id,

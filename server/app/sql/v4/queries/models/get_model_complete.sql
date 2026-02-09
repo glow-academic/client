@@ -676,21 +676,34 @@ value_resource_data AS (
     FROM params
 ),
 endpoint_resource_data AS (
-    SELECT 
+    SELECT
         COALESCE(
             (SELECT de.endpoints_id FROM endpoints_drafts_connection de WHERE de.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-            (SELECT me.endpoint_id FROM model_endpoints_junction me WHERE me.model_id = (SELECT model_id FROM params) AND me.active = true LIMIT 1)
+            (SELECT pej.endpoint_id
+             FROM model_providers_junction mpj
+             JOIN providers_resource pr ON pr.id = mpj.providers_id
+             JOIN provider_providers_junction ppj ON ppj.providers_id = pr.id
+             JOIN provider_endpoints_junction pej ON pej.provider_id = ppj.provider_id AND pej.active = true
+             WHERE mpj.model_id = (SELECT model_id FROM params) AND mpj.active = true
+             LIMIT 1)
         ) as endpoint_id,
         (SELECT ROW(e.id, e.base_url, COALESCE(e.generated, false))::types.q_get_model_v4_endpoint_resource FROM endpoints_drafts_connection de JOIN endpoints_resource e ON de.endpoints_id = e.id WHERE de.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_endpoint_resource,
-        (SELECT ROW(e.id, e.base_url, COALESCE(e.generated, false))::types.q_get_model_v4_endpoint_resource FROM model_endpoints_junction me JOIN endpoints_resource e ON me.endpoint_id = e.id WHERE me.model_id = (SELECT model_id FROM params) AND me.active = true LIMIT 1) as model_endpoint_resource
+        (SELECT ROW(e.id, e.base_url, COALESCE(e.generated, false))::types.q_get_model_v4_endpoint_resource
+         FROM model_providers_junction mpj
+         JOIN providers_resource pr ON pr.id = mpj.providers_id
+         JOIN provider_providers_junction ppj ON ppj.providers_id = pr.id
+         JOIN provider_endpoints_junction pej ON pej.provider_id = ppj.provider_id AND pej.active = true
+         JOIN endpoints_resource e ON e.id = pej.endpoint_id
+         WHERE mpj.model_id = (SELECT model_id FROM params) AND mpj.active = true
+         LIMIT 1) as model_endpoint_resource
     FROM params
 ),
 model_endpoint_data AS (
-    SELECT 
-        COALESCE(e.base_url, '') as base_url
+    SELECT
+        COALESCE(pr.endpoint, '') as base_url
     FROM model_artifact m
-    LEFT JOIN model_endpoints_junction me_j ON me_j.model_id = m.id
-    LEFT JOIN endpoints_resource e ON e.id = me_j.endpoint_id AND e.active = true
+    LEFT JOIN model_providers_junction mpj ON mpj.model_id = m.id AND mpj.active = true
+    LEFT JOIN providers_resource pr ON pr.id = mpj.providers_id
     WHERE m.id = (SELECT model_id FROM params)
     AND (SELECT model_id FROM params) IS NOT NULL
     LIMIT 1
@@ -947,15 +960,12 @@ provider_resource_data AS (
     SELECT 
         COALESCE(
             (SELECT dp.providers_id FROM providers_drafts_connection dp WHERE dp.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-            CASE 
+            CASE
                 WHEN (SELECT model_id FROM params) IS NULL THEN NULL::uuid
                 ELSE (
-                    SELECT p.id
-                    FROM provider_models_junction pm
-                    JOIN model_models_junction mmj ON mmj.models_id = pm.model_id
-                    JOIN provider_providers_junction ppj ON ppj.provider_id = pm.provider_id
-                    JOIN providers_resource p ON p.id = ppj.providers_id
-                    WHERE mmj.model_id = (SELECT model_id FROM params)
+                    SELECT mpj.providers_id
+                    FROM model_providers_junction mpj
+                    WHERE mpj.model_id = (SELECT model_id FROM params) AND mpj.active = true
                     LIMIT 1
                 )
             END
@@ -975,7 +985,7 @@ provider_resource_data AS (
             JOIN names_resource n ON n.id = pn.name_id
             WHERE dp.draft_id = (SELECT draft_id FROM params)
             LIMIT 1),
-            CASE 
+            CASE
                 WHEN (SELECT model_id FROM params) IS NULL THEN NULL::types.q_get_model_v4_provider_resource
                 ELSE (
                     SELECT ROW(
@@ -984,14 +994,13 @@ provider_resource_data AS (
                         COALESCE((SELECT d.description FROM provider_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.provider_id = pr.id LIMIT 1), ''),
                         false
                     )::types.q_get_model_v4_provider_resource
-                    FROM provider_models_junction pm
-                    JOIN model_models_junction mmj ON mmj.models_id = pm.model_id
-                    JOIN provider_artifact pr ON pr.id = pm.provider_id
-                    JOIN provider_providers_junction ppj ON ppj.provider_id = pr.id
-                    JOIN providers_resource p ON p.id = ppj.providers_id
+                    FROM model_providers_junction mpj
+                    JOIN providers_resource p ON p.id = mpj.providers_id
+                    JOIN provider_providers_junction ppj ON ppj.providers_id = p.id
+                    JOIN provider_artifact pr ON pr.id = ppj.provider_id
                     JOIN provider_names_junction pn ON pn.provider_id = pr.id
                     JOIN names_resource n ON n.id = pn.name_id
-                    WHERE mmj.model_id = (SELECT model_id FROM params)
+                    WHERE mpj.model_id = (SELECT model_id FROM params) AND mpj.active = true
                     LIMIT 1
                 )
             END
@@ -1009,32 +1018,30 @@ provider_suggestions_data AS (
 model_all_keys AS (
     -- For detail mode: Get keys via settings system: settings -> provider -> key
     -- For each department that has this model, get keys from their settings
+    -- For detail mode: Get keys via provider chain: model → provider → provider_keys_junction → keys
     SELECT DISTINCT
-        pkr.key_id,
+        pkj.key_id,
         kr.name as name,
         kr.key,
         kr.description as description,
         kr.active as active,
         ARRAY_AGG(DISTINCT ds.department_id) FILTER (WHERE ds.department_id IS NOT NULL) as department_ids
     FROM model_artifact m
-    JOIN models_resource m_res ON TRUE
-    JOIN model_models_junction mmj ON mmj.models_id = m_res.id AND mmj.model_id = m.id
-    LEFT JOIN provider_models_junction pm ON pm.model_id = m_res.id
-    LEFT JOIN provider_artifact pr ON pr.id = pm.provider_id
-    LEFT JOIN provider_providers_junction ppj ON ppj.provider_id = pr.id
-    LEFT JOIN providers_resource p ON p.id = ppj.providers_id
-    JOIN provider_keys_resource pkr ON pkr.provider_id = p.id AND pkr.active = true
-    JOIN keys_resource kr ON kr.id = pkr.key_id AND kr.active
-    JOIN setting_provider_keys_junction spk ON spk.provider_key_id = pkr.id AND spk.active = true
-    JOIN setting_artifact s ON s.id = spk.setting_id AND EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'scenario_active' AND sf.value = true)
-    JOIN department_settings_junction ds ON ds.settings_id = s.id AND ds.active = true
+    JOIN model_providers_junction mpj ON mpj.model_id = m.id AND mpj.active = true
+    JOIN providers_resource pr ON pr.id = mpj.providers_id
+    JOIN provider_providers_junction ppj ON ppj.providers_id = pr.id
+    JOIN provider_keys_junction pkj ON pkj.provider_id = ppj.provider_id AND pkj.active = true
+    JOIN keys_resource kr ON kr.id = pkj.key_id AND kr.active
+    LEFT JOIN provider_keys_resource pkr ON pkr.provider_id = pr.id AND pkr.key_id = kr.id AND pkr.active = true
+    LEFT JOIN setting_provider_keys_junction spk ON spk.provider_key_id = pkr.id AND spk.active = true
+    LEFT JOIN setting_artifact s ON s.id = spk.setting_id
+    LEFT JOIN department_settings_junction ds ON ds.settings_id = s.id AND ds.active = true
     WHERE m.id = (SELECT model_id FROM params)
     AND (SELECT model_id FROM params) IS NOT NULL
-    AND ds.active = true
-    GROUP BY pkr.key_id, kr.name, kr.key, kr.description, kr.active
-    
+    GROUP BY pkj.key_id, kr.name, kr.key, kr.description, kr.active
+
     UNION ALL
-    
+
     -- General keys (keys without department links that user has access to)
     -- Works for both new and detail modes
     SELECT DISTINCT
@@ -1051,14 +1058,11 @@ model_all_keys AS (
         (SELECT model_id FROM params) IS NULL
         OR NOT EXISTS (
             -- Exclude keys already included via provider_keys for this model's provider
-            SELECT 1 FROM model_artifact m2
-            JOIN model_models_junction mmj2 ON mmj2.model_id = m2.id
-            JOIN provider_models_junction pm2 ON pm2.model_id = mmj2.models_id
-            JOIN provider_providers_junction ppj2 ON ppj2.provider_id = pm2.provider_id
-            JOIN providers_resource p2 ON p2.id = ppj2.providers_id
-            JOIN provider_keys_resource pkr2 ON pkr2.provider_id = p2.id AND pkr2.key_id = kr.id AND pkr2.active = true
-            JOIN setting_provider_keys_junction spk2 ON spk2.provider_key_id = pkr2.id AND spk2.active = true
-            WHERE m2.id = (SELECT model_id FROM params)
+            SELECT 1 FROM model_providers_junction mpj2
+            JOIN providers_resource pr2 ON pr2.id = mpj2.providers_id
+            JOIN provider_providers_junction ppj2 ON ppj2.providers_id = pr2.id
+            JOIN provider_keys_junction pkj2 ON pkj2.provider_id = ppj2.provider_id AND pkj2.key_id = kr.id AND pkj2.active = true
+            WHERE mpj2.model_id = (SELECT model_id FROM params) AND mpj2.active = true
         )
     )
     AND (
@@ -1317,26 +1321,24 @@ value_suggestions_data AS (
     FROM params
     LIMIT 1
 ),
--- Endpoint suggestions: linked to models OR same group with generated=true
+-- Endpoint suggestions: linked to providers OR same group with generated=true
 endpoint_suggestions_data AS (
-    SELECT 
+    SELECT
         COALESCE(
-            (SELECT ARRAY_AGG(me.endpoint_id ORDER BY me.created_at DESC)
+            (SELECT ARRAY_AGG(pe.endpoint_id ORDER BY pe.created_at DESC)
              FROM (
-                 SELECT DISTINCT me.endpoint_id, MAX(me.created_at) as created_at
-                 FROM model_endpoints_junction me
-                 JOIN endpoints_resource e ON e.id = me.endpoint_id
+                 SELECT DISTINCT pe.endpoint_id, MAX(pe.created_at) as created_at
+                 FROM provider_endpoints_junction pe
+                 JOIN endpoints_resource e ON e.id = pe.endpoint_id
                  CROSS JOIN draft_group_data dgd
-                 WHERE me.endpoint_id IS NOT NULL
+                 WHERE pe.endpoint_id IS NOT NULL
                    AND e.base_url IS NOT NULL
                    AND e.base_url != ''
                    AND (
-                       -- Option 1: Linked to models (model_endpoints_junction junction table means it's validated/used)
-                       -- Option 2: OR linked to same group with generated=true (show generated items from current group)
-                       me.generated = false
+                       pe.generated = false
                        OR
                        (
-                           me.generated = true
+                           pe.generated = true
                            AND e.generated = true
                            AND EXISTS (
                                SELECT 1 FROM view_calls_entry c
@@ -1346,10 +1348,10 @@ endpoint_suggestions_data AS (
                            )
                        )
                    )
-                 GROUP BY me.endpoint_id
-                 ORDER BY MAX(me.created_at) DESC
+                 GROUP BY pe.endpoint_id
+                 ORDER BY MAX(pe.created_at) DESC
                  LIMIT 20
-             ) me),
+             ) pe),
             ARRAY[]::uuid[]
         ) as endpoint_suggestions
     FROM params

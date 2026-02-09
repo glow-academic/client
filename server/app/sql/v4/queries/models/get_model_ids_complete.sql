@@ -131,20 +131,32 @@ value_resource_data AS (
 ),
 endpoint_resource_data AS (
     SELECT
-        (SELECT me.endpoint_id FROM model_endpoints_junction me WHERE me.model_id = (SELECT model_id FROM params) AND me.active = true LIMIT 1) as endpoint_id
+        (SELECT pej.endpoint_id
+         FROM model_providers_junction mpj
+         JOIN providers_resource pr ON pr.id = mpj.providers_id
+         JOIN provider_providers_junction ppj ON ppj.providers_id = pr.id
+         JOIN provider_endpoints_junction pej ON pej.provider_id = ppj.provider_id AND pej.active = true
+         WHERE mpj.model_id = (SELECT model_id FROM params) AND mpj.active = true
+         LIMIT 1) as endpoint_id
     FROM params
 ),
 provider_resource_data AS (
     SELECT
-        (SELECT pm.provider_id
-         FROM provider_models_junction pm
-         WHERE pm.model_id = (SELECT model_id FROM params)
+        (SELECT mpj.providers_id
+         FROM model_providers_junction mpj
+         WHERE mpj.model_id = (SELECT model_id FROM params) AND mpj.active = true
          LIMIT 1) as provider_id
     FROM params
 ),
 key_resource_data AS (
     SELECT
-        (SELECT mk.key_id FROM model_keys_junction mk WHERE mk.model_id = (SELECT model_id FROM params) AND mk.active = true LIMIT 1) as key_id
+        (SELECT pkj.key_id
+         FROM model_providers_junction mpj
+         JOIN providers_resource pr ON pr.id = mpj.providers_id
+         JOIN provider_providers_junction ppj ON ppj.providers_id = pr.id
+         JOIN provider_keys_junction pkj ON pkj.provider_id = ppj.provider_id AND pkj.active = true
+         WHERE mpj.model_id = (SELECT model_id FROM params) AND mpj.active = true
+         LIMIT 1) as key_id
     FROM params
 ),
 -- Flag IDs

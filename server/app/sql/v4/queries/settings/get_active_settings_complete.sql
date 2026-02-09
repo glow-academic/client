@@ -51,8 +51,7 @@ RETURNS TABLE (
     danger_threshold integer,
     auth_ids text[],
     auths types.q_get_settings_detail_v4_auth[],
-    provider_ids text[],
-    providers types.q_get_settings_detail_v4_provider[]
+    provider_key_ids uuid[]
 )
 LANGUAGE sql
 STABLE
@@ -176,24 +175,14 @@ settings_auths_data AS (
         ARRAY_AGG(sawi.auth_id::text ORDER BY sawi.auth_id::text) FILTER (WHERE sawi.auth_id IS NOT NULL) as auth_ids
     FROM settings_auths_with_items sawi
 ),
-settings_providers_data AS (
-    -- Get linked providers for this settings (providers is now an enum)
-    SELECT 
-        COALESCE(
-            ARRAY_AGG(
-                (n.name, n.name, COALESCE((SELECT d.description FROM provider_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.provider_id = pr.id LIMIT 1), ''), n.name, sp.active)::types.q_get_settings_detail_v4_provider
-                ORDER BY n.name
-            ),
-            '{}'::types.q_get_settings_detail_v4_provider[]
-        ) as providers,
-        ARRAY_AGG(n.name ORDER BY n.name) as provider_ids
+settings_provider_keys_data AS (
+    -- Get provider_key_ids from settings_resource
+    SELECT
+        COALESCE(sr.provider_key_ids, ARRAY[]::uuid[]) as provider_key_ids
     FROM selected_settings ss
-    JOIN setting_providers_junction sp ON sp.settings_id = ss.settings_id AND sp.active = true
-    JOIN providers_resource p ON p.id = sp.providers_id
-    JOIN provider_providers_junction ppj ON ppj.providers_id = p.id
-    JOIN provider_artifact pr ON pr.id = ppj.provider_id
-    JOIN provider_names_junction pn ON pn.provider_id = pr.id
-    JOIN names_resource n ON n.id = pn.name_id
+    JOIN setting_settings_junction ssj ON ssj.setting_id = ss.settings_id AND ssj.active = true
+    JOIN settings_resource sr ON sr.id = ssj.settings_id
+    LIMIT 1
 )
 SELECT 
     s.id as settings_id,
@@ -221,10 +210,9 @@ SELECT
     COALESCE((SELECT p.value FROM setting_thresholds_junction st JOIN thresholds_resource p ON st.threshold_id = p.id WHERE st.setting_id = s.id AND st.type = 'danger'::threshold_type LIMIT 1), 70),
     COALESCE(sad.auth_ids, ARRAY[]::text[]) as auth_ids,
     COALESCE(sad.auths, '{}'::types.q_get_settings_detail_v4_auth[]) as auths,
-    COALESCE(spd.provider_ids, ARRAY[]::text[]) as provider_ids,
-    COALESCE(spd.providers, '{}'::types.q_get_settings_detail_v4_provider[]) as providers
+    COALESCE(spkd.provider_key_ids, ARRAY[]::uuid[]) as provider_key_ids
 FROM selected_settings ss
 JOIN setting_artifact s ON s.id = ss.settings_id
 LEFT JOIN settings_auths_data sad ON true
-LEFT JOIN settings_providers_data spd ON true
+LEFT JOIN settings_provider_keys_data spkd ON true
 $$;

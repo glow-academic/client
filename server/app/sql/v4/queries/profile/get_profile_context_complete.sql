@@ -195,8 +195,7 @@ RETURNS TABLE (
     settings_danger_threshold integer,
     settings_auth_ids text[],
     settings_auths types.q_get_profile_context_v4_auth[],
-    settings_provider_ids text[],
-    settings_providers types.q_get_profile_context_v4_provider[],
+    settings_provider_key_ids uuid[],
     -- Computed fields
     available_sections text[],
     available_routes text[],
@@ -493,24 +492,14 @@ settings_resolution AS (
         JOIN setting_auths_junction sa ON sa.settings_id = ss.settings_id AND sa.active = true
         JOIN auths_resource a ON a.id = sa.auth_id AND EXISTS (SELECT 1 FROM auth_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.auth_id = a.id AND f.name = 'auth_active' AND af.value = true)
     ),
-    settings_providers_data AS (
-        -- Get linked providers for this settings (providers is now a resource table)
+    settings_provider_keys_data AS (
+        -- Get provider_key_ids from settings_resource
         SELECT
-            ARRAY_AGG(n.name ORDER BY n.name) as provider_ids,
-            COALESCE(
-                ARRAY_AGG(
-                    (p.id::text, n.name, COALESCE((SELECT d.description FROM provider_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.provider_id = pr.id LIMIT 1), ''), n.name)::types.q_get_profile_context_v4_provider
-                    ORDER BY n.name
-                ),
-                '{}'::types.q_get_profile_context_v4_provider[]
-            ) as providers
+            COALESCE(sr.provider_key_ids, ARRAY[]::uuid[]) as provider_key_ids
         FROM selected_settings ss
-        JOIN setting_providers_junction sp ON sp.settings_id = ss.settings_id AND sp.active = true
-        JOIN providers_resource p ON p.id = sp.providers_id
-        JOIN provider_providers_junction ppj ON ppj.providers_id = p.id
-        JOIN provider_artifact pr ON pr.id = ppj.provider_id
-        JOIN provider_names_junction pn ON pn.provider_id = pr.id
-        JOIN names_resource n ON n.id = pn.name_id
+        JOIN setting_settings_junction ssj ON ssj.setting_id = ss.settings_id AND ssj.active = true
+        JOIN settings_resource sr ON sr.id = ssj.settings_id
+        LIMIT 1
     )
     SELECT 
         s.id::text as settings_id,
@@ -538,12 +527,11 @@ settings_resolution AS (
         (SELECT t.value FROM setting_thresholds_junction st JOIN thresholds_resource t ON st.threshold_id = t.id WHERE st.setting_id = s.id AND st.type = 'danger'::threshold_type LIMIT 1) as danger_threshold,
         COALESCE(sad.auth_ids, ARRAY[]::text[]) as settings_auth_ids,
         COALESCE(sad.auths, '{}'::types.q_get_profile_context_v4_auth[]) as settings_auths,
-        COALESCE(spd.provider_ids, ARRAY[]::text[]) as settings_provider_ids,
-        COALESCE(spd.providers, '{}'::types.q_get_profile_context_v4_provider[]) as settings_providers
+        COALESCE(spkd.provider_key_ids, ARRAY[]::uuid[]) as settings_provider_key_ids
     FROM selected_settings ss
     JOIN setting_artifact s ON s.id = ss.settings_id::uuid
     LEFT JOIN settings_auths_data sad ON true
-    LEFT JOIN settings_providers_data spd ON true
+    LEFT JOIN settings_provider_keys_data spkd ON true
     LIMIT 1
 ),
 roles_data AS (
@@ -731,8 +719,7 @@ SELECT
     sr.danger_threshold as settings_danger_threshold,
     sr.settings_auth_ids as settings_auth_ids,
     sr.settings_auths as settings_auths,
-    sr.settings_provider_ids as settings_provider_ids,
-    sr.settings_providers as settings_providers,
+    sr.settings_provider_key_ids as settings_provider_key_ids,
     -- Computed fields
     (SELECT available_sections FROM available_sections_computed) as available_sections,
     (SELECT available_routes FROM available_routes_data) as available_routes,

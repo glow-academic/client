@@ -335,8 +335,8 @@ scenario_full_data_raw AS (
         m.id as model_id,
         (SELECT v.value FROM model_values_junction mv JOIN values_resource v ON mv.value_id = v.id WHERE mv.model_id = m.id LIMIT 1) as model_name,
         COALESCE(n_prov.name, '') as provider,
-        COALESCE(e.base_url, '') as base_url,
-        m.key as api_key,
+        COALESCE(pr.endpoint, '') as base_url,
+        pr.key as api_key,
         -- Check if scenario needs generation
         CASE
             WHEN ps.problem_statement IS NULL OR ps.problem_statement = '' THEN true
@@ -361,17 +361,16 @@ scenario_full_data_raw AS (
     LEFT JOIN reasoning_levels_resource rl ON rl.id = mrl.reasoning_level_id AND rl.active = true
     LEFT JOIN agent_prompts_junction ap_default ON ap_default.agent_id = a.id AND ap_default.active = true
     LEFT JOIN prompts_resource pr_prompt_default ON pr_prompt_default.id = ap_default.prompt_id
-    LEFT JOIN model_endpoints_junction me_j ON me_j.model_id = m.id
-    LEFT JOIN endpoints_resource e ON e.id = me_j.endpoint_id AND e.active = true
-    -- Get provider via provider_models_junction
-    LEFT JOIN provider_models_junction pm ON pm.model_id = m.id
-    LEFT JOIN provider_names_junction pn_prov ON pn_prov.provider_id = pm.provider_id
+    -- Get provider via models_resource.provider_id
+    LEFT JOIN providers_resource pr ON pr.id = m.provider_id
+    LEFT JOIN provider_providers_junction ppj ON ppj.providers_id = pr.id
+    LEFT JOIN provider_names_junction pn_prov ON pn_prov.provider_id = ppj.provider_id
     LEFT JOIN names_resource n_prov ON n_prov.id = pn_prov.name_id
     WHERE s.id = csi.scenario_id
     GROUP BY s.id, (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1), ps.problem_statement, EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'scenario_active' AND sf.value = TRUE),
              CASE WHEN ps.problem_statement IS NULL OR ps.problem_statement = '' THEN true ELSE false END, sp.persona_id, (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = sp.persona_id LIMIT 1), pr_prompt_default.system_prompt,
              COALESCE(tl.temperature, 0.0), rl.reasoning_level, (SELECT c.hex_code FROM persona_colors_junction pc JOIN colors_resource c ON pc.color_id = c.id WHERE pc.persona_id = sp.persona_id LIMIT 1), (SELECT i.name FROM persona_icons_junction pi JOIN icons_resource i ON pi.icon_id = i.id WHERE pi.persona_id = sp.persona_id LIMIT 1), m.id, (SELECT v.value FROM model_values_junction mv JOIN values_resource v ON mv.value_id = v.id WHERE mv.model_id = m.id LIMIT 1), n_prov.name,
-             m.key, e.base_url
+             pr.key, pr.endpoint
 ),
 -- Select only ONE row per scenario (deterministic: pick first model by ID)
 scenario_full_data AS (

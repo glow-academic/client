@@ -277,7 +277,7 @@ config_settings AS (
       AND dr.setting_ids != ARRAY[]::uuid[]
 ),
 config_settings_data AS (
-    SELECT sr.id, sr.agent_ids, sr.provider_ids
+    SELECT sr.id, sr.agent_ids
     FROM settings_resource sr
     JOIN config_settings cs ON sr.id = cs.setting_id
     WHERE sr.active = true
@@ -293,17 +293,6 @@ config_agent_resource_ids_data AS (
         WHERE csd.agent_ids IS NOT NULL AND csd.agent_ids != ARRAY[]::uuid[]
     ) sub
 ),
-config_provider_resource_ids_data AS (
-    SELECT COALESCE(
-        ARRAY_AGG(DISTINCT provider_id),
-        ARRAY[]::uuid[]
-    ) as ids
-    FROM (
-        SELECT unnest(csd.provider_ids) as provider_id
-        FROM config_settings_data csd
-        WHERE csd.provider_ids IS NOT NULL AND csd.provider_ids != ARRAY[]::uuid[]
-    ) sub
-),
 -- Resolve model_ids from agents_resource.model_id (fully parallel fetch in Python)
 config_model_resource_ids_data AS (
     SELECT COALESCE(
@@ -314,6 +303,17 @@ config_model_resource_ids_data AS (
     JOIN LATERAL unnest(cari.ids) AS agent_res_id ON true
     JOIN agents_resource ar ON ar.id = agent_res_id
     WHERE ar.model_id IS NOT NULL
+),
+-- Resolve provider_ids from models_resource.provider_id (via agents → models → providers chain)
+config_provider_resource_ids_data AS (
+    SELECT COALESCE(
+        ARRAY_AGG(DISTINCT mr.provider_id),
+        ARRAY[]::uuid[]
+    ) as ids
+    FROM config_model_resource_ids_data cmri
+    JOIN LATERAL unnest(cmri.ids) AS model_res_id ON true
+    JOIN models_resource mr ON mr.id = model_res_id
+    WHERE mr.provider_id IS NOT NULL
 ),
 -- Tools existence check
 tools_existence_check AS (

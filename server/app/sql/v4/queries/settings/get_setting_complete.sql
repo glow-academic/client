@@ -247,14 +247,8 @@ RETURNS TABLE (
     auths_required boolean,
     auth_suggestions uuid[],
     auths types.q_get_setting_v4_auth[],
-    -- Multi-select resources: providers
-    provider_ids uuid[],
-    provider_resources types.q_get_setting_v4_provider[],
-    show_providers boolean,
-    providers_agent_id uuid,
-    providers_required boolean,
-    provider_suggestions uuid[],
-    providers types.q_get_setting_v4_provider[],
+    -- Provider key IDs (denormalized from settings_resource)
+    provider_key_ids uuid[],
     -- Multi-select resources: keys
     key_ids uuid[],
     key_resources types.q_get_setting_v4_key[],
@@ -900,52 +894,22 @@ auth_mapping_data AS (
     LEFT JOIN items_resource ai ON ai.id = ai_j.item_id
     GROUP BY a.id, (SELECT n.name FROM auth_names_junction an JOIN names_resource n ON an.name_id = n.id WHERE an.auth_id = a.id LIMIT 1), (SELECT d.description FROM auth_descriptions_junction ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE ad.auth_id = a.id LIMIT 1), (SELECT s.value FROM auth_slugs_junction as_j JOIN slugs_resource s ON s.id = as_j.slug_id WHERE as_j.auth_id = a.id LIMIT 1), EXISTS (SELECT 1 FROM auth_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.auth_id = a.id AND f.name = 'auth_active' AND af.value = TRUE), a.generated
 ),
--- Provider IDs (selected provider IDs for setting)
-setting_provider_ids_data AS (
-    SELECT 
-        CASE 
+-- Provider key IDs (from settings_resource.provider_key_ids)
+setting_provider_key_ids_data AS (
+    SELECT
+        CASE
             WHEN (SELECT setting_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
-                (SELECT ARRAY_AGG(sp.providers_id ORDER BY sp.created_at)
-                 FROM setting_providers_junction sp
-                 WHERE sp.settings_id = (SELECT setting_id FROM params)
-                   AND sp.active = true),
+                (SELECT sr.provider_key_ids
+                 FROM setting_settings_junction ssj
+                 JOIN settings_resource sr ON sr.id = ssj.settings_id
+                 WHERE ssj.setting_id = (SELECT setting_id FROM params)
+                   AND ssj.active = true
+                 LIMIT 1),
                 ARRAY[]::uuid[]
             )
-        END as provider_ids
+        END as provider_key_ids
     FROM params
-    -- Always return at least one row
-    LIMIT 1
-),
--- Provider suggestions: linked to settings OR same group with generated=true
-provider_suggestions_data AS (
-    SELECT
-        COALESCE(
-            (SELECT ARRAY_AGG(sp.providers_id ORDER BY sp.created_at DESC)
-             FROM (
-                 SELECT DISTINCT sp.providers_id, MAX(sp.created_at) as created_at
-                 FROM setting_providers_junction sp
-                 JOIN providers_resource p ON p.id = sp.providers_id
-                 JOIN provider_providers_junction ppj ON ppj.providers_id = p.id
-                 JOIN provider_artifact pr ON pr.id = ppj.provider_id
-                 CROSS JOIN draft_group_data dgd
-                 WHERE sp.providers_id IS NOT NULL
-                   AND p.active = true
-                   AND (
-                       -- Option 1: Linked to settings with active=true
-                       sp.active = true
-                       OR
-                       -- Option 2: Linked to same group with generated=true (if providers had generated field)
-                       false  -- Providers don't have generated field yet, so skip this for now
-                   )
-                 GROUP BY sp.providers_id
-                 ORDER BY MAX(sp.created_at) DESC
-                 LIMIT 20
-             ) sp),
-            ARRAY[]::uuid[]
-        ) as provider_suggestions
-    FROM params
-    -- Always return at least one row
     LIMIT 1
 ),
 -- Provider mapping data (all providers)
@@ -2215,61 +2179,17 @@ SELECT
         ) FROM (SELECT DISTINCT auth_id, name, description, slug, active, auth_items_junction FROM auth_mapping_data) amd),
         '{}'::types.q_get_setting_v4_auth[]
     ) as auths,
-    -- Multi-select resources: providers
+    -- Provider key IDs
     COALESCE(
-        (SELECT 
-            CASE 
-                WHEN payload->'provider_ids' IS NOT NULL AND jsonb_typeof(payload->'provider_ids') = 'array' THEN
-                    ARRAY(SELECT jsonb_array_elements_text(payload->'provider_ids'))::uuid[]
+        (SELECT
+            CASE
+                WHEN payload->'provider_key_ids' IS NOT NULL AND jsonb_typeof(payload->'provider_key_ids') = 'array' THEN
+                    ARRAY(SELECT jsonb_array_elements_text(payload->'provider_key_ids'))::uuid[]
                 ELSE NULL
             END
         FROM draft_payload_data),
-        CASE 
-            WHEN (SELECT setting_id FROM params) IS NULL THEN
-                -- For new settings, leave provider_ids empty (no auto-selection)
-                ARRAY[]::uuid[]
-            ELSE spid.provider_ids
-        END
-    ) as provider_ids,
-    -- Provider resources (selected providers filtered by provider_ids)
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (pmd.provider_id, pmd.name, pmd.description, pmd.value, pmd.active)::types.q_get_setting_v4_provider
-            ORDER BY pmd.name
-        )
-        FROM (SELECT DISTINCT provider_id, name, description, value, active FROM provider_mapping_data WHERE provider_id = ANY(
-            COALESCE(
-                (SELECT 
-                    CASE 
-                        WHEN payload->'provider_ids' IS NOT NULL AND jsonb_typeof(payload->'provider_ids') = 'array' THEN
-                            ARRAY(SELECT jsonb_array_elements_text(payload->'provider_ids'))::uuid[]
-                        ELSE NULL
-                    END
-                FROM draft_payload_data),
-                CASE 
-                    WHEN (SELECT setting_id FROM params) IS NULL THEN
-                        ARRAY[]::uuid[]
-                    ELSE spid.provider_ids
-                END
-            )
-        )) pmd),
-        '{}'::types.q_get_setting_v4_provider[]
-    ) as provider_resources,
-    CASE 
-        WHEN NOT tec.providers_has_tools AND uf.show_providers THEN false
-        WHEN EXISTS (SELECT 1 FROM provider_mapping_data LIMIT 1) THEN true
-        ELSE uf.show_providers
-    END as show_providers,
-    (SELECT agent_id FROM providers_agent_data) as providers_agent_id,
-    false as providers_required,
-    COALESCE((SELECT provider_suggestions FROM provider_suggestions_data), ARRAY[]::uuid[]) as provider_suggestions,
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (pmd.provider_id, pmd.name, pmd.description, pmd.value, pmd.active)::types.q_get_setting_v4_provider
-            ORDER BY pmd.name
-        ) FROM (SELECT DISTINCT provider_id, name, description, value, active FROM provider_mapping_data) pmd),
-        '{}'::types.q_get_setting_v4_provider[]
-    ) as providers,
+        spkid.provider_key_ids
+    ) as provider_key_ids,
     -- Multi-select resources: keys
     COALESCE(
         (SELECT 
@@ -2362,6 +2282,6 @@ CROSS JOIN descriptions_suggestions_objects dso
 CROSS JOIN colors_agg cag
 CROSS JOIN department_suggestions_data dsd_dept
 CROSS JOIN setting_auth_ids_data said
-CROSS JOIN setting_provider_ids_data spid
+CROSS JOIN setting_provider_key_ids_data spkid
 CROSS JOIN setting_key_ids_data skid
 $$;

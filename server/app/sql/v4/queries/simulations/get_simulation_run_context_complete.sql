@@ -194,9 +194,9 @@ SELECT
     m.id::text as model_id,
     m.value as model_name,
     COALESCE(n_prov.name, '') as provider,
-    COALESCE(m.endpoint, '') as base_url,
-    m.key as api_key,
-    CASE WHEN m.endpoint IS NOT NULL AND m.endpoint != '' THEN m.value ELSE NULL END as custom_model,
+    COALESCE(pr.endpoint, '') as base_url,
+    pr.key as api_key,
+    CASE WHEN pr.endpoint IS NOT NULL AND pr.endpoint != '' THEN m.value ELSE NULL END as custom_model,
     NULL::text as provider_id,
     COALESCE(n_prov.name, '') as provider_name,
     p_agent_id::text as agent_id,
@@ -208,9 +208,9 @@ SELECT
     m_voice.id::text as voice_model_id,
     m_voice.value as voice_model_name,
     COALESCE(n_voice_prov.name, '') as voice_provider,
-    COALESCE(m_voice.endpoint, '') as voice_base_url,
-    m_voice.key as voice_api_key,
-    CASE WHEN m_voice.endpoint IS NOT NULL AND m_voice.endpoint != '' THEN m_voice.value ELSE NULL END as voice_custom_model,
+    COALESCE(pr_voice.endpoint, '') as voice_base_url,
+    pr_voice.key as voice_api_key,
+    CASE WHEN pr_voice.endpoint IS NOT NULL AND pr_voice.endpoint != '' THEN m_voice.value ELSE NULL END as voice_custom_model,
     COALESCE(n_voice_prov.name, '') as voice_provider_name,
     p_agent_id::text as voice_agent_id,
     
@@ -274,10 +274,10 @@ LEFT JOIN agents_resource a ON a.id = aaj.agents_id AND a.active = true
 LEFT JOIN models_resource m ON m.id = a.model_id
 LEFT JOIN agent_prompts_junction ap_prompt ON ap_prompt.agent_id = p_agent_id AND ap_prompt.active = true
 LEFT JOIN prompts_resource pr_prompt_default ON pr_prompt_default.id = ap_prompt.prompt_id
--- Get provider via provider_models_junction
-LEFT JOIN provider_models_junction pmj ON pmj.model_id = m.id
-LEFT JOIN provider_artifact pr_prov ON pr_prov.id = pmj.provider_id
-LEFT JOIN provider_names_junction pn_prov ON pn_prov.provider_id = pr_prov.id
+-- Get provider via models_resource.provider_id
+LEFT JOIN providers_resource pr ON pr.id = m.provider_id
+LEFT JOIN provider_providers_junction ppj ON ppj.providers_id = pr.id
+LEFT JOIN provider_names_junction pn_prov ON pn_prov.provider_id = ppj.provider_id
 LEFT JOIN names_resource n_prov ON n_prov.id = pn_prov.name_id
 
 -- Voice agent joins (use p_agent_id parameter passed from frontend - same as text for now)
@@ -289,10 +289,10 @@ LEFT JOIN agents_resource a_voice ON a_voice.id = aaj_voice.agents_id AND a_voic
 LEFT JOIN models_resource m_voice ON m_voice.id = a_voice.model_id
 LEFT JOIN agent_prompts_junction ap_voice ON ap_voice.agent_id = p_agent_id AND ap_voice.active = true
 LEFT JOIN prompts_resource pr_prompt_voice_default ON pr_prompt_voice_default.id = ap_voice.prompt_id
--- Get voice provider via provider_models_junction
-LEFT JOIN provider_models_junction pmj_voice ON pmj_voice.model_id = m_voice.id
-LEFT JOIN provider_artifact pr_voice_prov ON pr_voice_prov.id = pmj_voice.provider_id
-LEFT JOIN provider_names_junction pn_voice_prov ON pn_voice_prov.provider_id = pr_voice_prov.id
+-- Get voice provider via models_resource.provider_id
+LEFT JOIN providers_resource pr_voice ON pr_voice.id = m_voice.provider_id
+LEFT JOIN provider_providers_junction ppj_voice ON ppj_voice.providers_id = pr_voice.id
+LEFT JOIN provider_names_junction pn_voice_prov ON pn_voice_prov.provider_id = ppj_voice.provider_id
 LEFT JOIN names_resource n_voice_prov ON n_voice_prov.id = pn_voice_prov.name_id
 LEFT JOIN scenario_documents_junction sd ON sd.scenario_id = s.id
 LEFT JOIN documents_resource doc ON doc.id = sd.document_id
@@ -311,10 +311,10 @@ GROUP BY sc.id, sc.title,
          n_prov.name,
          -- Text agent fields
          pr_prompt_default.system_prompt, COALESCE(a.temperature, 0.0), a.reasoning,
-         m.id, m.value, n_prov.name, m.key, m.endpoint, p_agent_id,
+         m.id, m.value, n_prov.name, pr.key, pr.endpoint, p_agent_id,
          -- Voice agent fields
          pr_prompt_voice_default.system_prompt, COALESCE(a_voice.temperature, 0.0), a_voice.reasoning,
-         m_voice.id, m_voice.value, n_voice_prov.name, m_voice.key, m_voice.endpoint, p_agent_id,
+         m_voice.id, m_voice.value, n_voice_prov.name, pr_voice.key, pr_voice.endpoint, p_agent_id,
          -- Other fields
          EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'images_enabled' AND sf.value = TRUE),
          COALESCE((SELECT ssf.value FROM simulation_scenario_flags_junction ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id

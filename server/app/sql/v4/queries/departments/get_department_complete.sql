@@ -883,10 +883,11 @@ model_key_associations AS (
         pkr.key_id
     FROM department_models dm
     LEFT JOIN department_settings_for_model_keys dsfmk ON true
-    LEFT JOIN provider_models_junction pm ON pm.model_id = dm.model_id
-    LEFT JOIN provider_providers_junction ppj ON ppj.provider_id = pm.provider_id
-    LEFT JOIN providers_resource p_prov ON p_prov.id = ppj.providers_id
-    LEFT JOIN provider_keys_resource pkr ON pkr.provider_id = p_prov.id
+    LEFT JOIN model_artifact ma ON ma.id = dm.model_id
+    LEFT JOIN models_resource mr ON mr.id = (SELECT mm.id FROM models_resource mm JOIN model_models_junction mmj ON mmj.models_id = mm.id WHERE mmj.model_id = ma.id LIMIT 1)
+    LEFT JOIN providers_resource p_prov ON p_prov.id = mr.provider_id
+    LEFT JOIN provider_providers_junction ppj ON ppj.providers_id = p_prov.id
+    LEFT JOIN provider_keys_resource pkr ON pkr.provider_id = ppj.provider_id
     LEFT JOIN setting_provider_keys_junction spk ON spk.provider_key_id = pkr.id
         AND spk.setting_id = dsfmk.settings_id
         AND spk.active = true

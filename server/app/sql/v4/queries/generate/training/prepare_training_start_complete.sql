@@ -288,15 +288,13 @@ BEGIN
             WHERE aaj.agent_id = v_entry_agent_id AND aaj.active = true AND ar.model_id IS NOT NULL
             ON CONFLICT (config_id, models_id) DO NOTHING;
 
-            -- 3. providers (via agents_resource.model_id -> provider_models_junction)
+            -- 3. providers (via agents_resource.model_id -> models_resource.provider_id)
             INSERT INTO config_providers_connection (config_id, providers_id, created_at, active, generated, mcp)
-            SELECT v_config_id, pr.id, NOW(), true, false, false
+            SELECT v_config_id, mr.provider_id, NOW(), true, false, false
             FROM agent_agents_junction aaj
             JOIN agents_resource ar ON ar.id = aaj.agents_id
-            JOIN provider_models_junction pmj ON pmj.model_id = ar.model_id
-            JOIN provider_providers_junction ppj ON ppj.provider_id = pmj.provider_id AND ppj.active = true
-            JOIN providers_resource pr ON pr.id = ppj.providers_id
-            WHERE aaj.agent_id = v_entry_agent_id AND aaj.active = true
+            JOIN models_resource mr ON mr.id = ar.model_id
+            WHERE aaj.agent_id = v_entry_agent_id AND aaj.active = true AND mr.provider_id IS NOT NULL
             ON CONFLICT (config_id, providers_id) DO NOTHING;
 
         END LOOP;

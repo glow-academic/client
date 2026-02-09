@@ -49,7 +49,7 @@ source_model AS (
         (SELECT d.description FROM model_descriptions_junction md JOIN descriptions_resource d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1) as description,
         EXISTS (SELECT 1 FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = m.id AND f.name = 'model_active' AND mf.value = TRUE) as active,
         NULL::uuid as domain_id,  -- Domain no longer exists, use NULL
-        (SELECT pm.provider_id FROM provider_models_junction pm JOIN model_models_junction mmj ON mmj.models_id = pm.model_id WHERE mmj.model_id = m.id LIMIT 1) as provider_id,
+        (SELECT mpj.providers_id FROM model_providers_junction mpj WHERE mpj.model_id = m.id AND mpj.active = true LIMIT 1) as provider_id,
         (SELECT v.value FROM model_values_junction mv JOIN values_resource v ON mv.value_id = v.id WHERE mv.model_id = m.id LIMIT 1) as value
     FROM params x
     JOIN model_artifact m ON m.id = x.model_id
@@ -169,17 +169,17 @@ link_model_description AS (
     CROSS JOIN new_description_resource ndr
     ON CONFLICT (model_id, description_id) DO NOTHING
 ),
--- Link model to provider (via provider_models_junction)
+-- Link model to provider (via model_providers_junction)
 link_model_provider AS (
-    INSERT INTO provider_models_junction (provider_id, model_id, created_at)
+    INSERT INTO model_providers_junction (model_id, providers_id, created_at)
     SELECT
+        dm.id,  -- Use model_artifact.id from duplicated model
         sm.provider_id,
-        dmr.id,  -- Use models_resource.id from duplicated model resource
         NOW()
-    FROM duplicated_model_resource dmr
+    FROM duplicated_model dm
     CROSS JOIN source_model sm
     WHERE sm.provider_id IS NOT NULL
-    ON CONFLICT (provider_id, model_id) DO NOTHING
+    ON CONFLICT (model_id, providers_id) DO NOTHING
 ),
 -- Link model active flag (set to false for duplicate)
 link_model_active_flag AS (

@@ -479,8 +479,8 @@ context_data AS (
         m.id::text as model_id,
         m.value as model_name,
         COALESCE(n_prov.name, '') as provider,
-        COALESCE(m.endpoint, '') as base_url,
-        m.key as api_key,
+        COALESCE(pr_prov_res.endpoint, '') as base_url,
+        pr_prov_res.key as api_key,
         
         -- Profile data
         rp.profile_id::text as profile_id,
@@ -512,9 +512,10 @@ context_data AS (
     LEFT JOIN agent_prompts_junction ap_default ON ap_default.agent_id = a.id AND ap_default.active = true
     LEFT JOIN prompts_resource pr_prompt ON pr_prompt.id = ap_default.prompt_id
     INNER JOIN models_resource m ON m.id = a.model_id
-    -- Get provider via provider_models_junction
-    LEFT JOIN provider_models_junction pmj ON pmj.model_id = m.id
-    LEFT JOIN provider_artifact pr_prov ON pr_prov.id = pmj.provider_id
+    -- Get provider via models_resource.provider_id
+    LEFT JOIN providers_resource pr_prov_res ON pr_prov_res.id = m.provider_id
+    LEFT JOIN provider_providers_junction ppj_prov ON ppj_prov.providers_id = pr_prov_res.id AND ppj_prov.active = true
+    LEFT JOIN provider_artifact pr_prov ON pr_prov.id = ppj_prov.provider_id
     LEFT JOIN provider_names_junction pn_prov ON pn_prov.provider_id = pr_prov.id
     LEFT JOIN names_resource n_prov ON n_prov.id = pn_prov.name_id
     CROSS JOIN profile_rate_limit prl

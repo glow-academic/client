@@ -46,16 +46,15 @@ WITH chat_info AS (
     WHERE c.id = p_chat_id
     LIMIT 1
 ),
--- Get OpenAI provider and API key from models_resource via provider_models_junction
+-- Get OpenAI provider and API key from providers_resource via models_resource.provider_id
 openai_provider AS (
-    SELECT n.name as provider_name, m.key as api_key
-    FROM provider_artifact pa
-    JOIN provider_names_junction pnj ON pnj.provider_id = pa.id
+    SELECT n.name as provider_name, pr.key as api_key
+    FROM providers_resource pr
+    JOIN provider_providers_junction ppj ON ppj.providers_id = pr.id
+    JOIN provider_names_junction pnj ON pnj.provider_id = ppj.provider_id
     JOIN names_resource n ON n.id = pnj.name_id
-    JOIN provider_models_junction pmj ON pmj.provider_id = pa.id
-    JOIN models_resource m ON m.id = pmj.model_id
     WHERE LOWER(n.name) = 'openai'
-      AND m.key IS NOT NULL AND m.key != ''
+      AND pr.key IS NOT NULL AND pr.key != ''
     LIMIT 1
 )
 SELECT

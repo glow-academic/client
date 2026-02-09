@@ -114,14 +114,13 @@ BEGIN
     -- Create or UPDATE model_artifact (without name, description, active, value - these go in junction tables)
     IF is_create THEN
         -- CREATE path
-        INSERT INTO model_artifact (provider_id)
-        VALUES (provider_id)
+        INSERT INTO model_artifact (created_at, updated_at)
+        VALUES (NOW(), NOW())
         RETURNING id INTO v_model_id;
     ELSE
         -- UPDATE path
         v_model_id := input_model_id;
         UPDATE model_artifact SET
-            provider_id = api_save_model_v4.provider_id,
             updated_at = NOW()
         WHERE id = v_model_id;
     END IF;
@@ -260,27 +259,16 @@ BEGIN
         DELETE FROM model_values_junction WHERE model_id = v_model_id;
     END IF;
 
-    -- Handle provider link (via provider_models_junction table)
-    -- Note: provider_models_junction.model_id REFERENCES models_resource.id (resource), not model.id (artifact)
-    -- So we need to get or create the models resource entry first
-    -- Get or create models resource entry
-    SELECT id INTO v_models_resource_id
-    FROM models_resource
-    WHERE model_id = v_model_id
-    LIMIT 1;
-
-    IF v_models_resource_id IS NULL THEN
-        -- Create models resource entry if it doesn't exist (use active_flag_id to determine active status)
-        INSERT INTO models_resource (model_id, active, generated, mcp, created_at)
-        VALUES (v_model_id, active_flag_id IS NOT NULL, false, false, NOW())
-        RETURNING id INTO v_models_resource_id;
+    -- Handle provider link (via model_providers_junction table)
+    -- model_providers_junction: model_id → model_artifact, providers_id → providers_resource
+    -- First delete existing provider links, then insert new one
+    DELETE FROM model_providers_junction WHERE model_id = v_model_id;
+    IF provider_id IS NOT NULL THEN
+        INSERT INTO model_providers_junction (model_id, providers_id, active, created_at)
+        VALUES (v_model_id, provider_id, true, NOW())
+        ON CONFLICT (model_id, providers_id) DO UPDATE SET
+            active = true;
     END IF;
-
-    -- Link provider via provider_models_junction (provider_id -> provider_artifact, model_id -> models_resource)
-    INSERT INTO provider_models_junction (provider_id, model_id, active, created_at)
-    VALUES (provider_id, v_models_resource_id, true, NOW())
-    ON CONFLICT (provider_id, model_id) DO UPDATE SET
-        active = true;
 
     -- Handle departments
     IF NOT is_create THEN
@@ -298,15 +286,12 @@ BEGIN
             active = true;
     END IF;
 
-    -- Handle endpoint (using endpoint_id resource ID)
-    IF endpoint_id IS NOT NULL THEN
-        -- Delete existing endpoint links and insert new one
-        DELETE FROM model_endpoints_junction WHERE model_id = v_model_id;
-        INSERT INTO model_endpoints_junction (model_id, endpoint_id, active, created_at, generated, mcp)
-        VALUES (v_model_id, endpoint_id, true, NOW(), false, false);
-    ELSE
-        -- Remove endpoint if endpoint_id is NULL
-        DELETE FROM model_endpoints_junction WHERE model_id = v_model_id;
+    -- Handle endpoint (via provider_endpoints_junction on the provider)
+    -- If endpoint_id is provided, link it to the provider (not the model)
+    IF endpoint_id IS NOT NULL AND provider_id IS NOT NULL THEN
+        -- Sync denormalized endpoint on providers_resource
+        UPDATE providers_resource SET endpoint = (SELECT base_url FROM endpoints_resource WHERE id = endpoint_id)
+        WHERE id = api_save_model_v4.provider_id;
     END IF;
 
     -- Handle temperature levels (using temperature_level_ids resource IDs)
@@ -416,10 +401,17 @@ BEGIN
         ON CONFLICT (model_id, quality_id) DO UPDATE SET active = true;
     END IF;
 
-    -- Sync linked resources with name/description
+    -- Sync linked resources with name/description and denormalized arrays
     UPDATE models_resource r
     SET name = n.name,
-        description = d.description
+        description = d.description,
+        provider_id = (SELECT mpj.providers_id FROM model_providers_junction mpj WHERE mpj.model_id = v_model_id AND mpj.active = true LIMIT 1),
+        input_modality_ids = COALESCE((SELECT ARRAY_AGG(mm.modality_id) FROM model_modalities_junction mm WHERE mm.model_id = v_model_id AND mm.type = 'input'::direction_type AND mm.active = true), ARRAY[]::uuid[]),
+        output_modality_ids = COALESCE((SELECT ARRAY_AGG(mm.modality_id) FROM model_modalities_junction mm WHERE mm.model_id = v_model_id AND mm.type = 'output'::direction_type AND mm.active = true), ARRAY[]::uuid[]),
+        temperature_level_ids = COALESCE((SELECT ARRAY_AGG(mtl.temperature_level_id) FROM model_temperature_levels_junction mtl WHERE mtl.model_id = v_model_id AND mtl.active = true), ARRAY[]::uuid[]),
+        reasoning_level_ids = COALESCE((SELECT ARRAY_AGG(mrl.reasoning_level_id) FROM model_reasoning_levels_junction mrl WHERE mrl.model_id = v_model_id AND mrl.active = true), ARRAY[]::uuid[]),
+        quality_ids = COALESCE((SELECT ARRAY_AGG(mq.quality_id) FROM model_qualities_junction mq WHERE mq.model_id = v_model_id AND mq.active = true), ARRAY[]::uuid[]),
+        voice_ids = COALESCE((SELECT ARRAY_AGG(mv.voice_id) FROM model_voices_junction mv WHERE mv.model_id = v_model_id AND mv.active = true), ARRAY[]::uuid[])
     FROM model_models_junction j
     LEFT JOIN names_resource n ON n.id = name_id
     LEFT JOIN descriptions_resource d ON d.id = description_id

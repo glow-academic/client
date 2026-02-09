@@ -22,7 +22,7 @@ CREATE OR REPLACE FUNCTION api_save_setting_v4(
     department_ids uuid[],
     profile_id uuid,
     auth_ids uuid[],
-    provider_ids uuid[],
+    provider_key_ids uuid[],
     key_ids uuid[],
     input_setting_id uuid DEFAULT NULL,
     profile_ids uuid[] DEFAULT NULL,
@@ -81,7 +81,7 @@ BEGIN
         DELETE FROM department_settings_junction WHERE settings_id = v_setting_id;
         DELETE FROM setting_profiles_junction WHERE setting_id = v_setting_id;
         DELETE FROM setting_auths_junction WHERE settings_id = v_setting_id;
-        DELETE FROM setting_providers_junction WHERE settings_id = v_setting_id;
+        -- setting_providers_junction removed (providers now reached via agents → models → providers)
         DELETE FROM setting_roles_junction WHERE setting_id = v_setting_id;
         DELETE FROM setting_routes_junction WHERE setting_id = v_setting_id;
         -- Update existing active flag if it exists
@@ -105,7 +105,7 @@ BEGIN
             COALESCE(profile_ids, ARRAY[]::uuid[]) AS profile_ids,
             profile_id,
             COALESCE(auth_ids, ARRAY[]::uuid[]) AS auth_ids,
-            COALESCE(provider_ids, ARRAY[]::uuid[]) AS provider_ids,
+            COALESCE(provider_key_ids, ARRAY[]::uuid[]) AS provider_key_ids,
             COALESCE(key_ids, ARRAY[]::uuid[]) AS key_ids,
             COALESCE(role_ids, ARRAY[]::uuid[]) AS role_ids,
             COALESCE(route_ids, ARRAY[]::uuid[]) AS route_ids
@@ -243,19 +243,14 @@ BEGIN
         ON CONFLICT ON CONSTRAINT setting_auths_pkey DO UPDATE SET
             active = true
     ),
-    -- Link providers (old ones already deleted above if update)
-    link_providers AS (
-        INSERT INTO setting_providers_junction (settings_id, providers_id, active, created_at)
-        SELECT 
-            x.setting_id,
-            provider_id,
-            true,
-            NOW()
+    -- Sync provider_key_ids on settings_resource
+    sync_provider_key_ids AS (
+        UPDATE settings_resource sr
+        SET provider_key_ids = x.provider_key_ids
         FROM params x
-        CROSS JOIN UNNEST(x.provider_ids) as provider_id
-        WHERE COALESCE(array_length(x.provider_ids, 1), 0) > 0
-        ON CONFLICT ON CONSTRAINT setting_providers_pkey DO UPDATE SET
-            active = true
+        JOIN setting_settings_junction ssj ON ssj.setting_id = x.setting_id AND ssj.active = true
+        WHERE sr.id = ssj.settings_id
+        RETURNING sr.id
     ),
     -- Link roles (old ones already deleted above if update)
     link_roles AS (

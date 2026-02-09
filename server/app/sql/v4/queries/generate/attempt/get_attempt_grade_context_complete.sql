@@ -108,20 +108,20 @@ agent_data AS (
 ),
 -- Model data
 model_data AS (
-    SELECT mr.id as model_id, mr.value as model_name, mr.key as model_key
+    SELECT mr.id as model_id, mr.value as model_name, pr.key as model_key, pr.id as provider_id
     FROM resolved_agent ra
     JOIN agent_agents_junction aaj ON aaj.agent_id = ra.agent_id
     JOIN agents_resource ar ON ar.id = aaj.agents_id
     JOIN models_resource mr ON mr.id = ar.model_id
+    LEFT JOIN providers_resource pr ON pr.id = mr.provider_id
     LIMIT 1
 ),
 -- Provider data
 provider_data AS (
     SELECT
-        pm.provider_id as provider_id,
-        (SELECT n.name FROM provider_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.provider_id = pm.provider_id LIMIT 1) as provider_name
+        md.provider_id as provider_id,
+        (SELECT n.name FROM provider_providers_junction ppj JOIN provider_names_junction pn ON pn.provider_id = ppj.provider_id JOIN names_resource n ON pn.name_id = n.id WHERE ppj.providers_id = md.provider_id LIMIT 1) as provider_name
     FROM model_data md
-    JOIN provider_models_junction pm ON pm.model_id = md.model_id
     LIMIT 1
 ),
 -- API key check

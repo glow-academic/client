@@ -54,9 +54,13 @@ CREATE TYPE types.q_get_models_v4_item AS (
     name text,
     description text,
     value text,
-    endpoint text,
-    key text,
-    modality text,
+    provider_id uuid,
+    input_modality_ids uuid[],
+    output_modality_ids uuid[],
+    temperature_level_ids uuid[],
+    reasoning_level_ids uuid[],
+    quality_ids uuid[],
+    voice_ids uuid[],
     active boolean,
     generated boolean
 );
@@ -73,7 +77,7 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (m.id, m.name, m.description, m.value, m.endpoint, m.key, m.modality::text, COALESCE(m.active, true), COALESCE(m.generated, false))::types.q_get_models_v4_item
+        (m.id, m.name, m.description, m.value, m.provider_id, m.input_modality_ids, m.output_modality_ids, m.temperature_level_ids, m.reasoning_level_ids, m.quality_ids, m.voice_ids, COALESCE(m.active, true), COALESCE(m.generated, false))::types.q_get_models_v4_item
         ORDER BY array_position(ids, m.id)
     ),
     ARRAY[]::types.q_get_models_v4_item[]

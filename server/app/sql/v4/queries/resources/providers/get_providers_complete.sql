@@ -39,6 +39,8 @@ CREATE TYPE types.q_get_providers_v4_item AS (
     value text,
     name text,
     description text,
+    endpoint text,
+    key text,
     active boolean,
     generated boolean
 );
@@ -55,7 +57,7 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (p.id, p.value, p.name, p.description, COALESCE(p.active, true), COALESCE(p.generated, false))::types.q_get_providers_v4_item
+        (p.id, p.value, p.name, p.description, p.endpoint, p.key, COALESCE(p.active, true), COALESCE(p.generated, false))::types.q_get_providers_v4_item
         ORDER BY array_position(ids, p.id)
     ),
     ARRAY[]::types.q_get_providers_v4_item[]

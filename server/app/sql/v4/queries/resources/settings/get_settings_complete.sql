@@ -21,7 +21,6 @@ END $$;
 -- Drop types in reverse dependency order (item first, then nested types)
 DROP TYPE IF EXISTS types.q_get_settings_v4_item;
 DROP TYPE IF EXISTS types.q_get_settings_v4_auth;
-DROP TYPE IF EXISTS types.q_get_settings_v4_provider;
 
 -- Create nested composite types
 CREATE TYPE types.q_get_settings_v4_auth AS (
@@ -29,13 +28,6 @@ CREATE TYPE types.q_get_settings_v4_auth AS (
     name text,
     description text,
     slug text
-);
-
-CREATE TYPE types.q_get_settings_v4_provider AS (
-    provider_id text,
-    name text,
-    description text,
-    value text
 );
 
 -- Create main composite type for settings item
@@ -65,8 +57,7 @@ CREATE TYPE types.q_get_settings_v4_item AS (
     danger_threshold integer,
     auth_ids text[],
     auths types.q_get_settings_v4_auth[],
-    provider_ids text[],
-    providers types.q_get_settings_v4_provider[]
+    provider_key_ids uuid[]
 );
 
 -- Create function
@@ -95,24 +86,14 @@ WITH settings_auths_data AS (
     WHERE sa.settings_id = settings_id_param
       AND sa.active = true
 ),
-settings_providers_data AS (
+settings_provider_keys_data AS (
     SELECT
-        ARRAY_AGG(n.name ORDER BY n.name) as provider_ids,
-        COALESCE(
-            ARRAY_AGG(
-                (p.id::text, n.name, COALESCE((SELECT d.description FROM provider_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.provider_id = pr.id LIMIT 1), ''), n.name)::types.q_get_settings_v4_provider
-                ORDER BY n.name
-            ),
-            ARRAY[]::types.q_get_settings_v4_provider[]
-        ) as providers
-    FROM setting_providers_junction sp
-    JOIN providers_resource p ON p.id = sp.providers_id
-    JOIN provider_providers_junction ppj ON ppj.providers_id = p.id
-    JOIN provider_artifact pr ON pr.id = ppj.provider_id
-    JOIN provider_names_junction pn ON pn.provider_id = pr.id
-    JOIN names_resource n ON n.id = pn.name_id
-    WHERE sp.settings_id = settings_id_param
-      AND sp.active = true
+        COALESCE(sr.provider_key_ids, ARRAY[]::uuid[]) as provider_key_ids
+    FROM setting_settings_junction ssj
+    JOIN settings_resource sr ON sr.id = ssj.settings_id
+    WHERE ssj.setting_id = settings_id_param
+      AND ssj.active = true
+    LIMIT 1
 )
 SELECT COALESCE(
     ARRAY_AGG(
@@ -142,15 +123,14 @@ SELECT COALESCE(
             (SELECT t.value FROM setting_thresholds_junction st JOIN thresholds_resource t ON st.threshold_id = t.id WHERE st.setting_id = s.id AND st.type = 'danger'::threshold_type LIMIT 1),
             COALESCE(sad.auth_ids, ARRAY[]::text[]),
             COALESCE(sad.auths, ARRAY[]::types.q_get_settings_v4_auth[]),
-            COALESCE(spd.provider_ids, ARRAY[]::text[]),
-            COALESCE(spd.providers, ARRAY[]::types.q_get_settings_v4_provider[])
+            COALESCE(spkd.provider_key_ids, ARRAY[]::uuid[])
         )::types.q_get_settings_v4_item
     ),
     ARRAY[]::types.q_get_settings_v4_item[]
 ) as items
 FROM setting_artifact s
 LEFT JOIN settings_auths_data sad ON true
-LEFT JOIN settings_providers_data spd ON true
+LEFT JOIN settings_provider_keys_data spkd ON true
 WHERE s.id = settings_id_param
   AND EXISTS (SELECT 1 FROM setting_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = TRUE);
 $$;

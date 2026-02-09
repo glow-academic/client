@@ -128,7 +128,7 @@ model_data AS (
     SELECT
         m.id as model_id,
         m.value as model_name,
-        m.key as model_key
+        m.provider_id as provider_id
     FROM group_binding gb
     JOIN runs_entry r ON r.group_id = gb.group_id
     JOIN config_models_connection cmc ON cmc.config_id = r.config_id AND cmc.active = true
@@ -136,19 +136,20 @@ model_data AS (
     ORDER BY r.created_at DESC
     LIMIT 1
 ),
--- Provider from model
+-- Provider via models_resource.provider_id
 provider_data AS (
     SELECT
-        pm.provider_id as provider_id,
-        (SELECT n.name FROM provider_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.provider_id = pm.provider_id LIMIT 1) as provider_name
+        pr.id as providers_resource_id,
+        pr.key as provider_key,
+        (SELECT n.name FROM provider_providers_junction ppj JOIN provider_names_junction pn ON pn.provider_id = ppj.provider_id JOIN names_resource n ON pn.name_id = n.id WHERE ppj.providers_id = pr.id AND ppj.active = true LIMIT 1) as provider_name
     FROM model_data md
-    JOIN provider_models_junction pm ON pm.model_id = md.model_id
+    JOIN providers_resource pr ON pr.id = md.provider_id
     LIMIT 1
 ),
--- API key check (denormalized on models_resource.key)
+-- API key check (on providers_resource.key)
 api_key_data AS (
-    SELECT (md.model_key IS NOT NULL AND md.model_key != '') as has_api_key
-    FROM model_data md
+    SELECT (pd.provider_key IS NOT NULL AND pd.provider_key != '') as has_api_key
+    FROM provider_data pd
 ),
 -- Rate limit data
 profile_rate_limit AS (
@@ -226,7 +227,7 @@ SELECT
     md.model_name,
 
     -- Provider
-    pd.provider_id,
+    pd.providers_resource_id as provider_id,
     pd.provider_name,
 
     -- API key

@@ -379,8 +379,8 @@ context_data AS (
         ar.reasoning as reasoning,
         m.value as model_name,
         COALESCE(n_prov.name, '') as provider_name,
-        COALESCE(m.endpoint, '') as base_url,
-        m.key as api_key,
+        COALESCE(pr_prov_res.endpoint, '') as base_url,
+        pr_prov_res.key as api_key,
         ar.voice as voice,
         ar.quality::text as quality,
         COALESCE(atd.tools, '{}'::types.i_get_text_run_context_and_create_run_v4_tool[]) as tools,
@@ -394,9 +394,10 @@ context_data AS (
     LEFT JOIN prompts_resource pr_prompt ON pr_prompt.id = ap_default.prompt_id
     -- Model via denormalized agents_resource.model_id
     INNER JOIN models_resource m ON m.id = ar.model_id
-    -- Get provider via provider_models_junction
-    LEFT JOIN provider_models_junction pmj ON pmj.model_id = m.id
-    LEFT JOIN provider_artifact pr_prov ON pr_prov.id = pmj.provider_id
+    -- Get provider via models_resource.provider_id
+    LEFT JOIN providers_resource pr_prov_res ON pr_prov_res.id = m.provider_id
+    LEFT JOIN provider_providers_junction ppj_prov ON ppj_prov.providers_id = pr_prov_res.id AND ppj_prov.active = true
+    LEFT JOIN provider_artifact pr_prov ON pr_prov.id = ppj_prov.provider_id
     LEFT JOIN provider_names_junction pn_prov ON pn_prov.provider_id = pr_prov.id
     LEFT JOIN names_resource n_prov ON n_prov.id = pn_prov.name_id
     LEFT JOIN agent_tools_data atd ON atd.agent_id = sa.agent_id

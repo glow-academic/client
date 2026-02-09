@@ -105,15 +105,13 @@ BEGIN
         WHERE aaj.agent_id = v_agent_id AND aaj.active = true AND ar.model_id IS NOT NULL
         ON CONFLICT (config_id, models_id) DO NOTHING;
 
-        -- 3. providers (via agents_resource.model_id -> provider_models_junction)
+        -- 3. providers (via agents_resource.model_id -> models_resource.provider_id)
         INSERT INTO config_providers_connection (config_id, providers_id, created_at, active, generated, mcp)
-        SELECT v_config_id, pr.id, NOW(), true, false, false
+        SELECT v_config_id, mr.provider_id, NOW(), true, false, false
         FROM agent_agents_junction aaj
         JOIN agents_resource ar ON ar.id = aaj.agents_id
-        JOIN provider_models_junction pmj ON pmj.model_id = ar.model_id
-        JOIN provider_providers_junction ppj ON ppj.provider_id = pmj.provider_id AND ppj.active = true
-        JOIN providers_resource pr ON pr.id = ppj.providers_id
-        WHERE aaj.agent_id = v_agent_id AND aaj.active = true
+        JOIN models_resource mr ON mr.id = ar.model_id
+        WHERE aaj.agent_id = v_agent_id AND aaj.active = true AND mr.provider_id IS NOT NULL
         ON CONFLICT (config_id, providers_id) DO NOTHING;
     END IF;
 
@@ -155,28 +153,27 @@ BEGIN
     model_config AS (
         SELECT
             m.value as model_name,
-            COALESCE(m.endpoint, '') as base_url
+            COALESCE(pr.endpoint, '') as base_url
         FROM config_models_connection cmc
         JOIN models_resource m ON m.id = cmc.models_id
+        LEFT JOIN providers_resource pr ON pr.id = m.provider_id
         WHERE cmc.config_id = v_config_id AND cmc.active = true
         LIMIT 1
     ),
     provider_config AS (
         SELECT
-            (SELECT n.name FROM provider_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.provider_id = pr.id LIMIT 1) as provider_name
+            (SELECT n.name FROM provider_providers_junction ppj2 JOIN provider_names_junction pn ON pn.provider_id = ppj2.provider_id JOIN names_resource n ON pn.name_id = n.id WHERE ppj2.providers_id = cpc_prov.providers_id AND ppj2.active = true LIMIT 1) as provider_name
         FROM config_providers_connection cpc_prov
-        JOIN providers_resource prov ON prov.id = cpc_prov.providers_id
-        JOIN provider_providers_junction ppj ON ppj.providers_id = prov.id
-        JOIN provider_artifact pr ON pr.id = ppj.provider_id
         WHERE cpc_prov.config_id = v_config_id AND cpc_prov.active = true
         LIMIT 1
     ),
     key_config AS (
         SELECT
-            m.key as api_key
+            pr.key as api_key
         FROM config_models_connection cmc
         JOIN models_resource m ON m.id = cmc.models_id
-        WHERE cmc.config_id = v_config_id AND cmc.active = true AND m.key IS NOT NULL
+        JOIN providers_resource pr ON pr.id = m.provider_id
+        WHERE cmc.config_id = v_config_id AND cmc.active = true AND pr.key IS NOT NULL
         LIMIT 1
     ),
     temp_config AS (

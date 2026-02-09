@@ -70,26 +70,27 @@ agent_data AS (
 ),
 -- Get model via denormalized agents_resource.model_id
 model_data AS (
-    SELECT mr.id as model_id, mr.value as model_name, mr.key as model_key
+    SELECT mr.id as model_id, mr.value as model_name, mr.provider_id as provider_id
     FROM params p
     JOIN agent_agents_junction aaj ON aaj.agent_id = p.agent_id
     JOIN agents_resource ar ON ar.id = aaj.agents_id
     JOIN models_resource mr ON mr.id = ar.model_id
     LIMIT 1
 ),
--- Get provider via provider_models_junction
+-- Get provider via models_resource.provider_id
 provider_data AS (
     SELECT
-        pm.provider_id as provider_id,
-        (SELECT n.name FROM provider_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.provider_id = pm.provider_id LIMIT 1) as provider_name
+        pr.id as providers_resource_id,
+        pr.key as provider_key,
+        (SELECT n.name FROM provider_providers_junction ppj JOIN provider_names_junction pn ON pn.provider_id = ppj.provider_id JOIN names_resource n ON pn.name_id = n.id WHERE ppj.providers_id = pr.id AND ppj.active = true LIMIT 1) as provider_name
     FROM model_data md
-    JOIN provider_models_junction pm ON pm.model_id = md.model_id
+    JOIN providers_resource pr ON pr.id = md.provider_id
     LIMIT 1
 ),
--- Check if model has API key (denormalized on models_resource.key)
+-- Check if provider has API key (on providers_resource.key)
 api_key_check AS (
-    SELECT (md.model_key IS NOT NULL AND md.model_key != '') as has_api_key
-    FROM model_data md
+    SELECT (pd.provider_key IS NOT NULL AND pd.provider_key != '') as has_api_key
+    FROM provider_data pd
 ),
 -- Get rate limit for profile (raw data)
 rate_limit_data AS (
@@ -115,7 +116,7 @@ SELECT
     COALESCE(ad.agent_is_active, FALSE) as agent_is_active,
     md.model_id,
     md.model_name,
-    pd.provider_id,
+    pd.providers_resource_id as provider_id,
     pd.provider_name,
     COALESCE(akc.has_api_key, FALSE) as has_api_key,
     rld.requests_per_day,
