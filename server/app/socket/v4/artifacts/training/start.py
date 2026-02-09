@@ -19,6 +19,11 @@ from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
+from app.socket.v4.artifacts.attempt.resolve_agent import resolve_attempt_entries
+from app.socket.v4.artifacts.attempt.types import (
+    ATTEMPT_GRADE_ENTRY_TYPES,
+    ATTEMPT_MESSAGE_ENTRY_TYPES,
+)
 from app.socket.v4.artifacts.training.permissions import (
     TrainingGenerationContext,
     check_scenario_needs_generation,
@@ -302,11 +307,30 @@ async def _training_start_impl(
             # NO GENERATION PATH - create attempt directly
             # =============================================
 
-            # Step 3: Create attempt + chat entries
+            # Step 3: Resolve agents for attempt entry types
+            all_entry_types = list(
+                set(ATTEMPT_MESSAGE_ENTRY_TYPES + ATTEMPT_GRADE_ENTRY_TYPES)
+            )
+            entries_map = await resolve_attempt_entries(
+                conn, profile_id, all_entry_types
+            )
+
+            # Build parallel arrays for SQL
+            entry_types_arr = list(entries_map.keys())
+            entry_agent_ids_arr = [entries_map[et] for et in entry_types_arr]
+
+            logger.info(
+                f"Resolved attempt entries - "
+                f"profile_id={profile_id}, entries={entry_types_arr}"
+            )
+
+            # Step 4: Create attempt + chat entries (with per-entry groups)
             prepare_params = PrepareTrainingStartSqlParams(
                 p_profile_id=profile_id,
                 p_simulation_id=data.simulation_id,
                 p_scenario_id=scenario_id,
+                p_entry_types=entry_types_arr if entry_types_arr else None,
+                p_entry_agent_ids=entry_agent_ids_arr if entry_agent_ids_arr else None,
             )
 
             prepare_row = cast(
@@ -334,7 +358,7 @@ async def _training_start_impl(
                 )
                 return
 
-            # Step 4: Build scenario data from context
+            # Step 5: Build scenario data from context
             scenario_data = None
             if scenario_id:
                 scenario_data = {
@@ -345,7 +369,7 @@ async def _training_start_impl(
                     "image_ids": context_row.image_ids,
                 }
 
-            # Step 5: Emit training_started event
+            # Step 6: Emit training_started event
             started_event = TrainingStartedEvent(
                 simulation_id=str(data.simulation_id),
                 attempt_id=str(prepare_row.attempt_id),
@@ -356,11 +380,11 @@ async def _training_start_impl(
                 scenario_data=scenario_data,
             )
 
-            # Step 6: Refresh MVs so attempt is immediately visible
+            # Step 7: Refresh MVs so attempt is immediately visible
             await conn.execute("REFRESH MATERIALIZED VIEW mv_simulation_attempts")
             await conn.execute("REFRESH MATERIALIZED VIEW mv_simulation_chats")
 
-            # Step 7: Emit training_started event (after MVs refreshed)
+            # Step 8: Emit training_started event (after MVs refreshed)
             await sio.emit(
                 "training_started",
                 started_event.model_dump(mode="json"),

@@ -18,6 +18,14 @@ class DomainAgent(BaseModel):
     group_id: UUID | None = None  # Per-resource group ID for this domain
 
 
+class EntryAgent(BaseModel):
+    """Maps an entry_type to its assigned agent and per-entry group."""
+
+    entry_type: str  # e.g., "contents", "hints", "grades", "feedbacks"
+    agent_id: UUID | None = None
+    group_id: UUID | None = None
+
+
 class DomainData(BaseModel):
     """Rich metadata for a domain, used in generate/regenerate modals."""
 

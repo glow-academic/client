@@ -43612,14 +43612,6 @@
             "format": "uuid",
             "title": "Simulation Id"
           },
-          "agent_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "title": "Agent Ids"
-          },
           "attempt_id": {
             "type": "string",
             "format": "uuid",
@@ -43641,11 +43633,10 @@
         "type": "object",
         "required": [
           "simulation_id",
-          "agent_ids",
           "attempt_id"
         ],
         "title": "AttemptGradePayload",
-        "description": "Request payload for attempt_grade WebSocket event.\n\nEnds the simulation and triggers grading."
+        "description": "Request payload for attempt_grade WebSocket event.\n\nEnds the simulation and triggers grading.\nAgent is resolved from pre-stored group (created at training start)."
       },
       "AttemptGradedEvent": {
         "properties": {
@@ -44243,14 +44234,6 @@
             "format": "uuid",
             "title": "Simulation Id"
           },
-          "agent_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "title": "Agent Ids"
-          },
           "chat_id": {
             "type": "string",
             "format": "uuid",
@@ -44293,12 +44276,11 @@
         "type": "object",
         "required": [
           "simulation_id",
-          "agent_ids",
           "chat_id",
           "message"
         ],
         "title": "AttemptMessagePayload",
-        "description": "Request payload for attempt_message WebSocket event.\n\nSends a user message during an active simulation chat."
+        "description": "Request payload for attempt_message WebSocket event.\n\nSends a user message during an active simulation chat.\nAgent is resolved from pre-stored group (created at training start)."
       },
       "AttemptMicMutePayload": {
         "properties": {

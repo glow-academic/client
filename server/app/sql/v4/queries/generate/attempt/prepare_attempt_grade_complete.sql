@@ -41,7 +41,6 @@ END $$;
 -- 3) Create the function
 CREATE OR REPLACE FUNCTION socket_prepare_attempt_grade_v4(
     p_profile_id uuid,
-    p_agent_id uuid,
     p_attempt_id uuid,
     p_chat_id uuid DEFAULT NULL,
     p_entry_types text[] DEFAULT NULL
@@ -77,6 +76,7 @@ DECLARE
     v_session_id uuid;
     v_simulation_id uuid;
     v_chat_id uuid;
+    v_agent_id uuid;
 BEGIN
     -- Get simulation_id and first chat from attempt
     SELECT sas.simulations_id, COALESCE(p_chat_id, c.id) INTO v_simulation_id, v_chat_id
@@ -85,119 +85,30 @@ BEGIN
     WHERE sas.attempt_id = p_attempt_id AND sas.active = true
     LIMIT 1;
 
-    -- Get or create group
-    SELECT id INTO v_session_id
-    FROM sessions_entry
-    WHERE profile_id = p_profile_id AND active = true
-    ORDER BY created_at DESC
+    -- Read pre-stored group from simulation_chats_bindings_entry (filtering by grade entry types)
+    SELECT scbe.group_id INTO v_group_id
+    FROM simulation_chats_bindings_entry scbe
+    JOIN bindings_entry be ON be.id = scbe.binding_id AND be.active = true
+    JOIN bindings_bindings_connection bbc ON bbc.binding_id = be.id AND bbc.active = true
+    JOIN bindings_resource br ON br.id = bbc.bindings_id AND br.active = true
+    WHERE scbe.chat_id = v_chat_id AND scbe.active = true
+      AND (p_entry_types IS NULL OR br.entry::text = ANY(p_entry_types))
     LIMIT 1;
 
-    INSERT INTO groups_entry (created_at, updated_at, session_id)
-    VALUES (NOW(), NOW(), v_session_id)
-    RETURNING id, trace_id INTO v_group_id, v_trace_id;
+    IF v_group_id IS NOT NULL THEN
+        SELECT trace_id INTO v_trace_id FROM groups_entry WHERE id = v_group_id;
+    END IF;
 
-    -- Populate group connection tables (14 tables)
-    -- 1. agents
-    INSERT INTO groups_agents_connection (group_id, agents_id, created_at, active, generated, mcp)
-    SELECT v_group_id, aaj.agents_id, NOW(), true, false, false
-    FROM agent_agents_junction aaj WHERE aaj.agent_id = p_agent_id AND aaj.active = true
-    ON CONFLICT (group_id, agents_id) DO NOTHING;
+    IF v_group_id IS NULL THEN
+        RAISE EXCEPTION 'No pre-stored group found for chat_id %. Groups should be created at training start time.', v_chat_id;
+    END IF;
 
-    -- 2. models
-    INSERT INTO groups_models_connection (group_id, models_id, created_at, active, generated, mcp)
-    SELECT v_group_id, mmj.models_id, NOW(), true, false, false
-    FROM agent_models_junction amj
-    JOIN model_models_junction mmj ON mmj.model_id = amj.model_id AND mmj.active = true
-    WHERE amj.agent_id = p_agent_id AND amj.active = true
-    ON CONFLICT (group_id, models_id) DO NOTHING;
-
-    -- 3. providers
-    INSERT INTO groups_providers_connection (group_id, providers_id, created_at, active, generated, mcp)
-    SELECT v_group_id, ppj.providers_id, NOW(), true, false, false
-    FROM agent_models_junction amj
-    JOIN model_providers_junction mpj ON mpj.model_id = amj.model_id AND mpj.active = true
-    JOIN provider_providers_junction ppj ON ppj.provider_id = mpj.providers_id AND ppj.active = true
-    WHERE amj.agent_id = p_agent_id AND amj.active = true
-    ON CONFLICT (group_id, providers_id) DO NOTHING;
-
-    -- 4. keys
-    INSERT INTO groups_keys_connection (group_id, keys_id, created_at, active, generated, mcp)
-    SELECT v_group_id, mkj.key_id, NOW(), true, false, false
-    FROM agent_models_junction amj
-    JOIN model_keys_junction mkj ON mkj.model_id = amj.model_id AND mkj.active = true
-    WHERE amj.agent_id = p_agent_id AND amj.active = true
-    ON CONFLICT (group_id, keys_id) DO NOTHING;
-
-    -- 5. endpoints
-    INSERT INTO groups_endpoints_connection (group_id, endpoints_id, created_at, active, generated, mcp)
-    SELECT v_group_id, mej.endpoint_id, NOW(), true, false, false
-    FROM agent_models_junction amj
-    JOIN model_endpoints_junction mej ON mej.model_id = amj.model_id AND mej.active = true
-    WHERE amj.agent_id = p_agent_id AND amj.active = true
-    ON CONFLICT (group_id, endpoints_id) DO NOTHING;
-
-    -- 6. temperature_levels
-    INSERT INTO groups_temperature_levels_connection (group_id, temperature_levels_id, created_at, active, generated, mcp)
-    SELECT v_group_id, atlj.temperature_level_id, NOW(), true, false, false
-    FROM agent_temperature_levels_junction atlj WHERE atlj.agent_id = p_agent_id AND atlj.active = true
-    ON CONFLICT (group_id, temperature_levels_id) DO NOTHING;
-
-    -- 7. reasoning_levels
-    INSERT INTO groups_reasoning_levels_connection (group_id, reasoning_levels_id, created_at, active, generated, mcp)
-    SELECT v_group_id, arlj.reasoning_level_id, NOW(), true, false, false
-    FROM agent_reasoning_levels_junction arlj WHERE arlj.agent_id = p_agent_id AND arlj.active = true
-    ON CONFLICT (group_id, reasoning_levels_id) DO NOTHING;
-
-    -- 8. prompts
-    INSERT INTO groups_prompts_connection (group_id, prompts_id, created_at, active, generated, mcp)
-    SELECT v_group_id, apj.prompt_id, NOW(), true, false, false
-    FROM agent_prompts_junction apj WHERE apj.agent_id = p_agent_id AND apj.active = true
-    ON CONFLICT (group_id, prompts_id) DO NOTHING;
-
-    -- 9. instructions
-    INSERT INTO groups_instructions_connection (group_id, instructions_id, created_at, active, generated, mcp)
-    SELECT v_group_id, aij.instruction_id, NOW(), true, false, false
-    FROM agent_instructions_junction aij WHERE aij.agent_id = p_agent_id AND aij.active = true
-    ON CONFLICT (group_id, instructions_id) DO NOTHING;
-
-    -- 10. tools
-    INSERT INTO groups_tools_connection (group_id, tools_id, created_at, active, generated, mcp)
-    SELECT v_group_id, ttj.tools_id, NOW(), true, false, false
-    FROM agent_tools_junction atj
-    JOIN tool_tools_junction ttj ON ttj.tool_id = atj.tool_id AND ttj.active = true
-    WHERE atj.agent_id = p_agent_id AND atj.active = true
-    ON CONFLICT (group_id, tools_id) DO NOTHING;
-
-    -- 11. voices
-    INSERT INTO groups_voices_connection (group_id, voices_id, created_at, active, generated, mcp)
-    SELECT v_group_id, avj.voice_id, NOW(), true, false, false
-    FROM agent_voices_junction avj WHERE avj.agent_id = p_agent_id AND avj.active = true
-    ON CONFLICT (group_id, voices_id) DO NOTHING;
-
-    -- 12. qualities
-    INSERT INTO groups_qualities_connection (group_id, qualities_id, created_at, active, generated, mcp)
-    SELECT v_group_id, mqj.quality_id, NOW(), true, false, false
-    FROM agent_models_junction amj
-    JOIN model_qualities_junction mqj ON mqj.model_id = amj.model_id AND mqj.active = true
-    WHERE amj.agent_id = p_agent_id AND amj.active = true
-    ON CONFLICT (group_id, qualities_id) DO NOTHING;
-
-    -- 13. model_values
-    INSERT INTO groups_model_values_connection (group_id, values_id, created_at, active, generated, mcp)
-    SELECT v_group_id, mvj.value_id, NOW(), true, false, false
-    FROM agent_models_junction amj
-    JOIN model_values_junction mvj ON mvj.model_id = amj.model_id AND mvj.active = true
-    WHERE amj.agent_id = p_agent_id AND amj.active = true
-    ON CONFLICT (group_id, values_id) DO NOTHING;
-
-    -- 14. provider_values
-    INSERT INTO groups_provider_values_connection (group_id, values_id, created_at, active, generated, mcp)
-    SELECT v_group_id, pvj.values_id, NOW(), true, false, false
-    FROM agent_models_junction amj
-    JOIN model_providers_junction mpj ON mpj.model_id = amj.model_id AND mpj.active = true
-    JOIN provider_values_junction pvj ON pvj.provider_id = mpj.providers_id AND pvj.active = true
-    WHERE amj.agent_id = p_agent_id AND amj.active = true
-    ON CONFLICT (group_id, values_id) DO NOTHING;
+    -- Resolve agent_id from stored group
+    SELECT aaj.agent_id INTO v_agent_id
+    FROM groups_agents_connection gac
+    JOIN agent_agents_junction aaj ON aaj.agents_id = gac.agents_id AND aaj.active = true
+    WHERE gac.group_id = v_group_id AND gac.active = true
+    LIMIT 1;
 
     -- Create run
     INSERT INTO runs_entry (input_tokens, output_tokens, group_id)
@@ -208,9 +119,11 @@ BEGIN
     INSERT INTO profile_runs_junction (profile_id, run_id)
     VALUES (p_profile_id, v_run_id);
 
-    -- Link run to agent
-    INSERT INTO agent_runs_junction (agent_id, run_id)
-    VALUES (p_agent_id, v_run_id);
+    -- Link run to agent (if resolved)
+    IF v_agent_id IS NOT NULL THEN
+        INSERT INTO agent_runs_junction (agent_id, run_id)
+        VALUES (v_agent_id, v_run_id);
+    END IF;
 
     -- Create grade entry (grade has chat_id directly)
     INSERT INTO simulation_grades_entry (chat_id, run_id, created_at, updated_at, score, passed)
@@ -221,9 +134,9 @@ BEGIN
     RETURN QUERY
     WITH agent_config AS (
         SELECT
-            (SELECT pr.system_prompt FROM agent_prompts_junction ap JOIN prompts_resource pr ON ap.prompt_id = pr.id WHERE ap.agent_id = p_agent_id AND ap.active = true LIMIT 1) as system_prompt,
-            (SELECT tl.temperature FROM agent_temperature_levels_junction atl JOIN temperature_levels_resource tl ON atl.temperature_level_id = tl.id WHERE atl.agent_id = p_agent_id AND atl.active = true LIMIT 1) as temperature,
-            (SELECT rl.reasoning_level FROM agent_reasoning_levels_junction arl JOIN reasoning_levels_resource rl ON arl.reasoning_level_id = rl.id WHERE arl.agent_id = p_agent_id AND arl.active = true LIMIT 1) as reasoning
+            (SELECT pr.system_prompt FROM agent_prompts_junction ap JOIN prompts_resource pr ON ap.prompt_id = pr.id WHERE ap.agent_id = v_agent_id AND ap.active = true LIMIT 1) as system_prompt,
+            (SELECT tl.temperature FROM agent_temperature_levels_junction atl JOIN temperature_levels_resource tl ON atl.temperature_level_id = tl.id WHERE atl.agent_id = v_agent_id AND atl.active = true LIMIT 1) as temperature,
+            (SELECT rl.reasoning_level FROM agent_reasoning_levels_junction arl JOIN reasoning_levels_resource rl ON arl.reasoning_level_id = rl.id WHERE arl.agent_id = v_agent_id AND arl.active = true LIMIT 1) as reasoning
     ),
     model_config AS (
         SELECT
@@ -239,7 +152,7 @@ BEGIN
         JOIN model_artifact ma ON ma.id = am.model_id
         JOIN model_models_junction mmj ON mmj.model_id = ma.id
         JOIN models_resource mr ON mr.id = mmj.models_id
-        WHERE am.agent_id = p_agent_id
+        WHERE am.agent_id = v_agent_id
         LIMIT 1
     ),
     api_key_data AS (
@@ -269,7 +182,7 @@ BEGIN
         JOIN tool_artifact t ON t.id = ttj.tool_id
         LEFT JOIN tool_bindings_junction tbj ON tbj.tool_id = t.id AND tbj.active = true
         LEFT JOIN bindings_resource br ON br.id = tbj.binding_id AND br.active = true
-        WHERE at.agent_id = p_agent_id
+        WHERE at.agent_id = v_agent_id
           AND (p_entry_types IS NULL OR br.entry::text = ANY(p_entry_types))
           AND br.creatable = true
     ),
@@ -277,7 +190,7 @@ BEGIN
         SELECT ARRAY_AGG(i.template ORDER BY i.created_at) as templates
         FROM agent_instructions_junction ai
         JOIN instructions_resource i ON i.id = ai.instruction_id AND i.active = true
-        WHERE ai.agent_id = p_agent_id
+        WHERE ai.agent_id = v_agent_id
     ),
     -- Get all messages from all chats in attempt (or specific chat if provided)
     attempt_messages AS (

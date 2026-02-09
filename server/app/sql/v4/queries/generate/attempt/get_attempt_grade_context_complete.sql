@@ -19,9 +19,9 @@ END $$;
 -- 2) Create the function
 CREATE OR REPLACE FUNCTION socket_get_attempt_grade_context_v4(
     p_profile_id uuid,
-    p_agent_id uuid,
     p_simulation_id uuid,
     p_attempt_id uuid,
+    p_chat_id uuid DEFAULT NULL,
     p_entry_types text[] DEFAULT NULL
 )
 RETURNS TABLE (
@@ -67,12 +67,33 @@ AS $$
 WITH params AS (
     SELECT
         p_profile_id AS profile_id,
-        p_agent_id AS agent_id,
         p_simulation_id AS simulation_id,
         p_attempt_id AS attempt_id,
+        p_chat_id AS chat_id,
         p_entry_types AS entry_types
 ),
--- Agent data (grading agent, may differ from simulation agent)
+-- Resolve chat_id (use provided or first chat from attempt)
+effective_chat AS (
+    SELECT COALESCE(p_chat_id, c.id) as chat_id
+    FROM simulation_chats_entry c
+    WHERE c.attempt_id = p_attempt_id
+    ORDER BY c.created_at ASC
+    LIMIT 1
+),
+-- Resolve agent from pre-stored group (created at training start)
+resolved_agent AS (
+    SELECT aaj.agent_id
+    FROM effective_chat ec
+    JOIN simulation_chats_bindings_entry scbe ON scbe.chat_id = ec.chat_id AND scbe.active = true
+    JOIN groups_agents_connection gac ON gac.group_id = scbe.group_id AND gac.active = true
+    JOIN agent_agents_junction aaj ON aaj.agents_id = gac.agents_id AND aaj.active = true
+    JOIN bindings_entry be ON be.id = scbe.binding_id AND be.active = true
+    JOIN bindings_bindings_connection bbc ON bbc.binding_id = be.id AND bbc.active = true
+    JOIN bindings_resource br ON br.id = bbc.bindings_id AND br.active = true
+    WHERE p_entry_types IS NULL OR br.entry::text = ANY(p_entry_types)
+    LIMIT 1
+),
+-- Agent data (grading agent, resolved from stored group)
 agent_data AS (
     SELECT
         a.id as agent_id,
@@ -84,8 +105,7 @@ agent_data AS (
             WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true
         ) as agent_is_active
     FROM agent_artifact a
-    CROSS JOIN params p
-    WHERE a.id = p.agent_id
+    JOIN resolved_agent ra ON ra.agent_id = a.id
     LIMIT 1
 ),
 -- Model data
@@ -94,8 +114,8 @@ model_data AS (
         mr.id as model_id,
         mr.value as model_name,
         ma.id as model_artifact_id
-    FROM params p
-    JOIN agent_models_junction am ON am.agent_id = p.agent_id
+    FROM resolved_agent ra
+    JOIN agent_models_junction am ON am.agent_id = ra.agent_id
     JOIN model_artifact ma ON ma.id = am.model_id
     JOIN model_models_junction mmj ON mmj.model_id = ma.id
     JOIN models_resource mr ON mr.id = mmj.models_id

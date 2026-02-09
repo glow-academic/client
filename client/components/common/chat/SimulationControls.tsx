@@ -102,27 +102,16 @@ export function SimulationControls({
       setEndingAction("endChat");
 
       try {
-        const continueData: {
-          chat_id: string;
-          attempt_id: string;
-          end_all: boolean;
-          previous_chat_id?: string;
-        } = {
+        socket.emit("attempt_end", {
           chat_id: targetChatId,
-          attempt_id: attemptId,
-          end_all: false,
-        };
-        if (previousChatId) {
-          continueData.previous_chat_id = previousChatId;
-        }
-        socket.emit("simulation_text_end", continueData);
+        });
       } catch (error) {
         toast.error(`Failed to end chat: ${error}`);
         setEndChatLoading(false);
         setEndingAction(null);
       }
     },
-    [currentChatId, socket, attemptId],
+    [currentChatId, socket],
   );
 
   // End all chats function
@@ -133,93 +122,55 @@ export function SimulationControls({
         return;
       }
 
-      // Don't set local state here - let WebSocket events drive the state
-      // Server will emit end_all_started event which all watchers will receive
       try {
-        const continueData: {
-          chat_id: string;
-          attempt_id: string;
-          end_all: boolean;
-          previous_chat_map?: Record<string, string | null>;
-        } = {
-          chat_id: currentChatId!, // Non-null assertion: already checked above
+        socket.emit("attempt_end_all", {
           attempt_id: attemptId,
-          end_all: true,
-        };
-        if (previousChatMap) {
-          continueData.previous_chat_map = previousChatMap;
-        }
-        socket.emit("simulation_text_end", continueData);
+        });
       } catch (error) {
         toast.error(`Failed to end all chats: ${error}`);
-        // Only reset on error - success/completion handled by WebSocket events
         setEndChatLoading(false);
         setEndingAction(null);
       }
     },
-    [attempt, currentChatId, attemptId, socket],
+    [attempt, attemptId, socket],
   );
 
   // Listen for WebSocket events to reset loading state and handle grading
   useEffect(() => {
     if (!socket) return;
 
-    const handleSimulationContinued = () => {
+    const handleChatEnded = (data: {
+      chat_id: string;
+      next_chat_id: string | null;
+      is_attempt_finished: boolean;
+      grade_id: string | null;
+    }) => {
+      if (!currentChatId || data.chat_id !== currentChatId) return;
       setEndChatLoading(false);
       setEndingAction(null);
     };
 
-    const handleSimulationError = () => {
-      setEndChatLoading(false);
-      setEndingAction(null);
-    };
-
-    const handleEndAllStarted = (data: {
-      chat_id: string;
+    const handleAttemptEnded = (data: {
       attempt_id: string;
-    }) => {
-      // Only handle if this event is for the current chat
-      if (!currentChatId || data.chat_id !== currentChatId) return;
-
-      // Set loading state - all watchers will see this
-      setEndChatLoading(true);
-      setEndingAction("endAll");
-      // Close confirmation dialog if still open
-      setConfirmEndChatOpen(false);
-    };
-
-    const handleEndChatStarted = (data: {
-      chat_id: string;
-      attempt_id: string;
-    }) => {
-      // Only handle if this event is for the current chat
-      if (!currentChatId || data.chat_id !== currentChatId) return;
-
-      // Set loading state - all watchers will see this
-      setEndChatLoading(true);
-      setEndingAction("endChat");
-      // Close confirmation dialog if still open
-      setConfirmEndChatOpen(false);
-    };
-
-    const handleEndAllCompleted = (data: {
       success: boolean;
       message: string;
-      chat_id: string;
-      attempt_id: string;
-      completed_chat_ids?: string[];
-      next_chat_ids?: (string | null)[];
-      all_completed?: boolean;
     }) => {
-      // Only handle if this event is for the current chat
-      if (!currentChatId || data.chat_id !== currentChatId) return;
-
-      // Reset loading state - all watchers will see this
       setEndChatLoading(false);
       setEndingAction(null);
     };
 
-    const handleSimulationGradingProgress = (data: {
+    const handleAttemptError = (data: {
+      chat_id: string | null;
+      type: string;
+      message: string;
+    }) => {
+      if (data.type === "end") {
+        setEndChatLoading(false);
+        setEndingAction(null);
+      }
+    };
+
+    const handleGradingProgress = (data: {
       type: string;
       chat_id: string;
       completed_count?: number;
@@ -255,25 +206,21 @@ export function SimulationControls({
       }
     };
 
-    socket.on("simulation_text_ended", handleSimulationContinued);
-    socket.on("simulation_text_end_error", handleSimulationError);
-    socket.on("simulation_text_end_all_started", handleEndAllStarted);
-    socket.on("simulation_text_end_chat_started", handleEndChatStarted);
-    socket.on("simulation_text_end_all_completed", handleEndAllCompleted);
+    socket.on("attempt_chat_ended", handleChatEnded);
+    socket.on("attempt_ended", handleAttemptEnded);
+    socket.on("attempt_error", handleAttemptError);
     socket.on(
       "simulation_text_grading_progress",
-      handleSimulationGradingProgress,
+      handleGradingProgress,
     );
 
     return () => {
-      socket.off("simulation_text_ended", handleSimulationContinued);
-      socket.off("simulation_text_end_error", handleSimulationError);
-      socket.off("simulation_text_end_all_started", handleEndAllStarted);
-      socket.off("simulation_text_end_chat_started", handleEndChatStarted);
-      socket.off("simulation_text_end_all_completed", handleEndAllCompleted);
+      socket.off("attempt_chat_ended", handleChatEnded);
+      socket.off("attempt_ended", handleAttemptEnded);
+      socket.off("attempt_error", handleAttemptError);
       socket.off(
         "simulation_text_grading_progress",
-        handleSimulationGradingProgress,
+        handleGradingProgress,
       );
     };
   }, [socket, currentChatId]);
@@ -496,10 +443,8 @@ export function SimulationControls({
     setEndingAction("endChat");
 
     try {
-      socket.emit("simulation_text_end", {
+      socket.emit("attempt_end", {
         chat_id: currentChatId,
-        attempt_id: attemptId,
-        end_all: false,
       });
     } catch (error) {
       toast.error(`Failed to advance to next video: ${error}`);

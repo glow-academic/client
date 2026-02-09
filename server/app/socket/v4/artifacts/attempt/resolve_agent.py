@@ -1,7 +1,8 @@
 """Agent resolution utility for attempt handlers.
 
 Resolves a single agent ID from a list of agent IDs based on which agent's
-tools produce the required entry types.
+tools produce the required entry types. Also provides start-time resolution
+of agents per entry type based on profile departments.
 """
 
 from dataclasses import dataclass
@@ -13,11 +14,16 @@ from asyncpg import Connection
 from app.sql.types import (
     ResolveAgentByEntryTypesSqlParams,
     ResolveAgentByEntryTypesSqlRow,
+    ResolveAttemptEntriesSqlParams,
+    ResolveAttemptEntriesSqlRow,
 )
 from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH_RESOLVE = (
     "app/sql/v4/queries/generate/attempt/resolve_agent_by_entry_types_complete.sql"
+)
+SQL_PATH_RESOLVE_ENTRIES = (
+    "app/sql/v4/queries/generate/attempt/resolve_attempt_entries_complete.sql"
 )
 
 
@@ -89,3 +95,40 @@ async def resolve_agent_for_entry_types(
         success=True,
         agent_id=row.resolved_agent_id,
     )
+
+
+async def resolve_attempt_entries(
+    conn: Connection, profile_id: UUID, entry_types: list[str]
+) -> dict[str, UUID]:
+    """Resolve agent for each attempt entry type based on profile's departments.
+
+    Called at training start time to pre-resolve which agent handles each
+    entry type (contents, hints, grades, feedbacks).
+
+    Args:
+        conn: Database connection
+        profile_id: The profile starting the training
+        entry_types: Entry types to resolve (e.g., ['contents', 'hints', 'grades', 'feedbacks'])
+
+    Returns:
+        Dict mapping entry_type -> agent_id for each resolved type.
+        Entry types with no matching agent are omitted.
+    """
+    params = ResolveAttemptEntriesSqlParams(
+        p_profile_id=profile_id,
+        p_entry_types=entry_types,
+    )
+
+    rows = cast(
+        list[ResolveAttemptEntriesSqlRow],
+        await execute_sql_typed(
+            conn, SQL_PATH_RESOLVE_ENTRIES, params=params, multi_row=True
+        ),
+    )
+
+    entries_map: dict[str, UUID] = {}
+    for row in rows:
+        if row.agent_id:
+            entries_map[row.entry_type] = row.agent_id
+
+    return entries_map

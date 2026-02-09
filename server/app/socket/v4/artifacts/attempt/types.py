@@ -38,10 +38,10 @@ class AttemptMessagePayload(BaseModel):
     """Request payload for attempt_message WebSocket event.
 
     Sends a user message during an active simulation chat.
+    Agent is resolved from pre-stored group (created at training start).
     """
 
     simulation_id: UUID
-    agent_ids: list[UUID]  # List of agents - resolved to one based on entry types
     chat_id: UUID
     message: str
     voice_mode: bool = False
@@ -53,10 +53,10 @@ class AttemptGradePayload(BaseModel):
     """Request payload for attempt_grade WebSocket event.
 
     Ends the simulation and triggers grading.
+    Agent is resolved from pre-stored group (created at training start).
     """
 
     simulation_id: UUID
-    agent_ids: list[UUID]  # List of agents - resolved to one based on entry types
     attempt_id: UUID
     chat_id: UUID | None = None  # Optional - grade specific chat or all
 

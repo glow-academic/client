@@ -10738,6 +10738,7 @@ export interface components {
          * @description Request payload for attempt_grade WebSocket event.
          *
          *     Ends the simulation and triggers grading.
+         *     Agent is resolved from pre-stored group (created at training start).
          */
         AttemptGradePayload: {
             /**
@@ -10745,8 +10746,6 @@ export interface components {
              * Format: uuid
              */
             simulation_id: string;
-            /** Agent Ids */
-            agent_ids: string[];
             /**
              * Attempt Id
              * Format: uuid
@@ -10938,6 +10937,7 @@ export interface components {
          * @description Request payload for attempt_message WebSocket event.
          *
          *     Sends a user message during an active simulation chat.
+         *     Agent is resolved from pre-stored group (created at training start).
          */
         AttemptMessagePayload: {
             /**
@@ -10945,8 +10945,6 @@ export interface components {
              * Format: uuid
              */
             simulation_id: string;
-            /** Agent Ids */
-            agent_ids: string[];
             /**
              * Chat Id
              * Format: uuid
