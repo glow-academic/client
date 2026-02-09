@@ -304,67 +304,36 @@ async def _auth_generate_impl(
             # Current selections come from the websocket response
 
             # Step 4: Prepare generation (group/run creation, context fetch)
-            try:
-                prepare_params = PreparePersonaGenerationSqlParams(
-                    p_profile_id=profile_id,
-                    p_agent_id=agent_id,
-                    p_group_id=existing_group_id,
-                    p_resources=resources if resources else None,
-                    p_current_resources=current_resources
-                    if current_resources
-                    else None,
-                    p_resource_types=resource_types,
+            prepare_params = PreparePersonaGenerationSqlParams(
+                p_profile_id=profile_id,
+                p_agent_id=agent_id,
+                p_group_id=existing_group_id,
+                p_resources=resources if resources else None,
+                p_current_resources=current_resources if current_resources else None,
+                p_resource_types=resource_types,
+            )
+            prepare_row = cast(
+                PreparePersonaGenerationSqlRow,
+                await execute_sql_typed(conn, SQL_PATH_PREPARE, params=prepare_params),
+            )
+
+            if not prepare_row.run_id:
+                logger.error(
+                    f"Auth generation preparation failed unexpectedly - "
+                    f"profile_id={profile_id}, agent_id={agent_id}"
                 )
-                prepare_row = cast(
-                    PreparePersonaGenerationSqlRow,
-                    await execute_sql_typed(
-                        conn, SQL_PATH_PREPARE, params=prepare_params
+                await emit_to_internal(
+                    "generate_call_error",
+                    GenerateErrorApiRequest(
+                        sid=sid,
+                        error_message="Failed to prepare auth generation: Unknown error",
+                        artifact_type="auth",
+                        group_id=str(existing_group_id) if existing_group_id else None,
+                        resource_type="auth",
                     ),
+                    sid=sid,
                 )
-
-                if not prepare_row.run_id:
-                    logger.error(
-                        f"Auth generation preparation failed unexpectedly - "
-                        f"profile_id={profile_id}, agent_id={agent_id}"
-                    )
-                    await emit_to_internal(
-                        "generate_call_error",
-                        GenerateErrorApiRequest(
-                            sid=sid,
-                            error_message="Failed to prepare auth generation: Unknown error",
-                            artifact_type="auth",
-                            group_id=str(existing_group_id)
-                            if existing_group_id
-                            else None,
-                            resource_type="auth",
-                        ),
-                        sid=sid,
-                    )
-                    return
-
-            except Exception as e:
-                error_msg = str(e)
-                if "RATE_LIMIT_EXCEEDED" in error_msg:
-                    user_msg = (
-                        error_msg.split("RATE_LIMIT_EXCEEDED: ", 1)[1]
-                        if "RATE_LIMIT_EXCEEDED: " in error_msg
-                        else "Rate limit exceeded. Please try again later."
-                    )
-                    await emit_to_internal(
-                        "generate_call_error",
-                        GenerateErrorApiRequest(
-                            sid=sid,
-                            error_message=user_msg,
-                            artifact_type="auth",
-                            group_id=str(existing_group_id)
-                            if existing_group_id
-                            else None,
-                            resource_type="auth",
-                        ),
-                        sid=sid,
-                    )
-                    return
-                raise
+                return
 
             # Extract context from prepare result
             run_id = prepare_row.run_id

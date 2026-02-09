@@ -16,7 +16,6 @@ import {
   type StepStatus,
 } from "@/components/common/forms/GenericForm";
 import { StepCard } from "@/components/common/forms/StepCard";
-import type { GenerateRegenerateModalResource } from "@/components/common/GenerateRegenerateModal";
 import { GenerateRegenerateModal } from "@/components/common/GenerateRegenerateModal";
 import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
 import { Departments } from "@/components/resources/Departments";
@@ -34,10 +33,23 @@ import {
 } from "@/components/ui/tooltip";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
+import { useAiGeneration } from "@/hooks/use-ai-generation";
+import { useGenerationModal } from "@/hooks/use-generation-modal";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { ResourceType } from "@/lib/resources/types";
 import { Loader2, Sparkles } from "lucide-react";
 import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
+import type { Dispatch, SetStateAction } from "react";
+
+const VALID_RESOURCE_TYPES = [
+  "names",
+  "descriptions",
+  "flags",
+  "departments",
+  "fields",
+  "uploads",
+] as const;
+type DocumentResourceType = (typeof VALID_RESOURCE_TYPES)[number];
 
 // Types defined inline using InputOf/OutputOf
 type SaveDocumentIn = InputOf<"/api/v4/artifacts/documents/save", "post">;
@@ -54,8 +66,14 @@ type CreateDraftDescriptionsOut = OutputOf<
 >;
 type CreateDraftUploadsIn = InputOf<"/api/v4/resources/uploads", "post">;
 type CreateDraftUploadsOut = OutputOf<"/api/v4/resources/uploads", "post">;
-type PatchDocumentDraftIn = InputOf<"/api/v4/artifacts/documents/draft", "patch">;
-type PatchDocumentDraftOut = OutputOf<"/api/v4/artifacts/documents/draft", "patch">;
+type PatchDocumentDraftIn = InputOf<
+  "/api/v4/artifacts/documents/draft",
+  "patch"
+>;
+type PatchDocumentDraftOut = OutputOf<
+  "/api/v4/artifacts/documents/draft",
+  "patch"
+>;
 
 type DocumentData = OutputOf<"/api/v4/artifacts/documents/get", "post">;
 
@@ -68,17 +86,17 @@ export interface DocumentProps {
   // Server actions
   saveDocumentAction?: (input: SaveDocumentIn) => Promise<SaveDocumentOut>;
   patchDocumentDraftAction?: (
-    input: PatchDocumentDraftIn
+    input: PatchDocumentDraftIn,
   ) => Promise<PatchDocumentDraftOut>;
   // Resource creation actions
   createNamesAction?: (
-    input: CreateDraftNamesIn
+    input: CreateDraftNamesIn,
   ) => Promise<CreateDraftNamesOut>;
   createDescriptionsAction?: (
-    input: CreateDraftDescriptionsIn
+    input: CreateDraftDescriptionsIn,
   ) => Promise<CreateDraftDescriptionsOut>;
   createUploadsAction?: (
-    input: CreateDraftUploadsIn
+    input: CreateDraftUploadsIn,
   ) => Promise<CreateDraftUploadsOut>;
 }
 
@@ -96,34 +114,9 @@ function DocumentComponent({
   const router = useRouter();
   const isEditMode = mode === "edit" && !!documentId;
   const documentDetail = documentDetailProp ?? documentDetailDefault;
-  const {
-    profile,
-    selectedDraftId,
-    setSelectedDraftId,
-    socket,
-    isConnected,
-  } = useProfile();
+  const { profile, selectedDraftId, setSelectedDraftId, socket, isConnected } =
+    useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
-
-  // Generation state for AI workflows - simplified using ResourceType
-  const [generatingResources, setGeneratingResources] = useState<
-    Set<ResourceType>
-  >(new Set());
-
-  // Modal state for generate/regenerate
-  const [showGenerateModal, setShowGenerateModal] = useState(false);
-  const [modalMode, setModalMode] = useState<"generate" | "regenerate" | null>(
-    null
-  );
-  const [modalResources, setModalResources] = useState<
-    GenerateRegenerateModalResource[]
-  >([]);
-  const [modalInstructions, setModalInstructions] = useState("");
-
-  const isGenerating = useCallback(
-    (resourceType: ResourceType) => generatingResources.has(resourceType),
-    [generatingResources]
-  );
 
   // nuqs parsers for URL-backed state (will be passed to GenericForm)
   // Memoize to prevent new object reference on every render
@@ -138,7 +131,7 @@ function DocumentComponent({
       // Filter params (URL-backed)
       fieldShowSelected: parseAsBoolean,
     }),
-    []
+    [],
   );
 
   // Local form state (not in URL) - stores only resource IDs
@@ -161,14 +154,17 @@ function DocumentComponent({
       description_id: current?.descriptions?.[0]?.id ?? null,
       active_flag_id: current?.flags?.[0]?.flag_option_id ?? null,
       department_ids:
-        current?.departments?.map((d) => d.department_id).filter((x): x is string => x != null) ??
-        ([] as string[]),
+        current?.departments
+          ?.map((d) => d.department_id)
+          .filter((x): x is string => x != null) ?? ([] as string[]),
       field_ids:
-        current?.fields?.map((f) => f.id).filter((x): x is string => x != null) ??
-        ([] as string[]),
+        current?.fields
+          ?.map((f) => f.id)
+          .filter((x): x is string => x != null) ?? ([] as string[]),
       upload_ids:
-        current?.uploads?.map((u) => u.uploads_id).filter((x): x is string => x != null) ??
-        ([] as string[]),
+        current?.uploads
+          ?.map((u) => u.uploads_id)
+          .filter((x): x is string => x != null) ?? ([] as string[]),
     };
   }, [documentDetail]);
 
@@ -292,7 +288,7 @@ function DocumentComponent({
       return;
     }
 
-    // ✅ If nothing changed since the last successful patch, do nothing.
+    // If nothing changed since the last successful patch, do nothing.
     if (lastPatchedKeyRef.current === draftPatchKey) {
       return;
     }
@@ -335,177 +331,95 @@ function DocumentComponent({
     return () => clearTimeout(timer);
   }, [draftPatchKey, draftId, formState]);
 
-  // WebSocket handlers for AI generation - unified handler for all resource types
-  useEffect(() => {
-    if (!socket || !isConnected) return;
-
-    // Use single group_id from documentDetail (no need to track multiple)
-    const currentGroupId = documentDetail?.group_id;
-
-    const handleGenerationComplete = (data: {
-      artifact_type?: string;
-      group_id?: string;
-      resource_type?: string;
-      // Full resource objects from server
-      name_resource?: { id?: string | null } | null;
-      description_resource?: { id?: string | null } | null;
-      flag_resource?: { id?: string | null } | null;
-      department_resources?: Array<{ department_id?: string | null }> | null;
-      field_resources?: Array<{ id?: string | null }> | null;
-      upload_resources?: Array<{ id?: string | null }> | null;
-      message?: string;
-      success?: boolean;
-      [key: string]: unknown;
-    }) => {
-      // Filter by artifact_type and group_id
-      if (
-        data.artifact_type !== "document" ||
-        !data.group_id ||
-        data.group_id !== currentGroupId
-      ) {
-        return; // Not for this document or wrong group_id
-      }
-
-      const validResourceTypes: ResourceType[] = [
-        "names",
-        "descriptions",
-        "flags",
-        "departments",
-        "fields",
-        "uploads",
-      ];
-      if (
-        data.resource_type &&
-        validResourceTypes.includes(data.resource_type as ResourceType)
-      ) {
-        // Extract IDs from full resource objects
-        const nameId = data.name_resource?.id ?? null;
-        const descriptionId = data.description_resource?.id ?? null;
-        const flagId = data.flag_resource?.id ?? null;
-        const deptIds = (
-          data.department_resources
+  // AI generation via shared hook
+  const onAiComplete = useCallback((data: Record<string, unknown>) => {
+    return {
+      aiUpdates: {} as Record<string, unknown>,
+      formStateUpdater: (prev: Record<string, unknown>) => {
+        const updates: Record<string, unknown> = {};
+        const nameRes = data["name_resource"] as
+          | { id?: string | null }
+          | null
+          | undefined;
+        const descRes = data["description_resource"] as
+          | { id?: string | null }
+          | null
+          | undefined;
+        const flagRes = data["flag_resource"] as
+          | { id?: string | null }
+          | null
+          | undefined;
+        const nameId = nameRes?.id ?? null;
+        const descriptionId = descRes?.id ?? null;
+        const flagId = flagRes?.id ?? null;
+        const deptResources = data["department_resources"] as
+          | Array<{ department_id?: string | null }>
+          | null
+          | undefined;
+        const fieldResources = data["field_resources"] as
+          | Array<{ id?: string | null }>
+          | null
+          | undefined;
+        const uploadResources = data["upload_resources"] as
+          | Array<{ id?: string | null }>
+          | null
+          | undefined;
+        const deptIds =
+          deptResources
             ?.map((d) => d.department_id)
-            .filter((x): x is string => x != null) ?? []
-        );
-        const fieldIds = (
-          data.field_resources?.map((f) => f.id).filter((x): x is string => x != null) ?? []
-        );
-        const uploadIds = (
-          data.upload_resources?.map((u) => u.id).filter((x): x is string => x != null) ?? []
-        );
-
-        // Update formState with extracted IDs
-        setFormState((prev) => {
-          const updates: Partial<typeof prev> = {};
-
-          if (nameId) updates.name_id = nameId;
-          if (descriptionId) updates.description_id = descriptionId;
-          if (flagId) updates.active_flag_id = flagId;
-          if (fieldIds.length > 0) {
-            const newFieldIds = (fieldIds as string[]).filter(
-              (id) => !prev.field_ids.includes(id)
-            );
-            updates.field_ids = [...prev.field_ids, ...newFieldIds];
-          }
-          if (deptIds.length > 0) {
-            const newDeptIds = (deptIds as string[]).filter(
-              (id) => !prev.department_ids.includes(id)
-            );
-            updates.department_ids = [...prev.department_ids, ...newDeptIds];
-          }
-          if (uploadIds.length > 0) {
-            const newUploadIds = (uploadIds as string[]).filter(
-              (id) => !prev.upload_ids.includes(id)
-            );
-            updates.upload_ids = [...prev.upload_ids, ...newUploadIds];
-          }
-
-          return { ...prev, ...updates };
-        });
-
-        setGeneratingResources((prev) => {
-          const next = new Set(prev);
-          next.delete(data.resource_type as ResourceType);
-          return next;
-        });
-        if (data.success) {
-          toast.success(
-            data.message || `${data.resource_type} generated successfully`
-          );
-        } else {
-          toast.error(
-            data.message || `Failed to generate ${data.resource_type}`
-          );
+            .filter((x): x is string => x != null) ?? [];
+        const fieldIds =
+          fieldResources
+            ?.map((f) => f.id)
+            .filter((x): x is string => x != null) ?? [];
+        const uploadIds =
+          uploadResources
+            ?.map((u) => u.id)
+            .filter((x): x is string => x != null) ?? [];
+        if (nameId) updates["name_id"] = nameId;
+        if (descriptionId) updates["description_id"] = descriptionId;
+        if (flagId) updates["active_flag_id"] = flagId;
+        if (fieldIds.length > 0) {
+          const prevFieldIds = (prev["field_ids"] as string[]) ?? [];
+          updates["field_ids"] = [
+            ...prevFieldIds,
+            ...fieldIds.filter((id: string) => !prevFieldIds.includes(id)),
+          ];
         }
-      }
+        if (deptIds.length > 0) {
+          const prevDeptIds = (prev["department_ids"] as string[]) ?? [];
+          updates["department_ids"] = [
+            ...prevDeptIds,
+            ...deptIds.filter((id: string) => !prevDeptIds.includes(id)),
+          ];
+        }
+        if (uploadIds.length > 0) {
+          const prevUploadIds = (prev["upload_ids"] as string[]) ?? [];
+          updates["upload_ids"] = [
+            ...prevUploadIds,
+            ...uploadIds.filter((id: string) => !prevUploadIds.includes(id)),
+          ];
+        }
+        return { ...prev, ...updates };
+      },
     };
+  }, []);
 
-    const handleGenerationProgress = (data: {
-      artifact_type?: string;
-      group_id?: string;
-      resource_type?: string;
-      [key: string]: unknown;
-    }) => {
-      // Filter by artifact_type and group_id
-      if (
-        data.artifact_type !== "document" ||
-        !data.group_id ||
-        data.group_id !== currentGroupId
-      ) {
-        return; // Not for this document or wrong group_id
-      }
-      // Handle progress updates if needed
-    };
-
-    const handleGenerationError = (data: {
-      artifact_type?: string;
-      group_id?: string;
-      message?: string;
-      resource_type?: string;
-      resource_types?: string[];
-    }) => {
-      // Filter by artifact_type and group_id
-      if (
-        data.artifact_type !== "document" ||
-        !data.group_id ||
-        data.group_id !== currentGroupId
-      ) {
-        return; // Not for this document or wrong group_id
-      }
-
-      const validResourceTypes: ResourceType[] = [
-        "names",
-        "descriptions",
-        "flags",
-        "departments",
-        "fields",
-        "uploads",
-      ];
-      const resourceTypes =
-        data.resource_types || (data.resource_type ? [data.resource_type] : []);
-      setGeneratingResources((prev) => {
-        const next = new Set(prev);
-        resourceTypes.forEach((rt) => {
-          if (validResourceTypes.includes(rt as ResourceType)) {
-            next.delete(rt as ResourceType);
-          }
-        });
-        return next;
-      });
-      toast.error(data.message || "Generation failed");
-    };
-
-    // Listen to document-specific events filtered by artifact_type and group_id
-    socket.on("document_generation_progress", handleGenerationProgress);
-    socket.on("document_generation_complete", handleGenerationComplete);
-    socket.on("document_generation_error", handleGenerationError);
-
-    return () => {
-      socket.off("document_generation_progress", handleGenerationProgress);
-      socket.off("document_generation_complete", handleGenerationComplete);
-      socket.off("document_generation_error", handleGenerationError);
-    };
-  }, [socket, isConnected, documentDetail?.group_id]);
+  const { isGenerating, setGeneratingResources } = useAiGeneration<
+    ResourceType,
+    Record<string, unknown>
+  >({
+    socket,
+    isConnected,
+    artifactType: "document",
+    groupId: documentDetail?.group_id,
+    eventPrefix: "document_generation",
+    validResourceTypes: [...VALID_RESOURCE_TYPES],
+    onComplete: onAiComplete,
+    setFormState: setFormState as Dispatch<
+      SetStateAction<Record<string, unknown>>
+    >,
+  });
 
   // Map resource types to domain_ids for socket emit
   const resourceTypeToDomainId = useCallback(
@@ -528,14 +442,14 @@ function DocumentComponent({
           return null;
       }
     },
-    [documentDetail]
+    [documentDetail],
   );
 
   const handleGenerateResources = useCallback(
     async (
       resourceTypes: ResourceType[],
       _agentType: string | null,
-      userInstructions?: string
+      userInstructions?: string,
     ) => {
       if (!socket || !isConnected) {
         toast.error("WebSocket not connected");
@@ -555,7 +469,7 @@ function DocumentComponent({
       // Set all resources as generating
       setGeneratingResources((prev) => {
         const next = new Set(prev);
-        resourceTypes.forEach((rt) => next.add(rt));
+        resourceTypes.forEach((rt) => next.add(rt as DocumentResourceType));
         return next;
       });
 
@@ -571,28 +485,34 @@ function DocumentComponent({
         document_id: documentId || null,
       });
     },
-    [socket, isConnected, documentId, resourceTypeToDomainId]
+    [
+      socket,
+      isConnected,
+      documentId,
+      resourceTypeToDomainId,
+      setGeneratingResources,
+    ],
   );
 
   // Individual generation handlers - generate directly without modals
   const handleGenerateName = useCallback(
     async () => handleGenerateResources(["names"], null),
-    [handleGenerateResources]
+    [handleGenerateResources],
   );
 
   const handleGenerateDescription = useCallback(
     async () => handleGenerateResources(["descriptions"], null),
-    [handleGenerateResources]
+    [handleGenerateResources],
   );
 
   const handleGenerateDepartments = useCallback(
     async () => handleGenerateResources(["departments"], null),
-    [handleGenerateResources]
+    [handleGenerateResources],
   );
 
   const handleGenerateFlags = useCallback(
     async () => handleGenerateResources(["flags"], null),
-    [handleGenerateResources]
+    [handleGenerateResources],
   );
 
   // Helper to check if a resource type can be regenerated
@@ -617,7 +537,7 @@ function DocumentComponent({
           return false;
       }
     },
-    [documentDetail]
+    [documentDetail],
   );
 
   // Disabled logic based on can_edit flag - standardized for all resource components
@@ -708,12 +628,12 @@ function DocumentComponent({
           },
         });
         toast.success(
-          `Document ${isEditMode ? "updated" : "created"} successfully!`
+          `Document ${isEditMode ? "updated" : "created"} successfully!`,
         );
         router.push("/management/documents");
       } catch (error) {
         toast.error(
-          `Failed to ${isEditMode ? "update" : "create"} document: ${error instanceof Error ? error.message : "Unknown error"}`
+          `Failed to ${isEditMode ? "update" : "create"} document: ${error instanceof Error ? error.message : "Unknown error"}`,
         );
         throw error;
       }
@@ -728,7 +648,7 @@ function DocumentComponent({
       documentDetail?.name_required,
       documentDetail?.departments_required,
       documentDetail?.fields_required,
-    ]
+    ],
   );
 
   // Step status logic (for GenericForm) - check resource IDs instead of display values
@@ -753,7 +673,7 @@ function DocumentComponent({
           return "pending";
       }
     },
-    [formState]
+    [formState],
   );
 
   // Step-to-resources mapping for multi-generation
@@ -771,7 +691,7 @@ function DocumentComponent({
         "uploads",
       ], // All resources for full-page generation
     }),
-    []
+    [],
   );
 
   // Resource labels for display
@@ -784,65 +704,24 @@ function DocumentComponent({
       fields: "Fields",
       uploads: "Uploads",
     }),
-    []
+    [],
   );
 
-  // Handler to open modal for step card generation
-  const handleOpenStepCardModal = useCallback(
-    (stepId: string, mode: "generate" | "regenerate") => {
-      const resourceTypes = stepResources[stepId] || [];
-      const resources: GenerateRegenerateModalResource[] = resourceTypes.map(
-        (rt) => ({
-          id: rt,
-          label: resourceLabels[rt] ?? "",
-          active: mode === "regenerate" ? canRegenerate(rt) : true,
-        })
-      );
-
-      setModalResources(resources);
-      setModalMode(mode);
-      setModalInstructions("");
-      setShowGenerateModal(true);
-    },
-    [stepResources, resourceLabels, canRegenerate]
-  );
-
-  // Handler for modal generate/regenerate action
-  const handleModalGenerate = useCallback(
-    async (selectedResources: string[], instructions: string) => {
-      const resourceTypes = selectedResources as ResourceType[];
-      await handleGenerateResources(
-        resourceTypes,
-        null,
-        instructions.trim() || undefined
-      );
-      setShowGenerateModal(false);
-      setModalInstructions("");
-    },
-    [handleGenerateResources]
-  );
-
-  // Listen for full-page-generate event from layout
-  useEffect(() => {
-    const handleFullPageGenerate = (
-      event: CustomEvent<{ agentId?: string }>
-    ) => {
-      const agentId = event.detail?.agentId;
-      if (agentId) {
-        // Open modal instead of directly generating
-        handleOpenStepCardModal("all", "generate");
-      }
-    };
-    window.addEventListener(
-      "full-page-generate",
-      handleFullPageGenerate as EventListener
-    );
-    return () =>
-      window.removeEventListener(
-        "full-page-generate",
-        handleFullPageGenerate as EventListener
-      );
-  }, [handleOpenStepCardModal]);
+  // Generation modal via shared hook
+  const { handleOpenStepCardModal, modalProps } =
+    useGenerationModal<ResourceType>({
+      stepResources,
+      resourceLabels,
+      canRegenerate,
+      onGenerate: (selectedResources, instructions) => {
+        handleGenerateResources(
+          selectedResources as ResourceType[],
+          null,
+          instructions,
+        );
+      },
+      isGenerating,
+    });
 
   // Steps configuration for GenericForm
   const steps = useMemo(
@@ -867,7 +746,7 @@ function DocumentComponent({
         resetFields: ["upload_ids"],
       },
     ],
-    []
+    [],
   );
 
   // Memoize formFieldKeys to prevent re-initialization loops
@@ -880,7 +759,7 @@ function DocumentComponent({
       "field_ids",
       "upload_ids",
     ],
-    []
+    [],
   );
 
   // Memoize resetSuccessMessage to prevent GenericForm re-renders
@@ -932,7 +811,7 @@ function DocumentComponent({
       createLabel: "Create Document",
       updateLabel: "Update Document",
     }),
-    []
+    [],
   );
 
   // Memoize renderStep to prevent GenericForm re-renders
@@ -979,7 +858,9 @@ function DocumentComponent({
               customHeader={
                 <Names
                   name_id={formState.name_id ?? null}
-                  name_resource={documentDetail?.resources?.current?.names?.[0] ?? null}
+                  name_resource={
+                    documentDetail?.resources?.current?.names?.[0] ?? null
+                  }
                   show_name={documentDetail?.show_name ?? true}
                   name_suggestions={documentDetail?.name_suggestions ?? []}
                   names={documentDetail?.resources?.resources?.names ?? []}
@@ -994,7 +875,9 @@ function DocumentComponent({
                   required={documentDetail?.name_required ?? false}
                   hideDescription={true}
                   group_id={documentDetail?.group_id ?? null}
-                  showAiGenerate={documentDetail?.name_show_ai_generate ?? false}
+                  showAiGenerate={
+                    documentDetail?.name_show_ai_generate ?? false
+                  }
                   create_tool_id={documentDetail?.name_create_tool_id ?? null}
                   link_tool_id={documentDetail?.name_link_tool_id ?? null}
                   createNamesAction={createNamesAction}
@@ -1024,18 +907,18 @@ function DocumentComponent({
                             ]!.some((rt) => canRegenerate(rt));
                             handleOpenStepCardModal(
                               "basic",
-                              hasRegeneratable ? "regenerate" : "generate"
+                              hasRegeneratable ? "regenerate" : "generate",
                             );
                           }}
                           disabled={
                             disabled ||
                             stepResources["basic"]!.some((rt) =>
-                              isGenerating(rt)
+                              isGenerating(rt),
                             )
                           }
                         >
                           {stepResources["basic"]!.some((rt) =>
-                            isGenerating(rt)
+                            isGenerating(rt),
                           ) ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
                           ) : (
@@ -1060,13 +943,16 @@ function DocumentComponent({
                 <Descriptions
                   description_id={formState.description_id ?? null}
                   description_resource={
-                    documentDetail?.resources?.current?.descriptions?.[0] ?? null
+                    documentDetail?.resources?.current?.descriptions?.[0] ??
+                    null
                   }
                   show_description={documentDetail?.show_description ?? true}
                   description_suggestions={
                     documentDetail?.description_suggestions ?? []
                   }
-                  descriptions={documentDetail?.resources?.resources?.descriptions ?? []}
+                  descriptions={
+                    documentDetail?.resources?.resources?.descriptions ?? []
+                  }
                   disabled={disabled}
                   onDescriptionIdChange={(descriptionId) =>
                     setFormState((prev) => ({
@@ -1086,9 +972,15 @@ function DocumentComponent({
                   rows={4}
                   data-testid="input-document-description"
                   group_id={documentDetail?.group_id ?? null}
-                  showAiGenerate={documentDetail?.description_show_ai_generate ?? false}
-                  create_tool_id={documentDetail?.description_create_tool_id ?? null}
-                  link_tool_id={documentDetail?.description_link_tool_id ?? null}
+                  showAiGenerate={
+                    documentDetail?.description_show_ai_generate ?? false
+                  }
+                  create_tool_id={
+                    documentDetail?.description_create_tool_id ?? null
+                  }
+                  link_tool_id={
+                    documentDetail?.description_link_tool_id ?? null
+                  }
                   createDescriptionsAction={createDescriptionsAction}
                 />
 
@@ -1102,7 +994,9 @@ function DocumentComponent({
                   department_suggestions={
                     documentDetail?.department_suggestions ?? []
                   }
-                  departments={documentDetail?.resources?.resources?.departments ?? []}
+                  departments={
+                    documentDetail?.resources?.resources?.departments ?? []
+                  }
                   disabled={disabled}
                   onChange={(ids) =>
                     setFormState((prev) => ({ ...prev, department_ids: ids }))
@@ -1111,8 +1005,12 @@ function DocumentComponent({
                   isGenerating={isGenerating("departments")}
                   required={documentDetail?.departments_required ?? false}
                   group_id={documentDetail?.group_id ?? null}
-                  showAiGenerate={documentDetail?.departments_show_ai_generate ?? false}
-                  link_tool_id={documentDetail?.departments_link_tool_id ?? null}
+                  showAiGenerate={
+                    documentDetail?.departments_show_ai_generate ?? false
+                  }
+                  link_tool_id={
+                    documentDetail?.departments_link_tool_id ?? null
+                  }
                 />
 
                 {/* Active Switch - using Flags resource component */}
@@ -1121,7 +1019,13 @@ function DocumentComponent({
                   flag_resource={(() => {
                     const f = documentDetail?.resources?.current?.flags?.[0];
                     if (!f) return null;
-                    return { id: f.flag_option_id ?? null, name: f.label ?? null, description: f.description ?? null, icon: null, generated: f.generated ?? null };
+                    return {
+                      id: f.flag_option_id ?? null,
+                      name: f.label ?? null,
+                      description: f.description ?? null,
+                      icon: null,
+                      generated: f.generated ?? null,
+                    };
                   })()}
                   show_flag={documentDetail?.show_flag ?? false}
                   disabled={disabled}
@@ -1137,7 +1041,9 @@ function DocumentComponent({
                   helpText="Inactive documents will not be available for scenarios"
                   required={documentDetail?.flag_required ?? false}
                   group_id={documentDetail?.group_id ?? null}
-                  showAiGenerate={documentDetail?.flag_show_ai_generate ?? false}
+                  showAiGenerate={
+                    documentDetail?.flag_show_ai_generate ?? false
+                  }
                   link_tool_id={documentDetail?.flag_link_tool_id ?? null}
                 />
               </div>
@@ -1193,18 +1099,18 @@ function DocumentComponent({
                             ]!.some((rt) => canRegenerate(rt));
                             handleOpenStepCardModal(
                               "fields",
-                              hasRegeneratable ? "regenerate" : "generate"
+                              hasRegeneratable ? "regenerate" : "generate",
                             );
                           }}
                           disabled={
                             disabled ||
                             stepResources["fields"]!.some((rt) =>
-                              isGenerating(rt)
+                              isGenerating(rt),
                             )
                           }
                         >
                           {stepResources["fields"]!.some((rt) =>
-                            isGenerating(rt)
+                            isGenerating(rt),
                           ) ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
                           ) : (
@@ -1214,7 +1120,7 @@ function DocumentComponent({
                       </TooltipTrigger>
                       <TooltipContent>
                         {stepResources["fields"]!.some((rt) =>
-                          canRegenerate(rt)
+                          canRegenerate(rt),
                         )
                           ? "Regenerate"
                           : "Generate"}
@@ -1226,7 +1132,9 @@ function DocumentComponent({
             >
               <Fields
                 field_ids={formState.field_ids ?? []}
-                field_resources={documentDetail?.resources?.current?.fields ?? []}
+                field_resources={
+                  documentDetail?.resources?.current?.fields ?? []
+                }
                 show_fields={documentDetail?.show_fields ?? false}
                 field_suggestions={documentDetail?.field_suggestions ?? []}
                 fields={documentDetail?.resources?.resources?.fields ?? []}
@@ -1237,7 +1145,9 @@ function DocumentComponent({
                 label="Fields"
                 required={documentDetail?.fields_required ?? false}
                 group_id={documentDetail?.group_id ?? null}
-                showAiGenerate={documentDetail?.fields_show_ai_generate ?? false}
+                showAiGenerate={
+                  documentDetail?.fields_show_ai_generate ?? false
+                }
                 link_tool_id={documentDetail?.fields_link_tool_id ?? null}
                 searchTerm={fieldSearchTerm}
                 showSelectedFilter={fieldShowSelected}
@@ -1276,18 +1186,18 @@ function DocumentComponent({
                             ]!.some((rt) => canRegenerate(rt));
                             handleOpenStepCardModal(
                               "uploads",
-                              hasRegeneratable ? "regenerate" : "generate"
+                              hasRegeneratable ? "regenerate" : "generate",
                             );
                           }}
                           disabled={
                             disabled ||
                             stepResources["uploads"]!.some((rt) =>
-                              isGenerating(rt)
+                              isGenerating(rt),
                             )
                           }
                         >
                           {stepResources["uploads"]!.some((rt) =>
-                            isGenerating(rt)
+                            isGenerating(rt),
                           ) ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
                           ) : (
@@ -1297,7 +1207,7 @@ function DocumentComponent({
                       </TooltipTrigger>
                       <TooltipContent>
                         {stepResources["uploads"]!.some((rt) =>
-                          canRegenerate(rt)
+                          canRegenerate(rt),
                         )
                           ? "Regenerate"
                           : "Generate"}
@@ -1309,7 +1219,9 @@ function DocumentComponent({
             >
               <Uploads
                 upload_ids={formState.upload_ids ?? []}
-                upload_resources={documentDetail?.resources?.current?.uploads ?? []}
+                upload_resources={
+                  documentDetail?.resources?.current?.uploads ?? []
+                }
                 show_uploads={documentDetail?.show_uploads ?? false}
                 upload_suggestions={documentDetail?.upload_suggestions ?? []}
                 uploads={documentDetail?.resources?.resources?.uploads ?? []}
@@ -1320,7 +1232,9 @@ function DocumentComponent({
                 label="Files"
                 required={documentDetail?.uploads_required ?? false}
                 group_id={documentDetail?.group_id ?? null}
-                showAiGenerate={documentDetail?.uploads_show_ai_generate ?? false}
+                showAiGenerate={
+                  documentDetail?.uploads_show_ai_generate ?? false
+                }
                 create_tool_id={documentDetail?.uploads_link_tool_id ?? null}
                 link_tool_id={documentDetail?.uploads_link_tool_id ?? null}
                 createUploadsAction={createUploadsAction}
@@ -1354,7 +1268,7 @@ function DocumentComponent({
       createUploadsAction,
       canRegenerate,
       handleOpenStepCardModal,
-    ]
+    ],
   );
 
   return (
@@ -1391,21 +1305,7 @@ function DocumentComponent({
         />
 
         {/* Generate/Regenerate Modal */}
-        {modalMode && (
-          <GenerateRegenerateModal
-            open={showGenerateModal}
-            onOpenChange={setShowGenerateModal}
-            resources={modalResources}
-            onResourcesChange={setModalResources}
-            instructions={modalInstructions}
-            onInstructionsChange={setModalInstructions}
-            onGenerate={handleModalGenerate}
-            isGenerating={modalResources.some((r) =>
-              isGenerating(r.id as ResourceType)
-            )}
-            mode={modalMode}
-          />
-        )}
+        <GenerateRegenerateModal {...modalProps} />
       </div>
     </TooltipProvider>
   );
@@ -1414,8 +1314,10 @@ function DocumentComponent({
 // Memoize component to prevent re-renders when only prop references change (content is same)
 export default React.memo(DocumentComponent, (prevProps, nextProps) => {
   // Compare documentDetail by resource IDs from buckets, not object reference
-  const prevDetail = prevProps.documentDetail ?? prevProps.documentDetailDefault;
-  const nextDetail = nextProps.documentDetail ?? nextProps.documentDetailDefault;
+  const prevDetail =
+    prevProps.documentDetail ?? prevProps.documentDetailDefault;
+  const nextDetail =
+    nextProps.documentDetail ?? nextProps.documentDetailDefault;
   const prevCurrent = prevDetail?.resources?.current;
   const nextCurrent = nextDetail?.resources?.current;
   const prevIds = {

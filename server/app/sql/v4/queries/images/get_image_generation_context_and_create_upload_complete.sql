@@ -213,9 +213,6 @@ LEFT JOIN reasoning_levels_resource rl ON rl.id = mrl.reasoning_level_id AND rl.
     LEFT JOIN keys_resource kr ON kr.id = spk.key_id AND kr.active
     LEFT JOIN profile_rate_limit prl ON TRUE
     LEFT JOIN runs_today rt ON TRUE
-    -- Validate rate limit: raises exception if exceeded (function returns TRUE if valid)
-    -- Only validate if profile_id is not NULL
-    WHERE (p.profile_id IS NULL OR validate_rate_limit(COALESCE(prl.req_per_day, 0), COALESCE(rt.runs_today_count, 0)) = TRUE)
 ),
 create_run AS (
     -- Create run record (atomic with context query)

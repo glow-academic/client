@@ -435,8 +435,8 @@ context_data AS (
         AND spk.settings_id = act_s.settings_id 
         AND spk.active = true
     LEFT JOIN keys_resource kr ON kr.id = spk.key_id AND kr.active
-    CROSS JOIN profile_rate_limit prl
-    CROSS JOIN runs_today rt
+    LEFT JOIN profile_rate_limit prl ON TRUE
+    LEFT JOIN runs_today rt ON TRUE
     -- JOIN tools_resource data
     LEFT JOIN agent_tools_data atd ON atd.agent_id = ba.agent_id
     -- Join developer instruction data
@@ -445,8 +445,6 @@ context_data AS (
     LEFT JOIN department_data dd ON dd.department_id = p.department_id
     -- Join template context fields data
     LEFT JOIN template_context_fields_data tcfd ON true
-    -- Validate rate limit: raises exception if exceeded (function returns TRUE if valid)
-    WHERE validate_rate_limit(prl.req_per_day, COALESCE(rt.runs_today_count, 0)) = TRUE
 ),
 create_run AS (
     -- Create run record with group_id directly

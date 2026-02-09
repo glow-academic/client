@@ -70,7 +70,7 @@ WebSocket v4 endpoints follow the agents-style architecture pattern, which uses:
 All agent generation handlers dispatch to `generate_start` (`server/app/socket/v4/generate/start.py`), which:
 
 1. **Creates group** (if not provided) - Gets or creates `group_id` and `trace_id`
-2. **Validates rate limits** - Checks rate limits using `validate_rate_limit()` function (raises exception if exceeded)
+2. **Rate limits validated in Python** - Checked via `validate_generation_access()` before prepare SQL is called
 3. **Creates run** - Inserts into `runs` table with all junction records (run_profiles, group_runs, etc.)
 4. **Creates user message** (if `user_instructions` provided) - For regeneration scenarios
 5. **Links existing messages** - Links system/developer messages from previous runs in the group

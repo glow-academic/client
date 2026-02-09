@@ -182,62 +182,38 @@ async def _training_start_impl(
                 )
 
                 # Call prepare_training_generation SQL
-                try:
-                    gen_params = PrepareTrainingGenerationSqlParams(
-                        p_profile_id=profile_id,
-                        p_agent_id=data.agent_id,
-                        p_simulation_id=data.simulation_id,
-                        p_scenario_id=scenario_id,
-                        p_resource_types=TRAINING_RESOURCE_TYPES,
-                    )
+                gen_params = PrepareTrainingGenerationSqlParams(
+                    p_profile_id=profile_id,
+                    p_agent_id=data.agent_id,
+                    p_simulation_id=data.simulation_id,
+                    p_scenario_id=scenario_id,
+                    p_resource_types=TRAINING_RESOURCE_TYPES,
+                )
 
-                    gen_row = cast(
-                        PrepareTrainingGenerationSqlRow,
-                        await execute_sql_typed(
-                            conn, SQL_PATH_PREPARE_GENERATION, params=gen_params
+                gen_row = cast(
+                    PrepareTrainingGenerationSqlRow,
+                    await execute_sql_typed(
+                        conn, SQL_PATH_PREPARE_GENERATION, params=gen_params
+                    ),
+                )
+
+                if not gen_row or not gen_row.run_id:
+                    logger.error(
+                        f"Training generation preparation failed - "
+                        f"profile_id={profile_id}, simulation_id={data.simulation_id}"
+                    )
+                    await emit_to_internal(
+                        "generate_call_error",
+                        GenerateErrorApiRequest(
+                            sid=sid,
+                            error_message="Failed to prepare training generation",
+                            artifact_type="training",
+                            group_id=None,
+                            resource_type="training",
                         ),
+                        sid=sid,
                     )
-
-                    if not gen_row or not gen_row.run_id:
-                        logger.error(
-                            f"Training generation preparation failed - "
-                            f"profile_id={profile_id}, simulation_id={data.simulation_id}"
-                        )
-                        await emit_to_internal(
-                            "generate_call_error",
-                            GenerateErrorApiRequest(
-                                sid=sid,
-                                error_message="Failed to prepare training generation",
-                                artifact_type="training",
-                                group_id=None,
-                                resource_type="training",
-                            ),
-                            sid=sid,
-                        )
-                        return
-
-                except Exception as e:
-                    error_msg = str(e)
-                    # Check for rate limit error (fail fast)
-                    if "RATE_LIMIT_EXCEEDED" in error_msg:
-                        user_msg = (
-                            error_msg.split("RATE_LIMIT_EXCEEDED: ", 1)[1]
-                            if "RATE_LIMIT_EXCEEDED: " in error_msg
-                            else "Rate limit exceeded. Please try again later."
-                        )
-                        await emit_to_internal(
-                            "generate_call_error",
-                            GenerateErrorApiRequest(
-                                sid=sid,
-                                error_message=user_msg,
-                                artifact_type="training",
-                                group_id=None,
-                                resource_type="training",
-                            ),
-                            sid=sid,
-                        )
-                        return
-                    raise
+                    return
 
                 # Render developer instructions with Jinja
                 rendered_developer_messages = render_developer_instructions(

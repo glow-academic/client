@@ -354,108 +354,69 @@ async def _persona_generate_impl(
                 )
                 return
 
-            # Build current resources from form state (passed from frontend)
+            # Build current resources from draft-backed websocket response
             current_resources: list[IPersonaResourceV4] = []
+            current_bucket = result.resources.current if result.resources else None
 
-            def collect_current(
-                resource_type: str, resource_ids: list[uuid.UUID] | None
-            ) -> None:
-                """Collect current resource IDs for a resource type."""
-                if resource_ids:
-                    current_resources.append(
-                        IPersonaResourceV4(
-                            resource_type=resource_type,
-                            resource_ids=resource_ids,
-                        )
-                    )
-
-            # Single-select resources (wrap in list)
-            if data.name_id:
-                collect_current("names", [data.name_id])
-            if data.description_id:
-                collect_current("descriptions", [data.description_id])
-            if data.color_id:
-                collect_current("colors", [data.color_id])
-            if data.icon_id:
-                collect_current("icons", [data.icon_id])
-            if data.instructions_id:
-                collect_current("instructions", [data.instructions_id])
-            if data.active_flag_id:
-                collect_current("flags", [data.active_flag_id])
-
-            # Multi-select resources (already lists)
-            if data.department_ids:
-                collect_current("departments", data.department_ids)
-            if data.parameter_field_ids:
-                collect_current("parameter_fields", data.parameter_field_ids)
-            if data.example_ids:
-                collect_current("examples", data.example_ids)
-            if data.parameter_ids:
-                collect_current("parameters", data.parameter_ids)
+            if current_bucket:
+                _id_extractors: list[tuple[str, list | None, str]] = [
+                    ("names", current_bucket.names, "id"),
+                    ("descriptions", current_bucket.descriptions, "id"),
+                    ("colors", current_bucket.colors, "id"),
+                    ("icons", current_bucket.icons, "id"),
+                    ("instructions", current_bucket.instructions, "id"),
+                    ("flags", current_bucket.flags, "flag_option_id"),
+                    ("departments", current_bucket.departments, "department_id"),
+                    ("parameter_fields", current_bucket.parameter_fields, "field_id"),
+                    ("examples", current_bucket.examples, "id"),
+                    ("parameters", current_bucket.parameters, "parameter_id"),
+                ]
+                for resource_type, items, id_field in _id_extractors:
+                    if items:
+                        ids = [
+                            getattr(item, id_field)
+                            for item in items
+                            if getattr(item, id_field, None) is not None
+                        ]
+                        if ids:
+                            current_resources.append(
+                                IPersonaResourceV4(
+                                    resource_type=resource_type,
+                                    resource_ids=ids,
+                                )
+                            )
 
             # Step 5: Prepare generation (group/run creation, context fetch)
-            try:
-                prepare_params = PreparePersonaGenerationSqlParams(
-                    p_profile_id=profile_id,
-                    p_agent_id=agent_id,
-                    p_group_id=existing_group_id,
-                    p_resources=resources if resources else None,
-                    p_current_resources=current_resources
-                    if current_resources
-                    else None,
-                    p_resource_types=resource_types,  # For tool filtering
+            prepare_params = PreparePersonaGenerationSqlParams(
+                p_profile_id=profile_id,
+                p_agent_id=agent_id,
+                p_group_id=existing_group_id,
+                p_resources=resources if resources else None,
+                p_current_resources=current_resources if current_resources else None,
+                p_resource_types=resource_types,  # For tool filtering
+            )
+            prepare_row = cast(
+                PreparePersonaGenerationSqlRow,
+                await execute_sql_typed(conn, SQL_PATH_PREPARE, params=prepare_params),
+            )
+
+            if not prepare_row.run_id:
+                logger.error(
+                    f"Persona generation preparation failed unexpectedly - "
+                    f"profile_id={profile_id}, agent_id={agent_id}"
                 )
-                prepare_row = cast(
-                    PreparePersonaGenerationSqlRow,
-                    await execute_sql_typed(
-                        conn, SQL_PATH_PREPARE, params=prepare_params
+                await emit_to_internal(
+                    "generate_call_error",
+                    GenerateErrorApiRequest(
+                        sid=sid,
+                        error_message="Failed to prepare persona generation: Unknown error",
+                        artifact_type="persona",
+                        group_id=str(existing_group_id) if existing_group_id else None,
+                        resource_type="persona",
                     ),
+                    sid=sid,
                 )
-
-                if not prepare_row.run_id:
-                    logger.error(
-                        f"Persona generation preparation failed unexpectedly - "
-                        f"profile_id={profile_id}, agent_id={agent_id}"
-                    )
-                    await emit_to_internal(
-                        "generate_call_error",
-                        GenerateErrorApiRequest(
-                            sid=sid,
-                            error_message="Failed to prepare persona generation: Unknown error",
-                            artifact_type="persona",
-                            group_id=str(existing_group_id)
-                            if existing_group_id
-                            else None,
-                            resource_type="persona",
-                        ),
-                        sid=sid,
-                    )
-                    return
-
-            except Exception as e:
-                error_msg = str(e)
-                # Check for rate limit error (fail fast)
-                if "RATE_LIMIT_EXCEEDED" in error_msg:
-                    user_msg = (
-                        error_msg.split("RATE_LIMIT_EXCEEDED: ", 1)[1]
-                        if "RATE_LIMIT_EXCEEDED: " in error_msg
-                        else "Rate limit exceeded. Please try again later."
-                    )
-                    await emit_to_internal(
-                        "generate_call_error",
-                        GenerateErrorApiRequest(
-                            sid=sid,
-                            error_message=user_msg,
-                            artifact_type="persona",
-                            group_id=str(existing_group_id)
-                            if existing_group_id
-                            else None,
-                            resource_type="persona",
-                        ),
-                        sid=sid,
-                    )
-                    return
-                raise
+                return
 
             # Extract context from prepare result
             run_id = prepare_row.run_id

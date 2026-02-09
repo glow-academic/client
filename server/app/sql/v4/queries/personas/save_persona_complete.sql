@@ -1,6 +1,31 @@
 -- Unified save persona function - handles both create (input_persona_id = NULL) and update (input_persona_id provided)
 -- Accepts form fields directly (no draft_id dependency)
 
+-- 0) Drop and recreate composite types for resource actions
+DO $$
+BEGIN
+    DROP TYPE IF EXISTS types.persona_resource_action CASCADE;
+    CREATE TYPE types.persona_resource_action AS (
+        resource_id uuid,
+        group_id uuid,
+        create_tool_id uuid,
+        link_tool_id uuid
+    );
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
+DO $$
+BEGIN
+    DROP TYPE IF EXISTS types.persona_multi_resource_action CASCADE;
+    CREATE TYPE types.persona_multi_resource_action AS (
+        resource_ids uuid[],
+        group_id uuid,
+        create_tool_id uuid,
+        link_tool_id uuid
+    );
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
 -- 1) Drop function first (breaks dependency on types)
 DO $$
 DECLARE
@@ -16,34 +41,20 @@ BEGIN
     END LOOP;
 END $$;
 
--- 2) Recreate function with per-resource group_id parameters
+-- 2) Recreate function with composite resource action parameters
 CREATE OR REPLACE FUNCTION api_save_persona_v4(
     profile_id uuid,
     input_persona_id uuid DEFAULT NULL,
-    -- Per-resource group IDs
-    names_group_id uuid DEFAULT NULL,
-    descriptions_group_id uuid DEFAULT NULL,
-    colors_group_id uuid DEFAULT NULL,
-    icons_group_id uuid DEFAULT NULL,
-    instructions_group_id uuid DEFAULT NULL,
-    flags_group_id uuid DEFAULT NULL,
-    departments_group_id uuid DEFAULT NULL,
-    parameter_fields_group_id uuid DEFAULT NULL,
-    examples_group_id uuid DEFAULT NULL,
-    parameters_group_id uuid DEFAULT NULL,
-    -- Required form data
-    name_id uuid DEFAULT NULL,
-    color_id uuid DEFAULT NULL,
-    icon_id uuid DEFAULT NULL,
-    instructions_id uuid DEFAULT NULL,
-    -- Optional single-select form data
-    description_id uuid DEFAULT NULL,
-    active_flag_id uuid DEFAULT NULL,
-    -- Optional multi-select form data
-    department_ids uuid[] DEFAULT NULL,
-    parameter_field_ids uuid[] DEFAULT NULL,
-    example_ids uuid[] DEFAULT NULL,
-    parameter_ids uuid[] DEFAULT NULL
+    names types.persona_resource_action DEFAULT NULL,
+    descriptions types.persona_resource_action DEFAULT NULL,
+    colors types.persona_resource_action DEFAULT NULL,
+    icons types.persona_resource_action DEFAULT NULL,
+    instructions types.persona_resource_action DEFAULT NULL,
+    flags types.persona_resource_action DEFAULT NULL,
+    departments types.persona_multi_resource_action DEFAULT NULL,
+    parameter_fields types.persona_multi_resource_action DEFAULT NULL,
+    examples types.persona_multi_resource_action DEFAULT NULL,
+    parameters types.persona_multi_resource_action DEFAULT NULL
 )
 RETURNS TABLE (
     persona_id uuid,
@@ -70,27 +81,33 @@ DECLARE
     v_parameter_field_ids uuid[];
     v_parameter_ids uuid[];
     v_group_ids uuid[];
+    -- Call tracking variables
+    v_group_ids_seen uuid[] := ARRAY[]::uuid[];
+    v_run_ids_seen uuid[] := ARRAY[]::uuid[];
+    v_run_id uuid;
+    v_call_id uuid;
+    v_idx int;
 BEGIN
-    -- Assign parameters to local variables
+    -- Assign parameters to local variables (extract from composites)
     v_profile_id := profile_id;
     v_input_persona_id := input_persona_id;
-    v_name_id := name_id;
-    v_color_id := color_id;
-    v_icon_id := icon_id;
-    v_instructions_id := instructions_id;
-    v_description_id := description_id;
-    v_active_flag_id := active_flag_id;
-    v_department_ids := COALESCE(department_ids, ARRAY[]::uuid[]);
-    v_parameter_field_ids := COALESCE(parameter_field_ids, ARRAY[]::uuid[]);
-    v_example_ids := COALESCE(example_ids, ARRAY[]::uuid[]);
-    v_parameter_ids := COALESCE(parameter_ids, ARRAY[]::uuid[]);
+    v_name_id := (names).resource_id;
+    v_description_id := (descriptions).resource_id;
+    v_color_id := (colors).resource_id;
+    v_icon_id := (icons).resource_id;
+    v_instructions_id := (instructions).resource_id;
+    v_active_flag_id := (flags).resource_id;
+    v_department_ids := COALESCE((departments).resource_ids, ARRAY[]::uuid[]);
+    v_parameter_field_ids := COALESCE((parameter_fields).resource_ids, ARRAY[]::uuid[]);
+    v_example_ids := COALESCE((examples).resource_ids, ARRAY[]::uuid[]);
+    v_parameter_ids := COALESCE((parameters).resource_ids, ARRAY[]::uuid[]);
 
     -- Collect non-null group IDs into array (deduplicated)
     SELECT ARRAY(SELECT DISTINCT unnest FROM unnest(ARRAY[
-        names_group_id, descriptions_group_id, colors_group_id,
-        icons_group_id, instructions_group_id, flags_group_id,
-        departments_group_id, parameter_fields_group_id,
-        examples_group_id, parameters_group_id
+        (names).group_id, (descriptions).group_id, (colors).group_id,
+        (icons).group_id, (instructions).group_id, (flags).group_id,
+        (departments).group_id, (parameter_fields).group_id,
+        (examples).group_id, (parameters).group_id
     ]) WHERE unnest IS NOT NULL) INTO v_group_ids;
 
     -- Validate required fields
@@ -176,6 +193,307 @@ BEGIN
             flag_id = COALESCE(v_active_flag_id, persona_flags_junction.flag_id),
             value = CASE WHEN v_active_flag_id IS NOT NULL THEN true ELSE false END
         WHERE persona_id = v_persona_id;
+    END IF;
+
+    -- === TOOL CALL TRACKING ===
+    -- For each resource with tool IDs, find-or-create run for its group, then create call records
+
+    -- names
+    IF ((names).create_tool_id IS NOT NULL OR (names).link_tool_id IS NOT NULL)
+       AND (names).group_id IS NOT NULL AND v_name_id IS NOT NULL THEN
+        v_idx := array_position(v_group_ids_seen, (names).group_id);
+        IF v_idx IS NULL THEN
+            v_run_id := uuidv7();
+            INSERT INTO runs_entry (id, input_tokens, output_tokens, cached_input_tokens, group_id, created_at, updated_at)
+            VALUES (v_run_id, 0, 0, 0, (names).group_id, NOW(), NOW());
+            v_group_ids_seen := array_append(v_group_ids_seen, (names).group_id);
+            v_run_ids_seen := array_append(v_run_ids_seen, v_run_id);
+        ELSE
+            v_run_id := v_run_ids_seen[v_idx];
+        END IF;
+        IF (names).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'persona_create_names_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((names).create_tool_id, v_call_id);
+            INSERT INTO names_calls_connection (names_id, call_id) VALUES (v_name_id, v_call_id);
+        END IF;
+        IF (names).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'persona_link_names_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((names).link_tool_id, v_call_id);
+            INSERT INTO names_calls_connection (names_id, call_id) VALUES (v_name_id, v_call_id);
+        END IF;
+    END IF;
+
+    -- descriptions
+    IF ((descriptions).create_tool_id IS NOT NULL OR (descriptions).link_tool_id IS NOT NULL)
+       AND (descriptions).group_id IS NOT NULL AND v_description_id IS NOT NULL THEN
+        v_idx := array_position(v_group_ids_seen, (descriptions).group_id);
+        IF v_idx IS NULL THEN
+            v_run_id := uuidv7();
+            INSERT INTO runs_entry (id, input_tokens, output_tokens, cached_input_tokens, group_id, created_at, updated_at)
+            VALUES (v_run_id, 0, 0, 0, (descriptions).group_id, NOW(), NOW());
+            v_group_ids_seen := array_append(v_group_ids_seen, (descriptions).group_id);
+            v_run_ids_seen := array_append(v_run_ids_seen, v_run_id);
+        ELSE
+            v_run_id := v_run_ids_seen[v_idx];
+        END IF;
+        IF (descriptions).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'persona_create_descriptions_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((descriptions).create_tool_id, v_call_id);
+            INSERT INTO descriptions_calls_connection (descriptions_id, call_id) VALUES (v_description_id, v_call_id);
+        END IF;
+        IF (descriptions).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'persona_link_descriptions_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((descriptions).link_tool_id, v_call_id);
+            INSERT INTO descriptions_calls_connection (descriptions_id, call_id) VALUES (v_description_id, v_call_id);
+        END IF;
+    END IF;
+
+    -- colors
+    IF ((colors).create_tool_id IS NOT NULL OR (colors).link_tool_id IS NOT NULL)
+       AND (colors).group_id IS NOT NULL AND v_color_id IS NOT NULL THEN
+        v_idx := array_position(v_group_ids_seen, (colors).group_id);
+        IF v_idx IS NULL THEN
+            v_run_id := uuidv7();
+            INSERT INTO runs_entry (id, input_tokens, output_tokens, cached_input_tokens, group_id, created_at, updated_at)
+            VALUES (v_run_id, 0, 0, 0, (colors).group_id, NOW(), NOW());
+            v_group_ids_seen := array_append(v_group_ids_seen, (colors).group_id);
+            v_run_ids_seen := array_append(v_run_ids_seen, v_run_id);
+        ELSE
+            v_run_id := v_run_ids_seen[v_idx];
+        END IF;
+        IF (colors).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'persona_create_colors_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((colors).create_tool_id, v_call_id);
+            INSERT INTO colors_calls_connection (colors_id, call_id) VALUES (v_color_id, v_call_id);
+        END IF;
+        IF (colors).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'persona_link_colors_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((colors).link_tool_id, v_call_id);
+            INSERT INTO colors_calls_connection (colors_id, call_id) VALUES (v_color_id, v_call_id);
+        END IF;
+    END IF;
+
+    -- icons
+    IF ((icons).create_tool_id IS NOT NULL OR (icons).link_tool_id IS NOT NULL)
+       AND (icons).group_id IS NOT NULL AND v_icon_id IS NOT NULL THEN
+        v_idx := array_position(v_group_ids_seen, (icons).group_id);
+        IF v_idx IS NULL THEN
+            v_run_id := uuidv7();
+            INSERT INTO runs_entry (id, input_tokens, output_tokens, cached_input_tokens, group_id, created_at, updated_at)
+            VALUES (v_run_id, 0, 0, 0, (icons).group_id, NOW(), NOW());
+            v_group_ids_seen := array_append(v_group_ids_seen, (icons).group_id);
+            v_run_ids_seen := array_append(v_run_ids_seen, v_run_id);
+        ELSE
+            v_run_id := v_run_ids_seen[v_idx];
+        END IF;
+        IF (icons).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'persona_create_icons_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((icons).create_tool_id, v_call_id);
+            INSERT INTO icons_calls_connection (icons_id, call_id) VALUES (v_icon_id, v_call_id);
+        END IF;
+        IF (icons).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'persona_link_icons_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((icons).link_tool_id, v_call_id);
+            INSERT INTO icons_calls_connection (icons_id, call_id) VALUES (v_icon_id, v_call_id);
+        END IF;
+    END IF;
+
+    -- instructions
+    IF ((instructions).create_tool_id IS NOT NULL OR (instructions).link_tool_id IS NOT NULL)
+       AND (instructions).group_id IS NOT NULL AND v_instructions_id IS NOT NULL THEN
+        v_idx := array_position(v_group_ids_seen, (instructions).group_id);
+        IF v_idx IS NULL THEN
+            v_run_id := uuidv7();
+            INSERT INTO runs_entry (id, input_tokens, output_tokens, cached_input_tokens, group_id, created_at, updated_at)
+            VALUES (v_run_id, 0, 0, 0, (instructions).group_id, NOW(), NOW());
+            v_group_ids_seen := array_append(v_group_ids_seen, (instructions).group_id);
+            v_run_ids_seen := array_append(v_run_ids_seen, v_run_id);
+        ELSE
+            v_run_id := v_run_ids_seen[v_idx];
+        END IF;
+        IF (instructions).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'persona_create_instructions_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((instructions).create_tool_id, v_call_id);
+            INSERT INTO instructions_calls_connection (instructions_id, call_id) VALUES (v_instructions_id, v_call_id);
+        END IF;
+        IF (instructions).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'persona_link_instructions_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((instructions).link_tool_id, v_call_id);
+            INSERT INTO instructions_calls_connection (instructions_id, call_id) VALUES (v_instructions_id, v_call_id);
+        END IF;
+    END IF;
+
+    -- flags
+    IF ((flags).create_tool_id IS NOT NULL OR (flags).link_tool_id IS NOT NULL)
+       AND (flags).group_id IS NOT NULL AND v_active_flag_id IS NOT NULL THEN
+        v_idx := array_position(v_group_ids_seen, (flags).group_id);
+        IF v_idx IS NULL THEN
+            v_run_id := uuidv7();
+            INSERT INTO runs_entry (id, input_tokens, output_tokens, cached_input_tokens, group_id, created_at, updated_at)
+            VALUES (v_run_id, 0, 0, 0, (flags).group_id, NOW(), NOW());
+            v_group_ids_seen := array_append(v_group_ids_seen, (flags).group_id);
+            v_run_ids_seen := array_append(v_run_ids_seen, v_run_id);
+        ELSE
+            v_run_id := v_run_ids_seen[v_idx];
+        END IF;
+        IF (flags).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'persona_create_flags_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((flags).create_tool_id, v_call_id);
+            INSERT INTO flags_calls_connection (flags_id, call_id) VALUES (v_active_flag_id, v_call_id);
+        END IF;
+        IF (flags).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'persona_link_flags_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((flags).link_tool_id, v_call_id);
+            INSERT INTO flags_calls_connection (flags_id, call_id) VALUES (v_active_flag_id, v_call_id);
+        END IF;
+    END IF;
+
+    -- departments (multi-select)
+    IF ((departments).create_tool_id IS NOT NULL OR (departments).link_tool_id IS NOT NULL)
+       AND (departments).group_id IS NOT NULL AND COALESCE(array_length(v_department_ids, 1), 0) > 0 THEN
+        v_idx := array_position(v_group_ids_seen, (departments).group_id);
+        IF v_idx IS NULL THEN
+            v_run_id := uuidv7();
+            INSERT INTO runs_entry (id, input_tokens, output_tokens, cached_input_tokens, group_id, created_at, updated_at)
+            VALUES (v_run_id, 0, 0, 0, (departments).group_id, NOW(), NOW());
+            v_group_ids_seen := array_append(v_group_ids_seen, (departments).group_id);
+            v_run_ids_seen := array_append(v_run_ids_seen, v_run_id);
+        ELSE
+            v_run_id := v_run_ids_seen[v_idx];
+        END IF;
+        IF (departments).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'persona_create_departments_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((departments).create_tool_id, v_call_id);
+            INSERT INTO departments_calls_connection (departments_id, call_id)
+            SELECT dept_id, v_call_id FROM UNNEST(v_department_ids) AS dept_id;
+        END IF;
+        IF (departments).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'persona_link_departments_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((departments).link_tool_id, v_call_id);
+            INSERT INTO departments_calls_connection (departments_id, call_id)
+            SELECT dept_id, v_call_id FROM UNNEST(v_department_ids) AS dept_id;
+        END IF;
+    END IF;
+
+    -- parameter_fields (multi-select)
+    IF ((parameter_fields).create_tool_id IS NOT NULL OR (parameter_fields).link_tool_id IS NOT NULL)
+       AND (parameter_fields).group_id IS NOT NULL AND COALESCE(array_length(v_parameter_field_ids, 1), 0) > 0 THEN
+        v_idx := array_position(v_group_ids_seen, (parameter_fields).group_id);
+        IF v_idx IS NULL THEN
+            v_run_id := uuidv7();
+            INSERT INTO runs_entry (id, input_tokens, output_tokens, cached_input_tokens, group_id, created_at, updated_at)
+            VALUES (v_run_id, 0, 0, 0, (parameter_fields).group_id, NOW(), NOW());
+            v_group_ids_seen := array_append(v_group_ids_seen, (parameter_fields).group_id);
+            v_run_ids_seen := array_append(v_run_ids_seen, v_run_id);
+        ELSE
+            v_run_id := v_run_ids_seen[v_idx];
+        END IF;
+        IF (parameter_fields).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'persona_create_parameter_fields_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((parameter_fields).create_tool_id, v_call_id);
+            INSERT INTO parameter_fields_calls_connection (parameter_fields_id, call_id)
+            SELECT field_id, v_call_id FROM UNNEST(v_parameter_field_ids) AS field_id;
+        END IF;
+        IF (parameter_fields).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'persona_link_parameter_fields_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((parameter_fields).link_tool_id, v_call_id);
+            INSERT INTO parameter_fields_calls_connection (parameter_fields_id, call_id)
+            SELECT field_id, v_call_id FROM UNNEST(v_parameter_field_ids) AS field_id;
+        END IF;
+    END IF;
+
+    -- examples (multi-select)
+    IF ((examples).create_tool_id IS NOT NULL OR (examples).link_tool_id IS NOT NULL)
+       AND (examples).group_id IS NOT NULL AND COALESCE(array_length(v_example_ids, 1), 0) > 0 THEN
+        v_idx := array_position(v_group_ids_seen, (examples).group_id);
+        IF v_idx IS NULL THEN
+            v_run_id := uuidv7();
+            INSERT INTO runs_entry (id, input_tokens, output_tokens, cached_input_tokens, group_id, created_at, updated_at)
+            VALUES (v_run_id, 0, 0, 0, (examples).group_id, NOW(), NOW());
+            v_group_ids_seen := array_append(v_group_ids_seen, (examples).group_id);
+            v_run_ids_seen := array_append(v_run_ids_seen, v_run_id);
+        ELSE
+            v_run_id := v_run_ids_seen[v_idx];
+        END IF;
+        IF (examples).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'persona_create_examples_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((examples).create_tool_id, v_call_id);
+            INSERT INTO examples_calls_connection (examples_id, call_id)
+            SELECT ex_id, v_call_id FROM UNNEST(v_example_ids) AS ex_id;
+        END IF;
+        IF (examples).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'persona_link_examples_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((examples).link_tool_id, v_call_id);
+            INSERT INTO examples_calls_connection (examples_id, call_id)
+            SELECT ex_id, v_call_id FROM UNNEST(v_example_ids) AS ex_id;
+        END IF;
+    END IF;
+
+    -- parameters (multi-select)
+    IF ((parameters).create_tool_id IS NOT NULL OR (parameters).link_tool_id IS NOT NULL)
+       AND (parameters).group_id IS NOT NULL AND COALESCE(array_length(v_parameter_ids, 1), 0) > 0 THEN
+        v_idx := array_position(v_group_ids_seen, (parameters).group_id);
+        IF v_idx IS NULL THEN
+            v_run_id := uuidv7();
+            INSERT INTO runs_entry (id, input_tokens, output_tokens, cached_input_tokens, group_id, created_at, updated_at)
+            VALUES (v_run_id, 0, 0, 0, (parameters).group_id, NOW(), NOW());
+            v_group_ids_seen := array_append(v_group_ids_seen, (parameters).group_id);
+            v_run_ids_seen := array_append(v_run_ids_seen, v_run_id);
+        ELSE
+            v_run_id := v_run_ids_seen[v_idx];
+        END IF;
+        IF (parameters).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'persona_create_parameters_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((parameters).create_tool_id, v_call_id);
+            INSERT INTO parameters_calls_connection (parameters_id, call_id)
+            SELECT param_id, v_call_id FROM UNNEST(v_parameter_ids) AS param_id;
+        END IF;
+        IF (parameters).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'persona_link_parameters_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((parameters).link_tool_id, v_call_id);
+            INSERT INTO parameters_calls_connection (parameters_id, call_id)
+            SELECT param_id, v_call_id FROM UNNEST(v_parameter_ids) AS param_id;
+        END IF;
     END IF;
 
     -- Continue with persona save using SQL (persona already created/updated above)

@@ -87,25 +87,6 @@ agent_model_modalities AS (
       AND mm.active = true
       AND mr.active = true
 ),
--- Get rate limit for profile
-profile_rate_limit AS (
-    SELECT 
-        rl.requests_per_day as req_per_day
-    FROM profile_artifact prof
-    LEFT JOIN profile_request_limits_junction prl ON prl.profile_id = prof.id AND prl.active = true
-    LEFT JOIN request_limits_resource rl ON prl.request_limit_id = rl.id
-    WHERE prof.id = (SELECT profile_id FROM params)
-),
--- Count view_runs_entry today for rate limiting
-runs_today AS (
-    SELECT
-        COUNT(*)::bigint as runs_today_count,
-        MIN(mr.created_at) as earliest_run_created_at
-    FROM profile_runs_junction prj
-    JOIN view_runs_entry mr ON mr.id = prj.run_id
-    WHERE prj.profile_id = (SELECT profile_id FROM params)
-      AND mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
-),
 -- Get or create group (for trace_id and group_id)
 existing_group_from_param AS (
     SELECT g.id as group_id, g.trace_id
@@ -136,22 +117,11 @@ group_data AS (
             gen_random_uuid()::text  -- Fallback trace_id
         ) as trace_id
 ),
--- Validate rate limit (raises exception if exceeded)
-rate_limit_check AS (
-    SELECT 
-        prl.req_per_day,
-        COALESCE(rt.runs_today_count, 0::bigint) as runs_today_count
-    FROM profile_rate_limit prl
-    CROSS JOIN runs_today rt
-    CROSS JOIN params p
-    WHERE validate_rate_limit(prl.req_per_day, COALESCE(rt.runs_today_count, 0)) = TRUE
-),
 -- Create run with group_id directly
 create_run AS (
     INSERT INTO runs_entry (input_tokens, output_tokens, group_id)
     SELECT 0, 0, gd.group_id
     FROM selected_agent sa
-    CROSS JOIN rate_limit_check rlc
     CROSS JOIN params p
     CROSS JOIN group_data gd
     RETURNING id as run_id
