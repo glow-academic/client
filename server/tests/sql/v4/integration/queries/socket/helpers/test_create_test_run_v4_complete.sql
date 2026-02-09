@@ -26,11 +26,9 @@ AS $$
         VALUES (0, 0)
         RETURNING id
     ),
+    -- agent_runs_junction removed; runs now link to agents via config_agents_connection
     junction_insert AS (
-        INSERT INTO agent_runs_junction(agent_id, run_id)
-        SELECT test_create_test_run_v4.agent_id, new_run.id
-        FROM new_run
-        WHERE test_create_test_run_v4.agent_id IS NOT NULL
+        SELECT 1 WHERE false
     )
     SELECT
         new_run.id,

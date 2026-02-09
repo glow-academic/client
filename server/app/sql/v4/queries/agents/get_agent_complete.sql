@@ -2481,8 +2481,8 @@ debug_data AS (
             ARRAY[]::jsonb[]
         ) as debug_info
     FROM params x
-    LEFT JOIN runs_entry mr ON mr.config_id IS NOT NULL
-    LEFT JOIN config_agents_connection cac_debug ON cac_debug.config_id = mr.config_id AND cac_debug.agents_id = x.agent_id AND cac_debug.active = TRUE
+    LEFT JOIN config_agents_connection cac_debug ON cac_debug.agents_id = x.agent_id AND cac_debug.active = TRUE
+    LEFT JOIN view_runs_entry mr ON mr.config_id = cac_debug.config_id
     LEFT JOIN view_debug_info_entry di ON di.run_id = mr.id
     WHERE x.agent_id IS NOT NULL
     LIMIT 1

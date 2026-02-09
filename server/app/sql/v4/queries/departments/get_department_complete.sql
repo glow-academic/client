@@ -894,9 +894,9 @@ model_key_associations AS (
 runs_for_department_via_agents AS (
     SELECT DISTINCT mr.id as run_id
     FROM view_runs_entry mr
-    JOIN agent_runs_junction arj ON arj.run_id = mr.id
-    JOIN agent_departments_junction ad ON ad.agent_id = arj.agent_id AND ad.active = true
-    WHERE ad.department_id = (SELECT department_id FROM params) AND arj.agent_id IS NOT NULL
+    JOIN config_agents_connection cac ON cac.config_id = mr.config_id AND cac.active = true
+    JOIN agent_departments_junction ad ON ad.agent_id = cac.agents_id AND ad.active = true
+    WHERE ad.department_id = (SELECT department_id FROM params) AND cac.agents_id IS NOT NULL
     AND (SELECT department_id FROM params) IS NOT NULL
 ),
 runs_for_department_via_profiles AS (
@@ -921,8 +921,8 @@ model_run_costs AS (
     FROM view_run_pricing_entry rpu
     JOIN runs_for_department rfd ON rfd.run_id = rpu.run_id
     JOIN view_runs_entry r ON r.id = rpu.run_id
-    JOIN agent_runs_junction arj2 ON arj2.run_id = r.id
-    JOIN agent_models_junction am ON am.agent_id = arj2.agent_id AND am.active = true
+    JOIN config_agents_connection cac2 ON cac2.config_id = r.config_id AND cac2.active = true
+    JOIN agent_models_junction am ON am.agent_id = cac2.agents_id AND am.active = true
     JOIN model_pricing_junction mp ON mp.model_id = am.model_id AND mp.active = true
     JOIN pricing_resource pr ON pr.id = mp.pricing_id
         AND pr.pricing_type = rpu.pricing_type

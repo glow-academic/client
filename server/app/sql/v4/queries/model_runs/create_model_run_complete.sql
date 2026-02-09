@@ -49,13 +49,9 @@ create_run AS (
     FROM params p
     RETURNING id
 ),
+-- agent_runs_junction removed; runs now link to agents via config_agents_connection
 link_run_agent AS (
-    -- Link run to agent via junction table
-    INSERT INTO agent_runs_junction (agent_id, run_id)
-    SELECT p.agent_id, cr.id
-    FROM params p
-    CROSS JOIN create_run cr
-    WHERE p.agent_id IS NOT NULL
+    SELECT 1 WHERE false  -- Placeholder CTE to maintain structure
 ),
 link_run_profile AS (
     -- Link run to profile via junction table
