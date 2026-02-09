@@ -105,23 +105,23 @@ export interface AgentProps {
   // Draft action: Resource-specific prop name is acceptable since types are resource-specific
   // See Z-DOCS.md "Draft Autosave Pattern" section for migration guide
   patchAgentDraftAction?: (
-    input: PatchAgentDraftIn
+    input: PatchAgentDraftIn,
   ) => Promise<PatchAgentDraftOut>;
   // Resource creation actions
   createReasoningLevelsAction?: (
-    input: CreateDraftReasoningLevelsIn
+    input: CreateDraftReasoningLevelsIn,
   ) => Promise<CreateDraftReasoningLevelsOut>;
   createTemperatureLevelsAction?: (
-    input: CreateDraftTemperatureLevelsIn
+    input: CreateDraftTemperatureLevelsIn,
   ) => Promise<CreateDraftTemperatureLevelsOut>;
   createVoicesAction?: (
-    input: CreateDraftVoicesIn
+    input: CreateDraftVoicesIn,
   ) => Promise<CreateDraftVoicesOut>;
   createPromptsAction?: (
-    input: CreateDraftPromptsIn
+    input: CreateDraftPromptsIn,
   ) => Promise<CreateDraftPromptsOut>;
   createModelsAction?: (
-    input: CreateDraftModelsIn
+    input: CreateDraftModelsIn,
   ) => Promise<CreateDraftModelsOut>;
 }
 
@@ -139,20 +139,15 @@ export default function Agent({
 }: AgentProps) {
   const router = useRouter();
   const isEditMode = !!agentId;
-  const {
-    profile,
-    selectedDraftId,
-    setSelectedDraftId,
-    socket,
-    isConnected,
-  } = useProfile();
+  const { profile, selectedDraftId, setSelectedDraftId, socket, isConnected } =
+    useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
   const isSuperadmin = profile?.role === "superadmin";
 
   // Stabilize server props to prevent unnecessary re-renders from object reference changes
   const stabilizeServerProp = React.useCallback(
     (
-      data: typeof serverAgentDetail | typeof serverAgentDetailDefault
+      data: typeof serverAgentDetail | typeof serverAgentDetailDefault,
     ): string | null => {
       if (!data) return null;
       if (typeof data === "object" && data !== null) {
@@ -167,7 +162,7 @@ export default function Agent({
         }
         if ("valid_department_ids" in data) {
           keyFields["valid_department_ids"] = Array.isArray(
-            data["valid_department_ids"]
+            data["valid_department_ids"],
           )
             ? data["valid_department_ids"].sort().join(",")
             : data["valid_department_ids"];
@@ -180,22 +175,22 @@ export default function Agent({
       }
       return String(data);
     },
-    []
+    [],
   );
 
   const agentDetailId = React.useMemo(
     () => stabilizeServerProp(serverAgentDetail),
-    [serverAgentDetail, stabilizeServerProp]
+    [serverAgentDetail, stabilizeServerProp],
   );
   const agentDetailDefaultId = React.useMemo(
     () => stabilizeServerProp(serverAgentDetailDefault),
-    [serverAgentDetailDefault, stabilizeServerProp]
+    [serverAgentDetailDefault, stabilizeServerProp],
   );
 
   // Use refs to track latest server props (for effect access) and stable props (for render)
   const latestServerAgentDetailRef = React.useRef(serverAgentDetail);
   const latestServerAgentDetailDefaultRef = React.useRef(
-    serverAgentDetailDefault
+    serverAgentDetailDefault,
   );
 
   // Update latest refs on every render (no effect needed - just sync)
@@ -305,9 +300,9 @@ export default function Agent({
     () =>
       getDefaultDepartmentIds(
         isSuperadmin,
-        profile?.primary_department_id ?? null
+        profile?.primary_department_id ?? null,
       ),
-    [isSuperadmin, profile?.primary_department_id]
+    [isSuperadmin, profile?.primary_department_id],
   );
 
   // Initialize draft state from server data or draft payload
@@ -381,7 +376,7 @@ export default function Agent({
 
   // Track previous initialDraftState content to avoid unnecessary updates
   const prevInitialDraftStateRef = useRef<string>(
-    JSON.stringify(initialDraftState)
+    JSON.stringify(initialDraftState),
   );
 
   // Update draft state when server data changes (e.g., draft selected)
@@ -435,7 +430,7 @@ export default function Agent({
         if (urlParams.draftId === newDraftId) return;
         setUrlParamsRef.current({ draftId: newDraftId });
       },
-      [urlParams.draftId]
+      [urlParams.draftId],
     ),
   });
 
@@ -451,7 +446,7 @@ export default function Agent({
       }
       await saveAgentAction({ body });
     },
-    [saveAgentAction]
+    [saveAgentAction],
   );
 
   // Get selected model capabilities
@@ -461,7 +456,7 @@ export default function Agent({
     }
 
     const selectedModel = agentData?.models?.find(
-      (m) => m.model_id === draftState.modelId
+      (m) => m.model_id === draftState.modelId,
     );
     if (!selectedModel) {
       return null;
@@ -510,13 +505,13 @@ export default function Agent({
   const initializeForm = useCallback(
     (
       _serverData: unknown,
-      _isEditMode: boolean
+      _isEditMode: boolean,
     ): Partial<Values<Record<string, Parser<unknown>>>> => {
       // GenericForm expects URL params, but we use draftState for form fields
       // So we return empty object - form fields are initialized via draftState
       return {};
     },
-    []
+    [],
   );
 
   // Steps configuration for GenericForm (moved before handleReset to fix declaration order)
@@ -629,7 +624,7 @@ export default function Agent({
         instructions_id: init.instructions_id,
       }),
     }),
-    []
+    [],
   );
 
   const handleReset = useCallback(
@@ -648,7 +643,7 @@ export default function Agent({
 
       setDraftState((prev) => ({ ...prev, ...resetUpdates }));
     },
-    [steps, initialDraftState, draftState, resetters]
+    [steps, initialDraftState, draftState, resetters],
   );
 
   // Handle form submission (for GenericForm)
@@ -679,7 +674,7 @@ export default function Agent({
         const finalDepartmentIds = transformDepartmentIdsForSubmit(
           draftState.departmentIds || [],
           isSuperadmin,
-          validDepartmentIds
+          validDepartmentIds,
         );
 
         // Save agent using unified v4 API (handles both create and update)
@@ -718,14 +713,14 @@ export default function Agent({
               : [],
         });
         toast.success(
-          `Agent ${isEditMode ? "updated" : "created"} successfully!`
+          `Agent ${isEditMode ? "updated" : "created"} successfully!`,
         );
         resetFormAndState();
         router.push("/intelligence/agents");
       } catch (error) {
         const msg = error instanceof Error ? error.message : "Unknown error";
         toast.error(
-          `Failed to ${isEditMode ? "update" : "create"} agent: ${msg}`
+          `Failed to ${isEditMode ? "update" : "create"} agent: ${msg}`,
         );
         throw error; // Re-throw for GenericForm to handle
       }
@@ -740,7 +735,7 @@ export default function Agent({
       handleSaveAgent,
       resetFormAndState,
       router,
-    ]
+    ],
   );
 
   // Extract disabled state from can_edit flag (check in both new and edit modes)
@@ -760,7 +755,7 @@ export default function Agent({
   const getStepStatus = useCallback(
     (
       stepId: string,
-      _formData: Values<Record<string, Parser<unknown>>>
+      _formData: Values<Record<string, Parser<unknown>>>,
     ): StepStatus => {
       const hasModel = !!draftState.modelId?.trim();
       const hasName = !!draftState.name_id;
@@ -798,7 +793,7 @@ export default function Agent({
           return "pending";
       }
     },
-    [draftState]
+    [draftState],
   );
 
   // Helper to check if a resource type can be regenerated
@@ -813,7 +808,7 @@ export default function Agent({
         case "models":
           return (
             agentData.models?.some(
-              (m) => (m as { generated?: boolean }).generated
+              (m) => (m as { generated?: boolean }).generated,
             ) ?? false
           );
         case "prompts":
@@ -836,7 +831,7 @@ export default function Agent({
           return false;
       }
     },
-    [agentData]
+    [agentData],
   );
 
   // Helper function to determine agent_type from resource types
@@ -864,7 +859,7 @@ export default function Agent({
       // For multiple resources, use "general" or find first available agent
       return "general";
     },
-    []
+    [],
   );
 
   // Valid resource types for AI generation
@@ -882,79 +877,72 @@ export default function Agent({
       "voices",
       "tools",
     ],
-    []
+    [],
   );
 
   // AI generation completion handler
-  const onAiComplete = useCallback(
-    (data: Record<string, unknown>) => {
-      return {
-        aiUpdates: {} as Record<string, unknown>,
-        formStateUpdater: (prev: Record<string, unknown>) => {
-          const updates: Record<string, unknown> = {};
+  const onAiComplete = useCallback((data: Record<string, unknown>) => {
+    return {
+      aiUpdates: {} as Record<string, unknown>,
+      formStateUpdater: (prev: Record<string, unknown>) => {
+        const updates: Record<string, unknown> = {};
 
-          // Single-value fields
-          if (data["name_id"]) updates["name_id"] = data["name_id"];
-          if (data["description_id"])
-            updates["description_id"] = data["description_id"];
-          if (data["model_id"]) updates["modelId"] = data["model_id"]; // Note: data has model_id, state has modelId
-          if (data["prompt_id"]) updates["prompt_id"] = data["prompt_id"];
-          if (data["active_flag_id"])
-            updates["active_flag_id"] = data["active_flag_id"];
-          if (data["instructions_id"])
-            updates["instructions_id"] = data["instructions_id"];
+        // Single-value fields
+        if (data["name_id"]) updates["name_id"] = data["name_id"];
+        if (data["description_id"])
+          updates["description_id"] = data["description_id"];
+        if (data["model_id"]) updates["modelId"] = data["model_id"]; // Note: data has model_id, state has modelId
+        if (data["prompt_id"]) updates["prompt_id"] = data["prompt_id"];
+        if (data["active_flag_id"])
+          updates["active_flag_id"] = data["active_flag_id"];
+        if (data["instructions_id"])
+          updates["instructions_id"] = data["instructions_id"];
 
-          // Single-value with type check
-          const reasoningLevelId = data["reasoning_level_id"];
-          if (reasoningLevelId && typeof reasoningLevelId === "string") {
-            updates["reasoning_level_id"] = reasoningLevelId;
-          }
-          const temperatureLevelId = data["temperature_level_id"];
-          if (temperatureLevelId && typeof temperatureLevelId === "string") {
-            updates["temperature_level_id"] = temperatureLevelId;
-          }
+        // Single-value with type check
+        const reasoningLevelId = data["reasoning_level_id"];
+        if (reasoningLevelId && typeof reasoningLevelId === "string") {
+          updates["reasoning_level_id"] = reasoningLevelId;
+        }
+        const temperatureLevelId = data["temperature_level_id"];
+        if (temperatureLevelId && typeof temperatureLevelId === "string") {
+          updates["temperature_level_id"] = temperatureLevelId;
+        }
 
-          // Array fields with dedup
-          const voiceIds = data["voice_ids"];
-          if (Array.isArray(voiceIds) && voiceIds.length > 0) {
-            const prevVoiceIds = (prev["voice_ids"] as string[]) ?? [];
-            updates["voice_ids"] = [
-              ...new Set([
-                ...prevVoiceIds,
-                ...voiceIds.filter(
-                  (id): id is string => typeof id === "string"
-                ),
-              ]),
-            ];
-          }
+        // Array fields with dedup
+        const voiceIds = data["voice_ids"];
+        if (Array.isArray(voiceIds) && voiceIds.length > 0) {
+          const prevVoiceIds = (prev["voice_ids"] as string[]) ?? [];
+          updates["voice_ids"] = [
+            ...new Set([
+              ...prevVoiceIds,
+              ...voiceIds.filter((id): id is string => typeof id === "string"),
+            ]),
+          ];
+        }
 
-          const deptIds = data["department_ids"];
-          if (Array.isArray(deptIds) && deptIds.length > 0) {
-            const prevDeptIds = (prev["departmentIds"] as string[]) ?? [];
-            updates["departmentIds"] = [
-              ...new Set([...prevDeptIds, ...(deptIds as string[])]),
-            ];
-          }
+        const deptIds = data["department_ids"];
+        if (Array.isArray(deptIds) && deptIds.length > 0) {
+          const prevDeptIds = (prev["departmentIds"] as string[]) ?? [];
+          updates["departmentIds"] = [
+            ...new Set([...prevDeptIds, ...(deptIds as string[])]),
+          ];
+        }
 
-          const toolIds = data["tool_ids"];
-          if (Array.isArray(toolIds) && toolIds.length > 0) {
-            const prevToolIds = (prev["tool_ids"] as string[]) ?? [];
-            updates["tool_ids"] = [
-              ...new Set([
-                ...prevToolIds,
-                ...toolIds.filter(
-                  (id): id is string => typeof id === "string"
-                ),
-              ]),
-            ];
-          }
+        const toolIds = data["tool_ids"];
+        if (Array.isArray(toolIds) && toolIds.length > 0) {
+          const prevToolIds = (prev["tool_ids"] as string[]) ?? [];
+          updates["tool_ids"] = [
+            ...new Set([
+              ...prevToolIds,
+              ...toolIds.filter((id): id is string => typeof id === "string"),
+            ]),
+          ];
+        }
 
-          return { ...prev, ...updates };
-        },
-      };
-    },
-    []
-  );
+        return { ...prev, ...updates };
+      },
+    };
+  }, []);
 
   // AI generation hook (replaces WebSocket useEffect + generatingResources state)
   const { setGeneratingResources, isGenerating } = useAiGeneration<
@@ -978,7 +966,7 @@ export default function Agent({
     async (
       resourceTypes: ResourceType[],
       agentType: string | null,
-      userInstructions?: string
+      userInstructions?: string,
     ) => {
       if (!socket || !isConnected) {
         toast.error("WebSocket not connected");
@@ -1002,56 +990,56 @@ export default function Agent({
         mcp: false,
       });
     },
-    [socket, isConnected, agentId, draftId, setGeneratingResources]
+    [socket, isConnected, agentId, draftId, setGeneratingResources],
   );
 
   // Individual generation handlers
   const handleGenerateName = useCallback(
     async () =>
       handleGenerateResources(["names"], determineAgentType(["names"])),
-    [handleGenerateResources, determineAgentType]
+    [handleGenerateResources, determineAgentType],
   );
 
   const handleGenerateDescription = useCallback(
     async () =>
       handleGenerateResources(
         ["descriptions"],
-        determineAgentType(["descriptions"])
+        determineAgentType(["descriptions"]),
       ),
-    [handleGenerateResources, determineAgentType]
+    [handleGenerateResources, determineAgentType],
   );
 
   const handleGenerateDepartments = useCallback(
     async () =>
       handleGenerateResources(
         ["departments"],
-        determineAgentType(["departments"])
+        determineAgentType(["departments"]),
       ),
-    [handleGenerateResources, determineAgentType]
+    [handleGenerateResources, determineAgentType],
   );
 
   const handleGenerateFlags = useCallback(
     async () =>
       handleGenerateResources(["flags"], determineAgentType(["flags"])),
-    [handleGenerateResources, determineAgentType]
+    [handleGenerateResources, determineAgentType],
   );
 
   const handleGenerateReasoningLevels = useCallback(
     async () =>
       handleGenerateResources(
         ["reasoning_levels"],
-        determineAgentType(["reasoning_levels"])
+        determineAgentType(["reasoning_levels"]),
       ),
-    [handleGenerateResources, determineAgentType]
+    [handleGenerateResources, determineAgentType],
   );
 
   const handleGenerateTemperatureLevels = useCallback(
     async () =>
       handleGenerateResources(
         ["temperature_levels"],
-        determineAgentType(["temperature_levels"])
+        determineAgentType(["temperature_levels"]),
       ),
-    [handleGenerateResources, determineAgentType]
+    [handleGenerateResources, determineAgentType],
   );
 
   // Step-to-resources mapping for multi-generation
@@ -1079,7 +1067,7 @@ export default function Agent({
         "tools",
       ],
     }),
-    []
+    [],
   );
 
   // Resource labels for display (only for resources used in this component)
@@ -1097,7 +1085,7 @@ export default function Agent({
       voices: "Voices",
       tools: "Tools",
     }),
-    []
+    [],
   );
 
   // Modal generate handler (with agent-specific determineAgentType)
@@ -1106,7 +1094,7 @@ export default function Agent({
       const agentType = determineAgentType(selectedResources);
       handleGenerateResources(selectedResources, agentType, instructions);
     },
-    [determineAgentType, handleGenerateResources]
+    [determineAgentType, handleGenerateResources],
   );
 
   // Generation modal hook (replaces modal state + handleOpenStepCardModal + full-page-generate listener)
@@ -1250,18 +1238,18 @@ export default function Agent({
                                       "basic",
                                       hasRegeneratable
                                         ? "regenerate"
-                                        : "generate"
+                                        : "generate",
                                     );
                                   }}
                                   disabled={
                                     isReadonly ||
                                     stepResources["basic"]!.some((rt) =>
-                                      isGenerating(rt)
+                                      isGenerating(rt),
                                     )
                                   }
                                 >
                                   {stepResources["basic"]!.some((rt) =>
-                                    isGenerating(rt)
+                                    isGenerating(rt),
                                   ) ? (
                                     <Loader2 className="h-4 w-4 animate-spin" />
                                   ) : (
@@ -1271,7 +1259,7 @@ export default function Agent({
                               </TooltipTrigger>
                               <TooltipContent>
                                 {stepResources["basic"]!.some((rt) =>
-                                  canRegenerate(rt)
+                                  canRegenerate(rt),
                                 )
                                   ? "Regenerate"
                                   : "Generate"}
@@ -1301,7 +1289,7 @@ export default function Agent({
                             setDraftState((prev) => ({
                               ...prev,
                               description_id: descriptionId,
-                              }));
+                            }));
                           }}
                           searchTerm={descriptionSearch}
                           onSearchChange={(term: string) =>
@@ -1420,18 +1408,18 @@ export default function Agent({
                                       "tools",
                                       hasRegeneratable
                                         ? "regenerate"
-                                        : "generate"
+                                        : "generate",
                                     );
                                   }}
                                   disabled={
                                     isReadonly ||
                                     stepResources["tools"]!.some((rt) =>
-                                      isGenerating(rt)
+                                      isGenerating(rt),
                                     )
                                   }
                                 >
                                   {stepResources["tools"]!.some((rt) =>
-                                    isGenerating(rt)
+                                    isGenerating(rt),
                                   ) ? (
                                     <Loader2 className="h-4 w-4 animate-spin" />
                                   ) : (
@@ -1441,7 +1429,7 @@ export default function Agent({
                               </TooltipTrigger>
                               <TooltipContent>
                                 {stepResources["tools"]!.some((rt) =>
-                                  canRegenerate(rt)
+                                  canRegenerate(rt),
                                 )
                                   ? "Regenerate"
                                   : "Generate"}
@@ -1528,18 +1516,18 @@ export default function Agent({
                                       "model",
                                       hasRegeneratable
                                         ? "regenerate"
-                                        : "generate"
+                                        : "generate",
                                     );
                                   }}
                                   disabled={
                                     isReadonly ||
                                     stepResources["model"]!.some((rt) =>
-                                      isGenerating(rt)
+                                      isGenerating(rt),
                                     )
                                   }
                                 >
                                   {stepResources["model"]!.some((rt) =>
-                                    isGenerating(rt)
+                                    isGenerating(rt),
                                   ) ? (
                                     <Loader2 className="h-4 w-4 animate-spin" />
                                   ) : (
@@ -1549,7 +1537,7 @@ export default function Agent({
                               </TooltipTrigger>
                               <TooltipContent>
                                 {stepResources["model"]!.some((rt) =>
-                                  canRegenerate(rt)
+                                  canRegenerate(rt),
                                 )
                                   ? "Regenerate"
                                   : "Generate"}
@@ -1595,7 +1583,7 @@ export default function Agent({
 
                 case "temperature": {
                   const selectedModel = agentData?.models?.find(
-                    (m) => m.model_id === draftState.modelId
+                    (m) => m.model_id === draftState.modelId,
                   );
 
                   return (
@@ -1628,18 +1616,18 @@ export default function Agent({
                                       "temperature",
                                       hasRegeneratable
                                         ? "regenerate"
-                                        : "generate"
+                                        : "generate",
                                     );
                                   }}
                                   disabled={
                                     isReadonly ||
                                     stepResources["temperature"]!.some((rt) =>
-                                      isGenerating(rt)
+                                      isGenerating(rt),
                                     )
                                   }
                                 >
                                   {stepResources["temperature"]!.some((rt) =>
-                                    isGenerating(rt)
+                                    isGenerating(rt),
                                   ) ? (
                                     <Loader2 className="h-4 w-4 animate-spin" />
                                   ) : (
@@ -1649,7 +1637,7 @@ export default function Agent({
                               </TooltipTrigger>
                               <TooltipContent>
                                 {stepResources["temperature"]!.some((rt) =>
-                                  canRegenerate(rt)
+                                  canRegenerate(rt),
                                 )
                                   ? "Regenerate"
                                   : "Generate"}
@@ -1730,18 +1718,18 @@ export default function Agent({
                                       "reasoning",
                                       hasRegeneratable
                                         ? "regenerate"
-                                        : "generate"
+                                        : "generate",
                                     );
                                   }}
                                   disabled={
                                     isReadonly ||
                                     stepResources["reasoning"]!.some((rt) =>
-                                      isGenerating(rt)
+                                      isGenerating(rt),
                                     )
                                   }
                                 >
                                   {stepResources["reasoning"]!.some((rt) =>
-                                    isGenerating(rt)
+                                    isGenerating(rt),
                                   ) ? (
                                     <Loader2 className="h-4 w-4 animate-spin" />
                                   ) : (
@@ -1751,7 +1739,7 @@ export default function Agent({
                               </TooltipTrigger>
                               <TooltipContent>
                                 {stepResources["reasoning"]!.some((rt) =>
-                                  canRegenerate(rt)
+                                  canRegenerate(rt),
                                 )
                                   ? "Regenerate"
                                   : "Generate"}
@@ -1823,18 +1811,18 @@ export default function Agent({
                                       "voice",
                                       hasRegeneratable
                                         ? "regenerate"
-                                        : "generate"
+                                        : "generate",
                                     );
                                   }}
                                   disabled={
                                     isReadonly ||
                                     stepResources["voice"]!.some((rt) =>
-                                      isGenerating(rt)
+                                      isGenerating(rt),
                                     )
                                   }
                                 >
                                   {stepResources["voice"]!.some((rt) =>
-                                    isGenerating(rt)
+                                    isGenerating(rt),
                                   ) ? (
                                     <Loader2 className="h-4 w-4 animate-spin" />
                                   ) : (
@@ -1844,7 +1832,7 @@ export default function Agent({
                               </TooltipTrigger>
                               <TooltipContent>
                                 {stepResources["voice"]!.some((rt) =>
-                                  canRegenerate(rt)
+                                  canRegenerate(rt),
                                 )
                                   ? "Regenerate"
                                   : "Generate"}
@@ -1905,18 +1893,18 @@ export default function Agent({
                                       "prompt",
                                       hasRegeneratable
                                         ? "regenerate"
-                                        : "generate"
+                                        : "generate",
                                     );
                                   }}
                                   disabled={
                                     isReadonly ||
                                     stepResources["prompt"]!.some((rt) =>
-                                      isGenerating(rt)
+                                      isGenerating(rt),
                                     )
                                   }
                                 >
                                   {stepResources["prompt"]!.some((rt) =>
-                                    isGenerating(rt)
+                                    isGenerating(rt),
                                   ) ? (
                                     <Loader2 className="h-4 w-4 animate-spin" />
                                   ) : (
@@ -1926,7 +1914,7 @@ export default function Agent({
                               </TooltipTrigger>
                               <TooltipContent>
                                 {stepResources["prompt"]!.some((rt) =>
-                                  canRegenerate(rt)
+                                  canRegenerate(rt),
                                 )
                                   ? "Regenerate"
                                   : "Generate"}
@@ -1991,7 +1979,7 @@ export default function Agent({
                                       "instructions",
                                       hasRegeneratable
                                         ? "regenerate"
-                                        : "generate"
+                                        : "generate",
                                     );
                                   }}
                                   disabled={
@@ -2048,9 +2036,7 @@ export default function Agent({
         </div>
 
         {/* Generate/Regenerate Modal */}
-        {modalProps.mode && (
-          <GenerateRegenerateModal {...modalProps} />
-        )}
+        {modalProps.mode && <GenerateRegenerateModal {...modalProps} />}
       </div>
     </TooltipProvider>
   );

@@ -32,7 +32,7 @@ export function useAiGeneration<
     formStateUpdates?: Record<string, unknown>;
     /** For complex merging that needs access to prev state (e.g. array dedup) */
     formStateUpdater?: (
-      prev: Record<string, unknown>
+      prev: Record<string, unknown>,
     ) => Record<string, unknown>;
   };
   setFormState?: Dispatch<SetStateAction<Record<string, unknown>>>;
@@ -49,7 +49,7 @@ export function useAiGeneration<
   } = config;
 
   const [generatingResources, setGeneratingResources] = useState<Set<RT>>(
-    new Set()
+    new Set(),
   );
 
   const [aiFormData, setAiFormData] = useState<AiFormData>({} as AiFormData);
@@ -63,7 +63,7 @@ export function useAiGeneration<
 
   const isGenerating = useCallback(
     (resourceType: RT) => generatingResources.has(resourceType),
-    [generatingResources]
+    [generatingResources],
   );
 
   useEffect(() => {
@@ -109,12 +109,12 @@ export function useAiGeneration<
         if (data.success) {
           toast.success(
             (data.message as string) ||
-              `${data.resource_type as string} generated successfully`
+              `${data.resource_type as string} generated successfully`,
           );
         } else {
           toast.error(
             (data.message as string) ||
-              `Failed to generate ${data.resource_type as string}`
+              `Failed to generate ${data.resource_type as string}`,
           );
         }
       }

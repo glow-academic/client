@@ -369,7 +369,7 @@ class SavePersonaSqlParams(BaseModel):
     @classmethod
     def from_request(
         cls, request: SavePersonaApiRequest, profile_id: UUID
-    ) -> "SavePersonaSqlParams":
+    ) -> SavePersonaSqlParams:
         return cls(profile_id=profile_id, **request.model_dump())
 
     def to_tuple(self) -> tuple:
@@ -486,7 +486,7 @@ class PatchPersonaDraftSqlParams(BaseModel):
     @classmethod
     def from_request(
         cls, request: PatchPersonaDraftApiRequest, profile_id: UUID
-    ) -> "PatchPersonaDraftSqlParams":
+    ) -> PatchPersonaDraftSqlParams:
         _empty_single = PersonaResourceAction()
         _empty_multi = PersonaMultiResourceAction()
         return cls(
