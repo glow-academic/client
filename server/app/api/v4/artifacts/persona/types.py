@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.api.v4.types import DomainAgent, DomainData
 from app.sql.types import (
     QGetColorsV4Item,
     QGetDepartmentsV4Item,
@@ -20,10 +20,6 @@ from app.sql.types import (
     QGetParametersV4Item,
 )
 
-# Re-export for backwards compatibility
-__all__ = ["DomainAgent", "DomainData"]
-
-
 class PersonaFlagConfig(BaseModel):
     """Enriched flag config for direct client consumption."""
 
@@ -34,8 +30,75 @@ class PersonaFlagConfig(BaseModel):
     flag_option_id: UUID | None = None  # ID to use when enabling
     show: bool = True
     required: bool = False
-    domain_id: UUID | None = None  # Domain ID for generation
     generated: bool | None = None
+
+
+# ========== Per-Resource Section Types ==========
+
+
+class BaseResourceSection(BaseModel):
+    """Common metadata fields for all resource sections."""
+
+    show: bool = False
+    required: bool = False
+    suggestions: list[UUID] | None = None
+    show_ai_generate: bool = False
+    group_id: UUID | None = None
+    create_tool_id: UUID | None = None
+    link_tool_id: UUID | None = None
+
+
+# Single-select sections (resource = singular current, resources = all options)
+class PersonaNameSection(BaseResourceSection):
+    resource: QGetNamesV4Item | None = None
+    resources: list[QGetNamesV4Item] | None = None
+
+
+class PersonaDescriptionSection(BaseResourceSection):
+    resource: QGetDescriptionsV4Item | None = None
+    resources: list[QGetDescriptionsV4Item] | None = None
+
+
+class PersonaColorSection(BaseResourceSection):
+    resource: QGetColorsV4Item | None = None
+    resources: list[QGetColorsV4Item] | None = None
+
+
+class PersonaIconSection(BaseResourceSection):
+    resource: QGetIconsV4Item | None = None
+    resources: list[QGetIconsV4Item] | None = None
+
+
+class PersonaInstructionSection(BaseResourceSection):
+    resource: QGetInstructionsV4Item | None = None
+    resources: list[QGetInstructionsV4Item] | None = None
+
+
+# Flag section (uses PersonaFlagConfig)
+class PersonaFlagSection(BaseResourceSection):
+    current: PersonaFlagConfig | None = None
+    resources: list[PersonaFlagConfig] | None = None
+
+
+# Multi-select sections (current = list, resources = all options)
+class PersonaDepartmentSection(BaseResourceSection):
+    current: list[QGetDepartmentsV4Item] | None = None
+    resources: list[QGetDepartmentsV4Item] | None = None
+
+
+class PersonaParameterFieldSection(BaseResourceSection):
+    current: list[QGetParameterFieldsV4Item] | None = None
+    resources: list[QGetParameterFieldsV4Item] | None = None
+
+
+class PersonaExampleSection(BaseResourceSection):
+    current: list[QGetExamplesV4Item] | None = None
+    resources: list[QGetExamplesV4Item] | None = None
+
+
+class PersonaParameterSection(BaseResourceSection):
+    current: list[QGetParametersV4Item] | None = None
+    resources: list[QGetParametersV4Item] | None = None
 
 
 class GetPersonaApiRequest(BaseModel):
@@ -58,156 +121,45 @@ class GetPersonaApiRequest(BaseModel):
 class GetPersonaApiResponse(BaseModel):
     """Response model for get persona endpoint."""
 
-    # Required fields
+    # Context
     actor_name: str | None = None
     persona_exists: bool | None = None
     can_edit: bool | None = None
     disabled_reason: str | None = None
     draft_version: int | None = None
 
-    # Group ID
-    group_id: UUID | None = None
-
-    # Per-resource group IDs (from draft MV)
-    names_group_id: UUID | None = None
-    descriptions_group_id: UUID | None = None
-    colors_group_id: UUID | None = None
-    icons_group_id: UUID | None = None
-    instructions_group_id: UUID | None = None
-    flags_group_id: UUID | None = None
-    departments_group_id: UUID | None = None
-    parameter_fields_group_id: UUID | None = None
-    examples_group_id: UUID | None = None
-    parameters_group_id: UUID | None = None
-
-    # Single-select resources: name
-    show_name: bool | None = None
-    name_domain_id: UUID | None = None
-    name_required: bool | None = None
-    name_suggestions: list[UUID] | None = None
-    name_show_ai_generate: bool | None = None
-
-    # Single-select resources: description
-    show_description: bool | None = None
-    description_domain_id: UUID | None = None
-    description_required: bool | None = None
-    description_suggestions: list[UUID] | None = None
-    description_show_ai_generate: bool | None = None
-
-    # Single-select resources: color
-    show_color: bool | None = None
-    color_domain_id: UUID | None = None
-    color_required: bool | None = None
-    color_suggestions: list[UUID] | None = None
-    color_show_ai_generate: bool | None = None
-
-    # Single-select resources: icon
-    show_icon: bool | None = None
-    icon_domain_id: UUID | None = None
-    icon_required: bool | None = None
-    icon_suggestions: list[UUID] | None = None
-    icon_show_ai_generate: bool | None = None
-
-    # Single-select resources: instructions
-    show_instructions: bool | None = None
-    instructions_domain_id: UUID | None = None
-    instructions_required: bool | None = None
-    instructions_suggestions: list[UUID] | None = None
-    instructions_show_ai_generate: bool | None = None
-
-    # Single-select resources: flag
-    show_flag: bool | None = None
-    flag_domain_id: UUID | None = None
-    flag_required: bool | None = None
-    flag_show_ai_generate: bool | None = None
-
-    # Multi-select resources: departments
-    show_departments: bool | None = None
-    departments_domain_id: UUID | None = None
-    departments_required: bool | None = None
-    department_suggestions: list[UUID] | None = None
-    departments_show_ai_generate: bool | None = None
-
-    # Multi-select resources: parameter_fields
-    show_parameter_fields: bool | None = None
-    parameter_fields_domain_id: UUID | None = None
-    parameter_fields_required: bool | None = None
-    parameter_field_suggestions: list[UUID] | None = None
-    parameter_fields_show_ai_generate: bool | None = None
-
-    # Multi-select resources: examples
-    show_examples: bool | None = None
-    examples_domain_id: UUID | None = None
-    examples_required: bool | None = None
-    example_suggestions: list[UUID] | None = None
-    examples_show_ai_generate: bool | None = None
-
-    # Multi-select resources: parameters
-    show_parameters: bool | None = None
-    parameters_domain_id: UUID | None = None
-    parameters_required: bool | None = None
-    parameter_suggestions: list[UUID] | None = None
-    parameters_show_ai_generate: bool | None = None
-
-    # Step-level AI generation flags (for "Generate All Basic", etc.)
+    # Step-level AI generation flags
     basic_show_ai_generate: bool | None = None
     content_show_ai_generate: bool | None = None
     parameters_step_show_ai_generate: bool | None = None
 
-    # Per-resource CREATE tool IDs (for AI generation)
-    # Only for resources that have actual create_* tools in the DB
-    name_create_tool_id: UUID | None = None
-    description_create_tool_id: UUID | None = None
-    color_create_tool_id: UUID | None = None
-    instructions_create_tool_id: UUID | None = None
-    parameter_fields_create_tool_id: UUID | None = None
-    examples_create_tool_id: UUID | None = None
-
-    # Per-resource LINK tool IDs (for AI suggestions)
-    name_link_tool_id: UUID | None = None
-    description_link_tool_id: UUID | None = None
-    color_link_tool_id: UUID | None = None
-    icon_link_tool_id: UUID | None = None
-    instructions_link_tool_id: UUID | None = None
-    flag_link_tool_id: UUID | None = None
-    departments_link_tool_id: UUID | None = None
-    parameter_fields_link_tool_id: UUID | None = None
-    examples_link_tool_id: UUID | None = None
-    parameters_link_tool_id: UUID | None = None
-
-    # Rich domain metadata for client display in modals
-    domain_data: list[DomainData] | None = None
-
-    # Generic resources payload (full objects + current selections)
-    resources: PersonaResources | None = None
+    # Per-resource sections
+    names: PersonaNameSection | None = None
+    descriptions: PersonaDescriptionSection | None = None
+    colors: PersonaColorSection | None = None
+    icons: PersonaIconSection | None = None
+    instructions: PersonaInstructionSection | None = None
+    flags: PersonaFlagSection | None = None
+    departments: PersonaDepartmentSection | None = None
+    parameter_fields: PersonaParameterFieldSection | None = None
+    examples: PersonaExampleSection | None = None
+    parameters: PersonaParameterSection | None = None
 
 
 class GetPersonaWebsocketResponse(BaseModel):
     """Minimal response for WebSocket handlers (get_persona_websocket).
 
     Contains only what's needed for AI generation:
-    - Domain IDs (for domain_to_resource mapping)
-    - Domains list (for agent_id lookup)
-    - Group ID (for existing group context)
+    - Resource-to-agent mapping (for agent_id lookup by resource type)
+    - Per-resource group IDs (for existing group context)
     - Resources (for Jinja template context)
     """
 
-    group_id: UUID | None = None
+    # Resource type -> agent_id mapping (server resolves domains internally)
+    resource_agent_ids: dict[str, UUID | None] | None = None
 
-    # Domain IDs for domain_to_resource mapping
-    name_domain_id: UUID | None = None
-    description_domain_id: UUID | None = None
-    color_domain_id: UUID | None = None
-    icon_domain_id: UUID | None = None
-    instructions_domain_id: UUID | None = None
-    flag_domain_id: UUID | None = None
-    departments_domain_id: UUID | None = None
-    parameter_fields_domain_id: UUID | None = None
-    examples_domain_id: UUID | None = None
-    parameters_domain_id: UUID | None = None
-
-    # Domains mapping (domain_id -> agent_id) for server-side agent lookup
-    domains: list[DomainAgent] | None = None
+    # Per-resource group IDs (resource_type -> group_id)
+    resource_group_ids: dict[str, UUID | None] | None = None
 
     # Resources for Jinja template context
     resources: PersonaResources | None = None
@@ -233,6 +185,53 @@ class PersonaResources(BaseModel):
 
     resources: PersonaResourceBucket | None = None
     current: PersonaResourceBucket | None = None
+
+
+# ========== Internal Data Types ==========
+
+
+@dataclass
+class PersonaInternalData:
+    """Internal data from core persona fetching (cacheable layer).
+
+    This dataclass contains all computed data needed by both:
+    - get_persona_websocket() - minimal data for WebSocket handlers
+    - get_persona_client() - full BFF response for HTTP/frontend
+    """
+
+    # Access/context
+    actor_name: str | None
+    persona_exists: bool | None
+    can_edit: bool
+    disabled_reason: str | None
+    draft_version: int | None
+    group_id: UUID | None
+
+    # Agent mappings (resource_type -> agent_id)
+    agent_ids: dict[str, UUID | None]
+
+    # Show/required flags
+    show_flags_map: dict[str, bool]
+    required_flags_map: dict[str, bool]
+
+    # Suggestions (resource -> list of suggestion IDs)
+    suggestions_map: dict[str, list[UUID]]
+
+    # Show AI generate flags (computed: agent exists for resource)
+    show_ai_generate_map: dict[str, bool]
+    basic_show_ai_generate: bool
+    content_show_ai_generate: bool
+    parameters_step_show_ai_generate: bool
+
+    # Resources payload
+    resources_payload: PersonaResources
+
+    # Per-resource group IDs (from draft MV)
+    resource_group_ids: dict[str, UUID | None]
+
+    # Per-resource tool IDs (from selected agents)
+    create_tool_ids_map: dict[str, UUID | None]
+    link_tool_ids_map: dict[str, UUID | None]
 
 
 # ========== List Endpoint Types ==========
@@ -309,8 +308,19 @@ class SavePersonaApiRequest(BaseModel):
     """Request model for save persona endpoint - accepts form data directly (no draft_id)."""
 
     # Context
-    group_id: UUID  # REQUIRED - which group to save to
     input_persona_id: UUID | None = None  # For update mode
+
+    # Per-resource group IDs
+    names_group_id: UUID | None = None
+    descriptions_group_id: UUID | None = None
+    colors_group_id: UUID | None = None
+    icons_group_id: UUID | None = None
+    instructions_group_id: UUID | None = None
+    flags_group_id: UUID | None = None
+    departments_group_id: UUID | None = None
+    parameter_fields_group_id: UUID | None = None
+    examples_group_id: UUID | None = None
+    parameters_group_id: UUID | None = None
 
     # Required single-select resources
     name_id: UUID  # REQUIRED
@@ -342,8 +352,19 @@ class SavePersonaSqlParams(BaseModel):
 
     # Context
     profile_id: UUID  # Added from header
-    group_id: UUID  # REQUIRED - which group to save to
     input_persona_id: UUID | None = None  # For update mode
+
+    # Per-resource group IDs
+    names_group_id: UUID | None = None
+    descriptions_group_id: UUID | None = None
+    colors_group_id: UUID | None = None
+    icons_group_id: UUID | None = None
+    instructions_group_id: UUID | None = None
+    flags_group_id: UUID | None = None
+    departments_group_id: UUID | None = None
+    parameter_fields_group_id: UUID | None = None
+    examples_group_id: UUID | None = None
+    parameters_group_id: UUID | None = None
 
     # Required single-select resources
     name_id: UUID  # REQUIRED
@@ -365,8 +386,17 @@ class SavePersonaSqlParams(BaseModel):
         """Convert to tuple for SQL execution."""
         return (
             self.profile_id,
-            self.group_id,
             self.input_persona_id,
+            self.names_group_id,
+            self.descriptions_group_id,
+            self.colors_group_id,
+            self.icons_group_id,
+            self.instructions_group_id,
+            self.flags_group_id,
+            self.departments_group_id,
+            self.parameter_fields_group_id,
+            self.examples_group_id,
+            self.parameters_group_id,
             self.name_id,
             self.color_id,
             self.icon_id,

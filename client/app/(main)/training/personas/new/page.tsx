@@ -40,8 +40,6 @@ type CreateDraftColorsIn = InputOf<"/api/v4/resources/colors", "post">;
 type CreateDraftColorsOut = OutputOf<"/api/v4/resources/colors", "post">;
 type CreateDraftExamplesIn = InputOf<"/api/v4/resources/examples", "post">;
 type CreateDraftExamplesOut = OutputOf<"/api/v4/resources/examples", "post">;
-type CreateDraftDocumentsIn = InputOf<"/api/v4/resources/documents", "post">;
-type CreateDraftDocumentsOut = OutputOf<"/api/v4/resources/documents", "post">;
 type CreateDraftParameterFieldsIn = InputOf<
   "/api/v4/resources/parameter_fields",
   "post"
@@ -119,14 +117,6 @@ async function createDraftExamples(
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.post("/resources/examples", input);
-}
-
-async function createDraftDocuments(
-  input: CreateDraftDocumentsIn
-): Promise<CreateDraftDocumentsOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/documents", input);
 }
 
 async function createDraftParameterFields(
@@ -215,7 +205,6 @@ export default async function NewPersonaPage({
         createInstructionsAction={createDraftInstructions}
         createColorsAction={createDraftColors}
         createExamplesAction={createDraftExamples}
-        createDocumentsAction={createDraftDocuments}
         createParameterFieldsAction={createDraftParameterFields}
       />
     </div>

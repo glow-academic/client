@@ -383,74 +383,22 @@ PERSONA_PARAMETERS_RESOURCES: set[str] = {"parameters", "parameter_fields"}
 PERSONA_GENERAL_RESOURCES: set[str] = PERSONA_RESOURCES  # All resources
 
 
-# ========== Domain Metadata - for client-side display in modals ==========
-
-# Domain display metadata (business logic - rarely changes)
-PERSONA_DOMAIN_METADATA: dict[str, dict[str, str | bool]] = {
-    "names": {
-        "name": "Name",
-        "description": "The display name for this persona",
-        "icon": "user",
-    },
-    "descriptions": {
-        "name": "Description",
-        "description": "A brief description of this persona's role",
-        "icon": "file-text",
-    },
-    "colors": {
-        "name": "Color",
-        "description": "The color theme for this persona",
-        "icon": "palette",
-    },
-    "icons": {
-        "name": "Icon",
-        "description": "The icon representing this persona",
-        "icon": "image",
-    },
-    "instructions": {
-        "name": "Instructions",
-        "description": "Detailed instructions for how this persona behaves",
-        "icon": "book-open",
-    },
-    "flags": {
-        "name": "Status",
-        "description": "Active/inactive status",
-        "icon": "flag",
-    },
-    "departments": {
-        "name": "Departments",
-        "description": "Which departments can access this persona",
-        "icon": "building",
-    },
-    "parameter_fields": {
-        "name": "Fields",
-        "description": "Custom fields for this persona",
-        "icon": "form-input",
-    },
-    "examples": {
-        "name": "Examples",
-        "description": "Example interactions for this persona",
-        "icon": "message-square",
-    },
-    "parameters": {
-        "name": "Parameters",
-        "description": "Configuration parameters for this persona",
-        "icon": "settings",
-    },
-}
+# ========== Business Logic Helpers ==========
 
 
-def build_domain_data(
-    domain_ids: dict[str, UUID | None],
-    show_flags: dict[str, bool],
-    required_flags: dict[str, bool],
-) -> list:
-    """Build rich domain metadata for client display.
+def compute_show_ai_generate(
+    agent_ids: dict[str, UUID | None], resource: str
+) -> bool:
+    """Returns True if an agent exists for that resource."""
+    return agent_ids.get(resource) is not None
 
-    Delegates to shared build_domain_data with persona-specific metadata.
-    """
-    from app.api.v4.types import build_domain_data as _build_domain_data
 
-    return _build_domain_data(
-        domain_ids, show_flags, required_flags, PERSONA_DOMAIN_METADATA
-    )
+def derive_flag_key_and_label(name: str | None) -> tuple[str, str]:
+    """Derive key and label from flag name like 'persona_active' -> ('active', 'Active')"""
+    if not name:
+        return ("unknown", "Unknown")
+    # Remove artifact prefix (e.g., 'persona_active' -> 'active')
+    key = name.replace("persona_", "")
+    # Title case for label
+    label = key.replace("_", " ").title()
+    return (key, label)

@@ -48,8 +48,6 @@ type CreateDraftObjectivesOut = OutputOf<
   "/api/v4/resources/objectives",
   "post"
 >;
-type CreateDraftScenarioFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
-type CreateDraftScenarioFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
 type CreateDraftQuestionsIn = InputOf<"/api/v4/resources/questions", "post">;
 type CreateDraftQuestionsOut = OutputOf<"/api/v4/resources/questions", "post">;
 type CreateDraftTemplatesIn = InputOf<"/api/v4/resources/templates", "post">;
@@ -292,14 +290,6 @@ async function createDraftObjectives(
   return api.post("/resources/objectives", input);
 }
 
-async function createDraftScenarioFlags(
-  input: CreateDraftScenarioFlagsIn
-): Promise<CreateDraftScenarioFlagsOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/flags", input);
-}
-
 async function createDraftQuestions(
   input: CreateDraftQuestionsIn
 ): Promise<CreateDraftQuestionsOut> {
@@ -466,7 +456,6 @@ export default async function EditScenarioPage({
           createDescriptionsAction={createDraftDescriptions}
           createProblemStatementsAction={createDraftProblemStatements}
           createObjectivesAction={createDraftObjectives}
-          createScenarioFlagsAction={createDraftScenarioFlags}
           createQuestionsAction={createDraftQuestions}
           createTemplatesAction={createDraftTemplates}
           createImagesAction={createDraftImages}
@@ -496,10 +485,12 @@ export default async function EditScenarioPage({
   }
 }
 
+/** ---- Type aliases for backward compatibility ---- */
+type ScenarioDetailOut = GetScenarioOut;
+type ScenarioNewOut = GetScenarioOut;
+
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
-  CreateScenarioIn,
-  CreateScenarioOut,
   GenerateAIScenarioIn,
   GenerateAIScenarioOut,
   GetScenarioIn,
@@ -508,10 +499,6 @@ export type {
   PatchScenarioDraftOut,
   SaveScenarioIn,
   SaveScenarioOut,
-  ScenarioDetailIn,
   ScenarioDetailOut,
-  ScenarioNewIn,
   ScenarioNewOut,
-  UpdateScenarioIn,
-  UpdateScenarioOut,
 };

@@ -47,8 +47,6 @@ type CreateDraftObjectivesOut = OutputOf<
   "/api/v4/resources/objectives",
   "post"
 >;
-type CreateDraftScenarioFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
-type CreateDraftScenarioFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
 type CreateDraftQuestionsIn = InputOf<"/api/v4/resources/questions", "post">;
 type CreateDraftQuestionsOut = OutputOf<"/api/v4/resources/questions", "post">;
 type CreateDraftTemplatesIn = InputOf<"/api/v4/resources/templates", "post">;
@@ -86,13 +84,6 @@ async function createDraftObjectives(
 ): Promise<CreateDraftObjectivesOut> {
   "use server";
   return api.post("/resources/objectives", input);
-}
-
-async function createDraftScenarioFlags(
-  input: CreateDraftScenarioFlagsIn
-): Promise<CreateDraftScenarioFlagsOut> {
-  "use server";
-  return api.post("/resources/flags", input);
 }
 
 async function createDraftQuestions(
@@ -230,7 +221,6 @@ export default async function NewScenarioPage({
         createDescriptionsAction={createDraftDescriptions}
         createProblemStatementsAction={createDraftProblemStatements}
         createObjectivesAction={createDraftObjectives}
-        createScenarioFlagsAction={createDraftScenarioFlags}
         createQuestionsAction={createDraftQuestions}
         createTemplatesAction={createDraftTemplates}
         createImagesAction={createDraftImages}

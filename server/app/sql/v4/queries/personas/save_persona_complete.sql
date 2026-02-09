@@ -16,11 +16,21 @@ BEGIN
     END LOOP;
 END $$;
 
--- 2) Recreate function with direct form data parameters (no draft_id)
+-- 2) Recreate function with per-resource group_id parameters
 CREATE OR REPLACE FUNCTION api_save_persona_v4(
     profile_id uuid,
-    group_id uuid,
     input_persona_id uuid DEFAULT NULL,
+    -- Per-resource group IDs
+    names_group_id uuid DEFAULT NULL,
+    descriptions_group_id uuid DEFAULT NULL,
+    colors_group_id uuid DEFAULT NULL,
+    icons_group_id uuid DEFAULT NULL,
+    instructions_group_id uuid DEFAULT NULL,
+    flags_group_id uuid DEFAULT NULL,
+    departments_group_id uuid DEFAULT NULL,
+    parameter_fields_group_id uuid DEFAULT NULL,
+    examples_group_id uuid DEFAULT NULL,
+    parameters_group_id uuid DEFAULT NULL,
     -- Required form data
     name_id uuid DEFAULT NULL,
     color_id uuid DEFAULT NULL,
@@ -46,7 +56,6 @@ AS $$
 DECLARE
     v_persona_id uuid;
     v_actor_name text;
-    v_group_id uuid;
     v_profile_id uuid;
     v_input_persona_id uuid;
     is_create boolean;
@@ -60,10 +69,10 @@ DECLARE
     v_example_ids uuid[];
     v_parameter_field_ids uuid[];
     v_parameter_ids uuid[];
+    v_group_ids uuid[];
 BEGIN
     -- Assign parameters to local variables
     v_profile_id := profile_id;
-    v_group_id := group_id;
     v_input_persona_id := input_persona_id;
     v_name_id := name_id;
     v_color_id := color_id;
@@ -76,11 +85,15 @@ BEGIN
     v_example_ids := COALESCE(example_ids, ARRAY[]::uuid[]);
     v_parameter_ids := COALESCE(parameter_ids, ARRAY[]::uuid[]);
 
-    -- Validate required fields
-    IF v_group_id IS NULL THEN
-        RAISE EXCEPTION 'group_id is required';
-    END IF;
+    -- Collect non-null group IDs into array (deduplicated)
+    SELECT ARRAY(SELECT DISTINCT unnest FROM unnest(ARRAY[
+        names_group_id, descriptions_group_id, colors_group_id,
+        icons_group_id, instructions_group_id, flags_group_id,
+        departments_group_id, parameter_fields_group_id,
+        examples_group_id, parameters_group_id
+    ]) WHERE unnest IS NOT NULL) INTO v_group_ids;
 
+    -- Validate required fields
     IF v_name_id IS NULL THEN
         RAISE EXCEPTION 'Name resource is required';
     END IF;
@@ -106,21 +119,21 @@ BEGIN
         INSERT INTO persona_artifact (created_at, updated_at)
         VALUES (NOW(), NOW())
         RETURNING id INTO v_persona_id;
-        -- Link group via junction table
-        INSERT INTO persona_groups_junction (persona_id, group_id)
-        VALUES (v_persona_id, v_group_id)
-        ON CONFLICT DO NOTHING;
     ELSE
         -- UPDATE path
         v_persona_id := v_input_persona_id;
         UPDATE persona_artifact
         SET updated_at = NOW()
         WHERE id = v_persona_id;
-        -- Upsert group via junction table
-        INSERT INTO persona_groups_junction (persona_id, group_id)
-        VALUES (v_persona_id, v_group_id)
-        ON CONFLICT DO NOTHING;
+        -- Remove old group links before re-inserting
+        DELETE FROM persona_groups_junction WHERE persona_id = v_persona_id;
     END IF;
+
+    -- Link all non-null group IDs via junction table
+    INSERT INTO persona_groups_junction (persona_id, group_id)
+    SELECT v_persona_id, gid
+    FROM unnest(v_group_ids) AS gid
+    ON CONFLICT DO NOTHING;
 
     -- Validate resource IDs exist
     IF v_name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names_resource WHERE id = v_name_id) THEN

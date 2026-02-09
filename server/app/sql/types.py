@@ -13069,16 +13069,6 @@ class GetPersonaIdsSqlRow(BaseModel):
     parameter_fields_has_tools: bool | None = None
     examples_has_tools: bool | None = None
     parameters_has_tools: bool | None = None
-    name_domain_id: UUID | None = None
-    description_domain_id: UUID | None = None
-    color_domain_id: UUID | None = None
-    icon_domain_id: UUID | None = None
-    instructions_domain_id: UUID | None = None
-    flag_domain_id: UUID | None = None
-    departments_domain_id: UUID | None = None
-    parameter_fields_domain_id: UUID | None = None
-    examples_domain_id: UUID | None = None
-    parameters_domain_id: UUID | None = None
 
 class GetPersonaIdsApiRequest(BaseModel):
 
@@ -13117,16 +13107,6 @@ class GetPersonaIdsApiResponse(BaseModel):
     parameter_fields_has_tools: bool | None = None
     examples_has_tools: bool | None = None
     parameters_has_tools: bool | None = None
-    name_domain_id: UUID | None = None
-    description_domain_id: UUID | None = None
-    color_domain_id: UUID | None = None
-    icon_domain_id: UUID | None = None
-    instructions_domain_id: UUID | None = None
-    flag_domain_id: UUID | None = None
-    departments_domain_id: UUID | None = None
-    parameter_fields_domain_id: UUID | None = None
-    examples_domain_id: UUID | None = None
-    parameters_domain_id: UUID | None = None
 
 
 
@@ -13403,8 +13383,17 @@ class PatchPersonaDraftApiResponse(BaseModel):
 class SavePersonaSqlParams(BaseModel):
 
     profile_id: UUID
-    group_id: UUID
     input_persona_id: UUID | None = None
+    names_group_id: UUID | None = None
+    descriptions_group_id: UUID | None = None
+    colors_group_id: UUID | None = None
+    icons_group_id: UUID | None = None
+    instructions_group_id: UUID | None = None
+    flags_group_id: UUID | None = None
+    departments_group_id: UUID | None = None
+    parameter_fields_group_id: UUID | None = None
+    examples_group_id: UUID | None = None
+    parameters_group_id: UUID | None = None
     name_id: UUID | None = None
     color_id: UUID | None = None
     icon_id: UUID | None = None
@@ -13419,8 +13408,17 @@ class SavePersonaSqlParams(BaseModel):
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
-            self.group_id,
             self.input_persona_id,
+            self.names_group_id,
+            self.descriptions_group_id,
+            self.colors_group_id,
+            self.icons_group_id,
+            self.instructions_group_id,
+            self.flags_group_id,
+            self.departments_group_id,
+            self.parameter_fields_group_id,
+            self.examples_group_id,
+            self.parameters_group_id,
             self.name_id,
             self.color_id,
             self.icon_id,
@@ -13440,8 +13438,17 @@ class SavePersonaSqlRow(BaseModel):
 
 class SavePersonaApiRequest(BaseModel):
 
-    group_id: UUID
     input_persona_id: UUID | None = None
+    names_group_id: UUID | None = None
+    descriptions_group_id: UUID | None = None
+    colors_group_id: UUID | None = None
+    icons_group_id: UUID | None = None
+    instructions_group_id: UUID | None = None
+    flags_group_id: UUID | None = None
+    departments_group_id: UUID | None = None
+    parameter_fields_group_id: UUID | None = None
+    examples_group_id: UUID | None = None
+    parameters_group_id: UUID | None = None
     name_id: UUID | None = None
     color_id: UUID | None = None
     icon_id: UUID | None = None

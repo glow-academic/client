@@ -10,7 +10,6 @@ The presentation layers transform internal data into consumer-specific formats.
 """
 
 import asyncio
-from dataclasses import dataclass
 from typing import Annotated, Any, cast
 from uuid import UUID
 
@@ -19,7 +18,6 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.artifacts.persona.permissions import (
     PERSONA_RESOURCES,
-    build_domain_data,
     compute_can_edit,
     compute_color_required,
     compute_departments_required,
@@ -32,6 +30,7 @@ from app.api.v4.artifacts.persona.permissions import (
     compute_name_required,
     compute_parameter_fields_required,
     compute_parameters_required,
+    compute_show_ai_generate,
     compute_show_color,
     compute_show_departments,
     compute_show_description,
@@ -42,14 +41,25 @@ from app.api.v4.artifacts.persona.permissions import (
     compute_show_name,
     compute_show_parameter_fields,
     compute_show_parameters,
+    derive_flag_key_and_label,
     has_access,
 )
 from app.api.v4.artifacts.persona.types import (
-    DomainAgent,
     GetPersonaApiRequest,
     GetPersonaApiResponse,
     GetPersonaWebsocketResponse,
+    PersonaColorSection,
+    PersonaDepartmentSection,
+    PersonaDescriptionSection,
+    PersonaExampleSection,
     PersonaFlagConfig,
+    PersonaFlagSection,
+    PersonaIconSection,
+    PersonaInstructionSection,
+    PersonaInternalData,
+    PersonaNameSection,
+    PersonaParameterFieldSection,
+    PersonaParameterSection,
     PersonaResourceBucket,
     PersonaResources,
 )
@@ -98,55 +108,6 @@ QUERY1_SQL_PATH = "app/sql/v4/queries/personas/get_persona_access_complete.sql"
 QUERY2_SQL_PATH = "app/sql/v4/queries/personas/get_persona_ids_complete.sql"
 
 router = APIRouter()
-
-
-@dataclass
-class PersonaInternalData:
-    """Internal data from core persona fetching (cacheable layer).
-
-    This dataclass contains all computed data needed by both:
-    - get_persona_websocket() - minimal data for WebSocket handlers
-    - get_persona_client() - full BFF response for HTTP/frontend
-    """
-
-    # Access/context
-    actor_name: str | None
-    persona_exists: bool | None
-    can_edit: bool
-    disabled_reason: str | None
-    draft_version: int | None
-    group_id: UUID | None
-
-    # Domain mappings
-    domain_ids_map: dict[str, UUID | None]
-    agent_ids: dict[str, UUID | None]
-    domains_list: list[DomainAgent]
-
-    # Show/required flags
-    show_flags_map: dict[str, bool]
-    required_flags_map: dict[str, bool]
-
-    # Suggestions (resource -> list of suggestion IDs)
-    suggestions_map: dict[str, list[UUID]]
-
-    # Show AI generate flags (computed: domain_id exists AND agent exists)
-    show_ai_generate_map: dict[str, bool]
-    basic_show_ai_generate: bool
-    content_show_ai_generate: bool
-    parameters_step_show_ai_generate: bool
-
-    # Domain data for modals
-    domain_data_list: list[Any]  # list[DomainData]
-
-    # Resources payload
-    resources_payload: PersonaResources
-
-    # Per-resource group IDs (from draft MV)
-    resource_group_ids: dict[str, UUID | None]
-
-    # Per-resource tool IDs (from selected agents)
-    create_tool_ids_map: dict[str, UUID | None]
-    link_tool_ids_map: dict[str, UUID | None]
 
 
 async def get_persona_internal(
@@ -338,38 +299,18 @@ async def get_persona_internal(
                     link_tool_ids_map[resource] = candidate.link_tool_ids.get(resource)
                     break
 
-    # === EXTRACT DOMAIN IDS FROM QUERY 2 ===
-    domain_ids_map: dict[str, UUID | None] = {
-        "names": ids_result.name_domain_id,
-        "descriptions": ids_result.description_domain_id,
-        "colors": ids_result.color_domain_id,
-        "icons": ids_result.icon_domain_id,
-        "instructions": ids_result.instructions_domain_id,
-        "flags": ids_result.flag_domain_id,
-        "departments": ids_result.departments_domain_id,
-        "parameter_fields": ids_result.parameter_fields_domain_id,
-        "examples": ids_result.examples_domain_id,
-        "parameters": ids_result.parameters_domain_id,
-    }
-
     # === COMPUTE SHOW_AI_GENERATE FLAGS (BFF pattern - server computes, client consumes) ===
-    def compute_show_ai_generate(resource: str) -> bool:
-        """Returns True if domain_id exists AND agent exists for that resource."""
-        domain_id = domain_ids_map.get(resource)
-        agent_id = agent_ids.get(resource)
-        return domain_id is not None and agent_id is not None
-
     # Per-resource show_ai_generate flags
-    name_show_ai_generate = compute_show_ai_generate("names")
-    description_show_ai_generate = compute_show_ai_generate("descriptions")
-    color_show_ai_generate = compute_show_ai_generate("colors")
-    icon_show_ai_generate = compute_show_ai_generate("icons")
-    instructions_show_ai_generate = compute_show_ai_generate("instructions")
-    flag_show_ai_generate = compute_show_ai_generate("flags")
-    departments_show_ai_generate = compute_show_ai_generate("departments")
-    parameter_fields_show_ai_generate = compute_show_ai_generate("parameter_fields")
-    examples_show_ai_generate = compute_show_ai_generate("examples")
-    parameters_show_ai_generate = compute_show_ai_generate("parameters")
+    name_show_ai_generate = compute_show_ai_generate(agent_ids, "names")
+    description_show_ai_generate = compute_show_ai_generate(agent_ids, "descriptions")
+    color_show_ai_generate = compute_show_ai_generate(agent_ids, "colors")
+    icon_show_ai_generate = compute_show_ai_generate(agent_ids, "icons")
+    instructions_show_ai_generate = compute_show_ai_generate(agent_ids, "instructions")
+    flag_show_ai_generate = compute_show_ai_generate(agent_ids, "flags")
+    departments_show_ai_generate = compute_show_ai_generate(agent_ids, "departments")
+    parameter_fields_show_ai_generate = compute_show_ai_generate(agent_ids, "parameter_fields")
+    examples_show_ai_generate = compute_show_ai_generate(agent_ids, "examples")
+    parameters_show_ai_generate = compute_show_ai_generate(agent_ids, "parameters")
 
     # Step-level show_ai_generate flags
     basic_show_ai_generate = any(
@@ -743,11 +684,6 @@ async def get_persona_internal(
         "parameters": compute_parameters_required(),
     }
 
-    # Build rich domain metadata for client display
-    domain_data_list = build_domain_data(
-        domain_ids_map, show_flags_map, required_flags_map
-    )
-
     # Transform flags to enriched format for client
     persona_flags = [
         PersonaFlagConfig(
@@ -758,7 +694,6 @@ async def get_persona_internal(
             flag_option_id=flag.id,
             show=show_flag,
             required=compute_flag_required(),
-            domain_id=domain_ids_map.get("flags"),
             generated=flag.generated,
         )
         for flag in flags
@@ -808,18 +743,6 @@ async def get_persona_internal(
         ),
     )
 
-    # Build domains list for WebSocket handler (includes group_id for each domain)
-    domains_list: list[DomainAgent] = []
-    for resource, domain_id in domain_ids_map.items():
-        if domain_id is not None:
-            domains_list.append(
-                DomainAgent(
-                    domain_id=domain_id,
-                    agent_id=agent_ids.get(resource),
-                    group_id=resource_group_ids.get(resource),
-                )
-            )
-
     # Build show_ai_generate map
     show_ai_generate_map = {
         "names": name_show_ai_generate,
@@ -855,10 +778,8 @@ async def get_persona_internal(
         disabled_reason=disabled_reason,
         draft_version=effective_draft_version,
         group_id=effective_group_id,
-        # Domain mappings
-        domain_ids_map=domain_ids_map,
+        # Agent mappings
         agent_ids=agent_ids,
-        domains_list=domains_list,
         # Show/required flags
         show_flags_map=show_flags_map,
         required_flags_map=required_flags_map,
@@ -869,8 +790,7 @@ async def get_persona_internal(
         basic_show_ai_generate=basic_show_ai_generate,
         content_show_ai_generate=content_show_ai_generate,
         parameters_step_show_ai_generate=parameters_step_show_ai_generate,
-        # Domain data and resources
-        domain_data_list=domain_data_list,
+        # Resources
         resources_payload=resources_payload,
         # Per-resource group IDs
         resource_group_ids=resource_group_ids,
@@ -889,9 +809,8 @@ async def get_persona_websocket(
     """Minimal response for WebSocket handlers.
 
     Returns only what's needed for AI generation:
-    - Domain IDs (for domain_to_resource mapping)
-    - Domains list (for agent_id lookup)
-    - Group ID (for existing group context)
+    - Resource-to-agent mapping (for agent_id lookup by resource type)
+    - Per-resource group IDs (for existing group context)
     - Resources (for Jinja template context)
     """
     data = await get_persona_internal(
@@ -902,20 +821,10 @@ async def get_persona_websocket(
     )
 
     return GetPersonaWebsocketResponse(
-        group_id=data.group_id,
-        # Domain IDs for domain_to_resource mapping
-        name_domain_id=data.domain_ids_map.get("names"),
-        description_domain_id=data.domain_ids_map.get("descriptions"),
-        color_domain_id=data.domain_ids_map.get("colors"),
-        icon_domain_id=data.domain_ids_map.get("icons"),
-        instructions_domain_id=data.domain_ids_map.get("instructions"),
-        flag_domain_id=data.domain_ids_map.get("flags"),
-        departments_domain_id=data.domain_ids_map.get("departments"),
-        parameter_fields_domain_id=data.domain_ids_map.get("parameter_fields"),
-        examples_domain_id=data.domain_ids_map.get("examples"),
-        parameters_domain_id=data.domain_ids_map.get("parameters"),
-        # Domains mapping for agent lookup
-        domains=data.domains_list,
+        # Resource type -> agent_id mapping
+        resource_agent_ids=data.agent_ids,
+        # Per-resource group IDs
+        resource_group_ids=data.resource_group_ids,
         # Resources for Jinja context
         resources=data.resources_payload,
     )
@@ -940,126 +849,110 @@ async def get_persona_client(
         bypass_cache=bypass_cache,
     )
 
+    all_resources = data.resources_payload.resources
+    current = data.resources_payload.current
+
+    def _section_common(resource_key: str) -> dict:
+        return {
+            "show": data.show_flags_map.get(resource_key, False),
+            "required": data.required_flags_map.get(resource_key, False),
+            "suggestions": data.suggestions_map.get(resource_key),
+            "show_ai_generate": data.show_ai_generate_map.get(resource_key, False),
+            "group_id": data.resource_group_ids.get(resource_key),
+            "create_tool_id": data.create_tool_ids_map.get(resource_key),
+            "link_tool_id": data.link_tool_ids_map.get(resource_key),
+        }
+
     return GetPersonaApiResponse(
-        # Required fields
+        # Context
         actor_name=data.actor_name,
         persona_exists=data.persona_exists,
         can_edit=data.can_edit,
         disabled_reason=data.disabled_reason,
         draft_version=data.draft_version,
-        group_id=data.group_id,
-        # Per-resource group IDs (from draft MV)
-        names_group_id=data.resource_group_ids.get("names"),
-        descriptions_group_id=data.resource_group_ids.get("descriptions"),
-        colors_group_id=data.resource_group_ids.get("colors"),
-        icons_group_id=data.resource_group_ids.get("icons"),
-        instructions_group_id=data.resource_group_ids.get("instructions"),
-        flags_group_id=data.resource_group_ids.get("flags"),
-        departments_group_id=data.resource_group_ids.get("departments"),
-        parameter_fields_group_id=data.resource_group_ids.get("parameter_fields"),
-        examples_group_id=data.resource_group_ids.get("examples"),
-        parameters_group_id=data.resource_group_ids.get("parameters"),
-        # Name
-        show_name=data.show_flags_map.get("names"),
-        name_domain_id=data.domain_ids_map.get("names"),
-        name_required=data.required_flags_map.get("names"),
-        name_suggestions=data.suggestions_map.get("names"),
-        name_show_ai_generate=data.show_ai_generate_map.get("names"),
-        # Description
-        show_description=data.show_flags_map.get("descriptions"),
-        description_domain_id=data.domain_ids_map.get("descriptions"),
-        description_required=data.required_flags_map.get("descriptions"),
-        description_suggestions=data.suggestions_map.get("descriptions"),
-        description_show_ai_generate=data.show_ai_generate_map.get("descriptions"),
-        # Color
-        show_color=data.show_flags_map.get("colors"),
-        color_domain_id=data.domain_ids_map.get("colors"),
-        color_required=data.required_flags_map.get("colors"),
-        color_suggestions=data.suggestions_map.get("colors"),
-        color_show_ai_generate=data.show_ai_generate_map.get("colors"),
-        # Icon
-        show_icon=data.show_flags_map.get("icons"),
-        icon_domain_id=data.domain_ids_map.get("icons"),
-        icon_required=data.required_flags_map.get("icons"),
-        icon_suggestions=data.suggestions_map.get("icons"),
-        icon_show_ai_generate=data.show_ai_generate_map.get("icons"),
-        # Instructions
-        show_instructions=data.show_flags_map.get("instructions"),
-        instructions_domain_id=data.domain_ids_map.get("instructions"),
-        instructions_required=data.required_flags_map.get("instructions"),
-        instructions_suggestions=data.suggestions_map.get("instructions"),
-        instructions_show_ai_generate=data.show_ai_generate_map.get("instructions"),
-        # Flag
-        show_flag=data.show_flags_map.get("flags"),
-        flag_domain_id=data.domain_ids_map.get("flags"),
-        flag_required=data.required_flags_map.get("flags"),
-        flag_show_ai_generate=data.show_ai_generate_map.get("flags"),
-        # Departments
-        show_departments=data.show_flags_map.get("departments"),
-        departments_domain_id=data.domain_ids_map.get("departments"),
-        departments_required=data.required_flags_map.get("departments"),
-        department_suggestions=data.suggestions_map.get("departments"),
-        departments_show_ai_generate=data.show_ai_generate_map.get("departments"),
-        # Parameter Fields
-        show_parameter_fields=data.show_flags_map.get("parameter_fields"),
-        parameter_fields_domain_id=data.domain_ids_map.get("parameter_fields"),
-        parameter_fields_required=data.required_flags_map.get("parameter_fields"),
-        parameter_field_suggestions=data.suggestions_map.get("parameter_fields"),
-        parameter_fields_show_ai_generate=data.show_ai_generate_map.get(
-            "parameter_fields"
-        ),
-        # Examples
-        show_examples=data.show_flags_map.get("examples"),
-        examples_domain_id=data.domain_ids_map.get("examples"),
-        examples_required=data.required_flags_map.get("examples"),
-        example_suggestions=data.suggestions_map.get("examples"),
-        examples_show_ai_generate=data.show_ai_generate_map.get("examples"),
-        # Parameters
-        show_parameters=data.show_flags_map.get("parameters"),
-        parameters_domain_id=data.domain_ids_map.get("parameters"),
-        parameters_required=data.required_flags_map.get("parameters"),
-        parameter_suggestions=data.suggestions_map.get("parameters"),
-        parameters_show_ai_generate=data.show_ai_generate_map.get("parameters"),
         # Step-level AI generation flags
         basic_show_ai_generate=data.basic_show_ai_generate,
         content_show_ai_generate=data.content_show_ai_generate,
         parameters_step_show_ai_generate=data.parameters_step_show_ai_generate,
-        # Domain metadata for client display in modals
-        domain_data=data.domain_data_list,
-        # Resources
-        resources=data.resources_payload,
-        # Per-resource CREATE tool IDs (only for resources with actual create tools)
-        name_create_tool_id=data.create_tool_ids_map.get("names"),
-        description_create_tool_id=data.create_tool_ids_map.get("descriptions"),
-        color_create_tool_id=data.create_tool_ids_map.get("colors"),
-        instructions_create_tool_id=data.create_tool_ids_map.get("instructions"),
-        parameter_fields_create_tool_id=data.create_tool_ids_map.get(
-            "parameter_fields"
+        # Per-resource sections
+        names=PersonaNameSection(
+            **_section_common("names"),
+            resource=(
+                current.names[0]
+                if current and current.names
+                else None
+            ),
+            resources=all_resources.names if all_resources else [],
         ),
-        examples_create_tool_id=data.create_tool_ids_map.get("examples"),
-        # Per-resource LINK tool IDs
-        name_link_tool_id=data.link_tool_ids_map.get("names"),
-        description_link_tool_id=data.link_tool_ids_map.get("descriptions"),
-        color_link_tool_id=data.link_tool_ids_map.get("colors"),
-        icon_link_tool_id=data.link_tool_ids_map.get("icons"),
-        instructions_link_tool_id=data.link_tool_ids_map.get("instructions"),
-        flag_link_tool_id=data.link_tool_ids_map.get("flags"),
-        departments_link_tool_id=data.link_tool_ids_map.get("departments"),
-        parameter_fields_link_tool_id=data.link_tool_ids_map.get("parameter_fields"),
-        examples_link_tool_id=data.link_tool_ids_map.get("examples"),
-        parameters_link_tool_id=data.link_tool_ids_map.get("parameters"),
+        descriptions=PersonaDescriptionSection(
+            **_section_common("descriptions"),
+            resource=(
+                current.descriptions[0]
+                if current and current.descriptions
+                else None
+            ),
+            resources=all_resources.descriptions if all_resources else [],
+        ),
+        colors=PersonaColorSection(
+            **_section_common("colors"),
+            resource=(
+                current.colors[0]
+                if current and current.colors
+                else None
+            ),
+            resources=all_resources.colors if all_resources else [],
+        ),
+        icons=PersonaIconSection(
+            **_section_common("icons"),
+            resource=(
+                current.icons[0]
+                if current and current.icons
+                else None
+            ),
+            resources=all_resources.icons if all_resources else [],
+        ),
+        instructions=PersonaInstructionSection(
+            **_section_common("instructions"),
+            resource=(
+                current.instructions[0]
+                if current and current.instructions
+                else None
+            ),
+            resources=all_resources.instructions if all_resources else [],
+        ),
+        flags=PersonaFlagSection(
+            **_section_common("flags"),
+            current=(
+                current.flags[0]
+                if current and current.flags
+                else None
+            ),
+            resources=all_resources.flags if all_resources else [],
+        ),
+        departments=PersonaDepartmentSection(
+            **_section_common("departments"),
+            current=current.departments if current else [],
+            resources=all_resources.departments if all_resources else [],
+        ),
+        parameter_fields=PersonaParameterFieldSection(
+            **_section_common("parameter_fields"),
+            current=current.parameter_fields if current else [],
+            resources=(
+                all_resources.parameter_fields if all_resources else []
+            ),
+        ),
+        examples=PersonaExampleSection(
+            **_section_common("examples"),
+            current=current.examples if current else [],
+            resources=all_resources.examples if all_resources else [],
+        ),
+        parameters=PersonaParameterSection(
+            **_section_common("parameters"),
+            current=current.parameters if current else [],
+            resources=all_resources.parameters if all_resources else [],
+        ),
     )
 
-
-def derive_flag_key_and_label(name: str | None) -> tuple[str, str]:
-    """Derive key and label from flag name like 'persona_active' -> ('active', 'Active')"""
-    if not name:
-        return ("unknown", "Unknown")
-    # Remove artifact prefix (e.g., 'persona_active' -> 'active')
-    key = name.replace("persona_", "")
-    # Title case for label
-    label = key.replace("_", " ").title()
-    return (key, label)
 
 
 def _dedupe_by_id(items: list[Any], id_attr: str) -> list[Any]:
@@ -1124,11 +1017,8 @@ async def get_persona(
                 "actor": {"name": response_data.actor_name, "id": profile_id}
             }
             current_name = None
-            current_resources = (
-                response_data.resources.current if response_data.resources else None
-            )
-            if current_resources and current_resources.names:
-                current_name = getattr(current_resources.names[0], "name", None)
+            if response_data.names and response_data.names.resource:
+                current_name = getattr(response_data.names.resource, "name", None)
             if request.persona_id and current_name:
                 audit_ctx["persona"] = {
                     "name": current_name,

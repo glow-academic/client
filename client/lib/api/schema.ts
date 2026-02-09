@@ -17751,167 +17751,22 @@ export interface components {
             disabled_reason?: string | null;
             /** Draft Version */
             draft_version?: number | null;
-            /** Group Id */
-            group_id?: string | null;
-            /** Names Group Id */
-            names_group_id?: string | null;
-            /** Descriptions Group Id */
-            descriptions_group_id?: string | null;
-            /** Colors Group Id */
-            colors_group_id?: string | null;
-            /** Icons Group Id */
-            icons_group_id?: string | null;
-            /** Instructions Group Id */
-            instructions_group_id?: string | null;
-            /** Flags Group Id */
-            flags_group_id?: string | null;
-            /** Departments Group Id */
-            departments_group_id?: string | null;
-            /** Parameter Fields Group Id */
-            parameter_fields_group_id?: string | null;
-            /** Examples Group Id */
-            examples_group_id?: string | null;
-            /** Parameters Group Id */
-            parameters_group_id?: string | null;
-            /** Show Name */
-            show_name?: boolean | null;
-            /** Name Domain Id */
-            name_domain_id?: string | null;
-            /** Name Required */
-            name_required?: boolean | null;
-            /** Name Suggestions */
-            name_suggestions?: string[] | null;
-            /** Name Show Ai Generate */
-            name_show_ai_generate?: boolean | null;
-            /** Show Description */
-            show_description?: boolean | null;
-            /** Description Domain Id */
-            description_domain_id?: string | null;
-            /** Description Required */
-            description_required?: boolean | null;
-            /** Description Suggestions */
-            description_suggestions?: string[] | null;
-            /** Description Show Ai Generate */
-            description_show_ai_generate?: boolean | null;
-            /** Show Color */
-            show_color?: boolean | null;
-            /** Color Domain Id */
-            color_domain_id?: string | null;
-            /** Color Required */
-            color_required?: boolean | null;
-            /** Color Suggestions */
-            color_suggestions?: string[] | null;
-            /** Color Show Ai Generate */
-            color_show_ai_generate?: boolean | null;
-            /** Show Icon */
-            show_icon?: boolean | null;
-            /** Icon Domain Id */
-            icon_domain_id?: string | null;
-            /** Icon Required */
-            icon_required?: boolean | null;
-            /** Icon Suggestions */
-            icon_suggestions?: string[] | null;
-            /** Icon Show Ai Generate */
-            icon_show_ai_generate?: boolean | null;
-            /** Show Instructions */
-            show_instructions?: boolean | null;
-            /** Instructions Domain Id */
-            instructions_domain_id?: string | null;
-            /** Instructions Required */
-            instructions_required?: boolean | null;
-            /** Instructions Suggestions */
-            instructions_suggestions?: string[] | null;
-            /** Instructions Show Ai Generate */
-            instructions_show_ai_generate?: boolean | null;
-            /** Show Flag */
-            show_flag?: boolean | null;
-            /** Flag Domain Id */
-            flag_domain_id?: string | null;
-            /** Flag Required */
-            flag_required?: boolean | null;
-            /** Flag Show Ai Generate */
-            flag_show_ai_generate?: boolean | null;
-            /** Show Departments */
-            show_departments?: boolean | null;
-            /** Departments Domain Id */
-            departments_domain_id?: string | null;
-            /** Departments Required */
-            departments_required?: boolean | null;
-            /** Department Suggestions */
-            department_suggestions?: string[] | null;
-            /** Departments Show Ai Generate */
-            departments_show_ai_generate?: boolean | null;
-            /** Show Parameter Fields */
-            show_parameter_fields?: boolean | null;
-            /** Parameter Fields Domain Id */
-            parameter_fields_domain_id?: string | null;
-            /** Parameter Fields Required */
-            parameter_fields_required?: boolean | null;
-            /** Parameter Field Suggestions */
-            parameter_field_suggestions?: string[] | null;
-            /** Parameter Fields Show Ai Generate */
-            parameter_fields_show_ai_generate?: boolean | null;
-            /** Show Examples */
-            show_examples?: boolean | null;
-            /** Examples Domain Id */
-            examples_domain_id?: string | null;
-            /** Examples Required */
-            examples_required?: boolean | null;
-            /** Example Suggestions */
-            example_suggestions?: string[] | null;
-            /** Examples Show Ai Generate */
-            examples_show_ai_generate?: boolean | null;
-            /** Show Parameters */
-            show_parameters?: boolean | null;
-            /** Parameters Domain Id */
-            parameters_domain_id?: string | null;
-            /** Parameters Required */
-            parameters_required?: boolean | null;
-            /** Parameter Suggestions */
-            parameter_suggestions?: string[] | null;
-            /** Parameters Show Ai Generate */
-            parameters_show_ai_generate?: boolean | null;
             /** Basic Show Ai Generate */
             basic_show_ai_generate?: boolean | null;
             /** Content Show Ai Generate */
             content_show_ai_generate?: boolean | null;
             /** Parameters Step Show Ai Generate */
             parameters_step_show_ai_generate?: boolean | null;
-            /** Name Create Tool Id */
-            name_create_tool_id?: string | null;
-            /** Description Create Tool Id */
-            description_create_tool_id?: string | null;
-            /** Color Create Tool Id */
-            color_create_tool_id?: string | null;
-            /** Instructions Create Tool Id */
-            instructions_create_tool_id?: string | null;
-            /** Parameter Fields Create Tool Id */
-            parameter_fields_create_tool_id?: string | null;
-            /** Examples Create Tool Id */
-            examples_create_tool_id?: string | null;
-            /** Name Link Tool Id */
-            name_link_tool_id?: string | null;
-            /** Description Link Tool Id */
-            description_link_tool_id?: string | null;
-            /** Color Link Tool Id */
-            color_link_tool_id?: string | null;
-            /** Icon Link Tool Id */
-            icon_link_tool_id?: string | null;
-            /** Instructions Link Tool Id */
-            instructions_link_tool_id?: string | null;
-            /** Flag Link Tool Id */
-            flag_link_tool_id?: string | null;
-            /** Departments Link Tool Id */
-            departments_link_tool_id?: string | null;
-            /** Parameter Fields Link Tool Id */
-            parameter_fields_link_tool_id?: string | null;
-            /** Examples Link Tool Id */
-            examples_link_tool_id?: string | null;
-            /** Parameters Link Tool Id */
-            parameters_link_tool_id?: string | null;
-            /** Domain Data */
-            domain_data?: components["schemas"]["DomainData"][] | null;
-            resources?: components["schemas"]["PersonaResources"] | null;
+            names?: components["schemas"]["PersonaNameSection"] | null;
+            descriptions?: components["schemas"]["PersonaDescriptionSection"] | null;
+            colors?: components["schemas"]["PersonaColorSection"] | null;
+            icons?: components["schemas"]["PersonaIconSection"] | null;
+            instructions?: components["schemas"]["PersonaInstructionSection"] | null;
+            flags?: components["schemas"]["PersonaFlagSection"] | null;
+            departments?: components["schemas"]["PersonaDepartmentSection"] | null;
+            parameter_fields?: components["schemas"]["PersonaParameterFieldSection"] | null;
+            examples?: components["schemas"]["PersonaExampleSection"] | null;
+            parameters?: components["schemas"]["PersonaParameterSection"] | null;
         };
         /** GetPersonaResourceApiRequest */
         GetPersonaResourceApiRequest: {
@@ -23764,6 +23619,94 @@ export interface components {
             /** Color */
             color?: string | null;
         };
+        /** PersonaColorSection */
+        PersonaColorSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Group Id */
+            group_id?: string | null;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            resource?: components["schemas"]["QGetColorsV4Item"] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetColorsV4Item"][] | null;
+        };
+        /** PersonaDepartmentSection */
+        PersonaDepartmentSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Group Id */
+            group_id?: string | null;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
+        };
+        /** PersonaDescriptionSection */
+        PersonaDescriptionSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Group Id */
+            group_id?: string | null;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            resource?: components["schemas"]["QGetDescriptionsV4Item"] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetDescriptionsV4Item"][] | null;
+        };
         /**
          * PersonaEntry
          * @description Persona entry for lookup.
@@ -23781,6 +23724,36 @@ export interface components {
             instructions?: string | null;
             /** Examples */
             examples?: string[] | null;
+        };
+        /** PersonaExampleSection */
+        PersonaExampleSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Group Id */
+            group_id?: string | null;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["QGetExamplesV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetExamplesV4Item"][] | null;
         };
         /**
          * PersonaFlagConfig
@@ -23807,10 +23780,37 @@ export interface components {
              * @default false
              */
             required: boolean;
-            /** Domain Id */
-            domain_id?: string | null;
             /** Generated */
             generated?: boolean | null;
+        };
+        /** PersonaFlagSection */
+        PersonaFlagSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Group Id */
+            group_id?: string | null;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            current?: components["schemas"]["PersonaFlagConfig"] | null;
+            /** Resources */
+            resources?: components["schemas"]["PersonaFlagConfig"][] | null;
         };
         /**
          * PersonaGenerationCompleteEvent
@@ -23923,39 +23923,152 @@ export interface components {
             /** Trace Id */
             trace_id?: string | null;
         };
-        /**
-         * PersonaResourceBucket
-         * @description Generic resources bucket with full objects (always plural lists).
-         */
-        PersonaResourceBucket: {
-            /** Names */
-            names?: components["schemas"]["QGetNamesV4Item"][] | null;
-            /** Descriptions */
-            descriptions?: components["schemas"]["QGetDescriptionsV4Item"][] | null;
-            /** Colors */
-            colors?: components["schemas"]["QGetColorsV4Item"][] | null;
-            /** Icons */
-            icons?: components["schemas"]["QGetIconsV4Item"][] | null;
-            /** Instructions */
-            instructions?: components["schemas"]["QGetInstructionsV4Item"][] | null;
-            /** Flags */
-            flags?: components["schemas"]["PersonaFlagConfig"][] | null;
-            /** Departments */
-            departments?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
-            /** Parameter Fields */
-            parameter_fields?: components["schemas"]["QGetParameterFieldsV4Item"][] | null;
-            /** Examples */
-            examples?: components["schemas"]["QGetExamplesV4Item"][] | null;
-            /** Parameters */
-            parameters?: components["schemas"]["QGetParametersV4Item"][] | null;
+        /** PersonaIconSection */
+        PersonaIconSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Group Id */
+            group_id?: string | null;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            resource?: components["schemas"]["QGetIconsV4Item"] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetIconsV4Item"][] | null;
         };
-        /**
-         * PersonaResources
-         * @description Full resources + current selections.
-         */
-        PersonaResources: {
-            resources?: components["schemas"]["PersonaResourceBucket"] | null;
-            current?: components["schemas"]["PersonaResourceBucket"] | null;
+        /** PersonaInstructionSection */
+        PersonaInstructionSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Group Id */
+            group_id?: string | null;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            resource?: components["schemas"]["QGetInstructionsV4Item"] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetInstructionsV4Item"][] | null;
+        };
+        /** PersonaNameSection */
+        PersonaNameSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Group Id */
+            group_id?: string | null;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            resource?: components["schemas"]["QGetNamesV4Item"] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetNamesV4Item"][] | null;
+        };
+        /** PersonaParameterFieldSection */
+        PersonaParameterFieldSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Group Id */
+            group_id?: string | null;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["QGetParameterFieldsV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetParameterFieldsV4Item"][] | null;
+        };
+        /** PersonaParameterSection */
+        PersonaParameterSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Group Id */
+            group_id?: string | null;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["QGetParametersV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetParametersV4Item"][] | null;
         };
         /** PersonaTrendPoint */
         PersonaTrendPoint: {
@@ -28372,13 +28485,28 @@ export interface components {
          * @description Request model for save persona endpoint - accepts form data directly (no draft_id).
          */
         SavePersonaApiRequest: {
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
             /** Input Persona Id */
             input_persona_id?: string | null;
+            /** Names Group Id */
+            names_group_id?: string | null;
+            /** Descriptions Group Id */
+            descriptions_group_id?: string | null;
+            /** Colors Group Id */
+            colors_group_id?: string | null;
+            /** Icons Group Id */
+            icons_group_id?: string | null;
+            /** Instructions Group Id */
+            instructions_group_id?: string | null;
+            /** Flags Group Id */
+            flags_group_id?: string | null;
+            /** Departments Group Id */
+            departments_group_id?: string | null;
+            /** Parameter Fields Group Id */
+            parameter_fields_group_id?: string | null;
+            /** Examples Group Id */
+            examples_group_id?: string | null;
+            /** Parameters Group Id */
+            parameters_group_id?: string | null;
             /**
              * Name Id
              * Format: uuid

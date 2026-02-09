@@ -5,8 +5,6 @@ Types are registered in OpenAPI via FastAPI endpoints, enabling
 automatic type extraction in the frontend via InputOf/OutputOf.
 """
 
-from uuid import UUID
-
 from app.api.v4.artifacts.persona.types import GetPersonaApiRequest
 from app.socket.v4.artifacts.types import (
     GenerationCompleteEvent,
@@ -38,14 +36,14 @@ class GeneratePersonaPayload(GetPersonaApiRequest):
     with generation-specific fields and form state.
     """
 
-    # Generation-specific fields - domain-based API
-    domain_ids: list[
-        UUID
-    ]  # Required: which domains to generate (client passes these through)
+    # Generation-specific fields - resource-type-based API
+    resource_types: list[
+        str
+    ]  # Required: which resource types to generate (e.g. ["names", "descriptions"])
     user_instructions: list[str] | None = None  # Optional: user instructions
 
     # Note: current selections are derived from draft-backed API response.
-    # The server looks up agent_ids and group_ids from the domains mapping in get_persona_internal().
+    # The server resolves domain_ids and agent_ids internally from the resource_types.
 
 
 # =============================================================================

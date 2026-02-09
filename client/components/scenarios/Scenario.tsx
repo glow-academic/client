@@ -21,7 +21,6 @@ import {
   type StepStatus,
 } from "@/components/common/forms/GenericForm";
 import { StepCard } from "@/components/common/forms/StepCard";
-import type { GenerateRegenerateModalResource } from "@/components/common/GenerateRegenerateModal";
 import { GenerateRegenerateModal } from "@/components/common/GenerateRegenerateModal";
 import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
 import { Departments } from "@/components/resources/Departments";
@@ -48,6 +47,11 @@ import {
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useSaveContext } from "@/contexts/save-context";
+import { useAiGeneration } from "@/hooks/use-ai-generation";
+import { useConditionalParameterToggle } from "@/hooks/use-conditional-parameter-toggle";
+import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
+import { useFlushRegistry } from "@/hooks/use-flush-registry";
+import { useGenerationModal } from "@/hooks/use-generation-modal";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { ServerToClientEvents } from "@/lib/ws/types";
 import { Sparkles } from "lucide-react";
@@ -144,6 +148,38 @@ type ScenarioFormState = {
   question_ids: string[];
 };
 
+// Type for flush results - each resource returns its created ID(s)
+type FlushResult = {
+  name_id?: string | null;
+  description_id?: string | null;
+  problem_statement_id?: string | null;
+  objective_ids?: string[];
+  template_ids?: string[];
+  image_ids?: string[];
+  video_ids?: string[];
+  question_ids?: string[];
+  parameter_field_ids?: string[];
+};
+
+// AI form data shape for scenario generation
+type ScenarioAiFormData = {
+  name_resource?: ScenarioGenerationCompletePayload["name_resource"];
+  description_resource?: ScenarioGenerationCompletePayload["description_resource"];
+  problem_statement_resource?: ScenarioGenerationCompletePayload["problem_statement_resource"];
+  department_resources?: ScenarioGenerationCompletePayload["department_resources"];
+  persona_resources?: ScenarioGenerationCompletePayload["persona_resources"];
+  document_resources?: ScenarioGenerationCompletePayload["document_resources"];
+  template_resources?: ScenarioGenerationCompletePayload["template_resources"];
+  objective_resources?: ScenarioGenerationCompletePayload["objective_resources"];
+  question_resources?: ScenarioGenerationCompletePayload["question_resources"];
+  image_resources?: ScenarioGenerationCompletePayload["image_resources"];
+  video_resources?: ScenarioGenerationCompletePayload["video_resources"];
+  parameter_resources?: ScenarioGenerationCompletePayload["parameter_resources"];
+  parameter_field_resources?: ScenarioGenerationCompletePayload["parameter_field_resources"];
+  // Flags use a different structure for AI suggestions (id + key)
+  flag_resources?: Array<{ id?: string | null; key?: string | null }>;
+};
+
 export interface ScenarioProps {
   scenarioId?: string;
   // Server-provided data (for server-side rendering)
@@ -184,6 +220,35 @@ export interface ScenarioProps {
   ) => Promise<CreateDraftQuestionsOut>;
 }
 
+const FLUSH_KEYS = [
+  "names",
+  "descriptions",
+  "problem_statements",
+  "objectives",
+  "templates",
+  "images",
+  "videos",
+  "questions",
+  "parameter_fields",
+];
+
+const VALID_RESOURCE_TYPES: ScenarioResourceType[] = [
+  "names",
+  "descriptions",
+  "problem_statements",
+  "objectives",
+  "scenario_flags",
+  "departments",
+  "personas",
+  "documents",
+  "templates",
+  "parameters",
+  "parameter_fields",
+  "images",
+  "videos",
+  "questions",
+];
+
 function ScenarioComponent({
   scenarioId,
   scenarioDetailDefault: serverScenarioDetailDefault,
@@ -211,116 +276,52 @@ function ScenarioComponent({
     ? serverScenarioDetail
     : serverScenarioDetailDefault;
 
-  // Generation state for AI workflows
-  const [generatingResources, setGeneratingResources] = useState<
-    Set<ScenarioResourceType>
-  >(new Set());
+  // --- Flush Registry ---
+  const { flushRegistryRef, registerFlushCallbacks, flushAllResources } =
+    useFlushRegistry<FlushResult>(FLUSH_KEYS);
 
-  // Modal state for generate/regenerate
-  const [showGenerateModal, setShowGenerateModal] = useState(false);
-  const [modalMode, setModalMode] = useState<"generate" | "regenerate" | null>(
-    null
-  );
-  const [modalResources, setModalResources] = useState<
-    GenerateRegenerateModalResource[]
-  >([]);
-  const [modalInstructions, setModalInstructions] = useState("");
+  // --- AI Generation ---
+  const onAiComplete = useCallback(
+    (data: Record<string, unknown>) => {
+      const aiUpdates: Partial<ScenarioAiFormData> = {};
+      if (data["name_resource"]) aiUpdates.name_resource = data["name_resource"] as ScenarioAiFormData["name_resource"];
+      if (data["description_resource"]) aiUpdates.description_resource = data["description_resource"] as ScenarioAiFormData["description_resource"];
+      if (data["problem_statement_resource"]) aiUpdates.problem_statement_resource = data["problem_statement_resource"] as ScenarioAiFormData["problem_statement_resource"];
+      if (data["department_resources"]) aiUpdates.department_resources = data["department_resources"] as ScenarioAiFormData["department_resources"];
+      if (data["persona_resources"]) aiUpdates.persona_resources = data["persona_resources"] as ScenarioAiFormData["persona_resources"];
+      if (data["document_resources"]) aiUpdates.document_resources = data["document_resources"] as ScenarioAiFormData["document_resources"];
+      if (data["template_resources"]) aiUpdates.template_resources = data["template_resources"] as ScenarioAiFormData["template_resources"];
+      if (data["objective_resources"]) aiUpdates.objective_resources = data["objective_resources"] as ScenarioAiFormData["objective_resources"];
+      if (data["question_resources"]) aiUpdates.question_resources = data["question_resources"] as ScenarioAiFormData["question_resources"];
+      if (data["image_resources"]) aiUpdates.image_resources = data["image_resources"] as ScenarioAiFormData["image_resources"];
+      if (data["video_resources"]) aiUpdates.video_resources = data["video_resources"] as ScenarioAiFormData["video_resources"];
+      if (data["parameter_resources"]) aiUpdates.parameter_resources = data["parameter_resources"] as ScenarioAiFormData["parameter_resources"];
+      if (data["parameter_field_resources"]) aiUpdates.parameter_field_resources = data["parameter_field_resources"] as ScenarioAiFormData["parameter_field_resources"];
 
-  // AI-generated pending suggestions state - stores AI suggestions before user accepts/rejects
-  // Uses server-generated types for full resource objects
-  const [aiFormData, setAiFormData] = useState<{
-    name_resource?: ScenarioGenerationCompletePayload["name_resource"];
-    description_resource?: ScenarioGenerationCompletePayload["description_resource"];
-    problem_statement_resource?: ScenarioGenerationCompletePayload["problem_statement_resource"];
-    department_resources?: ScenarioGenerationCompletePayload["department_resources"];
-    persona_resources?: ScenarioGenerationCompletePayload["persona_resources"];
-    document_resources?: ScenarioGenerationCompletePayload["document_resources"];
-    template_resources?: ScenarioGenerationCompletePayload["template_resources"];
-    objective_resources?: ScenarioGenerationCompletePayload["objective_resources"];
-    question_resources?: ScenarioGenerationCompletePayload["question_resources"];
-    image_resources?: ScenarioGenerationCompletePayload["image_resources"];
-    video_resources?: ScenarioGenerationCompletePayload["video_resources"];
-    parameter_resources?: ScenarioGenerationCompletePayload["parameter_resources"];
-    parameter_field_resources?: ScenarioGenerationCompletePayload["parameter_field_resources"];
-    // Flags use a different structure for AI suggestions (id + key)
-    flag_resources?: Array<{ id?: string | null; key?: string | null }>;
-  }>({});
+      // Only name_resource auto-accepts (names are auto-applied without user confirmation)
+      const formStateUpdates: Record<string, unknown> = {};
+      const nameRes = data["name_resource"] as { id?: string } | undefined;
+      if (nameRes?.id) formStateUpdates["name_id"] = String(nameRes.id);
 
-  // Clear a pending AI resource suggestion
-  // Note: We explicitly set to undefined instead of using delete to ensure
-  // React properly detects the state change and triggers re-renders
-  const clearAiResource = useCallback((key: keyof typeof aiFormData) => {
-    setAiFormData((prev) => ({
-      ...prev,
-      [key]: undefined,
-    }));
-  }, []);
-
-  const isGenerating = useCallback(
-    (resourceType: ScenarioResourceType) =>
-      generatingResources.has(resourceType),
-    [generatingResources]
+      return { aiUpdates, formStateUpdates };
+    },
+    []
   );
 
-  // Type for flush results - each resource returns its created ID(s)
-  type FlushResult = {
-    name_id?: string | null;
-    description_id?: string | null;
-    problem_statement_id?: string | null;
-    objective_ids?: string[];
-    template_ids?: string[];
-    image_ids?: string[];
-    video_ids?: string[];
-    question_ids?: string[];
-    parameter_field_ids?: string[];
-  };
-
-  // Registry of flush callbacks from creatable resource components
-  const flushRegistryRef = useRef<
-    Map<string, () => Promise<FlushResult | void>>
-  >(new Map());
-
-  // Create stable registerFlush callback
-  const createRegisterFlush = useCallback((key: string) => {
-    return (flush: () => Promise<FlushResult | void>) => {
-      flushRegistryRef.current.set(key, flush);
-    };
-  }, []);
-
-  // Memoize registerFlush callbacks to prevent re-renders
-  const registerFlushCallbacks = useMemo(
-    () => ({
-      names: createRegisterFlush("names"),
-      descriptions: createRegisterFlush("descriptions"),
-      problem_statements: createRegisterFlush("problem_statements"),
-      objectives: createRegisterFlush("objectives"),
-      templates: createRegisterFlush("templates"),
-      images: createRegisterFlush("images"),
-      videos: createRegisterFlush("videos"),
-      questions: createRegisterFlush("questions"),
-      parameter_fields: createRegisterFlush("parameter_fields"),
-    }),
-    [createRegisterFlush]
-  );
-
-  // Set breadcrumb context when scenario data is loaded in edit mode
-  useEffect(() => {
-    const scenarioName = scenarioData?.name_resource?.name;
-    if (scenarioName && scenarioId && isEditMode) {
-      setEntityMetadata({
-        entityId: scenarioId,
-        entityName: scenarioName,
-        entityType: "scenario",
-      });
-    }
-    return () => clearEntityMetadata();
-  }, [
-    scenarioData?.name_resource?.name,
-    scenarioId,
-    isEditMode,
-    setEntityMetadata,
-    clearEntityMetadata,
-  ]);
+  const {
+    setGeneratingResources,
+    isGenerating,
+    aiFormData,
+    clearAiResource,
+  } = useAiGeneration<ScenarioResourceType, ScenarioAiFormData>({
+    socket,
+    isConnected,
+    artifactType: "scenario",
+    groupId: scenarioData?.group_id,
+    eventPrefix: "scenario_generation",
+    validResourceTypes: VALID_RESOURCE_TYPES,
+    onComplete: onAiComplete,
+  });
 
   // nuqs parsers for URL-backed state (search/filter params only)
   const scenarioSearchParamsClient = useMemo(
@@ -341,29 +342,11 @@ function ScenarioComponent({
     []
   );
 
-  const [draftId, setDraftId] = useState<string | null>(null);
-  const setUrlFormDataRef = useRef<
-    null | ((updates: Record<string, unknown>) => void)
-  >(null);
-  const formDataRef = useRef<Record<string, unknown>>({});
-
-  // Track last synced draftId to prevent redundant profile context updates
-  const lastSyncedDraftIdRef = useRef<string | null>(null);
-
-  const onFormDataChange = useCallback(
-    (fd: Record<string, unknown>) => {
-      formDataRef.current = fd;
-      const nextDraftId = (fd["draftId"] as string | undefined) ?? null;
-      setDraftId((prev) => (prev === nextDraftId ? prev : nextDraftId));
-
-      // One-way sync to profile context (no effect dependency on selectedDraftId)
-      if (nextDraftId !== lastSyncedDraftIdRef.current) {
-        lastSyncedDraftIdRef.current = nextDraftId;
-        setSelectedDraftId(nextDraftId);
-      }
-    },
-    [setSelectedDraftId]
-  );
+  // --- Form State ---
+  const scenarioDataRef = useRef(scenarioData);
+  useEffect(() => {
+    scenarioDataRef.current = scenarioData;
+  }, [scenarioData]);
 
   const getInitialFormState = useCallback((): ScenarioFormState => {
     if (!scenarioData) {
@@ -419,22 +402,23 @@ function ScenarioComponent({
 
   const [formState, setFormState] =
     useState<ScenarioFormState>(getInitialFormState);
-
-  // Ref to store formState for stable access in callbacks
-  const formStateRef = useRef(formState);
+  const formStateRef = useRef<Record<string, unknown>>(formState as unknown as Record<string, unknown>);
   useEffect(() => {
-    formStateRef.current = formState;
+    formStateRef.current = formState as unknown as Record<string, unknown>;
   }, [formState]);
 
-  // Ref to track scenarioData for conditional parameter toggle
-  const scenarioDataRef = useRef(scenarioData);
-  useEffect(() => {
-    scenarioDataRef.current = scenarioData;
-  }, [scenarioData]);
+  // Separate effect to auto-accept name from AI generation
+  const aiNameResource = aiFormData.name_resource;
+  React.useEffect(() => {
+    if (aiNameResource?.id) {
+      setFormState((prev) => ({
+        ...prev,
+        name_id: String(aiNameResource.id!),
+      }));
+    }
+  }, [aiNameResource]);
 
-  // Track if a change came from server sync (to skip triggering autosave)
-  const serverSyncPendingRef = useRef(false);
-
+  // Memoize stringified array dependencies
   const departmentIdsStr = useMemo(
     () => JSON.stringify(formState.department_ids),
     [formState.department_ids]
@@ -518,6 +502,7 @@ function ScenarioComponent({
     [scenarioData?.question_ids]
   );
 
+  // Update form state when server data changes
   useEffect(() => {
     const newState = getInitialFormState();
     setFormState((prev) => {
@@ -553,6 +538,7 @@ function ScenarioComponent({
         JSON.stringify(prev.question_ids) !==
           JSON.stringify(newState.question_ids)
       ) {
+        serverSyncPendingRef.current = true;
         return newState;
       }
       return prev;
@@ -583,40 +569,30 @@ function ScenarioComponent({
     scenarioQuestionIdsStr,
   ]);
 
-  // Draft version tracking for optimistic concurrency control
-  const [lastSavedVersion, setLastSavedVersion] = useState(0);
-  const lastSavedVersionRef = useRef(0);
-  useEffect(() => {
-    lastSavedVersionRef.current = lastSavedVersion;
-  }, [lastSavedVersion]);
-  // Sync draft_version from server to avoid unintended draft forks.
-  const draftVersion =
-    scenarioData && "draft_version" in scenarioData
-      ? (scenarioData as { draft_version?: number | null }).draft_version
-      : null;
-  // Track if version has been synced from server to prevent patching before sync
-  const versionSyncedRef = useRef(false);
-  useEffect(() => {
-    if (
-      typeof draftVersion === "number" &&
-      draftVersion !== lastSavedVersionRef.current
-    ) {
-      setLastSavedVersion(draftVersion);
-      lastSavedVersionRef.current = draftVersion;
-    }
-    versionSyncedRef.current = true; // Mark as synced
-  }, [draftVersion]);
-
+  // --- Draft Lifecycle ---
   const patchScenarioDraftActionRef = useRef(patchScenarioDraftAction);
   useEffect(() => {
     patchScenarioDraftActionRef.current = patchScenarioDraftAction;
   }, [patchScenarioDraftAction]);
 
-  // Array dependencies use stringified versions to detect changes correctly
-  const draftPatchKey = useMemo(
+  // Stable ref wrapper for patch action
+  const patchActionRef = useRef<
+    ((payload: Record<string, unknown>) => Promise<{ draft_id?: string | null; new_version?: number | null }>) | undefined
+  >(undefined);
+  useEffect(() => {
+    if (patchScenarioDraftAction) {
+      patchActionRef.current = async (payload: Record<string, unknown>) => {
+        return await patchScenarioDraftAction({ body: payload } as PatchScenarioDraftIn);
+      };
+    } else {
+      patchActionRef.current = undefined;
+    }
+  }, [patchScenarioDraftAction]);
+
+  // formStateKey excludes draftId -- the hook prepends it
+  const formStateKey = useMemo(
     () =>
       JSON.stringify({
-        draftId: draftId || null,
         name_id: formState.name_id,
         description_id: formState.description_id,
         problem_statement_id: formState.problem_statement_id,
@@ -628,19 +604,19 @@ function ScenarioComponent({
         problem_statement_enabled_flag_id:
           formState.problem_statement_enabled_flag_id,
         use_templates_flag_id: formState.use_templates_flag_id,
-        department_ids: departmentIdsStr,
-        persona_ids: personaIdsStr,
-        document_ids: documentIdsStr,
-        template_document_ids: templateIdsStr,
-        parameter_ids: parameterIdsStr,
-        field_ids: parameterFieldIdsStr,
-        image_ids: imageIdsStr,
-        objective_ids: objectiveIdsStr,
-        video_ids: videoIdsStr,
-        question_ids: questionIdsStr,
+        department_ids: formState.department_ids,
+        persona_ids: formState.persona_ids,
+        document_ids: formState.document_ids,
+        template_document_ids: formState.template_ids,
+        parameter_ids: formState.parameter_ids,
+        field_ids: formState.parameter_field_ids,
+        image_ids: formState.image_ids,
+        objective_ids: formState.objective_ids,
+        video_ids: formState.video_ids,
+        question_ids: formState.question_ids,
       }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
-      draftId,
       formState.name_id,
       formState.description_id,
       formState.problem_statement_id,
@@ -664,340 +640,99 @@ function ScenarioComponent({
     ]
   );
 
-  const lastPatchedKeyRef = useRef<string | null>(null);
-  const isFirstPatchRef = useRef(true);
+  const hasResourceIds = !!(
+    formState.name_id ||
+    formState.description_id ||
+    formState.problem_statement_id ||
+    formState.active_flag_id ||
+    formState.objectives_enabled_flag_id ||
+    formState.images_enabled_flag_id ||
+    formState.video_enabled_flag_id ||
+    formState.questions_enabled_flag_id ||
+    formState.problem_statement_enabled_flag_id ||
+    formState.use_templates_flag_id ||
+    formState.department_ids.length > 0 ||
+    formState.persona_ids.length > 0 ||
+    formState.document_ids.length > 0 ||
+    formState.template_ids.length > 0 ||
+    formState.parameter_ids.length > 0 ||
+    formState.parameter_field_ids.length > 0 ||
+    formState.image_ids.length > 0 ||
+    formState.objective_ids.length > 0 ||
+    formState.video_ids.length > 0 ||
+    formState.question_ids.length > 0
+  );
 
-  // Track if there are pending changes for beforeunload warning
-  const hasPendingChangesRef = useRef(false);
+  const buildPatchPayload = useCallback(
+    (
+      draftId: string | null,
+      expectedVersion: number,
+      flushResults?: Record<string, unknown>
+    ): Record<string, unknown> => {
+      const currentFormState = formStateRef.current as unknown as ScenarioFormState;
+      const fr = (flushResults ?? {}) as Partial<FlushResult>;
+      return {
+        input_draft_id: draftId || null,
+        name_id: fr.name_id !== undefined ? fr.name_id : currentFormState.name_id,
+        description_id: fr.description_id !== undefined ? fr.description_id : currentFormState.description_id,
+        problem_statement_id: fr.problem_statement_id !== undefined ? fr.problem_statement_id : currentFormState.problem_statement_id,
+        active_flag_id: currentFormState.active_flag_id,
+        objectives_enabled_flag_id: currentFormState.objectives_enabled_flag_id,
+        images_enabled_flag_id: currentFormState.images_enabled_flag_id,
+        video_enabled_flag_id: currentFormState.video_enabled_flag_id,
+        questions_enabled_flag_id: currentFormState.questions_enabled_flag_id,
+        problem_statement_enabled_flag_id: currentFormState.problem_statement_enabled_flag_id,
+        use_templates_flag_id: currentFormState.use_templates_flag_id,
+        department_ids: currentFormState.department_ids,
+        persona_ids: currentFormState.persona_ids,
+        document_ids: currentFormState.document_ids,
+        template_document_ids: fr.template_ids !== undefined ? fr.template_ids : currentFormState.template_ids,
+        parameter_ids: currentFormState.parameter_ids,
+        parameter_field_ids: fr.parameter_field_ids !== undefined ? fr.parameter_field_ids : currentFormState.parameter_field_ids,
+        image_ids: fr.image_ids !== undefined ? fr.image_ids : currentFormState.image_ids,
+        objective_ids: fr.objective_ids !== undefined ? fr.objective_ids : currentFormState.objective_ids,
+        video_ids: fr.video_ids !== undefined ? fr.video_ids : currentFormState.video_ids,
+        question_ids: fr.question_ids !== undefined ? fr.question_ids : currentFormState.question_ids,
+        expected_version: expectedVersion,
+      };
+    },
+    []
+  );
 
-  // Draft change listener - watches resource IDs and patches draft
-  // Only triggers when the payload actually changes, not when version changes
-  useEffect(() => {
-    const hasResourceIds =
-      formState.name_id ||
-      formState.description_id ||
-      formState.problem_statement_id ||
-      formState.active_flag_id ||
-      formState.objectives_enabled_flag_id ||
-      formState.images_enabled_flag_id ||
-      formState.video_enabled_flag_id ||
-      formState.questions_enabled_flag_id ||
-      formState.problem_statement_enabled_flag_id ||
-      formState.use_templates_flag_id ||
-      formState.department_ids.length > 0 ||
-      formState.persona_ids.length > 0 ||
-      formState.document_ids.length > 0 ||
-      formState.template_ids.length > 0 ||
-      formState.parameter_ids.length > 0 ||
-      formState.parameter_field_ids.length > 0 ||
-      formState.image_ids.length > 0 ||
-      formState.objective_ids.length > 0 ||
-      formState.video_ids.length > 0 ||
-      formState.question_ids.length > 0;
+  const draftVersion =
+    scenarioData && "draft_version" in scenarioData
+      ? (scenarioData as { draft_version?: number | null }).draft_version
+      : null;
 
-    if (!hasResourceIds || !patchScenarioDraftActionRef.current) {
-      return;
-    }
+  const {
+    setUrlFormDataRef,
+    onFormDataChange,
+    serverSyncPendingRef,
+    formDataRef,
+  } = useDraftLifecycle({
+    formStateKey,
+    patchActionRef,
+    isAutosaveEnabled,
+    buildPatchPayload,
+    setSelectedDraftId,
+    serverDraftVersion: draftVersion ?? null,
+    hasResourceIds,
+    flushRegistryRef,
+    formStateRef,
+  });
 
-    // Wait for version sync before patching to prevent race conditions
-    if (!versionSyncedRef.current && lastSavedVersionRef.current !== 0) {
-      return;
-    }
+  // --- Conditional Parameter Toggle ---
+  const getParameterFields = useCallback(
+    () => scenarioDataRef.current?.parameter_fields ?? [],
+    []
+  );
 
-    // Skip the first effect run - treat initial server state as the baseline
-    // This prevents creating an unwanted draft on page load when server returns pre-populated IDs
-    if (isFirstPatchRef.current) {
-      isFirstPatchRef.current = false;
-      lastPatchedKeyRef.current = draftPatchKey;
-      return;
-    }
+  const { handleConditionalParameterToggle } = useConditionalParameterToggle({
+    setFormState,
+    getParameterFields,
+  });
 
-    // If this change came from server sync, reset baseline instead of triggering save
-    if (serverSyncPendingRef.current) {
-      serverSyncPendingRef.current = false;
-      lastPatchedKeyRef.current = draftPatchKey;
-      return;
-    }
-
-    // ✅ If nothing changed since the last successful patch, do nothing.
-    if (lastPatchedKeyRef.current === draftPatchKey) {
-      return;
-    }
-
-    // Mark that we have pending changes (for beforeunload warning)
-    hasPendingChangesRef.current = true;
-
-    // Skip autosave if disabled (manual save mode)
-    if (!isAutosaveEnabled) {
-      return;
-    }
-
-    // Immediately show "Saving draft..." when autosave is enabled
-    window.dispatchEvent(
-      new CustomEvent("save-status-change", { detail: { status: "saving" } })
-    );
-
-    const timer = setTimeout(async () => {
-      try {
-        if (!patchScenarioDraftActionRef.current) return;
-
-        const result = await patchScenarioDraftActionRef.current({
-          body: {
-            input_draft_id: draftId || null,
-            name_id: formState.name_id,
-            description_id: formState.description_id,
-            problem_statement_id: formState.problem_statement_id,
-            active_flag_id: formState.active_flag_id,
-            objectives_enabled_flag_id: formState.objectives_enabled_flag_id,
-            images_enabled_flag_id: formState.images_enabled_flag_id,
-            video_enabled_flag_id: formState.video_enabled_flag_id,
-            questions_enabled_flag_id: formState.questions_enabled_flag_id,
-            problem_statement_enabled_flag_id:
-              formState.problem_statement_enabled_flag_id,
-            use_templates_flag_id: formState.use_templates_flag_id,
-            department_ids: formState.department_ids,
-            persona_ids: formState.persona_ids,
-            document_ids: formState.document_ids,
-            template_document_ids: formState.template_ids,
-            parameter_ids: formState.parameter_ids,
-            parameter_field_ids: formState.parameter_field_ids,
-            image_ids: formState.image_ids,
-            objective_ids: formState.objective_ids,
-            video_ids: formState.video_ids,
-            question_ids: formState.question_ids,
-            expected_version: lastSavedVersionRef.current,
-          },
-        });
-
-        // Mark this payload as patched so we don't loop
-        lastPatchedKeyRef.current = draftPatchKey;
-
-        if (!draftId && result.draft_id) {
-          // Update URL when draft is created via GenericForm bridge (GenericForm owns URL state)
-          toast.success("Draft created", {
-            description: "Your changes are being auto-saved",
-          });
-          setUrlFormDataRef.current?.({ draftId: result.draft_id });
-        } else if (result.draft_id && result.draft_id !== draftId) {
-          // Sync URL to server-returned draft_id to avoid stale draft mismatch
-          setUrlFormDataRef.current?.({ draftId: result.draft_id });
-        }
-
-        if ((result.new_version ?? 0) !== lastSavedVersionRef.current) {
-          setLastSavedVersion(result.new_version ?? 0);
-          lastSavedVersionRef.current = result.new_version ?? 0;
-        }
-
-        // Clear pending changes flag after successful save
-        hasPendingChangesRef.current = false;
-
-        // Notify save context that save completed and changes are saved
-        window.dispatchEvent(
-          new CustomEvent("save-status-change", { detail: { status: "idle" } })
-        );
-        window.dispatchEvent(
-          new CustomEvent("unsaved-changes", { detail: { hasChanges: false } })
-        );
-      } catch {
-        toast.error("Failed to save draft", {
-          description:
-            "Your changes may not have been saved. Please try again.",
-        });
-        window.dispatchEvent(
-          new CustomEvent("save-status-change", { detail: { status: "error" } })
-        );
-      }
-    }, 1000);
-
-    return () => clearTimeout(timer);
-    // ✅ Trigger only when payload changes, not when version changes
-    // patchScenarioDraftAction is accessed via ref to prevent effect recreation
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    draftPatchKey, // ✅ trigger only when payload changes
-    isAutosaveEnabled, // ✅ re-check when autosave mode changes
-    // patchScenarioDraftAction is accessed via ref
-  ]);
-
-  // Warn users about unsaved changes when navigating away
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (hasPendingChangesRef.current) {
-        e.preventDefault();
-        e.returnValue = "You have unsaved changes.";
-      }
-    };
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, []);
-
-  // Emit unsaved-changes event when draftPatchKey changes
-  useEffect(() => {
-    // During server sync, report no changes (baseline will be reset by autosave effect)
-    if (serverSyncPendingRef.current) {
-      window.dispatchEvent(
-        new CustomEvent("unsaved-changes", { detail: { hasChanges: false } })
-      );
-      return;
-    }
-    // Only report changes after we've established a baseline (ref is not null)
-    const hasChanges =
-      lastPatchedKeyRef.current !== null &&
-      lastPatchedKeyRef.current !== draftPatchKey;
-    window.dispatchEvent(
-      new CustomEvent("unsaved-changes", { detail: { hasChanges } })
-    );
-  }, [draftPatchKey]);
-
-  // Flush all resources without saving to draft - returns the created IDs
-  // Used by handleSubmit when autosave is off to get IDs before final save
-  const flushAllResources = useCallback(async (): Promise<FlushResult> => {
-    const flushPromises = Array.from(flushRegistryRef.current.values()).map(
-      (flush) => flush()
-    );
-    const flushResults = await Promise.all(flushPromises);
-
-    // Merge all flush results into a single object (filter out void results)
-    const mergedFlushResults = flushResults.reduce<FlushResult>(
-      (acc, result) => (result ? { ...acc, ...result } : acc),
-      {}
-    );
-
-    return mergedFlushResults;
-  }, []);
-
-  // Flush all resources and patch draft (for manual save via Save toolbar)
-  const flushAllAndSave = useCallback(async () => {
-    const startTime = Date.now();
-    const MIN_SAVING_DURATION = 1000; // Show "Saving..." for at least 1 second on manual save
-
-    window.dispatchEvent(
-      new CustomEvent("save-status-change", { detail: { status: "saving" } })
-    );
-
-    try {
-      // 1. Flush all creatable resource components and collect returned IDs
-      const flushPromises = Array.from(flushRegistryRef.current.values()).map(
-        (flush) => flush()
-      );
-      const flushResults = await Promise.all(flushPromises);
-
-      // 2. Merge all flush results into a single object (filter out void results)
-      const mergedFlushResults = flushResults.reduce<FlushResult>(
-        (acc, result) => (result ? { ...acc, ...result } : acc),
-        {}
-      );
-
-      // 3. Patch draft with all resource IDs - use flush results with fallback to current formState
-      let isNewDraft = false;
-      if (patchScenarioDraftActionRef.current) {
-        const currentFormState = formStateRef.current;
-        const result = await patchScenarioDraftActionRef.current({
-          body: {
-            input_draft_id: draftId || null,
-            // Use flush results (fresh) with fallback to formState (for non-flushed resources)
-            name_id:
-              mergedFlushResults.name_id !== undefined
-                ? mergedFlushResults.name_id
-                : currentFormState.name_id,
-            description_id:
-              mergedFlushResults.description_id !== undefined
-                ? mergedFlushResults.description_id
-                : currentFormState.description_id,
-            problem_statement_id:
-              mergedFlushResults.problem_statement_id !== undefined
-                ? mergedFlushResults.problem_statement_id
-                : currentFormState.problem_statement_id,
-            active_flag_id: currentFormState.active_flag_id,
-            objectives_enabled_flag_id:
-              currentFormState.objectives_enabled_flag_id,
-            images_enabled_flag_id: currentFormState.images_enabled_flag_id,
-            video_enabled_flag_id: currentFormState.video_enabled_flag_id,
-            questions_enabled_flag_id:
-              currentFormState.questions_enabled_flag_id,
-            problem_statement_enabled_flag_id:
-              currentFormState.problem_statement_enabled_flag_id,
-            use_templates_flag_id: currentFormState.use_templates_flag_id,
-            department_ids: currentFormState.department_ids,
-            persona_ids: currentFormState.persona_ids,
-            document_ids: currentFormState.document_ids,
-            template_document_ids:
-              mergedFlushResults.template_ids !== undefined
-                ? mergedFlushResults.template_ids
-                : currentFormState.template_ids,
-            parameter_ids: currentFormState.parameter_ids,
-            parameter_field_ids:
-              mergedFlushResults.parameter_field_ids !== undefined
-                ? mergedFlushResults.parameter_field_ids
-                : currentFormState.parameter_field_ids,
-            image_ids:
-              mergedFlushResults.image_ids !== undefined
-                ? mergedFlushResults.image_ids
-                : currentFormState.image_ids,
-            objective_ids:
-              mergedFlushResults.objective_ids !== undefined
-                ? mergedFlushResults.objective_ids
-                : currentFormState.objective_ids,
-            video_ids:
-              mergedFlushResults.video_ids !== undefined
-                ? mergedFlushResults.video_ids
-                : currentFormState.video_ids,
-            question_ids:
-              mergedFlushResults.question_ids !== undefined
-                ? mergedFlushResults.question_ids
-                : currentFormState.question_ids,
-            expected_version: lastSavedVersionRef.current,
-          },
-        });
-
-        // Update refs
-        lastPatchedKeyRef.current = draftPatchKey;
-        if (result.new_version !== undefined && result.new_version !== null) {
-          lastSavedVersionRef.current = result.new_version;
-          setLastSavedVersion(result.new_version);
-        }
-
-        // Update URL if draft was created
-        if (!draftId && result.draft_id) {
-          setUrlFormDataRef.current?.({ draftId: result.draft_id });
-          isNewDraft = true;
-        }
-      }
-
-      // Ensure minimum display duration for manual save
-      const elapsed = Date.now() - startTime;
-      if (elapsed < MIN_SAVING_DURATION) {
-        await new Promise((resolve) =>
-          setTimeout(resolve, MIN_SAVING_DURATION - elapsed)
-        );
-      }
-
-      window.dispatchEvent(
-        new CustomEvent("save-status-change", { detail: { status: "idle" } })
-      );
-      window.dispatchEvent(
-        new CustomEvent("unsaved-changes", { detail: { hasChanges: false } })
-      );
-
-      hasPendingChangesRef.current = false;
-
-      // Show success toast for manual save
-      toast.success(isNewDraft ? "Draft created" : "Draft saved");
-    } catch {
-      window.dispatchEvent(
-        new CustomEvent("save-status-change", { detail: { status: "error" } })
-      );
-      toast.error("Failed to save draft");
-    }
-  }, [draftId, draftPatchKey]);
-
-  // Listen for save trigger from layout
-  useEffect(() => {
-    const handleTriggerSave = () => flushAllAndSave();
-    window.addEventListener("trigger-save", handleTriggerSave);
-    return () => window.removeEventListener("trigger-save", handleTriggerSave);
-  }, [flushAllAndSave]);
-
+  // --- Stable Data Memo ---
   const stableScenarioDataFields = useMemo(() => {
     if (!scenarioData) return null;
     return {
@@ -1195,160 +930,32 @@ function ScenarioComponent({
     [stableScenarioDataFields]
   );
 
+  // --- Disabled / Breadcrumb ---
   const disabled = useMemo(() => {
     if (!scenarioData) return false;
     return !scenarioData.can_edit;
   }, [scenarioData]);
 
+  // Set breadcrumb context when scenario data is loaded in edit mode
   useEffect(() => {
-    if (!socket || !isConnected) return;
-
-    const currentGroupId = scenarioData?.group_id;
-
-    const handleGenerationComplete = (
-      data: ScenarioGenerationCompletePayload
-    ) => {
-      if (
-        data.artifact_type !== "scenario" ||
-        !data.group_id ||
-        data.group_id !== currentGroupId
-      ) {
-        return;
-      }
-
-      const validResourceTypes: ScenarioResourceType[] = [
-        "names",
-        "descriptions",
-        "problem_statements",
-        "objectives",
-        "scenario_flags",
-        "departments",
-        "personas",
-        "documents",
-        "templates",
-        "parameters",
-        "parameter_fields",
-        "images",
-        "videos",
-        "questions",
-      ];
-
-      if (
-        data.resource_type &&
-        validResourceTypes.includes(data.resource_type as ScenarioResourceType)
-      ) {
-        // Store full resources in aiFormData for diff view workflow
-        setAiFormData((prev) => {
-          const updates: Partial<typeof prev> = {};
-          if (data.name_resource) updates.name_resource = data.name_resource;
-          if (data.description_resource)
-            updates.description_resource = data.description_resource;
-          if (data.problem_statement_resource)
-            updates.problem_statement_resource = data.problem_statement_resource;
-          if (data.department_resources)
-            updates.department_resources = data.department_resources;
-          if (data.persona_resources)
-            updates.persona_resources = data.persona_resources;
-          if (data.document_resources)
-            updates.document_resources = data.document_resources;
-          if (data.template_resources)
-            updates.template_resources = data.template_resources;
-          if (data.objective_resources)
-            updates.objective_resources = data.objective_resources;
-          if (data.question_resources)
-            updates.question_resources = data.question_resources;
-          if (data.image_resources)
-            updates.image_resources = data.image_resources;
-          if (data.video_resources)
-            updates.video_resources = data.video_resources;
-          if (data.parameter_resources)
-            updates.parameter_resources = data.parameter_resources;
-          if (data.parameter_field_resources)
-            updates.parameter_field_resources = data.parameter_field_resources;
-          return { ...prev, ...updates };
-        });
-
-        // Only auto-accept name_resource (names are auto-applied without user confirmation)
-        if (data.name_resource?.id) {
-          setFormState((prev) => ({
-            ...prev,
-            name_id: String(data.name_resource!.id),
-          }));
-        }
-
-        setGeneratingResources((prev) => {
-          const next = new Set(prev);
-          next.delete(data.resource_type as ScenarioResourceType);
-          return next;
-        });
-
-        if (data.success) {
-          toast.success(
-            data.message || `${data.resource_type} generated successfully`
-          );
-        } else {
-          toast.error(
-            data.message || `Failed to generate ${data.resource_type}`
-          );
-        }
-      }
-    };
-
-    const handleGenerationProgress = (data: {
-      artifact_type?: string;
-      group_id?: string;
-      resource_type?: string;
-      [key: string]: unknown;
-    }) => {
-      if (
-        data.artifact_type !== "scenario" ||
-        !data.group_id ||
-        data.group_id !== currentGroupId
-      ) {
-        return;
-      }
-    };
-
-    const handleGenerationError = (data: {
-      artifact_type?: string;
-      group_id?: string;
-      message?: string;
-      resource_type?: string;
-      resource_types?: string[];
-    }) => {
-      if (
-        data.artifact_type !== "scenario" ||
-        !data.group_id ||
-        data.group_id !== currentGroupId
-      ) {
-        return;
-      }
-
-      const resourceTypes =
-        data.resource_types || (data.resource_type ? [data.resource_type] : []);
-
-      setGeneratingResources((prev) => {
-        const next = new Set(prev);
-        resourceTypes.forEach((rt) => {
-          next.delete(rt as ScenarioResourceType);
-        });
-        return next;
+    const scenarioName = scenarioData?.name_resource?.name;
+    if (scenarioName && scenarioId && isEditMode) {
+      setEntityMetadata({
+        entityId: scenarioId,
+        entityName: scenarioName,
+        entityType: "scenario",
       });
+    }
+    return () => clearEntityMetadata();
+  }, [
+    scenarioData?.name_resource?.name,
+    scenarioId,
+    isEditMode,
+    setEntityMetadata,
+    clearEntityMetadata,
+  ]);
 
-      toast.error(data.message || "Generation failed");
-    };
-
-    socket.on("scenario_generation_progress", handleGenerationProgress);
-    socket.on("scenario_generation_complete", handleGenerationComplete);
-    socket.on("scenario_generation_error", handleGenerationError);
-
-    return () => {
-      socket.off("scenario_generation_progress", handleGenerationProgress);
-      socket.off("scenario_generation_complete", handleGenerationComplete);
-      socket.off("scenario_generation_error", handleGenerationError);
-    };
-  }, [socket, isConnected, scenarioData?.group_id]);
-
+  // --- Generation Handlers ---
   const determineAgentType = useCallback(
     (resourceTypes: ScenarioResourceType[]): string | null => {
       const basicResources: ScenarioResourceType[] = [
@@ -1486,6 +1093,8 @@ function ScenarioComponent({
       formState.department_ids,
       formState.persona_ids,
       formState.parameter_ids,
+      formDataRef,
+      setGeneratingResources,
     ]
   );
 
@@ -1585,77 +1194,7 @@ function ScenarioComponent({
     [handleGenerateResources, determineAgentType]
   );
 
-  // Handle toggling conditional parameters on/off when parameter fields are selected/deselected
-  // This supports transitive chains: when a field's conditional parameter is deselected,
-  // we also deselect any conditional parameters that were triggered by that parameter's fields
-  const handleConditionalParameterToggle = useCallback(
-    (conditionalParameterId: string, selected: boolean) => {
-      setFormState((prev) => {
-        if (selected) {
-          // Auto-add conditional parameter if not present
-          if (!prev.parameter_ids.includes(conditionalParameterId)) {
-            return {
-              ...prev,
-              parameter_ids: [...prev.parameter_ids, conditionalParameterId],
-            };
-          }
-        } else {
-          // Auto-remove conditional parameter and handle chain cleanup
-          // Build a set of parameters to remove (starts with the one being deselected)
-          const toRemove = new Set<string>([conditionalParameterId]);
-
-          // Get all available fields from scenarioData to find chain dependencies
-          const allFields = scenarioDataRef.current?.parameter_fields ?? [];
-
-          // Recursively find conditional params that should also be removed
-          // (parameters whose trigger fields belong to parameters being removed)
-          let changed = true;
-          while (changed) {
-            changed = false;
-            for (const field of allFields) {
-              // If this field belongs to a parameter we're removing
-              // and it has conditional_parameter_ids
-              if (
-                field.parameter_id &&
-                toRemove.has(field.parameter_id) &&
-                field.conditional_parameter_ids?.length
-              ) {
-                for (const condParamId of field.conditional_parameter_ids) {
-                  if (condParamId && !toRemove.has(condParamId)) {
-                    toRemove.add(condParamId);
-                    changed = true;
-                  }
-                }
-              }
-            }
-          }
-
-          // Also find fields that should be deselected (fields of removed parameters)
-          const fieldsToRemove = new Set<string>();
-          for (const field of allFields) {
-            if (
-              field.parameter_id &&
-              toRemove.has(field.parameter_id) &&
-              field.field_id
-            ) {
-              fieldsToRemove.add(field.field_id);
-            }
-          }
-
-          return {
-            ...prev,
-            parameter_ids: prev.parameter_ids.filter((id) => !toRemove.has(id)),
-            parameter_field_ids: prev.parameter_field_ids.filter(
-              (id) => !fieldsToRemove.has(id)
-            ),
-          };
-        }
-        return prev;
-      });
-    },
-    []
-  );
-
+  // --- Generation Modal ---
   const stepResources: Record<string, ScenarioResourceType[]> = useMemo(
     () => ({
       basic: ["names", "descriptions", "scenario_flags", "departments"],
@@ -1708,61 +1247,23 @@ function ScenarioComponent({
     []
   );
 
-  const handleOpenStepCardModal = useCallback(
-    (stepId: string, mode: "generate" | "regenerate") => {
-      const resourceTypes = stepResources[stepId] || [];
-      const resources: GenerateRegenerateModalResource[] = resourceTypes.map(
-        (rt) => ({
-          id: rt,
-          label: resourceLabels[rt] ?? "",
-          active: mode === "regenerate" ? canRegenerate(rt) : true,
-        })
-      );
-
-      setModalResources(resources);
-      setModalMode(mode);
-      setModalInstructions("");
-      setShowGenerateModal(true);
-    },
-    [stepResources, resourceLabels, canRegenerate]
-  );
-
-  const handleModalGenerate = useCallback(
-    async (selectedResources: string[], instructions: string) => {
-      const resourceTypes = selectedResources as ScenarioResourceType[];
-      const agentType = determineAgentType(resourceTypes);
-      await handleGenerateResources(
-        resourceTypes,
-        agentType,
-        instructions.trim() || undefined
-      );
-      setShowGenerateModal(false);
-      setModalInstructions("");
+  const onModalGenerate = useCallback(
+    (selectedResources: ScenarioResourceType[], instructions?: string) => {
+      const agentType = determineAgentType(selectedResources);
+      handleGenerateResources(selectedResources, agentType, instructions);
     },
     [handleGenerateResources, determineAgentType]
   );
 
-  // Listen for full-page-generate event from layout
-  useEffect(() => {
-    const handleFullPageGenerate = (
-      event: CustomEvent<{ agentId?: string }>
-    ) => {
-      const agentId = event.detail?.agentId;
-      if (agentId) {
-        handleOpenStepCardModal("all", "generate");
-      }
-    };
-    window.addEventListener(
-      "full-page-generate",
-      handleFullPageGenerate as EventListener
-    );
-    return () =>
-      window.removeEventListener(
-        "full-page-generate",
-        handleFullPageGenerate as EventListener
-      );
-  }, [handleOpenStepCardModal]);
+  const { handleOpenStepCardModal, modalProps } = useGenerationModal<ScenarioResourceType>({
+    stepResources,
+    resourceLabels,
+    canRegenerate,
+    onGenerate: onModalGenerate,
+    isGenerating,
+  });
 
+  // --- Steps / Form Config ---
   const steps = useMemo(() => {
     const items = [
       {
@@ -1992,6 +1493,7 @@ function ScenarioComponent({
     });
   }, []);
 
+  // --- Submit ---
   const handleSubmit = useCallback(
     async (_formData: Record<string, unknown>) => {
       if (scenarioData?.name_required && !formState.name_id) {
@@ -2107,7 +1609,7 @@ function ScenarioComponent({
 
       // Get the current form state and merge with flush results
       // Flush results take precedence (they're freshly created)
-      const baseFormState = formStateRef.current;
+      const baseFormState = formStateRef.current as unknown as ScenarioFormState;
       const effectiveFormState = {
         ...baseFormState,
         name_id:
@@ -2236,6 +1738,7 @@ function ScenarioComponent({
     ]
   );
 
+  // --- Step Status ---
   const getStepStatus = useCallback(
     (stepId: string, _formData: Record<string, unknown>): StepStatus => {
       const hasName = !!formState.name_id;
@@ -2282,6 +1785,7 @@ function ScenarioComponent({
     [formState]
   );
 
+  // --- Render Step ---
   const renderStep = useCallback(
     ({
       stepId,
@@ -2680,7 +2184,7 @@ function ScenarioComponent({
                 onGenerate={handleGenerateObjectives}
                 isGenerating={isGenerating("objectives")}
                 isAutosaveEnabled={isAutosaveEnabled}
-                registerFlush={registerFlushCallbacks.objectives}
+                registerFlush={registerFlushCallbacks["objectives"]}
                 aiObjectiveResources={aiFormData.objective_resources ?? null}
                 onAccept={() => clearAiResource("objective_resources")}
                 onReject={() => clearAiResource("objective_resources")}
@@ -2924,7 +2428,7 @@ function ScenarioComponent({
                 onGenerate={handleGenerateTemplates}
                 isGenerating={isGenerating("templates")}
                 isAutosaveEnabled={isAutosaveEnabled}
-                registerFlush={registerFlushCallbacks.templates}
+                registerFlush={registerFlushCallbacks["templates"]}
                 aiTemplateResources={aiFormData.template_resources ?? null}
                 onAccept={() => clearAiResource("template_resources")}
                 onReject={() => clearAiResource("template_resources")}
@@ -3046,7 +2550,7 @@ function ScenarioComponent({
                   }
                   createParameterFieldsAction={createParameterFieldsAction}
                   isAutosaveEnabled={isAutosaveEnabled}
-                  registerFlush={registerFlushCallbacks.parameter_fields}
+                  registerFlush={registerFlushCallbacks["parameter_fields"]}
                   aiParameterFieldResources={aiFormData.parameter_field_resources ?? null}
                   onAccept={() => clearAiResource("parameter_field_resources")}
                   onReject={() => clearAiResource("parameter_field_resources")}
@@ -3117,7 +2621,7 @@ function ScenarioComponent({
                 multiSelect={true}
                 maxImages={3}
                 isAutosaveEnabled={isAutosaveEnabled}
-                registerFlush={registerFlushCallbacks.images}
+                registerFlush={registerFlushCallbacks["images"]}
                 aiImageResources={aiFormData.image_resources ?? null}
                 onAccept={() => clearAiResource("image_resources")}
                 onReject={() => clearAiResource("image_resources")}
@@ -3185,7 +2689,7 @@ function ScenarioComponent({
                 onGenerate={handleGenerateVideos}
                 isGenerating={isGenerating("videos")}
                 isAutosaveEnabled={isAutosaveEnabled}
-                registerFlush={registerFlushCallbacks.videos}
+                registerFlush={registerFlushCallbacks["videos"]}
                 aiVideoResources={aiFormData.video_resources ?? null}
                 onAccept={() => clearAiResource("video_resources")}
                 onReject={() => clearAiResource("video_resources")}
@@ -3261,7 +2765,7 @@ function ScenarioComponent({
                 onGenerate={handleGenerateQuestions}
                 isGenerating={isGenerating("questions")}
                 isAutosaveEnabled={isAutosaveEnabled}
-                registerFlush={registerFlushCallbacks.questions}
+                registerFlush={registerFlushCallbacks["questions"]}
                 aiQuestionResources={aiFormData.question_resources ?? null}
                 onAccept={() => clearAiResource("question_resources")}
                 onReject={() => clearAiResource("question_resources")}
@@ -3311,6 +2815,10 @@ function ScenarioComponent({
       showObjectivesSection,
       showProblemStatementSection,
       showTemplatesSection,
+      aiFormData,
+      clearAiResource,
+      videoEnabled,
+      canRegenerate,
     ]
   );
 
@@ -3347,20 +2855,8 @@ function ScenarioComponent({
           }}
         />
 
-        {modalMode && (
-          <GenerateRegenerateModal
-            open={showGenerateModal}
-            onOpenChange={setShowGenerateModal}
-            resources={modalResources}
-            onResourcesChange={setModalResources}
-            instructions={modalInstructions}
-            onInstructionsChange={setModalInstructions}
-            onGenerate={handleModalGenerate}
-            isGenerating={modalResources.some((r) =>
-              isGenerating(r.id as ScenarioResourceType)
-            )}
-            mode={modalMode}
-          />
+        {modalProps.open && (
+          <GenerateRegenerateModal {...modalProps} />
         )}
       </div>
     </TooltipProvider>

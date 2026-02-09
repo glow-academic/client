@@ -132,7 +132,7 @@ async def _persona_generate_impl(
     """Handle persona generation with all business logic.
 
     This function:
-    1. Validates domain_ids and derives resource_types + agent_id
+    1. Validates resource_types and resolves agent_id from domain mappings
     2. Fetches persona data via internal function for seed nodes
     3. Expands resources via tree traversal
     4. Calls prepare_persona_generation SQL (rate limit, group/run, context)
@@ -141,13 +141,13 @@ async def _persona_generate_impl(
     7. Emits simplified payload to generate_artifact handler
     """
     try:
-        # Validate domain_ids
-        if not data.domain_ids:
+        # Validate resource_types
+        if not data.resource_types:
             await emit_to_internal(
                 "generate_call_error",
                 GenerateErrorApiRequest(
                     sid=sid,
-                    error_message="domain_ids must be provided",
+                    error_message="resource_types must be provided",
                     artifact_type="persona",
                     group_id=None,
                     resource_type="persona",
@@ -170,55 +170,7 @@ async def _persona_generate_impl(
             )
             return
 
-        # Step 1: Fetch persona data for seed nodes using websocket function
-        # This gives us the domains mapping to look up agent_ids
-        result = await get_persona_websocket(
-            profile_id=profile_id,
-            persona_id=data.persona_id,
-            draft_id=data.draft_id,
-        )
-
-        # Build domain_id -> agent_id mapping from result.domains
-        domain_to_agent: dict[uuid.UUID, uuid.UUID | None] = {}
-        if result.domains:
-            for domain in result.domains:
-                domain_to_agent[domain.domain_id] = domain.agent_id
-
-        # Build domain_id -> resource_type mapping from result
-        domain_to_resource: dict[uuid.UUID | None, str] = {
-            result.name_domain_id: "names",
-            result.description_domain_id: "descriptions",
-            result.color_domain_id: "colors",
-            result.icon_domain_id: "icons",
-            result.instructions_domain_id: "instructions",
-            result.flag_domain_id: "flags",
-            result.departments_domain_id: "departments",
-            result.parameter_fields_domain_id: "parameter_fields",
-            result.examples_domain_id: "examples",
-            result.parameters_domain_id: "parameters",
-        }
-        # Remove None key if present
-        domain_to_resource.pop(None, None)
-
-        # Derive resource_types from domain_ids (internal use only)
-        resource_types: list[str] = []
-        for did in data.domain_ids:
-            if did in domain_to_resource:
-                resource_types.append(domain_to_resource[did])
-
-        if not resource_types:
-            await emit_to_internal(
-                "generate_call_error",
-                GenerateErrorApiRequest(
-                    sid=sid,
-                    error_message="No valid domain_ids provided",
-                    artifact_type="persona",
-                    group_id=None,
-                    resource_type="persona",
-                ),
-                sid=sid,
-            )
-            return
+        resource_types = data.resource_types
 
         invalid_types = [
             rt for rt in resource_types if rt not in PERSONA_RESOURCE_TYPES
@@ -237,11 +189,20 @@ async def _persona_generate_impl(
             )
             return
 
-        # Get agent_id from the first valid domain_id
+        # Step 1: Fetch persona data for seed nodes using websocket function
+        result = await get_persona_websocket(
+            profile_id=profile_id,
+            persona_id=data.persona_id,
+            draft_id=data.draft_id,
+        )
+
+        # Get agent_id from the first resource type that has an agent assigned
+        resource_agent_ids = result.resource_agent_ids or {}
         agent_id: uuid.UUID | None = None
-        for did in data.domain_ids:
-            if did in domain_to_agent and domain_to_agent[did] is not None:
-                agent_id = domain_to_agent[did]
+        for rt in resource_types:
+            aid = resource_agent_ids.get(rt)
+            if aid is not None:
+                agent_id = aid
                 break
 
         if not agent_id:
@@ -249,7 +210,7 @@ async def _persona_generate_impl(
                 "generate_call_error",
                 GenerateErrorApiRequest(
                     sid=sid,
-                    error_message="No agent found for the requested domains",
+                    error_message="No agent found for the requested resource types",
                     artifact_type="persona",
                     group_id=None,
                     resource_type="persona",
@@ -337,8 +298,14 @@ async def _persona_generate_impl(
                     for resource_type, resource_ids in resources_by_type.items()
                 ]
 
-            # Get group_id from persona response if available
-            existing_group_id: uuid.UUID | None = result.group_id
+            # Get group_id from per-resource group IDs (use first requested resource type's group)
+            resource_group_ids = result.resource_group_ids or {}
+            existing_group_id: uuid.UUID | None = None
+            for rt in resource_types:
+                gid = resource_group_ids.get(rt)
+                if gid is not None:
+                    existing_group_id = gid
+                    break
 
             # Step 4: Fetch context and validate prerequisites
             context_params = GetPersonaGenerationContextSqlParams(

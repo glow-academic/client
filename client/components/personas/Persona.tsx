@@ -12,7 +12,6 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
-  useRef,
   useState,
 } from "react";
 import { toast } from "sonner";
@@ -22,7 +21,6 @@ import {
   type StepStatus,
 } from "@/components/common/forms/GenericForm";
 import { StepCard } from "@/components/common/forms/StepCard";
-import type { GenerateRegenerateModalResource } from "@/components/common/GenerateRegenerateModal";
 import { GenerateRegenerateModal } from "@/components/common/GenerateRegenerateModal";
 import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
 import { Colors } from "@/components/resources/Colors";
@@ -45,6 +43,11 @@ import {
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useSaveContext } from "@/contexts/save-context";
+import { useAiGeneration } from "@/hooks/use-ai-generation";
+import { useConditionalParameterToggle } from "@/hooks/use-conditional-parameter-toggle";
+import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
+import { useFlushRegistry } from "@/hooks/use-flush-registry";
+import { useGenerationModal } from "@/hooks/use-generation-modal";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { ResourceType } from "@/lib/resources/types";
 import type { ServerToClientEvents } from "@/lib/ws/types";
@@ -54,12 +57,6 @@ import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 // Socket event types (auto-generated from server)
 type PersonaGenerationCompletePayload = Parameters<
   ServerToClientEvents["persona_generation_complete"]
->[0];
-type PersonaGenerationProgressPayload = Parameters<
-  ServerToClientEvents["persona_generation_progress"]
->[0];
-type PersonaGenerationErrorPayload = Parameters<
-  ServerToClientEvents["persona_generation_error"]
 >[0];
 
 // Types defined inline using InputOf/OutputOf
@@ -100,6 +97,43 @@ type PatchPersonaDraftOut = OutputOf<"/api/v4/artifacts/personas/draft", "patch"
 
 type PersonaData = OutputOf<"/api/v4/artifacts/personas/get", "post">;
 
+// Type for flush results - each resource returns its created ID(s)
+type FlushResult = {
+  name_id?: string | null;
+  description_id?: string | null;
+  color_id?: string | null;
+  instructions_id?: string | null;
+  example_ids?: string[];
+  parameter_field_ids?: string[];
+};
+
+// AI form data shape for persona generation
+type PersonaAiFormData = {
+  name_resource?: PersonaGenerationCompletePayload["name_resource"];
+  description_resource?: PersonaGenerationCompletePayload["description_resource"];
+  color_resource?: PersonaGenerationCompletePayload["color_resource"];
+  icon_resource?: PersonaGenerationCompletePayload["icon_resource"];
+  instructions_resource?: PersonaGenerationCompletePayload["instructions_resource"];
+  flag_resource?: PersonaGenerationCompletePayload["flag_resource"];
+  department_resources?: PersonaGenerationCompletePayload["department_resources"];
+  parameter_field_resources?: PersonaGenerationCompletePayload["parameter_field_resources"];
+  example_resources?: PersonaGenerationCompletePayload["example_resources"];
+  parameter_resources?: PersonaGenerationCompletePayload["parameter_resources"];
+};
+
+type PersonaFormState = {
+  name_id: string | null;
+  description_id: string | null;
+  color_id: string | null;
+  icon_id: string | null;
+  instructions_id: string | null;
+  active_flag_id: string | null;
+  department_ids: string[];
+  parameter_field_ids: string[];
+  example_ids: string[];
+  parameter_ids: string[];
+};
+
 export interface PersonaProps {
   personaId?: string;
   // Server-provided data (for server-side rendering)
@@ -130,6 +164,28 @@ export interface PersonaProps {
   ) => Promise<CreateDraftParameterFieldsOut>;
 }
 
+const FLUSH_KEYS = [
+  "names",
+  "descriptions",
+  "instructions",
+  "examples",
+  "colors",
+  "parameter_fields",
+] as const;
+
+const VALID_RESOURCE_TYPES: ResourceType[] = [
+  "names",
+  "descriptions",
+  "colors",
+  "icons",
+  "instructions",
+  "flags",
+  "examples",
+  "parameter_fields",
+  "departments",
+  "parameters",
+];
+
 function PersonaComponent({
   personaId,
   personaData,
@@ -148,100 +204,59 @@ function PersonaComponent({
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
   const { isAutosaveEnabled } = useSaveContext();
 
-  // Type for flush results - each resource returns its created ID(s)
-  type FlushResult = {
-    name_id?: string | null;
-    description_id?: string | null;
-    color_id?: string | null;
-    instructions_id?: string | null;
-    example_ids?: string[];
-    parameter_field_ids?: string[];
-  };
+  // --- Flush Registry ---
+  const { flushRegistryRef, registerFlushCallbacks, flushAllResources } =
+    useFlushRegistry<FlushResult>(FLUSH_KEYS);
 
-  // Registry of flush callbacks from creatable resource components
-  const flushRegistryRef = useRef<
-    Map<string, () => Promise<FlushResult | void>>
-  >(new Map());
+  // --- AI Generation ---
+  const onAiComplete = useCallback(
+    (data: Record<string, unknown>) => {
+      const aiUpdates: Partial<PersonaAiFormData> = {};
+      if (data["name_resource"]) aiUpdates.name_resource = data["name_resource"] as PersonaAiFormData["name_resource"];
+      if (data["description_resource"]) aiUpdates.description_resource = data["description_resource"] as PersonaAiFormData["description_resource"];
+      if (data["color_resource"]) aiUpdates.color_resource = data["color_resource"] as PersonaAiFormData["color_resource"];
+      if (data["icon_resource"]) aiUpdates.icon_resource = data["icon_resource"] as PersonaAiFormData["icon_resource"];
+      if (data["instructions_resource"]) aiUpdates.instructions_resource = data["instructions_resource"] as PersonaAiFormData["instructions_resource"];
+      if (data["flag_resource"]) aiUpdates.flag_resource = data["flag_resource"] as PersonaAiFormData["flag_resource"];
+      if (data["department_resources"]) aiUpdates.department_resources = data["department_resources"] as PersonaAiFormData["department_resources"];
+      if (data["parameter_field_resources"]) aiUpdates.parameter_field_resources = data["parameter_field_resources"] as PersonaAiFormData["parameter_field_resources"];
+      if (data["example_resources"]) aiUpdates.example_resources = data["example_resources"] as PersonaAiFormData["example_resources"];
+      if (data["parameter_resources"]) aiUpdates.parameter_resources = data["parameter_resources"] as PersonaAiFormData["parameter_resources"];
 
-  // Create stable registerFlush callback
-  const createRegisterFlush = useCallback((key: string) => {
-    return (flush: () => Promise<FlushResult | void>) => {
-      flushRegistryRef.current.set(key, flush);
-    };
-  }, []);
+      // Only name_resource auto-accepts (Names.tsx already implements diff workflow)
+      const formStateUpdates: Record<string, unknown> = {};
+      const nameRes = data["name_resource"] as { id?: string } | undefined;
+      if (nameRes?.id) formStateUpdates["name_id"] = nameRes.id;
 
-  // Memoize registerFlush callbacks to prevent re-renders
-  const registerFlushCallbacks = useMemo(
-    () => ({
-      names: createRegisterFlush("names"),
-      descriptions: createRegisterFlush("descriptions"),
-      instructions: createRegisterFlush("instructions"),
-      examples: createRegisterFlush("examples"),
-      colors: createRegisterFlush("colors"),
-      parameter_fields: createRegisterFlush("parameter_fields"),
-    }),
-    [createRegisterFlush]
+      return { aiUpdates, formStateUpdates };
+    },
+    []
   );
 
-  // Generation state for AI workflows - simplified using ResourceType
-  const [generatingResources, setGeneratingResources] = useState<
-    Set<ResourceType>
-  >(new Set());
-
-  // Modal state for generate/regenerate
-  const [showGenerateModal, setShowGenerateModal] = useState(false);
-  const [modalMode, setModalMode] = useState<"generate" | "regenerate" | null>(
-    null
-  );
-  const [modalResources, setModalResources] = useState<
-    GenerateRegenerateModalResource[]
-  >([]);
-  const [modalInstructions, setModalInstructions] = useState("");
-
-  // AI-generated pending suggestions state - stores AI suggestions before user accepts/rejects
-  // Uses server-generated types for full resource objects
-  // Insert sample name_resource and description_resource for initial state (for testing/demo)
-  const [aiFormData, setAiFormData] = useState<{
-    name_resource?: PersonaGenerationCompletePayload["name_resource"];
-    description_resource?: PersonaGenerationCompletePayload["description_resource"];
-    color_resource?: PersonaGenerationCompletePayload["color_resource"];
-    icon_resource?: PersonaGenerationCompletePayload["icon_resource"];
-    instructions_resource?: PersonaGenerationCompletePayload["instructions_resource"];
-    flag_resource?: PersonaGenerationCompletePayload["flag_resource"];
-    department_resources?: PersonaGenerationCompletePayload["department_resources"];
-    parameter_field_resources?: PersonaGenerationCompletePayload["parameter_field_resources"];
-    example_resources?: PersonaGenerationCompletePayload["example_resources"];
-    parameter_resources?: PersonaGenerationCompletePayload["parameter_resources"];
-  }>({});
-
-  // Clear a pending AI resource suggestion
-  // Note: We explicitly set to undefined instead of using delete to ensure
-  // React properly detects the state change and triggers re-renders
-  const clearAiResource = useCallback((key: keyof typeof aiFormData) => {
-    setAiFormData((prev) => ({
-      ...prev,
-      [key]: undefined,
-    }));
-  }, []);
-
-  const isGenerating = useCallback(
-    (resourceType: ResourceType) => generatingResources.has(resourceType),
-    [generatingResources]
-  );
+  const {
+    setGeneratingResources,
+    isGenerating,
+    aiFormData,
+    clearAiResource,
+  } = useAiGeneration<ResourceType, PersonaAiFormData>({
+    socket,
+    isConnected,
+    artifactType: "persona",
+    groupId: personaData?.group_id,
+    eventPrefix: "persona_generation",
+    validResourceTypes: VALID_RESOURCE_TYPES,
+    onComplete: onAiComplete,
+  });
 
   // nuqs parsers for URL-backed state (will be passed to GenericForm)
-  // Memoize to prevent new object reference on every render
   const personaSearchParamsClient = useMemo(
     () => ({
-      // Draft ID (URL-backed, updated when draft is created)
       draftId: parseAsString,
-      // Search params (URL-backed, updated via debounced callback in StepCard)
       colorSearch: parseAsString,
       iconSearch: parseAsString,
       descriptionSearch: parseAsString,
       instructionsSearch: parseAsString,
       parameterSearch: parseAsString,
-      // Filter params (URL-backed)
       colorShowSelected: parseAsBoolean,
       iconShowSelected: parseAsBoolean,
       parameterShowSelected: parseAsBoolean,
@@ -249,16 +264,12 @@ function PersonaComponent({
     []
   );
 
-  // Local form state (not in URL) - stores only resource IDs
-  // Display values are managed inside resource components
-  // Use ref to store personaData to prevent callback recreation on every render
+  // --- Form State ---
   const personaDataRef = React.useRef(personaData);
   React.useEffect(() => {
     personaDataRef.current = personaData;
   }, [personaData]);
 
-  // Memoize personaData fields used in renderStep to prevent callback recreation
-  // when only object reference changes (but content is same)
   const stablePersonaDataFields = React.useMemo(() => {
     if (!personaData) return null;
     const resources = personaData.resources?.resources;
@@ -270,74 +281,61 @@ function PersonaComponent({
       name_suggestions: personaData.name_suggestions,
       names: resources?.names ?? [],
       name_required: personaData.name_required,
-      name_domain_id: personaData.name_domain_id,
       name_show_ai_generate: personaData.name_show_ai_generate,
       description_resource: current?.descriptions?.[0] ?? null,
       show_description: personaData.show_description,
       description_suggestions: personaData.description_suggestions,
       description_required: personaData.description_required,
-      description_domain_id: personaData.description_domain_id,
       description_show_ai_generate: personaData.description_show_ai_generate,
       descriptions: resources?.descriptions ?? [],
       department_resources: current?.departments ?? [],
       show_departments: personaData.show_departments,
       department_suggestions: personaData.department_suggestions,
       departments_required: personaData.departments_required,
-      departments_domain_id: personaData.departments_domain_id,
       departments_show_ai_generate: personaData.departments_show_ai_generate,
       departments: resources?.departments ?? [],
       flags: resources?.flags ?? [],
       show_flag: personaData.show_flag,
-      flag_domain_id: personaData.flag_domain_id,
       flag_show_ai_generate: personaData.flag_show_ai_generate,
       parameter_field_resources: current?.parameter_fields ?? [],
       show_parameter_fields: personaData.show_parameter_fields,
       parameter_field_suggestions: personaData.parameter_field_suggestions,
       parameter_fields_required: personaData.parameter_fields_required,
-      parameter_fields_domain_id: personaData.parameter_fields_domain_id,
       parameter_fields_show_ai_generate: personaData.parameter_fields_show_ai_generate,
       parameter_fields: resources?.parameter_fields ?? [],
       color_resource: current?.colors?.[0] ?? null,
       show_color: personaData.show_color,
       color_suggestions: personaData.color_suggestions,
       color_required: personaData.color_required,
-      color_domain_id: personaData.color_domain_id,
       color_show_ai_generate: personaData.color_show_ai_generate,
       colors: resources?.colors ?? [],
       icon_resource: current?.icons?.[0] ?? null,
       show_icon: personaData.show_icon,
       icon_suggestions: personaData.icon_suggestions,
       icon_required: personaData.icon_required,
-      icon_domain_id: personaData.icon_domain_id,
       icon_show_ai_generate: personaData.icon_show_ai_generate,
       icons: resources?.icons ?? [],
       instructions_resource: current?.instructions?.[0] ?? null,
       show_instructions: personaData.show_instructions,
       instructions_suggestions: personaData.instructions_suggestions,
       instructions_required: personaData.instructions_required,
-      instructions_domain_id: personaData.instructions_domain_id,
       instructions_show_ai_generate: personaData.instructions_show_ai_generate,
       instructions: resources?.instructions ?? [],
       example_resources: current?.examples ?? [],
       show_examples: personaData.show_examples,
       example_suggestions: personaData.example_suggestions,
       examples_required: personaData.examples_required,
-      examples_domain_id: personaData.examples_domain_id,
       examples_show_ai_generate: personaData.examples_show_ai_generate,
       examples: resources?.examples ?? [],
       parameter_resources: current?.parameters ?? [],
       show_parameters: personaData.show_parameters,
       parameter_suggestions: personaData.parameter_suggestions,
       parameters_required: personaData.parameters_required,
-      parameters_domain_id: personaData.parameters_domain_id,
       parameters_show_ai_generate: personaData.parameters_show_ai_generate,
       parameters: resources?.parameters ?? [],
-      // Step-level AI generation flags
       basic_show_ai_generate: personaData.basic_show_ai_generate,
       content_show_ai_generate: personaData.content_show_ai_generate,
       parameters_step_show_ai_generate: personaData.parameters_step_show_ai_generate,
-      domain_data: personaData.domain_data,
-      // Per-resource group IDs (from draft MV)
       names_group_id: personaData.names_group_id,
       descriptions_group_id: personaData.descriptions_group_id,
       colors_group_id: personaData.colors_group_id,
@@ -348,14 +346,12 @@ function PersonaComponent({
       parameter_fields_group_id: personaData.parameter_fields_group_id,
       examples_group_id: personaData.examples_group_id,
       parameters_group_id: personaData.parameters_group_id,
-      // Per-resource create tool IDs (only for resources with actual create tools)
       name_create_tool_id: personaData.name_create_tool_id,
       description_create_tool_id: personaData.description_create_tool_id,
       color_create_tool_id: personaData.color_create_tool_id,
       instructions_create_tool_id: personaData.instructions_create_tool_id,
       parameter_fields_create_tool_id: personaData.parameter_fields_create_tool_id,
       examples_create_tool_id: personaData.examples_create_tool_id,
-      // Per-resource link tool IDs
       name_link_tool_id: personaData.name_link_tool_id,
       description_link_tool_id: personaData.description_link_tool_id,
       color_link_tool_id: personaData.color_link_tool_id,
@@ -367,8 +363,6 @@ function PersonaComponent({
       examples_link_tool_id: personaData.examples_link_tool_id,
       parameters_link_tool_id: personaData.parameters_link_tool_id,
     };
-    // Intentionally depend on individual fields, not whole personaData object
-    // to prevent recreation when only object reference changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     personaData?.group_id,
@@ -376,56 +370,44 @@ function PersonaComponent({
     personaData?.show_name,
     personaData?.name_suggestions,
     personaData?.name_required,
-    personaData?.name_domain_id,
     personaData?.name_show_ai_generate,
     personaData?.show_description,
     personaData?.description_suggestions,
     personaData?.description_required,
-    personaData?.description_domain_id,
     personaData?.description_show_ai_generate,
     personaData?.show_departments,
     personaData?.department_suggestions,
     personaData?.departments_required,
-    personaData?.departments_domain_id,
     personaData?.departments_show_ai_generate,
     personaData?.show_flag,
-    personaData?.flag_domain_id,
     personaData?.flag_show_ai_generate,
     personaData?.show_parameter_fields,
     personaData?.parameter_field_suggestions,
     personaData?.parameter_fields_required,
-    personaData?.parameter_fields_domain_id,
     personaData?.parameter_fields_show_ai_generate,
     personaData?.show_color,
     personaData?.color_suggestions,
     personaData?.color_required,
-    personaData?.color_domain_id,
     personaData?.color_show_ai_generate,
     personaData?.show_icon,
     personaData?.icon_suggestions,
     personaData?.icon_required,
-    personaData?.icon_domain_id,
     personaData?.icon_show_ai_generate,
     personaData?.show_instructions,
     personaData?.instructions_suggestions,
     personaData?.instructions_required,
-    personaData?.instructions_domain_id,
     personaData?.instructions_show_ai_generate,
     personaData?.show_examples,
     personaData?.example_suggestions,
     personaData?.examples_required,
-    personaData?.examples_domain_id,
     personaData?.examples_show_ai_generate,
     personaData?.show_parameters,
     personaData?.parameter_suggestions,
     personaData?.parameters_required,
-    personaData?.parameters_domain_id,
     personaData?.parameters_show_ai_generate,
     personaData?.basic_show_ai_generate,
     personaData?.content_show_ai_generate,
     personaData?.parameters_step_show_ai_generate,
-    personaData?.domain_data,
-    // Per-resource group IDs
     personaData?.names_group_id,
     personaData?.descriptions_group_id,
     personaData?.colors_group_id,
@@ -436,7 +418,6 @@ function PersonaComponent({
     personaData?.parameter_fields_group_id,
     personaData?.examples_group_id,
     personaData?.parameters_group_id,
-    // Per-resource tool IDs (only for resources with actual create tools)
     personaData?.name_create_tool_id,
     personaData?.description_create_tool_id,
     personaData?.color_create_tool_id,
@@ -455,8 +436,6 @@ function PersonaComponent({
     personaData?.parameters_link_tool_id,
   ]);
 
-  // Helper to check if a resource type can be regenerated
-  // Use stablePersonaDataFields to prevent callback recreation when personaData object reference changes
   const canRegenerate = useCallback(
     (resourceType: ResourceType): boolean => {
       if (!stablePersonaDataFields) return false;
@@ -464,37 +443,21 @@ function PersonaComponent({
         case "names":
           return stablePersonaDataFields.name_resource?.generated ?? false;
         case "descriptions":
-          return (
-            stablePersonaDataFields.description_resource?.generated ?? false
-          );
+          return stablePersonaDataFields.description_resource?.generated ?? false;
         case "colors":
           return stablePersonaDataFields.color_resource?.generated ?? false;
         case "icons":
           return stablePersonaDataFields.icon_resource?.generated ?? false;
         case "instructions":
-          return (
-            stablePersonaDataFields.instructions_resource?.generated ?? false
-          );
+          return stablePersonaDataFields.instructions_resource?.generated ?? false;
         case "flags":
           return stablePersonaDataFields.flags?.[0]?.generated ?? false;
         case "departments":
-          return (
-            stablePersonaDataFields.department_resources?.some(
-              (d) => d.generated
-            ) ?? false
-          );
+          return stablePersonaDataFields.department_resources?.some((d) => d.generated) ?? false;
         case "parameter_fields":
-          return (
-            stablePersonaDataFields.parameter_field_resources?.some(
-              (f) => f.generated
-            ) ?? false
-          );
+          return stablePersonaDataFields.parameter_field_resources?.some((f) => f.generated) ?? false;
         case "examples":
-          return (
-            stablePersonaDataFields.example_resources?.some(
-              (e) => e.generated
-            ) ?? false
-          );
+          return stablePersonaDataFields.example_resources?.some((e) => e.generated) ?? false;
         default:
           return false;
       }
@@ -502,47 +465,37 @@ function PersonaComponent({
     [stablePersonaDataFields]
   );
 
-  const getInitialFormState = useCallback(() => {
+  const getInitialFormState = useCallback((): PersonaFormState => {
     const data = personaDataRef.current;
     if (!data) {
       return {
-        name_id: null as string | null,
-        description_id: null as string | null,
-        color_id: null as string | null,
-        icon_id: null as string | null,
-        instructions_id: null as string | null,
-        active_flag_id: null as string | null,
-        department_ids: [] as string[],
-        parameter_field_ids: [] as string[],
-        example_ids: [] as string[],
-        parameter_ids: [] as string[],
+        name_id: null,
+        description_id: null,
+        color_id: null,
+        icon_id: null,
+        instructions_id: null,
+        active_flag_id: null,
+        department_ids: [],
+        parameter_field_ids: [],
+        example_ids: [],
+        parameter_ids: [],
       };
     }
 
     const resources = data.resources?.resources;
     const current = data.resources?.current;
 
-    // Derive parameter_ids from parameter_field_resources
-    // This ensures conditional parameters show up on load, even when parameter_ids
-    // is already populated (it may only contain base parameters, not conditional ones)
     const currentParameterIds = (current?.parameters ?? [])
       .map((p) => p.parameter_id)
       .filter(Boolean) as string[];
     const paramIdsSet = new Set<string>(currentParameterIds);
     const availableFields = resources?.parameter_fields ?? [];
 
-    if (
-      current?.parameter_fields &&
-      current.parameter_fields.length > 0
-    ) {
-      // For each selected field resource, add its parent parameter and any conditional parameters
+    if (current?.parameter_fields && current.parameter_fields.length > 0) {
       current.parameter_fields.forEach((fieldResource) => {
-        // Add the parent parameter (the parameter this field belongs to)
         if (fieldResource.parameter_id) {
           paramIdsSet.add(fieldResource.parameter_id);
         }
-
-        // Find the available field to check for conditional_parameter_id
         const availableField = availableFields.find(
           (f) => f.field_id === fieldResource.field_id
         );
@@ -552,10 +505,6 @@ function PersonaComponent({
       });
     }
 
-    const derivedParameterIds = Array.from(paramIdsSet);
-
-    // Extract resource IDs from server data
-    // Note: Server data may have display values, but we only store IDs here
     return {
       name_id: current?.names?.[0]?.id ?? null,
       description_id: current?.descriptions?.[0]?.id ?? null,
@@ -572,49 +521,103 @@ function PersonaComponent({
       example_ids: (current?.examples ?? [])
         .map((e) => e.id)
         .filter(Boolean) as string[],
-      parameter_ids: derivedParameterIds,
+      parameter_ids: Array.from(paramIdsSet),
     };
-    // Remove personaData from dependencies - use ref instead to prevent callback recreation
   }, []);
 
-  const [formState, setFormState] = useState(getInitialFormState);
-  // Use ref to access formState in renderStep without depending on it
-  const formStateRef = React.useRef(formState);
+  const [formState, setFormState] = useState<PersonaFormState>(getInitialFormState);
+  const formStateRef = React.useRef<Record<string, unknown>>(formState as unknown as Record<string, unknown>);
   React.useEffect(() => {
-    formStateRef.current = formState;
+    formStateRef.current = formState as unknown as Record<string, unknown>;
   }, [formState]);
 
-  // Memoize stringified array dependencies to prevent effect from running when array references change but content is same
+  // Auto-accept name from AI generation
+  const aiNameResource = aiFormData.name_resource;
+  React.useEffect(() => {
+    if (aiNameResource?.id) {
+      setFormState((prev) => ({
+        ...prev,
+        name_id: aiNameResource.id!,
+      }));
+    }
+  }, [aiNameResource]);
+
+  // Memoize stringified array dependencies
   const departmentIdsStr = React.useMemo(() => {
     const current = personaData?.resources?.current;
-    const ids = (current?.departments ?? [])
-      .map((d) => d.department_id)
-      .filter(Boolean);
-    return JSON.stringify(ids);
+    return JSON.stringify(
+      (current?.departments ?? []).map((d) => d.department_id).filter(Boolean)
+    );
   }, [personaData?.resources]);
   const parameterFieldIdsStr = React.useMemo(() => {
     const current = personaData?.resources?.current;
-    const ids = (current?.parameter_fields ?? [])
-      .map((f) => f.field_id)
-      .filter(Boolean);
-    return JSON.stringify(ids);
+    return JSON.stringify(
+      (current?.parameter_fields ?? []).map((f) => f.field_id).filter(Boolean)
+    );
   }, [personaData?.resources]);
   const exampleIdsStr = React.useMemo(() => {
     const current = personaData?.resources?.current;
-    const ids = (current?.examples ?? [])
-      .map((e) => e.id)
-      .filter(Boolean);
-    return JSON.stringify(ids);
+    return JSON.stringify(
+      (current?.examples ?? []).map((e) => e.id).filter(Boolean)
+    );
   }, [personaData?.resources]);
   const parameterIdsStr = React.useMemo(() => {
     const current = personaData?.resources?.current;
-    const ids = (current?.parameters ?? [])
-      .map((p) => p.parameter_id)
-      .filter(Boolean);
-    return JSON.stringify(ids);
+    return JSON.stringify(
+      (current?.parameters ?? []).map((p) => p.parameter_id).filter(Boolean)
+    );
   }, [personaData?.resources]);
 
-  // Memoize stringified formState arrays for draft listener effect dependencies
+  // Update form state when server data changes
+  useEffect(() => {
+    const newState = getInitialFormState();
+    setFormState((prev) => {
+      if (
+        prev.name_id !== newState.name_id ||
+        prev.description_id !== newState.description_id ||
+        prev.color_id !== newState.color_id ||
+        prev.icon_id !== newState.icon_id ||
+        prev.instructions_id !== newState.instructions_id ||
+        prev.active_flag_id !== newState.active_flag_id ||
+        JSON.stringify(prev.department_ids) !== JSON.stringify(newState.department_ids) ||
+        JSON.stringify(prev.parameter_field_ids) !== JSON.stringify(newState.parameter_field_ids) ||
+        JSON.stringify(prev.example_ids) !== JSON.stringify(newState.example_ids) ||
+        JSON.stringify(prev.parameter_ids) !== JSON.stringify(newState.parameter_ids)
+      ) {
+        serverSyncPendingRef.current = true;
+        return newState;
+      }
+      return prev;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    personaData?.resources,
+    departmentIdsStr,
+    parameterFieldIdsStr,
+    exampleIdsStr,
+    parameterIdsStr,
+  ]);
+
+  // --- Draft Lifecycle ---
+  const patchPersonaDraftActionRef = React.useRef(patchPersonaDraftAction);
+  React.useEffect(() => {
+    patchPersonaDraftActionRef.current = patchPersonaDraftAction;
+  }, [patchPersonaDraftAction]);
+
+  // Stable ref wrapper for patch action
+  const patchActionRef = React.useRef<
+    ((payload: Record<string, unknown>) => Promise<{ draft_id?: string | null; new_version?: number | null }>) | undefined
+  >(undefined);
+  React.useEffect(() => {
+    if (patchPersonaDraftAction) {
+      patchActionRef.current = async (payload: Record<string, unknown>) => {
+        return await patchPersonaDraftAction({ body: payload } as PatchPersonaDraftIn);
+      };
+    } else {
+      patchActionRef.current = undefined;
+    }
+  }, [patchPersonaDraftAction]);
+
   const formStateDepartmentIdsStr = React.useMemo(
     () => JSON.stringify(formState.department_ids),
     [formState.department_ids]
@@ -632,663 +635,122 @@ function PersonaComponent({
     [formState.parameter_ids]
   );
 
-  // Update form state when server data changes
-  // Use personaData directly in dependency array, not getInitialFormState
-  useEffect(() => {
-    const newState = getInitialFormState();
-    setFormState((prev) => {
-      // Only update if resource IDs actually changed
-      if (
-        prev.name_id !== newState.name_id ||
-        prev.description_id !== newState.description_id ||
-        prev.color_id !== newState.color_id ||
-        prev.icon_id !== newState.icon_id ||
-        prev.instructions_id !== newState.instructions_id ||
-        prev.active_flag_id !== newState.active_flag_id ||
-        JSON.stringify(prev.department_ids) !==
-          JSON.stringify(newState.department_ids) ||
-        JSON.stringify(prev.parameter_field_ids) !==
-          JSON.stringify(newState.parameter_field_ids) ||
-        JSON.stringify(prev.example_ids) !==
-          JSON.stringify(newState.example_ids) ||
-        JSON.stringify(prev.parameter_ids) !==
-          JSON.stringify(newState.parameter_ids)
-      ) {
-        // Mark that this is a server sync, so autosave resets baseline instead of saving
-        serverSyncPendingRef.current = true;
-        return newState;
-      }
-      return prev;
-    });
-    // Use stringified arrays in dependencies to prevent effect from running when array references change but content is same
-    // Intentionally exclude formState and getInitialFormState to prevent infinite loops
+  // formStateKey excludes draftId — the hook prepends it
+  const formStateKey = React.useMemo(
+    () =>
+      JSON.stringify({
+        name_id: formState.name_id,
+        description_id: formState.description_id,
+        color_id: formState.color_id,
+        icon_id: formState.icon_id,
+        instructions_id: formState.instructions_id,
+        active_flag_id: formState.active_flag_id,
+        department_ids: formState.department_ids,
+        parameter_field_ids: formState.parameter_field_ids,
+        example_ids: formState.example_ids,
+        parameter_ids: formState.parameter_ids,
+      }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    personaData?.resources,
-    departmentIdsStr,
-    parameterFieldIdsStr,
-    exampleIdsStr,
-    parameterIdsStr,
-  ]);
+    [
+      formState.name_id,
+      formState.description_id,
+      formState.color_id,
+      formState.icon_id,
+      formState.instructions_id,
+      formState.active_flag_id,
+      formStateDepartmentIdsStr,
+      formStateParameterFieldIdsStr,
+      formStateExampleIdsStr,
+      formStateParameterIdsStr,
+    ]
+  );
 
-  // Draft version tracking for optimistic concurrency control
-  // Keep version in a ref so updating it doesn't retrigger the effect
-  const [lastSavedVersion, setLastSavedVersion] = useState(0);
-  const lastSavedVersionRef = React.useRef(0);
-  React.useEffect(() => {
-    lastSavedVersionRef.current = lastSavedVersion;
-  }, [lastSavedVersion]);
-  // Sync draft_version from server to avoid unintended draft forks.
+  const hasResourceIds = !!(
+    formState.name_id ||
+    formState.description_id ||
+    formState.color_id ||
+    formState.icon_id ||
+    formState.instructions_id ||
+    formState.active_flag_id ||
+    formState.department_ids.length > 0 ||
+    formState.parameter_field_ids.length > 0 ||
+    formState.example_ids.length > 0 ||
+    formState.parameter_ids.length > 0
+  );
+
+  const buildPatchPayload = useCallback(
+    (
+      draftId: string | null,
+      expectedVersion: number,
+      flushResults?: Record<string, unknown>
+    ): Record<string, unknown> => {
+      const currentFormState = formStateRef.current as unknown as PersonaFormState;
+      const fr = (flushResults ?? {}) as Partial<FlushResult>;
+      return {
+        input_draft_id: draftId || null,
+        name_id: fr.name_id !== undefined ? fr.name_id : currentFormState.name_id,
+        description_id: fr.description_id !== undefined ? fr.description_id : currentFormState.description_id,
+        color_id: fr.color_id !== undefined ? fr.color_id : currentFormState.color_id,
+        icon_id: currentFormState.icon_id,
+        instructions_id: fr.instructions_id !== undefined ? fr.instructions_id : currentFormState.instructions_id,
+        active_flag_id: currentFormState.active_flag_id,
+        department_ids: currentFormState.department_ids,
+        parameter_field_ids: fr.parameter_field_ids !== undefined ? fr.parameter_field_ids : currentFormState.parameter_field_ids,
+        example_ids: fr.example_ids !== undefined ? fr.example_ids : currentFormState.example_ids,
+        parameter_ids: currentFormState.parameter_ids,
+        expected_version: expectedVersion,
+      };
+    },
+    []
+  );
+
   const draftVersion =
     personaData && "draft_version" in personaData
       ? (personaData as { draft_version?: number | null }).draft_version
       : null;
-  // Track if version has been synced from server to prevent patching before sync
-  const versionSyncedRef = React.useRef(false);
-  React.useEffect(() => {
-    if (
-      typeof draftVersion === "number" &&
-      draftVersion !== lastSavedVersionRef.current
-    ) {
-      setLastSavedVersion(draftVersion);
-      lastSavedVersionRef.current = draftVersion;
-    }
-    versionSyncedRef.current = true; // Mark as synced
-  }, [draftVersion]);
 
-  // Get draftId from GenericForm's URL state via bridge (GenericForm is single source of truth)
-  const [draftId, setDraftId] = useState<string | null>(null);
-  const setUrlFormDataRef = React.useRef<
-    null | ((updates: Record<string, unknown>) => void)
-  >(null);
+  const {
+    setUrlFormDataRef,
+    onFormDataChange,
+    flushAllAndSave,
+    serverSyncPendingRef,
+    formDataRef,
+  } = useDraftLifecycle({
+    formStateKey,
+    patchActionRef,
+    isAutosaveEnabled,
+    buildPatchPayload,
+    setSelectedDraftId,
+    serverDraftVersion: draftVersion ?? null,
+    hasResourceIds,
+    flushRegistryRef,
+    formStateRef,
+  });
 
-  // Store formData from GenericForm to access search params
-  const formDataRef = React.useRef<Record<string, unknown>>({});
-
-  // Track last synced draftId to prevent redundant profile context updates
-  const lastSyncedDraftIdRef = React.useRef<string | null>(null);
-
-  // Track when we're syncing from server data (to reset baseline, not trigger save)
-  // Defined early so it's available for onFormDataChange and formState sync effect
-  const serverSyncPendingRef = React.useRef(false);
-
-  // Memoized callback to sync draftId from GenericForm - only update if value changed
-  const onFormDataChange = React.useCallback(
-    (fd: Record<string, unknown>) => {
-      // Store formData for access in handleGenerateResources
-      formDataRef.current = fd;
-      const next = (fd["draftId"] as string | undefined) ?? null;
-      setDraftId((prev) => {
-        // If draftId is changing on initial load (null → value), mark as server sync
-        // to prevent triggering autosave for URL-based draft loading
-        if (prev === null && next !== null) {
-          serverSyncPendingRef.current = true;
-        }
-        return prev === next ? prev : next;
-      });
-
-      // One-way sync to profile context (no effect dependency on selectedDraftId)
-      if (next !== lastSyncedDraftIdRef.current) {
-        lastSyncedDraftIdRef.current = next;
-        setSelectedDraftId(next);
-      }
-    },
-    [setSelectedDraftId]
+  // --- Conditional Parameter Toggle ---
+  const getParameterFields = useCallback(
+    () => personaDataRef.current?.resources?.resources?.parameter_fields ?? [],
+    []
   );
 
-  // Use ref to stabilize patchPersonaDraftAction to prevent effect recreation when prop reference changes
-  const patchPersonaDraftActionRef = React.useRef(patchPersonaDraftAction);
-  React.useEffect(() => {
-    patchPersonaDraftActionRef.current = patchPersonaDraftAction;
-  }, [patchPersonaDraftAction]);
+  const { handleConditionalParameterToggle } = useConditionalParameterToggle({
+    setFormState,
+    getParameterFields,
+  });
 
-  // Build a stable key for "what would we patch" - only changes when form data actually changes
-  const draftPatchKey = React.useMemo(() => {
-    return JSON.stringify({
-      draftId: draftId || null,
-      name_id: formState.name_id,
-      description_id: formState.description_id,
-      color_id: formState.color_id,
-      icon_id: formState.icon_id,
-      instructions_id: formState.instructions_id,
-      active_flag_id: formState.active_flag_id,
-      department_ids: formState.department_ids,
-      parameter_field_ids: formState.parameter_field_ids,
-      example_ids: formState.example_ids,
-      parameter_ids: formState.parameter_ids,
-    });
-    // Use stringified arrays to prevent recreation when array references change but content is same
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    draftId,
-    formState.name_id,
-    formState.description_id,
-    formState.color_id,
-    formState.icon_id,
-    formState.instructions_id,
-    formState.active_flag_id,
-    formStateDepartmentIdsStr,
-    formStateParameterFieldIdsStr,
-    formStateExampleIdsStr,
-    formStateParameterIdsStr,
-  ]);
-
-  // Track last patched payload so we don't repatch identical state
-  const lastPatchedKeyRef = React.useRef<string | null>(null);
-  const isFirstPatchRef = React.useRef(true);
-
-  // Track if there are pending changes for beforeunload warning
-  const hasPendingChangesRef = React.useRef(false);
-
-  // Draft change listener - watches resource IDs and patches draft
-  // Only triggers when the payload actually changes, not when version changes
-  useEffect(() => {
-    const hasResourceIds =
-      formState.name_id ||
-      formState.description_id ||
-      formState.color_id ||
-      formState.icon_id ||
-      formState.instructions_id ||
-      formState.active_flag_id ||
-      formState.department_ids.length > 0 ||
-      formState.parameter_field_ids.length > 0 ||
-      formState.example_ids.length > 0 ||
-      formState.parameter_ids.length > 0;
-
-    if (!hasResourceIds || !patchPersonaDraftActionRef.current) {
-      return;
-    }
-
-    // Wait for version sync before patching to prevent race conditions
-    // Only block if there's an actual numeric version to sync (not null for new personas)
-    if (
-      typeof personaData?.draft_version === "number" &&
-      !versionSyncedRef.current
-    ) {
-      return;
-    }
-
-    // Skip the first effect run - treat initial server state as the baseline
-    // This prevents creating an unwanted draft on page load when server returns pre-populated IDs
-    if (isFirstPatchRef.current) {
-      isFirstPatchRef.current = false;
-      lastPatchedKeyRef.current = draftPatchKey;
-      return;
-    }
-
-    // If this change came from server sync, reset baseline instead of triggering save
-    if (serverSyncPendingRef.current) {
-      serverSyncPendingRef.current = false;
-      lastPatchedKeyRef.current = draftPatchKey;
-      return;
-    }
-
-    // ✅ If nothing changed since the last successful patch, do nothing.
-    if (lastPatchedKeyRef.current === draftPatchKey) {
-      return;
-    }
-
-    // Mark that we have pending changes (for beforeunload warning)
-    hasPendingChangesRef.current = true;
-
-    // Skip autosave if disabled (manual save mode)
-    if (!isAutosaveEnabled) {
-      return;
-    }
-
-    // Immediately show "Saving draft..." when autosave is enabled
-    // (actual API call is debounced, but UI reflects intent immediately)
-    window.dispatchEvent(
-      new CustomEvent("save-status-change", { detail: { status: "saving" } })
-    );
-
-    const timer = setTimeout(async () => {
-      try {
-        if (!patchPersonaDraftActionRef.current) return;
-
-        const result = await patchPersonaDraftActionRef.current({
-          body: {
-            input_draft_id: draftId || null,
-            name_id: formState.name_id,
-            description_id: formState.description_id,
-            color_id: formState.color_id,
-            icon_id: formState.icon_id,
-            instructions_id: formState.instructions_id,
-            active_flag_id: formState.active_flag_id,
-            department_ids: formState.department_ids,
-            parameter_field_ids: formState.parameter_field_ids,
-            example_ids: formState.example_ids,
-            parameter_ids: formState.parameter_ids,
-            expected_version: lastSavedVersionRef.current, // ✅ ref, not state dep
-          },
-        });
-
-        // Mark this payload as patched so we don't loop
-        lastPatchedKeyRef.current = draftPatchKey;
-
-        if (!draftId && result.draft_id) {
-          // Update URL when draft is created via GenericForm bridge (GenericForm owns URL state)
-          toast.success("Draft created", {
-            description: "Your changes are being auto-saved",
-          });
-          setUrlFormDataRef.current?.({ draftId: result.draft_id });
-        } else if (result.draft_id && result.draft_id !== draftId) {
-          // Sync URL to server-returned draft_id to avoid stale draft mismatch
-          setUrlFormDataRef.current?.({ draftId: result.draft_id });
-        }
-
-        // This can stay as state (for UI), but it won't re-trigger patching
-        // because the effect is gated by payload changes.
-        if ((result.new_version ?? 0) !== lastSavedVersionRef.current) {
-          setLastSavedVersion(result.new_version ?? 0);
-          lastSavedVersionRef.current = result.new_version ?? 0;
-        }
-
-        // Clear pending changes flag after successful save
-        hasPendingChangesRef.current = false;
-
-        // Notify save context that save completed and changes are saved
-        window.dispatchEvent(
-          new CustomEvent("save-status-change", { detail: { status: "idle" } })
-        );
-        window.dispatchEvent(
-          new CustomEvent("unsaved-changes", { detail: { hasChanges: false } })
-        );
-      } catch {
-        // Show user feedback
-        toast.error("Failed to save draft", {
-          description:
-            "Your changes may not have been saved. Please try again.",
-        });
-        // Notify save context of error, then reset to idle
-        window.dispatchEvent(
-          new CustomEvent("save-status-change", { detail: { status: "error" } })
-        );
-        // Don't update lastPatchedKeyRef on failure so we retry on next change
-      }
-    }, 1000);
-
-    return () => clearTimeout(timer);
-    // ✅ Trigger only when payload changes, not when version changes
-    // patchPersonaDraftAction and setDraftId are accessed via refs to prevent effect recreation
-    // when prop/function references change but functionality is the same
-    // We access formState fields and draftId inside the effect, but depend on draftPatchKey
-    // to prevent unnecessary effect recreation when individual fields change but payload is same
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    draftPatchKey, // ✅ trigger only when payload changes
-    isAutosaveEnabled, // ✅ re-check when autosave mode changes
-    // patchPersonaDraftAction and setDraftId are accessed via refs
-  ]);
-
-  // Warn users about unsaved changes when navigating away
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (hasPendingChangesRef.current) {
-        e.preventDefault();
-        e.returnValue = "You have unsaved changes.";
-      }
-    };
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, []);
-
-  // Emit unsaved-changes event when draftPatchKey changes
-  useEffect(() => {
-    // During server sync, report no changes (baseline will be reset by autosave effect)
-    if (serverSyncPendingRef.current) {
-      window.dispatchEvent(
-        new CustomEvent("unsaved-changes", { detail: { hasChanges: false } })
-      );
-      return;
-    }
-    // Only report changes after we've established a baseline (ref is not null)
-    const hasChanges =
-      lastPatchedKeyRef.current !== null &&
-      lastPatchedKeyRef.current !== draftPatchKey;
-    window.dispatchEvent(
-      new CustomEvent("unsaved-changes", { detail: { hasChanges } })
-    );
-  }, [draftPatchKey]);
-
-  // Flush all resources without saving to draft - returns the created IDs
-  // Used by handleSubmit when autosave is off to get IDs before final save
-  const flushAllResources = useCallback(async (): Promise<FlushResult> => {
-    const flushPromises = Array.from(flushRegistryRef.current.values()).map(
-      (flush) => flush()
-    );
-    const flushResults = await Promise.all(flushPromises);
-
-    // Merge all flush results into a single object (filter out void results)
-    const mergedFlushResults = flushResults.reduce<FlushResult>(
-      (acc, result) => (result ? { ...acc, ...result } : acc),
-      {}
-    );
-
-    return mergedFlushResults;
-  }, []);
-
-  // Flush all resources and patch draft (for manual save via Save toolbar)
-  const flushAllAndSave = useCallback(async (): Promise<string | null> => {
-    const startTime = Date.now();
-    const MIN_SAVING_DURATION = 1000; // Show "Saving..." for at least 1 second on manual save
-
-    window.dispatchEvent(
-      new CustomEvent("save-status-change", { detail: { status: "saving" } })
-    );
-
-    let resolvedDraftId: string | null = draftId || null;
-
-    try {
-      // 1. Flush all creatable resource components and collect returned IDs
-      const flushPromises = Array.from(flushRegistryRef.current.values()).map(
-        (flush) => flush()
-      );
-      const flushResults = await Promise.all(flushPromises);
-
-      // 2. Merge all flush results into a single object (filter out void results)
-      const mergedFlushResults = flushResults.reduce<FlushResult>(
-        (acc, result) => (result ? { ...acc, ...result } : acc),
-        {}
-      );
-
-      // 3. Patch draft with all resource IDs - use flush results with fallback to current formState
-      // This avoids the stale closure problem by using freshly returned IDs
-      let isNewDraft = false;
-      if (patchPersonaDraftActionRef.current) {
-        const currentFormState = formStateRef.current;
-        const result = await patchPersonaDraftActionRef.current({
-          body: {
-            input_draft_id: draftId || null,
-            // Use flush results (fresh) with fallback to formState (for non-flushed resources)
-            name_id:
-              mergedFlushResults.name_id !== undefined
-                ? mergedFlushResults.name_id
-                : currentFormState.name_id,
-            description_id:
-              mergedFlushResults.description_id !== undefined
-                ? mergedFlushResults.description_id
-                : currentFormState.description_id,
-            color_id:
-              mergedFlushResults.color_id !== undefined
-                ? mergedFlushResults.color_id
-                : currentFormState.color_id,
-            icon_id: currentFormState.icon_id,
-            instructions_id:
-              mergedFlushResults.instructions_id !== undefined
-                ? mergedFlushResults.instructions_id
-                : currentFormState.instructions_id,
-            active_flag_id: currentFormState.active_flag_id,
-            department_ids: currentFormState.department_ids,
-            parameter_field_ids:
-              mergedFlushResults.parameter_field_ids !== undefined
-                ? mergedFlushResults.parameter_field_ids
-                : currentFormState.parameter_field_ids,
-            example_ids:
-              mergedFlushResults.example_ids !== undefined
-                ? mergedFlushResults.example_ids
-                : currentFormState.example_ids,
-            parameter_ids: currentFormState.parameter_ids,
-            expected_version: lastSavedVersionRef.current,
-          },
-        });
-
-        // Update refs
-        lastPatchedKeyRef.current = draftPatchKey;
-        if (result.new_version !== undefined && result.new_version !== null) {
-          lastSavedVersionRef.current = result.new_version;
-          setLastSavedVersion(result.new_version);
-        }
-
-        // Update URL if draft was created
-        if (!draftId && result.draft_id) {
-          setUrlFormDataRef.current?.({ draftId: result.draft_id });
-          isNewDraft = true;
-        }
-        resolvedDraftId = result.draft_id || draftId || null;
-      }
-
-      // Ensure minimum display duration for manual save
-      const elapsed = Date.now() - startTime;
-      if (elapsed < MIN_SAVING_DURATION) {
-        await new Promise((resolve) =>
-          setTimeout(resolve, MIN_SAVING_DURATION - elapsed)
-        );
-      }
-
-      window.dispatchEvent(
-        new CustomEvent("save-status-change", { detail: { status: "idle" } })
-      );
-      window.dispatchEvent(
-        new CustomEvent("unsaved-changes", { detail: { hasChanges: false } })
-      );
-
-      hasPendingChangesRef.current = false;
-
-      // Show success toast for manual save
-      toast.success(isNewDraft ? "Draft created" : "Draft saved");
-      return resolvedDraftId;
-    } catch {
-      window.dispatchEvent(
-        new CustomEvent("save-status-change", { detail: { status: "error" } })
-      );
-      toast.error("Failed to save draft");
-      return resolvedDraftId;
-    }
-  }, [draftId, draftPatchKey]);
-
-  // Listen for save trigger from layout
-  useEffect(() => {
-    const handleTriggerSave = () => flushAllAndSave();
-    window.addEventListener("trigger-save", handleTriggerSave);
-    return () => window.removeEventListener("trigger-save", handleTriggerSave);
-  }, [flushAllAndSave]);
-
-  // WebSocket handlers for AI generation - unified handler for all resource types
-  useEffect(() => {
-    if (!socket || !isConnected) return;
-
-    // Use single group_id from personaData (no need to track multiple)
-    const currentGroupId = personaData?.group_id;
-
-    const handleGenerationComplete = (
-      data: PersonaGenerationCompletePayload
-    ) => {
-      // Filter by artifact_type and group_id
-      if (
-        data.artifact_type !== "persona" ||
-        !data.group_id ||
-        data.group_id !== currentGroupId
-      ) {
-        return; // Not for this persona or wrong group_id
-      }
-
-      const validResourceTypes: ResourceType[] = [
-        "names",
-        "descriptions",
-        "colors",
-        "icons",
-        "instructions",
-        "flags",
-        "examples",
-        "parameter_fields",
-        "departments",
-        "parameters",
-      ];
-      if (
-        data.resource_type &&
-        validResourceTypes.includes(data.resource_type as ResourceType)
-      ) {
-        // Store full resource objects in aiFormData for diff view workflow
-        // Server now sends full resource objects, not just IDs
-        setAiFormData((prev) => {
-          const updates: Partial<typeof prev> = {};
-          if (data.name_resource) updates.name_resource = data.name_resource;
-          if (data.description_resource)
-            updates.description_resource = data.description_resource;
-          if (data.color_resource) updates.color_resource = data.color_resource;
-          if (data.icon_resource) updates.icon_resource = data.icon_resource;
-          if (data.instructions_resource)
-            updates.instructions_resource = data.instructions_resource;
-          if (data.flag_resource) updates.flag_resource = data.flag_resource;
-          if (data.department_resources)
-            updates.department_resources = data.department_resources;
-          if (data.parameter_field_resources)
-            updates.parameter_field_resources = data.parameter_field_resources;
-          if (data.example_resources)
-            updates.example_resources = data.example_resources;
-          if (data.parameter_resources)
-            updates.parameter_resources = data.parameter_resources;
-          return { ...prev, ...updates };
-        });
-
-        // Update formState with the resource IDs extracted from resource objects
-        // Note: Most resources are now handled through aiFormData for diff workflow
-        // Only name_resource auto-accepts since it already has diff workflow implemented
-        setFormState((prev) => {
-          const updates: Partial<typeof prev> = {};
-
-          // Single-select resources: only name_resource auto-accepts
-          // (Names.tsx already implements diff workflow)
-          if (data.name_resource?.id) updates.name_id = data.name_resource.id;
-          // color_resource is handled through aiFormData for diff workflow
-          // icon_resource is handled through aiFormData for diff workflow
-          // instructions_resource is handled through aiFormData for diff workflow
-          // description_id is handled through aiFormData for diff workflow
-          // flag_resource is handled through aiFormData for diff workflow
-
-          // Multi-select resources: all handled through aiFormData for diff workflow
-          // parameter_field_resources is handled through aiFormData for diff workflow
-          // department_resources is handled through aiFormData for diff workflow
-          // example_resources is handled through aiFormData for diff workflow
-
-          return { ...prev, ...updates };
-        });
-
-        setGeneratingResources((prev) => {
-          const next = new Set(prev);
-          next.delete(data.resource_type as ResourceType);
-          return next;
-        });
-        if (data.success) {
-          toast.success(
-            data.message || `${data.resource_type} generated successfully`
-          );
-        } else {
-          toast.error(
-            data.message || `Failed to generate ${data.resource_type}`
-          );
-        }
-      }
-    };
-
-    const handleGenerationProgress = (
-      data: PersonaGenerationProgressPayload
-    ) => {
-      // Filter by artifact_type and group_id
-      if (
-        data.artifact_type !== "persona" ||
-        !data.group_id ||
-        data.group_id !== currentGroupId
-      ) {
-        return; // Not for this persona or wrong group_id
-      }
-      // Handle progress updates if needed
-    };
-
-    const handleGenerationError = (data: PersonaGenerationErrorPayload) => {
-      // Filter by artifact_type and group_id
-      if (
-        data.artifact_type !== "persona" ||
-        !data.group_id ||
-        data.group_id !== currentGroupId
-      ) {
-        return; // Not for this persona or wrong group_id
-      }
-
-      const validResourceTypes: ResourceType[] = [
-        "names",
-        "descriptions",
-        "colors",
-        "icons",
-        "instructions",
-        "flags",
-        "examples",
-        "parameter_fields",
-        "departments",
-        "parameters",
-      ];
-      const resourceTypes =
-        data.resource_types || (data.resource_type ? [data.resource_type] : []);
-      setGeneratingResources((prev) => {
-        const next = new Set(prev);
-        resourceTypes.forEach((rt) => {
-          if (validResourceTypes.includes(rt as ResourceType)) {
-            next.delete(rt as ResourceType);
-          }
-        });
-        return next;
-      });
-      toast.error(data.message || "Generation failed");
-    };
-
-    // Listen to persona-specific events filtered by artifact_type and group_id
-    socket.on("persona_generation_progress", handleGenerationProgress);
-    socket.on("persona_generation_complete", handleGenerationComplete);
-    socket.on("persona_generation_error", handleGenerationError);
-
-    return () => {
-      socket.off("persona_generation_progress", handleGenerationProgress);
-      socket.off("persona_generation_complete", handleGenerationComplete);
-      socket.off("persona_generation_error", handleGenerationError);
-    };
-  }, [socket, isConnected, personaData?.group_id]);
-
-  // Helper function to get domain_ids from resource types using personaData
-  const getDomainIds = useCallback(
-    (resourceTypes: ResourceType[]): string[] => {
-      if (!personaData) return [];
-
-      // Map resource types to their domain IDs
-      const domainIdMap: Partial<Record<ResourceType, string | null | undefined>> = {
-        names: personaData.name_domain_id,
-        descriptions: personaData.description_domain_id,
-        colors: personaData.color_domain_id,
-        icons: personaData.icon_domain_id,
-        instructions: personaData.instructions_domain_id,
-        flags: personaData.flag_domain_id,
-        departments: personaData.departments_domain_id,
-        parameter_fields: personaData.parameter_fields_domain_id,
-        examples: personaData.examples_domain_id,
-        parameters: personaData.parameters_domain_id,
-      };
-
-      // Return array of domain IDs for the requested resource types
-      return resourceTypes
-        .map((rt) => domainIdMap[rt])
-        .filter((id): id is string => id != null);
-    },
-    [personaData]
-  );
-
+  // --- Generation Handlers ---
   const handleGenerateResources = useCallback(
-    async (
-      resourceTypes: ResourceType[],
-      userInstructions?: string
-    ) => {
+    async (resourceTypes: ResourceType[], userInstructions?: string) => {
       if (!socket || !isConnected) {
         toast.error("WebSocket not connected");
         return;
       }
 
-      // Get domain IDs for the requested resource types
-      const domainIds = getDomainIds(resourceTypes);
-      if (domainIds.length === 0) {
-        toast.error("No domains available for generation");
+      if (resourceTypes.length === 0) {
+        toast.error("No resource types specified for generation");
         return;
       }
 
-      // Ensure a draft exists before generation
       let draftIdToUse =
         (formDataRef.current["draftId"] as string | undefined) ?? null;
       if (!draftIdToUse) {
@@ -1299,182 +761,125 @@ function PersonaComponent({
         return;
       }
 
-      // Set all resources as generating
       setGeneratingResources((prev) => {
         const next = new Set(prev);
         resourceTypes.forEach((rt) => next.add(rt));
         return next;
       });
 
-      // Read search params from formData
       const formData = formDataRef.current;
-      const draftId = draftIdToUse;
-      const colorSearch =
-        (formData["colorSearch"] as string | undefined) ?? null;
-      const iconSearch = (formData["iconSearch"] as string | undefined) ?? null;
-      const descriptionSearch =
-        (formData["descriptionSearch"] as string | undefined) ?? null;
-      const instructionsSearch =
-        (formData["instructionsSearch"] as string | undefined) ?? null;
-      const colorShowSelected =
-        (formData["colorShowSelected"] as boolean | undefined) ?? false;
-      const iconShowSelected =
-        (formData["iconShowSelected"] as boolean | undefined) ?? false;
-
-      // Emit persona_generate event with domain_ids (server looks up agent_ids)
       socket.emit("persona_generate", {
-        domain_ids: domainIds, // Domain IDs for generation (server maps to agent_ids)
+        resource_types: resourceTypes,
         user_instructions: userInstructions ? [userInstructions] : null,
-        // GetPersonaApiRequest fields from formData
-        draft_id: draftId,
-        color_search: colorSearch || null,
-        icon_search: iconSearch || null,
-        descriptions_search: descriptionSearch || null,
-        instructions_search: instructionsSearch || null,
-        color_show_selected: colorShowSelected || false,
-        icon_show_selected: iconShowSelected || false,
+        draft_id: draftIdToUse,
+        color_search: (formData["colorSearch"] as string | undefined) ?? null,
+        icon_search: (formData["iconSearch"] as string | undefined) ?? null,
+        descriptions_search: (formData["descriptionSearch"] as string | undefined) ?? null,
+        instructions_search: (formData["instructionsSearch"] as string | undefined) ?? null,
+        color_show_selected: (formData["colorShowSelected"] as boolean | undefined) ?? false,
+        icon_show_selected: (formData["iconShowSelected"] as boolean | undefined) ?? false,
         mcp: false,
         persona_id: personaId || null,
-        // Current selections are derived server-side from draft-backed API response
       });
     },
-    [socket, isConnected, personaId, flushAllAndSave, getDomainIds]
+    [socket, isConnected, personaId, flushAllAndSave, formDataRef, setGeneratingResources]
   );
 
-  // Individual generation handlers - generate directly without modals
   const handleGenerateName = useCallback(
     async () => handleGenerateResources(["names"]),
     [handleGenerateResources]
   );
-
   const handleGenerateDescription = useCallback(
     async () => handleGenerateResources(["descriptions"]),
     [handleGenerateResources]
   );
-
   const handleGenerateInstructions = useCallback(
     async () => handleGenerateResources(["instructions"]),
     [handleGenerateResources]
   );
-
   const handleGenerateDepartments = useCallback(
     async () => handleGenerateResources(["departments"]),
     [handleGenerateResources]
   );
-
   const handleGenerateFlags = useCallback(
     async () => handleGenerateResources(["flags"]),
     [handleGenerateResources]
   );
-
   const handleGenerateExamples = useCallback(
     async () => handleGenerateResources(["examples"]),
     [handleGenerateResources]
   );
-
   const handleGenerateColors = useCallback(
     async () => handleGenerateResources(["colors"]),
     [handleGenerateResources]
   );
-
   const handleGenerateIcons = useCallback(
     async () => handleGenerateResources(["icons"]),
     [handleGenerateResources]
   );
-
   const handleGenerateParameters = useCallback(
     async () => handleGenerateResources(["parameters"]),
     [handleGenerateResources]
   );
-
   const handleGenerateParameterFields = useCallback(
     async () => handleGenerateResources(["parameter_fields"]),
     [handleGenerateResources]
   );
 
-  // Handle conditional parameter auto-select/deselect when a field triggers it
-  // This supports transitive chains: when a field's conditional parameter is deselected,
-  // we also deselect any conditional parameters that were triggered by that parameter's fields
-  const handleConditionalParameterToggle = useCallback(
-    (conditionalParameterId: string, selected: boolean) => {
-      setFormState((prev) => {
-        if (selected) {
-          // Auto-add conditional parameter if not present
-          if (!prev.parameter_ids.includes(conditionalParameterId)) {
-            return {
-              ...prev,
-              parameter_ids: [...prev.parameter_ids, conditionalParameterId],
-            };
-          }
-        } else {
-          // Auto-remove conditional parameter and handle chain cleanup
-          // Build a set of parameters to remove (starts with the one being deselected)
-          const toRemove = new Set<string>([conditionalParameterId]);
-
-          // Get all available fields from personaData to find chain dependencies
-          const allFields =
-            personaDataRef.current?.resources?.resources?.parameter_fields ?? [];
-
-          // Recursively find conditional params that should also be removed
-          // (parameters whose trigger fields belong to parameters being removed)
-          let changed = true;
-          while (changed) {
-            changed = false;
-            for (const field of allFields) {
-              // If this field belongs to a parameter we're removing
-              // and it has a conditional_parameter_id
-              if (
-                field.parameter_id &&
-                toRemove.has(field.parameter_id) &&
-                field.conditional_parameter_id &&
-                !toRemove.has(field.conditional_parameter_id)
-              ) {
-                toRemove.add(field.conditional_parameter_id);
-                changed = true;
-              }
-            }
-          }
-
-          // Also find fields that should be deselected (fields of removed parameters)
-          const fieldsToRemove = new Set<string>();
-          for (const field of allFields) {
-            if (
-              field.parameter_id &&
-              toRemove.has(field.parameter_id) &&
-              field.id
-            ) {
-              fieldsToRemove.add(field.id);
-            }
-          }
-
-          return {
-            ...prev,
-            parameter_ids: prev.parameter_ids.filter((id) => !toRemove.has(id)),
-            parameter_field_ids: prev.parameter_field_ids.filter(
-              (id) => !fieldsToRemove.has(id)
-            ),
-          };
-        }
-        return prev;
-      });
-    },
+  // --- Generation Modal ---
+  const stepResources: Record<string, ResourceType[]> = useMemo(
+    () => ({
+      basic: ["names", "descriptions", "departments", "flags"],
+      parameters: ["parameters", "parameter_fields"],
+      color: ["colors"],
+      icon: ["icons"],
+      content: ["instructions", "examples"],
+      all: [
+        "names", "descriptions", "colors", "icons", "instructions",
+        "flags", "parameters", "parameter_fields", "departments", "examples",
+      ],
+    }),
     []
   );
 
-  // GenericForm will manage URL state via nuqs parsers
-  // We'll merge formState (resource IDs) with GenericForm's formData (URL params) when needed
+  const resourceLabels: Partial<Record<ResourceType, string>> = useMemo(
+    () => ({
+      names: "Names",
+      descriptions: "Descriptions",
+      colors: "Colors",
+      icons: "Icons",
+      instructions: "Instructions",
+      flags: "Flags",
+      examples: "Examples",
+      parameters: "Parameters",
+      parameter_fields: "Parameter Fields",
+      departments: "Departments",
+    }),
+    []
+  );
 
-  // Disabled logic based on can_edit flag - standardized for all resource components
-  // Check can_edit in both new and edit modes to show disabled_reason when agents are missing
+  const onModalGenerate = useCallback(
+    (selectedResources: ResourceType[], instructions?: string) => {
+      handleGenerateResources(selectedResources, instructions);
+    },
+    [handleGenerateResources]
+  );
+
+  const { handleOpenStepCardModal, modalProps } = useGenerationModal<ResourceType>({
+    stepResources,
+    resourceLabels,
+    canRegenerate,
+    onGenerate: onModalGenerate,
+    isGenerating,
+  });
+
+  // --- Disabled / Breadcrumb ---
   const disabled = useMemo(() => {
     if (!personaData) return false;
     return !personaData.can_edit;
   }, [personaData]);
 
-  // Set breadcrumb context when persona data is loaded
-  // Extract the specific field to use as dependency (not the whole object)
-  const personaNameForBreadcrumb =
-    stablePersonaDataFields?.name_resource?.name;
+  const personaNameForBreadcrumb = stablePersonaDataFields?.name_resource?.name;
   useEffect(() => {
     if (personaNameForBreadcrumb && personaId && isEditMode) {
       setEntityMetadata({
@@ -1492,120 +897,69 @@ function PersonaComponent({
     clearEntityMetadata,
   ]);
 
-  // Submit handler for GenericForm (uses formState, not formData parameter)
+  // --- Submit ---
   const handleSubmit = useCallback(
     async (_formData: Record<string, unknown>) => {
-      // When autosave is disabled, flush all resources first to create them
-      // This gets the IDs directly without saving to draft
       let flushResults: FlushResult = {};
       if (!isAutosaveEnabled) {
         flushResults = await flushAllResources();
       }
 
-      // Get the current form state and merge with flush results
-      // Flush results take precedence (they're freshly created)
-      const baseFormState = formStateRef.current;
+      const baseFormState = formStateRef.current as unknown as PersonaFormState;
       const effectiveFormState = {
-        name_id:
-          flushResults.name_id !== undefined
-            ? flushResults.name_id
-            : baseFormState.name_id,
-        description_id:
-          flushResults.description_id !== undefined
-            ? flushResults.description_id
-            : baseFormState.description_id,
-        color_id:
-          flushResults.color_id !== undefined
-            ? flushResults.color_id
-            : baseFormState.color_id,
+        name_id: flushResults.name_id !== undefined ? flushResults.name_id : baseFormState.name_id,
+        description_id: flushResults.description_id !== undefined ? flushResults.description_id : baseFormState.description_id,
+        color_id: flushResults.color_id !== undefined ? flushResults.color_id : baseFormState.color_id,
         icon_id: baseFormState.icon_id,
-        instructions_id:
-          flushResults.instructions_id !== undefined
-            ? flushResults.instructions_id
-            : baseFormState.instructions_id,
+        instructions_id: flushResults.instructions_id !== undefined ? flushResults.instructions_id : baseFormState.instructions_id,
         active_flag_id: baseFormState.active_flag_id,
         department_ids: baseFormState.department_ids,
-        parameter_field_ids:
-          flushResults.parameter_field_ids !== undefined
-            ? flushResults.parameter_field_ids
-            : baseFormState.parameter_field_ids,
-        example_ids:
-          flushResults.example_ids !== undefined
-            ? flushResults.example_ids
-            : baseFormState.example_ids,
+        parameter_field_ids: flushResults.parameter_field_ids !== undefined ? flushResults.parameter_field_ids : baseFormState.parameter_field_ids,
+        example_ids: flushResults.example_ids !== undefined ? flushResults.example_ids : baseFormState.example_ids,
         parameter_ids: baseFormState.parameter_ids,
       };
 
-      // Validate required resource IDs using {resource}_required flags from personaData
       if (personaData?.name_required && !effectiveFormState.name_id) {
         toast.error("Persona name is required");
         throw new Error("Persona name is required");
       }
-
       if (personaData?.color_required && !effectiveFormState.color_id) {
         toast.error("Persona color is required");
         throw new Error("Persona color is required");
       }
-
       if (personaData?.icon_required && !effectiveFormState.icon_id) {
         toast.error("Persona icon is required");
         throw new Error("Persona icon is required");
       }
-
-      if (
-        personaData?.instructions_required &&
-        !effectiveFormState.instructions_id
-      ) {
+      if (personaData?.instructions_required && !effectiveFormState.instructions_id) {
         toast.error("Instructions are required");
         throw new Error("Instructions are required");
       }
-
-      if (
-        personaData?.departments_required &&
-        (!effectiveFormState.department_ids ||
-          effectiveFormState.department_ids.length === 0)
-      ) {
+      if (personaData?.departments_required && (!effectiveFormState.department_ids || effectiveFormState.department_ids.length === 0)) {
         toast.error("Departments are required");
         throw new Error("Departments are required");
       }
-
-      if (
-        personaData?.parameter_fields_required &&
-        (!effectiveFormState.parameter_field_ids ||
-          effectiveFormState.parameter_field_ids.length === 0)
-      ) {
+      if (personaData?.parameter_fields_required && (!effectiveFormState.parameter_field_ids || effectiveFormState.parameter_field_ids.length === 0)) {
         toast.error("Parameter fields are required");
         throw new Error("Parameter fields are required");
       }
-
-      if (
-        personaData?.examples_required &&
-        (!effectiveFormState.example_ids ||
-          effectiveFormState.example_ids.length === 0)
-      ) {
+      if (personaData?.examples_required && (!effectiveFormState.example_ids || effectiveFormState.example_ids.length === 0)) {
         toast.error("Examples are required");
         throw new Error("Examples are required");
       }
 
-      // Pass department_ids directly - SQL handles validation via validate_department_create_permissions/validate_department_update_permissions
-
-      // Ensure profileId exists - required for API calls
       if (!profile?.id) {
         toast.error("Profile not loaded. Please refresh the page.");
         throw new Error("Profile not loaded");
       }
-
       if (!savePersonaAction) {
         toast.error("Save action not available");
         throw new Error("Save action not available");
       }
-
       if (!personaData?.group_id) {
         toast.error("Group not found. Please try again.");
         throw new Error("Group ID is required for save");
       }
-
-      // Ensure required fields are present (TypeScript guard)
       if (
         !effectiveFormState.name_id ||
         !effectiveFormState.color_id ||
@@ -1619,42 +973,21 @@ function PersonaComponent({
       try {
         await savePersonaAction({
           body: {
-            // Context
             group_id: personaData.group_id,
             input_persona_id: isEditMode && personaId ? personaId : null,
-
-            // Required single-select
             name_id: effectiveFormState.name_id,
             color_id: effectiveFormState.color_id,
             icon_id: effectiveFormState.icon_id,
             instructions_id: effectiveFormState.instructions_id,
-
-            // Optional single-select
             description_id: effectiveFormState.description_id ?? null,
             active_flag_id: effectiveFormState.active_flag_id ?? null,
-
-            // Optional multi-select
-            department_ids:
-              effectiveFormState.department_ids.length > 0
-                ? effectiveFormState.department_ids
-                : null,
-            parameter_field_ids:
-              effectiveFormState.parameter_field_ids.length > 0
-                ? effectiveFormState.parameter_field_ids
-                : null,
-            example_ids:
-              effectiveFormState.example_ids.length > 0
-                ? effectiveFormState.example_ids
-                : null,
-            parameter_ids:
-              effectiveFormState.parameter_ids.length > 0
-                ? effectiveFormState.parameter_ids
-                : null,
+            department_ids: effectiveFormState.department_ids.length > 0 ? effectiveFormState.department_ids : null,
+            parameter_field_ids: effectiveFormState.parameter_field_ids.length > 0 ? effectiveFormState.parameter_field_ids : null,
+            example_ids: effectiveFormState.example_ids.length > 0 ? effectiveFormState.example_ids : null,
+            parameter_ids: effectiveFormState.parameter_ids.length > 0 ? effectiveFormState.parameter_ids : null,
           },
         });
-        toast.success(
-          `Persona ${isEditMode ? "updated" : "created"} successfully!`
-        );
+        toast.success(`Persona ${isEditMode ? "updated" : "created"} successfully!`);
         router.push("/training/personas");
       } catch (error) {
         toast.error(
@@ -1682,10 +1015,9 @@ function PersonaComponent({
     ]
   );
 
-  // Step status logic (for GenericForm) - check resource IDs instead of display values
+  // --- Step Status ---
   const getStepStatus = useCallback(
     (stepId: string, _formData: Record<string, unknown>): StepStatus => {
-      // Check resource IDs from formState (components manage their own display state)
       const hasName = !!formState.name_id;
       const hasDescription = !!formState.description_id;
       const hasColor = !!formState.color_id;
@@ -1715,182 +1047,56 @@ function PersonaComponent({
     [formState]
   );
 
-  // Step-to-resources mapping for multi-generation
-  const stepResources: Record<string, ResourceType[]> = useMemo(
-    () => ({
-      basic: ["names", "descriptions", "departments", "flags"],
-      parameters: ["parameters", "parameter_fields"],
-      color: ["colors"],
-      icon: ["icons"],
-      content: ["instructions", "examples"],
-      all: [
-        "names",
-        "descriptions",
-        "colors",
-        "icons",
-        "instructions",
-        "flags",
-        "parameters",
-        "parameter_fields",
-        "departments",
-        "examples",
-      ], // All resources for full-page generation
-    }),
-    []
-  );
-
-  // Resource labels for display
-  const resourceLabels: Partial<Record<ResourceType, string>> = useMemo(
-    () => ({
-      names: "Names",
-      descriptions: "Descriptions",
-      colors: "Colors",
-      icons: "Icons",
-      instructions: "Instructions",
-      flags: "Flags",
-      examples: "Examples",
-      parameters: "Parameters",
-      parameter_fields: "Parameter Fields",
-      departments: "Departments",
-    }),
-    []
-  );
-
-  // Handler to open modal for step card generation
-  const handleOpenStepCardModal = useCallback(
-    (stepId: string, mode: "generate" | "regenerate") => {
-      const resourceTypes = stepResources[stepId] || [];
-      const resources: GenerateRegenerateModalResource[] = resourceTypes.map(
-        (rt) => ({
-          id: rt,
-          label: resourceLabels[rt] ?? "",
-          active: mode === "regenerate" ? canRegenerate(rt) : true,
-        })
-      );
-
-      setModalResources(resources);
-      setModalMode(mode);
-      setModalInstructions("");
-      setShowGenerateModal(true);
+  // --- Steps / Form Config ---
+  const steps = useMemo(() => [
+    {
+      id: "basic",
+      title: "Basic Information",
+      description: "Set the persona name, description, departments, and active status.",
+      resetFields: ["name", "description", "department_ids", "active"],
     },
-    [stepResources, resourceLabels, canRegenerate]
-  );
-
-  // Handler for modal generate/regenerate action
-  const handleModalGenerate = useCallback(
-    async (selectedResources: string[], instructions: string) => {
-      const resourceTypes = selectedResources as ResourceType[];
-      await handleGenerateResources(
-        resourceTypes,
-        instructions.trim() || undefined
-      );
-      setShowGenerateModal(false);
-      setModalInstructions("");
+    {
+      id: "parameters",
+      title: "Parameters",
+      description: "Select parameters and parameter fields for this persona.",
+      resetFields: ["parameter_ids", "parameter_field_ids", "parameterSearch", "parameterShowSelected"],
     },
-    [handleGenerateResources]
-  );
+    {
+      id: "color",
+      title: "Color",
+      description: "Select a color for the persona.",
+      resetFields: ["color", "colorSearch", "colorShowSelected"],
+    },
+    {
+      id: "icon",
+      title: "Icon",
+      description: "Select an icon for the persona.",
+      resetFields: ["icon", "iconSearch", "iconShowSelected"],
+    },
+    {
+      id: "content",
+      title: "Personality",
+      description: "Define instructions and example messages for the persona.",
+      resetFields: ["instructions", "examples"],
+    },
+  ], []);
 
-  // Listen for full-page-generate event from layout
-  useEffect(() => {
-    const handleFullPageGenerate = (
-      event: CustomEvent<{ agentId?: string }>
-    ) => {
-      const agentId = event.detail?.agentId;
-      if (agentId) {
-        // Open modal instead of directly generating
-        handleOpenStepCardModal("all", "generate");
-      }
-    };
-    window.addEventListener(
-      "full-page-generate",
-      handleFullPageGenerate as EventListener
-    );
-    return () =>
-      window.removeEventListener(
-        "full-page-generate",
-        handleFullPageGenerate as EventListener
-      );
-  }, [handleOpenStepCardModal]);
-
-  // Steps configuration for GenericForm
-  const steps = useMemo(() => {
-    return [
-      {
-        id: "basic",
-        title: "Basic Information",
-        description:
-          "Set the persona name, description, departments, and active status.",
-        resetFields: ["name", "description", "department_ids", "active"],
-      },
-      {
-        id: "parameters",
-        title: "Parameters",
-        description: "Select parameters and parameter fields for this persona.",
-        resetFields: [
-          "parameter_ids",
-          "parameter_field_ids",
-          "parameterSearch",
-          "parameterShowSelected",
-        ],
-      },
-      {
-        id: "color",
-        title: "Color",
-        description: "Select a color for the persona.",
-        resetFields: ["color", "colorSearch", "colorShowSelected"],
-      },
-      {
-        id: "icon",
-        title: "Icon",
-        description: "Select an icon for the persona.",
-        resetFields: ["icon", "iconSearch", "iconShowSelected"],
-      },
-      {
-        id: "content",
-        title: "Personality",
-        description:
-          "Define instructions and example messages for the persona.",
-        resetFields: ["instructions", "examples"],
-      },
-    ];
-  }, []);
-
-  // Memoize formFieldKeys to prevent re-initialization loops
   const formFieldKeys = useMemo(
-    () => [
-      "name",
-      "description",
-      "color",
-      "icon",
-      "instructions",
-      "active",
-      "department_ids",
-      "parameter_field_ids",
-      "parameter_ids",
-      "examples",
-    ],
+    () => ["name", "description", "color", "icon", "instructions", "active", "department_ids", "parameter_field_ids", "parameter_ids", "examples"],
     []
   );
 
-  // Memoize resetSuccessMessage to prevent GenericForm re-renders
   const resetSuccessMessage = useCallback((stepId: string) => {
     switch (stepId) {
-      case "basic":
-        return "Basic information reset";
-      case "parameters":
-        return "Parameters reset";
-      case "color":
-        return "Color reset";
-      case "icon":
-        return "Icon reset";
-      case "content":
-        return "Content reset";
-      default:
-        return "Reset";
+      case "basic": return "Basic information reset";
+      case "parameters": return "Parameters reset";
+      case "color": return "Color reset";
+      case "icon": return "Icon reset";
+      case "content": return "Content reset";
+      default: return "Reset";
     }
   }, []);
 
-  // Memoize submitButton to prevent GenericForm re-renders
   const submitButton = useMemo(
     () => ({
       backUrl: "/training/personas",
@@ -1901,10 +1107,7 @@ function PersonaComponent({
     []
   );
 
-  // Filter onChange callbacks will be created inline in renderStep
-  // to have access to setStepFormData
-
-  // Memoize renderStep to prevent GenericForm re-renders
+  // --- Render Step ---
   const renderStep = useCallback(
     ({
       stepId,
@@ -1932,7 +1135,6 @@ function PersonaComponent({
       }>;
       onReset?: () => void;
     }) => {
-      // Use memoized fields to avoid dependency on personaData object reference
       const currentPersonaData = stablePersonaDataFields;
       switch (stepId) {
         case "basic":
@@ -1965,13 +1167,11 @@ function PersonaComponent({
                   showAiGenerate={currentPersonaData?.name_show_ai_generate ?? false}
                   createNamesAction={
                     createNamesAction as
-                      | ((
-                          input: CreateDraftNamesIn
-                        ) => Promise<CreateDraftNamesOut>)
+                      | ((input: CreateDraftNamesIn) => Promise<CreateDraftNamesOut>)
                       | undefined
                   }
                   isAutosaveEnabled={isAutosaveEnabled}
-                  registerFlush={registerFlushCallbacks.names}
+                  registerFlush={registerFlushCallbacks["names"]}
                   aiResource={aiFormData.name_resource}
                   onAccept={() => clearAiResource("name_resource")}
                   onReject={() => clearAiResource("name_resource")}
@@ -1992,24 +1192,12 @@ function PersonaComponent({
                           variant="ghost"
                           size="icon"
                           onClick={() => {
-                            const hasRegeneratable = stepResources[
-                              "basic"
-                            ]!.some((rt) => canRegenerate(rt));
-                            handleOpenStepCardModal(
-                              "basic",
-                              hasRegeneratable ? "regenerate" : "generate"
-                            );
+                            const hasRegeneratable = stepResources["basic"]!.some((rt) => canRegenerate(rt));
+                            handleOpenStepCardModal("basic", hasRegeneratable ? "regenerate" : "generate");
                           }}
-                          disabled={
-                            disabled ||
-                            stepResources["basic"]!.some((rt) =>
-                              isGenerating(rt)
-                            )
-                          }
+                          disabled={disabled || stepResources["basic"]!.some((rt) => isGenerating(rt))}
                         >
-                          {stepResources["basic"]!.some((rt) =>
-                            isGenerating(rt)
-                          ) ? (
+                          {stepResources["basic"]!.some((rt) => isGenerating(rt)) ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
                           ) : (
                             <Sparkles className="h-4 w-4" />
@@ -2017,9 +1205,7 @@ function PersonaComponent({
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
-                        {stepResources["basic"]!.some((rt) => canRegenerate(rt))
-                          ? "Regenerate"
-                          : "Generate"}
+                        {stepResources["basic"]!.some((rt) => canRegenerate(rt)) ? "Regenerate" : "Generate"}
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -2029,35 +1215,18 @@ function PersonaComponent({
               resetLabel="Reset"
             >
               <div className="space-y-4">
-                {/* Description field - using Descriptions resource component */}
                 <Descriptions
                   description_id={formState.description_id ?? null}
-                  description_resource={
-                    currentPersonaData?.description_resource ?? null
-                  }
-                  show_description={
-                    currentPersonaData?.show_description ?? true
-                  }
-                  description_suggestions={
-                    currentPersonaData?.description_suggestions ?? []
-                  }
+                  description_resource={currentPersonaData?.description_resource ?? null}
+                  show_description={currentPersonaData?.show_description ?? true}
+                  description_suggestions={currentPersonaData?.description_suggestions ?? []}
                   descriptions={currentPersonaData?.descriptions ?? []}
                   disabled={disabled}
                   onDescriptionIdChange={(descriptionId) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      description_id: descriptionId,
-                    }))
+                    setFormState((prev) => ({ ...prev, description_id: descriptionId }))
                   }
-                  searchTerm={
-                    (stepFormData["descriptionSearch"] as
-                      | string
-                      | null
-                      | undefined) || ""
-                  }
-                  onSearchChange={(term: string) =>
-                    setStepFormData({ descriptionSearch: term || null })
-                  }
+                  searchTerm={(stepFormData["descriptionSearch"] as string | null | undefined) || ""}
+                  onSearchChange={(term: string) => setStepFormData({ descriptionSearch: term || null })}
                   onGenerate={handleGenerateDescription}
                   isGenerating={isGenerating("descriptions")}
                   label="Description"
@@ -2069,45 +1238,31 @@ function PersonaComponent({
                   showAiGenerate={currentPersonaData?.description_show_ai_generate ?? false}
                   createDescriptionsAction={createDescriptionsAction}
                   isAutosaveEnabled={isAutosaveEnabled}
-                  registerFlush={registerFlushCallbacks.descriptions}
+                  registerFlush={registerFlushCallbacks["descriptions"]}
                   aiResource={aiFormData.description_resource}
                   onAccept={() => clearAiResource("description_resource")}
                   onReject={() => clearAiResource("description_resource")}
                   create_tool_id={currentPersonaData?.description_create_tool_id ?? null}
                   link_tool_id={currentPersonaData?.description_link_tool_id ?? null}
                 />
-
-                {/* Department Selection */}
                 <Departments
                   department_ids={formState.department_ids ?? []}
-                  department_resources={
-                    currentPersonaData?.department_resources ?? []
-                  }
-                  show_departments={
-                    currentPersonaData?.show_departments ?? false
-                  }
-                  department_suggestions={
-                    currentPersonaData?.department_suggestions ?? []
-                  }
+                  department_resources={currentPersonaData?.department_resources ?? []}
+                  show_departments={currentPersonaData?.show_departments ?? false}
+                  department_suggestions={currentPersonaData?.department_suggestions ?? []}
                   departments={currentPersonaData?.departments ?? []}
                   disabled={disabled}
-                  onChange={(ids) =>
-                    setFormState((prev) => ({ ...prev, department_ids: ids }))
-                  }
+                  onChange={(ids) => setFormState((prev) => ({ ...prev, department_ids: ids }))}
                   onGenerate={handleGenerateDepartments}
                   isGenerating={isGenerating("departments")}
                   required={currentPersonaData?.departments_required ?? false}
                   group_id={currentPersonaData?.departments_group_id ?? null}
                   showAiGenerate={currentPersonaData?.departments_show_ai_generate ?? false}
-                  aiDepartmentResources={
-                    aiFormData.department_resources ?? null
-                  }
+                  aiDepartmentResources={aiFormData.department_resources ?? null}
                   onAccept={() => clearAiResource("department_resources")}
                   onReject={() => clearAiResource("department_resources")}
                   link_tool_id={currentPersonaData?.departments_link_tool_id ?? null}
                 />
-
-                {/* Active Switch - using server-driven Flags component */}
                 <Flags
                   flags={currentPersonaData?.flags ?? []}
                   flag_id={formState.active_flag_id}
@@ -2117,17 +1272,10 @@ function PersonaComponent({
                   disabled={disabled}
                   group_id={currentPersonaData?.flags_group_id ?? null}
                   showAiGenerate={currentPersonaData?.flag_show_ai_generate ?? false}
-                  onChange={(flagId) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      active_flag_id: flagId,
-                    }))
-                  }
+                  onChange={(flagId) => setFormState((prev) => ({ ...prev, active_flag_id: flagId }))}
                   onGenerate={handleGenerateFlags}
                   isGenerating={isGenerating("flags")}
-                  aiFlagResources={
-                    aiFormData.flag_resource ? [aiFormData.flag_resource] : null
-                  }
+                  aiFlagResources={aiFormData.flag_resource ? [aiFormData.flag_resource] : null}
                   onAccept={() => clearAiResource("flag_resource")}
                   onReject={() => clearAiResource("flag_resource")}
                   link_tool_id={currentPersonaData?.flag_link_tool_id ?? null}
@@ -2137,14 +1285,8 @@ function PersonaComponent({
           );
 
         case "parameters": {
-          const parameterSearchTerm =
-            (stepFormData["parameterSearch"] as string | null | undefined) ||
-            "";
-          const parameterShowSelected =
-            (stepFormData["parameterShowSelected"] as
-              | boolean
-              | null
-              | undefined) ?? false;
+          const parameterSearchTerm = (stepFormData["parameterSearch"] as string | null | undefined) || "";
+          const parameterShowSelected = (stepFormData["parameterShowSelected"] as boolean | null | undefined) ?? false;
           return (
             <StepCard
               stepStatus={stepStatus}
@@ -2154,9 +1296,7 @@ function PersonaComponent({
               isReadonly={disabled}
               isEditMode={isEditMode}
               searchTerm={parameterSearchTerm}
-              onSearchChange={(term: string) =>
-                setStepFormData({ parameterSearch: term || null })
-              }
+              onSearchChange={(term: string) => setStepFormData({ parameterSearch: term || null })}
               searchPlaceholder="Search parameters..."
               debounceMs={300}
               filters={[
@@ -2164,16 +1304,10 @@ function PersonaComponent({
                   key: "showSelected",
                   label: "Show selected",
                   value: parameterShowSelected,
-                  onChange: (value: boolean) =>
-                    setStepFormData({ parameterShowSelected: value || null }),
+                  onChange: (value: boolean) => setStepFormData({ parameterShowSelected: value || null }),
                 },
               ]}
-              resetFields={[
-                "parameter_ids",
-                "parameter_field_ids",
-                "parameterSearch",
-                "parameterShowSelected",
-              ]}
+              resetFields={["parameter_ids", "parameter_field_ids", "parameterSearch", "parameterShowSelected"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
               actions={
@@ -2188,24 +1322,12 @@ function PersonaComponent({
                           variant="ghost"
                           size="icon"
                           onClick={() => {
-                            const hasRegeneratable = stepResources[
-                              "parameters"
-                            ]!.some((rt) => canRegenerate(rt));
-                            handleOpenStepCardModal(
-                              "parameters",
-                              hasRegeneratable ? "regenerate" : "generate"
-                            );
+                            const hasRegeneratable = stepResources["parameters"]!.some((rt) => canRegenerate(rt));
+                            handleOpenStepCardModal("parameters", hasRegeneratable ? "regenerate" : "generate");
                           }}
-                          disabled={
-                            disabled ||
-                            stepResources["parameters"]!.some((rt) =>
-                              isGenerating(rt)
-                            )
-                          }
+                          disabled={disabled || stepResources["parameters"]!.some((rt) => isGenerating(rt))}
                         >
-                          {stepResources["parameters"]!.some((rt) =>
-                            isGenerating(rt)
-                          ) ? (
+                          {stepResources["parameters"]!.some((rt) => isGenerating(rt)) ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
                           ) : (
                             <Sparkles className="h-4 w-4" />
@@ -2213,11 +1335,7 @@ function PersonaComponent({
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
-                        {stepResources["parameters"]!.some((rt) =>
-                          canRegenerate(rt)
-                        )
-                          ? "Regenerate"
-                          : "Generate"}
+                        {stepResources["parameters"]!.some((rt) => canRegenerate(rt)) ? "Regenerate" : "Generate"}
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -2227,18 +1345,12 @@ function PersonaComponent({
               <div className="space-y-6">
                 <Parameters
                   parameter_ids={formState.parameter_ids ?? []}
-                  parameter_resources={
-                    currentPersonaData?.parameter_resources ?? []
-                  }
+                  parameter_resources={currentPersonaData?.parameter_resources ?? []}
                   show_parameters={currentPersonaData?.show_parameters ?? false}
-                  parameter_suggestions={
-                    currentPersonaData?.parameter_suggestions ?? []
-                  }
+                  parameter_suggestions={currentPersonaData?.parameter_suggestions ?? []}
                   parameters={currentPersonaData?.parameters ?? []}
                   disabled={disabled}
-                  onChange={(ids) =>
-                    setFormState((prev) => ({ ...prev, parameter_ids: ids }))
-                  }
+                  onChange={(ids) => setFormState((prev) => ({ ...prev, parameter_ids: ids }))}
                   onGenerate={handleGenerateParameters}
                   isGenerating={isGenerating("parameters")}
                   label="Parameters"
@@ -2254,38 +1366,23 @@ function PersonaComponent({
                 />
                 <ParameterFields
                   parameter_field_ids={formState.parameter_field_ids}
-                  parameter_field_resources={
-                    currentPersonaData?.parameter_field_resources ?? []
-                  }
-                  show_parameter_fields={
-                    currentPersonaData?.show_parameter_fields ?? false
-                  }
+                  parameter_field_resources={currentPersonaData?.parameter_field_resources ?? []}
+                  show_parameter_fields={currentPersonaData?.show_parameter_fields ?? false}
                   parameter_fields={currentPersonaData?.parameter_fields ?? []}
                   parameter_ids={formState.parameter_ids}
                   parameters={currentPersonaData?.parameters ?? []}
-                  parameter_resources={
-                    currentPersonaData?.parameter_resources ?? []
-                  }
+                  parameter_resources={currentPersonaData?.parameter_resources ?? []}
                   disabled={disabled}
-                  onChange={(ids) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      parameter_field_ids: ids,
-                    }))
-                  }
-                  onConditionalParameterToggle={
-                    handleConditionalParameterToggle
-                  }
+                  onChange={(ids) => setFormState((prev) => ({ ...prev, parameter_field_ids: ids }))}
+                  onConditionalParameterToggle={handleConditionalParameterToggle}
                   group_id={currentPersonaData?.parameter_fields_group_id ?? null}
                   showAiGenerate={currentPersonaData?.parameter_fields_show_ai_generate ?? false}
-                  required={
-                    currentPersonaData?.parameter_fields_required ?? false
-                  }
+                  required={currentPersonaData?.parameter_fields_required ?? false}
                   createParameterFieldsAction={createParameterFieldsAction}
                   onGenerate={handleGenerateParameterFields}
                   isGenerating={isGenerating("parameter_fields")}
                   isAutosaveEnabled={isAutosaveEnabled}
-                  registerFlush={registerFlushCallbacks.parameter_fields}
+                  registerFlush={registerFlushCallbacks["parameter_fields"]}
                   aiParameterFieldResources={aiFormData.parameter_field_resources ?? null}
                   onAccept={() => clearAiResource("parameter_field_resources")}
                   onReject={() => clearAiResource("parameter_field_resources")}
@@ -2298,10 +1395,7 @@ function PersonaComponent({
         }
 
         case "color": {
-          const colorShowSelected =
-            (stepFormData["colorShowSelected"] as boolean | null | undefined) ??
-            false;
-
+          const colorShowSelected = (stepFormData["colorShowSelected"] as boolean | null | undefined) ?? false;
           return (
             <StepCard
               stepStatus={stepStatus}
@@ -2310,12 +1404,8 @@ function PersonaComponent({
               stepDescription={stepDescription}
               isReadonly={disabled}
               isEditMode={isEditMode}
-              searchTerm={
-                (stepFormData["colorSearch"] as string | null | undefined) || ""
-              }
-              onSearchChange={(term: string) =>
-                setStepFormData({ colorSearch: term || null })
-              }
+              searchTerm={(stepFormData["colorSearch"] as string | null | undefined) || ""}
+              onSearchChange={(term: string) => setStepFormData({ colorSearch: term || null })}
               searchPlaceholder="Search colors..."
               debounceMs={300}
               filters={[
@@ -2323,8 +1413,7 @@ function PersonaComponent({
                   key: "showSelected",
                   label: "Show selected",
                   value: colorShowSelected,
-                  onChange: (value: boolean) =>
-                    setStepFormData({ colorShowSelected: value || null }),
+                  onChange: (value: boolean) => setStepFormData({ colorShowSelected: value || null }),
                 },
               ]}
               resetFields={["color", "colorSearch", "colorShowSelected"]}
@@ -2340,24 +1429,12 @@ function PersonaComponent({
                           variant="ghost"
                           size="icon"
                           onClick={() => {
-                            const hasRegeneratable = stepResources[
-                              "color"
-                            ]!.some((rt) => canRegenerate(rt));
-                            handleOpenStepCardModal(
-                              "color",
-                              hasRegeneratable ? "regenerate" : "generate"
-                            );
+                            const hasRegeneratable = stepResources["color"]!.some((rt) => canRegenerate(rt));
+                            handleOpenStepCardModal("color", hasRegeneratable ? "regenerate" : "generate");
                           }}
-                          disabled={
-                            disabled ||
-                            stepResources["color"]!.some((rt) =>
-                              isGenerating(rt)
-                            )
-                          }
+                          disabled={disabled || stepResources["color"]!.some((rt) => isGenerating(rt))}
                         >
-                          {stepResources["color"]!.some((rt) =>
-                            isGenerating(rt)
-                          ) ? (
+                          {stepResources["color"]!.some((rt) => isGenerating(rt)) ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
                           ) : (
                             <Sparkles className="h-4 w-4" />
@@ -2365,16 +1442,13 @@ function PersonaComponent({
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
-                        {stepResources["color"]!.some((rt) => canRegenerate(rt))
-                          ? "Regenerate"
-                          : "Generate"}
+                        {stepResources["color"]!.some((rt) => canRegenerate(rt)) ? "Regenerate" : "Generate"}
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
                 ) : undefined
               }
             >
-              {/* Color picker - using Colors resource component */}
               <Colors
                 color_id={formState.color_id ?? null}
                 color_resource={currentPersonaData?.color_resource ?? null}
@@ -2382,28 +1456,19 @@ function PersonaComponent({
                 color_suggestions={currentPersonaData?.color_suggestions ?? []}
                 colors={currentPersonaData?.colors ?? []}
                 disabled={disabled}
-                onColorIdChange={(colorId) =>
-                  setFormState((prev) => ({ ...prev, color_id: colorId }))
-                }
+                onColorIdChange={(colorId) => setFormState((prev) => ({ ...prev, color_id: colorId }))}
                 onGenerate={handleGenerateColors}
                 isGenerating={isGenerating("colors")}
-                searchTerm={
-                  (stepFormData["colorSearch"] as string | null | undefined) ||
-                  ""
-                }
-                onSearchChange={(term) =>
-                  setStepFormData({ colorSearch: term || null })
-                }
+                searchTerm={(stepFormData["colorSearch"] as string | null | undefined) || ""}
+                onSearchChange={(term) => setStepFormData({ colorSearch: term || null })}
                 showSelectedFilter={colorShowSelected}
-                onShowSelectedChange={(value) =>
-                  setStepFormData({ colorShowSelected: value || null })
-                }
+                onShowSelectedChange={(value) => setStepFormData({ colorShowSelected: value || null })}
                 group_id={currentPersonaData?.colors_group_id ?? null}
                 showAiGenerate={currentPersonaData?.color_show_ai_generate ?? false}
                 createColorsAction={createColorsAction}
                 required={currentPersonaData?.color_required ?? false}
                 isAutosaveEnabled={isAutosaveEnabled}
-                registerFlush={registerFlushCallbacks.colors}
+                registerFlush={registerFlushCallbacks["colors"]}
                 aiResource={aiFormData.color_resource}
                 onAccept={() => clearAiResource("color_resource")}
                 onReject={() => clearAiResource("color_resource")}
@@ -2415,10 +1480,7 @@ function PersonaComponent({
         }
 
         case "icon": {
-          const iconShowSelected =
-            (stepFormData["iconShowSelected"] as boolean | null | undefined) ??
-            false;
-
+          const iconShowSelected = (stepFormData["iconShowSelected"] as boolean | null | undefined) ?? false;
           return (
             <StepCard
               stepStatus={stepStatus}
@@ -2427,12 +1489,8 @@ function PersonaComponent({
               stepDescription={stepDescription}
               isReadonly={disabled}
               isEditMode={isEditMode}
-              searchTerm={
-                (stepFormData["iconSearch"] as string | null | undefined) || ""
-              }
-              onSearchChange={(term: string) =>
-                setStepFormData({ iconSearch: term || null })
-              }
+              searchTerm={(stepFormData["iconSearch"] as string | null | undefined) || ""}
+              onSearchChange={(term: string) => setStepFormData({ iconSearch: term || null })}
               searchPlaceholder="Search icons..."
               debounceMs={300}
               filters={[
@@ -2440,8 +1498,7 @@ function PersonaComponent({
                   key: "showSelected",
                   label: "Show selected",
                   value: iconShowSelected,
-                  onChange: (value: boolean) =>
-                    setStepFormData({ iconShowSelected: value || null }),
+                  onChange: (value: boolean) => setStepFormData({ iconShowSelected: value || null }),
                 },
               ]}
               resetFields={["icon", "iconSearch", "iconShowSelected"]}
@@ -2457,24 +1514,12 @@ function PersonaComponent({
                           variant="ghost"
                           size="icon"
                           onClick={() => {
-                            const hasRegeneratable = stepResources[
-                              "icon"
-                            ]!.some((rt) => canRegenerate(rt));
-                            handleOpenStepCardModal(
-                              "icon",
-                              hasRegeneratable ? "regenerate" : "generate"
-                            );
+                            const hasRegeneratable = stepResources["icon"]!.some((rt) => canRegenerate(rt));
+                            handleOpenStepCardModal("icon", hasRegeneratable ? "regenerate" : "generate");
                           }}
-                          disabled={
-                            disabled ||
-                            stepResources["icon"]!.some((rt) =>
-                              isGenerating(rt)
-                            )
-                          }
+                          disabled={disabled || stepResources["icon"]!.some((rt) => isGenerating(rt))}
                         >
-                          {stepResources["icon"]!.some((rt) =>
-                            isGenerating(rt)
-                          ) ? (
+                          {stepResources["icon"]!.some((rt) => isGenerating(rt)) ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
                           ) : (
                             <Sparkles className="h-4 w-4" />
@@ -2482,16 +1527,13 @@ function PersonaComponent({
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
-                        {stepResources["icon"]!.some((rt) => canRegenerate(rt))
-                          ? "Regenerate"
-                          : "Generate"}
+                        {stepResources["icon"]!.some((rt) => canRegenerate(rt)) ? "Regenerate" : "Generate"}
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
                 ) : undefined
               }
             >
-              {/* Icon picker - using Icons resource component */}
               <Icons
                 icon_id={formState.icon_id ?? null}
                 icon_resource={currentPersonaData?.icon_resource ?? null}
@@ -2499,22 +1541,13 @@ function PersonaComponent({
                 icon_suggestions={currentPersonaData?.icon_suggestions ?? []}
                 icons={currentPersonaData?.icons ?? []}
                 disabled={disabled}
-                onIconIdChange={(iconId) =>
-                  setFormState((prev) => ({ ...prev, icon_id: iconId }))
-                }
+                onIconIdChange={(iconId) => setFormState((prev) => ({ ...prev, icon_id: iconId }))}
                 onGenerate={handleGenerateIcons}
                 isGenerating={isGenerating("icons")}
-                searchTerm={
-                  (stepFormData["iconSearch"] as string | null | undefined) ||
-                  ""
-                }
-                onSearchChange={(term) =>
-                  setStepFormData({ iconSearch: term || null })
-                }
+                searchTerm={(stepFormData["iconSearch"] as string | null | undefined) || ""}
+                onSearchChange={(term) => setStepFormData({ iconSearch: term || null })}
                 showSelectedFilter={iconShowSelected}
-                onShowSelectedChange={(value) =>
-                  setStepFormData({ iconShowSelected: value || null })
-                }
+                onShowSelectedChange={(value) => setStepFormData({ iconShowSelected: value || null })}
                 group_id={currentPersonaData?.icons_group_id ?? null}
                 showAiGenerate={currentPersonaData?.icon_show_ai_generate ?? false}
                 required={currentPersonaData?.icon_required ?? false}
@@ -2551,24 +1584,12 @@ function PersonaComponent({
                           variant="ghost"
                           size="icon"
                           onClick={() => {
-                            const hasRegeneratable = stepResources[
-                              "content"
-                            ]!.some((rt) => canRegenerate(rt));
-                            handleOpenStepCardModal(
-                              "content",
-                              hasRegeneratable ? "regenerate" : "generate"
-                            );
+                            const hasRegeneratable = stepResources["content"]!.some((rt) => canRegenerate(rt));
+                            handleOpenStepCardModal("content", hasRegeneratable ? "regenerate" : "generate");
                           }}
-                          disabled={
-                            disabled ||
-                            stepResources["content"]!.some((rt) =>
-                              isGenerating(rt)
-                            )
-                          }
+                          disabled={disabled || stepResources["content"]!.some((rt) => isGenerating(rt))}
                         >
-                          {stepResources["content"]!.some((rt) =>
-                            isGenerating(rt)
-                          ) ? (
+                          {stepResources["content"]!.some((rt) => isGenerating(rt)) ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
                           ) : (
                             <Sparkles className="h-4 w-4" />
@@ -2576,19 +1597,13 @@ function PersonaComponent({
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
-                        {stepResources["content"]!.some((rt) =>
-                          canRegenerate(rt)
-                        )
-                          ? "Regenerate"
-                          : "Generate"}
+                        {stepResources["content"]!.some((rt) => canRegenerate(rt)) ? "Regenerate" : "Generate"}
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
                 ) : undefined
               }
             >
-              {/* Instructions - using Instructions resource component */}
-              {/* Note: instructions_resource is conditional on instructions_id to enable reset */}
               <Instructions
                 instructions_id={formState.instructions_id ?? null}
                 instructions_resource={
@@ -2596,29 +1611,15 @@ function PersonaComponent({
                     ? (currentPersonaData?.instructions_resource ?? null)
                     : null
                 }
-                show_instructions={
-                  currentPersonaData?.show_instructions ?? true
-                }
-                instructions_suggestions={
-                  currentPersonaData?.instructions_suggestions ?? []
-                }
+                show_instructions={currentPersonaData?.show_instructions ?? true}
+                instructions_suggestions={currentPersonaData?.instructions_suggestions ?? []}
                 instructions={currentPersonaData?.instructions ?? []}
                 disabled={disabled}
                 onInstructionsIdChange={(instructionsId) =>
-                  setFormState((prev) => ({
-                    ...prev,
-                    instructions_id: instructionsId,
-                  }))
+                  setFormState((prev) => ({ ...prev, instructions_id: instructionsId }))
                 }
-                searchTerm={
-                  (stepFormData["instructionsSearch"] as
-                    | string
-                    | null
-                    | undefined) || ""
-                }
-                onSearchChange={(term: string) =>
-                  setStepFormData({ instructionsSearch: term || null })
-                }
+                searchTerm={(stepFormData["instructionsSearch"] as string | null | undefined) || ""}
+                onSearchChange={(term: string) => setStepFormData({ instructionsSearch: term || null })}
                 onGenerate={handleGenerateInstructions}
                 isGenerating={isGenerating("instructions")}
                 label="Instructions"
@@ -2631,27 +1632,21 @@ function PersonaComponent({
                 showAiGenerate={currentPersonaData?.instructions_show_ai_generate ?? false}
                 createInstructionsAction={createInstructionsAction}
                 isAutosaveEnabled={isAutosaveEnabled}
-                registerFlush={registerFlushCallbacks.instructions}
+                registerFlush={registerFlushCallbacks["instructions"]}
                 aiResource={aiFormData.instructions_resource}
                 onAccept={() => clearAiResource("instructions_resource")}
                 onReject={() => clearAiResource("instructions_resource")}
                 create_tool_id={currentPersonaData?.instructions_create_tool_id ?? null}
                 link_tool_id={currentPersonaData?.instructions_link_tool_id ?? null}
               />
-
-              {/* Examples Section */}
               <Examples
                 example_ids={formState.example_ids ?? []}
                 example_resources={currentPersonaData?.example_resources ?? []}
                 show_examples={currentPersonaData?.show_examples ?? false}
-                example_suggestions={
-                  currentPersonaData?.example_suggestions ?? []
-                }
+                example_suggestions={currentPersonaData?.example_suggestions ?? []}
                 examples={currentPersonaData?.examples ?? []}
                 disabled={disabled}
-                onChange={(ids) =>
-                  setFormState((prev) => ({ ...prev, example_ids: ids }))
-                }
+                onChange={(ids) => setFormState((prev) => ({ ...prev, example_ids: ids }))}
                 onGenerate={handleGenerateExamples}
                 isGenerating={isGenerating("examples")}
                 maxItems={10}
@@ -2662,18 +1657,10 @@ function PersonaComponent({
                 createExamplesAction={
                   createExamplesAction
                     ? async (input: {
-                        body: {
-                          group_id: string;
-                          example: string;
-                          mcp?: boolean;
-                        };
+                        body: { group_id: string; example: string; mcp?: boolean };
                       }) => {
-                        // Wrap the action to add mcp field (defaults to false)
                         return await createExamplesAction({
-                          body: {
-                            ...input.body,
-                            mcp: input.body.mcp ?? false,
-                          },
+                          body: { ...input.body, mcp: input.body.mcp ?? false },
                         });
                       }
                     : undefined
@@ -2683,16 +1670,13 @@ function PersonaComponent({
                   currentPersonaData?.examples && formState.example_ids
                     ? Object.fromEntries(
                         currentPersonaData.examples
-                          .map((ex, idx) => [
-                            formState.example_ids?.[idx] || "",
-                            ex.example || "",
-                          ])
+                          .map((ex, idx) => [formState.example_ids?.[idx] || "", ex.example || ""])
                           .filter(([id]) => id)
                       )
                     : {}
                 }
                 isAutosaveEnabled={isAutosaveEnabled}
-                registerFlush={registerFlushCallbacks.examples}
+                registerFlush={registerFlushCallbacks["examples"]}
                 aiExampleResources={aiFormData.example_resources ?? null}
                 onAccept={() => clearAiResource("example_resources")}
                 onReject={() => clearAiResource("example_resources")}
@@ -2707,8 +1691,6 @@ function PersonaComponent({
       }
     },
     [
-      // Use stablePersonaDataFields instead of personaData to prevent callback recreation
-      // when only object reference changes (but content is same)
       stablePersonaDataFields,
       disabled,
       isEditMode,
@@ -2725,16 +1707,12 @@ function PersonaComponent({
       handleConditionalParameterToggle,
       isGenerating,
       stepResources,
-      // Depend on individual formState fields instead of whole object to prevent callback recreation
-      // when object reference changes but values are same
       formState.name_id,
       formState.description_id,
       formState.color_id,
       formState.icon_id,
       formState.instructions_id,
       formState.active_flag_id,
-      // Include arrays - they're used in the callback, but the formState sync effect ensures
-      // they only change when content actually changes (not just reference)
       formState.department_ids,
       formState.parameter_field_ids,
       formState.example_ids,
@@ -2749,7 +1727,6 @@ function PersonaComponent({
       isAutosaveEnabled,
       registerFlushCallbacks,
       createParameterFieldsAction,
-      // AI form data for accept/reject functionality
       aiFormData,
       clearAiResource,
     ]
@@ -2768,9 +1745,7 @@ function PersonaComponent({
         />
 
         <GenericForm
-          nuqsParsers={
-            personaSearchParamsClient as Record<string, Parser<unknown>>
-          }
+          nuqsParsers={personaSearchParamsClient as Record<string, Parser<unknown>>}
           steps={steps}
           getStepStatus={getStepStatus}
           serverData={personaData}
@@ -2787,21 +1762,8 @@ function PersonaComponent({
           }}
         />
 
-        {/* Generate/Regenerate Modal */}
-        {modalMode && (
-          <GenerateRegenerateModal
-            open={showGenerateModal}
-            onOpenChange={setShowGenerateModal}
-            resources={modalResources}
-            onResourcesChange={setModalResources}
-            instructions={modalInstructions}
-            onInstructionsChange={setModalInstructions}
-            onGenerate={handleModalGenerate}
-            isGenerating={modalResources.some((r) =>
-              isGenerating(r.id as ResourceType)
-            )}
-            mode={modalMode}
-          />
+        {modalProps.open && (
+          <GenerateRegenerateModal {...modalProps} />
         )}
       </div>
     </TooltipProvider>
@@ -2810,7 +1772,6 @@ function PersonaComponent({
 
 // Memoize component to prevent re-renders when only prop references change (content is same)
 export default React.memo(PersonaComponent, (prevProps, nextProps) => {
-  // Compare personaData by resource IDs, not object reference
   const prevCurrent = prevProps.personaData?.resources?.current;
   const nextCurrent = nextProps.personaData?.resources?.current;
   const prevIds = {
@@ -2820,15 +1781,9 @@ export default React.memo(PersonaComponent, (prevProps, nextProps) => {
     icon_id: prevCurrent?.icons?.[0]?.id ?? null,
     instructions_id: prevCurrent?.instructions?.[0]?.id ?? null,
     active_flag_id: prevCurrent?.flags?.[0]?.flag_option_id ?? null,
-    department_ids: (prevCurrent?.departments ?? [])
-      .map((d) => d.department_id)
-      .filter(Boolean),
-    parameter_field_ids: (prevCurrent?.parameter_fields ?? [])
-      .map((f) => f.field_id)
-      .filter(Boolean),
-    example_ids: (prevCurrent?.examples ?? [])
-      .map((e) => e.id)
-      .filter(Boolean),
+    department_ids: (prevCurrent?.departments ?? []).map((d) => d.department_id).filter(Boolean),
+    parameter_field_ids: (prevCurrent?.parameter_fields ?? []).map((f) => f.field_id).filter(Boolean),
+    example_ids: (prevCurrent?.examples ?? []).map((e) => e.id).filter(Boolean),
   };
   const nextIds = {
     name_id: nextCurrent?.names?.[0]?.id ?? null,
@@ -2837,26 +1792,18 @@ export default React.memo(PersonaComponent, (prevProps, nextProps) => {
     icon_id: nextCurrent?.icons?.[0]?.id ?? null,
     instructions_id: nextCurrent?.instructions?.[0]?.id ?? null,
     active_flag_id: nextCurrent?.flags?.[0]?.flag_option_id ?? null,
-    department_ids: (nextCurrent?.departments ?? [])
-      .map((d) => d.department_id)
-      .filter(Boolean),
-    parameter_field_ids: (nextCurrent?.parameter_fields ?? [])
-      .map((f) => f.field_id)
-      .filter(Boolean),
-    example_ids: (nextCurrent?.examples ?? [])
-      .map((e) => e.id)
-      .filter(Boolean),
+    department_ids: (nextCurrent?.departments ?? []).map((d) => d.department_id).filter(Boolean),
+    parameter_field_ids: (nextCurrent?.parameter_fields ?? []).map((f) => f.field_id).filter(Boolean),
+    example_ids: (nextCurrent?.examples ?? []).map((e) => e.id).filter(Boolean),
   };
 
-  // Compare primitive props
   if (
     prevProps.personaId !== nextProps.personaId ||
     JSON.stringify(prevIds) !== JSON.stringify(nextIds)
   ) {
-    return false; // Props changed, re-render
+    return false;
   }
 
-  // Compare function props by reference (should be stable from server actions)
   if (
     prevProps.savePersonaAction !== nextProps.savePersonaAction ||
     prevProps.patchPersonaDraftAction !== nextProps.patchPersonaDraftAction ||
@@ -2865,12 +1812,10 @@ export default React.memo(PersonaComponent, (prevProps, nextProps) => {
     prevProps.createColorsAction !== nextProps.createColorsAction ||
     prevProps.createInstructionsAction !== nextProps.createInstructionsAction ||
     prevProps.createExamplesAction !== nextProps.createExamplesAction ||
-    prevProps.createParameterFieldsAction !==
-      nextProps.createParameterFieldsAction
+    prevProps.createParameterFieldsAction !== nextProps.createParameterFieldsAction
   ) {
-    return false; // Function props changed, re-render
+    return false;
   }
 
-  // All props are equivalent, skip re-render
   return true;
 });
