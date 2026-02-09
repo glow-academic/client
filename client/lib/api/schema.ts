@@ -17751,6 +17751,8 @@ export interface components {
             disabled_reason?: string | null;
             /** Draft Version */
             draft_version?: number | null;
+            /** Group Id */
+            group_id?: string | null;
             /** Basic Show Ai Generate */
             basic_show_ai_generate?: boolean | null;
             /** Content Show Ai Generate */
@@ -23630,8 +23632,6 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Group Id */
-            group_id?: string | null;
             /** Create Tool Id */
             create_tool_id?: string | null;
             /** Link Tool Id */
@@ -23659,8 +23659,6 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Group Id */
-            group_id?: string | null;
             /** Create Tool Id */
             create_tool_id?: string | null;
             /** Link Tool Id */
@@ -23689,8 +23687,6 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Group Id */
-            group_id?: string | null;
             /** Create Tool Id */
             create_tool_id?: string | null;
             /** Link Tool Id */
@@ -23736,8 +23732,6 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Group Id */
-            group_id?: string | null;
             /** Create Tool Id */
             create_tool_id?: string | null;
             /** Link Tool Id */
@@ -23794,8 +23788,6 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Group Id */
-            group_id?: string | null;
             /** Create Tool Id */
             create_tool_id?: string | null;
             /** Link Tool Id */
@@ -23934,8 +23926,6 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Group Id */
-            group_id?: string | null;
             /** Create Tool Id */
             create_tool_id?: string | null;
             /** Link Tool Id */
@@ -23963,8 +23953,6 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Group Id */
-            group_id?: string | null;
             /** Create Tool Id */
             create_tool_id?: string | null;
             /** Link Tool Id */
@@ -24006,8 +23994,6 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Group Id */
-            group_id?: string | null;
             /** Create Tool Id */
             create_tool_id?: string | null;
             /** Link Tool Id */
@@ -24035,8 +24021,6 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Group Id */
-            group_id?: string | null;
             /** Create Tool Id */
             create_tool_id?: string | null;
             /** Link Tool Id */
@@ -24065,8 +24049,6 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Group Id */
-            group_id?: string | null;
             /** Create Tool Id */
             create_tool_id?: string | null;
             /** Link Tool Id */

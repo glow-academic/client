@@ -45,7 +45,6 @@ class BaseResourceSection(BaseModel):
     required: bool = False
     suggestions: list[UUID] | None = None
     show_ai_generate: bool = False
-    group_id: UUID | None = None
     create_tool_id: UUID | None = None
     link_tool_id: UUID | None = None
 
@@ -129,6 +128,7 @@ class GetPersonaApiResponse(BaseModel):
     can_edit: bool | None = None
     disabled_reason: str | None = None
     draft_version: int | None = None
+    group_id: UUID | None = None
 
     # Step-level AI generation flags
     basic_show_ai_generate: bool | None = None
@@ -155,15 +155,15 @@ class GetPersonaWebsocketResponse(BaseModel):
 
     Contains only what's needed for AI generation:
     - Resource-to-agent mapping (for agent_id lookup by resource type)
-    - Per-resource group IDs (for existing group context)
+    - Group ID (for existing group context)
     - Resources (for Jinja template context)
     """
 
     # Resource type -> agent_id mapping (server resolves domains internally)
     resource_agent_ids: dict[str, UUID | None] | None = None
 
-    # Per-resource group IDs (resource_type -> group_id)
-    resource_group_ids: dict[str, UUID | None] | None = None
+    # Single top-level group ID
+    group_id: UUID | None = None
 
     # Resources for Jinja template context
     resources: PersonaResources | None = None
@@ -230,9 +230,6 @@ class PersonaInternalData:
 
     # Resources payload
     resources_payload: PersonaResources
-
-    # Per-resource group IDs (from draft MV)
-    resource_group_ids: dict[str, UUID | None]
 
     # Per-resource tool IDs (from selected agents)
     create_tool_ids_map: dict[str, UUID | None]

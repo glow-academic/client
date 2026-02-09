@@ -241,22 +241,6 @@ async def get_persona_internal(
         if draft_item.parameter_ids:
             selected_parameter_ids = draft_item.parameter_ids
 
-    # Build per-resource group_ids from draft_item
-    resource_group_ids: dict[str, UUID | None] = {
-        "names": draft_item.names_group_id if draft_item else None,
-        "descriptions": draft_item.descriptions_group_id if draft_item else None,
-        "colors": draft_item.colors_group_id if draft_item else None,
-        "icons": draft_item.icons_group_id if draft_item else None,
-        "instructions": draft_item.instructions_group_id if draft_item else None,
-        "flags": draft_item.flags_group_id if draft_item else None,
-        "departments": draft_item.departments_group_id if draft_item else None,
-        "parameter_fields": draft_item.parameter_fields_group_id
-        if draft_item
-        else None,
-        "examples": draft_item.examples_group_id if draft_item else None,
-        "parameters": draft_item.parameters_group_id if draft_item else None,
-    }
-
     # Get tools existence flags from Query 2 (used for show_* UI flags)
     names_has_tools = ids_result.names_has_tools or False
     colors_has_tools = ids_result.colors_has_tools or False
@@ -763,8 +747,6 @@ async def get_persona_internal(
         parameters_step_show_ai_generate=parameters_step_show_ai_generate,
         # Resources
         resources_payload=resources_payload,
-        # Per-resource group IDs
-        resource_group_ids=resource_group_ids,
         # Per-resource tool IDs
         create_tool_ids_map=create_tool_ids_map,
         link_tool_ids_map=link_tool_ids_map,
@@ -794,8 +776,8 @@ async def get_persona_websocket(
     return GetPersonaWebsocketResponse(
         # Resource type -> agent_id mapping
         resource_agent_ids=data.agent_ids,
-        # Per-resource group IDs
-        resource_group_ids=data.resource_group_ids,
+        # Single top-level group ID
+        group_id=data.group_id,
         # Resources for Jinja context
         resources=data.resources_payload,
     )
@@ -829,7 +811,6 @@ async def get_persona_client(
             "required": data.required_flags_map.get(resource_key, False),
             "suggestions": data.suggestions_map.get(resource_key),
             "show_ai_generate": data.show_ai_generate_map.get(resource_key, False),
-            "group_id": data.resource_group_ids.get(resource_key),
             "create_tool_id": data.create_tool_ids_map.get(resource_key),
             "link_tool_id": data.link_tool_ids_map.get(resource_key),
         }
@@ -841,6 +822,7 @@ async def get_persona_client(
         can_edit=data.can_edit,
         disabled_reason=data.disabled_reason,
         draft_version=data.draft_version,
+        group_id=data.group_id,
         # Step-level AI generation flags
         basic_show_ai_generate=data.basic_show_ai_generate,
         content_show_ai_generate=data.content_show_ai_generate,

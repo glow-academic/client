@@ -66101,6 +66101,18 @@
             ],
             "title": "Draft Version"
           },
+          "group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Id"
+          },
           "basic_show_ai_generate": {
             "anyOf": [
               {
@@ -89443,18 +89455,6 @@
             "title": "Show Ai Generate",
             "default": false
           },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
-          },
           "create_tool_id": {
             "anyOf": [
               {
@@ -89538,18 +89538,6 @@
             "type": "boolean",
             "title": "Show Ai Generate",
             "default": false
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           },
           "create_tool_id": {
             "anyOf": [
@@ -89638,18 +89626,6 @@
             "type": "boolean",
             "title": "Show Ai Generate",
             "default": false
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           },
           "create_tool_id": {
             "anyOf": [
@@ -89812,18 +89788,6 @@
             "title": "Show Ai Generate",
             "default": false
           },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
-          },
           "create_tool_id": {
             "anyOf": [
               {
@@ -89985,18 +89949,6 @@
             "type": "boolean",
             "title": "Show Ai Generate",
             "default": false
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           },
           "create_tool_id": {
             "anyOf": [
@@ -90492,18 +90444,6 @@
             "title": "Show Ai Generate",
             "default": false
           },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
-          },
           "create_tool_id": {
             "anyOf": [
               {
@@ -90587,18 +90527,6 @@
             "type": "boolean",
             "title": "Show Ai Generate",
             "default": false
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           },
           "create_tool_id": {
             "anyOf": [
@@ -90742,18 +90670,6 @@
             "title": "Show Ai Generate",
             "default": false
           },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
-          },
           "create_tool_id": {
             "anyOf": [
               {
@@ -90837,18 +90753,6 @@
             "type": "boolean",
             "title": "Show Ai Generate",
             "default": false
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           },
           "create_tool_id": {
             "anyOf": [
@@ -90937,18 +90841,6 @@
             "type": "boolean",
             "title": "Show Ai Generate",
             "default": false
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           },
           "create_tool_id": {
             "anyOf": [

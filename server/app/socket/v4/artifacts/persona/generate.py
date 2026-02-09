@@ -298,14 +298,8 @@ async def _persona_generate_impl(
                     for resource_type, resource_ids in resources_by_type.items()
                 ]
 
-            # Get group_id from per-resource group IDs (use first requested resource type's group)
-            resource_group_ids = result.resource_group_ids or {}
-            existing_group_id: uuid.UUID | None = None
-            for rt in resource_types:
-                gid = resource_group_ids.get(rt)
-                if gid is not None:
-                    existing_group_id = gid
-                    break
+            # Get group_id from the single top-level group ID
+            existing_group_id = result.group_id
 
             # Step 4: Fetch context and validate prerequisites
             context_params = GetPersonaGenerationContextSqlParams(
