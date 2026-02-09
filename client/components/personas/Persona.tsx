@@ -285,100 +285,16 @@ function PersonaComponent({
   const stablePersonaDataFields = React.useMemo(() => {
     if (!personaData) return null;
     return {
-      // Section-based fields
-      name_resource: personaData.names?.resource ?? null,
-      show_name: personaData.names?.show,
-      name_suggestions: personaData.names?.suggestions,
-      names: personaData.names?.resources ?? [],
-      name_required: personaData.names?.required,
-      name_show_ai_generate: personaData.names?.show_ai_generate,
-      names_group_id: personaData.names?.group_id,
-      name_create_tool_id: personaData.names?.create_tool_id,
-      name_link_tool_id: personaData.names?.link_tool_id,
-
-      description_resource: personaData.descriptions?.resource ?? null,
-      show_description: personaData.descriptions?.show,
-      description_suggestions: personaData.descriptions?.suggestions,
-      description_required: personaData.descriptions?.required,
-      description_show_ai_generate: personaData.descriptions?.show_ai_generate,
-      descriptions: personaData.descriptions?.resources ?? [],
-      descriptions_group_id: personaData.descriptions?.group_id,
-      description_create_tool_id: personaData.descriptions?.create_tool_id,
-      description_link_tool_id: personaData.descriptions?.link_tool_id,
-
-      department_resources: personaData.departments?.current ?? [],
-      show_departments: personaData.departments?.show,
-      department_suggestions: personaData.departments?.suggestions,
-      departments_required: personaData.departments?.required,
-      departments_show_ai_generate: personaData.departments?.show_ai_generate,
-      departments: personaData.departments?.resources ?? [],
-      departments_group_id: personaData.departments?.group_id,
-      departments_link_tool_id: personaData.departments?.link_tool_id,
-
-      flags: personaData.flags?.resources ?? [],
-      show_flag: personaData.flags?.show,
-      flag_show_ai_generate: personaData.flags?.show_ai_generate,
-      flags_group_id: personaData.flags?.group_id,
-      flag_link_tool_id: personaData.flags?.link_tool_id,
-
-      parameter_field_resources: personaData.parameter_fields?.current ?? [],
-      show_parameter_fields: personaData.parameter_fields?.show,
-      parameter_field_suggestions: personaData.parameter_fields?.suggestions,
-      parameter_fields_required: personaData.parameter_fields?.required,
-      parameter_fields_show_ai_generate: personaData.parameter_fields?.show_ai_generate,
-      parameter_fields: personaData.parameter_fields?.resources ?? [],
-      parameter_fields_group_id: personaData.parameter_fields?.group_id,
-      parameter_fields_create_tool_id: personaData.parameter_fields?.create_tool_id,
-      parameter_fields_link_tool_id: personaData.parameter_fields?.link_tool_id,
-
-      color_resource: personaData.colors?.resource ?? null,
-      show_color: personaData.colors?.show,
-      color_suggestions: personaData.colors?.suggestions,
-      color_required: personaData.colors?.required,
-      color_show_ai_generate: personaData.colors?.show_ai_generate,
-      colors: personaData.colors?.resources ?? [],
-      colors_group_id: personaData.colors?.group_id,
-      color_create_tool_id: personaData.colors?.create_tool_id,
-      color_link_tool_id: personaData.colors?.link_tool_id,
-
-      icon_resource: personaData.icons?.resource ?? null,
-      show_icon: personaData.icons?.show,
-      icon_suggestions: personaData.icons?.suggestions,
-      icon_required: personaData.icons?.required,
-      icon_show_ai_generate: personaData.icons?.show_ai_generate,
-      icons: personaData.icons?.resources ?? [],
-      icons_group_id: personaData.icons?.group_id,
-      icon_link_tool_id: personaData.icons?.link_tool_id,
-
-      instructions_resource: personaData.instructions?.resource ?? null,
-      show_instructions: personaData.instructions?.show,
-      instructions_suggestions: personaData.instructions?.suggestions,
-      instructions_required: personaData.instructions?.required,
-      instructions_show_ai_generate: personaData.instructions?.show_ai_generate,
-      instructions: personaData.instructions?.resources ?? [],
-      instructions_group_id: personaData.instructions?.group_id,
-      instructions_create_tool_id: personaData.instructions?.create_tool_id,
-      instructions_link_tool_id: personaData.instructions?.link_tool_id,
-
-      example_resources: personaData.examples?.current ?? [],
-      show_examples: personaData.examples?.show,
-      example_suggestions: personaData.examples?.suggestions,
-      examples_required: personaData.examples?.required,
-      examples_show_ai_generate: personaData.examples?.show_ai_generate,
-      examples: personaData.examples?.resources ?? [],
-      examples_group_id: personaData.examples?.group_id,
-      examples_create_tool_id: personaData.examples?.create_tool_id,
-      examples_link_tool_id: personaData.examples?.link_tool_id,
-
-      parameter_resources: personaData.parameters?.current ?? [],
-      show_parameters: personaData.parameters?.show,
-      parameter_suggestions: personaData.parameters?.suggestions,
-      parameters_required: personaData.parameters?.required,
-      parameters_show_ai_generate: personaData.parameters?.show_ai_generate,
-      parameters: personaData.parameters?.resources ?? [],
-      parameters_group_id: personaData.parameters?.group_id,
-      parameters_link_tool_id: personaData.parameters?.link_tool_id,
-
+      names: personaData.names,
+      descriptions: personaData.descriptions,
+      colors: personaData.colors,
+      icons: personaData.icons,
+      instructions: personaData.instructions,
+      flags: personaData.flags,
+      departments: personaData.departments,
+      parameter_fields: personaData.parameter_fields,
+      examples: personaData.examples,
+      parameters: personaData.parameters,
       basic_show_ai_generate: personaData.basic_show_ai_generate,
       content_show_ai_generate: personaData.content_show_ai_generate,
       parameters_step_show_ai_generate: personaData.parameters_step_show_ai_generate,
@@ -405,23 +321,23 @@ function PersonaComponent({
       if (!stablePersonaDataFields) return false;
       switch (resourceType) {
         case "names":
-          return stablePersonaDataFields.name_resource?.generated ?? false;
+          return stablePersonaDataFields.names?.resource?.generated ?? false;
         case "descriptions":
-          return stablePersonaDataFields.description_resource?.generated ?? false;
+          return stablePersonaDataFields.descriptions?.resource?.generated ?? false;
         case "colors":
-          return stablePersonaDataFields.color_resource?.generated ?? false;
+          return stablePersonaDataFields.colors?.resource?.generated ?? false;
         case "icons":
-          return stablePersonaDataFields.icon_resource?.generated ?? false;
+          return stablePersonaDataFields.icons?.resource?.generated ?? false;
         case "instructions":
-          return stablePersonaDataFields.instructions_resource?.generated ?? false;
+          return stablePersonaDataFields.instructions?.resource?.generated ?? false;
         case "flags":
-          return stablePersonaDataFields.flags?.[0]?.generated ?? false;
+          return stablePersonaDataFields.flags?.resources?.[0]?.generated ?? false;
         case "departments":
-          return stablePersonaDataFields.department_resources?.some((d) => d.generated) ?? false;
+          return stablePersonaDataFields.departments?.current?.some((d) => d.generated) ?? false;
         case "parameter_fields":
-          return stablePersonaDataFields.parameter_field_resources?.some((f) => f.generated) ?? false;
+          return stablePersonaDataFields.parameter_fields?.current?.some((f) => f.generated) ?? false;
         case "examples":
-          return stablePersonaDataFields.example_resources?.some((e) => e.generated) ?? false;
+          return stablePersonaDataFields.examples?.current?.some((e) => e.generated) ?? false;
         default:
           return false;
       }
@@ -845,7 +761,7 @@ function PersonaComponent({
     return !personaData.can_edit;
   }, [personaData]);
 
-  const personaNameForBreadcrumb = stablePersonaDataFields?.name_resource?.name;
+  const personaNameForBreadcrumb = stablePersonaDataFields?.names?.resource?.name;
   useEffect(() => {
     if (personaNameForBreadcrumb && personaId && isEditMode) {
       setEntityMetadata({
@@ -1110,7 +1026,7 @@ function PersonaComponent({
       }>;
       onReset?: () => void;
     }) => {
-      const currentPersonaData = stablePersonaDataFields;
+      const s = stablePersonaDataFields;
       switch (stepId) {
         case "basic":
           return (
@@ -1124,10 +1040,10 @@ function PersonaComponent({
               customHeader={
                 <Names
                   name_id={formState.name_id ?? null}
-                  name_resource={currentPersonaData?.name_resource ?? null}
-                  show_name={currentPersonaData?.show_name ?? true}
-                  name_suggestions={currentPersonaData?.name_suggestions ?? []}
-                  names={currentPersonaData?.names ?? []}
+                  name_resource={s?.names?.resource ?? null}
+                  show_name={s?.names?.show ?? true}
+                  name_suggestions={s?.names?.suggestions ?? []}
+                  names={s?.names?.resources ?? []}
                   disabled={disabled}
                   onNameIdChange={(nameId) =>
                     setFormState((prev) => ({ ...prev, name_id: nameId }))
@@ -1136,10 +1052,10 @@ function PersonaComponent({
                   isGenerating={isGenerating("names")}
                   placeholder="e.g., Enthusiastic Student"
                   defaultName="New Persona"
-                  required={currentPersonaData?.name_required ?? false}
+                  required={s?.names?.required ?? false}
                   hideDescription={true}
-                  group_id={currentPersonaData?.names_group_id ?? null}
-                  showAiGenerate={currentPersonaData?.name_show_ai_generate ?? false}
+                  group_id={s?.names?.group_id ?? null}
+                  showAiGenerate={s?.names?.show_ai_generate ?? false}
                   createNamesAction={
                     createNamesAction as
                       | ((input: CreateDraftNamesIn) => Promise<CreateDraftNamesOut>)
@@ -1150,15 +1066,15 @@ function PersonaComponent({
                   aiResource={aiFormData.name_resource}
                   onAccept={() => clearAiResource("name_resource")}
                   onReject={() => clearAiResource("name_resource")}
-                  create_tool_id={currentPersonaData?.name_create_tool_id ?? null}
-                  link_tool_id={currentPersonaData?.name_link_tool_id ?? null}
+                  create_tool_id={s?.names?.create_tool_id ?? null}
+                  link_tool_id={s?.names?.link_tool_id ?? null}
                 />
               }
               resetFields={["name", "description", "department_ids", "active"]}
               actions={
                 stepResources["basic"] &&
                 stepResources["basic"].length > 0 &&
-                (currentPersonaData?.basic_show_ai_generate ?? false) ? (
+                (s?.basic_show_ai_generate ?? false) ? (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -1192,10 +1108,10 @@ function PersonaComponent({
               <div className="space-y-4">
                 <Descriptions
                   description_id={formState.description_id ?? null}
-                  description_resource={currentPersonaData?.description_resource ?? null}
-                  show_description={currentPersonaData?.show_description ?? true}
-                  description_suggestions={currentPersonaData?.description_suggestions ?? []}
-                  descriptions={currentPersonaData?.descriptions ?? []}
+                  description_resource={s?.descriptions?.resource ?? null}
+                  show_description={s?.descriptions?.show ?? true}
+                  description_suggestions={s?.descriptions?.suggestions ?? []}
+                  descriptions={s?.descriptions?.resources ?? []}
                   disabled={disabled}
                   onDescriptionIdChange={(descriptionId) =>
                     setFormState((prev) => ({ ...prev, description_id: descriptionId }))
@@ -1206,54 +1122,54 @@ function PersonaComponent({
                   isGenerating={isGenerating("descriptions")}
                   label="Description"
                   placeholder="Detailed behavior description and personality traits"
-                  required={currentPersonaData?.description_required ?? false}
+                  required={s?.descriptions?.required ?? false}
                   rows={4}
                   data-testid="input-persona-description"
-                  group_id={currentPersonaData?.descriptions_group_id ?? null}
-                  showAiGenerate={currentPersonaData?.description_show_ai_generate ?? false}
+                  group_id={s?.descriptions?.group_id ?? null}
+                  showAiGenerate={s?.descriptions?.show_ai_generate ?? false}
                   createDescriptionsAction={createDescriptionsAction}
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["descriptions"]}
                   aiResource={aiFormData.description_resource}
                   onAccept={() => clearAiResource("description_resource")}
                   onReject={() => clearAiResource("description_resource")}
-                  create_tool_id={currentPersonaData?.description_create_tool_id ?? null}
-                  link_tool_id={currentPersonaData?.description_link_tool_id ?? null}
+                  create_tool_id={s?.descriptions?.create_tool_id ?? null}
+                  link_tool_id={s?.descriptions?.link_tool_id ?? null}
                 />
                 <Departments
                   department_ids={formState.department_ids ?? []}
-                  department_resources={currentPersonaData?.department_resources ?? []}
-                  show_departments={currentPersonaData?.show_departments ?? false}
-                  department_suggestions={currentPersonaData?.department_suggestions ?? []}
-                  departments={currentPersonaData?.departments ?? []}
+                  department_resources={s?.departments?.current ?? []}
+                  show_departments={s?.departments?.show ?? false}
+                  department_suggestions={s?.departments?.suggestions ?? []}
+                  departments={s?.departments?.resources ?? []}
                   disabled={disabled}
                   onChange={(ids) => setFormState((prev) => ({ ...prev, department_ids: ids }))}
                   onGenerate={handleGenerateDepartments}
                   isGenerating={isGenerating("departments")}
-                  required={currentPersonaData?.departments_required ?? false}
-                  group_id={currentPersonaData?.departments_group_id ?? null}
-                  showAiGenerate={currentPersonaData?.departments_show_ai_generate ?? false}
+                  required={s?.departments?.required ?? false}
+                  group_id={s?.departments?.group_id ?? null}
+                  showAiGenerate={s?.departments?.show_ai_generate ?? false}
                   aiDepartmentResources={aiFormData.department_resources ?? null}
                   onAccept={() => clearAiResource("department_resources")}
                   onReject={() => clearAiResource("department_resources")}
-                  link_tool_id={currentPersonaData?.departments_link_tool_id ?? null}
+                  link_tool_id={s?.departments?.link_tool_id ?? null}
                 />
                 <Flags
-                  flags={currentPersonaData?.flags ?? []}
+                  flags={s?.flags?.resources ?? []}
                   flag_id={formState.active_flag_id}
-                  show_flags={currentPersonaData?.show_flag ?? false}
+                  show_flags={s?.flags?.show ?? false}
                   columns={1}
                   label="Flags"
                   disabled={disabled}
-                  group_id={currentPersonaData?.flags_group_id ?? null}
-                  showAiGenerate={currentPersonaData?.flag_show_ai_generate ?? false}
+                  group_id={s?.flags?.group_id ?? null}
+                  showAiGenerate={s?.flags?.show_ai_generate ?? false}
                   onChange={(flagId) => setFormState((prev) => ({ ...prev, active_flag_id: flagId }))}
                   onGenerate={handleGenerateFlags}
                   isGenerating={isGenerating("flags")}
                   aiFlagResources={aiFormData.flag_resource ? [aiFormData.flag_resource] : null}
                   onAccept={() => clearAiResource("flag_resource")}
                   onReject={() => clearAiResource("flag_resource")}
-                  link_tool_id={currentPersonaData?.flag_link_tool_id ?? null}
+                  link_tool_id={s?.flags?.link_tool_id ?? null}
                 />
               </div>
             </StepCard>
@@ -1288,7 +1204,7 @@ function PersonaComponent({
               actions={
                 stepResources["parameters"] &&
                 stepResources["parameters"].length > 0 &&
-                (currentPersonaData?.parameters_step_show_ai_generate ?? false) ? (
+                (s?.parameters_step_show_ai_generate ?? false) ? (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -1320,39 +1236,39 @@ function PersonaComponent({
               <div className="space-y-6">
                 <Parameters
                   parameter_ids={formState.parameter_ids ?? []}
-                  parameter_resources={currentPersonaData?.parameter_resources ?? []}
-                  show_parameters={currentPersonaData?.show_parameters ?? false}
-                  parameter_suggestions={currentPersonaData?.parameter_suggestions ?? []}
-                  parameters={currentPersonaData?.parameters ?? []}
+                  parameter_resources={s?.parameters?.current ?? []}
+                  show_parameters={s?.parameters?.show ?? false}
+                  parameter_suggestions={s?.parameters?.suggestions ?? []}
+                  parameters={s?.parameters?.resources ?? []}
                   disabled={disabled}
                   onChange={(ids) => setFormState((prev) => ({ ...prev, parameter_ids: ids }))}
                   onGenerate={handleGenerateParameters}
                   isGenerating={isGenerating("parameters")}
                   label="Parameters"
-                  required={currentPersonaData?.parameters_required ?? false}
-                  group_id={currentPersonaData?.parameters_group_id ?? null}
-                  showAiGenerate={currentPersonaData?.parameters_show_ai_generate ?? false}
+                  required={s?.parameters?.required ?? false}
+                  group_id={s?.parameters?.group_id ?? null}
+                  showAiGenerate={s?.parameters?.show_ai_generate ?? false}
                   searchTerm={parameterSearchTerm}
                   showSelectedFilter={parameterShowSelected}
                   aiParameterResources={aiFormData.parameter_resources ?? null}
                   onAccept={() => clearAiResource("parameter_resources")}
                   onReject={() => clearAiResource("parameter_resources")}
-                  link_tool_id={currentPersonaData?.parameters_link_tool_id ?? null}
+                  link_tool_id={s?.parameters?.link_tool_id ?? null}
                 />
                 <ParameterFields
                   parameter_field_ids={formState.parameter_field_ids}
-                  parameter_field_resources={currentPersonaData?.parameter_field_resources ?? []}
-                  show_parameter_fields={currentPersonaData?.show_parameter_fields ?? false}
-                  parameter_fields={currentPersonaData?.parameter_fields ?? []}
+                  parameter_field_resources={s?.parameter_fields?.current ?? []}
+                  show_parameter_fields={s?.parameter_fields?.show ?? false}
+                  parameter_fields={s?.parameter_fields?.resources ?? []}
                   parameter_ids={formState.parameter_ids}
-                  parameters={currentPersonaData?.parameters ?? []}
-                  parameter_resources={currentPersonaData?.parameter_resources ?? []}
+                  parameters={s?.parameters?.resources ?? []}
+                  parameter_resources={s?.parameters?.current ?? []}
                   disabled={disabled}
                   onChange={(ids) => setFormState((prev) => ({ ...prev, parameter_field_ids: ids }))}
                   onConditionalParameterToggle={handleConditionalParameterToggle}
-                  group_id={currentPersonaData?.parameter_fields_group_id ?? null}
-                  showAiGenerate={currentPersonaData?.parameter_fields_show_ai_generate ?? false}
-                  required={currentPersonaData?.parameter_fields_required ?? false}
+                  group_id={s?.parameter_fields?.group_id ?? null}
+                  showAiGenerate={s?.parameter_fields?.show_ai_generate ?? false}
+                  required={s?.parameter_fields?.required ?? false}
                   createParameterFieldsAction={createParameterFieldsAction}
                   onGenerate={handleGenerateParameterFields}
                   isGenerating={isGenerating("parameter_fields")}
@@ -1361,8 +1277,8 @@ function PersonaComponent({
                   aiParameterFieldResources={aiFormData.parameter_field_resources ?? null}
                   onAccept={() => clearAiResource("parameter_field_resources")}
                   onReject={() => clearAiResource("parameter_field_resources")}
-                  create_tool_id={currentPersonaData?.parameter_fields_create_tool_id ?? null}
-                  link_tool_id={currentPersonaData?.parameter_fields_link_tool_id ?? null}
+                  create_tool_id={s?.parameter_fields?.create_tool_id ?? null}
+                  link_tool_id={s?.parameter_fields?.link_tool_id ?? null}
                 />
               </div>
             </StepCard>
@@ -1426,10 +1342,10 @@ function PersonaComponent({
             >
               <Colors
                 color_id={formState.color_id ?? null}
-                color_resource={currentPersonaData?.color_resource ?? null}
-                show_color={currentPersonaData?.show_color ?? false}
-                color_suggestions={currentPersonaData?.color_suggestions ?? []}
-                colors={currentPersonaData?.colors ?? []}
+                color_resource={s?.colors?.resource ?? null}
+                show_color={s?.colors?.show ?? false}
+                color_suggestions={s?.colors?.suggestions ?? []}
+                colors={s?.colors?.resources ?? []}
                 disabled={disabled}
                 onColorIdChange={(colorId) => setFormState((prev) => ({ ...prev, color_id: colorId }))}
                 onGenerate={handleGenerateColors}
@@ -1438,17 +1354,17 @@ function PersonaComponent({
                 onSearchChange={(term) => setStepFormData({ colorSearch: term || null })}
                 showSelectedFilter={colorShowSelected}
                 onShowSelectedChange={(value) => setStepFormData({ colorShowSelected: value || null })}
-                group_id={currentPersonaData?.colors_group_id ?? null}
-                showAiGenerate={currentPersonaData?.color_show_ai_generate ?? false}
+                group_id={s?.colors?.group_id ?? null}
+                showAiGenerate={s?.colors?.show_ai_generate ?? false}
                 createColorsAction={createColorsAction}
-                required={currentPersonaData?.color_required ?? false}
+                required={s?.colors?.required ?? false}
                 isAutosaveEnabled={isAutosaveEnabled}
                 registerFlush={registerFlushCallbacks["colors"]}
                 aiResource={aiFormData.color_resource}
                 onAccept={() => clearAiResource("color_resource")}
                 onReject={() => clearAiResource("color_resource")}
-                create_tool_id={currentPersonaData?.color_create_tool_id ?? null}
-                link_tool_id={currentPersonaData?.color_link_tool_id ?? null}
+                create_tool_id={s?.colors?.create_tool_id ?? null}
+                link_tool_id={s?.colors?.link_tool_id ?? null}
               />
             </StepCard>
           );
@@ -1511,10 +1427,10 @@ function PersonaComponent({
             >
               <Icons
                 icon_id={formState.icon_id ?? null}
-                icon_resource={currentPersonaData?.icon_resource ?? null}
-                show_icon={currentPersonaData?.show_icon ?? false}
-                icon_suggestions={currentPersonaData?.icon_suggestions ?? []}
-                icons={currentPersonaData?.icons ?? []}
+                icon_resource={s?.icons?.resource ?? null}
+                show_icon={s?.icons?.show ?? false}
+                icon_suggestions={s?.icons?.suggestions ?? []}
+                icons={s?.icons?.resources ?? []}
                 disabled={disabled}
                 onIconIdChange={(iconId) => setFormState((prev) => ({ ...prev, icon_id: iconId }))}
                 onGenerate={handleGenerateIcons}
@@ -1523,13 +1439,13 @@ function PersonaComponent({
                 onSearchChange={(term) => setStepFormData({ iconSearch: term || null })}
                 showSelectedFilter={iconShowSelected}
                 onShowSelectedChange={(value) => setStepFormData({ iconShowSelected: value || null })}
-                group_id={currentPersonaData?.icons_group_id ?? null}
-                showAiGenerate={currentPersonaData?.icon_show_ai_generate ?? false}
-                required={currentPersonaData?.icon_required ?? false}
+                group_id={s?.icons?.group_id ?? null}
+                showAiGenerate={s?.icons?.show_ai_generate ?? false}
+                required={s?.icons?.required ?? false}
                 aiResource={aiFormData.icon_resource}
                 onAccept={() => clearAiResource("icon_resource")}
                 onReject={() => clearAiResource("icon_resource")}
-                link_tool_id={currentPersonaData?.icon_link_tool_id ?? null}
+                link_tool_id={s?.icons?.link_tool_id ?? null}
               />
             </StepCard>
           );
@@ -1550,7 +1466,7 @@ function PersonaComponent({
               actions={
                 stepResources["content"] &&
                 stepResources["content"].length > 0 &&
-                (currentPersonaData?.content_show_ai_generate ?? false) ? (
+                (s?.content_show_ai_generate ?? false) ? (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -1583,12 +1499,12 @@ function PersonaComponent({
                 instructions_id={formState.instructions_id ?? null}
                 instructions_resource={
                   formState.instructions_id
-                    ? (currentPersonaData?.instructions_resource ?? null)
+                    ? (s?.instructions?.resource ?? null)
                     : null
                 }
-                show_instructions={currentPersonaData?.show_instructions ?? true}
-                instructions_suggestions={currentPersonaData?.instructions_suggestions ?? []}
-                instructions={currentPersonaData?.instructions ?? []}
+                show_instructions={s?.instructions?.show ?? true}
+                instructions_suggestions={s?.instructions?.suggestions ?? []}
+                instructions={s?.instructions?.resources ?? []}
                 disabled={disabled}
                 onInstructionsIdChange={(instructionsId) =>
                   setFormState((prev) => ({ ...prev, instructions_id: instructionsId }))
@@ -1599,27 +1515,27 @@ function PersonaComponent({
                 isGenerating={isGenerating("instructions")}
                 label="Instructions"
                 placeholder="Instructions that define how the persona should behave and respond."
-                required={currentPersonaData?.instructions_required ?? false}
+                required={s?.instructions?.required ?? false}
                 rows={8}
                 helpText="Define the persona's behavior, communication style, and response patterns"
                 data-testid="input-instructions"
-                group_id={currentPersonaData?.instructions_group_id ?? null}
-                showAiGenerate={currentPersonaData?.instructions_show_ai_generate ?? false}
+                group_id={s?.instructions?.group_id ?? null}
+                showAiGenerate={s?.instructions?.show_ai_generate ?? false}
                 createInstructionsAction={createInstructionsAction}
                 isAutosaveEnabled={isAutosaveEnabled}
                 registerFlush={registerFlushCallbacks["instructions"]}
                 aiResource={aiFormData.instructions_resource}
                 onAccept={() => clearAiResource("instructions_resource")}
                 onReject={() => clearAiResource("instructions_resource")}
-                create_tool_id={currentPersonaData?.instructions_create_tool_id ?? null}
-                link_tool_id={currentPersonaData?.instructions_link_tool_id ?? null}
+                create_tool_id={s?.instructions?.create_tool_id ?? null}
+                link_tool_id={s?.instructions?.link_tool_id ?? null}
               />
               <Examples
                 example_ids={formState.example_ids ?? []}
-                example_resources={currentPersonaData?.example_resources ?? []}
-                show_examples={currentPersonaData?.show_examples ?? false}
-                example_suggestions={currentPersonaData?.example_suggestions ?? []}
-                examples={currentPersonaData?.examples ?? []}
+                example_resources={s?.examples?.current ?? []}
+                show_examples={s?.examples?.show ?? false}
+                example_suggestions={s?.examples?.suggestions ?? []}
+                examples={s?.examples?.resources ?? []}
                 disabled={disabled}
                 onChange={(ids) => setFormState((prev) => ({ ...prev, example_ids: ids }))}
                 onGenerate={handleGenerateExamples}
@@ -1627,8 +1543,8 @@ function PersonaComponent({
                 maxItems={10}
                 addButtonLabel="Add example"
                 itemPlaceholder="Message"
-                group_id={currentPersonaData?.examples_group_id ?? null}
-                showAiGenerate={currentPersonaData?.examples_show_ai_generate ?? false}
+                group_id={s?.examples?.group_id ?? null}
+                showAiGenerate={s?.examples?.show_ai_generate ?? false}
                 createExamplesAction={
                   createExamplesAction
                     ? async (input: {
@@ -1640,11 +1556,11 @@ function PersonaComponent({
                       }
                     : undefined
                 }
-                required={currentPersonaData?.examples_required ?? false}
+                required={s?.examples?.required ?? false}
                 exampleMapping={
-                  currentPersonaData?.examples && formState.example_ids
+                  s?.examples?.resources && formState.example_ids
                     ? Object.fromEntries(
-                        currentPersonaData.examples
+                        s.examples.resources
                           .map((ex, idx) => [formState.example_ids?.[idx] || "", ex.example || ""])
                           .filter(([id]) => id)
                       )
@@ -1655,8 +1571,8 @@ function PersonaComponent({
                 aiExampleResources={aiFormData.example_resources ?? null}
                 onAccept={() => clearAiResource("example_resources")}
                 onReject={() => clearAiResource("example_resources")}
-                create_tool_id={currentPersonaData?.examples_create_tool_id ?? null}
-                link_tool_id={currentPersonaData?.examples_link_tool_id ?? null}
+                create_tool_id={s?.examples?.create_tool_id ?? null}
+                link_tool_id={s?.examples?.link_tool_id ?? null}
               />
             </StepCard>
           );

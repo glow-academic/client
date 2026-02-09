@@ -17,7 +17,6 @@ import {
   type StepStatus,
 } from "@/components/common/forms/GenericForm";
 import { StepCard } from "@/components/common/forms/StepCard";
-import type { GenerateRegenerateModalResource } from "@/components/common/GenerateRegenerateModal";
 import { GenerateRegenerateModal } from "@/components/common/GenerateRegenerateModal";
 import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
 import { Departments } from "@/components/resources/Departments";
@@ -38,10 +37,21 @@ import {
 } from "@/components/ui/tooltip";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
+import { useSaveContext } from "@/contexts/save-context";
+import { useAiGeneration } from "@/hooks/use-ai-generation";
+import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
+import { useFlushRegistry } from "@/hooks/use-flush-registry";
+import { useGenerationModal } from "@/hooks/use-generation-modal";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { ResourceType } from "@/lib/resources/types";
+import type { ServerToClientEvents } from "@/lib/ws/types";
 import { Loader2, Sparkles } from "lucide-react";
 import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
+
+// Socket event types (auto-generated from server)
+type CohortGenerationCompletePayload = Parameters<
+  ServerToClientEvents["cohort_generation_complete"]
+>[0];
 
 // Types defined inline using InputOf/OutputOf
 type SaveCohortIn = InputOf<"/api/v4/artifacts/cohorts/save", "post">;
@@ -69,6 +79,22 @@ type PatchCohortDraftOut = OutputOf<"/api/v4/artifacts/cohorts/draft", "patch">;
 
 type CohortData = OutputOf<"/api/v4/artifacts/cohorts/get", "post">;
 
+// Type for flush results - each resource returns its created ID(s)
+type FlushResult = {
+  name_id?: string | null;
+  description_id?: string | null;
+};
+
+// AI form data shape for cohort generation
+type CohortAiFormData = {
+  name_resource?: CohortGenerationCompletePayload["name_resource"];
+  description_resource?: CohortGenerationCompletePayload["description_resource"];
+  flag_resource?: CohortGenerationCompletePayload["flag_resource"];
+  department_resources?: CohortGenerationCompletePayload["department_resources"];
+  simulation_resources?: CohortGenerationCompletePayload["simulation_resources"];
+  simulation_positions?: CohortGenerationCompletePayload["simulation_positions"];
+};
+
 export interface CohortProps {
   cohortId?: string;
   // Server-provided data (for server-side rendering)
@@ -90,6 +116,20 @@ export interface CohortProps {
   ) => Promise<CreateDraftSimulationPositionsOut>;
 }
 
+const FLUSH_KEYS = [
+  "names",
+  "descriptions",
+] as const;
+
+const VALID_RESOURCE_TYPES: ResourceType[] = [
+  "names",
+  "descriptions",
+  "flags",
+  "departments",
+  "simulations",
+  "simulation_positions",
+];
+
 function CohortComponent({
   cohortId,
   cohortData,
@@ -108,26 +148,125 @@ function CohortComponent({
     isConnected,
   } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
+  const { isAutosaveEnabled } = useSaveContext();
 
-  // Generation state for AI workflows - simplified using ResourceType
-  const [generatingResources, setGeneratingResources] = useState<
-    Set<ResourceType>
-  >(new Set());
+  // --- Flush Registry ---
+  const { flushRegistryRef, registerFlushCallbacks, flushAllResources } =
+    useFlushRegistry<FlushResult>(FLUSH_KEYS);
 
-  // Modal state for generate/regenerate
-  const [showGenerateModal, setShowGenerateModal] = useState(false);
-  const [modalMode, setModalMode] = useState<"generate" | "regenerate" | null>(
-    null
+  // --- AI Generation ---
+  const onAiComplete = useCallback(
+    (data: Record<string, unknown>) => {
+      const aiUpdates: Partial<CohortAiFormData> = {};
+
+      // Handle simulation_positions specially - merge directly into formState
+      if (data["resource_type"] === "simulation_positions") {
+        const positions = data["simulation_positions"] as Array<{
+          simulation_id?: string | null;
+          value?: number | null;
+          generated?: boolean | null;
+          mcp?: boolean | null;
+        }> | undefined;
+
+        if (positions && positions.length > 0) {
+          setFormState((prev) => {
+            const nextPositions = new Map<string, SimulationPositionItem>();
+            prev.simulation_positions.forEach((pos) => {
+              if (pos.simulation_id) {
+                nextPositions.set(pos.simulation_id, pos);
+              }
+            });
+            positions.forEach((pos) => {
+              if (
+                pos.simulation_id &&
+                pos.value !== null &&
+                pos.value !== undefined
+              ) {
+                nextPositions.set(pos.simulation_id, {
+                  simulation_id: pos.simulation_id,
+                  value: pos.value,
+                  generated: pos.generated ?? false,
+                });
+              }
+            });
+            const merged = Array.from(nextPositions.values()).sort((a, b) => {
+              if (a.value !== b.value) return a.value - b.value;
+              return a.simulation_id.localeCompare(b.simulation_id);
+            });
+            return { ...prev, simulation_positions: merged };
+          });
+        }
+        return { aiUpdates };
+      }
+
+      // For other resource types, build formState updates for auto-accepted resources
+      const formStateUpdates: Record<string, unknown> = {};
+
+      if (data["name_id"]) formStateUpdates["name_id"] = data["name_id"];
+      if (data["description_id"]) formStateUpdates["description_id"] = data["description_id"];
+      if (data["active_flag_id"]) formStateUpdates["active_flag_id"] = data["active_flag_id"];
+
+      const departmentIds = data["department_ids"] as string[] | undefined;
+      if (departmentIds && departmentIds.length > 0) {
+        formStateUpdates["_append_department_ids"] = departmentIds;
+      }
+
+      const simulationIds = data["simulation_ids"] as string[] | undefined;
+      if (simulationIds && simulationIds.length > 0) {
+        formStateUpdates["_append_simulation_ids"] = simulationIds;
+      }
+
+      return { aiUpdates, formStateUpdates };
+    },
+    []
   );
-  const [modalResources, setModalResources] = useState<
-    GenerateRegenerateModalResource[]
-  >([]);
-  const [modalInstructions, setModalInstructions] = useState("");
 
-  const isGenerating = useCallback(
-    (resourceType: ResourceType) => generatingResources.has(resourceType),
-    [generatingResources]
+  // Custom setFormState wrapper for AI generation that handles append semantics
+  const setFormStateForAi = useCallback(
+    (updater: (prev: Record<string, unknown>) => Record<string, unknown>) => {
+      setFormState((prev) => {
+        const updates = updater(prev as unknown as Record<string, unknown>);
+        const result = { ...prev };
+
+        if (updates["name_id"]) result.name_id = updates["name_id"] as string;
+        if (updates["description_id"]) result.description_id = updates["description_id"] as string;
+        if (updates["active_flag_id"]) result.active_flag_id = updates["active_flag_id"] as string;
+
+        const appendDeptIds = updates["_append_department_ids"] as string[] | undefined;
+        if (appendDeptIds && appendDeptIds.length > 0) {
+          const newDeptIds = appendDeptIds.filter(
+            (id) => !prev.department_ids.includes(id)
+          );
+          result.department_ids = [...prev.department_ids, ...newDeptIds];
+        }
+
+        const appendSimIds = updates["_append_simulation_ids"] as string[] | undefined;
+        if (appendSimIds && appendSimIds.length > 0) {
+          const newSimIds = appendSimIds.filter(
+            (id) => !prev.simulation_ids.includes(id)
+          );
+          result.simulation_ids = [...prev.simulation_ids, ...newSimIds];
+        }
+
+        return result;
+      });
+    },
+    []
   );
+
+  const {
+    setGeneratingResources,
+    isGenerating,
+  } = useAiGeneration<ResourceType, CohortAiFormData>({
+    socket,
+    isConnected,
+    artifactType: "cohort",
+    groupId: cohortData?.group_id,
+    eventPrefix: "cohort_generation",
+    validResourceTypes: VALID_RESOURCE_TYPES,
+    onComplete: onAiComplete,
+    setFormState: setFormStateForAi as React.Dispatch<React.SetStateAction<Record<string, unknown>>>,
+  });
 
   // nuqs parsers for URL-backed state (will be passed to GenericForm)
   // Memoize to prevent new object reference on every render
@@ -312,9 +451,9 @@ function CohortComponent({
 
   const [formState, setFormState] = useState(getInitialFormState);
   // Use ref to access formState in renderStep without depending on it
-  const formStateRef = React.useRef(formState);
+  const formStateRef = React.useRef<Record<string, unknown>>(formState as unknown as Record<string, unknown>);
   React.useEffect(() => {
-    formStateRef.current = formState;
+    formStateRef.current = formState as unknown as Record<string, unknown>;
   }, [formState]);
 
   // Memoize stringified array dependencies to prevent effect from running when array references change but content is same
@@ -329,20 +468,6 @@ function CohortComponent({
   const simulationPositionsStr = React.useMemo(
     () => JSON.stringify(cohortData?.simulation_positions ?? []),
     [cohortData?.simulation_positions]
-  );
-
-  // Memoize stringified formState arrays for draft listener effect dependencies
-  const formStateDepartmentIdsStr = React.useMemo(
-    () => JSON.stringify(formState.department_ids),
-    [formState.department_ids]
-  );
-  const formStateSimulationIdsStr = React.useMemo(
-    () => JSON.stringify(formState.simulation_ids),
-    [formState.simulation_ids]
-  );
-  const formStateSimulationPositionsStr = React.useMemo(
-    () => JSON.stringify(formState.simulation_positions),
-    [formState.simulation_positions]
   );
 
   // Update form state when server data changes
@@ -362,6 +487,7 @@ function CohortComponent({
         JSON.stringify(prev.simulation_positions) !==
           JSON.stringify(newState.simulation_positions)
       ) {
+        serverSyncPendingRef.current = true;
         return newState;
       }
       return prev;
@@ -378,440 +504,122 @@ function CohortComponent({
     simulationPositionsStr,
   ]);
 
-  // Draft version tracking for optimistic concurrency control
-  // Keep version in a ref so updating it doesn't retrigger the effect
-  const [lastSavedVersion, setLastSavedVersion] = useState(0);
-  const lastSavedVersionRef = React.useRef(0);
-  React.useEffect(() => {
-    lastSavedVersionRef.current = lastSavedVersion;
-  }, [lastSavedVersion]);
-  // Sync draft_version from server to avoid unintended draft forks.
-  const draftVersion =
-    cohortData && "draft_version" in cohortData
-      ? (cohortData as { draft_version?: number | null }).draft_version
-      : null;
-  // Track if version has been synced from server to prevent patching before sync
-  const versionSyncedRef = React.useRef(false);
-  React.useEffect(() => {
-    if (
-      typeof draftVersion === "number" &&
-      draftVersion !== lastSavedVersionRef.current
-    ) {
-      setLastSavedVersion(draftVersion);
-      lastSavedVersionRef.current = draftVersion;
-    }
-    versionSyncedRef.current = true; // Mark as synced
-  }, [draftVersion]);
-
-  // Get draftId from GenericForm's URL state via bridge (GenericForm is single source of truth)
-  const [draftId, setDraftId] = useState<string | null>(null);
-  const setUrlFormDataRef = React.useRef<
-    null | ((updates: Record<string, unknown>) => void)
-  >(null);
-
-  // Store formData from GenericForm to access search params
-  const formDataRef = React.useRef<Record<string, unknown>>({});
-
-  // Track last synced draftId to prevent redundant profile context updates
-  const lastSyncedDraftIdRef = React.useRef<string | null>(null);
-
-  // Memoized callback to sync draftId from GenericForm - only update if value changed
-  const onFormDataChange = React.useCallback((fd: Record<string, unknown>) => {
-    // Store formData for access in handleGenerateResources
-    formDataRef.current = fd;
-    const next = (fd["draftId"] as string | undefined) ?? null;
-    setDraftId((prev) => (prev === next ? prev : next));
-
-    // One-way sync to profile context (no effect dependency on selectedDraftId)
-    if (next !== lastSyncedDraftIdRef.current) {
-      lastSyncedDraftIdRef.current = next;
-      setSelectedDraftId(next);
-    }
-  }, [setSelectedDraftId]);
-
-  // Use ref to stabilize patchCohortDraftAction to prevent effect recreation when prop reference changes
+  // --- Draft Lifecycle ---
   const patchCohortDraftActionRef = React.useRef(patchCohortDraftAction);
   React.useEffect(() => {
     patchCohortDraftActionRef.current = patchCohortDraftAction;
   }, [patchCohortDraftAction]);
 
-  // Build a stable key for "what would we patch" - only changes when form data actually changes
-  const draftPatchKey = React.useMemo(() => {
-    return JSON.stringify({
-      draftId: draftId || null,
-      name_id: formState.name_id,
-      description_id: formState.description_id,
-      active_flag_id: formState.active_flag_id,
-      department_ids: formState.department_ids,
-      simulation_ids: formState.simulation_ids,
-      simulation_positions: formState.simulation_positions,
-    });
-    // Use stringified arrays to prevent recreation when array references change but content is same
+  // Stable ref wrapper for patch action
+  const patchActionRef = React.useRef<
+    ((payload: Record<string, unknown>) => Promise<{ draft_id?: string | null; new_version?: number | null }>) | undefined
+  >(undefined);
+  React.useEffect(() => {
+    if (patchCohortDraftAction) {
+      patchActionRef.current = async (payload: Record<string, unknown>) => {
+        return await patchCohortDraftAction({ body: payload } as PatchCohortDraftIn);
+      };
+    } else {
+      patchActionRef.current = undefined;
+    }
+  }, [patchCohortDraftAction]);
+
+  // Memoize stringified formState arrays for draft listener effect dependencies
+  const formStateDepartmentIdsStr = React.useMemo(
+    () => JSON.stringify(formState.department_ids),
+    [formState.department_ids]
+  );
+  const formStateSimulationIdsStr = React.useMemo(
+    () => JSON.stringify(formState.simulation_ids),
+    [formState.simulation_ids]
+  );
+  const formStateSimulationPositionsStr = React.useMemo(
+    () => JSON.stringify(formState.simulation_positions),
+    [formState.simulation_positions]
+  );
+
+  // formStateKey excludes draftId -- the hook prepends it
+  const formStateKey = React.useMemo(
+    () =>
+      JSON.stringify({
+        name_id: formState.name_id,
+        description_id: formState.description_id,
+        active_flag_id: formState.active_flag_id,
+        department_ids: formState.department_ids,
+        simulation_ids: formState.simulation_ids,
+        simulation_positions: formState.simulation_positions,
+      }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    draftId,
-    formState.name_id,
-    formState.description_id,
-    formState.active_flag_id,
-    formStateDepartmentIdsStr,
-    formStateSimulationIdsStr,
-    formStateSimulationPositionsStr,
-  ]);
+    [
+      formState.name_id,
+      formState.description_id,
+      formState.active_flag_id,
+      formStateDepartmentIdsStr,
+      formStateSimulationIdsStr,
+      formStateSimulationPositionsStr,
+    ]
+  );
 
-  // Track last patched payload so we don't repatch identical state
-  const lastPatchedKeyRef = React.useRef<string | null>(null);
-  const isFirstPatchRef = React.useRef(true);
+  const hasResourceIds = !!(
+    formState.name_id ||
+    formState.description_id ||
+    formState.active_flag_id ||
+    formState.department_ids.length > 0 ||
+    formState.simulation_ids.length > 0
+  );
 
-  // Track if there are pending changes for beforeunload warning
-  const hasPendingChangesRef = React.useRef(false);
+  const buildPatchPayload = useCallback(
+    (
+      draftId: string | null,
+      expectedVersion: number,
+      flushResults?: Record<string, unknown>
+    ): Record<string, unknown> => {
+      const currentFormState = formStateRef.current as unknown as typeof formState;
+      const fr = (flushResults ?? {}) as Partial<FlushResult>;
+      return {
+        input_draft_id: draftId || null,
+        name_id: fr.name_id !== undefined ? fr.name_id : currentFormState.name_id,
+        description_id: fr.description_id !== undefined ? fr.description_id : currentFormState.description_id,
+        active_flag_id: currentFormState.active_flag_id,
+        department_ids: currentFormState.department_ids,
+        simulation_ids: currentFormState.simulation_ids,
+        simulation_position_values:
+          currentFormState.simulation_positions.length > 0
+            ? currentFormState.simulation_ids.map(
+                (simulationId, index) =>
+                  currentFormState.simulation_positions.find(
+                    (position) => position.simulation_id === simulationId
+                  )?.value ?? index + 1
+              )
+            : null,
+        expected_version: expectedVersion,
+      };
+    },
+    []
+  );
 
-  // Draft change listener - watches resource IDs and patches draft
-  // Only triggers when the payload actually changes, not when version changes
-  useEffect(() => {
-    const hasResourceIds =
-      formState.name_id ||
-      formState.description_id ||
-      formState.active_flag_id ||
-      formState.department_ids.length > 0 ||
-      formState.simulation_ids.length > 0;
+  const draftVersion =
+    cohortData && "draft_version" in cohortData
+      ? (cohortData as { draft_version?: number | null }).draft_version
+      : null;
 
-    // Debug logging at effect start
-    console.debug("[Cohort Draft] Effect triggered", {
-      hasResourceIds,
-      draftPatchKey: draftPatchKey.substring(0, 100) + "...",
-      lastPatchedKey: lastPatchedKeyRef.current?.substring(0, 50),
-    });
-
-    if (!hasResourceIds || !patchCohortDraftActionRef.current) {
-      return;
-    }
-
-    // Wait for version sync before patching to prevent race conditions
-    // Only block if there's an actual numeric version to sync (not null for new cohorts)
-    if (typeof cohortData?.draft_version === "number" && !versionSyncedRef.current) {
-      console.debug("[Cohort Draft] Waiting for version sync");
-      return;
-    }
-
-    // Skip the first effect run - treat initial server state as the baseline
-    // This prevents creating an unwanted draft on page load when server returns pre-populated IDs
-    if (isFirstPatchRef.current) {
-      isFirstPatchRef.current = false;
-      lastPatchedKeyRef.current = draftPatchKey;
-      return;
-    }
-
-    // ✅ If nothing changed since the last successful patch, do nothing.
-    if (lastPatchedKeyRef.current === draftPatchKey) {
-      return;
-    }
-
-    // Mark that we have pending changes (for beforeunload warning)
-    hasPendingChangesRef.current = true;
-
-    const timer = setTimeout(async () => {
-      try {
-        if (!patchCohortDraftActionRef.current) return;
-
-        // Debug logging before API call
-        console.debug("[Cohort Draft] Calling patch API", {
-          input_draft_id: draftId,
-          expected_version: lastSavedVersionRef.current,
-          fields: Object.keys(formState).filter(k => formState[k as keyof typeof formState]),
-        });
-
-        const result = await patchCohortDraftActionRef.current({
-          body: {
-            input_draft_id: draftId || null,
-            name_id: formState.name_id,
-            description_id: formState.description_id,
-            active_flag_id: formState.active_flag_id,
-            department_ids: formState.department_ids,
-            simulation_ids: formState.simulation_ids,
-            simulation_position_values:
-              formState.simulation_positions.length > 0
-                ? formState.simulation_ids.map(
-                    (simulationId, index) =>
-                      formState.simulation_positions.find(
-                        (position) => position.simulation_id === simulationId
-                      )?.value ?? index + 1
-                  )
-                : null,
-            expected_version: lastSavedVersionRef.current, // ✅ ref, not state dep
-          },
-        });
-
-        // Mark this payload as patched so we don't loop
-        lastPatchedKeyRef.current = draftPatchKey;
-
-        if (!draftId && result.draft_id) {
-          // Update URL when draft is created via GenericForm bridge (GenericForm owns URL state)
-          toast.success("Draft created", {
-            description: "Your changes are being auto-saved",
-          });
-          setUrlFormDataRef.current?.({ draftId: result.draft_id });
-        } else if (result.draft_id && result.draft_id !== draftId) {
-          // Sync URL to server-returned draft_id to avoid stale draft mismatch
-          setUrlFormDataRef.current?.({ draftId: result.draft_id });
-        }
-
-        // Debug logging after success
-        console.debug("[Cohort Draft] Patch succeeded", {
-          draft_id: result.draft_id,
-          new_version: result.new_version,
-        });
-
-        // This can stay as state (for UI), but it won't re-trigger patching
-        // because the effect is gated by payload changes.
-        if ((result.new_version ?? 0) !== lastSavedVersionRef.current) {
-          setLastSavedVersion(result.new_version ?? 0);
-          lastSavedVersionRef.current = result.new_version ?? 0;
-        }
-
-        // Clear pending changes flag after successful save
-        hasPendingChangesRef.current = false;
-      } catch (error) {
-        // Log error for debugging
-        console.error("[Cohort Draft] Patch failed:", error);
-        // Show user feedback
-        toast.error("Failed to save draft", {
-          description: "Your changes may not have been saved. Please try again.",
-        });
-        // Don't update lastPatchedKeyRef on failure so we retry on next change
-      }
-    }, 1000);
-
-    return () => clearTimeout(timer);
-    // ✅ Trigger only when payload changes, not when version changes
-    // patchCohortDraftAction and setDraftId are accessed via refs to prevent effect recreation
-    // when prop/function references change but functionality is the same
-    // We access formState fields and draftId inside the effect, but depend on draftPatchKey
-    // to prevent unnecessary effect recreation when individual fields change but payload is same
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    draftPatchKey, // ✅ trigger only when payload changes
-    // patchCohortDraftAction and setDraftId are accessed via refs
-  ]);
-
-  // Warn users about unsaved changes when navigating away
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (hasPendingChangesRef.current) {
-        e.preventDefault();
-        e.returnValue = "You have unsaved changes.";
-      }
-    };
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, []);
-
-  // WebSocket handlers for AI generation - unified handler for all resource types
-  // Note: Cohort generation events may not exist yet, but structure is ready
-  useEffect(() => {
-    if (!socket || !isConnected) return;
-
-    // Use single group_id from cohortData (no need to track multiple)
-    const currentGroupId = cohortData?.group_id;
-
-    const handleGenerationComplete = (data: {
-      artifact_type?: string;
-      group_id?: string;
-      resource_type?: string;
-      name_id?: string | null;
-      description_id?: string | null;
-      active_flag_id?: string | null;
-      department_ids?: string[];
-      simulation_ids?: string[];
-      simulation_positions?: Array<{
-        simulation_id?: string | null;
-        value?: number | null;
-        generated?: boolean | null;
-        mcp?: boolean | null;
-      }>;
-      message?: string;
-      success?: boolean;
-      [key: string]: unknown;
-    }) => {
-      // Filter by artifact_type and group_id
-      if (
-        data.artifact_type !== "cohort" ||
-        !data.group_id ||
-        data.group_id !== currentGroupId
-      ) {
-        return; // Not for this cohort or wrong group_id
-      }
-
-      const validResourceTypes: ResourceType[] = [
-        "names",
-        "descriptions",
-        "flags",
-        "departments",
-        "simulations",
-        "simulation_positions",
-      ];
-      if (
-        data.resource_type &&
-        validResourceTypes.includes(data.resource_type as ResourceType)
-      ) {
-        if (data.resource_type === "simulation_positions") {
-          if (
-            data.simulation_positions &&
-            data.simulation_positions.length > 0
-          ) {
-            setFormState((prev) => {
-              const nextPositions = new Map<string, SimulationPositionItem>();
-              prev.simulation_positions.forEach((pos) => {
-                if (pos.simulation_id) {
-                  nextPositions.set(pos.simulation_id, pos);
-                }
-              });
-              data.simulation_positions?.forEach((pos) => {
-                if (
-                  pos.simulation_id &&
-                  pos.value !== null &&
-                  pos.value !== undefined
-                ) {
-                  nextPositions.set(pos.simulation_id, {
-                    simulation_id: pos.simulation_id,
-                    value: pos.value,
-                    generated: pos.generated ?? false,
-                  });
-                }
-              });
-              const merged = Array.from(nextPositions.values()).sort((a, b) => {
-                if (a.value !== b.value) return a.value - b.value;
-                return a.simulation_id.localeCompare(b.simulation_id);
-              });
-              return { ...prev, simulation_positions: merged };
-            });
-          }
-          setGeneratingResources((prev) => {
-            const next = new Set(prev);
-            next.delete("simulation_positions");
-            return next;
-          });
-          if (data.success) {
-            toast.success(
-              data.message || "Simulation positions generated successfully"
-            );
-          } else {
-            toast.error(
-              data.message || "Failed to generate simulation positions"
-            );
-          }
-          return;
-        }
-
-        // Update formState with the resource ID that was generated
-        // Only update the field that matches resource_type (others will be null)
-        setFormState((prev) => {
-          const updates: Partial<typeof prev> = {};
-
-          if (data.name_id) updates.name_id = data.name_id;
-          if (data.description_id) updates.description_id = data.description_id;
-          if (data.active_flag_id) updates.active_flag_id = data.active_flag_id;
-          if (data.department_ids && data.department_ids.length > 0) {
-            // For arrays, append new IDs (avoid duplicates)
-            const newDeptIds = data.department_ids.filter(
-              (id) => !prev.department_ids.includes(id)
-            );
-            updates.department_ids = [...prev.department_ids, ...newDeptIds];
-          }
-          if (data.simulation_ids && data.simulation_ids.length > 0) {
-            // For arrays, append new IDs (avoid duplicates)
-            const newSimIds = data.simulation_ids.filter(
-              (id) => !prev.simulation_ids.includes(id)
-            );
-            updates.simulation_ids = [...prev.simulation_ids, ...newSimIds];
-          }
-
-          return { ...prev, ...updates };
-        });
-
-        setGeneratingResources((prev) => {
-          const next = new Set(prev);
-          next.delete(data.resource_type as ResourceType);
-          return next;
-        });
-        if (data.success) {
-          toast.success(
-            data.message || `${data.resource_type} generated successfully`
-          );
-        } else {
-          toast.error(
-            data.message || `Failed to generate ${data.resource_type}`
-          );
-        }
-      }
-    };
-
-    const handleGenerationProgress = (data: {
-      artifact_type?: string;
-      group_id?: string;
-      resource_type?: string;
-      [key: string]: unknown;
-    }) => {
-      // Filter by artifact_type and group_id
-      if (
-        data.artifact_type !== "cohort" ||
-        !data.group_id ||
-        data.group_id !== currentGroupId
-      ) {
-        return; // Not for this cohort or wrong group_id
-      }
-      // Handle progress updates if needed
-    };
-
-    const handleGenerationError = (data: {
-      artifact_type?: string;
-      group_id?: string;
-      message?: string;
-      resource_type?: string;
-      resource_types?: string[];
-    }) => {
-      // Filter by artifact_type and group_id
-      if (
-        data.artifact_type !== "cohort" ||
-        !data.group_id ||
-        data.group_id !== currentGroupId
-      ) {
-        return; // Not for this cohort or wrong group_id
-      }
-
-      const validResourceTypes: ResourceType[] = [
-        "names",
-        "descriptions",
-        "flags",
-        "departments",
-        "simulations",
-        "simulation_positions",
-      ];
-      const resourceTypes =
-        data.resource_types || (data.resource_type ? [data.resource_type] : []);
-      setGeneratingResources((prev) => {
-        const next = new Set(prev);
-        resourceTypes.forEach((rt) => {
-          if (validResourceTypes.includes(rt as ResourceType)) {
-            next.delete(rt as ResourceType);
-          }
-        });
-        return next;
-      });
-      toast.error(data.message || "Generation failed");
-    };
-
-    // Listen to cohort-specific events filtered by artifact_type and group_id
-    // Note: These events may not exist yet, but structure is ready
-    socket.on("cohort_generation_progress", handleGenerationProgress);
-    socket.on("cohort_generation_complete", handleGenerationComplete);
-    socket.on("cohort_generation_error", handleGenerationError);
-
-    return () => {
-      socket.off("cohort_generation_progress", handleGenerationProgress);
-      socket.off("cohort_generation_complete", handleGenerationComplete);
-      socket.off("cohort_generation_error", handleGenerationError);
-    };
-  }, [socket, isConnected, cohortData?.group_id, router]);
+  const {
+    setUrlFormDataRef,
+    onFormDataChange,
+    flushAllAndSave,
+    serverSyncPendingRef,
+    formDataRef,
+  } = useDraftLifecycle({
+    formStateKey,
+    patchActionRef,
+    isAutosaveEnabled,
+    buildPatchPayload,
+    setSelectedDraftId,
+    serverDraftVersion: draftVersion ?? null,
+    hasResourceIds,
+    flushRegistryRef,
+    formStateRef,
+  });
 
   // Domain-based generation: map resource types to domain_ids
   const getDomainIds = useCallback(
@@ -842,6 +650,21 @@ function CohortComponent({
         return;
       }
 
+      if (resourceTypes.length === 0) {
+        toast.error("No resource types specified for generation");
+        return;
+      }
+
+      let draftIdToUse =
+        (formDataRef.current["draftId"] as string | undefined) ?? null;
+      if (!draftIdToUse) {
+        draftIdToUse = await flushAllAndSave();
+      }
+      if (!draftIdToUse) {
+        toast.error("Please save a draft before generating with AI");
+        return;
+      }
+
       // Set all resources as generating
       setGeneratingResources((prev) => {
         const next = new Set(prev);
@@ -851,7 +674,6 @@ function CohortComponent({
 
       // Read search params from formData
       const formData = formDataRef.current;
-      const draftId = (formData["draftId"] as string | undefined) ?? null;
       const descriptionSearch =
         (formData["descriptionSearch"] as string | undefined) ?? null;
       const simulationSearch =
@@ -864,14 +686,14 @@ function CohortComponent({
         domain_ids: getDomainIds(resourceTypes),
         user_instructions: userInstructions ? [userInstructions] : null,
         // GetCohortApiRequest fields from formData
-        draft_id: draftId || null,
+        draft_id: draftIdToUse,
         descriptions_search: descriptionSearch || null,
         simulation_search: simulationSearch || null,
         simulation_show_selected: simulationShowSelected || false,
         cohort_id: cohortId || null,
       });
     },
-    [socket, isConnected, cohortId, getDomainIds]
+    [socket, isConnected, cohortId, getDomainIds, flushAllAndSave, formDataRef, setGeneratingResources]
   );
 
   // Individual generation handlers - generate directly without modals
@@ -905,6 +727,52 @@ function CohortComponent({
     [handleGenerateResources]
   );
 
+  // --- Generation Modal ---
+  // Step-to-resources mapping for multi-generation
+  const stepResources: Record<string, ResourceType[]> = useMemo(
+    () => ({
+      basic: ["names", "descriptions", "departments", "flags"],
+      simulations: ["simulations"],
+      all: [
+        "names",
+        "descriptions",
+        "flags",
+        "departments",
+        "simulations",
+        "simulation_positions",
+      ], // All resources for full-page generation
+    }),
+    []
+  );
+
+  // Resource labels for display
+  const resourceLabels: Partial<Record<ResourceType, string>> = useMemo(
+    () => ({
+      names: "Names",
+      descriptions: "Descriptions",
+      flags: "Flags",
+      departments: "Departments",
+      simulations: "Simulations",
+      simulation_positions: "Simulation Positions",
+    }),
+    []
+  );
+
+  const onModalGenerate = useCallback(
+    (selectedResources: ResourceType[], instructions?: string) => {
+      handleGenerateResources(selectedResources, instructions);
+    },
+    [handleGenerateResources]
+  );
+
+  const { handleOpenStepCardModal, modalProps } = useGenerationModal<ResourceType>({
+    stepResources,
+    resourceLabels,
+    canRegenerate,
+    onGenerate: onModalGenerate,
+    isGenerating,
+  });
+
   // Disabled logic based on can_edit flag - standardized for all resource components
   // Check can_edit in both new and edit modes to show disabled_reason when agents are missing
   const disabled = useMemo(() => {
@@ -934,15 +802,30 @@ function CohortComponent({
   // Submit handler for GenericForm (uses formState, not formData parameter)
   const handleSubmit = useCallback(
     async (_formData: Record<string, unknown>) => {
+      let flushResults: FlushResult = {};
+      if (!isAutosaveEnabled) {
+        flushResults = await flushAllResources();
+      }
+
+      const baseFormState = formStateRef.current as unknown as typeof formState;
+      const effectiveFormState = {
+        name_id: flushResults.name_id !== undefined ? flushResults.name_id : baseFormState.name_id,
+        description_id: flushResults.description_id !== undefined ? flushResults.description_id : baseFormState.description_id,
+        active_flag_id: baseFormState.active_flag_id,
+        department_ids: baseFormState.department_ids,
+        simulation_ids: baseFormState.simulation_ids,
+        simulation_positions: baseFormState.simulation_positions,
+      };
+
       // Validate required resource IDs using {resource}_required flags from cohortData
-      if (cohortData?.name_required && !formState.name_id) {
+      if (cohortData?.name_required && !effectiveFormState.name_id) {
         toast.error("Cohort name is required");
         throw new Error("Cohort name is required");
       }
 
       if (
         cohortData?.departments_required &&
-        (!formState.department_ids || formState.department_ids.length === 0)
+        (!effectiveFormState.department_ids || effectiveFormState.department_ids.length === 0)
       ) {
         toast.error("Departments are required");
         throw new Error("Departments are required");
@@ -967,7 +850,7 @@ function CohortComponent({
       }
 
       // Ensure required fields are present (TypeScript guard)
-      if (!formState.name_id) {
+      if (!effectiveFormState.name_id) {
         toast.error("Required fields are missing");
         throw new Error("Required fields are missing");
       }
@@ -980,20 +863,20 @@ function CohortComponent({
             input_cohort_id: isEditMode && cohortId ? cohortId : null,
 
             // Required single-select
-            name_id: formState.name_id,
+            name_id: effectiveFormState.name_id,
 
             // Optional single-select
-            description_id: formState.description_id ?? undefined,
-            active_flag_id: formState.active_flag_id ?? undefined,
+            description_id: effectiveFormState.description_id ?? undefined,
+            active_flag_id: effectiveFormState.active_flag_id ?? undefined,
 
             // Optional multi-select
             department_ids:
-              formState.department_ids.length > 0
-                ? formState.department_ids
+              effectiveFormState.department_ids.length > 0
+                ? effectiveFormState.department_ids
                 : undefined,
             simulation_ids:
-              formState.simulation_ids.length > 0
-                ? formState.simulation_ids
+              effectiveFormState.simulation_ids.length > 0
+                ? effectiveFormState.simulation_ids
                 : undefined,
 
             // Special: simulation position values
@@ -1016,7 +899,8 @@ function CohortComponent({
       }
     },
     [
-      formState,
+      isAutosaveEnabled,
+      flushAllResources,
       isEditMode,
       cohortId,
       cohortData?.group_id,
@@ -1025,6 +909,7 @@ function CohortComponent({
       router,
       cohortData?.name_required,
       cohortData?.departments_required,
+      formState.simulation_position_values,
     ]
   );
 
@@ -1048,97 +933,6 @@ function CohortComponent({
     },
     [formState]
   );
-
-  // Step-to-resources mapping for multi-generation
-  const stepResources: Record<string, ResourceType[]> = useMemo(
-    () => ({
-      basic: ["names", "descriptions", "departments", "flags"],
-      simulations: ["simulations"],
-      all: [
-        "names",
-        "descriptions",
-        "flags",
-        "departments",
-        "simulations",
-        "simulation_positions",
-      ], // All resources for full-page generation
-    }),
-    []
-  );
-
-  // Resource labels for display
-  const resourceLabels: Record<ResourceType, string> = useMemo(
-    () => ({
-      names: "Names",
-      descriptions: "Descriptions",
-      flags: "Flags",
-      departments: "Departments",
-      simulations: "Simulations",
-      simulation_positions: "Simulation Positions",
-      colors: "Colors", // Not used but required by type
-      icons: "Icons", // Not used but required by type
-      instructions: "Instructions", // Not used but required by type
-      examples: "Examples", // Not used but required by type
-      fields: "Fields", // Not used but required by type
-    }),
-    []
-  );
-
-  // Handler to open modal for step card generation
-  const handleOpenStepCardModal = useCallback(
-    (stepId: string, mode: "generate" | "regenerate") => {
-      const resourceTypes = stepResources[stepId] || [];
-      const resources: GenerateRegenerateModalResource[] = resourceTypes.map(
-        (rt) => ({
-          id: rt,
-          label: resourceLabels[rt],
-          active: mode === "regenerate" ? canRegenerate(rt) : true,
-        })
-      );
-
-      setModalResources(resources);
-      setModalMode(mode);
-      setModalInstructions("");
-      setShowGenerateModal(true);
-    },
-    [stepResources, resourceLabels, canRegenerate]
-  );
-
-  // Handler for modal generate/regenerate action
-  const handleModalGenerate = useCallback(
-    async (selectedResources: string[], instructions: string) => {
-      const resourceTypes = selectedResources as ResourceType[];
-      await handleGenerateResources(
-        resourceTypes,
-        instructions.trim() || undefined
-      );
-      setShowGenerateModal(false);
-      setModalInstructions("");
-    },
-    [handleGenerateResources]
-  );
-
-  // Listen for full-page-generate event from layout
-  useEffect(() => {
-    const handleFullPageGenerate = (
-      event: CustomEvent<{ agentId?: string }>
-    ) => {
-      const agentId = event.detail?.agentId;
-      if (agentId) {
-        // Open modal instead of directly generating
-        handleOpenStepCardModal("all", "generate");
-      }
-    };
-    window.addEventListener(
-      "full-page-generate",
-      handleFullPageGenerate as EventListener
-    );
-    return () =>
-      window.removeEventListener(
-        "full-page-generate",
-        handleFullPageGenerate as EventListener
-      );
-  }, [handleOpenStepCardModal]);
 
   // Steps configuration for GenericForm
   const steps = useMemo(
@@ -1285,6 +1079,8 @@ function CohortComponent({
                         ) => Promise<CreateDraftNamesOut>)
                       | undefined
                   }
+                  isAutosaveEnabled={isAutosaveEnabled}
+                  registerFlush={registerFlushCallbacks["names"]}
                 />
               }
               resetFields={["name", "description", "department_ids", "active"]}
@@ -1374,6 +1170,8 @@ function CohortComponent({
                   group_id={currentCohortData?.group_id ?? null}
                   showAiGenerate={currentCohortData?.description_show_ai_generate ?? false}
                   createDescriptionsAction={createDescriptionsAction}
+                  isAutosaveEnabled={isAutosaveEnabled}
+                  registerFlush={registerFlushCallbacks["descriptions"]}
                 />
 
                 {/* Department Selection */}
@@ -1611,6 +1409,8 @@ function CohortComponent({
       createSimulationPositionsAction,
       canRegenerate,
       handleOpenStepCardModal,
+      isAutosaveEnabled,
+      registerFlushCallbacks,
     ]
   );
 
@@ -1647,21 +1447,8 @@ function CohortComponent({
           }}
         />
 
-        {/* Generate/Regenerate Modal */}
-        {modalMode && (
-          <GenerateRegenerateModal
-            open={showGenerateModal}
-            onOpenChange={setShowGenerateModal}
-            resources={modalResources}
-            onResourcesChange={setModalResources}
-            instructions={modalInstructions}
-            onInstructionsChange={setModalInstructions}
-            onGenerate={handleModalGenerate}
-            isGenerating={modalResources.some((r) =>
-              isGenerating(r.id as ResourceType)
-            )}
-            mode={modalMode}
-          />
+        {modalProps.open && (
+          <GenerateRegenerateModal {...modalProps} />
         )}
       </div>
     </TooltipProvider>

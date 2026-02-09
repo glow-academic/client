@@ -79,8 +79,8 @@ export async function generateMetadata(
     };
     const persona = await getPersona(input);
     return {
-      title: `${persona?.name_resource?.name || "Persona"} Persona`,
-      description: `${persona?.name_resource?.name ? `${persona.name_resource.name} - ` : ""}AI-powered student persona for simulation-based teaching assistant training. Practice pedagogical techniques and student interaction strategies in realistic educational scenarios.${persona?.description_resource?.description ? ` ${persona.description_resource.description}` : ""}`,
+      title: `${persona?.names?.resource?.name || "Persona"} Persona`,
+      description: `${persona?.names?.resource?.name ? `${persona.names.resource.name} - ` : ""}AI-powered student persona for simulation-based teaching assistant training. Practice pedagogical techniques and student interaction strategies in realistic educational scenarios.${persona?.descriptions?.resource?.description ? ` ${persona.descriptions.resource.description}` : ""}`,
     };
   } catch {
     // Fall through to default metadata
