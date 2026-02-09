@@ -54,7 +54,7 @@ WITH run_pricing_rollup AS (
 SELECT
     r.id AS run_id,
     r.group_id,
-    arj.agent_id,
+    cac.agents_id AS agent_id,
     amj.model_id,
     prj.profile_id,
     gi.session_id,
@@ -77,8 +77,8 @@ SELECT
     gi.trace_id
 FROM runs_entry r
 LEFT JOIN run_pricing_rollup rpr ON rpr.run_id = r.id
-LEFT JOIN agent_runs_junction arj ON arj.run_id = r.id AND arj.active = TRUE
-LEFT JOIN agent_models_junction amj ON amj.agent_id = arj.agent_id AND amj.active = TRUE
+LEFT JOIN config_agents_connection cac ON cac.config_id = r.config_id AND cac.active = TRUE
+LEFT JOIN agent_models_junction amj ON amj.agent_id = cac.agents_id AND amj.active = TRUE
 LEFT JOIN groups_entry gi ON gi.id = r.group_id AND gi.active = TRUE
 LEFT JOIN profile_runs_junction prj ON prj.run_id = r.id AND prj.active = TRUE
 -- Name junctions (pre-resolve artifact IDs → name resource IDs)
@@ -90,7 +90,7 @@ LEFT JOIN LATERAL (
 ) mnj ON TRUE
 LEFT JOIN LATERAL (
     SELECT anj.name_id FROM agent_names_junction anj
-    WHERE anj.agent_id = arj.agent_id
+    WHERE anj.agent_id = cac.agents_id
     ORDER BY anj.created_at DESC LIMIT 1
 ) anj ON TRUE
 LEFT JOIN LATERAL (

@@ -35,7 +35,7 @@ WITH params AS (
 run_info AS (
     SELECT
         r.id as run_id,
-        arj.agent_id,
+        cac.agents_id AS agent_id,
         NULL::uuid as persona_id,
         COALESCE(
             x.department_id,
@@ -57,7 +57,7 @@ run_info AS (
         ) as department_id
     FROM params x
     JOIN view_runs_entry r ON r.id = x.run_id
-    LEFT JOIN agent_runs_junction arj ON arj.run_id = r.id
+    LEFT JOIN config_agents_connection cac ON cac.config_id = r.config_id AND cac.active = TRUE
 ),
 -- Token update: handle both text-only and audio/image/text scenarios
 has_audio_or_image AS (

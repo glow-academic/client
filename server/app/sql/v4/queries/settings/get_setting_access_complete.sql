@@ -81,10 +81,9 @@ draft_data AS (
 group_data AS (
     SELECT COALESCE(
         (
-            SELECT dde.group_id
-            FROM draft_domains_entry dde
-            JOIN params p ON p.draft_id = dde.draft_id
-            WHERE dde.active = true
+            SELECT d.group_id
+            FROM view_drafts_entry d
+            JOIN params p ON p.draft_id = d.id
             LIMIT 1
         ),
         (SELECT id FROM view_groups_entry ORDER BY created_at DESC LIMIT 1)

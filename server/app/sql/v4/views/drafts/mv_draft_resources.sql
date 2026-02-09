@@ -2,9 +2,8 @@
 -- One row per draft with denormalized draft-linked resource IDs and per-resource group IDs.
 --
 -- Notes:
--- - Each `{resource}_group_id` is the groups_resource.id resolved from draft_domains_entry
+-- - Each `{resource}_group_id` is the groups_resource.id resolved from drafts_entry.group_id
 --   via domains_domains_connection -> domains_resource (filtered by resource type) -> groups_groups_connection.
---   The "latest" group is selected by ordering on draft_domains_entry.created_at DESC.
 -- - `resource_types`/`resource_ids` include all active links from *_drafts_connection tables.
 
 DO $$

@@ -496,6 +496,7 @@ class PatchPersonaDraftSqlParams(BaseModel):
         return cls(
             profile_id=profile_id,
             input_draft_id=request.input_draft_id,
+            group_id=request.group_id,
             names=request.names or _empty_single,
             descriptions=request.descriptions or _empty_single,
             colors=request.colors or _empty_single,

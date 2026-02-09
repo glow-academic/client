@@ -56,11 +56,10 @@ simulation_departments AS (
 ),
 simulation_data AS (
     SELECT
-        dde.group_id,
+        d.group_id,
         d.version as draft_version
     FROM simulation_artifact sa
     LEFT JOIN view_drafts_entry d ON d.id = (SELECT draft_id FROM params)
-    LEFT JOIN draft_domains_entry dde ON dde.draft_id = d.id AND dde.active = TRUE
     WHERE sa.id = (SELECT simulation_id FROM params)
     LIMIT 1
 ),

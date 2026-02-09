@@ -143,12 +143,6 @@ create_run AS (
     CROSS JOIN group_data gd
     RETURNING id as run_id
 ),
-link_run_agent AS (
-    INSERT INTO agent_runs_junction (agent_id, run_id)
-    SELECT sa.agent_id, cr.run_id
-    FROM selected_agent sa
-    CROSS JOIN create_run cr
-),
 link_run_to_profile AS (
     INSERT INTO profile_runs_junction (profile_id, run_id)
     SELECT p.profile_id, cr.run_id

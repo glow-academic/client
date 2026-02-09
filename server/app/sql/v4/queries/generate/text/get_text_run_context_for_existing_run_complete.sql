@@ -80,12 +80,12 @@ WITH params AS (
 existing_run AS (
     SELECT
         r.id as run_id,
-        arj.agent_id,
+        cac.agents_id as agent_id,
         gd.group_id,
         gd.trace_id
     FROM view_runs_entry r
     CROSS JOIN params p
-    LEFT JOIN agent_runs_junction arj ON arj.run_id = r.id
+    LEFT JOIN config_agents_connection cac ON cac.config_id = r.config_id AND cac.active = TRUE
     LEFT JOIN view_groups_entry g ON g.id = r.group_id
     LEFT JOIN LATERAL (
         SELECT

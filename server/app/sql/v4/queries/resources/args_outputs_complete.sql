@@ -140,9 +140,6 @@ BEGIN
     INSERT INTO runs_entry (id, input_tokens, output_tokens, cached_input_tokens, created_at, updated_at)
     VALUES (v_run_id, 0, 0, 0, NOW(), NOW());
 
-    -- Link agent to run
-    INSERT INTO agent_runs_junction (agent_id, run_id) VALUES (api_create_args_outputs_v4.agent_id, v_run_id);
-    
     -- Link call to run
     UPDATE calls_entry SET run_id = v_run_id WHERE id = v_call_id;
 

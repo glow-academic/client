@@ -298,10 +298,10 @@ runs_with_details AS (
         -- Run details
         r.created_at as run_created_at,
         -- Model info (via agent_models_junction)
-        (SELECT am.model_id FROM agent_models_junction am WHERE am.agent_id = arj.agent_id AND am.active = true LIMIT 1) as model_id,
-        (SELECT n.name FROM model_names_junction mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = (SELECT am.model_id FROM agent_models_junction am WHERE am.agent_id = arj.agent_id AND am.active = true LIMIT 1) LIMIT 1) as model_name,
+        (SELECT am.model_id FROM agent_models_junction am WHERE am.agent_id = cac.agents_id AND am.active = true LIMIT 1) as model_id,
+        (SELECT n.name FROM model_names_junction mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = (SELECT am.model_id FROM agent_models_junction am WHERE am.agent_id = cac.agents_id AND am.active = true LIMIT 1) LIMIT 1) as model_name,
         -- Agent/persona info
-        arj.agent_id,
+        cac.agents_id AS agent_id,
         (SELECT n.name FROM agent_names_junction an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) as agent_name,
         NULL::uuid as persona_id,
         NULL::text as persona_name,
@@ -339,8 +339,8 @@ runs_with_details AS (
         ) as grade_created_at
     FROM runs_with_status rws
     JOIN view_runs_entry r ON r.id = rws.run_id
-    LEFT JOIN agent_runs_junction arj ON arj.run_id = r.id
-    LEFT JOIN agents_resource a ON a.id = arj.agent_id
+    LEFT JOIN config_agents_connection cac ON cac.config_id = r.config_id AND cac.active = TRUE
+    LEFT JOIN agents_resource a ON a.id = cac.agents_id
     LEFT JOIN profile_runs_junction prj ON prj.run_id = r.id
     LEFT JOIN profile_artifact p ON p.id = prj.profile_id
     ORDER BY rws.eval_run_assigned_at DESC

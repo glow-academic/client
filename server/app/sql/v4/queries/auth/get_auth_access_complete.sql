@@ -82,9 +82,8 @@ auth_group_data AS (
     SELECT
         COALESCE(
             (
-                SELECT dde.group_id
+                SELECT d.group_id
                 FROM view_drafts_entry d
-                JOIN draft_domains_entry dde ON dde.draft_id = d.id AND dde.active = TRUE
                 WHERE d.id = (SELECT draft_id FROM params)
                 LIMIT 1
             ),

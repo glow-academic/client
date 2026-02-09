@@ -275,12 +275,11 @@ draft_payload_data AS (
 draft_group_data AS (
     SELECT
         COALESCE(
-            dde.group_id,
+            d.group_id,
             (SELECT id FROM view_groups_entry ORDER BY created_at DESC LIMIT 1)
         ) as group_id
     FROM params x
     LEFT JOIN view_drafts_entry d ON d.id = x.draft_id
-    LEFT JOIN draft_domains_entry dde ON dde.draft_id = d.id AND dde.active = TRUE
     -- Always return at least one row (use COALESCE to handle NULL draft_id case)
     WHERE TRUE
     LIMIT 1
@@ -2474,7 +2473,7 @@ debug_data AS (
             ARRAY_AGG(
                 jsonb_build_object(
                     'created_at', di.created_at::text,
-                    'model_id', (SELECT am.model_id FROM agent_models_junction am WHERE am.agent_id = arj_debug.agent_id AND am.active = true LIMIT 1)::text,
+                    'model_id', (SELECT am.model_id FROM agent_models_junction am WHERE am.agent_id = cac_debug.agents_id AND am.active = true LIMIT 1)::text,
                     'content', di.content
                 )
                 ORDER BY di.created_at DESC
@@ -2482,8 +2481,8 @@ debug_data AS (
             ARRAY[]::jsonb[]
         ) as debug_info
     FROM params x
-    LEFT JOIN agent_runs_junction arj_debug ON arj_debug.agent_id = x.agent_id
-    LEFT JOIN view_runs_entry mr ON mr.id = arj_debug.run_id
+    LEFT JOIN runs_entry mr ON mr.config_id IS NOT NULL
+    LEFT JOIN config_agents_connection cac_debug ON cac_debug.config_id = mr.config_id AND cac_debug.agents_id = x.agent_id AND cac_debug.active = TRUE
     LEFT JOIN view_debug_info_entry di ON di.run_id = mr.id
     WHERE x.agent_id IS NOT NULL
     LIMIT 1

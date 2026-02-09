@@ -415,13 +415,12 @@ model_exists_check AS (
 draft_group_data AS (
     SELECT
         COALESCE(
-            dde.group_id,
+            d.group_id,
             (SELECT id FROM view_groups_entry ORDER BY created_at DESC LIMIT 1)
         ) as group_id,
         COALESCE(d.version, 0) as draft_version
     FROM params x
     LEFT JOIN view_drafts_entry d ON d.id = x.draft_id
-    LEFT JOIN draft_domains_entry dde ON dde.draft_id = d.id AND dde.active = TRUE
     WHERE TRUE
     LIMIT 1
 ),

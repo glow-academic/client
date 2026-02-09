@@ -221,14 +221,6 @@ create_run AS (
     FROM context_data cd
     RETURNING id
 ),
-link_run_to_agent AS (
-    -- Link run to agent via junction table
-    INSERT INTO agent_runs_junction (agent_id, run_id)
-    SELECT cd.agent_id::uuid, cr.id
-    FROM context_data cd
-    CROSS JOIN create_run cr
-    WHERE cd.agent_id IS NOT NULL
-),
 link_run_to_profile AS (
     -- Link run to profile via junction table
     INSERT INTO profile_runs_junction (profile_id, run_id)

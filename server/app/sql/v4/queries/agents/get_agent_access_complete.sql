@@ -84,7 +84,7 @@ agent_departments_data AS (
 draft_group_data AS (
     SELECT
         COALESCE(
-            (SELECT dde.group_id FROM view_drafts_entry d JOIN draft_domains_entry dde ON dde.draft_id = d.id AND dde.active = TRUE WHERE d.id = (SELECT draft_id FROM params)),
+            (SELECT d.group_id FROM view_drafts_entry d WHERE d.id = (SELECT draft_id FROM params)),
             (SELECT id FROM view_groups_entry ORDER BY created_at DESC LIMIT 1)
         ) as group_id
     FROM params

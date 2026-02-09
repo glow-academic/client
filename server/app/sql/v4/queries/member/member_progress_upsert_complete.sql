@@ -110,9 +110,9 @@ latest_run AS (
     JOIN view_runs_entry r ON r.group_id = tg.group_id
     JOIN chat_context cc ON true
     LEFT JOIN profile_runs_junction prj ON prj.run_id = r.id
-    LEFT JOIN agent_runs_junction arj ON arj.run_id = r.id
+    LEFT JOIN config_agents_connection cac ON cac.config_id = r.config_id AND cac.active = TRUE
     WHERE (cc.profile_id IS NULL OR prj.profile_id = cc.profile_id)
-      AND arj.agent_id = (SELECT agent_id FROM member_agent)
+      AND cac.agents_id = (SELECT agent_id FROM member_agent)
     ORDER BY r.created_at DESC
     LIMIT 1
 ),
@@ -124,13 +124,9 @@ create_run_if_needed AS (
     WHERE NOT EXISTS (SELECT 1 FROM latest_run)
     RETURNING id as run_id
 ),
--- Link new run to agent via junction
+-- Link new run to agent (agent_runs_junction removed; runs now link via config_agents_connection)
 link_run_to_agent AS (
-    INSERT INTO agent_runs_junction (agent_id, run_id)
-    SELECT ma.agent_id, cr.run_id
-    FROM member_agent ma
-    CROSS JOIN create_run_if_needed cr
-    RETURNING run_id
+    SELECT 1 WHERE false  -- Placeholder CTE to maintain structure
 ),
 upserted_run AS (
     SELECT run_id FROM latest_run
@@ -339,11 +335,11 @@ agent_system_prompt AS (
         pr_default.system_prompt as system_prompt
     FROM run_info ri
     JOIN view_runs_entry r ON r.id = ri.run_id
-    JOIN agent_runs_junction arj ON arj.run_id = r.id
-    JOIN agents_resource a ON a.id = arj.agent_id
+    JOIN config_agents_connection cac ON cac.config_id = r.config_id AND cac.active = TRUE
+    JOIN agents_resource a ON a.id = cac.agents_id
     LEFT JOIN agent_prompts_junction ap ON ap.agent_id = a.id AND ap.active = true
     LEFT JOIN prompts_resource pr_default ON pr_default.id = ap.prompt_id
-    WHERE arj.agent_id IS NOT NULL
+    WHERE cac.agents_id IS NOT NULL
     AND pr_default.system_prompt IS NOT NULL
     AND pr_default.system_prompt != ''
 ),

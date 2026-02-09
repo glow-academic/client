@@ -668,6 +668,7 @@ function PersonaComponent({
     ): Record<string, unknown> => {
       return {
         input_draft_id: draftId || null,
+        group_id: stablePersonaDataFields?.group_id ?? null,
         ...buildResourceActions(PERSONA_RESOURCES, {
           formState: formStateRef.current,
           referenceState: lastPatchedFormStateRef.current as unknown as Record<
@@ -956,6 +957,7 @@ function PersonaComponent({
         await savePersonaAction({
           body: {
             input_persona_id: isEditMode && personaId ? personaId : null,
+            group_id: personaData?.group_id ?? null,
             ...buildResourceActions(PERSONA_RESOURCES, {
               formState: formStateRef.current,
               referenceState: initialState as unknown as Record<

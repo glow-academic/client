@@ -3340,51 +3340,6 @@ class TestCreateTestRubricV4CompleteApiResponse(BaseModel):
 
 
 
-# Generated from: test_create_test_run_v4_complete
-
-class TestCreateTestRunV4CompleteSqlParams(BaseModel):
-
-    department_id: UUID
-    model_id: UUID
-    agent_id: UUID | None = None
-    entity_type: str | None = None
-    profile_id: UUID | None = None
-    entity_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.department_id,
-            self.model_id,
-            self.agent_id,
-            self.entity_type,
-            self.profile_id,
-            self.entity_id,
-        )
-
-class TestCreateTestRunV4CompleteSqlRow(BaseModel):
-
-    run_id: UUID | None = None
-    department_id: UUID | None = None
-    model_id: UUID | None = None
-    agent_id: UUID | None = None
-
-class TestCreateTestRunV4CompleteApiRequest(BaseModel):
-
-    department_id: UUID
-    model_id: UUID
-    agent_id: UUID | None = None
-    entity_type: str | None = None
-    entity_id: UUID | None = None
-
-class TestCreateTestRunV4CompleteApiResponse(BaseModel):
-
-    run_id: UUID | None = None
-    department_id: UUID | None = None
-    model_id: UUID | None = None
-    agent_id: UUID | None = None
-
-
-
 # Generated from: test_create_test_scenario_v4_complete
 
 class TestCreateTestScenarioV4CompleteSqlParams(BaseModel):
@@ -4315,12 +4270,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "TestCreateTestRubricV4CompleteApiRequest",
         "TestCreateTestRubricV4CompleteApiResponse",
     ),
-    "tests/sql/v4/integration/queries/socket/helpers/test_create_test_run_v4_complete.sql": (
-        "TestCreateTestRunV4CompleteSqlParams",
-        "TestCreateTestRunV4CompleteSqlRow",
-        "TestCreateTestRunV4CompleteApiRequest",
-        "TestCreateTestRunV4CompleteApiResponse",
-    ),
     "tests/sql/v4/integration/queries/socket/helpers/test_create_test_scenario_v4_complete.sql": (
         "TestCreateTestScenarioV4CompleteSqlParams",
         "TestCreateTestScenarioV4CompleteSqlRow",
@@ -4958,11 +4907,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["tests/sql/v4/integration/queries/socket/helpers/test_create_test_rubric_v4_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/queries/socket/helpers/test_create_test_run_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
