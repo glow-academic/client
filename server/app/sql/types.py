@@ -163,6 +163,345 @@ class GetAgentAccessApiResponse(BaseModel):
 
 
 
+# Generated from: get_agent
+
+class GetAgentSqlParams(BaseModel):
+
+    profile_id: UUID
+    agent_id: UUID | None = None
+    descriptions_search: str | None = None
+    prompts_search: str | None = None
+    instructions_search: str | None = None
+    draft_id: UUID | None = None
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.agent_id,
+            self.descriptions_search,
+            self.prompts_search,
+            self.instructions_search,
+            self.draft_id,
+            self.mcp,
+        )
+
+class QGetAgentV4Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+    generated: bool | None
+
+
+
+
+class QGetAgentV4DescriptionResource(BaseModel):
+
+    id: UUID | None
+    description: str | None
+    generated: bool | None
+
+
+
+
+class QGetAgentV4FlagResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    icon: str | None
+    generated: bool | None
+
+
+
+
+class QGetAgentV4InstructionsResource(BaseModel):
+
+    id: UUID | None
+    template: str | None
+    generated: bool | None
+
+
+
+
+class QGetAgentV4Model(BaseModel):
+
+    model_id: UUID | None
+    name: str | None
+    description: str | None
+    active: bool | None
+    temperature_lower: float | None
+    temperature_upper: float | None
+    input_modalities: list[str] | None
+    output_modalities: list[str] | None
+    temperature_levels: Any | None
+    reasoning_options: Any | None
+    available_voices: Any | None
+
+
+
+
+class QGetAgentV4ModelResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    active: bool | None
+    generated: bool | None
+
+
+
+
+class QGetAgentV4NameResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    generated: bool | None
+
+
+
+
+class QGetAgentV4Prompt(BaseModel):
+
+    prompt_id: UUID | None
+    system_prompt: str | None
+    name: str | None
+    description: str | None
+    created_at: datetime | None
+    updated_at: datetime | None
+    department_ids: list[UUID] | None
+    can_delete: bool | None
+    generated: bool | None
+
+
+
+
+class QGetAgentV4PromptResource(BaseModel):
+
+    id: UUID | None
+    system_prompt: str | None
+    name: str | None
+    description: str | None
+    generated: bool | None
+
+
+
+
+class QGetAgentV4ReasoningLevelResource(BaseModel):
+
+    id: UUID | None
+    reasoning_level: str | None
+    generated: bool | None
+
+
+
+
+class QGetAgentV4TemperatureLevelResource(BaseModel):
+
+    id: UUID | None
+    temperature: float | None
+    generated: bool | None
+
+
+
+
+class QGetAgentV4Tool(BaseModel):
+
+    tool_id: UUID | None
+    name: str | None
+    description: str | None
+    generated: bool | None
+    group_id: UUID | None
+
+
+
+
+class QGetAgentV4VoiceResource(BaseModel):
+
+    id: UUID | None
+    voice: str | None
+    generated: bool | None
+
+class GetAgentSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    agent_exists: bool | None = None
+    can_edit: bool | None = None
+    disabled_reason: str | None = None
+    draft_version: int | None = None
+    group_id: UUID | None = None
+    name_id: UUID | None = None
+    name_resource: QGetAgentV4NameResource | None = None
+    show_name: bool | None = None
+    name_agent_id: UUID | None = None
+    name_required: bool | None = None
+    name_suggestions: list[UUID] | None = None
+    names: list[QGetAgentV4NameResource] | None = None
+    description_id: UUID | None = None
+    description_resource: QGetAgentV4DescriptionResource | None = None
+    show_description: bool | None = None
+    description_agent_id: UUID | None = None
+    description_required: bool | None = None
+    description_suggestions: list[UUID] | None = None
+    descriptions: list[QGetAgentV4DescriptionResource] | None = None
+    model_id: UUID | None = None
+    model_resource: QGetAgentV4ModelResource | None = None
+    show_models: bool | None = None
+    models_agent_id: UUID | None = None
+    models_required: bool | None = None
+    model_suggestions: list[UUID] | None = None
+    models: list[QGetAgentV4Model] | None = None
+    prompt_id: UUID | None = None
+    prompt_resource: QGetAgentV4PromptResource | None = None
+    show_prompts: bool | None = None
+    prompts_agent_id: UUID | None = None
+    prompts_required: bool | None = None
+    prompt_suggestions: list[UUID] | None = None
+    prompts: list[QGetAgentV4Prompt] | None = None
+    instructions_id: UUID | None = None
+    instructions_resource: QGetAgentV4InstructionsResource | None = None
+    show_instructions: bool | None = None
+    instructions_agent_id: UUID | None = None
+    instructions_required: bool | None = None
+    instructions_suggestions: list[UUID] | None = None
+    instructions: list[QGetAgentV4InstructionsResource] | None = None
+    active_flag_id: UUID | None = None
+    flag_resource: QGetAgentV4FlagResource | None = None
+    show_flag: bool | None = None
+    flag_agent_id: UUID | None = None
+    flag_required: bool | None = None
+    department_ids: list[UUID] | None = None
+    department_resources: list[QGetAgentV4Department] | None = None
+    show_departments: bool | None = None
+    departments_agent_id: UUID | None = None
+    departments_required: bool | None = None
+    department_suggestions: list[UUID] | None = None
+    departments: list[QGetAgentV4Department] | None = None
+    reasoning_level_id: UUID | None = None
+    reasoning_level_resource: QGetAgentV4ReasoningLevelResource | None = None
+    show_reasoning_levels: bool | None = None
+    reasoning_levels_agent_id: UUID | None = None
+    reasoning_levels_required: bool | None = None
+    reasoning_level_suggestions: list[UUID] | None = None
+    reasoning_levels: list[QGetAgentV4ReasoningLevelResource] | None = None
+    temperature_level_id: UUID | None = None
+    temperature_level_resource: QGetAgentV4TemperatureLevelResource | None = None
+    show_temperature_levels: bool | None = None
+    temperature_levels_agent_id: UUID | None = None
+    temperature_levels_required: bool | None = None
+    temperature_level_suggestions: list[UUID] | None = None
+    temperature_levels: list[QGetAgentV4TemperatureLevelResource] | None = None
+    voice_ids: list[UUID] | None = None
+    voice_resources: list[QGetAgentV4VoiceResource] | None = None
+    show_voices: bool | None = None
+    voices_agent_id: UUID | None = None
+    voices_required: bool | None = None
+    voice_suggestions: list[UUID] | None = None
+    voices: list[QGetAgentV4VoiceResource] | None = None
+    tool_ids: list[UUID] | None = None
+    tool_resources: list[QGetAgentV4Tool] | None = None
+    show_tools: bool | None = None
+    tools_agent_id: UUID | None = None
+    tools_required: bool | None = None
+    tool_suggestions: list[UUID] | None = None
+    tools: list[QGetAgentV4Tool] | None = None
+
+class GetAgentApiRequest(BaseModel):
+
+    agent_id: UUID | None = None
+    descriptions_search: str | None = None
+    prompts_search: str | None = None
+    instructions_search: str | None = None
+    draft_id: UUID | None = None
+    mcp: bool | None = False
+
+class GetAgentApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    agent_exists: bool | None = None
+    can_edit: bool | None = None
+    disabled_reason: str | None = None
+    draft_version: int | None = None
+    group_id: UUID | None = None
+    name_id: UUID | None = None
+    name_resource: QGetAgentV4NameResource | None = None
+    show_name: bool | None = None
+    name_agent_id: UUID | None = None
+    name_required: bool | None = None
+    name_suggestions: list[UUID] | None = None
+    names: list[QGetAgentV4NameResource] | None = None
+    description_id: UUID | None = None
+    description_resource: QGetAgentV4DescriptionResource | None = None
+    show_description: bool | None = None
+    description_agent_id: UUID | None = None
+    description_required: bool | None = None
+    description_suggestions: list[UUID] | None = None
+    descriptions: list[QGetAgentV4DescriptionResource] | None = None
+    model_id: UUID | None = None
+    model_resource: QGetAgentV4ModelResource | None = None
+    show_models: bool | None = None
+    models_agent_id: UUID | None = None
+    models_required: bool | None = None
+    model_suggestions: list[UUID] | None = None
+    models: list[QGetAgentV4Model] | None = None
+    prompt_id: UUID | None = None
+    prompt_resource: QGetAgentV4PromptResource | None = None
+    show_prompts: bool | None = None
+    prompts_agent_id: UUID | None = None
+    prompts_required: bool | None = None
+    prompt_suggestions: list[UUID] | None = None
+    prompts: list[QGetAgentV4Prompt] | None = None
+    instructions_id: UUID | None = None
+    instructions_resource: QGetAgentV4InstructionsResource | None = None
+    show_instructions: bool | None = None
+    instructions_agent_id: UUID | None = None
+    instructions_required: bool | None = None
+    instructions_suggestions: list[UUID] | None = None
+    instructions: list[QGetAgentV4InstructionsResource] | None = None
+    active_flag_id: UUID | None = None
+    flag_resource: QGetAgentV4FlagResource | None = None
+    show_flag: bool | None = None
+    flag_agent_id: UUID | None = None
+    flag_required: bool | None = None
+    department_ids: list[UUID] | None = None
+    department_resources: list[QGetAgentV4Department] | None = None
+    show_departments: bool | None = None
+    departments_agent_id: UUID | None = None
+    departments_required: bool | None = None
+    department_suggestions: list[UUID] | None = None
+    departments: list[QGetAgentV4Department] | None = None
+    reasoning_level_id: UUID | None = None
+    reasoning_level_resource: QGetAgentV4ReasoningLevelResource | None = None
+    show_reasoning_levels: bool | None = None
+    reasoning_levels_agent_id: UUID | None = None
+    reasoning_levels_required: bool | None = None
+    reasoning_level_suggestions: list[UUID] | None = None
+    reasoning_levels: list[QGetAgentV4ReasoningLevelResource] | None = None
+    temperature_level_id: UUID | None = None
+    temperature_level_resource: QGetAgentV4TemperatureLevelResource | None = None
+    show_temperature_levels: bool | None = None
+    temperature_levels_agent_id: UUID | None = None
+    temperature_levels_required: bool | None = None
+    temperature_level_suggestions: list[UUID] | None = None
+    temperature_levels: list[QGetAgentV4TemperatureLevelResource] | None = None
+    voice_ids: list[UUID] | None = None
+    voice_resources: list[QGetAgentV4VoiceResource] | None = None
+    show_voices: bool | None = None
+    voices_agent_id: UUID | None = None
+    voices_required: bool | None = None
+    voice_suggestions: list[UUID] | None = None
+    voices: list[QGetAgentV4VoiceResource] | None = None
+    tool_ids: list[UUID] | None = None
+    tool_resources: list[QGetAgentV4Tool] | None = None
+    show_tools: bool | None = None
+    tools_agent_id: UUID | None = None
+    tools_required: bool | None = None
+    tool_suggestions: list[UUID] | None = None
+    tools: list[QGetAgentV4Tool] | None = None
+
+
+
 # Generated from: get_agent_ids
 
 class GetAgentIdsSqlParams(BaseModel):
@@ -262,6 +601,39 @@ class GetAgentIdsApiResponse(BaseModel):
     temperature_levels_domain_id: UUID | None = None
     reasoning_levels_domain_id: UUID | None = None
     voices_domain_id: UUID | None = None
+
+
+
+# Generated from: get_agent_model_info
+
+class GetAgentModelInfoSqlParams(BaseModel):
+
+    agent_id: UUID
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.agent_id,
+            self.profile_id,
+        )
+
+class GetAgentModelInfoSqlRow(BaseModel):
+
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+
+class GetAgentModelInfoApiRequest(BaseModel):
+
+    agent_id: UUID
+
+class GetAgentModelInfoApiResponse(BaseModel):
+
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
 
 
 
@@ -2812,6 +3184,117 @@ class UpdateChatCreatedAtApiResponse(BaseModel):
 
 
 
+# Generated from: get_audio_run_context_and_create_run
+
+class GetAudioRunContextAndCreateRunSqlParams(BaseModel):
+
+    upload_id: UUID
+    agent_id: UUID
+    profile_id: UUID | None = None
+    department_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.upload_id,
+            self.agent_id,
+            self.profile_id,
+            self.department_id,
+        )
+
+class GetAudioRunContextAndCreateRunSqlRow(BaseModel):
+
+    agent_id: str | None = None
+    agent_name: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    custom_model: str | None = None
+    provider_id: str | None = None
+    provider_name: str | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: datetime | None = None
+    department_id: UUID | None = None
+    upload_id: UUID | None = None
+    file_path: str | None = None
+    mime_type: str | None = None
+    run_id: str | None = None
+
+class GetAudioRunContextAndCreateRunApiRequest(BaseModel):
+
+    upload_id: UUID
+    agent_id: UUID
+    department_id: UUID | None = None
+
+class GetAudioRunContextAndCreateRunApiResponse(BaseModel):
+
+    agent_id: str | None = None
+    agent_name: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    custom_model: str | None = None
+    provider_id: str | None = None
+    provider_name: str | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: datetime | None = None
+    department_id: UUID | None = None
+    upload_id: UUID | None = None
+    file_path: str | None = None
+    mime_type: str | None = None
+    run_id: str | None = None
+
+
+
+# Generated from: get_voice_session_context
+
+class GetVoiceSessionContextSqlParams(BaseModel):
+
+    p_profile_id: UUID
+    p_chat_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_profile_id,
+            self.p_chat_id,
+        )
+
+class GetVoiceSessionContextSqlRow(BaseModel):
+
+    chat_id: UUID | None = None
+    attempt_id: UUID | None = None
+    simulation_id: UUID | None = None
+    api_key: str | None = None
+    provider_name: str | None = None
+
+class GetVoiceSessionContextApiRequest(BaseModel):
+
+    p_profile_id: UUID
+    p_chat_id: UUID
+
+class GetVoiceSessionContextApiResponse(BaseModel):
+
+    chat_id: UUID | None = None
+    attempt_id: UUID | None = None
+    simulation_id: UUID | None = None
+    api_key: str | None = None
+    provider_name: str | None = None
+
+
+
 # Generated from: check_auth_delete_access
 
 class CheckAuthDeleteAccessSqlParams(BaseModel):
@@ -4554,6 +5037,266 @@ class GetDepartmentAccessApiResponse(BaseModel):
 
 
 
+# Generated from: get_department
+
+class GetDepartmentSqlParams(BaseModel):
+
+    profile_id: UUID
+    department_id: UUID | None = None
+    draft_id: UUID | None = None
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.department_id,
+            self.draft_id,
+            self.mcp,
+        )
+
+class QGetDepartmentV4Cohort(BaseModel):
+
+    cohort_id: UUID | None
+    name: str | None
+    description: str | None
+    generated: bool | None
+
+
+
+
+class QGetDepartmentV4Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+    generated: bool | None
+
+
+
+
+class QGetDepartmentV4DescriptionResource(BaseModel):
+
+    id: UUID | None
+    description: str | None
+    generated: bool | None
+
+
+
+
+class QGetDepartmentV4FlagResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    icon: str | None
+    generated: bool | None
+
+
+
+
+class QGetDepartmentV4Key(BaseModel):
+
+    key_id: UUID | None
+    name: str | None
+    description: str | None
+    key_masked: str | None
+    active: bool | None
+    generated: bool | None
+
+
+
+
+class QGetDepartmentV4Model(BaseModel):
+
+    model_id: UUID | None
+    name: str | None
+    description: str | None
+    generated: bool | None
+
+
+
+
+class QGetDepartmentV4ModelKey(BaseModel):
+
+    model_id: UUID | None
+    key_id: UUID | None
+
+
+
+
+class QGetDepartmentV4NameResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    generated: bool | None
+
+
+
+
+class QGetDepartmentV4Setting(BaseModel):
+
+    settings_id: UUID | None
+    created_at: datetime | None
+    active: bool | None
+    department_ids: list[UUID] | None
+    generated: bool | None
+
+class GetDepartmentSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    department_exists: bool | None = None
+    can_edit: bool | None = None
+    disabled_reason: str | None = None
+    group_id: UUID | None = None
+    name_id: UUID | None = None
+    name_resource: QGetDepartmentV4NameResource | None = None
+    show_name: bool | None = None
+    name_agent_id: UUID | None = None
+    name_required: bool | None = None
+    name_suggestions: list[UUID] | None = None
+    names: list[QGetDepartmentV4NameResource] | None = None
+    description_id: UUID | None = None
+    description_resource: QGetDepartmentV4DescriptionResource | None = None
+    show_description: bool | None = None
+    description_agent_id: UUID | None = None
+    description_required: bool | None = None
+    description_suggestions: list[UUID] | None = None
+    descriptions: list[QGetDepartmentV4DescriptionResource] | None = None
+    active_flag_id: UUID | None = None
+    flag_resource: QGetDepartmentV4FlagResource | None = None
+    show_flag: bool | None = None
+    flag_agent_id: UUID | None = None
+    flag_required: bool | None = None
+    flags: list[QGetDepartmentV4FlagResource] | None = None
+    settings_ids: list[UUID] | None = None
+    settings_resources: list[QGetDepartmentV4Setting] | None = None
+    show_settings: bool | None = None
+    settings_agent_id: UUID | None = None
+    settings_required: bool | None = None
+    settings_suggestions: list[UUID] | None = None
+    settings: list[QGetDepartmentV4Setting] | None = None
+    cohort_ids: list[UUID] | None = None
+    cohort_resources: list[QGetDepartmentV4Cohort] | None = None
+    show_cohorts: bool | None = None
+    cohorts_agent_id: UUID | None = None
+    cohorts_required: bool | None = None
+    cohort_suggestions: list[UUID] | None = None
+    cohorts: list[QGetDepartmentV4Cohort] | None = None
+    department_ids: list[UUID] | None = None
+    department_resources: list[QGetDepartmentV4Department] | None = None
+    show_departments: bool | None = None
+    departments_agent_id: UUID | None = None
+    departments_required: bool | None = None
+    department_suggestions: list[UUID] | None = None
+    departments: list[QGetDepartmentV4Department] | None = None
+    model_ids: list[UUID] | None = None
+    model_resources: list[QGetDepartmentV4Model] | None = None
+    show_models: bool | None = None
+    models_agent_id: UUID | None = None
+    models_required: bool | None = None
+    model_suggestions: list[UUID] | None = None
+    models: list[QGetDepartmentV4Model] | None = None
+    key_ids: list[UUID] | None = None
+    key_resources: list[QGetDepartmentV4Key] | None = None
+    show_keys: bool | None = None
+    keys_agent_id: UUID | None = None
+    keys_required: bool | None = None
+    key_suggestions: list[UUID] | None = None
+    keys: list[QGetDepartmentV4Key] | None = None
+    can_duplicate: bool | None = None
+    can_delete: bool | None = None
+    in_use: bool | None = None
+    staff_count: int | None = None
+    total_price_spent: float | None = None
+    settings_id: UUID | None = None
+    valid_department_ids: list[UUID] | None = None
+    valid_model_ids: list[UUID] | None = None
+    valid_key_ids: list[UUID] | None = None
+    model_keys_junction: list[QGetDepartmentV4ModelKey] | None = None
+    draft_version: int | None = None
+
+class GetDepartmentApiRequest(BaseModel):
+
+    department_id: UUID | None = None
+    draft_id: UUID | None = None
+    mcp: bool | None = False
+
+class GetDepartmentApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    department_exists: bool | None = None
+    can_edit: bool | None = None
+    disabled_reason: str | None = None
+    group_id: UUID | None = None
+    name_id: UUID | None = None
+    name_resource: QGetDepartmentV4NameResource | None = None
+    show_name: bool | None = None
+    name_agent_id: UUID | None = None
+    name_required: bool | None = None
+    name_suggestions: list[UUID] | None = None
+    names: list[QGetDepartmentV4NameResource] | None = None
+    description_id: UUID | None = None
+    description_resource: QGetDepartmentV4DescriptionResource | None = None
+    show_description: bool | None = None
+    description_agent_id: UUID | None = None
+    description_required: bool | None = None
+    description_suggestions: list[UUID] | None = None
+    descriptions: list[QGetDepartmentV4DescriptionResource] | None = None
+    active_flag_id: UUID | None = None
+    flag_resource: QGetDepartmentV4FlagResource | None = None
+    show_flag: bool | None = None
+    flag_agent_id: UUID | None = None
+    flag_required: bool | None = None
+    flags: list[QGetDepartmentV4FlagResource] | None = None
+    settings_ids: list[UUID] | None = None
+    settings_resources: list[QGetDepartmentV4Setting] | None = None
+    show_settings: bool | None = None
+    settings_agent_id: UUID | None = None
+    settings_required: bool | None = None
+    settings_suggestions: list[UUID] | None = None
+    settings: list[QGetDepartmentV4Setting] | None = None
+    cohort_ids: list[UUID] | None = None
+    cohort_resources: list[QGetDepartmentV4Cohort] | None = None
+    show_cohorts: bool | None = None
+    cohorts_agent_id: UUID | None = None
+    cohorts_required: bool | None = None
+    cohort_suggestions: list[UUID] | None = None
+    cohorts: list[QGetDepartmentV4Cohort] | None = None
+    department_ids: list[UUID] | None = None
+    department_resources: list[QGetDepartmentV4Department] | None = None
+    show_departments: bool | None = None
+    departments_agent_id: UUID | None = None
+    departments_required: bool | None = None
+    department_suggestions: list[UUID] | None = None
+    departments: list[QGetDepartmentV4Department] | None = None
+    model_ids: list[UUID] | None = None
+    model_resources: list[QGetDepartmentV4Model] | None = None
+    show_models: bool | None = None
+    models_agent_id: UUID | None = None
+    models_required: bool | None = None
+    model_suggestions: list[UUID] | None = None
+    models: list[QGetDepartmentV4Model] | None = None
+    key_ids: list[UUID] | None = None
+    key_resources: list[QGetDepartmentV4Key] | None = None
+    show_keys: bool | None = None
+    keys_agent_id: UUID | None = None
+    keys_required: bool | None = None
+    key_suggestions: list[UUID] | None = None
+    keys: list[QGetDepartmentV4Key] | None = None
+    can_duplicate: bool | None = None
+    can_delete: bool | None = None
+    in_use: bool | None = None
+    staff_count: int | None = None
+    total_price_spent: float | None = None
+    settings_id: UUID | None = None
+    valid_department_ids: list[UUID] | None = None
+    valid_model_ids: list[UUID] | None = None
+    valid_key_ids: list[UUID] | None = None
+    model_keys_junction: list[QGetDepartmentV4ModelKey] | None = None
+    draft_version: int | None = None
+
+
+
 # Generated from: get_department_ids
 
 class GetDepartmentIdsSqlParams(BaseModel):
@@ -5478,6 +6221,113 @@ class GetDocumentIdsApiResponse(BaseModel):
     departments_domain_id: UUID | None = None
     fields_domain_id: UUID | None = None
     uploads_domain_id: UUID | None = None
+
+
+
+# Generated from: get_document_run_context_and_create_run
+
+class GetDocumentRunContextAndCreateRunSqlParams(BaseModel):
+
+    department_id: UUID
+    profile_id: UUID
+    document_id: UUID | None = None
+    document_name: str | None = None
+    document_description: str | None = None
+    field_ids: list[UUID] | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.department_id,
+            self.profile_id,
+            self.document_id,
+            self.document_name,
+            self.document_description,
+            self.field_ids,
+        )
+
+class IGetDocumentRunContextAndCreateRunV4Field(BaseModel):
+
+    item_name: str | None
+    item_description: str | None
+    param_name: str | None
+    param_description: str | None
+
+
+
+
+class IGetDocumentRunContextAndCreateRunV4Tool(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    tool_type: str | None
+    agent_role: str | None
+    arguments: Any | None
+    argument_descriptions: Any | None
+    argument_defaults: Any | None
+    active: bool | None
+
+class GetDocumentRunContextAndCreateRunSqlRow(BaseModel):
+
+    agent_id: str | None = None
+    agent_name: str | None = None
+    agent_role: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: datetime | None = None
+    run_id: str | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    tools: list[IGetDocumentRunContextAndCreateRunV4Tool] | None = None
+    developer_instruction_template: str | None = None
+    developer_instruction_schema_id: UUID | None = None
+    department_name: str | None = None
+    template_context_fields: list[IGetDocumentRunContextAndCreateRunV4Field] | None = None
+    developer_message_id: UUID | None = None
+
+class GetDocumentRunContextAndCreateRunApiRequest(BaseModel):
+
+    department_id: UUID
+    document_id: UUID | None = None
+    document_name: str | None = None
+    document_description: str | None = None
+    field_ids: list[UUID] | None = None
+
+class GetDocumentRunContextAndCreateRunApiResponse(BaseModel):
+
+    agent_id: str | None = None
+    agent_name: str | None = None
+    agent_role: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: datetime | None = None
+    run_id: str | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    tools: list[IGetDocumentRunContextAndCreateRunV4Tool] | None = None
+    developer_instruction_template: str | None = None
+    developer_instruction_schema_id: UUID | None = None
+    department_name: str | None = None
+    template_context_fields: list[IGetDocumentRunContextAndCreateRunV4Field] | None = None
+    developer_message_id: UUID | None = None
 
 
 
@@ -6963,6 +7813,155 @@ class SaveFieldApiResponse(BaseModel):
 
 
 
+# Generated from: get_attempt_grade_context
+
+class GetAttemptGradeContextSqlParams(BaseModel):
+
+    p_profile_id: UUID
+    p_simulation_id: UUID
+    p_attempt_id: UUID
+    p_chat_id: UUID | None = None
+    p_entry_types: list[str] | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_profile_id,
+            self.p_simulation_id,
+            self.p_attempt_id,
+            self.p_chat_id,
+            self.p_entry_types,
+        )
+
+class GetAttemptGradeContextSqlRow(BaseModel):
+
+    agent_exists: bool | None = None
+    agent_name: str | None = None
+    agent_is_active: bool | None = None
+    model_id: UUID | None = None
+    model_name: str | None = None
+    provider_id: UUID | None = None
+    provider_name: str | None = None
+    has_api_key: bool | None = None
+    requests_per_day: int | None = None
+    runs_today: int | None = None
+    simulation_exists: bool | None = None
+    simulation_is_active: bool | None = None
+    simulation_id: UUID | None = None
+    simulation_name: str | None = None
+    profile_has_access: bool | None = None
+    attempt_exists: bool | None = None
+    attempt_id: UUID | None = None
+    valid_entry_types: list[str] | None = None
+
+class GetAttemptGradeContextApiRequest(BaseModel):
+
+    p_profile_id: UUID
+    p_simulation_id: UUID
+    p_attempt_id: UUID
+    p_chat_id: UUID | None = None
+    p_entry_types: list[str] | None = None
+
+class GetAttemptGradeContextApiResponse(BaseModel):
+
+    agent_exists: bool | None = None
+    agent_name: str | None = None
+    agent_is_active: bool | None = None
+    model_id: UUID | None = None
+    model_name: str | None = None
+    provider_id: UUID | None = None
+    provider_name: str | None = None
+    has_api_key: bool | None = None
+    requests_per_day: int | None = None
+    runs_today: int | None = None
+    simulation_exists: bool | None = None
+    simulation_is_active: bool | None = None
+    simulation_id: UUID | None = None
+    simulation_name: str | None = None
+    profile_has_access: bool | None = None
+    attempt_exists: bool | None = None
+    attempt_id: UUID | None = None
+    valid_entry_types: list[str] | None = None
+
+
+
+# Generated from: get_attempt_message_context
+
+class GetAttemptMessageContextSqlParams(BaseModel):
+
+    p_profile_id: UUID
+    p_simulation_id: UUID
+    p_chat_id: UUID
+    p_entry_types: list[str] | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_profile_id,
+            self.p_simulation_id,
+            self.p_chat_id,
+            self.p_entry_types,
+        )
+
+class GetAttemptMessageContextSqlRow(BaseModel):
+
+    agent_exists: bool | None = None
+    agent_name: str | None = None
+    agent_is_active: bool | None = None
+    model_id: UUID | None = None
+    model_name: str | None = None
+    provider_id: UUID | None = None
+    provider_name: str | None = None
+    has_api_key: bool | None = None
+    requests_per_day: int | None = None
+    runs_today: int | None = None
+    simulation_exists: bool | None = None
+    simulation_is_active: bool | None = None
+    simulation_id: UUID | None = None
+    simulation_name: str | None = None
+    profile_has_access: bool | None = None
+    attempt_exists: bool | None = None
+    attempt_is_active: bool | None = None
+    attempt_id: UUID | None = None
+    chat_exists: bool | None = None
+    chat_is_completed: bool | None = None
+    chat_id: UUID | None = None
+    hints_enabled: bool | None = None
+    valid_entry_types: list[str] | None = None
+
+class GetAttemptMessageContextApiRequest(BaseModel):
+
+    p_profile_id: UUID
+    p_simulation_id: UUID
+    p_chat_id: UUID
+    p_entry_types: list[str] | None = None
+
+class GetAttemptMessageContextApiResponse(BaseModel):
+
+    agent_exists: bool | None = None
+    agent_name: str | None = None
+    agent_is_active: bool | None = None
+    model_id: UUID | None = None
+    model_name: str | None = None
+    provider_id: UUID | None = None
+    provider_name: str | None = None
+    has_api_key: bool | None = None
+    requests_per_day: int | None = None
+    runs_today: int | None = None
+    simulation_exists: bool | None = None
+    simulation_is_active: bool | None = None
+    simulation_id: UUID | None = None
+    simulation_name: str | None = None
+    profile_has_access: bool | None = None
+    attempt_exists: bool | None = None
+    attempt_is_active: bool | None = None
+    attempt_id: UUID | None = None
+    chat_exists: bool | None = None
+    chat_is_completed: bool | None = None
+    chat_id: UUID | None = None
+    hints_enabled: bool | None = None
+    valid_entry_types: list[str] | None = None
+
+
+
 # Generated from: prepare_attempt_grade
 
 class PrepareAttemptGradeSqlParams(BaseModel):
@@ -7268,47 +8267,60 @@ class StartBenchmarkAttemptApiResponse(BaseModel):
 
 
 
-# Generated from: insert_generation_messages
+# Generated from: get_parameter_generation_context
 
-class InsertGenerationMessagesSqlParams(BaseModel):
+class GetParameterGenerationContextSqlParams(BaseModel):
 
-    p_run_id: UUID
-    p_developer_messages: list[str] | None = None
-    p_user_messages: list[str] | None = None
+    p_profile_id: UUID
+    p_agent_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.p_run_id,
-            self.p_developer_messages,
-            self.p_user_messages,
+            self.p_profile_id,
+            self.p_agent_id,
         )
 
-class InsertGenerationMessagesSqlRow(BaseModel):
+class GetParameterGenerationContextSqlRow(BaseModel):
 
-    message_id: UUID | None = None
-    messages: Any | None = None
+    agent_exists: bool | None = None
+    agent_name: str | None = None
+    agent_is_active: bool | None = None
+    model_id: UUID | None = None
+    model_name: str | None = None
+    provider_id: UUID | None = None
+    provider_name: str | None = None
+    has_api_key: bool | None = None
+    requests_per_day: int | None = None
+    runs_today: int | None = None
 
-class InsertGenerationMessagesApiRequest(BaseModel):
+class GetParameterGenerationContextApiRequest(BaseModel):
 
-    p_run_id: UUID
-    p_developer_messages: list[str] | None = None
-    p_user_messages: list[str] | None = None
+    p_profile_id: UUID
+    p_agent_id: UUID
 
-class InsertGenerationMessagesApiResponse(BaseModel):
+class GetParameterGenerationContextApiResponse(BaseModel):
 
-    message_id: UUID | None = None
-    messages: Any | None = None
+    agent_exists: bool | None = None
+    agent_name: str | None = None
+    agent_is_active: bool | None = None
+    model_id: UUID | None = None
+    model_name: str | None = None
+    provider_id: UUID | None = None
+    provider_name: str | None = None
+    has_api_key: bool | None = None
+    requests_per_day: int | None = None
+    runs_today: int | None = None
 
 
 
-# Generated from: prepare_persona_generation
+# Generated from: prepare_parameter_generation
 
 class IPersonaResourceV4(BaseModel):
 
     resource_type: str | None
     resource_ids: list[UUID] | None
 
-class PreparePersonaGenerationSqlParams(BaseModel):
+class PrepareParameterGenerationSqlParams(BaseModel):
 
     p_profile_id: UUID
     p_agent_id: UUID
@@ -7348,6 +8360,167 @@ class IGetTextRunContextAndCreateRunV4Tool(BaseModel):
     argument_descriptions: Any | None
     argument_defaults: Any | None
     active: bool | None
+
+class PrepareParameterGenerationSqlRow(BaseModel):
+
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    agent_name: str | None = None
+    system_prompt: str | None = None
+    model_name: str | None = None
+    provider_name: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    voice: str | None = None
+    quality: str | None = None
+    tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
+    developer_instruction_templates: list[str] | None = None
+    jinja_context: Any | None = None
+    output_modalities: list[str] | None = None
+
+class PrepareParameterGenerationApiRequest(BaseModel):
+
+    p_profile_id: UUID
+    p_agent_id: UUID
+    p_group_id: UUID | None = None
+    p_resources: list[IPersonaResourceV4] | None = None
+    p_current_resources: list[IPersonaResourceV4] | None = None
+    p_resource_types: list[str] | None = None
+
+class PrepareParameterGenerationApiResponse(BaseModel):
+
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    agent_name: str | None = None
+    system_prompt: str | None = None
+    model_name: str | None = None
+    provider_name: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    voice: str | None = None
+    quality: str | None = None
+    tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
+    developer_instruction_templates: list[str] | None = None
+    jinja_context: Any | None = None
+    output_modalities: list[str] | None = None
+
+
+
+# Generated from: get_persona_generation_context
+
+class GetPersonaGenerationContextSqlParams(BaseModel):
+
+    p_profile_id: UUID
+    p_agent_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_profile_id,
+            self.p_agent_id,
+        )
+
+class GetPersonaGenerationContextSqlRow(BaseModel):
+
+    agent_exists: bool | None = None
+    agent_name: str | None = None
+    agent_is_active: bool | None = None
+    model_id: UUID | None = None
+    model_name: str | None = None
+    provider_id: UUID | None = None
+    provider_name: str | None = None
+    has_api_key: bool | None = None
+    requests_per_day: int | None = None
+    runs_today: int | None = None
+
+class GetPersonaGenerationContextApiRequest(BaseModel):
+
+    p_profile_id: UUID
+    p_agent_id: UUID
+
+class GetPersonaGenerationContextApiResponse(BaseModel):
+
+    agent_exists: bool | None = None
+    agent_name: str | None = None
+    agent_is_active: bool | None = None
+    model_id: UUID | None = None
+    model_name: str | None = None
+    provider_id: UUID | None = None
+    provider_name: str | None = None
+    has_api_key: bool | None = None
+    requests_per_day: int | None = None
+    runs_today: int | None = None
+
+
+
+# Generated from: insert_generation_messages
+
+class InsertGenerationMessagesSqlParams(BaseModel):
+
+    p_run_id: UUID
+    p_developer_messages: list[str] | None = None
+    p_user_messages: list[str] | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_run_id,
+            self.p_developer_messages,
+            self.p_user_messages,
+        )
+
+class InsertGenerationMessagesSqlRow(BaseModel):
+
+    message_id: UUID | None = None
+    messages: Any | None = None
+
+class InsertGenerationMessagesApiRequest(BaseModel):
+
+    p_run_id: UUID
+    p_developer_messages: list[str] | None = None
+    p_user_messages: list[str] | None = None
+
+class InsertGenerationMessagesApiResponse(BaseModel):
+
+    message_id: UUID | None = None
+    messages: Any | None = None
+
+
+
+# Generated from: prepare_persona_generation
+
+class PreparePersonaGenerationSqlParams(BaseModel):
+
+    p_profile_id: UUID
+    p_agent_id: UUID
+    p_group_id: UUID | None = None
+    p_resources: list[IPersonaResourceV4] | None = None
+    p_current_resources: list[IPersonaResourceV4] | None = None
+    p_resource_types: list[str] | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        # Convert p_resources composite array to tuples for asyncpg
+        p_resources_tuples = [
+            (conn.resource_type, conn.resource_ids)
+            for conn in (self.p_resources or [])
+        ]
+        # Convert p_current_resources composite array to tuples for asyncpg
+        p_current_resources_tuples = [
+            (conn.resource_type, conn.resource_ids)
+            for conn in (self.p_current_resources or [])
+        ]
+        return (
+            self.p_profile_id,
+            self.p_agent_id,
+            self.p_group_id,
+            p_resources_tuples,
+            p_current_resources_tuples,
+            self.p_resource_types,
+        )
 
 class PreparePersonaGenerationSqlRow(BaseModel):
 
@@ -7460,6 +8633,78 @@ class GetGenerationRunContextAndCreateRunApiResponse(BaseModel):
 
 
 
+# Generated from: get_test_run_context
+
+class GetTestRunContextSqlParams(BaseModel):
+
+    p_profile_id: UUID
+    p_chat_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_profile_id,
+            self.p_chat_id,
+        )
+
+class GetTestRunContextSqlRow(BaseModel):
+
+    chat_exists: bool | None = None
+    chat_is_active: bool | None = None
+    chat_id: UUID | None = None
+    attempt_exists: bool | None = None
+    attempt_id: UUID | None = None
+    group_exists: bool | None = None
+    group_id: UUID | None = None
+    agent_exists: bool | None = None
+    agent_name: str | None = None
+    agent_is_active: bool | None = None
+    agent_id: UUID | None = None
+    model_id: UUID | None = None
+    model_name: str | None = None
+    provider_id: UUID | None = None
+    provider_name: str | None = None
+    has_api_key: bool | None = None
+    requests_per_day: int | None = None
+    runs_today: int | None = None
+    has_pending_runs: bool | None = None
+    next_run_resource_id: UUID | None = None
+    total_runs: int | None = None
+    completed_runs: int | None = None
+    rubric_id: UUID | None = None
+
+class GetTestRunContextApiRequest(BaseModel):
+
+    p_profile_id: UUID
+    p_chat_id: UUID
+
+class GetTestRunContextApiResponse(BaseModel):
+
+    chat_exists: bool | None = None
+    chat_is_active: bool | None = None
+    chat_id: UUID | None = None
+    attempt_exists: bool | None = None
+    attempt_id: UUID | None = None
+    group_exists: bool | None = None
+    group_id: UUID | None = None
+    agent_exists: bool | None = None
+    agent_name: str | None = None
+    agent_is_active: bool | None = None
+    agent_id: UUID | None = None
+    model_id: UUID | None = None
+    model_name: str | None = None
+    provider_id: UUID | None = None
+    provider_name: str | None = None
+    has_api_key: bool | None = None
+    requests_per_day: int | None = None
+    runs_today: int | None = None
+    has_pending_runs: bool | None = None
+    next_run_resource_id: UUID | None = None
+    total_runs: int | None = None
+    completed_runs: int | None = None
+    rubric_id: UUID | None = None
+
+
+
 # Generated from: prepare_test_run
 
 class PrepareTestRunSqlParams(BaseModel):
@@ -7523,6 +8768,94 @@ class PrepareTestRunApiResponse(BaseModel):
 
 
 
+# Generated from: get_text_run_context_for_existing_run
+
+class GetTextRunContextForExistingRunSqlParams(BaseModel):
+
+    run_id: UUID
+    agent_id: UUID
+    message_ids: list[UUID] | None = None
+    group_id: UUID | None = None
+    resources: list[IPersonaResourceV4] | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        # Convert resources composite array to tuples for asyncpg
+        resources_tuples = [
+            (conn.resource_type, conn.resource_ids)
+            for conn in (self.resources or [])
+        ]
+        return (
+            self.run_id,
+            self.agent_id,
+            self.message_ids,
+            self.group_id,
+            resources_tuples,
+        )
+
+class GetTextRunContextForExistingRunSqlRow(BaseModel):
+
+    agent_id: str | None = None
+    agent_name: str | None = None
+    agent_role: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: datetime | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
+    developer_instruction_templates: list[str] | None = None
+    context: Any | None = None
+    department_name: str | None = None
+    upload_id: UUID | None = None
+    file_path: str | None = None
+    mime_type: str | None = None
+
+class GetTextRunContextForExistingRunApiRequest(BaseModel):
+
+    run_id: UUID
+    agent_id: UUID
+    message_ids: list[UUID] | None = None
+    group_id: UUID | None = None
+    resources: list[IPersonaResourceV4] | None = None
+
+class GetTextRunContextForExistingRunApiResponse(BaseModel):
+
+    agent_id: str | None = None
+    agent_name: str | None = None
+    agent_role: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: datetime | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
+    developer_instruction_templates: list[str] | None = None
+    context: Any | None = None
+    department_name: str | None = None
+    upload_id: UUID | None = None
+    file_path: str | None = None
+    mime_type: str | None = None
+
+
+
 # Generated from: text_tool_progress_update
 
 class TextToolProgressUpdateSqlParams(BaseModel):
@@ -7570,6 +8903,52 @@ class TextToolProgressUpdateApiResponse(BaseModel):
     persisted_call_id: str | None = None
     tool_name: str | None = None
     arguments_raw: str | None = None
+
+
+
+# Generated from: get_tool_generation_context
+
+class GetToolGenerationContextSqlParams(BaseModel):
+
+    p_profile_id: UUID
+    p_agent_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_profile_id,
+            self.p_agent_id,
+        )
+
+class GetToolGenerationContextSqlRow(BaseModel):
+
+    agent_exists: bool | None = None
+    agent_name: str | None = None
+    agent_is_active: bool | None = None
+    model_id: UUID | None = None
+    model_name: str | None = None
+    provider_id: UUID | None = None
+    provider_name: str | None = None
+    has_api_key: bool | None = None
+    requests_per_day: int | None = None
+    runs_today: int | None = None
+
+class GetToolGenerationContextApiRequest(BaseModel):
+
+    p_profile_id: UUID
+    p_agent_id: UUID
+
+class GetToolGenerationContextApiResponse(BaseModel):
+
+    agent_exists: bool | None = None
+    agent_name: str | None = None
+    agent_is_active: bool | None = None
+    model_id: UUID | None = None
+    model_name: str | None = None
+    provider_id: UUID | None = None
+    provider_name: str | None = None
+    has_api_key: bool | None = None
+    requests_per_day: int | None = None
+    runs_today: int | None = None
 
 
 
@@ -7649,6 +9028,154 @@ class GetTrainingSimulationsApiResponse(BaseModel):
 
 
 
+# Generated from: get_training_start_context
+
+class GetTrainingStartContextSqlParams(BaseModel):
+
+    p_profile_id: UUID
+    p_agent_id: UUID
+    p_simulation_id: UUID
+    p_scenario_id: UUID | None = None
+    p_entry_types: list[str] | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_profile_id,
+            self.p_agent_id,
+            self.p_simulation_id,
+            self.p_scenario_id,
+            self.p_entry_types,
+        )
+
+class GetTrainingStartContextSqlRow(BaseModel):
+
+    agent_exists: bool | None = None
+    agent_name: str | None = None
+    agent_is_active: bool | None = None
+    model_id: UUID | None = None
+    model_name: str | None = None
+    provider_id: UUID | None = None
+    provider_name: str | None = None
+    has_api_key: bool | None = None
+    requests_per_day: int | None = None
+    runs_today: int | None = None
+    simulation_exists: bool | None = None
+    simulation_is_active: bool | None = None
+    simulation_id: UUID | None = None
+    simulation_name: str | None = None
+    profile_has_access: bool | None = None
+    scenario_id: UUID | None = None
+    has_problem_statement: bool | None = None
+    has_persona: bool | None = None
+    problem_statement: str | None = None
+    objectives: Any | None = None
+    persona: Any | None = None
+    video_ids: list[UUID] | None = None
+    image_ids: list[UUID] | None = None
+    valid_entry_types: list[str] | None = None
+
+class GetTrainingStartContextApiRequest(BaseModel):
+
+    p_profile_id: UUID
+    p_agent_id: UUID
+    p_simulation_id: UUID
+    p_scenario_id: UUID | None = None
+    p_entry_types: list[str] | None = None
+
+class GetTrainingStartContextApiResponse(BaseModel):
+
+    agent_exists: bool | None = None
+    agent_name: str | None = None
+    agent_is_active: bool | None = None
+    model_id: UUID | None = None
+    model_name: str | None = None
+    provider_id: UUID | None = None
+    provider_name: str | None = None
+    has_api_key: bool | None = None
+    requests_per_day: int | None = None
+    runs_today: int | None = None
+    simulation_exists: bool | None = None
+    simulation_is_active: bool | None = None
+    simulation_id: UUID | None = None
+    simulation_name: str | None = None
+    profile_has_access: bool | None = None
+    scenario_id: UUID | None = None
+    has_problem_statement: bool | None = None
+    has_persona: bool | None = None
+    problem_statement: str | None = None
+    objectives: Any | None = None
+    persona: Any | None = None
+    video_ids: list[UUID] | None = None
+    image_ids: list[UUID] | None = None
+    valid_entry_types: list[str] | None = None
+
+
+
+# Generated from: prepare_training_generation
+
+class PrepareTrainingGenerationSqlParams(BaseModel):
+
+    p_profile_id: UUID
+    p_agent_id: UUID
+    p_simulation_id: UUID
+    p_scenario_id: UUID | None = None
+    p_resource_types: list[str] | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_profile_id,
+            self.p_agent_id,
+            self.p_simulation_id,
+            self.p_scenario_id,
+            self.p_resource_types,
+        )
+
+class PrepareTrainingGenerationSqlRow(BaseModel):
+
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    scenario_id: UUID | None = None
+    agent_name: str | None = None
+    system_prompt: str | None = None
+    model_name: str | None = None
+    provider_name: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
+    developer_instruction_templates: list[str] | None = None
+    jinja_context: Any | None = None
+
+class PrepareTrainingGenerationApiRequest(BaseModel):
+
+    p_profile_id: UUID
+    p_agent_id: UUID
+    p_simulation_id: UUID
+    p_scenario_id: UUID | None = None
+    p_resource_types: list[str] | None = None
+
+class PrepareTrainingGenerationApiResponse(BaseModel):
+
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    scenario_id: UUID | None = None
+    agent_name: str | None = None
+    system_prompt: str | None = None
+    model_name: str | None = None
+    provider_name: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
+    developer_instruction_templates: list[str] | None = None
+    jinja_context: Any | None = None
+
+
+
 # Generated from: prepare_training_start
 
 class PrepareTrainingStartSqlParams(BaseModel):
@@ -7721,6 +9248,69 @@ class CompleteImageGenerationApiRequest(BaseModel):
 class CompleteImageGenerationApiResponse(BaseModel):
 
     upload_id: UUID | None = None
+
+
+
+# Generated from: get_image_generation_context_and_create_upload
+
+class GetImageGenerationContextAndCreateUploadSqlParams(BaseModel):
+
+    image_id: UUID
+    agent_id: UUID
+    profile_id: UUID | None = None
+    department_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.image_id,
+            self.agent_id,
+            self.profile_id,
+            self.department_id,
+        )
+
+class GetImageGenerationContextAndCreateUploadSqlRow(BaseModel):
+
+    agent_id: str | None = None
+    agent_name: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: datetime | None = None
+    department_id: UUID | None = None
+    run_id: str | None = None
+
+class GetImageGenerationContextAndCreateUploadApiRequest(BaseModel):
+
+    image_id: UUID
+    agent_id: UUID
+    department_id: UUID | None = None
+
+class GetImageGenerationContextAndCreateUploadApiResponse(BaseModel):
+
+    agent_id: str | None = None
+    agent_name: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: datetime | None = None
+    department_id: UUID | None = None
+    run_id: str | None = None
 
 
 
@@ -9438,6 +11028,39 @@ class DeleteModelApiResponse(BaseModel):
 
 
 
+# Generated from: duplicate_model
+
+class DuplicateModelSqlParams(BaseModel):
+
+    model_id: UUID
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.model_id,
+            self.profile_id,
+        )
+
+class DuplicateModelSqlRow(BaseModel):
+
+    model_exists: bool | None = None
+    model_id: UUID | None = None
+    original_name: str | None = None
+    actor_name: str | None = None
+
+class DuplicateModelApiRequest(BaseModel):
+
+    model_id: UUID
+
+class DuplicateModelApiResponse(BaseModel):
+
+    model_exists: bool | None = None
+    model_id: UUID | None = None
+    original_name: str | None = None
+    actor_name: str | None = None
+
+
+
 # Generated from: get_model_access
 
 class GetModelAccessSqlParams(BaseModel):
@@ -9479,6 +11102,755 @@ class GetModelAccessApiResponse(BaseModel):
     user_department_ids: list[UUID] | None = None
     model_department_ids: list[UUID] | None = None
     active_persona_count: int | None = None
+
+
+
+# Generated from: get_model
+
+class GetModelSqlParams(BaseModel):
+
+    profile_id: UUID
+    model_id: UUID | None = None
+    draft_id: UUID | None = None
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.model_id,
+            self.draft_id,
+            self.mcp,
+        )
+
+class QGetModelV4Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+    generated: bool | None
+
+
+
+
+class QGetModelV4DescriptionOption(BaseModel):
+
+    id: UUID | None
+    description: str | None
+    generated: bool | None
+
+
+
+
+class QGetModelV4DescriptionResource(BaseModel):
+
+    id: UUID | None
+    description: str | None
+    generated: bool | None
+
+
+
+
+class QGetModelV4EndpointOption(BaseModel):
+
+    id: UUID | None
+    base_url: str | None
+    generated: bool | None
+
+
+
+
+class QGetModelV4EndpointResource(BaseModel):
+
+    id: UUID | None
+    base_url: str | None
+    generated: bool | None
+
+
+
+
+class QGetModelV4FlagOption(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    icon: str | None
+    generated: bool | None
+
+
+
+
+class QGetModelV4FlagResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    icon: str | None
+    generated: bool | None
+
+
+
+
+class QGetModelV4KeyOption(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    key_masked: str | None
+    active: bool | None
+    department_ids: list[UUID] | None
+    generated: bool | None
+
+
+
+
+class QGetModelV4KeyResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    key_masked: str | None
+    active: bool | None
+    department_ids: list[UUID] | None
+    generated: bool | None
+
+
+
+
+class QGetModelV4ModalityOption(BaseModel):
+
+    modality_id: UUID | None
+    modality: str | None
+    generated: bool | None
+
+
+
+
+class QGetModelV4ModalityResource(BaseModel):
+
+    modality_id: UUID | None
+    modality: str | None
+    generated: bool | None
+
+
+
+
+class QGetModelV4NameOption(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    generated: bool | None
+
+
+
+
+class QGetModelV4NameResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    generated: bool | None
+
+
+
+
+class QGetModelV4PricingOption(BaseModel):
+
+    pricing_id: UUID | None
+    pricing_type: str | None
+    unit_id: UUID | None
+    unit_name: str | None
+    unit_category: str | None
+    price: float | None
+    generated: bool | None
+
+
+
+
+class QGetModelV4PricingResource(BaseModel):
+
+    pricing_id: UUID | None
+    pricing_type: str | None
+    unit_id: UUID | None
+    unit_name: str | None
+    unit_category: str | None
+    price: float | None
+    generated: bool | None
+
+
+
+
+class QGetModelV4ProviderOption(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    generated: bool | None
+
+
+
+
+class QGetModelV4ProviderResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    generated: bool | None
+
+
+
+
+class QGetModelV4QualityOption(BaseModel):
+
+    quality_id: UUID | None
+    quality: str | None
+    generated: bool | None
+
+
+
+
+class QGetModelV4QualityResource(BaseModel):
+
+    quality_id: UUID | None
+    quality: str | None
+    generated: bool | None
+
+
+
+
+class QGetModelV4ReasoningLevelOption(BaseModel):
+
+    reasoning_level_id: UUID | None
+    reasoning_level: str | None
+    generated: bool | None
+
+
+
+
+class QGetModelV4ReasoningLevelResource(BaseModel):
+
+    reasoning_level_id: UUID | None
+    reasoning_level: str | None
+    generated: bool | None
+
+
+
+
+class QGetModelV4TemperatureLevelOption(BaseModel):
+
+    temperature_level_id: UUID | None
+    temperature: float | None
+    generated: bool | None
+
+
+
+
+class QGetModelV4TemperatureLevelResource(BaseModel):
+
+    temperature_level_id: UUID | None
+    temperature: float | None
+    generated: bool | None
+
+
+
+
+class QGetModelV4ValueResource(BaseModel):
+
+    id: UUID | None
+    value: str | None
+    generated: bool | None
+
+
+
+
+class QGetModelV4VoiceOption(BaseModel):
+
+    id: UUID | None
+    voice: str | None
+    generated: bool | None
+
+
+
+
+class QGetModelV4VoiceResource(BaseModel):
+
+    id: UUID | None
+    voice: str | None
+    generated: bool | None
+
+class GetModelSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    model_exists: bool | None = None
+    can_edit: bool | None = None
+    disabled_reason: str | None = None
+    group_id: UUID | None = None
+    name_id: UUID | None = None
+    name_resource: QGetModelV4NameResource | None = None
+    show_name: bool | None = None
+    name_agent_id: UUID | None = None
+    name_required: bool | None = None
+    name_suggestions: list[UUID] | None = None
+    names: list[QGetModelV4NameOption] | None = None
+    description_id: UUID | None = None
+    description_resource: QGetModelV4DescriptionResource | None = None
+    show_description: bool | None = None
+    description_agent_id: UUID | None = None
+    description_required: bool | None = None
+    description_suggestions: list[UUID] | None = None
+    descriptions: list[QGetModelV4DescriptionOption] | None = None
+    active_flag_id: UUID | None = None
+    flag_resource: QGetModelV4FlagResource | None = None
+    show_flag: bool | None = None
+    flag_agent_id: UUID | None = None
+    flag_required: bool | None = None
+    flags: list[QGetModelV4FlagOption] | None = None
+    modalities_enabled_flag_id: UUID | None = None
+    modalities_enabled_flag_resource: QGetModelV4FlagResource | None = None
+    show_modalities_enabled_flag: bool | None = None
+    modalities_enabled_flag_agent_id: UUID | None = None
+    modalities_enabled_flag_required: bool | None = None
+    temperature_enabled_flag_id: UUID | None = None
+    temperature_enabled_flag_resource: QGetModelV4FlagResource | None = None
+    show_temperature_enabled_flag: bool | None = None
+    temperature_enabled_flag_agent_id: UUID | None = None
+    temperature_enabled_flag_required: bool | None = None
+    pricing_enabled_flag_id: UUID | None = None
+    pricing_enabled_flag_resource: QGetModelV4FlagResource | None = None
+    show_pricing_enabled_flag: bool | None = None
+    pricing_enabled_flag_agent_id: UUID | None = None
+    pricing_enabled_flag_required: bool | None = None
+    voices_enabled_flag_id: UUID | None = None
+    voices_enabled_flag_resource: QGetModelV4FlagResource | None = None
+    show_voices_enabled_flag: bool | None = None
+    voices_enabled_flag_agent_id: UUID | None = None
+    voices_enabled_flag_required: bool | None = None
+    reasoning_levels_enabled_flag_id: UUID | None = None
+    reasoning_levels_enabled_flag_resource: QGetModelV4FlagResource | None = None
+    show_reasoning_levels_enabled_flag: bool | None = None
+    reasoning_levels_enabled_flag_agent_id: UUID | None = None
+    reasoning_levels_enabled_flag_required: bool | None = None
+    qualities_enabled_flag_id: UUID | None = None
+    qualities_enabled_flag_resource: QGetModelV4FlagResource | None = None
+    show_qualities_enabled_flag: bool | None = None
+    qualities_enabled_flag_agent_id: UUID | None = None
+    qualities_enabled_flag_required: bool | None = None
+    value_id: UUID | None = None
+    value_resource: QGetModelV4ValueResource | None = None
+    show_value: bool | None = None
+    value_agent_id: UUID | None = None
+    value_required: bool | None = None
+    value_suggestions: list[UUID] | None = None
+    endpoint_id: UUID | None = None
+    endpoint_resource: QGetModelV4EndpointResource | None = None
+    show_endpoint: bool | None = None
+    endpoint_agent_id: UUID | None = None
+    endpoint_required: bool | None = None
+    endpoint_suggestions: list[UUID] | None = None
+    endpoints: list[QGetModelV4EndpointOption] | None = None
+    provider_id: UUID | None = None
+    provider_resource: QGetModelV4ProviderResource | None = None
+    show_provider: bool | None = None
+    provider_agent_id: UUID | None = None
+    provider_required: bool | None = None
+    provider_suggestions: list[UUID] | None = None
+    providers: list[QGetModelV4ProviderOption] | None = None
+    key_id: UUID | None = None
+    key_resource: QGetModelV4KeyResource | None = None
+    show_key: bool | None = None
+    key_agent_id: UUID | None = None
+    key_required: bool | None = None
+    key_suggestions: list[UUID] | None = None
+    keys: list[QGetModelV4KeyOption] | None = None
+    department_ids: list[UUID] | None = None
+    department_resources: list[QGetModelV4Department] | None = None
+    show_departments: bool | None = None
+    departments_agent_id: UUID | None = None
+    departments_required: bool | None = None
+    department_suggestions: list[UUID] | None = None
+    departments: list[QGetModelV4Department] | None = None
+    input_modality_ids: list[UUID] | None = None
+    input_modality_resources: list[QGetModelV4ModalityResource] | None = None
+    show_input_modalities: bool | None = None
+    input_modalities_agent_id: UUID | None = None
+    input_modalities_required: bool | None = None
+    input_modality_suggestions: list[UUID] | None = None
+    input_modalities: list[QGetModelV4ModalityOption] | None = None
+    output_modality_ids: list[UUID] | None = None
+    output_modality_resources: list[QGetModelV4ModalityResource] | None = None
+    show_output_modalities: bool | None = None
+    output_modalities_agent_id: UUID | None = None
+    output_modalities_required: bool | None = None
+    output_modality_suggestions: list[UUID] | None = None
+    output_modalities: list[QGetModelV4ModalityOption] | None = None
+    temperature_level_ids: list[UUID] | None = None
+    temperature_level_resources: list[QGetModelV4TemperatureLevelResource] | None = None
+    show_temperature_levels: bool | None = None
+    temperature_levels_agent_id: UUID | None = None
+    temperature_levels_required: bool | None = None
+    temperature_level_suggestions: list[UUID] | None = None
+    temperature_levels: list[QGetModelV4TemperatureLevelOption] | None = None
+    reasoning_level_ids: list[UUID] | None = None
+    reasoning_level_resources: list[QGetModelV4ReasoningLevelResource] | None = None
+    show_reasoning_levels: bool | None = None
+    reasoning_levels_agent_id: UUID | None = None
+    reasoning_levels_required: bool | None = None
+    reasoning_level_suggestions: list[UUID] | None = None
+    reasoning_levels: list[QGetModelV4ReasoningLevelOption] | None = None
+    quality_ids: list[UUID] | None = None
+    quality_resources: list[QGetModelV4QualityResource] | None = None
+    show_qualities: bool | None = None
+    qualities_agent_id: UUID | None = None
+    qualities_required: bool | None = None
+    quality_suggestions: list[UUID] | None = None
+    qualities: list[QGetModelV4QualityOption] | None = None
+    pricing_ids: list[UUID] | None = None
+    pricing_resources: list[QGetModelV4PricingResource] | None = None
+    show_pricing: bool | None = None
+    pricing_agent_id: UUID | None = None
+    pricing_required: bool | None = None
+    pricing_suggestions: list[UUID] | None = None
+    pricings: list[QGetModelV4PricingOption] | None = None
+    voice_ids: list[UUID] | None = None
+    voice_resources: list[QGetModelV4VoiceResource] | None = None
+    show_voices: bool | None = None
+    voices_agent_id: UUID | None = None
+    voices_required: bool | None = None
+    voice_suggestions: list[UUID] | None = None
+    voices: list[QGetModelV4VoiceOption] | None = None
+
+class GetModelApiRequest(BaseModel):
+
+    model_id: UUID | None = None
+    draft_id: UUID | None = None
+    mcp: bool | None = False
+
+class GetModelApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    model_exists: bool | None = None
+    can_edit: bool | None = None
+    disabled_reason: str | None = None
+    group_id: UUID | None = None
+    name_id: UUID | None = None
+    name_resource: QGetModelV4NameResource | None = None
+    show_name: bool | None = None
+    name_agent_id: UUID | None = None
+    name_required: bool | None = None
+    name_suggestions: list[UUID] | None = None
+    names: list[QGetModelV4NameOption] | None = None
+    description_id: UUID | None = None
+    description_resource: QGetModelV4DescriptionResource | None = None
+    show_description: bool | None = None
+    description_agent_id: UUID | None = None
+    description_required: bool | None = None
+    description_suggestions: list[UUID] | None = None
+    descriptions: list[QGetModelV4DescriptionOption] | None = None
+    active_flag_id: UUID | None = None
+    flag_resource: QGetModelV4FlagResource | None = None
+    show_flag: bool | None = None
+    flag_agent_id: UUID | None = None
+    flag_required: bool | None = None
+    flags: list[QGetModelV4FlagOption] | None = None
+    modalities_enabled_flag_id: UUID | None = None
+    modalities_enabled_flag_resource: QGetModelV4FlagResource | None = None
+    show_modalities_enabled_flag: bool | None = None
+    modalities_enabled_flag_agent_id: UUID | None = None
+    modalities_enabled_flag_required: bool | None = None
+    temperature_enabled_flag_id: UUID | None = None
+    temperature_enabled_flag_resource: QGetModelV4FlagResource | None = None
+    show_temperature_enabled_flag: bool | None = None
+    temperature_enabled_flag_agent_id: UUID | None = None
+    temperature_enabled_flag_required: bool | None = None
+    pricing_enabled_flag_id: UUID | None = None
+    pricing_enabled_flag_resource: QGetModelV4FlagResource | None = None
+    show_pricing_enabled_flag: bool | None = None
+    pricing_enabled_flag_agent_id: UUID | None = None
+    pricing_enabled_flag_required: bool | None = None
+    voices_enabled_flag_id: UUID | None = None
+    voices_enabled_flag_resource: QGetModelV4FlagResource | None = None
+    show_voices_enabled_flag: bool | None = None
+    voices_enabled_flag_agent_id: UUID | None = None
+    voices_enabled_flag_required: bool | None = None
+    reasoning_levels_enabled_flag_id: UUID | None = None
+    reasoning_levels_enabled_flag_resource: QGetModelV4FlagResource | None = None
+    show_reasoning_levels_enabled_flag: bool | None = None
+    reasoning_levels_enabled_flag_agent_id: UUID | None = None
+    reasoning_levels_enabled_flag_required: bool | None = None
+    qualities_enabled_flag_id: UUID | None = None
+    qualities_enabled_flag_resource: QGetModelV4FlagResource | None = None
+    show_qualities_enabled_flag: bool | None = None
+    qualities_enabled_flag_agent_id: UUID | None = None
+    qualities_enabled_flag_required: bool | None = None
+    value_id: UUID | None = None
+    value_resource: QGetModelV4ValueResource | None = None
+    show_value: bool | None = None
+    value_agent_id: UUID | None = None
+    value_required: bool | None = None
+    value_suggestions: list[UUID] | None = None
+    endpoint_id: UUID | None = None
+    endpoint_resource: QGetModelV4EndpointResource | None = None
+    show_endpoint: bool | None = None
+    endpoint_agent_id: UUID | None = None
+    endpoint_required: bool | None = None
+    endpoint_suggestions: list[UUID] | None = None
+    endpoints: list[QGetModelV4EndpointOption] | None = None
+    provider_id: UUID | None = None
+    provider_resource: QGetModelV4ProviderResource | None = None
+    show_provider: bool | None = None
+    provider_agent_id: UUID | None = None
+    provider_required: bool | None = None
+    provider_suggestions: list[UUID] | None = None
+    providers: list[QGetModelV4ProviderOption] | None = None
+    key_id: UUID | None = None
+    key_resource: QGetModelV4KeyResource | None = None
+    show_key: bool | None = None
+    key_agent_id: UUID | None = None
+    key_required: bool | None = None
+    key_suggestions: list[UUID] | None = None
+    keys: list[QGetModelV4KeyOption] | None = None
+    department_ids: list[UUID] | None = None
+    department_resources: list[QGetModelV4Department] | None = None
+    show_departments: bool | None = None
+    departments_agent_id: UUID | None = None
+    departments_required: bool | None = None
+    department_suggestions: list[UUID] | None = None
+    departments: list[QGetModelV4Department] | None = None
+    input_modality_ids: list[UUID] | None = None
+    input_modality_resources: list[QGetModelV4ModalityResource] | None = None
+    show_input_modalities: bool | None = None
+    input_modalities_agent_id: UUID | None = None
+    input_modalities_required: bool | None = None
+    input_modality_suggestions: list[UUID] | None = None
+    input_modalities: list[QGetModelV4ModalityOption] | None = None
+    output_modality_ids: list[UUID] | None = None
+    output_modality_resources: list[QGetModelV4ModalityResource] | None = None
+    show_output_modalities: bool | None = None
+    output_modalities_agent_id: UUID | None = None
+    output_modalities_required: bool | None = None
+    output_modality_suggestions: list[UUID] | None = None
+    output_modalities: list[QGetModelV4ModalityOption] | None = None
+    temperature_level_ids: list[UUID] | None = None
+    temperature_level_resources: list[QGetModelV4TemperatureLevelResource] | None = None
+    show_temperature_levels: bool | None = None
+    temperature_levels_agent_id: UUID | None = None
+    temperature_levels_required: bool | None = None
+    temperature_level_suggestions: list[UUID] | None = None
+    temperature_levels: list[QGetModelV4TemperatureLevelOption] | None = None
+    reasoning_level_ids: list[UUID] | None = None
+    reasoning_level_resources: list[QGetModelV4ReasoningLevelResource] | None = None
+    show_reasoning_levels: bool | None = None
+    reasoning_levels_agent_id: UUID | None = None
+    reasoning_levels_required: bool | None = None
+    reasoning_level_suggestions: list[UUID] | None = None
+    reasoning_levels: list[QGetModelV4ReasoningLevelOption] | None = None
+    quality_ids: list[UUID] | None = None
+    quality_resources: list[QGetModelV4QualityResource] | None = None
+    show_qualities: bool | None = None
+    qualities_agent_id: UUID | None = None
+    qualities_required: bool | None = None
+    quality_suggestions: list[UUID] | None = None
+    qualities: list[QGetModelV4QualityOption] | None = None
+    pricing_ids: list[UUID] | None = None
+    pricing_resources: list[QGetModelV4PricingResource] | None = None
+    show_pricing: bool | None = None
+    pricing_agent_id: UUID | None = None
+    pricing_required: bool | None = None
+    pricing_suggestions: list[UUID] | None = None
+    pricings: list[QGetModelV4PricingOption] | None = None
+    voice_ids: list[UUID] | None = None
+    voice_resources: list[QGetModelV4VoiceResource] | None = None
+    show_voices: bool | None = None
+    voices_agent_id: UUID | None = None
+    voices_required: bool | None = None
+    voice_suggestions: list[UUID] | None = None
+    voices: list[QGetModelV4VoiceOption] | None = None
+
+
+
+# Generated from: get_model_ids
+
+class GetModelIdsSqlParams(BaseModel):
+
+    profile_id: UUID
+    model_id: UUID | None = None
+    draft_id: UUID | None = None
+    group_id: UUID | None = None
+    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.model_id,
+            self.draft_id,
+            self.group_id,
+            self.user_department_ids,
+        )
+
+class GetModelIdsSqlRow(BaseModel):
+
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    value_id: UUID | None = None
+    endpoint_id: UUID | None = None
+    provider_id: UUID | None = None
+    key_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    modalities_enabled_flag_id: UUID | None = None
+    temperature_enabled_flag_id: UUID | None = None
+    pricing_enabled_flag_id: UUID | None = None
+    voices_enabled_flag_id: UUID | None = None
+    reasoning_levels_enabled_flag_id: UUID | None = None
+    qualities_enabled_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    input_modality_ids: list[UUID] | None = None
+    output_modality_ids: list[UUID] | None = None
+    temperature_level_ids: list[UUID] | None = None
+    pricing_ids: list[UUID] | None = None
+    reasoning_level_ids: list[UUID] | None = None
+    quality_ids: list[UUID] | None = None
+    voice_ids: list[UUID] | None = None
+    candidate_agents: Any | None = None
+    names_has_tools: bool | None = None
+    values_has_tools: bool | None = None
+    endpoints_has_tools: bool | None = None
+    departments_has_tools: bool | None = None
+    modalities_has_tools: bool | None = None
+    temperature_levels_has_tools: bool | None = None
+    pricing_has_tools: bool | None = None
+    reasoning_levels_has_tools: bool | None = None
+    qualities_has_tools: bool | None = None
+    voices_has_tools: bool | None = None
+    name_domain_id: UUID | None = None
+    description_domain_id: UUID | None = None
+    value_domain_id: UUID | None = None
+    endpoint_domain_id: UUID | None = None
+    provider_domain_id: UUID | None = None
+    key_domain_id: UUID | None = None
+    flag_domain_id: UUID | None = None
+    departments_domain_id: UUID | None = None
+    modalities_domain_id: UUID | None = None
+    temperature_levels_domain_id: UUID | None = None
+    pricing_domain_id: UUID | None = None
+    reasoning_levels_domain_id: UUID | None = None
+    qualities_domain_id: UUID | None = None
+    voices_domain_id: UUID | None = None
+
+class GetModelIdsApiRequest(BaseModel):
+
+    model_id: UUID | None = None
+    draft_id: UUID | None = None
+    group_id: UUID | None = None
+    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class GetModelIdsApiResponse(BaseModel):
+
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    value_id: UUID | None = None
+    endpoint_id: UUID | None = None
+    provider_id: UUID | None = None
+    key_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    modalities_enabled_flag_id: UUID | None = None
+    temperature_enabled_flag_id: UUID | None = None
+    pricing_enabled_flag_id: UUID | None = None
+    voices_enabled_flag_id: UUID | None = None
+    reasoning_levels_enabled_flag_id: UUID | None = None
+    qualities_enabled_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    input_modality_ids: list[UUID] | None = None
+    output_modality_ids: list[UUID] | None = None
+    temperature_level_ids: list[UUID] | None = None
+    pricing_ids: list[UUID] | None = None
+    reasoning_level_ids: list[UUID] | None = None
+    quality_ids: list[UUID] | None = None
+    voice_ids: list[UUID] | None = None
+    candidate_agents: Any | None = None
+    names_has_tools: bool | None = None
+    values_has_tools: bool | None = None
+    endpoints_has_tools: bool | None = None
+    departments_has_tools: bool | None = None
+    modalities_has_tools: bool | None = None
+    temperature_levels_has_tools: bool | None = None
+    pricing_has_tools: bool | None = None
+    reasoning_levels_has_tools: bool | None = None
+    qualities_has_tools: bool | None = None
+    voices_has_tools: bool | None = None
+    name_domain_id: UUID | None = None
+    description_domain_id: UUID | None = None
+    value_domain_id: UUID | None = None
+    endpoint_domain_id: UUID | None = None
+    provider_domain_id: UUID | None = None
+    key_domain_id: UUID | None = None
+    flag_domain_id: UUID | None = None
+    departments_domain_id: UUID | None = None
+    modalities_domain_id: UUID | None = None
+    temperature_levels_domain_id: UUID | None = None
+    pricing_domain_id: UUID | None = None
+    reasoning_levels_domain_id: UUID | None = None
+    qualities_domain_id: UUID | None = None
+    voices_domain_id: UUID | None = None
+
+
+
+# Generated from: list_models
+
+class ListModelsSqlParams(BaseModel):
+
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+        )
+
+class QListModelsV4Model(BaseModel):
+
+    model_id: UUID | None
+    name: str | None
+    description: str | None
+    active: bool | None
+    image_model: bool | None
+    updated_at: datetime | None
+    provider: str | None
+    provider_id: UUID | None
+    provider_name: str | None
+    base_url: str | None
+    can_edit: bool | None
+    can_delete: bool | None
+
+
+
+
+class QListModelsV4ProviderOption(BaseModel):
+
+    value: str | None
+    label: str | None
+
+
+
+
+class QListModelsV4StatusOption(BaseModel):
+
+    value: str | None
+    label: str | None
+
+class ListModelsSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    models: list[QListModelsV4Model] | None = None
+    provider_options: list[QListModelsV4ProviderOption] | None = None
+    status_options: list[QListModelsV4StatusOption] | None = None
+
+class ListModelsApiRequest(BaseModel):
+
+    pass
+
+class ListModelsApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    models: list[QListModelsV4Model] | None = None
+    provider_options: list[QListModelsV4ProviderOption] | None = None
+    status_options: list[QListModelsV4StatusOption] | None = None
 
 
 
@@ -10646,35 +13018,6 @@ class GetPersonaDocsJunctionsApiResponse(BaseModel):
 
 # Generated from: get_persona_generation_context
 
-class GetPersonaGenerationContextSqlParams(BaseModel):
-
-    profile_id: UUID
-    persona_id: UUID | None = None
-    draft_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.persona_id,
-            self.draft_id,
-        )
-
-class GetPersonaGenerationContextSqlRow(BaseModel):
-
-    domain_id: UUID | None = None
-    agent_id: UUID | None = None
-
-class GetPersonaGenerationContextApiRequest(BaseModel):
-
-    persona_id: UUID | None = None
-    draft_id: UUID | None = None
-
-class GetPersonaGenerationContextApiResponse(BaseModel):
-
-    domain_id: UUID | None = None
-    agent_id: UUID | None = None
-
-
 
 # Generated from: get_persona_ids
 
@@ -10970,7 +13313,7 @@ class GetPersonasListApiResponse(BaseModel):
 
 
 
-# Generated from: save_persona
+# Generated from: patch_persona_draft
 
 class PersonaMultiResourceAction(BaseModel):
 
@@ -10986,6 +13329,73 @@ class PersonaResourceAction(BaseModel):
     resource_id: UUID | None
     create_tool_id: UUID | None
     link_tool_id: UUID | None
+
+class PatchPersonaDraftSqlParams(BaseModel):
+
+    profile_id: UUID
+    input_draft_id: UUID | None = None
+    group_id: UUID | None = None
+    names: PersonaResourceAction | None = None
+    descriptions: PersonaResourceAction | None = None
+    colors: PersonaResourceAction | None = None
+    icons: PersonaResourceAction | None = None
+    instructions: PersonaResourceAction | None = None
+    flags: PersonaResourceAction | None = None
+    departments: PersonaMultiResourceAction | None = None
+    parameter_fields: PersonaMultiResourceAction | None = None
+    examples: PersonaMultiResourceAction | None = None
+    parameters: PersonaMultiResourceAction | None = None
+    expected_version: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.input_draft_id,
+            self.group_id,
+            self.names,
+            self.descriptions,
+            self.colors,
+            self.icons,
+            self.instructions,
+            self.flags,
+            self.departments,
+            self.parameter_fields,
+            self.examples,
+            self.parameters,
+            self.expected_version,
+        )
+
+class PatchPersonaDraftSqlRow(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+class PatchPersonaDraftApiRequest(BaseModel):
+
+    input_draft_id: UUID | None = None
+    group_id: UUID | None = None
+    names: PersonaResourceAction | None = None
+    descriptions: PersonaResourceAction | None = None
+    colors: PersonaResourceAction | None = None
+    icons: PersonaResourceAction | None = None
+    instructions: PersonaResourceAction | None = None
+    flags: PersonaResourceAction | None = None
+    departments: PersonaMultiResourceAction | None = None
+    parameter_fields: PersonaMultiResourceAction | None = None
+    examples: PersonaMultiResourceAction | None = None
+    parameters: PersonaMultiResourceAction | None = None
+    expected_version: int | None = 0
+
+class PatchPersonaDraftApiResponse(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+
+
+# Generated from: save_persona
 
 class SavePersonaSqlParams(BaseModel):
 
@@ -12436,6 +14846,39 @@ class ValidateProfileResourceProgressApiResponse(BaseModel):
 
 
 
+# Generated from: check_provider_delete_access
+
+class CheckProviderDeleteAccessSqlParams(BaseModel):
+
+    profile_id: UUID
+    provider_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.provider_id,
+        )
+
+class CheckProviderDeleteAccessSqlRow(BaseModel):
+
+    user_role: str | None = None
+    provider_department_ids: list[UUID] | None = None
+    model_usage_count: int | None = None
+    provider_name: str | None = None
+
+class CheckProviderDeleteAccessApiRequest(BaseModel):
+
+    provider_id: UUID
+
+class CheckProviderDeleteAccessApiResponse(BaseModel):
+
+    user_role: str | None = None
+    provider_department_ids: list[UUID] | None = None
+    model_usage_count: int | None = None
+    provider_name: str | None = None
+
+
+
 # Generated from: check_provider_duplicate_access
 
 class CheckProviderDuplicateAccessSqlParams(BaseModel):
@@ -12458,6 +14901,72 @@ class CheckProviderDuplicateAccessApiRequest(BaseModel):
 class CheckProviderDuplicateAccessApiResponse(BaseModel):
 
     user_role: str | None = None
+
+
+
+# Generated from: check_provider_save_access
+
+class CheckProviderSaveAccessSqlParams(BaseModel):
+
+    profile_id: UUID
+    provider_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.provider_id,
+        )
+
+class CheckProviderSaveAccessSqlRow(BaseModel):
+
+    user_role: str | None = None
+    user_department_ids: list[UUID] | None = None
+    provider_department_ids: list[UUID] | None = None
+    model_usage_count: int | None = None
+
+class CheckProviderSaveAccessApiRequest(BaseModel):
+
+    provider_id: UUID | None = None
+
+class CheckProviderSaveAccessApiResponse(BaseModel):
+
+    user_role: str | None = None
+    user_department_ids: list[UUID] | None = None
+    provider_department_ids: list[UUID] | None = None
+    model_usage_count: int | None = None
+
+
+
+# Generated from: delete_provider
+
+class DeleteProviderSqlParams(BaseModel):
+
+    provider_id: UUID
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.provider_id,
+            self.profile_id,
+        )
+
+class DeleteProviderSqlRow(BaseModel):
+
+    usage_count: int | None = None
+    name: str | None = None
+    deleted: bool | None = None
+    actor_name: str | None = None
+
+class DeleteProviderApiRequest(BaseModel):
+
+    provider_id: UUID
+
+class DeleteProviderApiResponse(BaseModel):
+
+    usage_count: int | None = None
+    name: str | None = None
+    deleted: bool | None = None
+    actor_name: str | None = None
 
 
 
@@ -12489,6 +14998,50 @@ class DuplicateProviderApiResponse(BaseModel):
     new_provider_id: UUID | None = None
     original_name: str | None = None
     actor_name: str | None = None
+
+
+
+# Generated from: get_provider_access
+
+class GetProviderAccessSqlParams(BaseModel):
+
+    profile_id: UUID
+    provider_id: UUID | None = None
+    draft_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.provider_id,
+            self.draft_id,
+        )
+
+class GetProviderAccessSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    provider_exists: bool | None = None
+    draft_version: int | None = None
+    group_id: UUID | None = None
+    user_role: str | None = None
+    user_department_ids: list[UUID] | None = None
+    provider_department_ids: list[UUID] | None = None
+    model_usage_count: int | None = None
+
+class GetProviderAccessApiRequest(BaseModel):
+
+    provider_id: UUID | None = None
+    draft_id: UUID | None = None
+
+class GetProviderAccessApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    provider_exists: bool | None = None
+    draft_version: int | None = None
+    group_id: UUID | None = None
+    user_role: str | None = None
+    user_department_ids: list[UUID] | None = None
+    provider_department_ids: list[UUID] | None = None
+    model_usage_count: int | None = None
 
 
 
@@ -12563,6 +15116,66 @@ class GetProviderIdsApiResponse(BaseModel):
     departments_domain_id: UUID | None = None
     value_domain_id: UUID | None = None
     regenerates_domain_id: UUID | None = None
+
+
+
+# Generated from: get_providers_list
+
+class GetProvidersListSqlParams(BaseModel):
+
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+        )
+
+class QListProvidersV4Provider(BaseModel):
+
+    provider_id: UUID | None
+    name: str | None
+    description: str | None
+    value: str | None
+    active: bool | None
+    updated_at: datetime | None
+    department_ids: list[UUID] | None
+    model_usage_count: int | None
+
+
+
+
+class QListProvidersV4ProviderOption(BaseModel):
+
+    value: str | None
+    label: str | None
+
+
+
+
+class QListProvidersV4StatusOption(BaseModel):
+
+    value: str | None
+    label: str | None
+
+class GetProvidersListSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    user_role: str | None = None
+    providers: list[QListProvidersV4Provider] | None = None
+    provider_options: list[QListProvidersV4ProviderOption] | None = None
+    status_options: list[QListProvidersV4StatusOption] | None = None
+
+class GetProvidersListApiRequest(BaseModel):
+
+    pass
+
+class GetProvidersListApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    user_role: str | None = None
+    providers: list[QListProvidersV4Provider] | None = None
+    provider_options: list[QListProvidersV4ProviderOption] | None = None
+    status_options: list[QListProvidersV4StatusOption] | None = None
 
 
 
@@ -17443,6 +20056,71 @@ class GetStandardsApiResponse(BaseModel):
 
 
 
+# Generated from: get_temperature_levels
+
+class GetTemperatureLevelsSqlParams(BaseModel):
+
+    ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.ids,
+        )
+
+class QGetTemperatureLevelsV4Item(BaseModel):
+
+    id: UUID | None
+    temperature: float | None
+    generated: bool | None
+
+class GetTemperatureLevelsSqlRow(BaseModel):
+
+    items: list[QGetTemperatureLevelsV4Item] | None = None
+
+class GetTemperatureLevelsApiRequest(BaseModel):
+
+    ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class GetTemperatureLevelsApiResponse(BaseModel):
+
+    items: list[QGetTemperatureLevelsV4Item] | None = None
+
+
+
+# Generated from: search_temperature_levels
+
+class SearchTemperatureLevelsSqlParams(BaseModel):
+
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.search,
+            self.limit_count,
+            self.offset_count,
+            self.exclude_ids,
+        )
+
+class SearchTemperatureLevelsSqlRow(BaseModel):
+
+    items: list[QGetTemperatureLevelsV4Item] | None = None
+
+class SearchTemperatureLevelsApiRequest(BaseModel):
+
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class SearchTemperatureLevelsApiResponse(BaseModel):
+
+    items: list[QGetTemperatureLevelsV4Item] | None = None
+
+
+
 # Generated from: get_template
 
 class GetTemplateSqlParams(BaseModel):
@@ -20138,6 +22816,459 @@ class GetSettingAccessApiResponse(BaseModel):
 
 
 
+# Generated from: get_setting
+
+class GetSettingSqlParams(BaseModel):
+
+    profile_id: UUID
+    setting_id: UUID | None = None
+    color_search: str | None = None
+    draft_id: UUID | None = None
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.setting_id,
+            self.color_search,
+            self.draft_id,
+            self.mcp,
+        )
+
+class QGetSettingV4AuthItem(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    encrypted: bool | None
+
+class QGetSettingV4Auth(BaseModel):
+
+    auth_id: UUID | None
+    name: str | None
+    description: str | None
+    slug: str | None
+    active: bool | None
+    auth_items_junction: list[QGetSettingV4AuthItem] | None
+
+
+
+
+class QGetSettingV4ColorOption(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    hex_code: str | None
+    generated: bool | None
+
+
+
+
+class QGetSettingV4ColorResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    hex_code: str | None
+    generated: bool | None
+
+
+
+
+class QGetSettingV4Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+    generated: bool | None
+
+
+
+
+class QGetSettingV4DescriptionResource(BaseModel):
+
+    id: UUID | None
+    description: str | None
+    generated: bool | None
+
+
+
+
+class QGetSettingV4FlagResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    icon: str | None
+    generated: bool | None
+
+
+
+
+class QGetSettingV4Key(BaseModel):
+
+    key_id: UUID | None
+    name: str | None
+    masked_key: str | None
+    description: str | None
+    active: bool | None
+    department_ids: list[str] | None
+
+
+
+
+class QGetSettingV4NameResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    generated: bool | None
+
+
+
+
+class QGetSettingV4Profile(BaseModel):
+
+    profile_id: UUID | None
+    name: str | None
+    description: str | None
+    generated: bool | None
+
+
+
+
+class QGetSettingV4Provider(BaseModel):
+
+    provider_id: UUID | None
+    name: str | None
+    description: str | None
+    value: str | None
+    active: bool | None
+
+
+
+
+class QGetSettingV4RoleResource(BaseModel):
+
+    role_id: UUID | None
+    role: str | None
+    name: str | None
+    description: str | None
+    icon_value: str | None
+    color_hex: str | None
+    generated: bool | None
+
+
+
+
+class QGetSettingV4RoleRoute(BaseModel):
+
+    id: UUID | None
+    role_id: UUID | None
+    route_id: UUID | None
+    generated: bool | None
+
+
+
+
+class QGetSettingV4RouteResource(BaseModel):
+
+    route_id: UUID | None
+    route: str | None
+    role_id: UUID | None
+    generated: bool | None
+
+class GetSettingSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    setting_exists: bool | None = None
+    can_edit: bool | None = None
+    disabled_reason: str | None = None
+    draft_version: int | None = None
+    group_id: UUID | None = None
+    name_id: UUID | None = None
+    name_resource: QGetSettingV4NameResource | None = None
+    show_name: bool | None = None
+    name_agent_id: UUID | None = None
+    name_required: bool | None = None
+    name_suggestions: list[UUID] | None = None
+    names: list[QGetSettingV4NameResource] | None = None
+    description_id: UUID | None = None
+    description_resource: QGetSettingV4DescriptionResource | None = None
+    show_description: bool | None = None
+    description_agent_id: UUID | None = None
+    description_required: bool | None = None
+    description_suggestions: list[UUID] | None = None
+    descriptions: list[QGetSettingV4DescriptionResource] | None = None
+    color_ids: list[UUID] | None = None
+    color_resources: list[QGetSettingV4ColorResource] | None = None
+    show_colors: bool | None = None
+    colors_agent_id: UUID | None = None
+    colors_required: bool | None = None
+    color_suggestions: list[UUID] | None = None
+    colors: list[QGetSettingV4ColorOption] | None = None
+    active_flag_id: UUID | None = None
+    flag_resource: QGetSettingV4FlagResource | None = None
+    show_flag: bool | None = None
+    flag_agent_id: UUID | None = None
+    flag_required: bool | None = None
+    flags: list[QGetSettingV4FlagResource] | None = None
+    department_ids: list[UUID] | None = None
+    department_resources: list[QGetSettingV4Department] | None = None
+    show_departments: bool | None = None
+    departments_agent_id: UUID | None = None
+    departments_required: bool | None = None
+    department_suggestions: list[UUID] | None = None
+    departments: list[QGetSettingV4Department] | None = None
+    profile_ids: list[UUID] | None = None
+    profile_resources: list[QGetSettingV4Profile] | None = None
+    show_profiles: bool | None = None
+    profiles_agent_id: UUID | None = None
+    profiles_required: bool | None = None
+    profile_suggestions: list[UUID] | None = None
+    profiles: list[QGetSettingV4Profile] | None = None
+    auth_ids: list[UUID] | None = None
+    auth_resources: list[QGetSettingV4Auth] | None = None
+    show_auths: bool | None = None
+    auths_agent_id: UUID | None = None
+    auths_required: bool | None = None
+    auth_suggestions: list[UUID] | None = None
+    auths: list[QGetSettingV4Auth] | None = None
+    provider_ids: list[UUID] | None = None
+    provider_resources: list[QGetSettingV4Provider] | None = None
+    show_providers: bool | None = None
+    providers_agent_id: UUID | None = None
+    providers_required: bool | None = None
+    provider_suggestions: list[UUID] | None = None
+    providers: list[QGetSettingV4Provider] | None = None
+    key_ids: list[UUID] | None = None
+    key_resources: list[QGetSettingV4Key] | None = None
+    show_keys: bool | None = None
+    keys_agent_id: UUID | None = None
+    keys_required: bool | None = None
+    key_suggestions: list[UUID] | None = None
+    keys: list[QGetSettingV4Key] | None = None
+    role_ids: list[UUID] | None = None
+    role_resources: list[QGetSettingV4RoleResource] | None = None
+    show_roles: bool | None = None
+    roles_required: bool | None = None
+    roles: list[QGetSettingV4RoleResource] | None = None
+    route_ids: list[UUID] | None = None
+    route_resources: list[QGetSettingV4RouteResource] | None = None
+    show_routes: bool | None = None
+    routes_required: bool | None = None
+    routes: list[QGetSettingV4RouteResource] | None = None
+    role_route_ids: list[UUID] | None = None
+    role_route_resources: list[QGetSettingV4RoleRoute] | None = None
+    show_role_routes: bool | None = None
+    role_routes: list[QGetSettingV4RoleRoute] | None = None
+
+class GetSettingApiRequest(BaseModel):
+
+    setting_id: UUID | None = None
+    color_search: str | None = None
+    draft_id: UUID | None = None
+    mcp: bool | None = False
+
+class GetSettingApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    setting_exists: bool | None = None
+    can_edit: bool | None = None
+    disabled_reason: str | None = None
+    draft_version: int | None = None
+    group_id: UUID | None = None
+    name_id: UUID | None = None
+    name_resource: QGetSettingV4NameResource | None = None
+    show_name: bool | None = None
+    name_agent_id: UUID | None = None
+    name_required: bool | None = None
+    name_suggestions: list[UUID] | None = None
+    names: list[QGetSettingV4NameResource] | None = None
+    description_id: UUID | None = None
+    description_resource: QGetSettingV4DescriptionResource | None = None
+    show_description: bool | None = None
+    description_agent_id: UUID | None = None
+    description_required: bool | None = None
+    description_suggestions: list[UUID] | None = None
+    descriptions: list[QGetSettingV4DescriptionResource] | None = None
+    color_ids: list[UUID] | None = None
+    color_resources: list[QGetSettingV4ColorResource] | None = None
+    show_colors: bool | None = None
+    colors_agent_id: UUID | None = None
+    colors_required: bool | None = None
+    color_suggestions: list[UUID] | None = None
+    colors: list[QGetSettingV4ColorOption] | None = None
+    active_flag_id: UUID | None = None
+    flag_resource: QGetSettingV4FlagResource | None = None
+    show_flag: bool | None = None
+    flag_agent_id: UUID | None = None
+    flag_required: bool | None = None
+    flags: list[QGetSettingV4FlagResource] | None = None
+    department_ids: list[UUID] | None = None
+    department_resources: list[QGetSettingV4Department] | None = None
+    show_departments: bool | None = None
+    departments_agent_id: UUID | None = None
+    departments_required: bool | None = None
+    department_suggestions: list[UUID] | None = None
+    departments: list[QGetSettingV4Department] | None = None
+    profile_ids: list[UUID] | None = None
+    profile_resources: list[QGetSettingV4Profile] | None = None
+    show_profiles: bool | None = None
+    profiles_agent_id: UUID | None = None
+    profiles_required: bool | None = None
+    profile_suggestions: list[UUID] | None = None
+    profiles: list[QGetSettingV4Profile] | None = None
+    auth_ids: list[UUID] | None = None
+    auth_resources: list[QGetSettingV4Auth] | None = None
+    show_auths: bool | None = None
+    auths_agent_id: UUID | None = None
+    auths_required: bool | None = None
+    auth_suggestions: list[UUID] | None = None
+    auths: list[QGetSettingV4Auth] | None = None
+    provider_ids: list[UUID] | None = None
+    provider_resources: list[QGetSettingV4Provider] | None = None
+    show_providers: bool | None = None
+    providers_agent_id: UUID | None = None
+    providers_required: bool | None = None
+    provider_suggestions: list[UUID] | None = None
+    providers: list[QGetSettingV4Provider] | None = None
+    key_ids: list[UUID] | None = None
+    key_resources: list[QGetSettingV4Key] | None = None
+    show_keys: bool | None = None
+    keys_agent_id: UUID | None = None
+    keys_required: bool | None = None
+    key_suggestions: list[UUID] | None = None
+    keys: list[QGetSettingV4Key] | None = None
+    role_ids: list[UUID] | None = None
+    role_resources: list[QGetSettingV4RoleResource] | None = None
+    show_roles: bool | None = None
+    roles_required: bool | None = None
+    roles: list[QGetSettingV4RoleResource] | None = None
+    route_ids: list[UUID] | None = None
+    route_resources: list[QGetSettingV4RouteResource] | None = None
+    show_routes: bool | None = None
+    routes_required: bool | None = None
+    routes: list[QGetSettingV4RouteResource] | None = None
+    role_route_ids: list[UUID] | None = None
+    role_route_resources: list[QGetSettingV4RoleRoute] | None = None
+    show_role_routes: bool | None = None
+    role_routes: list[QGetSettingV4RoleRoute] | None = None
+
+
+
+# Generated from: get_setting_ids
+
+class GetSettingIdsSqlParams(BaseModel):
+
+    profile_id: UUID
+    setting_id: UUID | None = None
+    color_search: str | None = None
+    draft_id: UUID | None = None
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.setting_id,
+            self.color_search,
+            self.draft_id,
+            self.mcp,
+        )
+
+class GetSettingIdsSqlRow(BaseModel):
+
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    color_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    name_agent_id: UUID | None = None
+    description_agent_id: UUID | None = None
+    colors_agent_id: UUID | None = None
+    flag_agent_id: UUID | None = None
+    departments_agent_id: UUID | None = None
+    profiles_agent_id: UUID | None = None
+    auths_agent_id: UUID | None = None
+    providers_agent_id: UUID | None = None
+    keys_agent_id: UUID | None = None
+
+class GetSettingIdsApiRequest(BaseModel):
+
+    setting_id: UUID | None = None
+    color_search: str | None = None
+    draft_id: UUID | None = None
+    mcp: bool | None = False
+
+class GetSettingIdsApiResponse(BaseModel):
+
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    color_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    name_agent_id: UUID | None = None
+    description_agent_id: UUID | None = None
+    colors_agent_id: UUID | None = None
+    flag_agent_id: UUID | None = None
+    departments_agent_id: UUID | None = None
+    profiles_agent_id: UUID | None = None
+    auths_agent_id: UUID | None = None
+    providers_agent_id: UUID | None = None
+    keys_agent_id: UUID | None = None
+
+
+
+# Generated from: get_settings_list
+
+class GetSettingsListSqlParams(BaseModel):
+
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+        )
+
+class QGetSettingsListV4Key(BaseModel):
+
+    key_id: UUID | None
+    name: str | None
+    key_masked: str | None
+    description: str | None
+    active: bool | None
+    department_ids: list[str] | None
+
+
+
+
+class QGetSettingsListV4Setting(BaseModel):
+
+    settings_id: UUID | None
+    created_at: datetime | None
+    active: bool | None
+    name: str | None
+    description: str | None
+    department_ids: list[str] | None
+
+class GetSettingsListSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    settings: list[QGetSettingsListV4Setting] | None = None
+    keys: list[QGetSettingsListV4Key] | None = None
+
+class GetSettingsListApiRequest(BaseModel):
+
+    pass
+
+class GetSettingsListApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    settings: list[QGetSettingsListV4Setting] | None = None
+    keys: list[QGetSettingsListV4Key] | None = None
+
+
+
 # Generated from: patch_setting_draft
 
 class PatchSettingDraftSqlParams(BaseModel):
@@ -21038,6 +24169,112 @@ class GetSimulationResourceIdsByGroupIdApiResponse(BaseModel):
 
 
 
+# Generated from: get_simulation_run_context
+
+class GetSimulationRunContextSqlParams(BaseModel):
+
+    chat_id: UUID
+    p_agent_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.chat_id,
+            self.p_agent_id,
+        )
+
+class GetSimulationRunContextSqlRow(BaseModel):
+
+    chat_id: str | None = None
+    chat_title: str | None = None
+    trace_id: str | None = None
+    attempt_id: str | None = None
+    simulation_id: str | None = None
+    scenario_id: str | None = None
+    department_id: str | None = None
+    problem_statement: str | None = None
+    persona_id: str | None = None
+    persona_name: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    custom_model: str | None = None
+    provider_id: str | None = None
+    provider_name: str | None = None
+    agent_id: str | None = None
+    voice_system_prompt: str | None = None
+    voice_temperature: float | None = None
+    voice_reasoning: str | None = None
+    voice_model_id: str | None = None
+    voice_model_name: str | None = None
+    voice_provider: str | None = None
+    voice_base_url: str | None = None
+    voice_api_key: str | None = None
+    voice_custom_model: str | None = None
+    voice_provider_name: str | None = None
+    voice_agent_id: str | None = None
+    image_input_enabled: bool | None = None
+    copy_paste_allowed: bool | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: datetime | None = None
+    documents: Any | None = None
+
+class GetSimulationRunContextApiRequest(BaseModel):
+
+    chat_id: UUID
+    p_agent_id: UUID | None = None
+
+class GetSimulationRunContextApiResponse(BaseModel):
+
+    chat_id: str | None = None
+    chat_title: str | None = None
+    trace_id: str | None = None
+    attempt_id: str | None = None
+    simulation_id: str | None = None
+    scenario_id: str | None = None
+    department_id: str | None = None
+    problem_statement: str | None = None
+    persona_id: str | None = None
+    persona_name: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    custom_model: str | None = None
+    provider_id: str | None = None
+    provider_name: str | None = None
+    agent_id: str | None = None
+    voice_system_prompt: str | None = None
+    voice_temperature: float | None = None
+    voice_reasoning: str | None = None
+    voice_model_id: str | None = None
+    voice_model_name: str | None = None
+    voice_provider: str | None = None
+    voice_base_url: str | None = None
+    voice_api_key: str | None = None
+    voice_custom_model: str | None = None
+    voice_provider_name: str | None = None
+    voice_agent_id: str | None = None
+    image_input_enabled: bool | None = None
+    copy_paste_allowed: bool | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: datetime | None = None
+    documents: Any | None = None
+
+
+
 # Generated from: get_simulations_list
 
 class GetSimulationsListSqlParams(BaseModel):
@@ -21360,6 +24597,111 @@ class SimulationTextStopRunApiResponse(BaseModel):
     success: bool | None = None
     cancelled_message_id: UUID | None = None
     final_content: str | None = None
+
+
+
+# Generated from: start_simulation_attempt
+
+class StartSimulationAttemptSqlParams(BaseModel):
+
+    simulation_id: UUID
+    infinite_mode: bool
+    profile_id: UUID | None = None
+    scenario_id_override: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.simulation_id,
+            self.infinite_mode,
+            self.profile_id,
+            self.scenario_id_override,
+        )
+
+class QStartSimulationAttemptV4Document(BaseModel):
+
+    id: str | None
+    name: str | None
+    file_path: str | None
+    mime_type: str | None
+
+
+
+
+class QStartSimulationAttemptV4ParameterItem(BaseModel):
+
+    id: str | None
+    name: str | None
+    description: str | None
+    parameter_id: str | None
+    parameter_name: str | None
+
+class QStartSimulationAttemptV4ScenarioMetadata(BaseModel):
+
+    persona_id: str | None
+    persona_name: str | None
+    persona_system_prompt: str | None
+    persona_temperature: float | None
+    persona_reasoning: str | None
+    persona_color: str | None
+    persona_icon: str | None
+    model_id: str | None
+    model_name: str | None
+    provider: str | None
+    provider_base_url: str | None
+    provider_api_key: str | None
+    documents: list[QStartSimulationAttemptV4Document] | None
+    parameter_items: list[QStartSimulationAttemptV4ParameterItem] | None
+    active: bool | None
+    default_scenario: bool | None
+    generated: bool | None
+
+
+
+
+class QStartSimulationAttemptV4SimulationData(BaseModel):
+
+    id: str | None
+    title: str | None
+    description: str | None
+    active: bool | None
+    practice_simulation: bool | None
+    rubric_id: str | None
+
+class StartSimulationAttemptSqlRow(BaseModel):
+
+    attempt_id: str | None = None
+    chat_id: str | None = None
+    chat_title: str | None = None
+    scenario_id: str | None = None
+    scenario_name: str | None = None
+    problem_statement: str | None = None
+    needs_generation: bool | None = None
+    content_type: str | None = None
+    video_id: str | None = None
+    trace_id: str | None = None
+    simulation_data: QStartSimulationAttemptV4SimulationData | None = None
+    scenario_metadata: QStartSimulationAttemptV4ScenarioMetadata | None = None
+
+class StartSimulationAttemptApiRequest(BaseModel):
+
+    simulation_id: UUID
+    infinite_mode: bool
+    scenario_id_override: UUID | None = None
+
+class StartSimulationAttemptApiResponse(BaseModel):
+
+    attempt_id: str | None = None
+    chat_id: str | None = None
+    chat_title: str | None = None
+    scenario_id: str | None = None
+    scenario_name: str | None = None
+    problem_statement: str | None = None
+    needs_generation: bool | None = None
+    content_type: str | None = None
+    video_id: str | None = None
+    trace_id: str | None = None
+    simulation_data: QStartSimulationAttemptV4SimulationData | None = None
+    scenario_metadata: QStartSimulationAttemptV4ScenarioMetadata | None = None
 
 
 
@@ -22763,6 +26105,69 @@ class CreateGenerationAndLinkApiResponse(BaseModel):
 
 
 
+# Generated from: get_video_run_context_and_create_run
+
+class GetVideoRunContextAndCreateRunSqlParams(BaseModel):
+
+    video_id: UUID
+    profile_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.video_id,
+            self.profile_id,
+        )
+
+class GetVideoRunContextAndCreateRunSqlRow(BaseModel):
+
+    agent_id: str | None = None
+    agent_name: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    custom_model: str | None = None
+    provider_id: str | None = None
+    provider_name: str | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: datetime | None = None
+    department_id: UUID | None = None
+    run_id: str | None = None
+
+class GetVideoRunContextAndCreateRunApiRequest(BaseModel):
+
+    video_id: UUID
+
+class GetVideoRunContextAndCreateRunApiResponse(BaseModel):
+
+    agent_id: str | None = None
+    agent_name: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    custom_model: str | None = None
+    provider_id: str | None = None
+    provider_name: str | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: datetime | None = None
+    department_id: UUID | None = None
+    run_id: str | None = None
+
+
+
 # Generated from: get_analytics_chat_facts_view
 
 class GetAnalyticsChatFactsViewSqlParams(BaseModel):
@@ -23607,6 +27012,39 @@ class GetSimulationScenarioCountsApiResponse(BaseModel):
 
 
 
+# Generated from: get_config_view
+
+class GetConfigViewSqlParams(BaseModel):
+
+    config_id_filter: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.config_id_filter,
+        )
+
+class QGetConfigViewV4Item(BaseModel):
+
+    config_id: UUID | None
+    agents_id: UUID | None
+    models_id: UUID | None
+    providers_id: UUID | None
+    created_at: datetime | None
+
+class GetConfigViewSqlRow(BaseModel):
+
+    items: list[QGetConfigViewV4Item] | None = None
+
+class GetConfigViewApiRequest(BaseModel):
+
+    config_id_filter: UUID
+
+class GetConfigViewApiResponse(BaseModel):
+
+    items: list[QGetConfigViewV4Item] | None = None
+
+
+
 # Generated from: get_draft_resources_view
 
 class GetDraftResourcesViewSqlParams(BaseModel):
@@ -24125,11 +27563,23 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetAgentAccessApiRequest",
         "GetAgentAccessApiResponse",
     ),
+    "app/sql/v4/queries/agents/get_agent_complete.sql": (
+        "GetAgentSqlParams",
+        "GetAgentSqlRow",
+        "GetAgentApiRequest",
+        "GetAgentApiResponse",
+    ),
     "app/sql/v4/queries/agents/get_agent_ids_complete.sql": (
         "GetAgentIdsSqlParams",
         "GetAgentIdsSqlRow",
         "GetAgentIdsApiRequest",
         "GetAgentIdsApiResponse",
+    ),
+    "app/sql/v4/queries/agents/get_agent_model_info_complete.sql": (
+        "GetAgentModelInfoSqlParams",
+        "GetAgentModelInfoSqlRow",
+        "GetAgentModelInfoApiRequest",
+        "GetAgentModelInfoApiResponse",
     ),
     "app/sql/v4/queries/agents/get_agent_resource_ids_by_group_id_complete.sql": (
         "GetAgentResourceIdsByGroupIdSqlParams",
@@ -24347,6 +27797,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "UpdateChatCreatedAtApiRequest",
         "UpdateChatCreatedAtApiResponse",
     ),
+    "app/sql/v4/queries/audio/get_audio_run_context_and_create_run_complete.sql": (
+        "GetAudioRunContextAndCreateRunSqlParams",
+        "GetAudioRunContextAndCreateRunSqlRow",
+        "GetAudioRunContextAndCreateRunApiRequest",
+        "GetAudioRunContextAndCreateRunApiResponse",
+    ),
+    "app/sql/v4/queries/audio/get_voice_session_context_complete.sql": (
+        "GetVoiceSessionContextSqlParams",
+        "GetVoiceSessionContextSqlRow",
+        "GetVoiceSessionContextApiRequest",
+        "GetVoiceSessionContextApiResponse",
+    ),
     "app/sql/v4/queries/auth/check_auth_delete_access_complete.sql": (
         "CheckAuthDeleteAccessSqlParams",
         "CheckAuthDeleteAccessSqlRow",
@@ -24545,6 +28007,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetDepartmentAccessApiRequest",
         "GetDepartmentAccessApiResponse",
     ),
+    "app/sql/v4/queries/departments/get_department_complete.sql": (
+        "GetDepartmentSqlParams",
+        "GetDepartmentSqlRow",
+        "GetDepartmentApiRequest",
+        "GetDepartmentApiResponse",
+    ),
     "app/sql/v4/queries/departments/get_department_ids_complete.sql": (
         "GetDepartmentIdsSqlParams",
         "GetDepartmentIdsSqlRow",
@@ -24664,6 +28132,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetDocumentIdsSqlRow",
         "GetDocumentIdsApiRequest",
         "GetDocumentIdsApiResponse",
+    ),
+    "app/sql/v4/queries/documents/get_document_run_context_and_create_run_complete.sql": (
+        "GetDocumentRunContextAndCreateRunSqlParams",
+        "GetDocumentRunContextAndCreateRunSqlRow",
+        "GetDocumentRunContextAndCreateRunApiRequest",
+        "GetDocumentRunContextAndCreateRunApiResponse",
     ),
     "app/sql/v4/queries/documents/get_documents_list_complete.sql": (
         "GetDocumentsListSqlParams",
@@ -24827,6 +28301,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SaveFieldApiRequest",
         "SaveFieldApiResponse",
     ),
+    "app/sql/v4/queries/generate/attempt/get_attempt_grade_context_complete.sql": (
+        "GetAttemptGradeContextSqlParams",
+        "GetAttemptGradeContextSqlRow",
+        "GetAttemptGradeContextApiRequest",
+        "GetAttemptGradeContextApiResponse",
+    ),
+    "app/sql/v4/queries/generate/attempt/get_attempt_message_context_complete.sql": (
+        "GetAttemptMessageContextSqlParams",
+        "GetAttemptMessageContextSqlRow",
+        "GetAttemptMessageContextApiRequest",
+        "GetAttemptMessageContextApiResponse",
+    ),
     "app/sql/v4/queries/generate/attempt/prepare_attempt_grade_complete.sql": (
         "PrepareAttemptGradeSqlParams",
         "PrepareAttemptGradeSqlRow",
@@ -24863,6 +28349,24 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "StartBenchmarkAttemptApiRequest",
         "StartBenchmarkAttemptApiResponse",
     ),
+    "app/sql/v4/queries/generate/parameter/get_parameter_generation_context_complete.sql": (
+        "GetParameterGenerationContextSqlParams",
+        "GetParameterGenerationContextSqlRow",
+        "GetParameterGenerationContextApiRequest",
+        "GetParameterGenerationContextApiResponse",
+    ),
+    "app/sql/v4/queries/generate/parameter/prepare_parameter_generation_complete.sql": (
+        "PrepareParameterGenerationSqlParams",
+        "PrepareParameterGenerationSqlRow",
+        "PrepareParameterGenerationApiRequest",
+        "PrepareParameterGenerationApiResponse",
+    ),
+    "app/sql/v4/queries/generate/persona/get_persona_generation_context_complete.sql": (
+        "GetPersonaGenerationContextSqlParams",
+        "GetPersonaGenerationContextSqlRow",
+        "GetPersonaGenerationContextApiRequest",
+        "GetPersonaGenerationContextApiResponse",
+    ),
     "app/sql/v4/queries/generate/persona/insert_generation_messages_complete.sql": (
         "InsertGenerationMessagesSqlParams",
         "InsertGenerationMessagesSqlRow",
@@ -24881,11 +28385,23 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetGenerationRunContextAndCreateRunApiRequest",
         "GetGenerationRunContextAndCreateRunApiResponse",
     ),
+    "app/sql/v4/queries/generate/test/get_test_run_context_complete.sql": (
+        "GetTestRunContextSqlParams",
+        "GetTestRunContextSqlRow",
+        "GetTestRunContextApiRequest",
+        "GetTestRunContextApiResponse",
+    ),
     "app/sql/v4/queries/generate/test/prepare_test_run_complete.sql": (
         "PrepareTestRunSqlParams",
         "PrepareTestRunSqlRow",
         "PrepareTestRunApiRequest",
         "PrepareTestRunApiResponse",
+    ),
+    "app/sql/v4/queries/generate/text/get_text_run_context_for_existing_run_complete.sql": (
+        "GetTextRunContextForExistingRunSqlParams",
+        "GetTextRunContextForExistingRunSqlRow",
+        "GetTextRunContextForExistingRunApiRequest",
+        "GetTextRunContextForExistingRunApiResponse",
     ),
     "app/sql/v4/queries/generate/text/text_tool_progress_update_complete.sql": (
         "TextToolProgressUpdateSqlParams",
@@ -24893,11 +28409,29 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "TextToolProgressUpdateApiRequest",
         "TextToolProgressUpdateApiResponse",
     ),
+    "app/sql/v4/queries/generate/tool/get_tool_generation_context_complete.sql": (
+        "GetToolGenerationContextSqlParams",
+        "GetToolGenerationContextSqlRow",
+        "GetToolGenerationContextApiRequest",
+        "GetToolGenerationContextApiResponse",
+    ),
     "app/sql/v4/queries/generate/training/get_training_simulations_complete.sql": (
         "GetTrainingSimulationsSqlParams",
         "GetTrainingSimulationsSqlRow",
         "GetTrainingSimulationsApiRequest",
         "GetTrainingSimulationsApiResponse",
+    ),
+    "app/sql/v4/queries/generate/training/get_training_start_context_complete.sql": (
+        "GetTrainingStartContextSqlParams",
+        "GetTrainingStartContextSqlRow",
+        "GetTrainingStartContextApiRequest",
+        "GetTrainingStartContextApiResponse",
+    ),
+    "app/sql/v4/queries/generate/training/prepare_training_generation_complete.sql": (
+        "PrepareTrainingGenerationSqlParams",
+        "PrepareTrainingGenerationSqlRow",
+        "PrepareTrainingGenerationApiRequest",
+        "PrepareTrainingGenerationApiResponse",
     ),
     "app/sql/v4/queries/generate/training/prepare_training_start_complete.sql": (
         "PrepareTrainingStartSqlParams",
@@ -24910,6 +28444,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "CompleteImageGenerationSqlRow",
         "CompleteImageGenerationApiRequest",
         "CompleteImageGenerationApiResponse",
+    ),
+    "app/sql/v4/queries/images/get_image_generation_context_and_create_upload_complete.sql": (
+        "GetImageGenerationContextAndCreateUploadSqlParams",
+        "GetImageGenerationContextAndCreateUploadSqlRow",
+        "GetImageGenerationContextAndCreateUploadApiRequest",
+        "GetImageGenerationContextAndCreateUploadApiResponse",
     ),
     "app/sql/v4/queries/infra/artifacts/discovery/get_agent_end_event_name_complete.sql": (
         "GetAgentEndEventNameSqlParams",
@@ -25259,11 +28799,35 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "DeleteModelApiRequest",
         "DeleteModelApiResponse",
     ),
+    "app/sql/v4/queries/models/duplicate_model_complete.sql": (
+        "DuplicateModelSqlParams",
+        "DuplicateModelSqlRow",
+        "DuplicateModelApiRequest",
+        "DuplicateModelApiResponse",
+    ),
     "app/sql/v4/queries/models/get_model_access_complete.sql": (
         "GetModelAccessSqlParams",
         "GetModelAccessSqlRow",
         "GetModelAccessApiRequest",
         "GetModelAccessApiResponse",
+    ),
+    "app/sql/v4/queries/models/get_model_complete.sql": (
+        "GetModelSqlParams",
+        "GetModelSqlRow",
+        "GetModelApiRequest",
+        "GetModelApiResponse",
+    ),
+    "app/sql/v4/queries/models/get_model_ids_complete.sql": (
+        "GetModelIdsSqlParams",
+        "GetModelIdsSqlRow",
+        "GetModelIdsApiRequest",
+        "GetModelIdsApiResponse",
+    ),
+    "app/sql/v4/queries/models/list_models_complete.sql": (
+        "ListModelsSqlParams",
+        "ListModelsSqlRow",
+        "ListModelsApiRequest",
+        "ListModelsApiResponse",
     ),
     "app/sql/v4/queries/models/patch_model_draft_complete.sql": (
         "PatchModelDraftSqlParams",
@@ -25433,6 +28997,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetPersonasListApiRequest",
         "GetPersonasListApiResponse",
     ),
+    "app/sql/v4/queries/personas/patch_persona_draft_complete.sql": (
+        "PatchPersonaDraftSqlParams",
+        "PatchPersonaDraftSqlRow",
+        "PatchPersonaDraftApiRequest",
+        "PatchPersonaDraftApiResponse",
+    ),
     "app/sql/v4/queries/personas/save_persona_complete.sql": (
         "SavePersonaSqlParams",
         "SavePersonaSqlRow",
@@ -25589,11 +29159,29 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "ValidateProfileResourceProgressApiRequest",
         "ValidateProfileResourceProgressApiResponse",
     ),
+    "app/sql/v4/queries/providers/check_provider_delete_access_complete.sql": (
+        "CheckProviderDeleteAccessSqlParams",
+        "CheckProviderDeleteAccessSqlRow",
+        "CheckProviderDeleteAccessApiRequest",
+        "CheckProviderDeleteAccessApiResponse",
+    ),
     "app/sql/v4/queries/providers/check_provider_duplicate_access_complete.sql": (
         "CheckProviderDuplicateAccessSqlParams",
         "CheckProviderDuplicateAccessSqlRow",
         "CheckProviderDuplicateAccessApiRequest",
         "CheckProviderDuplicateAccessApiResponse",
+    ),
+    "app/sql/v4/queries/providers/check_provider_save_access_complete.sql": (
+        "CheckProviderSaveAccessSqlParams",
+        "CheckProviderSaveAccessSqlRow",
+        "CheckProviderSaveAccessApiRequest",
+        "CheckProviderSaveAccessApiResponse",
+    ),
+    "app/sql/v4/queries/providers/delete_provider_complete.sql": (
+        "DeleteProviderSqlParams",
+        "DeleteProviderSqlRow",
+        "DeleteProviderApiRequest",
+        "DeleteProviderApiResponse",
     ),
     "app/sql/v4/queries/providers/duplicate_provider_complete.sql": (
         "DuplicateProviderSqlParams",
@@ -25601,11 +29189,23 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "DuplicateProviderApiRequest",
         "DuplicateProviderApiResponse",
     ),
+    "app/sql/v4/queries/providers/get_provider_access_complete.sql": (
+        "GetProviderAccessSqlParams",
+        "GetProviderAccessSqlRow",
+        "GetProviderAccessApiRequest",
+        "GetProviderAccessApiResponse",
+    ),
     "app/sql/v4/queries/providers/get_provider_ids_complete.sql": (
         "GetProviderIdsSqlParams",
         "GetProviderIdsSqlRow",
         "GetProviderIdsApiRequest",
         "GetProviderIdsApiResponse",
+    ),
+    "app/sql/v4/queries/providers/get_providers_list_complete.sql": (
+        "GetProvidersListSqlParams",
+        "GetProvidersListSqlRow",
+        "GetProvidersListApiRequest",
+        "GetProvidersListApiResponse",
     ),
     "app/sql/v4/queries/providers/patch_provider_draft_complete.sql": (
         "PatchProviderDraftSqlParams",
@@ -26429,6 +30029,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetStandardsApiRequest",
         "GetStandardsApiResponse",
     ),
+    "app/sql/v4/queries/resources/temperature_levels/get_temperature_levels_complete.sql": (
+        "GetTemperatureLevelsSqlParams",
+        "GetTemperatureLevelsSqlRow",
+        "GetTemperatureLevelsApiRequest",
+        "GetTemperatureLevelsApiResponse",
+    ),
+    "app/sql/v4/queries/resources/temperature_levels/search_temperature_levels_complete.sql": (
+        "SearchTemperatureLevelsSqlParams",
+        "SearchTemperatureLevelsSqlRow",
+        "SearchTemperatureLevelsApiRequest",
+        "SearchTemperatureLevelsApiResponse",
+    ),
     "app/sql/v4/queries/resources/templates/get_template_complete.sql": (
         "GetTemplateSqlParams",
         "GetTemplateSqlRow",
@@ -26747,6 +30359,24 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetSettingAccessApiRequest",
         "GetSettingAccessApiResponse",
     ),
+    "app/sql/v4/queries/settings/get_setting_complete.sql": (
+        "GetSettingSqlParams",
+        "GetSettingSqlRow",
+        "GetSettingApiRequest",
+        "GetSettingApiResponse",
+    ),
+    "app/sql/v4/queries/settings/get_setting_ids_complete.sql": (
+        "GetSettingIdsSqlParams",
+        "GetSettingIdsSqlRow",
+        "GetSettingIdsApiRequest",
+        "GetSettingIdsApiResponse",
+    ),
+    "app/sql/v4/queries/settings/get_settings_list_complete.sql": (
+        "GetSettingsListSqlParams",
+        "GetSettingsListSqlRow",
+        "GetSettingsListApiRequest",
+        "GetSettingsListApiResponse",
+    ),
     "app/sql/v4/queries/settings/patch_setting_draft_complete.sql": (
         "PatchSettingDraftSqlParams",
         "PatchSettingDraftSqlRow",
@@ -26831,6 +30461,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetSimulationResourceIdsByGroupIdApiRequest",
         "GetSimulationResourceIdsByGroupIdApiResponse",
     ),
+    "app/sql/v4/queries/simulations/get_simulation_run_context_complete.sql": (
+        "GetSimulationRunContextSqlParams",
+        "GetSimulationRunContextSqlRow",
+        "GetSimulationRunContextApiRequest",
+        "GetSimulationRunContextApiResponse",
+    ),
     "app/sql/v4/queries/simulations/get_simulations_list_complete.sql": (
         "GetSimulationsListSqlParams",
         "GetSimulationsListSqlRow",
@@ -26854,6 +30490,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SimulationTextStopRunSqlRow",
         "SimulationTextStopRunApiRequest",
         "SimulationTextStopRunApiResponse",
+    ),
+    "app/sql/v4/queries/simulations/start_simulation_attempt_complete.sql": (
+        "StartSimulationAttemptSqlParams",
+        "StartSimulationAttemptSqlRow",
+        "StartSimulationAttemptApiRequest",
+        "StartSimulationAttemptApiResponse",
     ),
     "app/sql/v4/queries/simulations/validate_simulation_resource_error_complete.sql": (
         "ValidateSimulationResourceErrorSqlParams",
@@ -27041,6 +30683,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "CreateGenerationAndLinkApiRequest",
         "CreateGenerationAndLinkApiResponse",
     ),
+    "app/sql/v4/queries/videos/get_video_run_context_and_create_run_complete.sql": (
+        "GetVideoRunContextAndCreateRunSqlParams",
+        "GetVideoRunContextAndCreateRunSqlRow",
+        "GetVideoRunContextAndCreateRunApiRequest",
+        "GetVideoRunContextAndCreateRunApiResponse",
+    ),
     "app/sql/v4/queries/views/analytics/chat_facts/get_analytics_chat_facts_view_complete.sql": (
         "GetAnalyticsChatFactsViewSqlParams",
         "GetAnalyticsChatFactsViewSqlRow",
@@ -27100,6 +30748,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetSimulationScenarioCountsSqlRow",
         "GetSimulationScenarioCountsApiRequest",
         "GetSimulationScenarioCountsApiResponse",
+    ),
+    "app/sql/v4/queries/views/config/get_config_view_complete.sql": (
+        "GetConfigViewSqlParams",
+        "GetConfigViewSqlRow",
+        "GetConfigViewApiRequest",
+        "GetConfigViewApiResponse",
     ),
     "app/sql/v4/queries/views/drafts/get_draft_resources_view_complete.sql": (
         "GetDraftResourcesViewSqlParams",
@@ -27216,7 +30870,17 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/agents/get_agent_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/agents/get_agent_ids_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/agents/get_agent_model_info_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -27401,6 +31065,16 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/audio/get_audio_run_context_and_create_run_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/audio/get_voice_session_context_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/auth/check_auth_delete_access_complete.sql"]
     ) -> SqlString: ...
 
@@ -27566,6 +31240,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/departments/get_department_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/departments/get_department_ids_complete.sql"]
     ) -> SqlString: ...
 
@@ -27662,6 +31341,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/documents/get_document_ids_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/documents/get_document_run_context_and_create_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -27801,6 +31485,16 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/attempt/get_attempt_grade_context_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/attempt/get_attempt_message_context_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/generate/attempt/prepare_attempt_grade_complete.sql"]
     ) -> SqlString: ...
 
@@ -27831,6 +31525,21 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/parameter/get_parameter_generation_context_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/parameter/prepare_parameter_generation_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/persona/get_persona_generation_context_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/generate/persona/insert_generation_messages_complete.sql"]
     ) -> SqlString: ...
 
@@ -27846,7 +31555,17 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/test/get_test_run_context_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/generate/test/prepare_test_run_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/text/get_text_run_context_for_existing_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -27856,7 +31575,22 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/tool/get_tool_generation_context_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/generate/training/get_training_simulations_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/training/get_training_start_context_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/training/prepare_training_generation_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -27867,6 +31601,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/images/complete_image_generation_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/images/get_image_generation_context_and_create_upload_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -28161,7 +31900,27 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/models/duplicate_model_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/models/get_model_access_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/models/get_model_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/models/get_model_ids_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/models/list_models_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -28306,6 +32065,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/personas/patch_persona_draft_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/personas/save_persona_complete.sql"]
     ) -> SqlString: ...
 
@@ -28436,7 +32200,22 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/providers/check_provider_delete_access_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/providers/check_provider_duplicate_access_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/providers/check_provider_save_access_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/providers/delete_provider_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -28446,7 +32225,17 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/providers/get_provider_access_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/providers/get_provider_ids_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/providers/get_providers_list_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -29136,6 +32925,16 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/temperature_levels/get_temperature_levels_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/temperature_levels/search_temperature_levels_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/templates/get_template_complete.sql"]
     ) -> SqlString: ...
 
@@ -29401,6 +33200,21 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/settings/get_setting_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/settings/get_setting_ids_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/settings/get_settings_list_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/settings/patch_setting_draft_complete.sql"]
     ) -> SqlString: ...
 
@@ -29471,6 +33285,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/simulations/get_simulation_run_context_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/simulations/get_simulations_list_complete.sql"]
     ) -> SqlString: ...
 
@@ -29487,6 +33306,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/simulations/simulation_text_stop_run_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/simulations/start_simulation_attempt_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -29646,6 +33470,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/videos/get_video_run_context_and_create_run_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/views/analytics/chat_facts/get_analytics_chat_facts_view_complete.sql"]
     ) -> SqlString: ...
 
@@ -29692,6 +33521,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/views/analytics/simulation_scenario_counts/get_simulation_scenario_counts_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/views/config/get_config_view_complete.sql"]
     ) -> SqlString: ...
 
     @overload

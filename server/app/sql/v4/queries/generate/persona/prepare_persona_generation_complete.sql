@@ -182,54 +182,18 @@ BEGIN
     INSERT INTO profile_runs_junction (profile_id, run_id)
     VALUES (p_profile_id, v_run_id);
 
-    -- Resolve active settings (for API key lookup)
-    SELECT COALESCE(
-        (SELECT s.id FROM setting_artifact s
-         JOIN department_settings_junction sd ON sd.settings_id = s.id
-         JOIN profile_departments_junction pd ON sd.department_id = pd.department_id
-         JOIN setting_provider_keys_junction spk ON spk.settings_id = s.id
-         JOIN keys_resource kr ON kr.id = spk.key_id
-         WHERE pd.profile_id = p_profile_id AND pd.is_primary = TRUE AND pd.active = true
-           AND EXISTS (SELECT 1 FROM setting_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = TRUE)
-           AND sd.active = true AND spk.active = true AND kr.active
-         LIMIT 1),
-        (SELECT s.id FROM setting_artifact s
-         JOIN setting_provider_keys_junction spk ON spk.settings_id = s.id
-         JOIN keys_resource kr ON kr.id = spk.key_id
-         WHERE EXISTS (SELECT 1 FROM setting_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = TRUE)
-           AND NOT EXISTS (SELECT 1 FROM department_settings_junction sd WHERE sd.settings_id = s.id AND sd.active = true)
-           AND spk.active = true AND kr.active
-         LIMIT 1),
-        (SELECT DISTINCT spk.settings_id FROM setting_provider_keys_junction spk
-         JOIN keys_resource kr ON kr.id = spk.key_id
-         WHERE spk.active = true AND kr.active
-         LIMIT 1),
-        (SELECT s.id FROM setting_artifact s
-         JOIN department_settings_junction sd ON sd.settings_id = s.id
-         JOIN profile_departments_junction pd ON sd.department_id = pd.department_id
-         WHERE pd.profile_id = p_profile_id AND pd.is_primary = TRUE AND pd.active = true
-           AND EXISTS (SELECT 1 FROM setting_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = TRUE)
-           AND sd.active = true
-         LIMIT 1),
-        (SELECT s.id FROM setting_artifact s
-         WHERE EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'scenario_active' AND sf.value = true)
-           AND NOT EXISTS (SELECT 1 FROM department_settings_junction sd WHERE sd.settings_id = s.id AND sd.active = true)
-         LIMIT 1),
-        (SELECT id FROM setting_artifact WHERE EXISTS (SELECT 1 FROM setting_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = setting_artifact.id AND f.name = 'setting_active' AND sf.value = TRUE) LIMIT 1)
-    ) INTO v_settings_id;
-
     -- Fetch context data (agent/model config)
     SELECT
         (SELECT n.name FROM agent_names_junction an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1),
         COALESCE(pr_prompt.system_prompt, ''),
-        COALESCE(tl.temperature, 0.0),
-        rl.reasoning_level,
+        COALESCE(ar.temperature, 0.0),
+        ar.reasoning,
         m.value,
         COALESCE(n_prov.name, ''),
-        COALESCE(e.base_url, ''),
-        kr.key,
-        NULL::text,
-        NULL::text
+        COALESCE(m.endpoint, ''),
+        m.key,
+        ar.voice,
+        ar.quality
     INTO
         v_agent_name,
         v_system_prompt,
@@ -245,33 +209,15 @@ BEGIN
     -- Agent prompt
     LEFT JOIN agent_prompts_junction ap_default ON ap_default.agent_id = a.id AND ap_default.active = true
     LEFT JOIN prompts_resource pr_prompt ON pr_prompt.id = ap_default.prompt_id
-    -- Model chain
-    INNER JOIN agent_models_junction am ON am.agent_id = a.id
-    INNER JOIN model_artifact ma ON ma.id = am.model_id
-    INNER JOIN model_models_junction mmj ON mmj.model_id = ma.id
-    INNER JOIN models_resource m ON m.id = mmj.models_id
-    -- Temperature
-    LEFT JOIN agent_temperature_levels_junction atl ON atl.agent_id = a.id AND atl.active = true
-    LEFT JOIN model_temperature_levels_junction mtl ON mtl.temperature_level_id = atl.temperature_level_id AND mtl.model_id = ma.id
-    LEFT JOIN temperature_levels_resource tl ON tl.id = mtl.temperature_level_id AND tl.active = true
-    -- Reasoning
-    LEFT JOIN agent_reasoning_levels_junction arl ON arl.agent_id = a.id AND arl.active = true
-    LEFT JOIN model_reasoning_levels_junction mrl ON mrl.reasoning_level_id = arl.reasoning_level_id AND mrl.model_id = ma.id
-    LEFT JOIN reasoning_levels_resource rl ON rl.id = mrl.reasoning_level_id AND rl.active = true
-    -- Endpoint
-    LEFT JOIN model_endpoints_junction me_j ON me_j.model_id = ma.id
-    LEFT JOIN endpoints_resource e ON e.id = me_j.endpoint_id AND e.active = true
-    -- API key via provider -> settings -> keys
-    LEFT JOIN model_providers_junction mp ON mp.model_id = ma.id
-    LEFT JOIN providers_resource p_prov ON p_prov.id = mp.providers_id
-    LEFT JOIN provider_providers_junction ppj ON ppj.providers_id = p_prov.id
-    LEFT JOIN provider_artifact pr_prov ON pr_prov.id = ppj.provider_id
+    -- Model chain (via denormalized agents_resource.model_id)
+    INNER JOIN agent_agents_junction aaj ON aaj.agent_id = a.id AND aaj.active = true
+    INNER JOIN agents_resource ar ON ar.id = aaj.agents_id
+    INNER JOIN models_resource m ON m.id = ar.model_id
+    -- Provider (via provider_models_junction)
+    LEFT JOIN provider_models_junction pmj ON pmj.model_id = m.id
+    LEFT JOIN provider_artifact pr_prov ON pr_prov.id = pmj.provider_id
     LEFT JOIN provider_names_junction pn_prov ON pn_prov.provider_id = pr_prov.id
     LEFT JOIN names_resource n_prov ON n_prov.id = pn_prov.name_id
-    LEFT JOIN setting_provider_keys_junction spk ON spk.providers_id = p_prov.id
-        AND spk.settings_id = v_settings_id
-        AND spk.active = true
-    LEFT JOIN keys_resource kr ON kr.id = spk.key_id AND kr.active
     WHERE a.id = v_agent_id;
 
     -- Fetch tools

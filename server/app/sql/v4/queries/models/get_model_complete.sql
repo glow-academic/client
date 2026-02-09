@@ -1010,7 +1010,7 @@ model_all_keys AS (
     -- For detail mode: Get keys via settings system: settings -> provider -> key
     -- For each department that has this model, get keys from their settings
     SELECT DISTINCT
-        spk.key_id,
+        pkr.key_id,
         kr.name as name,
         kr.key,
         kr.description as description,
@@ -1023,16 +1023,15 @@ model_all_keys AS (
     LEFT JOIN provider_artifact pr ON pr.id = pm.provider_id
     LEFT JOIN provider_providers_junction ppj ON ppj.provider_id = pr.id
     LEFT JOIN providers_resource p ON p.id = ppj.providers_id
-    LEFT JOIN provider_names_junction pn ON pn.provider_id = pr.id
-    LEFT JOIN names_resource n_prov ON n_prov.id = pn.name_id
-    JOIN setting_provider_keys_junction spk ON spk.providers_id = p.id AND spk.active = true
-    JOIN keys_resource kr ON kr.id = spk.key_id AND kr.active
-    JOIN setting_artifact s ON s.id = spk.settings_id AND EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'scenario_active' AND sf.value = true)
+    JOIN provider_keys_resource pkr ON pkr.provider_id = p.id AND pkr.active = true
+    JOIN keys_resource kr ON kr.id = pkr.key_id AND kr.active
+    JOIN setting_provider_keys_junction spk ON spk.provider_key_id = pkr.id AND spk.active = true
+    JOIN setting_artifact s ON s.id = spk.setting_id AND EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'scenario_active' AND sf.value = true)
     JOIN department_settings_junction ds ON ds.settings_id = s.id AND ds.active = true
     WHERE m.id = (SELECT model_id FROM params)
     AND (SELECT model_id FROM params) IS NOT NULL
     AND ds.active = true
-    GROUP BY spk.key_id, kr.name, kr.key, kr.description, kr.active
+    GROUP BY pkr.key_id, kr.name, kr.key, kr.description, kr.active
     
     UNION ALL
     
@@ -1051,30 +1050,33 @@ model_all_keys AS (
     AND (
         (SELECT model_id FROM params) IS NULL
         OR NOT EXISTS (
-            -- Exclude keys already included via setting_provider_keys_junction for this model's provider
+            -- Exclude keys already included via provider_keys for this model's provider
             SELECT 1 FROM model_artifact m2
             JOIN model_models_junction mmj2 ON mmj2.model_id = m2.id
             JOIN provider_models_junction pm2 ON pm2.model_id = mmj2.models_id
             JOIN provider_providers_junction ppj2 ON ppj2.provider_id = pm2.provider_id
             JOIN providers_resource p2 ON p2.id = ppj2.providers_id
-            JOIN setting_provider_keys_junction spk2 ON spk2.providers_id = p2.id AND spk2.key_id = kr.id AND spk2.active = true
+            JOIN provider_keys_resource pkr2 ON pkr2.provider_id = p2.id AND pkr2.key_id = kr.id AND pkr2.active = true
+            JOIN setting_provider_keys_junction spk2 ON spk2.provider_key_id = pkr2.id AND spk2.active = true
             WHERE m2.id = (SELECT model_id FROM params)
         )
     )
     AND (
         -- Include keys with no settings links (general keys)
         NOT EXISTS (
-            SELECT 1 FROM setting_provider_keys_junction spk3
-            WHERE spk3.key_id = kr.id AND spk3.active = true
+            SELECT 1 FROM provider_keys_resource pkr3
+            JOIN setting_provider_keys_junction spk3 ON spk3.provider_key_id = pkr3.id AND spk3.active = true
+            WHERE pkr3.key_id = kr.id
         )
         OR
         -- Include keys with settings links that match user's departments
         EXISTS (
-            SELECT 1 FROM setting_provider_keys_junction spk4
-            JOIN setting_artifact s4 ON s4.id = spk4.settings_id AND EXISTS (SELECT 1 FROM setting_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s4.id AND f.name = 'setting_active' AND sf.value = TRUE)
+            SELECT 1 FROM provider_keys_resource pkr4
+            JOIN setting_provider_keys_junction spk4 ON spk4.provider_key_id = pkr4.id AND spk4.active = true
+            JOIN setting_artifact s4 ON s4.id = spk4.setting_id AND EXISTS (SELECT 1 FROM setting_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s4.id AND f.name = 'setting_active' AND sf.value = TRUE)
             JOIN department_settings_junction ds4 ON ds4.settings_id = s4.id AND ds4.active = true
             JOIN user_departments ud ON ud.department_id = ds4.department_id
-            WHERE spk4.key_id = kr.id AND spk4.active = true
+            WHERE pkr4.key_id = kr.id
         )
         OR
         -- Superadmin can see all keys
