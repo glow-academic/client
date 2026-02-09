@@ -308,7 +308,9 @@ async def get_persona_internal(
     instructions_show_ai_generate = compute_show_ai_generate(agent_ids, "instructions")
     flag_show_ai_generate = compute_show_ai_generate(agent_ids, "flags")
     departments_show_ai_generate = compute_show_ai_generate(agent_ids, "departments")
-    parameter_fields_show_ai_generate = compute_show_ai_generate(agent_ids, "parameter_fields")
+    parameter_fields_show_ai_generate = compute_show_ai_generate(
+        agent_ids, "parameter_fields"
+    )
     examples_show_ai_generate = compute_show_ai_generate(agent_ids, "examples")
     parameters_show_ai_generate = compute_show_ai_generate(agent_ids, "parameters")
 
@@ -877,56 +879,36 @@ async def get_persona_client(
         # Per-resource sections
         names=PersonaNameSection(
             **_section_common("names"),
-            resource=(
-                current.names[0]
-                if current and current.names
-                else None
-            ),
+            resource=(current.names[0] if current and current.names else None),
             resources=all_resources.names if all_resources else [],
         ),
         descriptions=PersonaDescriptionSection(
             **_section_common("descriptions"),
             resource=(
-                current.descriptions[0]
-                if current and current.descriptions
-                else None
+                current.descriptions[0] if current and current.descriptions else None
             ),
             resources=all_resources.descriptions if all_resources else [],
         ),
         colors=PersonaColorSection(
             **_section_common("colors"),
-            resource=(
-                current.colors[0]
-                if current and current.colors
-                else None
-            ),
+            resource=(current.colors[0] if current and current.colors else None),
             resources=all_resources.colors if all_resources else [],
         ),
         icons=PersonaIconSection(
             **_section_common("icons"),
-            resource=(
-                current.icons[0]
-                if current and current.icons
-                else None
-            ),
+            resource=(current.icons[0] if current and current.icons else None),
             resources=all_resources.icons if all_resources else [],
         ),
         instructions=PersonaInstructionSection(
             **_section_common("instructions"),
             resource=(
-                current.instructions[0]
-                if current and current.instructions
-                else None
+                current.instructions[0] if current and current.instructions else None
             ),
             resources=all_resources.instructions if all_resources else [],
         ),
         flags=PersonaFlagSection(
             **_section_common("flags"),
-            current=(
-                current.flags[0]
-                if current and current.flags
-                else None
-            ),
+            current=(current.flags[0] if current and current.flags else None),
             resources=all_resources.flags if all_resources else [],
         ),
         departments=PersonaDepartmentSection(
@@ -937,9 +919,7 @@ async def get_persona_client(
         parameter_fields=PersonaParameterFieldSection(
             **_section_common("parameter_fields"),
             current=current.parameter_fields if current else [],
-            resources=(
-                all_resources.parameter_fields if all_resources else []
-            ),
+            resources=(all_resources.parameter_fields if all_resources else []),
         ),
         examples=PersonaExampleSection(
             **_section_common("examples"),
@@ -952,7 +932,6 @@ async def get_persona_client(
             resources=all_resources.parameters if all_resources else [],
         ),
     )
-
 
 
 def _dedupe_by_id(items: list[Any], id_attr: str) -> list[Any]:

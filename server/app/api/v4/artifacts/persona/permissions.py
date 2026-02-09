@@ -386,9 +386,7 @@ PERSONA_GENERAL_RESOURCES: set[str] = PERSONA_RESOURCES  # All resources
 # ========== Business Logic Helpers ==========
 
 
-def compute_show_ai_generate(
-    agent_ids: dict[str, UUID | None], resource: str
-) -> bool:
+def compute_show_ai_generate(agent_ids: dict[str, UUID | None], resource: str) -> bool:
     """Returns True if an agent exists for that resource."""
     return agent_ids.get(resource) is not None
 

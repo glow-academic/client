@@ -80,7 +80,9 @@ def test_personas_cache_revalidation_and_no_double_fetch(
     page: Page, base_url: str
 ) -> None:
     """Ensure default detail fetch happens once and mutations revalidate list data."""
-    detail_counter, stop_counter = _set_request_counter(page, "/api/v4/artifacts/personas/new")
+    detail_counter, stop_counter = _set_request_counter(
+        page, "/api/v4/artifacts/personas/new"
+    )
     page.goto(f"{base_url}/training/personas/new")
     page.wait_for_load_state("networkidle")
     stop_counter()

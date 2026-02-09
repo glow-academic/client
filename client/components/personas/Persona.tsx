@@ -233,6 +233,18 @@ function PersonaComponent({
     []
   );
 
+  // Derive groupId from first non-null section group_id
+  const groupId = personaData?.names?.group_id
+    ?? personaData?.descriptions?.group_id
+    ?? personaData?.colors?.group_id
+    ?? personaData?.icons?.group_id
+    ?? personaData?.instructions?.group_id
+    ?? personaData?.flags?.group_id
+    ?? personaData?.departments?.group_id
+    ?? personaData?.parameter_fields?.group_id
+    ?? personaData?.examples?.group_id
+    ?? personaData?.parameters?.group_id;
+
   const {
     setGeneratingResources,
     isGenerating,
@@ -242,7 +254,7 @@ function PersonaComponent({
     socket,
     isConnected,
     artifactType: "persona",
-    groupId: personaData?.group_id,
+    groupId,
     eventPrefix: "persona_generation",
     validResourceTypes: VALID_RESOURCE_TYPES,
     onComplete: onAiComplete,
@@ -272,168 +284,120 @@ function PersonaComponent({
 
   const stablePersonaDataFields = React.useMemo(() => {
     if (!personaData) return null;
-    const resources = personaData.resources?.resources;
-    const current = personaData.resources?.current;
     return {
-      group_id: personaData.group_id,
-      name_resource: current?.names?.[0] ?? null,
-      show_name: personaData.show_name,
-      name_suggestions: personaData.name_suggestions,
-      names: resources?.names ?? [],
-      name_required: personaData.name_required,
-      name_show_ai_generate: personaData.name_show_ai_generate,
-      description_resource: current?.descriptions?.[0] ?? null,
-      show_description: personaData.show_description,
-      description_suggestions: personaData.description_suggestions,
-      description_required: personaData.description_required,
-      description_show_ai_generate: personaData.description_show_ai_generate,
-      descriptions: resources?.descriptions ?? [],
-      department_resources: current?.departments ?? [],
-      show_departments: personaData.show_departments,
-      department_suggestions: personaData.department_suggestions,
-      departments_required: personaData.departments_required,
-      departments_show_ai_generate: personaData.departments_show_ai_generate,
-      departments: resources?.departments ?? [],
-      flags: resources?.flags ?? [],
-      show_flag: personaData.show_flag,
-      flag_show_ai_generate: personaData.flag_show_ai_generate,
-      parameter_field_resources: current?.parameter_fields ?? [],
-      show_parameter_fields: personaData.show_parameter_fields,
-      parameter_field_suggestions: personaData.parameter_field_suggestions,
-      parameter_fields_required: personaData.parameter_fields_required,
-      parameter_fields_show_ai_generate: personaData.parameter_fields_show_ai_generate,
-      parameter_fields: resources?.parameter_fields ?? [],
-      color_resource: current?.colors?.[0] ?? null,
-      show_color: personaData.show_color,
-      color_suggestions: personaData.color_suggestions,
-      color_required: personaData.color_required,
-      color_show_ai_generate: personaData.color_show_ai_generate,
-      colors: resources?.colors ?? [],
-      icon_resource: current?.icons?.[0] ?? null,
-      show_icon: personaData.show_icon,
-      icon_suggestions: personaData.icon_suggestions,
-      icon_required: personaData.icon_required,
-      icon_show_ai_generate: personaData.icon_show_ai_generate,
-      icons: resources?.icons ?? [],
-      instructions_resource: current?.instructions?.[0] ?? null,
-      show_instructions: personaData.show_instructions,
-      instructions_suggestions: personaData.instructions_suggestions,
-      instructions_required: personaData.instructions_required,
-      instructions_show_ai_generate: personaData.instructions_show_ai_generate,
-      instructions: resources?.instructions ?? [],
-      example_resources: current?.examples ?? [],
-      show_examples: personaData.show_examples,
-      example_suggestions: personaData.example_suggestions,
-      examples_required: personaData.examples_required,
-      examples_show_ai_generate: personaData.examples_show_ai_generate,
-      examples: resources?.examples ?? [],
-      parameter_resources: current?.parameters ?? [],
-      show_parameters: personaData.show_parameters,
-      parameter_suggestions: personaData.parameter_suggestions,
-      parameters_required: personaData.parameters_required,
-      parameters_show_ai_generate: personaData.parameters_show_ai_generate,
-      parameters: resources?.parameters ?? [],
+      // Section-based fields
+      name_resource: personaData.names?.resource ?? null,
+      show_name: personaData.names?.show,
+      name_suggestions: personaData.names?.suggestions,
+      names: personaData.names?.resources ?? [],
+      name_required: personaData.names?.required,
+      name_show_ai_generate: personaData.names?.show_ai_generate,
+      names_group_id: personaData.names?.group_id,
+      name_create_tool_id: personaData.names?.create_tool_id,
+      name_link_tool_id: personaData.names?.link_tool_id,
+
+      description_resource: personaData.descriptions?.resource ?? null,
+      show_description: personaData.descriptions?.show,
+      description_suggestions: personaData.descriptions?.suggestions,
+      description_required: personaData.descriptions?.required,
+      description_show_ai_generate: personaData.descriptions?.show_ai_generate,
+      descriptions: personaData.descriptions?.resources ?? [],
+      descriptions_group_id: personaData.descriptions?.group_id,
+      description_create_tool_id: personaData.descriptions?.create_tool_id,
+      description_link_tool_id: personaData.descriptions?.link_tool_id,
+
+      department_resources: personaData.departments?.current ?? [],
+      show_departments: personaData.departments?.show,
+      department_suggestions: personaData.departments?.suggestions,
+      departments_required: personaData.departments?.required,
+      departments_show_ai_generate: personaData.departments?.show_ai_generate,
+      departments: personaData.departments?.resources ?? [],
+      departments_group_id: personaData.departments?.group_id,
+      departments_link_tool_id: personaData.departments?.link_tool_id,
+
+      flags: personaData.flags?.resources ?? [],
+      show_flag: personaData.flags?.show,
+      flag_show_ai_generate: personaData.flags?.show_ai_generate,
+      flags_group_id: personaData.flags?.group_id,
+      flag_link_tool_id: personaData.flags?.link_tool_id,
+
+      parameter_field_resources: personaData.parameter_fields?.current ?? [],
+      show_parameter_fields: personaData.parameter_fields?.show,
+      parameter_field_suggestions: personaData.parameter_fields?.suggestions,
+      parameter_fields_required: personaData.parameter_fields?.required,
+      parameter_fields_show_ai_generate: personaData.parameter_fields?.show_ai_generate,
+      parameter_fields: personaData.parameter_fields?.resources ?? [],
+      parameter_fields_group_id: personaData.parameter_fields?.group_id,
+      parameter_fields_create_tool_id: personaData.parameter_fields?.create_tool_id,
+      parameter_fields_link_tool_id: personaData.parameter_fields?.link_tool_id,
+
+      color_resource: personaData.colors?.resource ?? null,
+      show_color: personaData.colors?.show,
+      color_suggestions: personaData.colors?.suggestions,
+      color_required: personaData.colors?.required,
+      color_show_ai_generate: personaData.colors?.show_ai_generate,
+      colors: personaData.colors?.resources ?? [],
+      colors_group_id: personaData.colors?.group_id,
+      color_create_tool_id: personaData.colors?.create_tool_id,
+      color_link_tool_id: personaData.colors?.link_tool_id,
+
+      icon_resource: personaData.icons?.resource ?? null,
+      show_icon: personaData.icons?.show,
+      icon_suggestions: personaData.icons?.suggestions,
+      icon_required: personaData.icons?.required,
+      icon_show_ai_generate: personaData.icons?.show_ai_generate,
+      icons: personaData.icons?.resources ?? [],
+      icons_group_id: personaData.icons?.group_id,
+      icon_link_tool_id: personaData.icons?.link_tool_id,
+
+      instructions_resource: personaData.instructions?.resource ?? null,
+      show_instructions: personaData.instructions?.show,
+      instructions_suggestions: personaData.instructions?.suggestions,
+      instructions_required: personaData.instructions?.required,
+      instructions_show_ai_generate: personaData.instructions?.show_ai_generate,
+      instructions: personaData.instructions?.resources ?? [],
+      instructions_group_id: personaData.instructions?.group_id,
+      instructions_create_tool_id: personaData.instructions?.create_tool_id,
+      instructions_link_tool_id: personaData.instructions?.link_tool_id,
+
+      example_resources: personaData.examples?.current ?? [],
+      show_examples: personaData.examples?.show,
+      example_suggestions: personaData.examples?.suggestions,
+      examples_required: personaData.examples?.required,
+      examples_show_ai_generate: personaData.examples?.show_ai_generate,
+      examples: personaData.examples?.resources ?? [],
+      examples_group_id: personaData.examples?.group_id,
+      examples_create_tool_id: personaData.examples?.create_tool_id,
+      examples_link_tool_id: personaData.examples?.link_tool_id,
+
+      parameter_resources: personaData.parameters?.current ?? [],
+      show_parameters: personaData.parameters?.show,
+      parameter_suggestions: personaData.parameters?.suggestions,
+      parameters_required: personaData.parameters?.required,
+      parameters_show_ai_generate: personaData.parameters?.show_ai_generate,
+      parameters: personaData.parameters?.resources ?? [],
+      parameters_group_id: personaData.parameters?.group_id,
+      parameters_link_tool_id: personaData.parameters?.link_tool_id,
+
       basic_show_ai_generate: personaData.basic_show_ai_generate,
       content_show_ai_generate: personaData.content_show_ai_generate,
       parameters_step_show_ai_generate: personaData.parameters_step_show_ai_generate,
-      names_group_id: personaData.names_group_id,
-      descriptions_group_id: personaData.descriptions_group_id,
-      colors_group_id: personaData.colors_group_id,
-      icons_group_id: personaData.icons_group_id,
-      instructions_group_id: personaData.instructions_group_id,
-      flags_group_id: personaData.flags_group_id,
-      departments_group_id: personaData.departments_group_id,
-      parameter_fields_group_id: personaData.parameter_fields_group_id,
-      examples_group_id: personaData.examples_group_id,
-      parameters_group_id: personaData.parameters_group_id,
-      name_create_tool_id: personaData.name_create_tool_id,
-      description_create_tool_id: personaData.description_create_tool_id,
-      color_create_tool_id: personaData.color_create_tool_id,
-      instructions_create_tool_id: personaData.instructions_create_tool_id,
-      parameter_fields_create_tool_id: personaData.parameter_fields_create_tool_id,
-      examples_create_tool_id: personaData.examples_create_tool_id,
-      name_link_tool_id: personaData.name_link_tool_id,
-      description_link_tool_id: personaData.description_link_tool_id,
-      color_link_tool_id: personaData.color_link_tool_id,
-      icon_link_tool_id: personaData.icon_link_tool_id,
-      instructions_link_tool_id: personaData.instructions_link_tool_id,
-      flag_link_tool_id: personaData.flag_link_tool_id,
-      departments_link_tool_id: personaData.departments_link_tool_id,
-      parameter_fields_link_tool_id: personaData.parameter_fields_link_tool_id,
-      examples_link_tool_id: personaData.examples_link_tool_id,
-      parameters_link_tool_id: personaData.parameters_link_tool_id,
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    personaData?.group_id,
-    personaData?.resources,
-    personaData?.show_name,
-    personaData?.name_suggestions,
-    personaData?.name_required,
-    personaData?.name_show_ai_generate,
-    personaData?.show_description,
-    personaData?.description_suggestions,
-    personaData?.description_required,
-    personaData?.description_show_ai_generate,
-    personaData?.show_departments,
-    personaData?.department_suggestions,
-    personaData?.departments_required,
-    personaData?.departments_show_ai_generate,
-    personaData?.show_flag,
-    personaData?.flag_show_ai_generate,
-    personaData?.show_parameter_fields,
-    personaData?.parameter_field_suggestions,
-    personaData?.parameter_fields_required,
-    personaData?.parameter_fields_show_ai_generate,
-    personaData?.show_color,
-    personaData?.color_suggestions,
-    personaData?.color_required,
-    personaData?.color_show_ai_generate,
-    personaData?.show_icon,
-    personaData?.icon_suggestions,
-    personaData?.icon_required,
-    personaData?.icon_show_ai_generate,
-    personaData?.show_instructions,
-    personaData?.instructions_suggestions,
-    personaData?.instructions_required,
-    personaData?.instructions_show_ai_generate,
-    personaData?.show_examples,
-    personaData?.example_suggestions,
-    personaData?.examples_required,
-    personaData?.examples_show_ai_generate,
-    personaData?.show_parameters,
-    personaData?.parameter_suggestions,
-    personaData?.parameters_required,
-    personaData?.parameters_show_ai_generate,
+    personaData?.names,
+    personaData?.descriptions,
+    personaData?.colors,
+    personaData?.icons,
+    personaData?.instructions,
+    personaData?.flags,
+    personaData?.departments,
+    personaData?.parameter_fields,
+    personaData?.examples,
+    personaData?.parameters,
     personaData?.basic_show_ai_generate,
     personaData?.content_show_ai_generate,
     personaData?.parameters_step_show_ai_generate,
-    personaData?.names_group_id,
-    personaData?.descriptions_group_id,
-    personaData?.colors_group_id,
-    personaData?.icons_group_id,
-    personaData?.instructions_group_id,
-    personaData?.flags_group_id,
-    personaData?.departments_group_id,
-    personaData?.parameter_fields_group_id,
-    personaData?.examples_group_id,
-    personaData?.parameters_group_id,
-    personaData?.name_create_tool_id,
-    personaData?.description_create_tool_id,
-    personaData?.color_create_tool_id,
-    personaData?.instructions_create_tool_id,
-    personaData?.parameter_fields_create_tool_id,
-    personaData?.examples_create_tool_id,
-    personaData?.name_link_tool_id,
-    personaData?.description_link_tool_id,
-    personaData?.color_link_tool_id,
-    personaData?.icon_link_tool_id,
-    personaData?.instructions_link_tool_id,
-    personaData?.flag_link_tool_id,
-    personaData?.departments_link_tool_id,
-    personaData?.parameter_fields_link_tool_id,
-    personaData?.examples_link_tool_id,
-    personaData?.parameters_link_tool_id,
   ]);
 
   const canRegenerate = useCallback(
@@ -482,17 +446,14 @@ function PersonaComponent({
       };
     }
 
-    const resources = data.resources?.resources;
-    const current = data.resources?.current;
-
-    const currentParameterIds = (current?.parameters ?? [])
+    const currentParameterIds = (data.parameters?.current ?? [])
       .map((p) => p.parameter_id)
       .filter(Boolean) as string[];
     const paramIdsSet = new Set<string>(currentParameterIds);
-    const availableFields = resources?.parameter_fields ?? [];
+    const availableFields = data.parameter_fields?.resources ?? [];
 
-    if (current?.parameter_fields && current.parameter_fields.length > 0) {
-      current.parameter_fields.forEach((fieldResource) => {
+    if (data.parameter_fields?.current && data.parameter_fields.current.length > 0) {
+      data.parameter_fields.current.forEach((fieldResource) => {
         if (fieldResource.parameter_id) {
           paramIdsSet.add(fieldResource.parameter_id);
         }
@@ -506,19 +467,19 @@ function PersonaComponent({
     }
 
     return {
-      name_id: current?.names?.[0]?.id ?? null,
-      description_id: current?.descriptions?.[0]?.id ?? null,
-      color_id: current?.colors?.[0]?.id ?? null,
-      icon_id: current?.icons?.[0]?.id ?? null,
-      instructions_id: current?.instructions?.[0]?.id ?? null,
-      active_flag_id: current?.flags?.[0]?.flag_option_id ?? null,
-      department_ids: (current?.departments ?? [])
+      name_id: data.names?.resource?.id ?? null,
+      description_id: data.descriptions?.resource?.id ?? null,
+      color_id: data.colors?.resource?.id ?? null,
+      icon_id: data.icons?.resource?.id ?? null,
+      instructions_id: data.instructions?.resource?.id ?? null,
+      active_flag_id: data.flags?.current?.flag_option_id ?? null,
+      department_ids: (data.departments?.current ?? [])
         .map((d) => d.department_id)
         .filter(Boolean) as string[],
-      parameter_field_ids: (current?.parameter_fields ?? [])
+      parameter_field_ids: (data.parameter_fields?.current ?? [])
         .map((f) => f.field_id)
         .filter(Boolean) as string[],
-      example_ids: (current?.examples ?? [])
+      example_ids: (data.examples?.current ?? [])
         .map((e) => e.id)
         .filter(Boolean) as string[],
       parameter_ids: Array.from(paramIdsSet),
@@ -544,29 +505,25 @@ function PersonaComponent({
 
   // Memoize stringified array dependencies
   const departmentIdsStr = React.useMemo(() => {
-    const current = personaData?.resources?.current;
     return JSON.stringify(
-      (current?.departments ?? []).map((d) => d.department_id).filter(Boolean)
+      (personaData?.departments?.current ?? []).map((d) => d.department_id).filter(Boolean)
     );
-  }, [personaData?.resources]);
+  }, [personaData?.departments]);
   const parameterFieldIdsStr = React.useMemo(() => {
-    const current = personaData?.resources?.current;
     return JSON.stringify(
-      (current?.parameter_fields ?? []).map((f) => f.field_id).filter(Boolean)
+      (personaData?.parameter_fields?.current ?? []).map((f) => f.field_id).filter(Boolean)
     );
-  }, [personaData?.resources]);
+  }, [personaData?.parameter_fields]);
   const exampleIdsStr = React.useMemo(() => {
-    const current = personaData?.resources?.current;
     return JSON.stringify(
-      (current?.examples ?? []).map((e) => e.id).filter(Boolean)
+      (personaData?.examples?.current ?? []).map((e) => e.id).filter(Boolean)
     );
-  }, [personaData?.resources]);
+  }, [personaData?.examples]);
   const parameterIdsStr = React.useMemo(() => {
-    const current = personaData?.resources?.current;
     return JSON.stringify(
-      (current?.parameters ?? []).map((p) => p.parameter_id).filter(Boolean)
+      (personaData?.parameters?.current ?? []).map((p) => p.parameter_id).filter(Boolean)
     );
-  }, [personaData?.resources]);
+  }, [personaData?.parameters]);
 
   // Update form state when server data changes
   useEffect(() => {
@@ -591,7 +548,16 @@ function PersonaComponent({
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    personaData?.resources,
+    personaData?.names,
+    personaData?.descriptions,
+    personaData?.colors,
+    personaData?.icons,
+    personaData?.instructions,
+    personaData?.flags,
+    personaData?.departments,
+    personaData?.parameter_fields,
+    personaData?.examples,
+    personaData?.parameters,
     departmentIdsStr,
     parameterFieldIdsStr,
     exampleIdsStr,
@@ -729,7 +695,7 @@ function PersonaComponent({
 
   // --- Conditional Parameter Toggle ---
   const getParameterFields = useCallback(
-    () => personaDataRef.current?.resources?.resources?.parameter_fields ?? [],
+    () => personaDataRef.current?.parameter_fields?.resources ?? [],
     []
   );
 
@@ -919,31 +885,31 @@ function PersonaComponent({
         parameter_ids: baseFormState.parameter_ids,
       };
 
-      if (personaData?.name_required && !effectiveFormState.name_id) {
+      if (personaData?.names?.required && !effectiveFormState.name_id) {
         toast.error("Persona name is required");
         throw new Error("Persona name is required");
       }
-      if (personaData?.color_required && !effectiveFormState.color_id) {
+      if (personaData?.colors?.required && !effectiveFormState.color_id) {
         toast.error("Persona color is required");
         throw new Error("Persona color is required");
       }
-      if (personaData?.icon_required && !effectiveFormState.icon_id) {
+      if (personaData?.icons?.required && !effectiveFormState.icon_id) {
         toast.error("Persona icon is required");
         throw new Error("Persona icon is required");
       }
-      if (personaData?.instructions_required && !effectiveFormState.instructions_id) {
+      if (personaData?.instructions?.required && !effectiveFormState.instructions_id) {
         toast.error("Instructions are required");
         throw new Error("Instructions are required");
       }
-      if (personaData?.departments_required && (!effectiveFormState.department_ids || effectiveFormState.department_ids.length === 0)) {
+      if (personaData?.departments?.required && (!effectiveFormState.department_ids || effectiveFormState.department_ids.length === 0)) {
         toast.error("Departments are required");
         throw new Error("Departments are required");
       }
-      if (personaData?.parameter_fields_required && (!effectiveFormState.parameter_field_ids || effectiveFormState.parameter_field_ids.length === 0)) {
+      if (personaData?.parameter_fields?.required && (!effectiveFormState.parameter_field_ids || effectiveFormState.parameter_field_ids.length === 0)) {
         toast.error("Parameter fields are required");
         throw new Error("Parameter fields are required");
       }
-      if (personaData?.examples_required && (!effectiveFormState.example_ids || effectiveFormState.example_ids.length === 0)) {
+      if (personaData?.examples?.required && (!effectiveFormState.example_ids || effectiveFormState.example_ids.length === 0)) {
         toast.error("Examples are required");
         throw new Error("Examples are required");
       }
@@ -955,10 +921,6 @@ function PersonaComponent({
       if (!savePersonaAction) {
         toast.error("Save action not available");
         throw new Error("Save action not available");
-      }
-      if (!personaData?.group_id) {
-        toast.error("Group not found. Please try again.");
-        throw new Error("Group ID is required for save");
       }
       if (
         !effectiveFormState.name_id ||
@@ -973,8 +935,19 @@ function PersonaComponent({
       try {
         await savePersonaAction({
           body: {
-            group_id: personaData.group_id,
             input_persona_id: isEditMode && personaId ? personaId : null,
+            // Per-resource group IDs from sections
+            names_group_id: personaData?.names?.group_id ?? null,
+            descriptions_group_id: personaData?.descriptions?.group_id ?? null,
+            colors_group_id: personaData?.colors?.group_id ?? null,
+            icons_group_id: personaData?.icons?.group_id ?? null,
+            instructions_group_id: personaData?.instructions?.group_id ?? null,
+            flags_group_id: personaData?.flags?.group_id ?? null,
+            departments_group_id: personaData?.departments?.group_id ?? null,
+            parameter_fields_group_id: personaData?.parameter_fields?.group_id ?? null,
+            examples_group_id: personaData?.examples?.group_id ?? null,
+            parameters_group_id: personaData?.parameters?.group_id ?? null,
+            // Resource IDs
             name_id: effectiveFormState.name_id,
             color_id: effectiveFormState.color_id,
             icon_id: effectiveFormState.icon_id,
@@ -1003,15 +976,17 @@ function PersonaComponent({
       personaId,
       profile?.id,
       savePersonaAction,
-      personaData?.group_id,
+      personaData?.names,
+      personaData?.descriptions,
+      personaData?.colors,
+      personaData?.icons,
+      personaData?.instructions,
+      personaData?.flags,
+      personaData?.departments,
+      personaData?.parameter_fields,
+      personaData?.examples,
+      personaData?.parameters,
       router,
-      personaData?.name_required,
-      personaData?.color_required,
-      personaData?.icon_required,
-      personaData?.instructions_required,
-      personaData?.departments_required,
-      personaData?.parameter_fields_required,
-      personaData?.examples_required,
     ]
   );
 
@@ -1772,29 +1747,30 @@ function PersonaComponent({
 
 // Memoize component to prevent re-renders when only prop references change (content is same)
 export default React.memo(PersonaComponent, (prevProps, nextProps) => {
-  const prevCurrent = prevProps.personaData?.resources?.current;
-  const nextCurrent = nextProps.personaData?.resources?.current;
+  // Compare section-based current resource IDs
+  const prevData = prevProps.personaData;
+  const nextData = nextProps.personaData;
   const prevIds = {
-    name_id: prevCurrent?.names?.[0]?.id ?? null,
-    description_id: prevCurrent?.descriptions?.[0]?.id ?? null,
-    color_id: prevCurrent?.colors?.[0]?.id ?? null,
-    icon_id: prevCurrent?.icons?.[0]?.id ?? null,
-    instructions_id: prevCurrent?.instructions?.[0]?.id ?? null,
-    active_flag_id: prevCurrent?.flags?.[0]?.flag_option_id ?? null,
-    department_ids: (prevCurrent?.departments ?? []).map((d) => d.department_id).filter(Boolean),
-    parameter_field_ids: (prevCurrent?.parameter_fields ?? []).map((f) => f.field_id).filter(Boolean),
-    example_ids: (prevCurrent?.examples ?? []).map((e) => e.id).filter(Boolean),
+    name_id: prevData?.names?.resource?.id ?? null,
+    description_id: prevData?.descriptions?.resource?.id ?? null,
+    color_id: prevData?.colors?.resource?.id ?? null,
+    icon_id: prevData?.icons?.resource?.id ?? null,
+    instructions_id: prevData?.instructions?.resource?.id ?? null,
+    active_flag_id: prevData?.flags?.current?.flag_option_id ?? null,
+    department_ids: (prevData?.departments?.current ?? []).map((d) => d.department_id).filter(Boolean),
+    parameter_field_ids: (prevData?.parameter_fields?.current ?? []).map((f) => f.field_id).filter(Boolean),
+    example_ids: (prevData?.examples?.current ?? []).map((e) => e.id).filter(Boolean),
   };
   const nextIds = {
-    name_id: nextCurrent?.names?.[0]?.id ?? null,
-    description_id: nextCurrent?.descriptions?.[0]?.id ?? null,
-    color_id: nextCurrent?.colors?.[0]?.id ?? null,
-    icon_id: nextCurrent?.icons?.[0]?.id ?? null,
-    instructions_id: nextCurrent?.instructions?.[0]?.id ?? null,
-    active_flag_id: nextCurrent?.flags?.[0]?.flag_option_id ?? null,
-    department_ids: (nextCurrent?.departments ?? []).map((d) => d.department_id).filter(Boolean),
-    parameter_field_ids: (nextCurrent?.parameter_fields ?? []).map((f) => f.field_id).filter(Boolean),
-    example_ids: (nextCurrent?.examples ?? []).map((e) => e.id).filter(Boolean),
+    name_id: nextData?.names?.resource?.id ?? null,
+    description_id: nextData?.descriptions?.resource?.id ?? null,
+    color_id: nextData?.colors?.resource?.id ?? null,
+    icon_id: nextData?.icons?.resource?.id ?? null,
+    instructions_id: nextData?.instructions?.resource?.id ?? null,
+    active_flag_id: nextData?.flags?.current?.flag_option_id ?? null,
+    department_ids: (nextData?.departments?.current ?? []).map((d) => d.department_id).filter(Boolean),
+    parameter_field_ids: (nextData?.parameter_fields?.current ?? []).map((f) => f.field_id).filter(Boolean),
+    example_ids: (nextData?.examples?.current ?? []).map((e) => e.id).filter(Boolean),
   };
 
   if (

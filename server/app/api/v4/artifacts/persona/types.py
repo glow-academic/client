@@ -20,6 +20,7 @@ from app.sql.types import (
     QGetParametersV4Item,
 )
 
+
 class PersonaFlagConfig(BaseModel):
     """Enriched flag config for direct client consumption."""
 
