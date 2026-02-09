@@ -37,14 +37,6 @@ run_links AS (
     WHERE c.active = true
     GROUP BY c.chat_id
 ),
-group_links AS (
-    SELECT
-        c.chat_id,
-        ARRAY_AGG(c.groups_id ORDER BY c.created_at) FILTER (WHERE c.groups_id IS NOT NULL) AS group_ids
-    FROM benchmark_chats_groups_connection c
-    WHERE c.active = true
-    GROUP BY c.chat_id
-),
 latest_grade AS (
     SELECT DISTINCT ON (g.chat_id)
         g.chat_id,
@@ -67,7 +59,7 @@ SELECT
     c.attempt_id AS test_id,
     el.eval_id,
     COALESCE(rl.run_ids, ARRAY[]::uuid[]) AS run_ids,
-    COALESCE(gl.group_ids, ARRAY[]::uuid[]) AS group_ids,
+    c.group_id,
     c.created_at AS chat_created_at,
     c.updated_at AS chat_updated_at,
     c.title AS chat_title,
@@ -79,7 +71,6 @@ SELECT
 FROM benchmark_chats_entry c
 LEFT JOIN eval_links el ON el.test_id = c.attempt_id
 LEFT JOIN run_links rl ON rl.chat_id = c.id
-LEFT JOIN group_links gl ON gl.chat_id = c.id
 LEFT JOIN latest_grade lg ON lg.chat_id = c.id
 LEFT JOIN message_counts mc ON mc.chat_id = c.id
 WHERE c.active = true
@@ -103,7 +94,7 @@ CREATE INDEX mv_benchmark_chats_created_at_idx
 CREATE INDEX mv_benchmark_chats_run_ids_gin
     ON mv_benchmark_chats USING GIN (run_ids);
 
-CREATE INDEX mv_benchmark_chats_group_ids_gin
-    ON mv_benchmark_chats USING GIN (group_ids);
+CREATE INDEX mv_benchmark_chats_group_id_idx
+    ON mv_benchmark_chats (group_id);
 
 REFRESH MATERIALIZED VIEW mv_benchmark_chats;

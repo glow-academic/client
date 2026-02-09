@@ -1,4 +1,4 @@
-"""Recreate endpoint for simulation groups view."""
+"""Recreate endpoint for config view."""
 
 import time
 from pathlib import Path
@@ -14,7 +14,7 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 
 MV_SQL_PATH = (
     Path(__file__).parent.parent.parent.parent.parent
-    / "sql/v4/views/simulation/simulation_groups_view.sql"
+    / "sql/v4/views/config/mv_config.sql"
 )
 
 router = APIRouter()
@@ -25,17 +25,17 @@ router = APIRouter()
     response_model=RefreshResponse,
     dependencies=[
         audit_activity(
-            "views.simulation.groups.recreate",
-            "{{ actor.name }} recreated simulation groups view",
+            "views.config.recreate",
+            "{{ actor.name }} recreated config view",
         )
     ],
 )
-async def recreate_groups_view(
+async def recreate_config_view(
     http_request: Request,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> RefreshResponse:
-    """Recreate the mv_simulation_groups materialized view."""
-    tags = ["views", "simulation", "groups"]
+    """Recreate the mv_config materialized view."""
+    tags = ["views", "config"]
 
     try:
         if not MV_SQL_PATH.exists():
@@ -57,7 +57,7 @@ async def recreate_groups_view(
         return RefreshResponse(
             success=True,
             method="recreate",
-            message=f"Recreated mv_simulation_groups in {duration_ms}ms",
+            message=f"Recreated mv_config in {duration_ms}ms",
             duration_ms=duration_ms,
         )
 
@@ -66,5 +66,5 @@ async def recreate_groups_view(
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to recreate mv_simulation_groups: {str(e)}",
+            detail=f"Failed to recreate mv_config: {str(e)}",
         ) from e

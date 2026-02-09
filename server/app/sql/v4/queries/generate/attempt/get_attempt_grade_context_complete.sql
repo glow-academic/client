@@ -80,17 +80,15 @@ effective_chat AS (
     ORDER BY c.created_at ASC
     LIMIT 1
 ),
--- Resolve agent from pre-stored group (created at training start)
+-- Resolve agent from latest run's config (via simulation_chats_entry.group_id)
 resolved_agent AS (
     SELECT aaj.agent_id
     FROM effective_chat ec
-    JOIN simulation_chats_bindings_entry scbe ON scbe.chat_id = ec.chat_id AND scbe.active = true
-    JOIN groups_agents_connection gac ON gac.group_id = scbe.group_id AND gac.active = true
-    JOIN agent_agents_junction aaj ON aaj.agents_id = gac.agents_id AND aaj.active = true
-    JOIN bindings_entry be ON be.id = scbe.binding_id AND be.active = true
-    JOIN bindings_bindings_connection bbc ON bbc.binding_id = be.id AND bbc.active = true
-    JOIN bindings_resource br ON br.id = bbc.bindings_id AND br.active = true
-    WHERE p_entry_types IS NULL OR br.entry::text = ANY(p_entry_types)
+    JOIN simulation_chats_entry sc ON sc.id = ec.chat_id
+    JOIN runs_entry r ON r.group_id = sc.group_id
+    JOIN config_agents_connection cac ON cac.config_id = r.config_id AND cac.active = true
+    JOIN agent_agents_junction aaj ON aaj.agents_id = cac.agents_id AND aaj.active = true
+    ORDER BY r.created_at DESC
     LIMIT 1
 ),
 -- Agent data (grading agent, resolved from stored group)

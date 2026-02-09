@@ -20,6 +20,7 @@ END $$;
 CREATE OR REPLACE FUNCTION api_patch_persona_draft_v4(
     profile_id uuid,
     input_draft_id uuid DEFAULT NULL,
+    group_id uuid DEFAULT NULL,
     names types.persona_resource_action DEFAULT NULL,
     descriptions types.persona_resource_action DEFAULT NULL,
     colors types.persona_resource_action DEFAULT NULL,
@@ -59,11 +60,8 @@ DECLARE
     v_example_ids uuid[];
     v_parameter_ids uuid[];
     -- Call tracking variables
-    v_group_ids_seen uuid[] := ARRAY[]::uuid[];
-    v_run_ids_seen uuid[] := ARRAY[]::uuid[];
     v_run_id uuid;
     v_call_id uuid;
-    v_idx int;
 BEGIN
     -- Extract resource IDs from composites
     v_name_id := (names).resource_id;
@@ -151,7 +149,7 @@ BEGIN
     -- Try to update existing draft
     IF input_draft_id IS NOT NULL THEN
         -- Get existing draft's group_id
-        SELECT group_id INTO v_group_id FROM view_drafts_entry WHERE id = input_draft_id;
+        SELECT vde.group_id INTO v_group_id FROM view_drafts_entry vde WHERE vde.id = input_draft_id;
 
         -- Create group if draft doesn't have one (shouldn't happen after migration, but safety check)
         IF v_group_id IS NULL THEN
@@ -264,19 +262,14 @@ BEGIN
             END IF;
 
             -- === TOOL CALL TRACKING (UPDATE path) ===
+            IF group_id IS NOT NULL THEN
+                v_run_id := uuidv7();
+                INSERT INTO runs_entry (id, input_tokens, output_tokens, cached_input_tokens, group_id, created_at, updated_at)
+                VALUES (v_run_id, 0, 0, 0, group_id, NOW(), NOW());
+            END IF;
+
             -- names
-            IF ((names).create_tool_id IS NOT NULL OR (names).link_tool_id IS NOT NULL)
-               AND (names).group_id IS NOT NULL AND v_name_id IS NOT NULL THEN
-                v_idx := array_position(v_group_ids_seen, (names).group_id);
-                IF v_idx IS NULL THEN
-                    v_run_id := uuidv7();
-                    INSERT INTO runs_entry (id, input_tokens, output_tokens, cached_input_tokens, group_id, created_at, updated_at)
-                    VALUES (v_run_id, 0, 0, 0, (names).group_id, NOW(), NOW());
-                    v_group_ids_seen := array_append(v_group_ids_seen, (names).group_id);
-                    v_run_ids_seen := array_append(v_run_ids_seen, v_run_id);
-                ELSE
-                    v_run_id := v_run_ids_seen[v_idx];
-                END IF;
+            IF v_run_id IS NOT NULL AND v_name_id IS NOT NULL THEN
                 IF (names).create_tool_id IS NOT NULL THEN
                     v_call_id := uuidv7();
                     INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
@@ -294,18 +287,7 @@ BEGIN
             END IF;
 
             -- descriptions
-            IF ((descriptions).create_tool_id IS NOT NULL OR (descriptions).link_tool_id IS NOT NULL)
-               AND (descriptions).group_id IS NOT NULL AND v_description_id IS NOT NULL THEN
-                v_idx := array_position(v_group_ids_seen, (descriptions).group_id);
-                IF v_idx IS NULL THEN
-                    v_run_id := uuidv7();
-                    INSERT INTO runs_entry (id, input_tokens, output_tokens, cached_input_tokens, group_id, created_at, updated_at)
-                    VALUES (v_run_id, 0, 0, 0, (descriptions).group_id, NOW(), NOW());
-                    v_group_ids_seen := array_append(v_group_ids_seen, (descriptions).group_id);
-                    v_run_ids_seen := array_append(v_run_ids_seen, v_run_id);
-                ELSE
-                    v_run_id := v_run_ids_seen[v_idx];
-                END IF;
+            IF v_run_id IS NOT NULL AND v_description_id IS NOT NULL THEN
                 IF (descriptions).create_tool_id IS NOT NULL THEN
                     v_call_id := uuidv7();
                     INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
@@ -323,18 +305,7 @@ BEGIN
             END IF;
 
             -- colors
-            IF ((colors).create_tool_id IS NOT NULL OR (colors).link_tool_id IS NOT NULL)
-               AND (colors).group_id IS NOT NULL AND v_color_id IS NOT NULL THEN
-                v_idx := array_position(v_group_ids_seen, (colors).group_id);
-                IF v_idx IS NULL THEN
-                    v_run_id := uuidv7();
-                    INSERT INTO runs_entry (id, input_tokens, output_tokens, cached_input_tokens, group_id, created_at, updated_at)
-                    VALUES (v_run_id, 0, 0, 0, (colors).group_id, NOW(), NOW());
-                    v_group_ids_seen := array_append(v_group_ids_seen, (colors).group_id);
-                    v_run_ids_seen := array_append(v_run_ids_seen, v_run_id);
-                ELSE
-                    v_run_id := v_run_ids_seen[v_idx];
-                END IF;
+            IF v_run_id IS NOT NULL AND v_color_id IS NOT NULL THEN
                 IF (colors).create_tool_id IS NOT NULL THEN
                     v_call_id := uuidv7();
                     INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
@@ -352,18 +323,7 @@ BEGIN
             END IF;
 
             -- icons
-            IF ((icons).create_tool_id IS NOT NULL OR (icons).link_tool_id IS NOT NULL)
-               AND (icons).group_id IS NOT NULL AND v_icon_id IS NOT NULL THEN
-                v_idx := array_position(v_group_ids_seen, (icons).group_id);
-                IF v_idx IS NULL THEN
-                    v_run_id := uuidv7();
-                    INSERT INTO runs_entry (id, input_tokens, output_tokens, cached_input_tokens, group_id, created_at, updated_at)
-                    VALUES (v_run_id, 0, 0, 0, (icons).group_id, NOW(), NOW());
-                    v_group_ids_seen := array_append(v_group_ids_seen, (icons).group_id);
-                    v_run_ids_seen := array_append(v_run_ids_seen, v_run_id);
-                ELSE
-                    v_run_id := v_run_ids_seen[v_idx];
-                END IF;
+            IF v_run_id IS NOT NULL AND v_icon_id IS NOT NULL THEN
                 IF (icons).create_tool_id IS NOT NULL THEN
                     v_call_id := uuidv7();
                     INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
@@ -381,18 +341,7 @@ BEGIN
             END IF;
 
             -- instructions
-            IF ((instructions).create_tool_id IS NOT NULL OR (instructions).link_tool_id IS NOT NULL)
-               AND (instructions).group_id IS NOT NULL AND v_instructions_id IS NOT NULL THEN
-                v_idx := array_position(v_group_ids_seen, (instructions).group_id);
-                IF v_idx IS NULL THEN
-                    v_run_id := uuidv7();
-                    INSERT INTO runs_entry (id, input_tokens, output_tokens, cached_input_tokens, group_id, created_at, updated_at)
-                    VALUES (v_run_id, 0, 0, 0, (instructions).group_id, NOW(), NOW());
-                    v_group_ids_seen := array_append(v_group_ids_seen, (instructions).group_id);
-                    v_run_ids_seen := array_append(v_run_ids_seen, v_run_id);
-                ELSE
-                    v_run_id := v_run_ids_seen[v_idx];
-                END IF;
+            IF v_run_id IS NOT NULL AND v_instructions_id IS NOT NULL THEN
                 IF (instructions).create_tool_id IS NOT NULL THEN
                     v_call_id := uuidv7();
                     INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
@@ -410,18 +359,7 @@ BEGIN
             END IF;
 
             -- flags
-            IF ((flags).create_tool_id IS NOT NULL OR (flags).link_tool_id IS NOT NULL)
-               AND (flags).group_id IS NOT NULL AND v_active_flag_id IS NOT NULL THEN
-                v_idx := array_position(v_group_ids_seen, (flags).group_id);
-                IF v_idx IS NULL THEN
-                    v_run_id := uuidv7();
-                    INSERT INTO runs_entry (id, input_tokens, output_tokens, cached_input_tokens, group_id, created_at, updated_at)
-                    VALUES (v_run_id, 0, 0, 0, (flags).group_id, NOW(), NOW());
-                    v_group_ids_seen := array_append(v_group_ids_seen, (flags).group_id);
-                    v_run_ids_seen := array_append(v_run_ids_seen, v_run_id);
-                ELSE
-                    v_run_id := v_run_ids_seen[v_idx];
-                END IF;
+            IF v_run_id IS NOT NULL AND v_active_flag_id IS NOT NULL THEN
                 IF (flags).create_tool_id IS NOT NULL THEN
                     v_call_id := uuidv7();
                     INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
@@ -439,18 +377,7 @@ BEGIN
             END IF;
 
             -- departments (multi-select)
-            IF ((departments).create_tool_id IS NOT NULL OR (departments).link_tool_id IS NOT NULL)
-               AND (departments).group_id IS NOT NULL AND COALESCE(array_length(v_department_ids, 1), 0) > 0 THEN
-                v_idx := array_position(v_group_ids_seen, (departments).group_id);
-                IF v_idx IS NULL THEN
-                    v_run_id := uuidv7();
-                    INSERT INTO runs_entry (id, input_tokens, output_tokens, cached_input_tokens, group_id, created_at, updated_at)
-                    VALUES (v_run_id, 0, 0, 0, (departments).group_id, NOW(), NOW());
-                    v_group_ids_seen := array_append(v_group_ids_seen, (departments).group_id);
-                    v_run_ids_seen := array_append(v_run_ids_seen, v_run_id);
-                ELSE
-                    v_run_id := v_run_ids_seen[v_idx];
-                END IF;
+            IF v_run_id IS NOT NULL AND COALESCE(array_length(v_department_ids, 1), 0) > 0 THEN
                 IF (departments).create_tool_id IS NOT NULL THEN
                     v_call_id := uuidv7();
                     INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
@@ -470,18 +397,7 @@ BEGIN
             END IF;
 
             -- parameter_fields (multi-select)
-            IF ((parameter_fields).create_tool_id IS NOT NULL OR (parameter_fields).link_tool_id IS NOT NULL)
-               AND (parameter_fields).group_id IS NOT NULL AND COALESCE(array_length(v_parameter_field_ids, 1), 0) > 0 THEN
-                v_idx := array_position(v_group_ids_seen, (parameter_fields).group_id);
-                IF v_idx IS NULL THEN
-                    v_run_id := uuidv7();
-                    INSERT INTO runs_entry (id, input_tokens, output_tokens, cached_input_tokens, group_id, created_at, updated_at)
-                    VALUES (v_run_id, 0, 0, 0, (parameter_fields).group_id, NOW(), NOW());
-                    v_group_ids_seen := array_append(v_group_ids_seen, (parameter_fields).group_id);
-                    v_run_ids_seen := array_append(v_run_ids_seen, v_run_id);
-                ELSE
-                    v_run_id := v_run_ids_seen[v_idx];
-                END IF;
+            IF v_run_id IS NOT NULL AND COALESCE(array_length(v_parameter_field_ids, 1), 0) > 0 THEN
                 IF (parameter_fields).create_tool_id IS NOT NULL THEN
                     v_call_id := uuidv7();
                     INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
@@ -501,18 +417,7 @@ BEGIN
             END IF;
 
             -- examples (multi-select)
-            IF ((examples).create_tool_id IS NOT NULL OR (examples).link_tool_id IS NOT NULL)
-               AND (examples).group_id IS NOT NULL AND COALESCE(array_length(v_example_ids, 1), 0) > 0 THEN
-                v_idx := array_position(v_group_ids_seen, (examples).group_id);
-                IF v_idx IS NULL THEN
-                    v_run_id := uuidv7();
-                    INSERT INTO runs_entry (id, input_tokens, output_tokens, cached_input_tokens, group_id, created_at, updated_at)
-                    VALUES (v_run_id, 0, 0, 0, (examples).group_id, NOW(), NOW());
-                    v_group_ids_seen := array_append(v_group_ids_seen, (examples).group_id);
-                    v_run_ids_seen := array_append(v_run_ids_seen, v_run_id);
-                ELSE
-                    v_run_id := v_run_ids_seen[v_idx];
-                END IF;
+            IF v_run_id IS NOT NULL AND COALESCE(array_length(v_example_ids, 1), 0) > 0 THEN
                 IF (examples).create_tool_id IS NOT NULL THEN
                     v_call_id := uuidv7();
                     INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
@@ -532,18 +437,7 @@ BEGIN
             END IF;
 
             -- parameters (multi-select)
-            IF ((parameters).create_tool_id IS NOT NULL OR (parameters).link_tool_id IS NOT NULL)
-               AND (parameters).group_id IS NOT NULL AND COALESCE(array_length(v_parameter_ids, 1), 0) > 0 THEN
-                v_idx := array_position(v_group_ids_seen, (parameters).group_id);
-                IF v_idx IS NULL THEN
-                    v_run_id := uuidv7();
-                    INSERT INTO runs_entry (id, input_tokens, output_tokens, cached_input_tokens, group_id, created_at, updated_at)
-                    VALUES (v_run_id, 0, 0, 0, (parameters).group_id, NOW(), NOW());
-                    v_group_ids_seen := array_append(v_group_ids_seen, (parameters).group_id);
-                    v_run_ids_seen := array_append(v_run_ids_seen, v_run_id);
-                ELSE
-                    v_run_id := v_run_ids_seen[v_idx];
-                END IF;
+            IF v_run_id IS NOT NULL AND COALESCE(array_length(v_parameter_ids, 1), 0) > 0 THEN
                 IF (parameters).create_tool_id IS NOT NULL THEN
                     v_call_id := uuidv7();
                     INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
@@ -659,23 +553,16 @@ BEGIN
     END IF;
 
     -- === TOOL CALL TRACKING (CREATE path) ===
-    -- Reset tracking arrays for CREATE path
-    v_group_ids_seen := ARRAY[]::uuid[];
-    v_run_ids_seen := ARRAY[]::uuid[];
+    v_run_id := NULL;
+
+    IF group_id IS NOT NULL THEN
+        v_run_id := uuidv7();
+        INSERT INTO runs_entry (id, input_tokens, output_tokens, cached_input_tokens, group_id, created_at, updated_at)
+        VALUES (v_run_id, 0, 0, 0, group_id, NOW(), NOW());
+    END IF;
 
     -- names
-    IF ((names).create_tool_id IS NOT NULL OR (names).link_tool_id IS NOT NULL)
-       AND (names).group_id IS NOT NULL AND v_name_id IS NOT NULL THEN
-        v_idx := array_position(v_group_ids_seen, (names).group_id);
-        IF v_idx IS NULL THEN
-            v_run_id := uuidv7();
-            INSERT INTO runs_entry (id, input_tokens, output_tokens, cached_input_tokens, group_id, created_at, updated_at)
-            VALUES (v_run_id, 0, 0, 0, (names).group_id, NOW(), NOW());
-            v_group_ids_seen := array_append(v_group_ids_seen, (names).group_id);
-            v_run_ids_seen := array_append(v_run_ids_seen, v_run_id);
-        ELSE
-            v_run_id := v_run_ids_seen[v_idx];
-        END IF;
+    IF v_run_id IS NOT NULL AND v_name_id IS NOT NULL THEN
         IF (names).create_tool_id IS NOT NULL THEN
             v_call_id := uuidv7();
             INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
@@ -693,18 +580,7 @@ BEGIN
     END IF;
 
     -- descriptions
-    IF ((descriptions).create_tool_id IS NOT NULL OR (descriptions).link_tool_id IS NOT NULL)
-       AND (descriptions).group_id IS NOT NULL AND v_description_id IS NOT NULL THEN
-        v_idx := array_position(v_group_ids_seen, (descriptions).group_id);
-        IF v_idx IS NULL THEN
-            v_run_id := uuidv7();
-            INSERT INTO runs_entry (id, input_tokens, output_tokens, cached_input_tokens, group_id, created_at, updated_at)
-            VALUES (v_run_id, 0, 0, 0, (descriptions).group_id, NOW(), NOW());
-            v_group_ids_seen := array_append(v_group_ids_seen, (descriptions).group_id);
-            v_run_ids_seen := array_append(v_run_ids_seen, v_run_id);
-        ELSE
-            v_run_id := v_run_ids_seen[v_idx];
-        END IF;
+    IF v_run_id IS NOT NULL AND v_description_id IS NOT NULL THEN
         IF (descriptions).create_tool_id IS NOT NULL THEN
             v_call_id := uuidv7();
             INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
@@ -722,18 +598,7 @@ BEGIN
     END IF;
 
     -- colors
-    IF ((colors).create_tool_id IS NOT NULL OR (colors).link_tool_id IS NOT NULL)
-       AND (colors).group_id IS NOT NULL AND v_color_id IS NOT NULL THEN
-        v_idx := array_position(v_group_ids_seen, (colors).group_id);
-        IF v_idx IS NULL THEN
-            v_run_id := uuidv7();
-            INSERT INTO runs_entry (id, input_tokens, output_tokens, cached_input_tokens, group_id, created_at, updated_at)
-            VALUES (v_run_id, 0, 0, 0, (colors).group_id, NOW(), NOW());
-            v_group_ids_seen := array_append(v_group_ids_seen, (colors).group_id);
-            v_run_ids_seen := array_append(v_run_ids_seen, v_run_id);
-        ELSE
-            v_run_id := v_run_ids_seen[v_idx];
-        END IF;
+    IF v_run_id IS NOT NULL AND v_color_id IS NOT NULL THEN
         IF (colors).create_tool_id IS NOT NULL THEN
             v_call_id := uuidv7();
             INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
@@ -751,18 +616,7 @@ BEGIN
     END IF;
 
     -- icons
-    IF ((icons).create_tool_id IS NOT NULL OR (icons).link_tool_id IS NOT NULL)
-       AND (icons).group_id IS NOT NULL AND v_icon_id IS NOT NULL THEN
-        v_idx := array_position(v_group_ids_seen, (icons).group_id);
-        IF v_idx IS NULL THEN
-            v_run_id := uuidv7();
-            INSERT INTO runs_entry (id, input_tokens, output_tokens, cached_input_tokens, group_id, created_at, updated_at)
-            VALUES (v_run_id, 0, 0, 0, (icons).group_id, NOW(), NOW());
-            v_group_ids_seen := array_append(v_group_ids_seen, (icons).group_id);
-            v_run_ids_seen := array_append(v_run_ids_seen, v_run_id);
-        ELSE
-            v_run_id := v_run_ids_seen[v_idx];
-        END IF;
+    IF v_run_id IS NOT NULL AND v_icon_id IS NOT NULL THEN
         IF (icons).create_tool_id IS NOT NULL THEN
             v_call_id := uuidv7();
             INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
@@ -780,18 +634,7 @@ BEGIN
     END IF;
 
     -- instructions
-    IF ((instructions).create_tool_id IS NOT NULL OR (instructions).link_tool_id IS NOT NULL)
-       AND (instructions).group_id IS NOT NULL AND v_instructions_id IS NOT NULL THEN
-        v_idx := array_position(v_group_ids_seen, (instructions).group_id);
-        IF v_idx IS NULL THEN
-            v_run_id := uuidv7();
-            INSERT INTO runs_entry (id, input_tokens, output_tokens, cached_input_tokens, group_id, created_at, updated_at)
-            VALUES (v_run_id, 0, 0, 0, (instructions).group_id, NOW(), NOW());
-            v_group_ids_seen := array_append(v_group_ids_seen, (instructions).group_id);
-            v_run_ids_seen := array_append(v_run_ids_seen, v_run_id);
-        ELSE
-            v_run_id := v_run_ids_seen[v_idx];
-        END IF;
+    IF v_run_id IS NOT NULL AND v_instructions_id IS NOT NULL THEN
         IF (instructions).create_tool_id IS NOT NULL THEN
             v_call_id := uuidv7();
             INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
@@ -809,18 +652,7 @@ BEGIN
     END IF;
 
     -- flags
-    IF ((flags).create_tool_id IS NOT NULL OR (flags).link_tool_id IS NOT NULL)
-       AND (flags).group_id IS NOT NULL AND v_active_flag_id IS NOT NULL THEN
-        v_idx := array_position(v_group_ids_seen, (flags).group_id);
-        IF v_idx IS NULL THEN
-            v_run_id := uuidv7();
-            INSERT INTO runs_entry (id, input_tokens, output_tokens, cached_input_tokens, group_id, created_at, updated_at)
-            VALUES (v_run_id, 0, 0, 0, (flags).group_id, NOW(), NOW());
-            v_group_ids_seen := array_append(v_group_ids_seen, (flags).group_id);
-            v_run_ids_seen := array_append(v_run_ids_seen, v_run_id);
-        ELSE
-            v_run_id := v_run_ids_seen[v_idx];
-        END IF;
+    IF v_run_id IS NOT NULL AND v_active_flag_id IS NOT NULL THEN
         IF (flags).create_tool_id IS NOT NULL THEN
             v_call_id := uuidv7();
             INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
@@ -838,18 +670,7 @@ BEGIN
     END IF;
 
     -- departments (multi-select)
-    IF ((departments).create_tool_id IS NOT NULL OR (departments).link_tool_id IS NOT NULL)
-       AND (departments).group_id IS NOT NULL AND COALESCE(array_length(v_department_ids, 1), 0) > 0 THEN
-        v_idx := array_position(v_group_ids_seen, (departments).group_id);
-        IF v_idx IS NULL THEN
-            v_run_id := uuidv7();
-            INSERT INTO runs_entry (id, input_tokens, output_tokens, cached_input_tokens, group_id, created_at, updated_at)
-            VALUES (v_run_id, 0, 0, 0, (departments).group_id, NOW(), NOW());
-            v_group_ids_seen := array_append(v_group_ids_seen, (departments).group_id);
-            v_run_ids_seen := array_append(v_run_ids_seen, v_run_id);
-        ELSE
-            v_run_id := v_run_ids_seen[v_idx];
-        END IF;
+    IF v_run_id IS NOT NULL AND COALESCE(array_length(v_department_ids, 1), 0) > 0 THEN
         IF (departments).create_tool_id IS NOT NULL THEN
             v_call_id := uuidv7();
             INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
@@ -869,18 +690,7 @@ BEGIN
     END IF;
 
     -- parameter_fields (multi-select)
-    IF ((parameter_fields).create_tool_id IS NOT NULL OR (parameter_fields).link_tool_id IS NOT NULL)
-       AND (parameter_fields).group_id IS NOT NULL AND COALESCE(array_length(v_parameter_field_ids, 1), 0) > 0 THEN
-        v_idx := array_position(v_group_ids_seen, (parameter_fields).group_id);
-        IF v_idx IS NULL THEN
-            v_run_id := uuidv7();
-            INSERT INTO runs_entry (id, input_tokens, output_tokens, cached_input_tokens, group_id, created_at, updated_at)
-            VALUES (v_run_id, 0, 0, 0, (parameter_fields).group_id, NOW(), NOW());
-            v_group_ids_seen := array_append(v_group_ids_seen, (parameter_fields).group_id);
-            v_run_ids_seen := array_append(v_run_ids_seen, v_run_id);
-        ELSE
-            v_run_id := v_run_ids_seen[v_idx];
-        END IF;
+    IF v_run_id IS NOT NULL AND COALESCE(array_length(v_parameter_field_ids, 1), 0) > 0 THEN
         IF (parameter_fields).create_tool_id IS NOT NULL THEN
             v_call_id := uuidv7();
             INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
@@ -900,18 +710,7 @@ BEGIN
     END IF;
 
     -- examples (multi-select)
-    IF ((examples).create_tool_id IS NOT NULL OR (examples).link_tool_id IS NOT NULL)
-       AND (examples).group_id IS NOT NULL AND COALESCE(array_length(v_example_ids, 1), 0) > 0 THEN
-        v_idx := array_position(v_group_ids_seen, (examples).group_id);
-        IF v_idx IS NULL THEN
-            v_run_id := uuidv7();
-            INSERT INTO runs_entry (id, input_tokens, output_tokens, cached_input_tokens, group_id, created_at, updated_at)
-            VALUES (v_run_id, 0, 0, 0, (examples).group_id, NOW(), NOW());
-            v_group_ids_seen := array_append(v_group_ids_seen, (examples).group_id);
-            v_run_ids_seen := array_append(v_run_ids_seen, v_run_id);
-        ELSE
-            v_run_id := v_run_ids_seen[v_idx];
-        END IF;
+    IF v_run_id IS NOT NULL AND COALESCE(array_length(v_example_ids, 1), 0) > 0 THEN
         IF (examples).create_tool_id IS NOT NULL THEN
             v_call_id := uuidv7();
             INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
@@ -931,18 +730,7 @@ BEGIN
     END IF;
 
     -- parameters (multi-select)
-    IF ((parameters).create_tool_id IS NOT NULL OR (parameters).link_tool_id IS NOT NULL)
-       AND (parameters).group_id IS NOT NULL AND COALESCE(array_length(v_parameter_ids, 1), 0) > 0 THEN
-        v_idx := array_position(v_group_ids_seen, (parameters).group_id);
-        IF v_idx IS NULL THEN
-            v_run_id := uuidv7();
-            INSERT INTO runs_entry (id, input_tokens, output_tokens, cached_input_tokens, group_id, created_at, updated_at)
-            VALUES (v_run_id, 0, 0, 0, (parameters).group_id, NOW(), NOW());
-            v_group_ids_seen := array_append(v_group_ids_seen, (parameters).group_id);
-            v_run_ids_seen := array_append(v_run_ids_seen, v_run_id);
-        ELSE
-            v_run_id := v_run_ids_seen[v_idx];
-        END IF;
+    IF v_run_id IS NOT NULL AND COALESCE(array_length(v_parameter_ids, 1), 0) > 0 THEN
         IF (parameters).create_tool_id IS NOT NULL THEN
             v_call_id := uuidv7();
             INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)

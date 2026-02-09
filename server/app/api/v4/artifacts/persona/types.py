@@ -310,7 +310,6 @@ class PersonaResourceAction(BaseModel):
     """Single-select resource with tool call tracking."""
 
     resource_id: UUID | None = None
-    group_id: UUID | None = None
     create_tool_id: UUID | None = None  # Set if resource was just created (flush)
     link_tool_id: UUID | None = None  # Set if selection changed from previous
 
@@ -319,7 +318,6 @@ class PersonaMultiResourceAction(BaseModel):
     """Multi-select resource with tool call tracking."""
 
     resource_ids: list[UUID] | None = None
-    group_id: UUID | None = None
     create_tool_id: UUID | None = None
     link_tool_id: UUID | None = None
 
@@ -331,6 +329,7 @@ class SavePersonaApiRequest(BaseModel):
     """Request model for save persona endpoint - accepts nested resource actions."""
 
     input_persona_id: UUID | None = None
+    group_id: UUID | None = None
     names: PersonaResourceAction
     descriptions: PersonaResourceAction
     colors: PersonaResourceAction
@@ -356,6 +355,7 @@ class SavePersonaSqlParams(BaseModel):
 
     profile_id: UUID
     input_persona_id: UUID | None = None
+    group_id: UUID | None = None
     names: PersonaResourceAction
     descriptions: PersonaResourceAction
     colors: PersonaResourceAction
@@ -377,14 +377,15 @@ class SavePersonaSqlParams(BaseModel):
         """Convert to tuple for SQL execution."""
 
         def single(a: PersonaResourceAction) -> tuple:
-            return (a.resource_id, a.group_id, a.create_tool_id, a.link_tool_id)
+            return (a.resource_id, a.create_tool_id, a.link_tool_id)
 
         def multi(a: PersonaMultiResourceAction) -> tuple:
-            return (a.resource_ids, a.group_id, a.create_tool_id, a.link_tool_id)
+            return (a.resource_ids, a.create_tool_id, a.link_tool_id)
 
         return (
             self.profile_id,
             self.input_persona_id,
+            self.group_id,
             single(self.names),
             single(self.descriptions),
             single(self.colors),
@@ -445,6 +446,7 @@ class PatchPersonaDraftApiRequest(BaseModel):
     """Request model for patch persona draft endpoint - nested resource actions."""
 
     input_draft_id: UUID | None = None
+    group_id: UUID | None = None
     expected_version: int = 0
     names: PersonaResourceAction | None = None
     descriptions: PersonaResourceAction | None = None
@@ -472,6 +474,7 @@ class PatchPersonaDraftSqlParams(BaseModel):
 
     profile_id: UUID
     input_draft_id: UUID | None = None
+    group_id: UUID | None = None
     names: PersonaResourceAction
     descriptions: PersonaResourceAction
     colors: PersonaResourceAction
@@ -510,14 +513,15 @@ class PatchPersonaDraftSqlParams(BaseModel):
         """Convert to tuple for SQL execution."""
 
         def single(a: PersonaResourceAction) -> tuple:
-            return (a.resource_id, a.group_id, a.create_tool_id, a.link_tool_id)
+            return (a.resource_id, a.create_tool_id, a.link_tool_id)
 
         def multi(a: PersonaMultiResourceAction) -> tuple:
-            return (a.resource_ids, a.group_id, a.create_tool_id, a.link_tool_id)
+            return (a.resource_ids, a.create_tool_id, a.link_tool_id)
 
         return (
             self.profile_id,
             self.input_draft_id,
+            self.group_id,
             single(self.names),
             single(self.descriptions),
             single(self.colors),

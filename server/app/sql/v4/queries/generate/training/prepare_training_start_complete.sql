@@ -53,8 +53,7 @@ DECLARE
     v_session_id uuid;
     v_group_id uuid;
     v_trace_id text;
-    v_binding_id uuid;
-    v_bindings_resource_id uuid;
+    v_config_id uuid;
     v_entry_type text;
     v_entry_agent_id uuid;
     v_idx int;
@@ -261,133 +260,122 @@ BEGIN
                 CONTINUE;
             END IF;
 
-            -- Create group for this entry type
+            -- Create group for this entry type (pure container)
             INSERT INTO groups_entry (created_at, updated_at, session_id)
             VALUES (NOW(), NOW(), v_session_id)
             RETURNING id, trace_id INTO v_group_id, v_trace_id;
 
-            -- Populate group connection tables (14 tables) from agent config
+            -- Set group_id directly on chat
+            UPDATE simulation_chats_entry SET group_id = v_group_id WHERE id = v_chat_id;
+
+            -- Create config_entry (fresh runtime snapshot)
+            INSERT INTO config_entry (created_at, updated_at, generated, mcp, active)
+            VALUES (NOW(), NOW(), false, false, true)
+            RETURNING id INTO v_config_id;
+
+            -- Populate config connection tables (14 tables) from agent config
             -- 1. agents
-            INSERT INTO groups_agents_connection (group_id, agents_id, created_at, active, generated, mcp)
-            SELECT v_group_id, aaj.agents_id, NOW(), true, false, false
+            INSERT INTO config_agents_connection (config_id, agents_id, created_at, active, generated, mcp)
+            SELECT v_config_id, aaj.agents_id, NOW(), true, false, false
             FROM agent_agents_junction aaj WHERE aaj.agent_id = v_entry_agent_id AND aaj.active = true
-            ON CONFLICT (group_id, agents_id) DO NOTHING;
+            ON CONFLICT (config_id, agents_id) DO NOTHING;
 
             -- 2. models
-            INSERT INTO groups_models_connection (group_id, models_id, created_at, active, generated, mcp)
-            SELECT v_group_id, mmj.models_id, NOW(), true, false, false
+            INSERT INTO config_models_connection (config_id, models_id, created_at, active, generated, mcp)
+            SELECT v_config_id, mmj.models_id, NOW(), true, false, false
             FROM agent_models_junction amj
             JOIN model_models_junction mmj ON mmj.model_id = amj.model_id AND mmj.active = true
             WHERE amj.agent_id = v_entry_agent_id AND amj.active = true
-            ON CONFLICT (group_id, models_id) DO NOTHING;
+            ON CONFLICT (config_id, models_id) DO NOTHING;
 
             -- 3. providers
-            INSERT INTO groups_providers_connection (group_id, providers_id, created_at, active, generated, mcp)
-            SELECT v_group_id, ppj.providers_id, NOW(), true, false, false
+            INSERT INTO config_providers_connection (config_id, providers_id, created_at, active, generated, mcp)
+            SELECT v_config_id, ppj.providers_id, NOW(), true, false, false
             FROM agent_models_junction amj
             JOIN model_providers_junction mpj ON mpj.model_id = amj.model_id AND mpj.active = true
             JOIN provider_providers_junction ppj ON ppj.provider_id = mpj.providers_id AND ppj.active = true
             WHERE amj.agent_id = v_entry_agent_id AND amj.active = true
-            ON CONFLICT (group_id, providers_id) DO NOTHING;
+            ON CONFLICT (config_id, providers_id) DO NOTHING;
 
             -- 4. keys
-            INSERT INTO groups_keys_connection (group_id, keys_id, created_at, active, generated, mcp)
-            SELECT v_group_id, mkj.key_id, NOW(), true, false, false
+            INSERT INTO config_keys_connection (config_id, keys_id, created_at, active, generated, mcp)
+            SELECT v_config_id, mkj.key_id, NOW(), true, false, false
             FROM agent_models_junction amj
             JOIN model_keys_junction mkj ON mkj.model_id = amj.model_id AND mkj.active = true
             WHERE amj.agent_id = v_entry_agent_id AND amj.active = true
-            ON CONFLICT (group_id, keys_id) DO NOTHING;
+            ON CONFLICT (config_id, keys_id) DO NOTHING;
 
             -- 5. endpoints
-            INSERT INTO groups_endpoints_connection (group_id, endpoints_id, created_at, active, generated, mcp)
-            SELECT v_group_id, mej.endpoint_id, NOW(), true, false, false
+            INSERT INTO config_endpoints_connection (config_id, endpoints_id, created_at, active, generated, mcp)
+            SELECT v_config_id, mej.endpoint_id, NOW(), true, false, false
             FROM agent_models_junction amj
             JOIN model_endpoints_junction mej ON mej.model_id = amj.model_id AND mej.active = true
             WHERE amj.agent_id = v_entry_agent_id AND amj.active = true
-            ON CONFLICT (group_id, endpoints_id) DO NOTHING;
+            ON CONFLICT (config_id, endpoints_id) DO NOTHING;
 
             -- 6. temperature_levels
-            INSERT INTO groups_temperature_levels_connection (group_id, temperature_levels_id, created_at, active, generated, mcp)
-            SELECT v_group_id, atlj.temperature_level_id, NOW(), true, false, false
+            INSERT INTO config_temperature_levels_connection (config_id, temperature_levels_id, created_at, active, generated, mcp)
+            SELECT v_config_id, atlj.temperature_level_id, NOW(), true, false, false
             FROM agent_temperature_levels_junction atlj WHERE atlj.agent_id = v_entry_agent_id AND atlj.active = true
-            ON CONFLICT (group_id, temperature_levels_id) DO NOTHING;
+            ON CONFLICT (config_id, temperature_levels_id) DO NOTHING;
 
             -- 7. reasoning_levels
-            INSERT INTO groups_reasoning_levels_connection (group_id, reasoning_levels_id, created_at, active, generated, mcp)
-            SELECT v_group_id, arlj.reasoning_level_id, NOW(), true, false, false
+            INSERT INTO config_reasoning_levels_connection (config_id, reasoning_levels_id, created_at, active, generated, mcp)
+            SELECT v_config_id, arlj.reasoning_level_id, NOW(), true, false, false
             FROM agent_reasoning_levels_junction arlj WHERE arlj.agent_id = v_entry_agent_id AND arlj.active = true
-            ON CONFLICT (group_id, reasoning_levels_id) DO NOTHING;
+            ON CONFLICT (config_id, reasoning_levels_id) DO NOTHING;
 
             -- 8. prompts
-            INSERT INTO groups_prompts_connection (group_id, prompts_id, created_at, active, generated, mcp)
-            SELECT v_group_id, apj.prompt_id, NOW(), true, false, false
+            INSERT INTO config_prompts_connection (config_id, prompts_id, created_at, active, generated, mcp)
+            SELECT v_config_id, apj.prompt_id, NOW(), true, false, false
             FROM agent_prompts_junction apj WHERE apj.agent_id = v_entry_agent_id AND apj.active = true
-            ON CONFLICT (group_id, prompts_id) DO NOTHING;
+            ON CONFLICT (config_id, prompts_id) DO NOTHING;
 
             -- 9. instructions
-            INSERT INTO groups_instructions_connection (group_id, instructions_id, created_at, active, generated, mcp)
-            SELECT v_group_id, aij.instruction_id, NOW(), true, false, false
+            INSERT INTO config_instructions_connection (config_id, instructions_id, created_at, active, generated, mcp)
+            SELECT v_config_id, aij.instruction_id, NOW(), true, false, false
             FROM agent_instructions_junction aij WHERE aij.agent_id = v_entry_agent_id AND aij.active = true
-            ON CONFLICT (group_id, instructions_id) DO NOTHING;
+            ON CONFLICT (config_id, instructions_id) DO NOTHING;
 
             -- 10. tools
-            INSERT INTO groups_tools_connection (group_id, tools_id, created_at, active, generated, mcp)
-            SELECT v_group_id, ttj.tools_id, NOW(), true, false, false
+            INSERT INTO config_tools_connection (config_id, tools_id, created_at, active, generated, mcp)
+            SELECT v_config_id, ttj.tools_id, NOW(), true, false, false
             FROM agent_tools_junction atj
             JOIN tool_tools_junction ttj ON ttj.tool_id = atj.tool_id AND ttj.active = true
             WHERE atj.agent_id = v_entry_agent_id AND atj.active = true
-            ON CONFLICT (group_id, tools_id) DO NOTHING;
+            ON CONFLICT (config_id, tools_id) DO NOTHING;
 
             -- 11. voices
-            INSERT INTO groups_voices_connection (group_id, voices_id, created_at, active, generated, mcp)
-            SELECT v_group_id, avj.voice_id, NOW(), true, false, false
+            INSERT INTO config_voices_connection (config_id, voices_id, created_at, active, generated, mcp)
+            SELECT v_config_id, avj.voice_id, NOW(), true, false, false
             FROM agent_voices_junction avj WHERE avj.agent_id = v_entry_agent_id AND avj.active = true
-            ON CONFLICT (group_id, voices_id) DO NOTHING;
+            ON CONFLICT (config_id, voices_id) DO NOTHING;
 
             -- 12. qualities
-            INSERT INTO groups_qualities_connection (group_id, qualities_id, created_at, active, generated, mcp)
-            SELECT v_group_id, mqj.quality_id, NOW(), true, false, false
+            INSERT INTO config_qualities_connection (config_id, qualities_id, created_at, active, generated, mcp)
+            SELECT v_config_id, mqj.quality_id, NOW(), true, false, false
             FROM agent_models_junction amj
             JOIN model_qualities_junction mqj ON mqj.model_id = amj.model_id AND mqj.active = true
             WHERE amj.agent_id = v_entry_agent_id AND amj.active = true
-            ON CONFLICT (group_id, qualities_id) DO NOTHING;
+            ON CONFLICT (config_id, qualities_id) DO NOTHING;
 
             -- 13. model_values
-            INSERT INTO groups_model_values_connection (group_id, values_id, created_at, active, generated, mcp)
-            SELECT v_group_id, mvj.value_id, NOW(), true, false, false
+            INSERT INTO config_model_values_connection (config_id, values_id, created_at, active, generated, mcp)
+            SELECT v_config_id, mvj.value_id, NOW(), true, false, false
             FROM agent_models_junction amj
             JOIN model_values_junction mvj ON mvj.model_id = amj.model_id AND mvj.active = true
             WHERE amj.agent_id = v_entry_agent_id AND amj.active = true
-            ON CONFLICT (group_id, values_id) DO NOTHING;
+            ON CONFLICT (config_id, values_id) DO NOTHING;
 
             -- 14. provider_values
-            INSERT INTO groups_provider_values_connection (group_id, values_id, created_at, active, generated, mcp)
-            SELECT v_group_id, pvj.values_id, NOW(), true, false, false
+            INSERT INTO config_provider_values_connection (config_id, values_id, created_at, active, generated, mcp)
+            SELECT v_config_id, pvj.values_id, NOW(), true, false, false
             FROM agent_models_junction amj
             JOIN model_providers_junction mpj ON mpj.model_id = amj.model_id AND mpj.active = true
             JOIN provider_values_junction pvj ON pvj.provider_id = mpj.providers_id AND pvj.active = true
             WHERE amj.agent_id = v_entry_agent_id AND amj.active = true
-            ON CONFLICT (group_id, values_id) DO NOTHING;
+            ON CONFLICT (config_id, values_id) DO NOTHING;
 
-            -- Create bindings_entry for this entry type
-            INSERT INTO bindings_entry (created_at, updated_at, generated, mcp, active)
-            VALUES (NOW(), NOW(), false, false, true)
-            RETURNING id INTO v_binding_id;
-
-            -- Link to the matching bindings_resource by entry type
-            SELECT br.id INTO v_bindings_resource_id
-            FROM bindings_resource br
-            WHERE br.entry::text = v_entry_type AND br.active = true
-            LIMIT 1;
-
-            IF v_bindings_resource_id IS NOT NULL THEN
-                INSERT INTO bindings_bindings_connection (binding_id, bindings_id, created_at, active)
-                VALUES (v_binding_id, v_bindings_resource_id, NOW(), true);
-            END IF;
-
-            -- Link chat -> group -> binding via junction
-            INSERT INTO simulation_chats_bindings_entry (chat_id, group_id, binding_id, created_at, updated_at, active)
-            VALUES (v_chat_id, v_group_id, v_binding_id, NOW(), NOW(), true);
         END LOOP;
     END IF;
 

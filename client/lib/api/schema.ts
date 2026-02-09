@@ -6384,68 +6384,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/views/simulation/groups/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Groups
-         * @description Get simulation group data from the materialized view.
-         *
-         *     This endpoint fetches group-level inference config data.
-         */
-        post: operations["get_groups_api_v4_views_simulation_groups_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/simulation/groups/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Refresh Groups View
-         * @description Refresh the mv_simulation_groups materialized view concurrently.
-         */
-        post: operations["refresh_groups_view_api_v4_views_simulation_groups_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/simulation/groups/recreate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Recreate Groups View
-         * @description Recreate the mv_simulation_groups materialized view.
-         */
-        post: operations["recreate_groups_view_api_v4_views_simulation_groups_recreate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v4/views/simulation/messages/get": {
         parameters: {
             query?: never;
@@ -7131,6 +7069,66 @@ export interface paths {
          * @description Get artifact session detail from api_get_artifact_session_detail_v4.
          */
         post: operations["get_artifact_session_detail_api_v4_views_artifacts_session_detail_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/views/config/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Config
+         * @description Get config data from the materialized view.
+         */
+        post: operations["get_config_api_v4_views_config_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/views/config/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Config View
+         * @description Refresh the mv_config materialized view concurrently.
+         */
+        post: operations["refresh_config_view_api_v4_views_config_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/views/config/recreate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Recreate Config View
+         * @description Recreate the mv_config materialized view.
+         */
+        post: operations["recreate_config_view_api_v4_views_config_recreate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11521,8 +11519,8 @@ export interface components {
             eval_id?: string | null;
             /** Run Ids */
             run_ids?: string[];
-            /** Group Ids */
-            group_ids?: string[];
+            /** Group Id */
+            group_id?: string | null;
             /** Chat Created At */
             chat_created_at?: string | null;
             /** Chat Updated At */
@@ -12424,6 +12422,47 @@ export interface components {
         ColorsApiResponse: {
             /** Color Id */
             color_id?: string | null;
+        };
+        /**
+         * ConfigViewItem
+         * @description Single config from the config view (inference config).
+         */
+        ConfigViewItem: {
+            /**
+             * Config Id
+             * Format: uuid
+             */
+            config_id: string;
+            /** Agents Id */
+            agents_id?: string | null;
+            /** Models Id */
+            models_id?: string | null;
+            /** Model Values Id */
+            model_values_id?: string | null;
+            /** Providers Id */
+            providers_id?: string | null;
+            /** Provider Values Id */
+            provider_values_id?: string | null;
+            /** Endpoints Id */
+            endpoints_id?: string | null;
+            /** Keys Id */
+            keys_id?: string | null;
+            /** Prompts Id */
+            prompts_id?: string | null;
+            /** Instructions Ids */
+            instructions_ids?: string[] | null;
+            /** Temperature Levels Id */
+            temperature_levels_id?: string | null;
+            /** Reasoning Levels Id */
+            reasoning_levels_id?: string | null;
+            /** Qualities Id */
+            qualities_id?: string | null;
+            /** Voices Id */
+            voices_id?: string | null;
+            /** Tools Ids */
+            tools_ids?: string[] | null;
+            /** Created At */
+            created_at?: string | null;
         };
         /**
          * ConnectionConfirmedPayload
@@ -13469,54 +13508,8 @@ export interface components {
              * @default true
              */
             active: boolean;
-            /** Names Group Id */
-            names_group_id?: string | null;
-            /** Descriptions Group Id */
-            descriptions_group_id?: string | null;
-            /** Flags Group Id */
-            flags_group_id?: string | null;
-            /** Colors Group Id */
-            colors_group_id?: string | null;
-            /** Icons Group Id */
-            icons_group_id?: string | null;
-            /** Auths Group Id */
-            auths_group_id?: string | null;
-            /** Tools Group Id */
-            tools_group_id?: string | null;
-            /** Instructions Group Id */
-            instructions_group_id?: string | null;
-            /** Documents Group Id */
-            documents_group_id?: string | null;
-            /** Departments Group Id */
-            departments_group_id?: string | null;
-            /** Parameters Group Id */
-            parameters_group_id?: string | null;
-            /** Parameter Fields Group Id */
-            parameter_fields_group_id?: string | null;
-            /** Fields Group Id */
-            fields_group_id?: string | null;
-            /** Examples Group Id */
-            examples_group_id?: string | null;
-            /** Questions Group Id */
-            questions_group_id?: string | null;
-            /** Templates Group Id */
-            templates_group_id?: string | null;
-            /** Texts Group Id */
-            texts_group_id?: string | null;
-            /** Run Rubrics Group Id */
-            run_rubrics_group_id?: string | null;
-            /** Group Rubrics Group Id */
-            group_rubrics_group_id?: string | null;
-            /** Bindings Group Id */
-            bindings_group_id?: string | null;
-            /** Conditional Parameters Group Id */
-            conditional_parameters_group_id?: string | null;
-            /** Personas Group Id */
-            personas_group_id?: string | null;
-            /** Scenarios Group Id */
-            scenarios_group_id?: string | null;
-            /** Simulations Group Id */
-            simulations_group_id?: string | null;
+            /** Group Id */
+            group_id?: string | null;
             /** Resource Types */
             resource_types?: string[];
             /** Resource Ids */
@@ -16182,6 +16175,29 @@ export interface components {
             items?: components["schemas"]["QGetColorsV4Item"][] | null;
         };
         /**
+         * GetConfigRequest
+         * @description Request for getting config data.
+         */
+        GetConfigRequest: {
+            /**
+             * Config Id
+             * Format: uuid
+             * @description Config ID to fetch
+             */
+            config_id: string;
+        };
+        /**
+         * GetConfigResponse
+         * @description Response containing config data.
+         */
+        GetConfigResponse: {
+            /**
+             * Items
+             * @description Config data items
+             */
+            items?: components["schemas"]["ConfigViewItem"][];
+        };
+        /**
          * GetDailyMetricsRequest
          * @description Request for filtering mv_daily_metrics.
          */
@@ -16972,29 +16988,6 @@ export interface components {
         GetGroupRubricsApiResponse: {
             /** Items */
             items?: components["schemas"]["QGetGroupRubricsV4Item"][] | null;
-        };
-        /**
-         * GetGroupsRequest
-         * @description Request for getting group data.
-         */
-        GetGroupsRequest: {
-            /**
-             * Chat Id
-             * Format: uuid
-             * @description Chat ID to fetch groups for
-             */
-            chat_id: string;
-        };
-        /**
-         * GetGroupsResponse
-         * @description Response containing group data.
-         */
-        GetGroupsResponse: {
-            /**
-             * Items
-             * @description Group data items
-             */
-            items?: components["schemas"]["GroupViewItem"][];
         };
         /**
          * GetHealthAnalyticsRequest
@@ -20804,55 +20797,6 @@ export interface components {
             /** Id */
             id?: string | null;
         };
-        /**
-         * GroupViewItem
-         * @description Single group from the simulation groups view (inference config).
-         */
-        GroupViewItem: {
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
-            /** Groups Id */
-            groups_id?: string | null;
-            /** Agents Id */
-            agents_id?: string | null;
-            /** Models Id */
-            models_id?: string | null;
-            /** Model Values Id */
-            model_values_id?: string | null;
-            /** Providers Id */
-            providers_id?: string | null;
-            /** Provider Values Id */
-            provider_values_id?: string | null;
-            /** Endpoints Id */
-            endpoints_id?: string | null;
-            /** Keys Id */
-            keys_id?: string | null;
-            /** Prompts Id */
-            prompts_id?: string | null;
-            /** Instructions Ids */
-            instructions_ids?: string[] | null;
-            /** Temperature Levels Id */
-            temperature_levels_id?: string | null;
-            /** Reasoning Levels Id */
-            reasoning_levels_id?: string | null;
-            /** Qualities Id */
-            qualities_id?: string | null;
-            /** Voices Id */
-            voices_id?: string | null;
-            /** Tools Ids */
-            tools_ids?: string[] | null;
-            /** Custom Model */
-            custom_model?: boolean | null;
-            /** Group Name */
-            group_name?: string | null;
-            /** Trace Id */
-            trace_id?: string | null;
-            /** Created At */
-            created_at?: string | null;
-        };
         /** GrowthAvailableMetric */
         GrowthAvailableMetric: {
             /** Id */
@@ -23234,6 +23178,8 @@ export interface components {
         PatchPersonaDraftApiRequest: {
             /** Input Draft Id */
             input_draft_id?: string | null;
+            /** Group Id */
+            group_id?: string | null;
             /**
              * Expected Version
              * @default 0
@@ -23968,8 +23914,6 @@ export interface components {
         PersonaMultiResourceAction: {
             /** Resource Ids */
             resource_ids?: string[] | null;
-            /** Group Id */
-            group_id?: string | null;
             /** Create Tool Id */
             create_tool_id?: string | null;
             /** Link Tool Id */
@@ -24065,8 +24009,6 @@ export interface components {
         PersonaResourceAction: {
             /** Resource Id */
             resource_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
             /** Create Tool Id */
             create_tool_id?: string | null;
             /** Link Tool Id */
@@ -28493,6 +28435,8 @@ export interface components {
         SavePersonaApiRequest: {
             /** Input Persona Id */
             input_persona_id?: string | null;
+            /** Group Id */
+            group_id?: string | null;
             names: components["schemas"]["PersonaResourceAction"];
             descriptions: components["schemas"]["PersonaResourceAction"];
             colors: components["schemas"]["PersonaResourceAction"];
@@ -43939,109 +43883,6 @@ export interface operations {
             };
         };
     };
-    get_groups_api_v4_views_simulation_groups_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetGroupsRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetGroupsResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    refresh_groups_view_api_v4_views_simulation_groups_refresh_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    recreate_groups_view_api_v4_views_simulation_groups_recreate_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_messages_api_v4_views_simulation_messages_get_post: {
         parameters: {
             query?: never;
@@ -45269,6 +45110,109 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetArtifactSessionDetailResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_config_api_v4_views_config_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetConfigRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetConfigResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_config_view_api_v4_views_config_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RefreshResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    recreate_config_view_api_v4_views_config_recreate_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RefreshResponse"];
                 };
             };
             /** @description Validation Error */

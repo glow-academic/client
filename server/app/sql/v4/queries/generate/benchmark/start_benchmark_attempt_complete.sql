@@ -38,7 +38,6 @@ DECLARE
     v_run RECORD;
     v_group RECORD;
     v_chat_id uuid;
-    v_first_binding_id uuid;
     v_first_group_id uuid;
     v_run_resource_id uuid;
     v_total_runs integer;
@@ -92,31 +91,16 @@ BEGIN
             VALUES (v_attempt_id, '', false, false, NOW(), NOW())
             RETURNING id INTO v_chat_id;
 
-            -- Link chat to groups_resource
-            INSERT INTO benchmark_chats_groups_connection (chat_id, groups_id, active)
-            VALUES (v_chat_id, v_group.groups_resource_id, true);
-
-            -- Find groups_entry linked to this groups_resource
+            -- Set group_id directly on chat from groups_entry
             SELECT ggc.group_id INTO v_first_group_id
             FROM groups_groups_connection ggc
             WHERE ggc.groups_id = v_group.groups_resource_id AND ggc.active = true
             LIMIT 1;
 
-            -- Get binding for runtime config from group_entry
+            UPDATE benchmark_chats_entry SET group_id = v_first_group_id WHERE id = v_chat_id;
+
             IF v_first_group_id IS NOT NULL THEN
-                SELECT b.id INTO v_first_binding_id
-                FROM bindings_entry b
-                WHERE b.group_id = v_first_group_id AND b.active = true
-                LIMIT 1;
-
-                -- Create binding entry if we have one
-                IF v_first_binding_id IS NOT NULL THEN
-                    INSERT INTO benchmark_chats_bindings_entry (chat_id, group_id, binding_id, active)
-                    VALUES (v_chat_id, v_first_group_id, v_first_binding_id, true);
-                END IF;
-
                 -- Link all runs_resource from runs_entry belonging to this group
-                -- runs_entry.group_id -> runs_runs_connection -> runs_resource
                 INSERT INTO benchmark_chats_runs_connection (chat_id, runs_id, active)
                 SELECT DISTINCT v_chat_id, rrc.runs_id, true
                 FROM runs_entry re
@@ -159,18 +143,15 @@ BEGIN
             INSERT INTO benchmark_chats_runs_connection (chat_id, runs_id, active)
             VALUES (v_chat_id, v_run.runs_resource_id, true);
 
-            -- Get binding for runtime config from runs_resource's linked runs_entry
-            SELECT b.id, re.group_id INTO v_first_binding_id, v_first_group_id
+            -- Set group_id on chat from runs_resource's linked runs_entry
+            SELECT re.group_id INTO v_first_group_id
             FROM runs_runs_connection rrc
             JOIN runs_entry re ON re.id = rrc.run_id
-            LEFT JOIN bindings_entry b ON b.group_id = re.group_id AND b.active = true
             WHERE rrc.runs_id = v_run.runs_resource_id AND rrc.active = true
             LIMIT 1;
 
-            -- Create binding entry if we have one
-            IF v_first_binding_id IS NOT NULL AND v_first_group_id IS NOT NULL THEN
-                INSERT INTO benchmark_chats_bindings_entry (chat_id, group_id, binding_id, active)
-                VALUES (v_chat_id, v_first_group_id, v_first_binding_id, true);
+            IF v_first_group_id IS NOT NULL THEN
+                UPDATE benchmark_chats_entry SET group_id = v_first_group_id WHERE id = v_chat_id;
             END IF;
 
             -- Add to chats array

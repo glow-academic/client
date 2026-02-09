@@ -60,42 +60,51 @@ DECLARE
     v_group_id uuid;
     v_trace_id text;
     v_agent_id uuid;
+    v_config_id uuid;
     v_created_at timestamptz;
 BEGIN
-    -- Get group_id from chat bindings
-    SELECT b.group_id INTO v_group_id
-    FROM benchmark_chats_bindings_entry b
-    WHERE b.chat_id = p_chat_id AND b.active = true
-    LIMIT 1;
+    -- Get group_id directly from benchmark_chats_entry
+    SELECT c.group_id INTO v_group_id
+    FROM benchmark_chats_entry c
+    WHERE c.id = p_chat_id;
 
     IF v_group_id IS NULL THEN
         RAISE EXCEPTION 'No group binding found for chat %', p_chat_id;
     END IF;
 
-    -- Get agent_id from group
-    SELECT ar.id INTO v_agent_id
-    FROM groups_agents_connection gac
-    JOIN agents_resource ar ON ar.id = gac.agents_id
-    WHERE gac.group_id = v_group_id AND gac.active = true
+    -- Get agent_id from latest run's config in this group
+    SELECT aaj.agent_id INTO v_agent_id
+    FROM runs_entry r
+    JOIN config_agents_connection cac ON cac.config_id = r.config_id AND cac.active = true
+    JOIN agent_agents_junction aaj ON aaj.agents_id = cac.agents_id AND aaj.active = true
+    WHERE r.group_id = v_group_id
+    ORDER BY r.created_at DESC
     LIMIT 1;
 
     -- Generate trace_id
     v_trace_id := 'test_' || p_chat_id::text || '_' || p_run_resource_id::text;
 
-    -- Create new runs_entry for this replay
-    INSERT INTO runs_entry (group_id, generated, mcp, created_at, updated_at)
-    VALUES (v_group_id, true, false, NOW(), NOW())
+    -- Create fresh config_entry for this test run
+    INSERT INTO config_entry (created_at, updated_at, generated, mcp, active)
+    VALUES (NOW(), NOW(), true, false, true)
+    RETURNING id INTO v_config_id;
+
+    -- Snapshot agent config into config
+    IF v_agent_id IS NOT NULL THEN
+        INSERT INTO config_agents_connection (config_id, agents_id, created_at, active, generated, mcp)
+        SELECT v_config_id, aaj.agents_id, NOW(), true, false, false
+        FROM agent_agents_junction aaj WHERE aaj.agent_id = v_agent_id AND aaj.active = true
+        ON CONFLICT (config_id, agents_id) DO NOTHING;
+    END IF;
+
+    -- Create new runs_entry with config_id
+    INSERT INTO runs_entry (group_id, config_id, generated, mcp, created_at, updated_at)
+    VALUES (v_group_id, v_config_id, true, false, NOW(), NOW())
     RETURNING id, created_at INTO v_run_id, v_created_at;
 
     -- Link profile to run
     INSERT INTO profile_runs_junction (profile_id, run_id)
     VALUES (p_profile_id, v_run_id);
-
-    -- Link agent to run
-    IF v_agent_id IS NOT NULL THEN
-        INSERT INTO agent_runs_junction (agent_id, run_id)
-        VALUES (v_agent_id, v_run_id);
-    END IF;
 
     -- Return all the data
     RETURN QUERY
@@ -109,54 +118,54 @@ BEGIN
     prompt_data AS (
         SELECT
             pr.system_prompt
-        FROM groups_prompts_connection gpc
-        JOIN prompts_resource pr ON pr.id = gpc.prompts_id
-        WHERE gpc.group_id = v_group_id AND gpc.active = true
+        FROM config_prompts_connection cpc
+        JOIN prompts_resource pr ON pr.id = cpc.prompts_id
+        WHERE cpc.config_id = v_config_id AND cpc.active = true
         LIMIT 1
     ),
     model_config AS (
         SELECT
             (SELECT v.value FROM model_values_junction mv JOIN values_resource v ON mv.value_id = v.id WHERE mv.model_id = m.id LIMIT 1) as model_name,
             COALESCE(e.base_url, '') as base_url
-        FROM groups_models_connection gmc
-        JOIN models_resource m ON m.id = gmc.models_id
+        FROM config_models_connection cmc
+        JOIN models_resource m ON m.id = cmc.models_id
         LEFT JOIN model_endpoints_junction mej ON mej.model_id = m.id
         LEFT JOIN endpoints_resource e ON e.id = mej.endpoint_id AND e.active = true
-        WHERE gmc.group_id = v_group_id AND gmc.active = true
+        WHERE cmc.config_id = v_config_id AND cmc.active = true
         LIMIT 1
     ),
     provider_config AS (
         SELECT
             (SELECT n.name FROM provider_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.provider_id = pr.id LIMIT 1) as provider_name
-        FROM groups_providers_connection gpc_prov
-        JOIN providers_resource prov ON prov.id = gpc_prov.providers_id
+        FROM config_providers_connection cpc_prov
+        JOIN providers_resource prov ON prov.id = cpc_prov.providers_id
         JOIN provider_providers_junction ppj ON ppj.providers_id = prov.id
         JOIN provider_artifact pr ON pr.id = ppj.provider_id
-        WHERE gpc_prov.group_id = v_group_id AND gpc_prov.active = true
+        WHERE cpc_prov.config_id = v_config_id AND cpc_prov.active = true
         LIMIT 1
     ),
     key_config AS (
         SELECT
             k.key as api_key
-        FROM groups_keys_connection gkc
-        JOIN keys_resource k ON k.id = gkc.keys_id AND k.active = true
-        WHERE gkc.group_id = v_group_id AND gkc.active = true
+        FROM config_keys_connection ckc
+        JOIN keys_resource k ON k.id = ckc.keys_id AND k.active = true
+        WHERE ckc.config_id = v_config_id AND ckc.active = true
         LIMIT 1
     ),
     temp_config AS (
         SELECT
             tl.temperature
-        FROM groups_temperature_levels_connection gtlc
-        JOIN temperature_levels_resource tl ON tl.id = gtlc.temperature_level_id AND tl.active = true
-        WHERE gtlc.group_id = v_group_id AND gtlc.active = true
+        FROM config_temperature_levels_connection ctlc
+        JOIN temperature_levels_resource tl ON tl.id = ctlc.temperature_levels_id AND tl.active = true
+        WHERE ctlc.config_id = v_config_id AND ctlc.active = true
         LIMIT 1
     ),
     reasoning_config AS (
         SELECT
             rl.reasoning_level as reasoning
-        FROM groups_reasoning_levels_connection grlc
-        JOIN reasoning_levels_resource rl ON rl.id = grlc.reasoning_level_id AND rl.active = true
-        WHERE grlc.group_id = v_group_id AND grlc.active = true
+        FROM config_reasoning_levels_connection crlc
+        JOIN reasoning_levels_resource rl ON rl.id = crlc.reasoning_levels_id AND rl.active = true
+        WHERE crlc.config_id = v_config_id AND crlc.active = true
         LIMIT 1
     ),
     tool_config AS (
@@ -166,19 +175,19 @@ BEGIN
                 'description', (SELECT d.description FROM tool_descriptions_junction td JOIN descriptions_resource d ON td.description_id = d.id WHERE td.tool_id = t.id LIMIT 1),
                 'parameters', '{}'::jsonb
             )), '[]'::jsonb) as tools
-        FROM groups_tools_connection gtc
-        JOIN tools_resource tr ON tr.id = gtc.tools_id
+        FROM config_tools_connection ctc
+        JOIN tools_resource tr ON tr.id = ctc.tools_id
         JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
         JOIN tool_artifact t ON t.id = ttj.tool_id
-        WHERE gtc.group_id = v_group_id AND gtc.active = true
+        WHERE ctc.config_id = v_config_id AND ctc.active = true
           AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
     ),
     instruction_config AS (
         SELECT
             COALESCE(ARRAY_AGG(i.template ORDER BY i.created_at), ARRAY[]::text[]) as templates
-        FROM groups_instructions_connection gic
-        JOIN instructions_resource i ON i.id = gic.instructions_id AND i.active = true
-        WHERE gic.group_id = v_group_id AND gic.active = true
+        FROM config_instructions_connection cic
+        JOIN instructions_resource i ON i.id = cic.instructions_id AND i.active = true
+        WHERE cic.config_id = v_config_id AND cic.active = true
     ),
     -- Get original conversation from the run_resource
     -- This needs to find the runs_entry linked to runs_resource and get its messages

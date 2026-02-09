@@ -95,17 +95,16 @@ attempt_data AS (
     WHERE t.active = true
     LIMIT 1
 ),
--- Group binding data (runtime config)
+-- Group data (direct from benchmark_chats_entry.group_id)
 group_binding AS (
     SELECT
-        b.group_id,
-        TRUE as group_exists
-    FROM benchmark_chats_bindings_entry b
-    JOIN chat_data cd ON b.chat_id = cd.chat_id
-    WHERE b.active = true
+        bce.group_id,
+        (bce.group_id IS NOT NULL) as group_exists
+    FROM benchmark_chats_entry bce
+    JOIN chat_data cd ON bce.id = cd.chat_id
     LIMIT 1
 ),
--- Agent from group
+-- Agent from latest run's config in this group
 agent_data AS (
     SELECT
         a.id as agent_id,
@@ -116,22 +115,24 @@ agent_data AS (
             JOIN flags_resource f ON af.flag_id = f.id
             WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true
         ) as agent_is_active
-    FROM groups_agents_connection gac
-    JOIN group_binding gb ON gac.group_id = gb.group_id
-    JOIN agents_resource ar ON ar.id = gac.agents_id
-    JOIN agent_artifact a ON a.id = ar.id
-    WHERE gac.active = true
+    FROM group_binding gb
+    JOIN runs_entry r ON r.group_id = gb.group_id
+    JOIN config_agents_connection cac ON cac.config_id = r.config_id AND cac.active = true
+    JOIN agent_agents_junction aaj ON aaj.agents_id = cac.agents_id AND aaj.active = true
+    JOIN agent_artifact a ON a.id = aaj.agent_id
+    ORDER BY r.created_at DESC
     LIMIT 1
 ),
--- Model from group
+-- Model from latest run's config
 model_data AS (
     SELECT
         m.id as model_id,
         (SELECT v.value FROM model_values_junction mv JOIN values_resource v ON mv.value_id = v.id WHERE mv.model_id = m.id LIMIT 1) as model_name
-    FROM groups_models_connection gmc
-    JOIN group_binding gb ON gmc.group_id = gb.group_id
-    JOIN models_resource m ON m.id = gmc.models_id
-    WHERE gmc.active = true
+    FROM group_binding gb
+    JOIN runs_entry r ON r.group_id = gb.group_id
+    JOIN config_models_connection cmc ON cmc.config_id = r.config_id AND cmc.active = true
+    JOIN models_resource m ON m.id = cmc.models_id
+    ORDER BY r.created_at DESC
     LIMIT 1
 ),
 -- Provider from model
@@ -146,14 +147,15 @@ provider_data AS (
     JOIN provider_artifact pr ON pr.id = ppj.provider_id
     LIMIT 1
 ),
--- API key from group
+-- API key from latest run's config
 api_key_data AS (
     SELECT
         TRUE as has_api_key
-    FROM groups_keys_connection gkc
-    JOIN group_binding gb ON gkc.group_id = gb.group_id
-    JOIN keys_resource k ON k.id = gkc.keys_id AND k.active = true
-    WHERE gkc.active = true
+    FROM group_binding gb
+    JOIN runs_entry r ON r.group_id = gb.group_id
+    JOIN config_keys_connection ckc ON ckc.config_id = r.config_id AND ckc.active = true
+    JOIN keys_resource k ON k.id = ckc.keys_id AND k.active = true
+    ORDER BY r.created_at DESC
     LIMIT 1
 ),
 -- Rate limit data

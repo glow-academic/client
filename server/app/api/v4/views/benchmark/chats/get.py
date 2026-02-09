@@ -76,7 +76,7 @@ async def get_benchmark_chats_internal(
             test_id=row["test_id"],
             eval_id=row["eval_id"],
             run_ids=row["run_ids"] or [],
-            group_ids=row["group_ids"] or [],
+            group_id=row["group_id"],
             chat_created_at=row["chat_created_at"],
             chat_updated_at=row["chat_updated_at"],
             chat_title=row["chat_title"],

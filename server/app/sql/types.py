@@ -9175,47 +9175,6 @@ class PrepareTrainingGenerationApiResponse(BaseModel):
 
 
 
-# Generated from: prepare_training_start
-
-class PrepareTrainingStartSqlParams(BaseModel):
-
-    p_profile_id: UUID
-    p_simulation_id: UUID
-    p_scenario_id: UUID | None = None
-    p_entry_types: list[str] | None = None
-    p_entry_agent_ids: list[UUID] | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_profile_id,
-            self.p_simulation_id,
-            self.p_scenario_id,
-            self.p_entry_types,
-            self.p_entry_agent_ids,
-        )
-
-class PrepareTrainingStartSqlRow(BaseModel):
-
-    attempt_id: UUID | None = None
-    chat_id: UUID | None = None
-    scenario_id: UUID | None = None
-
-class PrepareTrainingStartApiRequest(BaseModel):
-
-    p_profile_id: UUID
-    p_simulation_id: UUID
-    p_scenario_id: UUID | None = None
-    p_entry_types: list[str] | None = None
-    p_entry_agent_ids: list[UUID] | None = None
-
-class PrepareTrainingStartApiResponse(BaseModel):
-
-    attempt_id: UUID | None = None
-    chat_id: UUID | None = None
-    scenario_id: UUID | None = None
-
-
-
 # Generated from: complete_image_generation
 
 class CompleteImageGenerationSqlParams(BaseModel):
@@ -27010,91 +26969,6 @@ class GetSimulationScenarioCountsApiResponse(BaseModel):
 
 
 
-# Generated from: get_draft_resources_view
-
-class GetDraftResourcesViewSqlParams(BaseModel):
-
-    draft_ids: list[UUID]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.draft_ids,
-        )
-
-class QGetDraftResourcesViewV4Item(BaseModel):
-
-    draft_id: UUID | None
-    created_at: datetime | None
-    updated_at: datetime | None
-    version: int | None
-    generated: bool | None
-    mcp: bool | None
-    active: bool | None
-    names_group_id: UUID | None
-    descriptions_group_id: UUID | None
-    flags_group_id: UUID | None
-    colors_group_id: UUID | None
-    icons_group_id: UUID | None
-    auths_group_id: UUID | None
-    tools_group_id: UUID | None
-    instructions_group_id: UUID | None
-    documents_group_id: UUID | None
-    departments_group_id: UUID | None
-    parameters_group_id: UUID | None
-    parameter_fields_group_id: UUID | None
-    fields_group_id: UUID | None
-    examples_group_id: UUID | None
-    questions_group_id: UUID | None
-    templates_group_id: UUID | None
-    texts_group_id: UUID | None
-    run_rubrics_group_id: UUID | None
-    group_rubrics_group_id: UUID | None
-    bindings_group_id: UUID | None
-    conditional_parameters_group_id: UUID | None
-    personas_group_id: UUID | None
-    scenarios_group_id: UUID | None
-    simulations_group_id: UUID | None
-    resource_types: list[Any] | None
-    resource_ids: list[UUID] | None
-    name_ids: list[UUID] | None
-    description_ids: list[UUID] | None
-    flag_ids: list[UUID] | None
-    color_ids: list[UUID] | None
-    icon_ids: list[UUID] | None
-    auth_ids: list[UUID] | None
-    tool_ids: list[UUID] | None
-    instruction_ids: list[UUID] | None
-    document_ids: list[UUID] | None
-    department_ids: list[UUID] | None
-    parameter_ids: list[UUID] | None
-    parameter_field_ids: list[UUID] | None
-    field_ids: list[UUID] | None
-    example_ids: list[UUID] | None
-    question_ids: list[UUID] | None
-    template_ids: list[UUID] | None
-    text_ids: list[UUID] | None
-    run_rubric_ids: list[UUID] | None
-    group_rubric_ids: list[UUID] | None
-    binding_ids: list[UUID] | None
-    conditional_parameter_ids: list[UUID] | None
-    persona_ids: list[UUID] | None
-    scenario_ids: list[UUID] | None
-    simulation_ids: list[UUID] | None
-
-class GetDraftResourcesViewSqlRow(BaseModel):
-
-    items: list[QGetDraftResourcesViewV4Item] | None = None
-
-class GetDraftResourcesViewApiRequest(BaseModel):
-
-    draft_ids: list[UUID]
-
-class GetDraftResourcesViewApiResponse(BaseModel):
-
-    items: list[QGetDraftResourcesViewV4Item] | None = None
-
-
-
 # Generated from: get_simulation_attempts_view
 
 class GetSimulationAttemptsViewSqlParams(BaseModel):
@@ -27220,54 +27094,6 @@ class GetSimulationChatsViewApiRequest(BaseModel):
 class GetSimulationChatsViewApiResponse(BaseModel):
 
     items: list[QGetSimulationChatsViewV4Item] | None = None
-
-
-
-# Generated from: get_simulation_groups_view
-
-class GetSimulationGroupsViewSqlParams(BaseModel):
-
-    chat_id_filter: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.chat_id_filter,
-        )
-
-class QGetSimulationGroupsViewV4Item(BaseModel):
-
-    group_id: UUID | None
-    groups_id: UUID | None
-    agents_id: UUID | None
-    models_id: UUID | None
-    model_values_id: UUID | None
-    providers_id: UUID | None
-    provider_values_id: UUID | None
-    endpoints_id: UUID | None
-    keys_id: UUID | None
-    prompts_id: UUID | None
-    instructions_ids: list[UUID] | None
-    temperature_levels_id: UUID | None
-    reasoning_levels_id: UUID | None
-    qualities_id: UUID | None
-    voices_id: UUID | None
-    tools_ids: list[UUID] | None
-    custom_model: bool | None
-    group_name: str | None
-    trace_id: str | None
-    created_at: datetime | None
-
-class GetSimulationGroupsViewSqlRow(BaseModel):
-
-    items: list[QGetSimulationGroupsViewV4Item] | None = None
-
-class GetSimulationGroupsViewApiRequest(BaseModel):
-
-    chat_id_filter: UUID
-
-class GetSimulationGroupsViewApiResponse(BaseModel):
-
-    items: list[QGetSimulationGroupsViewV4Item] | None = None
 
 
 
@@ -28468,12 +28294,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "PrepareTrainingGenerationSqlRow",
         "PrepareTrainingGenerationApiRequest",
         "PrepareTrainingGenerationApiResponse",
-    ),
-    "app/sql/v4/queries/generate/training/prepare_training_start_complete.sql": (
-        "PrepareTrainingStartSqlParams",
-        "PrepareTrainingStartSqlRow",
-        "PrepareTrainingStartApiRequest",
-        "PrepareTrainingStartApiResponse",
     ),
     "app/sql/v4/queries/images/complete_image_generation_complete.sql": (
         "CompleteImageGenerationSqlParams",
@@ -30785,12 +30605,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetSimulationScenarioCountsApiRequest",
         "GetSimulationScenarioCountsApiResponse",
     ),
-    "app/sql/v4/queries/views/drafts/get_draft_resources_view_complete.sql": (
-        "GetDraftResourcesViewSqlParams",
-        "GetDraftResourcesViewSqlRow",
-        "GetDraftResourcesViewApiRequest",
-        "GetDraftResourcesViewApiResponse",
-    ),
     "app/sql/v4/queries/views/simulation/attempts/get_simulation_attempts_view_complete.sql": (
         "GetSimulationAttemptsViewSqlParams",
         "GetSimulationAttemptsViewSqlRow",
@@ -30802,12 +30616,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetSimulationChatsViewSqlRow",
         "GetSimulationChatsViewApiRequest",
         "GetSimulationChatsViewApiResponse",
-    ),
-    "app/sql/v4/queries/views/simulation/groups/get_simulation_groups_view_complete.sql": (
-        "GetSimulationGroupsViewSqlParams",
-        "GetSimulationGroupsViewSqlRow",
-        "GetSimulationGroupsViewApiRequest",
-        "GetSimulationGroupsViewApiResponse",
     ),
     "app/sql/v4/queries/views/simulation/history/get_simulation_history_view_complete.sql": (
         "GetSimulationHistoryViewSqlParams",
@@ -31627,11 +31435,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/generate/training/prepare_training_generation_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/generate/training/prepare_training_start_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -33561,22 +33364,12 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/views/drafts/get_draft_resources_view_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/views/simulation/attempts/get_simulation_attempts_view_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/views/simulation/chats/get_simulation_chats_view_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/views/simulation/groups/get_simulation_groups_view_complete.sql"]
     ) -> SqlString: ...
 
     @overload

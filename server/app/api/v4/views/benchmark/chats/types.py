@@ -13,7 +13,7 @@ class BenchmarkChatViewItem(BaseModel):
     test_id: UUID
     eval_id: UUID | None = None
     run_ids: list[UUID] = Field(default_factory=list)
-    group_ids: list[UUID] = Field(default_factory=list)
+    group_id: UUID | None = None
     chat_created_at: datetime | None = None
     chat_updated_at: datetime | None = None
     chat_title: str | None = None

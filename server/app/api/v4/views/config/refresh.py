@@ -1,4 +1,4 @@
-"""Refresh endpoint for simulation groups view."""
+"""Refresh endpoint for config view."""
 
 import time
 from typing import Annotated
@@ -19,24 +19,22 @@ router = APIRouter()
     response_model=RefreshResponse,
     dependencies=[
         audit_activity(
-            "views.simulation.groups.refresh",
-            "{{ actor.name }} refreshed simulation groups view",
+            "views.config.refresh",
+            "{{ actor.name }} refreshed config view",
         )
     ],
 )
-async def refresh_groups_view(
+async def refresh_config_view(
     http_request: Request,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> RefreshResponse:
-    """Refresh the mv_simulation_groups materialized view concurrently."""
-    tags = ["views", "simulation", "groups"]
+    """Refresh the mv_config materialized view concurrently."""
+    tags = ["views", "config"]
 
     try:
         start_time = time.time()
 
-        await conn.execute(
-            "REFRESH MATERIALIZED VIEW CONCURRENTLY mv_simulation_groups"
-        )
+        await conn.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY mv_config")
 
         duration_ms = int((time.time() - start_time) * 1000)
 
@@ -45,12 +43,12 @@ async def refresh_groups_view(
         return RefreshResponse(
             success=True,
             method="concurrent",
-            message=f"Refreshed mv_simulation_groups in {duration_ms}ms",
+            message=f"Refreshed mv_config in {duration_ms}ms",
             duration_ms=duration_ms,
         )
 
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to refresh mv_simulation_groups: {str(e)}",
+            detail=f"Failed to refresh mv_config: {str(e)}",
         ) from e

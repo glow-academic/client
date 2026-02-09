@@ -92,57 +92,65 @@ DECLARE
     v_trace_id text;
     v_created_at timestamptz;
     v_agent_id uuid;
+    v_config_id uuid;
 BEGIN
 
-    -- Read pre-stored group from simulation_chats_bindings_entry
+    -- Get group_id directly from simulation_chats_entry
     -- If p_group_id is provided (regeneration), use that directly
     IF p_group_id IS NOT NULL THEN
-        SELECT groups_entry.id, groups_entry.trace_id INTO v_group_id, v_trace_id
-        FROM groups_entry
-        WHERE groups_entry.id = p_group_id;
+        v_group_id := p_group_id;
+    ELSE
+        SELECT sc.group_id INTO v_group_id
+        FROM simulation_chats_entry sc
+        WHERE sc.id = p_chat_id;
     END IF;
 
     IF v_group_id IS NULL THEN
-        -- Read group from chat's bindings, filtering by entry_types if provided
-        SELECT scbe.group_id INTO v_group_id
-        FROM simulation_chats_bindings_entry scbe
-        JOIN bindings_entry be ON be.id = scbe.binding_id AND be.active = true
-        JOIN bindings_bindings_connection bbc ON bbc.binding_id = be.id AND bbc.active = true
-        JOIN bindings_resource br ON br.id = bbc.bindings_id AND br.active = true
-        WHERE scbe.chat_id = p_chat_id AND scbe.active = TRUE
-          AND (p_entry_types IS NULL OR br.entry::text = ANY(p_entry_types))
-        LIMIT 1;
-
-        IF v_group_id IS NOT NULL THEN
-            SELECT trace_id INTO v_trace_id FROM groups_entry WHERE id = v_group_id;
-        END IF;
+        RAISE EXCEPTION 'No group_id found for chat_id %. Group should be set at training start time.', p_chat_id;
     END IF;
 
-    IF v_group_id IS NULL THEN
-        RAISE EXCEPTION 'No pre-stored group found for chat_id %. Groups should be created at training start time.', p_chat_id;
-    END IF;
+    SELECT trace_id INTO v_trace_id FROM groups_entry WHERE id = v_group_id;
 
-    -- Resolve agent_id from stored group's agents connection
+    -- Resolve agent_id from latest run's config (or from agent junctions directly for first run)
     SELECT aaj.agent_id INTO v_agent_id
-    FROM groups_agents_connection gac
-    JOIN agent_agents_junction aaj ON aaj.agents_id = gac.agents_id AND aaj.active = true
-    WHERE gac.group_id = v_group_id AND gac.active = true
+    FROM runs_entry r
+    JOIN config_agents_connection cac ON cac.config_id = r.config_id AND cac.active = true
+    JOIN agent_agents_junction aaj ON aaj.agents_id = cac.agents_id AND aaj.active = true
+    WHERE r.group_id = v_group_id
+    ORDER BY r.created_at DESC
     LIMIT 1;
 
-    -- Create run
-    INSERT INTO runs_entry (input_tokens, output_tokens, group_id)
-    VALUES (0, 0, v_group_id)
+    -- Fallback: if no prior run (shouldn't happen, but safety), resolve from group's first config
+    IF v_agent_id IS NULL THEN
+        -- Get from any config linked to a run in this group
+        SELECT aaj.agent_id INTO v_agent_id
+        FROM config_agents_connection cac
+        JOIN agent_agents_junction aaj ON aaj.agents_id = cac.agents_id AND aaj.active = true
+        WHERE cac.config_id IN (SELECT r.config_id FROM runs_entry r WHERE r.group_id = v_group_id AND r.config_id IS NOT NULL)
+        LIMIT 1;
+    END IF;
+
+    -- Create fresh config_entry for this run
+    INSERT INTO config_entry (created_at, updated_at, generated, mcp, active)
+    VALUES (NOW(), NOW(), false, false, true)
+    RETURNING id INTO v_config_id;
+
+    -- Snapshot agent config into config_*_connection tables
+    IF v_agent_id IS NOT NULL THEN
+        INSERT INTO config_agents_connection (config_id, agents_id, created_at, active, generated, mcp)
+        SELECT v_config_id, aaj.agents_id, NOW(), true, false, false
+        FROM agent_agents_junction aaj WHERE aaj.agent_id = v_agent_id AND aaj.active = true
+        ON CONFLICT (config_id, agents_id) DO NOTHING;
+    END IF;
+
+    -- Create run with config_id
+    INSERT INTO runs_entry (input_tokens, output_tokens, group_id, config_id)
+    VALUES (0, 0, v_group_id, v_config_id)
     RETURNING id INTO v_run_id;
 
     -- Link run to profile
     INSERT INTO profile_runs_junction (profile_id, run_id)
     VALUES (p_profile_id, v_run_id);
-
-    -- Link run to agent (if resolved)
-    IF v_agent_id IS NOT NULL THEN
-        INSERT INTO agent_runs_junction (agent_id, run_id)
-        VALUES (v_agent_id, v_run_id);
-    END IF;
 
     v_created_at := NOW();
 
