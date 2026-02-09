@@ -373,7 +373,7 @@ if [ "$BARE_MODE" = true ]; then
         # Copy themes subfolder only
         if [ -d "uploads/themes" ]; then
             mkdir -p "$EXPORT_DIR/uploads/themes"
-            rsync -av "uploads/themes/" "$EXPORT_DIR/uploads/themes/" || true
+            rsync -av --exclude="providers.ftl" "uploads/themes/" "$EXPORT_DIR/uploads/themes/" || true
             success "Copied themes folder"
         else
             warning "uploads/themes directory does not exist, skipping..."
@@ -411,7 +411,7 @@ else
         # Copy themes subfolder
         if [ -d "uploads/themes" ]; then
             mkdir -p "$EXPORT_DIR/uploads/themes"
-            rsync -av "uploads/themes/" "$EXPORT_DIR/uploads/themes/" || true
+            rsync -av --exclude="providers.ftl" "uploads/themes/" "$EXPORT_DIR/uploads/themes/" || true
         fi
     else
         warning "uploads directory does not exist, skipping..."
