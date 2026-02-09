@@ -7,7 +7,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, {
+  type Dispatch,
+  type SetStateAction,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { toast } from "sonner";
 
 import {
@@ -17,7 +24,6 @@ import {
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { StepCard } from "@/components/common/forms/StepCard";
-import type { GenerateRegenerateModalResource } from "@/components/common/GenerateRegenerateModal";
 import { GenerateRegenerateModal } from "@/components/common/GenerateRegenerateModal";
 import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
 import { Cohorts } from "@/components/resources/Cohorts";
@@ -37,6 +43,8 @@ import {
 } from "@/components/ui/tooltip";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
+import { useAiGeneration } from "@/hooks/use-ai-generation";
+import { useGenerationModal } from "@/hooks/use-generation-modal";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { ResourceType } from "@/lib/resources/types";
 import { cn } from "@/lib/utils";
@@ -71,9 +79,22 @@ type CreateDraftRequestLimitsOut = OutputOf<
 type CreateDraftCohortsIn = InputOf<"/api/v4/resources/cohorts", "post">;
 type CreateDraftCohortsOut = OutputOf<"/api/v4/resources/cohorts", "post">;
 type PatchProfileDraftIn = InputOf<"/api/v4/artifacts/profiles/draft", "patch">;
-type PatchProfileDraftOut = OutputOf<"/api/v4/artifacts/profiles/draft", "patch">;
+type PatchProfileDraftOut = OutputOf<
+  "/api/v4/artifacts/profiles/draft",
+  "patch"
+>;
 
 type StaffData = OutputOf<"/api/v4/artifacts/profiles/get", "post">;
+
+const VALID_RESOURCE_TYPES = [
+  "names",
+  "flags",
+  "request_limits",
+  "departments",
+  "emails",
+  "cohorts",
+] as const;
+type ProfileResourceType = (typeof VALID_RESOURCE_TYPES)[number];
 
 export interface ProfileProps {
   staffId?: string;
@@ -124,24 +145,6 @@ function ProfileComponent({
     isConnected,
   } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
-
-  const [generatingResources, setGeneratingResources] = useState<
-    Set<ResourceType>
-  >(new Set());
-
-  const [showGenerateModal, setShowGenerateModal] = useState(false);
-  const [modalMode, setModalMode] = useState<"generate" | "regenerate" | null>(
-    null
-  );
-  const [modalResources, setModalResources] = useState<
-    GenerateRegenerateModalResource[]
-  >([]);
-  const [modalInstructions, setModalInstructions] = useState("");
-
-  const isGenerating = useCallback(
-    (resourceType: ResourceType) => generatingResources.has(resourceType),
-    [generatingResources]
-  );
 
   const staffSearchParamsClient = useMemo(
     () => ({
@@ -234,7 +237,6 @@ function ProfileComponent({
 
   const currentStaffData = stableStaffDataFields;
 
-
   const canRegenerate = useCallback(
     (resourceType: ResourceType): boolean => {
       if (!stableStaffDataFields) return false;
@@ -304,7 +306,6 @@ function ProfileComponent({
   React.useEffect(() => {
     formStateRef.current = formState;
   }, [formState]);
-
 
   const departmentIdsStr = React.useMemo(
     () => JSON.stringify(staffData?.department_ids ?? []),
@@ -435,7 +436,6 @@ function ProfileComponent({
     return [primaryId, ...ids.filter((id) => id !== primaryId)];
   }, [formState.department_ids, formState.primary_department_id]);
 
-
   const orderedEmailIdsStr = useMemo(
     () => JSON.stringify(orderedEmailIds),
     [orderedEmailIds]
@@ -525,157 +525,69 @@ function ProfileComponent({
     return () => clearTimeout(timer);
   }, [draftPatchKey]);
 
-  useEffect(() => {
-    if (!socket || !isConnected) return;
+  // --- useAiGeneration hook ---
+  const onAiComplete = useCallback((data: Record<string, unknown>) => {
+    return {
+      aiUpdates: {} as Record<string, unknown>,
+      formStateUpdater: (prev: Record<string, unknown>) => {
+        const updates: Record<string, unknown> = {};
 
-    const currentGroupId = staffData?.group_id;
+        if (data["name_id"]) updates["name_id"] = data["name_id"];
+        if (data["active_flag_id"])
+          updates["active_flag_id"] = data["active_flag_id"];
+        if (data["request_limit_id"])
+          updates["request_limit_id"] = data["request_limit_id"];
 
-    const handleGenerationComplete = (data: {
-      artifact_type?: string;
-      group_id?: string;
-      resource_type?: string;
-      name_id?: string | null;
-      active_flag_id?: string | null;
-      request_limit_id?: string | null;
-      department_ids?: string[];
-      email_ids?: string[];
-      cohort_ids?: string[];
-      primary_email_index?: number;
-      message?: string;
-      success?: boolean;
-      [key: string]: unknown;
-    }) => {
-      if (
-        data.artifact_type !== "profile" ||
-        !data.group_id ||
-        data.group_id !== currentGroupId
-      ) {
-        return;
-      }
-
-      const validResourceTypes: ResourceType[] = [
-        "names",
-        "flags",
-        "request_limits",
-        "departments",
-        "emails",
-        "cohorts",
-      ];
-      if (
-        data.resource_type &&
-        validResourceTypes.includes(data.resource_type as ResourceType)
-      ) {
-        setFormState((prev) => {
-          const updates: Partial<typeof prev> = {};
-
-          if (data.name_id) updates.name_id = data.name_id;
-          if (data.active_flag_id) updates.active_flag_id = data.active_flag_id;
-          if (data.request_limit_id)
-            updates.request_limit_id = data.request_limit_id;
-          if (data.department_ids && data.department_ids.length > 0) {
-            const newDeptIds = data.department_ids.filter(
-              (id) => !prev.department_ids.includes(id)
-            );
-            updates.department_ids = [...prev.department_ids, ...newDeptIds];
-          }
-          if (data.email_ids && data.email_ids.length > 0) {
-            const newEmailIds = data.email_ids.filter(
-              (id) => !prev.email_ids.includes(id)
-            );
-            updates.email_ids = [...prev.email_ids, ...newEmailIds];
-            if (data.primary_email_index !== undefined) {
-              updates.primary_email_index = data.primary_email_index;
-            }
-          }
-          if (data.cohort_ids && data.cohort_ids.length > 0) {
-            const newCohortIds = data.cohort_ids.filter(
-              (id) => !prev.cohort_ids.includes(id)
-            );
-            updates.cohort_ids = [...prev.cohort_ids, ...newCohortIds];
-          }
-
-          return { ...prev, ...updates };
-        });
-
-        setGeneratingResources((prev) => {
-          const next = new Set(prev);
-          next.delete(data.resource_type as ResourceType);
-          return next;
-        });
-        if (data.success) {
-          toast.success(
-            data.message || `${data.resource_type} generated successfully`
+        const deptIds = data["department_ids"] as string[] | undefined;
+        if (deptIds && deptIds.length > 0) {
+          const prevDeptIds = (prev["department_ids"] as string[]) ?? [];
+          const newDeptIds = deptIds.filter(
+            (id) => !prevDeptIds.includes(id)
           );
-        } else {
-          toast.error(
-            data.message || `Failed to generate ${data.resource_type}`
-          );
+          updates["department_ids"] = [...prevDeptIds, ...newDeptIds];
         }
-      }
-    };
 
-    const handleGenerationProgress = (data: {
-      artifact_type?: string;
-      group_id?: string;
-      resource_type?: string;
-      [key: string]: unknown;
-    }) => {
-      if (
-        data.artifact_type !== "profile" ||
-        !data.group_id ||
-        data.group_id !== currentGroupId
-      ) {
-        return;
-      }
-    };
-
-    const handleGenerationError = (data: {
-      artifact_type?: string;
-      group_id?: string;
-      message?: string;
-      resource_type?: string;
-      resource_types?: string[];
-    }) => {
-      if (
-        data.artifact_type !== "profile" ||
-        !data.group_id ||
-        data.group_id !== currentGroupId
-      ) {
-        return;
-      }
-
-      const validResourceTypes: ResourceType[] = [
-        "names",
-        "flags",
-        "request_limits",
-        "departments",
-        "emails",
-        "cohorts",
-      ];
-      const resourceTypes =
-        data.resource_types || (data.resource_type ? [data.resource_type] : []);
-      setGeneratingResources((prev) => {
-        const next = new Set(prev);
-        resourceTypes.forEach((rt) => {
-          if (validResourceTypes.includes(rt as ResourceType)) {
-            next.delete(rt as ResourceType);
+        const emailIds = data["email_ids"] as string[] | undefined;
+        if (emailIds && emailIds.length > 0) {
+          const prevEmailIds = (prev["email_ids"] as string[]) ?? [];
+          const newEmailIds = emailIds.filter(
+            (id) => !prevEmailIds.includes(id)
+          );
+          updates["email_ids"] = [...prevEmailIds, ...newEmailIds];
+          if (data["primary_email_index"] !== undefined) {
+            updates["primary_email_index"] = data["primary_email_index"];
           }
-        });
-        return next;
-      });
-      toast.error(data.message || "Generation failed");
-    };
+        }
 
-    socket.on("profile_generation_progress", handleGenerationProgress);
-    socket.on("profile_generation_complete", handleGenerationComplete);
-    socket.on("profile_generation_error", handleGenerationError);
+        const cohortIds = data["cohort_ids"] as string[] | undefined;
+        if (cohortIds && cohortIds.length > 0) {
+          const prevCohortIds = (prev["cohort_ids"] as string[]) ?? [];
+          const newCohortIds = cohortIds.filter(
+            (id) => !prevCohortIds.includes(id)
+          );
+          updates["cohort_ids"] = [...prevCohortIds, ...newCohortIds];
+        }
 
-    return () => {
-      socket.off("profile_generation_progress", handleGenerationProgress);
-      socket.off("profile_generation_complete", handleGenerationComplete);
-      socket.off("profile_generation_error", handleGenerationError);
+        return { ...prev, ...updates };
+      },
     };
-  }, [socket, isConnected, staffData?.group_id]);
+  }, []);
+
+  const { isGenerating, setGeneratingResources } = useAiGeneration<
+    ProfileResourceType,
+    Record<string, unknown>
+  >({
+    socket,
+    isConnected,
+    artifactType: "profile",
+    groupId: staffData?.group_id,
+    eventPrefix: "profile_generation",
+    validResourceTypes: [...VALID_RESOURCE_TYPES],
+    onComplete: onAiComplete,
+    setFormState: setFormState as Dispatch<
+      SetStateAction<Record<string, unknown>>
+    >,
+  });
 
   const determineAgentType = useCallback(
     (resourceTypes: ResourceType[]): string | null => {
@@ -737,7 +649,7 @@ function ProfileComponent({
 
       setGeneratingResources((prev) => {
         const next = new Set(prev);
-        resourceTypes.forEach((rt) => next.add(rt));
+        resourceTypes.forEach((rt) => next.add(rt as ProfileResourceType));
         return next;
       });
 
@@ -753,7 +665,7 @@ function ProfileComponent({
         staff_id: staffId || null,
       });
     },
-    [socket, isConnected, staffId]
+    [socket, isConnected, staffId, setGeneratingResources]
   );
 
   const handleGenerateName = useCallback(
@@ -833,24 +745,24 @@ function ProfileComponent({
     []
   );
 
-  const handleOpenStepCardModal = useCallback(
-    (stepId: string, mode: "generate" | "regenerate") => {
-      const resourceTypes = stepResources[stepId] || [];
-      const resources: GenerateRegenerateModalResource[] = resourceTypes.map(
-        (rt) => ({
-          id: rt,
-          label: resourceLabels[rt] ?? "",
-          active: mode === "regenerate" ? canRegenerate(rt) : true,
-        })
-      );
-
-      setModalResources(resources);
-      setModalMode(mode);
-      setModalInstructions("");
-      setShowGenerateModal(true);
-    },
-    [stepResources, resourceLabels, canRegenerate]
-  );
+  // --- useGenerationModal hook ---
+  const { handleOpenStepCardModal, modalProps } =
+    useGenerationModal<ResourceType>({
+      stepResources,
+      resourceLabels,
+      canRegenerate,
+      onGenerate: (selectedResources, instructions) => {
+        const agentType = determineAgentType(
+          selectedResources as ResourceType[]
+        );
+        handleGenerateResources(
+          selectedResources as ResourceType[],
+          agentType,
+          instructions
+        );
+      },
+      isGenerating,
+    });
 
   useEffect(() => {
     const staffName = staffData?.name;
@@ -863,27 +775,6 @@ function ProfileComponent({
     }
     return () => clearEntityMetadata();
   }, [staffData, staffId, isEditMode, setEntityMetadata, clearEntityMetadata]);
-
-  // Listen for full-page-generate event from layout
-  useEffect(() => {
-    const handleFullPageGenerate = (
-      event: CustomEvent<{ agentId?: string }>
-    ) => {
-      const agentId = event.detail?.agentId;
-      if (agentId) {
-        handleOpenStepCardModal("all", "generate");
-      }
-    };
-    window.addEventListener(
-      "full-page-generate",
-      handleFullPageGenerate as EventListener
-    );
-    return () =>
-      window.removeEventListener(
-        "full-page-generate",
-        handleFullPageGenerate as EventListener
-      );
-  }, [handleOpenStepCardModal]);
 
   const handleSubmit = useCallback(
     async (_formData: Record<string, unknown>) => {
@@ -1002,21 +893,6 @@ function ProfileComponent({
       }
     },
     [formState, staffData?.departments_required]
-  );
-
-  const handleModalGenerate = useCallback(
-    async (selectedResources: string[], instructions: string) => {
-      const resourceTypes = selectedResources as ResourceType[];
-      const agentType = determineAgentType(resourceTypes);
-      await handleGenerateResources(
-        resourceTypes,
-        agentType,
-        instructions.trim() || undefined
-      );
-      setShowGenerateModal(false);
-      setModalInstructions("");
-    },
-    [handleGenerateResources, determineAgentType]
   );
 
   const steps = useMemo(
@@ -1765,21 +1641,7 @@ function ProfileComponent({
           }}
         />
 
-        {modalMode && (
-          <GenerateRegenerateModal
-            open={showGenerateModal}
-            onOpenChange={setShowGenerateModal}
-            resources={modalResources}
-            onResourcesChange={setModalResources}
-            instructions={modalInstructions}
-            onInstructionsChange={setModalInstructions}
-            onGenerate={handleModalGenerate}
-            isGenerating={modalResources.some((r) =>
-              isGenerating(r.id as ResourceType)
-            )}
-            mode={modalMode}
-          />
-        )}
+        <GenerateRegenerateModal {...modalProps} />
       </div>
     </TooltipProvider>
   );
