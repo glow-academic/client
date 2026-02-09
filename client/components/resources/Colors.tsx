@@ -96,7 +96,7 @@ export interface ColorsProps {
   presetColors?: ColorItem[];
   colorSuggestions?: string[];
   // AI diff view props
-  aiResource?: { id?: string | null; name?: string | null; hex_code?: string | null } | null;
+  aiResource?: { id?: string | null; name?: string | null; hex_code?: string | null } | null | undefined;
   onAccept?: () => void;
   onReject?: () => void;
 }

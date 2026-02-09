@@ -73,7 +73,7 @@ export interface IconsProps {
   suggestedIcons?: string[];
   iconSuggestions?: string[];
   // AI diff view props
-  aiResource?: { id?: string | null; name?: string | null; value?: string | null } | null;
+  aiResource?: { id?: string | null; name?: string | null; value?: string | null } | null | undefined;
   onAccept?: () => void;
   onReject?: () => void;
 }

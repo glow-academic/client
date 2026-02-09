@@ -180,7 +180,7 @@ export interface InstructionsProps {
   instructionsId?: string | null;
   suggestions?: string[];
   // AI diff view props
-  aiResource?: { id?: string | null; template?: string | null } | null;
+  aiResource?: { id?: string | null; template?: string | null } | null | undefined;
   onAccept?: () => void;
   onReject?: () => void;
 }
