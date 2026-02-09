@@ -11,12 +11,12 @@ import type { Metadata, ResolvingMetadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetToolIn = InputOf<"/api/v4/tools/get", "post">;
-type GetToolOut = OutputOf<"/api/v4/tools/get", "post">;
-type SaveToolIn = InputOf<"/api/v4/tools/save", "post">;
-type SaveToolOut = OutputOf<"/api/v4/tools/save", "post">;
-type PatchToolDraftIn = InputOf<"/api/v4/tools/draft", "patch">;
-type PatchToolDraftOut = OutputOf<"/api/v4/tools/draft", "patch">;
+type GetToolIn = InputOf<"/api/v4/artifacts/tools/get", "post">;
+type GetToolOut = OutputOf<"/api/v4/artifacts/tools/get", "post">;
+type SaveToolIn = InputOf<"/api/v4/artifacts/tools/save", "post">;
+type SaveToolOut = OutputOf<"/api/v4/artifacts/tools/save", "post">;
+type PatchToolDraftIn = InputOf<"/api/v4/artifacts/tools/draft", "patch">;
+type PatchToolDraftOut = OutputOf<"/api/v4/artifacts/tools/draft", "patch">;
 type CreateDraftArgsIn = InputOf<"/api/v4/resources/args", "post">;
 type CreateDraftArgsOut = OutputOf<"/api/v4/resources/args", "post">;
 type CreateDraftArgsOutputsIn = InputOf<
@@ -32,7 +32,7 @@ type CreateDraftArgsOutputsOut = OutputOf<
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
 const getTool = async (input: GetToolIn): Promise<GetToolOut> => {
-  return api.post("/tools/get", input, {
+  return api.post("/artifacts/tools/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -78,7 +78,7 @@ export async function generateMetadata(
 async function saveTool(input: SaveToolIn): Promise<SaveToolOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/tools/save", input);
+  return api.post("/artifacts/tools/save", input);
 }
 
 async function patchToolDraft(
@@ -86,7 +86,7 @@ async function patchToolDraft(
 ): Promise<PatchToolDraftOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.patch("/tools/draft", input);
+  return api.patch("/artifacts/tools/draft", input);
 }
 
 async function createDraftArgs(

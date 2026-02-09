@@ -13,8 +13,8 @@ import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata, ResolvingMetadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type PricingGroupDetailIn = InputOf<"/api/v4/group/get", "post">;
-type PricingGroupDetailOut = OutputOf<"/api/v4/group/get", "post">;
+type PricingGroupDetailIn = InputOf<"/api/v4/artifacts/group/get", "post">;
+type PricingGroupDetailOut = OutputOf<"/api/v4/artifacts/group/get", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
@@ -25,7 +25,7 @@ const getPricingGroupDetail = async (
 ): Promise<PricingGroupDetailOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/group/get", input, {
+  return api.post("/artifacts/group/get", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {

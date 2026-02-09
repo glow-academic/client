@@ -1,4 +1,4 @@
-"""Route tests for POST /api/v4/departments/new endpoint."""
+"""Route tests for POST /api/v4/artifacts/departments/new endpoint."""
 
 import asyncpg  # type: ignore
 import httpx
@@ -16,7 +16,7 @@ async def test_get_department_new(
 
     # v4 routes get profile_id from router dependency, not request body
     response = await client.post(
-        "/api/v4/departments/new",
+        "/api/v4/artifacts/departments/new",
         json={},
     )
 
@@ -51,7 +51,7 @@ async def test_get_department_new_not_found(
     # v4 routes get profile_id from router dependency (header), not request body
     # For this test, we need to set the profile header
     response = await client.post(
-        "/api/v4/departments/new",
+        "/api/v4/artifacts/departments/new",
         json={},
         headers={"X-Profile-Id": fake_profile_id},
     )

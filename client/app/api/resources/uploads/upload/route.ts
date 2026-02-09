@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
         // Rewrite backend location to BFF location
         const location = value.replace(
           /\/api\/v4\/resources\/uploads\/upload\//,
-          "/api/uploads/upload/",
+          "/api/resources/uploads/upload/",
         );
         headers.set(key, location);
       } else {

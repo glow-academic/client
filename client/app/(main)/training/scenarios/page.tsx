@@ -13,11 +13,11 @@ import type { Metadata } from "next";
 import { loadScenariosListSearchParams } from "./listSearchParams";
 
 /** ---- Strong types from OpenAPI ---- */
-type ScenariosListOut = OutputOf<"/api/v4/scenarios/list", "post">;
-type DuplicateScenarioIn = InputOf<"/api/v4/scenarios/duplicate", "post">;
-type DuplicateScenarioOut = OutputOf<"/api/v4/scenarios/duplicate", "post">;
-type DeleteScenarioIn = InputOf<"/api/v4/scenarios/delete", "post">;
-type DeleteScenarioOut = OutputOf<"/api/v4/scenarios/delete", "post">;
+type ScenariosListOut = OutputOf<"/api/v4/artifacts/scenarios/list", "post">;
+type DuplicateScenarioIn = InputOf<"/api/v4/artifacts/scenarios/duplicate", "post">;
+type DuplicateScenarioOut = OutputOf<"/api/v4/artifacts/scenarios/duplicate", "post">;
+type DeleteScenarioIn = InputOf<"/api/v4/artifacts/scenarios/delete", "post">;
+type DeleteScenarioOut = OutputOf<"/api/v4/artifacts/scenarios/delete", "post">;
 
 /** ---- Body type for scenarios list request ---- */
 type ScenariosListBody = {
@@ -39,7 +39,7 @@ type ScenariosListBody = {
 const getScenariosList = async (body: ScenariosListBody): Promise<ScenariosListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/scenarios/list",
+    "/artifacts/scenarios/list",
     { body },
     {
       cache: "no-store",
@@ -58,7 +58,7 @@ async function duplicateScenario(
 ): Promise<DuplicateScenarioOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/scenarios/duplicate", input);
+  return api.post("/artifacts/scenarios/duplicate", input);
 }
 
 async function deleteScenario(
@@ -66,7 +66,7 @@ async function deleteScenario(
 ): Promise<DeleteScenarioOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/scenarios/delete", input);
+  return api.post("/artifacts/scenarios/delete", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {

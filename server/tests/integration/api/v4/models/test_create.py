@@ -1,4 +1,4 @@
-"""Route tests for POST /api/v4/models/create endpoint."""
+"""Route tests for POST /api/v4/artifacts/models/create endpoint."""
 
 import asyncpg  # type: ignore
 import httpx
@@ -16,7 +16,7 @@ async def test_create_model(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/models/create",
+        "/api/v4/artifacts/models/create",
         json={
             "name": "Test Model",
             "description": "Test Description",

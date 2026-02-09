@@ -22,8 +22,8 @@ import { loadProfileReportSearchParams } from "./searchParams";
 type ReportsOverviewIn = InputOf<"/api/v4/artifacts/dashboard/get", "post">;
 type ReportsOverviewOut = OutputOf<"/api/v4/artifacts/dashboard/get", "post">;
 // Using /attempt/list for history section
-type ReportHistoryIn = InputOf<"/api/v4/attempt/list", "post">;
-type ReportHistoryOut = OutputOf<"/api/v4/attempt/list", "post">;
+type ReportHistoryIn = InputOf<"/api/v4/artifacts/attempt/list", "post">;
+type ReportHistoryOut = OutputOf<"/api/v4/artifacts/attempt/list", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Reports overview responses exceed Next.js 2MB cache limit (~12.9MB).
@@ -51,7 +51,7 @@ const getReportHistory = async (
 ): Promise<ReportHistoryOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/attempt/list", input, {
+  return api.post("/artifacts/attempt/list", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {

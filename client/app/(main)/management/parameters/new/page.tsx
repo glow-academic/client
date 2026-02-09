@@ -12,12 +12,12 @@ import type { Metadata } from "next";
 import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type ParameterGetIn = InputOf<"/api/v4/parameters/get", "post">;
-type ParameterGetOut = OutputOf<"/api/v4/parameters/get", "post">;
-type SaveParameterIn = InputOf<"/api/v4/parameters/save", "post">;
-type SaveParameterOut = OutputOf<"/api/v4/parameters/save", "post">;
-type PatchParameterDraftIn = InputOf<"/api/v4/parameters/draft", "patch">;
-type PatchParameterDraftOut = OutputOf<"/api/v4/parameters/draft", "patch">;
+type ParameterGetIn = InputOf<"/api/v4/artifacts/parameters/get", "post">;
+type ParameterGetOut = OutputOf<"/api/v4/artifacts/parameters/get", "post">;
+type SaveParameterIn = InputOf<"/api/v4/artifacts/parameters/save", "post">;
+type SaveParameterOut = OutputOf<"/api/v4/artifacts/parameters/save", "post">;
+type PatchParameterDraftIn = InputOf<"/api/v4/artifacts/parameters/draft", "patch">;
+type PatchParameterDraftOut = OutputOf<"/api/v4/artifacts/parameters/draft", "patch">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -25,7 +25,7 @@ type PatchParameterDraftOut = OutputOf<"/api/v4/parameters/draft", "patch">;
 const getParameterDefault = async (
   input: ParameterGetIn
 ): Promise<ParameterGetOut> => {
-  return api.post("/parameters/get", input, {
+  return api.post("/artifacts/parameters/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -39,14 +39,14 @@ async function saveParameter(
 ): Promise<SaveParameterOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/parameters/save", input);
+  return api.post("/artifacts/parameters/save", input);
 }
 
 
 async function patchParameterDraft(input: PatchParameterDraftIn): Promise<PatchParameterDraftOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.patch("/parameters/draft", input);
+  return api.patch("/artifacts/parameters/draft", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {

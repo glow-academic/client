@@ -1,4 +1,4 @@
-"""Route tests for POST /api/v4/simulations/delete endpoint."""
+"""Route tests for POST /api/v4/artifacts/simulations/delete endpoint."""
 
 import asyncpg  # type: ignore
 import httpx
@@ -51,7 +51,7 @@ async def test_delete_simulation(
 
     # v4 routes get profile_id from router dependency, not request body
     response = await client.post(
-        "/api/v4/simulations/delete",
+        "/api/v4/artifacts/simulations/delete",
         json={"simulationId": str(simulation_id)},
     )
 

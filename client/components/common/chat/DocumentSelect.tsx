@@ -26,7 +26,7 @@ import { Check, ChevronsUpDown } from "lucide-react";
 
 // Use server type from documents list API
 import type { OutputOf } from "@/lib/api/types";
-type DocumentsListOut = OutputOf<"/api/v4/documents/list", "post">;
+type DocumentsListOut = OutputOf<"/api/v4/artifacts/documents/list", "post">;
 type DocumentItem = NonNullable<DocumentsListOut["documents"]>[number];
 
 export interface DocumentSelectProps {

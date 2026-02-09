@@ -11,17 +11,17 @@ import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type FieldsListOut = OutputOf<"/api/v4/fields/list", "post">;
-type DuplicateFieldIn = InputOf<"/api/v4/fields/duplicate", "post">;
-type DuplicateFieldOut = OutputOf<"/api/v4/fields/duplicate", "post">;
-type DeleteFieldIn = InputOf<"/api/v4/fields/delete", "post">;
-type DeleteFieldOut = OutputOf<"/api/v4/fields/delete", "post">;
+type FieldsListOut = OutputOf<"/api/v4/artifacts/fields/list", "post">;
+type DuplicateFieldIn = InputOf<"/api/v4/artifacts/fields/duplicate", "post">;
+type DuplicateFieldOut = OutputOf<"/api/v4/artifacts/fields/duplicate", "post">;
+type DeleteFieldIn = InputOf<"/api/v4/artifacts/fields/delete", "post">;
+type DeleteFieldOut = OutputOf<"/api/v4/artifacts/fields/delete", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ---- */
 const getFieldsList = async (): Promise<FieldsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/fields/list",
+    "/artifacts/fields/list",
     { body: {} },
     {
       cache: "no-store",
@@ -39,12 +39,12 @@ async function duplicateField(
   input: DuplicateFieldIn,
 ): Promise<DuplicateFieldOut> {
   "use server";
-  return api.post("/fields/duplicate", input);
+  return api.post("/artifacts/fields/duplicate", input);
 }
 
 async function deleteField(input: DeleteFieldIn): Promise<DeleteFieldOut> {
   "use server";
-  return api.post("/fields/delete", input);
+  return api.post("/artifacts/fields/delete", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {

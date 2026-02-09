@@ -54,7 +54,7 @@ import { cn } from "@/lib/utils";
 import type { OutputOf } from "@/lib/api/types";
 
 // Extract types from API response (single source of truth)
-type SimulationsListOut = OutputOf<"/api/v4/simulations/list", "post">;
+type SimulationsListOut = OutputOf<"/api/v4/artifacts/simulations/list", "post">;
 type ScenarioMappingType = SimulationsListOut extends { scenario_mapping?: infer T } ? T : never;
 type ScenarioMappingItem = ScenarioMappingType extends Record<string, infer T> ? T : never;
 

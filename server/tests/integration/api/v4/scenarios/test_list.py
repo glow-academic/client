@@ -1,4 +1,4 @@
-"""Route tests for POST /api/v4/scenarios/list endpoint."""
+"""Route tests for POST /api/v4/artifacts/scenarios/list endpoint."""
 
 import asyncpg  # type: ignore
 import httpx
@@ -36,7 +36,7 @@ async def test_list_scenarios(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/scenarios/list",
+        "/api/v4/artifacts/scenarios/list",
         json={},
     )
 
@@ -61,7 +61,7 @@ async def test_list_scenarios_empty(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/scenarios/list",
+        "/api/v4/artifacts/scenarios/list",
         json={},
     )
 

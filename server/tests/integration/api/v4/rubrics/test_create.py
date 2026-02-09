@@ -1,4 +1,4 @@
-"""Route tests for POST /api/v4/rubrics/create endpoint."""
+"""Route tests for POST /api/v4/artifacts/rubrics/create endpoint."""
 
 import asyncpg  # type: ignore
 import httpx
@@ -39,7 +39,7 @@ async def test_create_rubric(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/rubrics/create",
+        "/api/v4/artifacts/rubrics/create",
         json={
             "name": "Test Rubric",
             "description": "Test Description",
@@ -169,7 +169,7 @@ async def test_create_rubric_without_departments(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/rubrics/create",
+        "/api/v4/artifacts/rubrics/create",
         json={
             "name": "Cross-Dept Rubric",
             "description": "Available to all departments",
@@ -215,7 +215,7 @@ async def test_create_rubric_without_standard_groups(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/rubrics/create",
+        "/api/v4/artifacts/rubrics/create",
         json={
             "name": "Simple Rubric",
             "description": "No standard groups",
@@ -253,7 +253,7 @@ async def test_create_rubric_minimal(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/rubrics/create",
+        "/api/v4/artifacts/rubrics/create",
         json={
             "name": "Minimal Rubric",
             "description": "",

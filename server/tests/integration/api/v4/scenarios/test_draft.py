@@ -1,4 +1,4 @@
-"""Route tests for PATCH /api/v4/scenarios/draft endpoint."""
+"""Route tests for PATCH /api/v4/artifacts/scenarios/draft endpoint."""
 
 from uuid import UUID
 
@@ -45,7 +45,7 @@ async def test_patch_scenario_draft_create(
 
     # v4 routes get profile_id from router dependency
     response = await client.patch(
-        "/api/v4/scenarios/draft",
+        "/api/v4/artifacts/scenarios/draft",
         json={
             "name_id": name_id,
             "problem_statement_id": problem_statement_id,
@@ -76,7 +76,7 @@ async def test_patch_scenario_draft_update(
 
     # Create a draft first
     create_response = await client.patch(
-        "/api/v4/scenarios/draft",
+        "/api/v4/artifacts/scenarios/draft",
         json={
             "name_id": original_name_id,
             "expected_version": 0,
@@ -90,7 +90,7 @@ async def test_patch_scenario_draft_update(
 
     # Update the draft
     response = await client.patch(
-        "/api/v4/scenarios/draft",
+        "/api/v4/artifacts/scenarios/draft",
         json={
             "name_id": updated_name_id,
             "expected_version": version,
@@ -117,7 +117,7 @@ async def test_patch_scenario_draft_version_mismatch(
 
     # Create a draft first
     create_response = await client.patch(
-        "/api/v4/scenarios/draft",
+        "/api/v4/artifacts/scenarios/draft",
         json={
             "name_id": original_name_id,
             "expected_version": 0,
@@ -130,7 +130,7 @@ async def test_patch_scenario_draft_version_mismatch(
 
     # Try to update with wrong version
     response = await client.patch(
-        "/api/v4/scenarios/draft",
+        "/api/v4/artifacts/scenarios/draft",
         json={
             "name_id": updated_name_id,
             "expected_version": 999,  # Wrong version

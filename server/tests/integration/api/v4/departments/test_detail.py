@@ -1,4 +1,4 @@
-"""Route tests for POST /api/v4/departments/detail endpoint."""
+"""Route tests for POST /api/v4/artifacts/departments/detail endpoint."""
 
 import asyncpg  # type: ignore
 import httpx
@@ -34,7 +34,7 @@ async def test_get_department_detail(
 
     # v4 routes get profile_id from router dependency, not request body
     response = await client.post(
-        "/api/v4/departments/detail",
+        "/api/v4/artifacts/departments/detail",
         json={"departmentId": str(dept_id)},
     )
 
@@ -67,7 +67,7 @@ async def test_get_department_detail_not_found(
 
     # v4 routes get profile_id from router dependency, not request body
     response = await client.post(
-        "/api/v4/departments/detail",
+        "/api/v4/artifacts/departments/detail",
         json={"departmentId": fake_dept_id},
     )
 

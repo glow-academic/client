@@ -2100,7 +2100,7 @@ export function ContentSection({
                 {selectedVideo ? (
                   selectedVideo.upload_id ? (
                     <video
-                      src={`/api/uploads/download/${selectedVideo.upload_id}`}
+                      src={`/api/resources/uploads/download/${selectedVideo.upload_id}`}
                       controls
                       className="w-full h-full object-contain"
                     />

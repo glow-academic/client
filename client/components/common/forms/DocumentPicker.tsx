@@ -40,7 +40,7 @@ type MappingItem = {
 };
 
 // Use server type from documents list API
-type DocumentsListOut = OutputOf<"/api/v4/documents/list", "post">;
+type DocumentsListOut = OutputOf<"/api/v4/artifacts/documents/list", "post">;
 type DocumentItem = NonNullable<DocumentsListOut["documents"]>[number];
 
 // Extended mapping item for documents with tags

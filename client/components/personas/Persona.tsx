@@ -63,8 +63,8 @@ type PersonaGenerationErrorPayload = Parameters<
 >[0];
 
 // Types defined inline using InputOf/OutputOf
-type SavePersonaIn = InputOf<"/api/v4/personas/save", "post">;
-type SavePersonaOut = OutputOf<"/api/v4/personas/save", "post">;
+type SavePersonaIn = InputOf<"/api/v4/artifacts/personas/save", "post">;
+type SavePersonaOut = OutputOf<"/api/v4/artifacts/personas/save", "post">;
 type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
@@ -95,10 +95,10 @@ type CreateDraftParameterFieldsOut = OutputOf<
   "/api/v4/resources/parameter_fields",
   "post"
 >;
-type PatchPersonaDraftIn = InputOf<"/api/v4/personas/draft", "patch">;
-type PatchPersonaDraftOut = OutputOf<"/api/v4/personas/draft", "patch">;
+type PatchPersonaDraftIn = InputOf<"/api/v4/artifacts/personas/draft", "patch">;
+type PatchPersonaDraftOut = OutputOf<"/api/v4/artifacts/personas/draft", "patch">;
 
-type PersonaData = OutputOf<"/api/v4/personas/get", "post">;
+type PersonaData = OutputOf<"/api/v4/artifacts/personas/get", "post">;
 
 export interface PersonaProps {
   personaId?: string;

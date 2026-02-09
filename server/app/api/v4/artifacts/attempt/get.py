@@ -142,7 +142,7 @@ async def get_attempt_internal(
     profile_id: UUID,
     attempt_id: UUID,
     bypass_cache: bool = False,
-    cache_key_path: str = "/api/v4/attempt/get",
+    cache_key_path: str = "/api/v4/artifacts/attempt/get",
     http_request: Request | None = None,
 ) -> tuple[GetAttemptDetailResponse, bool]:
     """Internal attempt detail fetcher with caching.

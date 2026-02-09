@@ -1,4 +1,4 @@
-"""Route tests for POST /api/v4/cohorts/save endpoint (create mode)."""
+"""Route tests for POST /api/v4/artifacts/cohorts/save endpoint (create mode)."""
 
 from uuid import UUID
 
@@ -30,7 +30,7 @@ async def test_create_cohort_minimal(
     # v4 routes get profile_id from router dependency
     # Use unified save endpoint with input_cohort_id = null for create mode
     response = await client.post(
-        "/api/v4/cohorts/save",
+        "/api/v4/artifacts/cohorts/save",
         json={
             "input_cohort_id": None,
             "name_id": None,  # Will need to create name resource first in real usage
@@ -110,7 +110,7 @@ async def test_create_cohort_with_links(
     # v4 routes get profile_id from router dependency
     # Use unified save endpoint with input_cohort_id = null for create mode
     response = await client.post(
-        "/api/v4/cohorts/save",
+        "/api/v4/artifacts/cohorts/save",
         json={
             "input_cohort_id": None,
             "name_id": None,  # Will need to create name resource first in real usage

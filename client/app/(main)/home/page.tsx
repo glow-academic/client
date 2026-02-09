@@ -20,11 +20,11 @@ import { loadHomeSearchParams } from "./searchParams";
 
 /** ---- Strong types from OpenAPI ---- */
 // Using /training/get for simulation cards (enhanced with stats)
-type HomeCardsIn = InputOf<"/api/v4/training/get", "post">;
-type HomeCardsOut = OutputOf<"/api/v4/training/get", "post">;
+type HomeCardsIn = InputOf<"/api/v4/artifacts/training/get", "post">;
+type HomeCardsOut = OutputOf<"/api/v4/artifacts/training/get", "post">;
 // Using /attempt/list for history section
-type HomeHistoryIn = InputOf<"/api/v4/attempt/list", "post">;
-type HomeHistoryOut = OutputOf<"/api/v4/attempt/list", "post">;
+type HomeHistoryIn = InputOf<"/api/v4/artifacts/attempt/list", "post">;
+type HomeHistoryOut = OutputOf<"/api/v4/artifacts/attempt/list", "post">;
 
 // Home component uses cards data directly (no merge needed)
 type HomeOut = HomeCardsOut;
@@ -35,7 +35,7 @@ const getHomeCards = async (
 ): Promise<HomeCardsOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/training/get", input, {
+  return api.post("/artifacts/training/get", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -51,7 +51,7 @@ const getHomeHistory = async (
 ): Promise<HomeHistoryOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/attempt/list", input, {
+  return api.post("/artifacts/attempt/list", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {

@@ -61,9 +61,9 @@ import {
 } from "lucide-react";
 import { parseAsBoolean, parseAsString, useQueryStates } from "nuqs";
 // Types now use profiles/save (unified endpoint)
-type SaveStaffIn = InputOf<"/api/v4/profiles/save", "post">;
-type SaveStaffOut = OutputOf<"/api/v4/profiles/save", "post">;
-type StaffDetailOut = OutputOf<"/api/v4/profiles/get", "post">;
+type SaveStaffIn = InputOf<"/api/v4/artifacts/profiles/save", "post">;
+type SaveStaffOut = OutputOf<"/api/v4/artifacts/profiles/save", "post">;
+type StaffDetailOut = OutputOf<"/api/v4/artifacts/profiles/get", "post">;
 
 export interface StaffNewEditProps {
   profileId?: string;

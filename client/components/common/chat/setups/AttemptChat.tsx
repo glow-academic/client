@@ -72,7 +72,7 @@ type AttemptViews = {
 };
 
 /** Attempt data from server - strongly typed from OpenAPI */
-type AttemptData = OutputOf<"/api/v4/attempt/get", "post"> & {
+type AttemptData = OutputOf<"/api/v4/artifacts/attempt/get", "post"> & {
   resources?: AttemptResources;
   views?: AttemptViews;
 };
@@ -107,6 +107,7 @@ type AttemptEndedEvent = Parameters<ServerToClientEvents["attempt_ended"]>[0];
 type AttemptAudioReadyEvent = Parameters<ServerToClientEvents["attempt_audio_ready"]>[0];
 type AttemptAudioEndedEvent = Parameters<ServerToClientEvents["attempt_audio_ended"]>[0];
 type AttemptGradingProgressEvent = Parameters<ServerToClientEvents["attempt_grading_progress"]>[0];
+type AttemptGradedEvent = Parameters<ServerToClientEvents["attempt_graded"]>[0];
 type AttemptHintProgressEvent = Parameters<ServerToClientEvents["attempt_hint_progress"]>[0];
 type AttemptResponseResultEvent = Parameters<ServerToClientEvents["attempt_response_result"]>[0];
 type AttemptErrorEvent = Parameters<ServerToClientEvents["attempt_error"]>[0];
@@ -1350,6 +1351,17 @@ export function AttemptChat({
       // which has been moved to analyses. The summary will be available after attempt refresh.
     };
 
+    // Grading complete
+    const handleGraded = (data: AttemptGradedEvent) => {
+      if (data.chat_id === currentChatIdRef.current) {
+        isGradingRef.current = false;
+        setIsGrading(false);
+        setGradingProgress(null);
+        gradingProgressRef.current = null;
+        router.refresh();
+      }
+    };
+
     // Hint generation
     const handleHint = (data: AttemptHintProgressEvent) => {
       if (data.type === "complete" && data.message_id && data.hints_count) {
@@ -1424,6 +1436,7 @@ export function AttemptChat({
     socket.on("attempt_chat_ended", handleChatEnded);
     socket.on("attempt_ended", handleAttemptEnded);
     socket.on("attempt_grading_progress", handleGrading);
+    socket.on("attempt_graded", handleGraded);
     socket.on("attempt_hint_progress", handleHint);
     socket.on("attempt_response_result", handleQuizResult);
     socket.on("attempt_error", handleError);
@@ -1441,6 +1454,7 @@ export function AttemptChat({
       socket.off("attempt_chat_ended", handleChatEnded);
       socket.off("attempt_ended", handleAttemptEnded);
       socket.off("attempt_grading_progress", handleGrading);
+      socket.off("attempt_graded", handleGraded);
       socket.off("attempt_hint_progress", handleHint);
       socket.off("attempt_response_result", handleQuizResult);
       socket.off("attempt_error", handleError);

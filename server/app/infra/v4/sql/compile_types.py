@@ -290,7 +290,9 @@ def _build_view_dependency_order(
     return levels
 
 
-def _sort_sql_files(sql_file: Path, server_root: Path, view_order: dict[str, int] | None = None) -> tuple[int, str]:
+def _sort_sql_files(
+    sql_file: Path, server_root: Path, view_order: dict[str, int] | None = None
+) -> tuple[int, str]:
     """Sort SQL files with proper dependency ordering for views and MVs.
 
     Args:
@@ -355,16 +357,10 @@ def _sort_sql_files(sql_file: Path, server_root: Path, view_order: dict[str, int
 
     # Profile: get_profile_complete creates types.q_get_profile_v4_role_resource
     # that get_profile_access_complete depends on — must execute first
-    if (
-        sql_path
-        == f"app/sql/{VERSION}/queries/profile/get_profile_complete.sql"
-    ):
+    if sql_path == f"app/sql/{VERSION}/queries/profile/get_profile_complete.sql":
         return (14, sql_path)
 
-    if (
-        sql_path
-        == f"app/sql/{VERSION}/queries/profile/get_profile_access_complete.sql"
-    ):
+    if sql_path == f"app/sql/{VERSION}/queries/profile/get_profile_access_complete.sql":
         return (15, sql_path)
 
     # All other routes sorted alphabetically
@@ -1423,7 +1419,8 @@ async def compile_sql_types(
                 # Re-sort SQL files with auto-detected view dependency order
                 view_order = _build_view_dependency_order(sql_file_paths, server_root)
                 sorted_sql_files = sorted(
-                    sql_file_paths, key=lambda f: _sort_sql_files(f, server_root, view_order)
+                    sql_file_paths,
+                    key=lambda f: _sort_sql_files(f, server_root, view_order),
                 )
                 print(
                     f"🔍 Found {len(sql_file_paths)} SQL files to process (full compilation mode)"

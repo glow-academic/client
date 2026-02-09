@@ -31,10 +31,10 @@ import type { ResourceType } from "@/lib/resources/types";
 import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
 // Types defined inline using InputOf/OutputOf
-type SaveRubricIn = InputOf<"/api/v4/rubrics/save", "post">;
-type SaveRubricOut = OutputOf<"/api/v4/rubrics/save", "post">;
-type PatchRubricDraftIn = InputOf<"/api/v4/rubrics/draft", "patch">;
-type PatchRubricDraftOut = OutputOf<"/api/v4/rubrics/draft", "patch">;
+type SaveRubricIn = InputOf<"/api/v4/artifacts/rubrics/save", "post">;
+type SaveRubricOut = OutputOf<"/api/v4/artifacts/rubrics/save", "post">;
+type PatchRubricDraftIn = InputOf<"/api/v4/artifacts/rubrics/draft", "patch">;
+type PatchRubricDraftOut = OutputOf<"/api/v4/artifacts/rubrics/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
@@ -63,7 +63,7 @@ type CreateDraftStandardGroupsOut = OutputOf<
   "/api/v4/resources/standard_groups",
   "post"
 >;
-type RubricData = OutputOf<"/api/v4/rubrics/get", "post">;
+type RubricData = OutputOf<"/api/v4/artifacts/rubrics/get", "post">;
 
 export interface RubricProps {
   rubricId?: string;

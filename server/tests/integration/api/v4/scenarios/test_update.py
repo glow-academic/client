@@ -1,4 +1,4 @@
-"""Route tests for POST /api/v4/scenarios/update endpoint."""
+"""Route tests for POST /api/v4/artifacts/scenarios/update endpoint."""
 
 from uuid import UUID
 
@@ -50,7 +50,7 @@ async def test_update_scenario(
 
     # v4 routes get profile_id from router dependency, not request body
     response = await client.post(
-        "/api/v4/scenarios/update",
+        "/api/v4/artifacts/scenarios/update",
         json={
             "scenarioId": str(scenario_id),
             "name": "Updated Scenario",
@@ -134,7 +134,7 @@ async def test_update_scenario_not_found(
 
     # v4 routes get profile_id from router dependency, not request body
     response = await client.post(
-        "/api/v4/scenarios/update",
+        "/api/v4/artifacts/scenarios/update",
         json={
             "scenarioId": fake_scenario_id,
             "name": "Updated Scenario",

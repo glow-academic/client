@@ -1,4 +1,4 @@
-"""Route tests for POST /api/v4/cohorts/remove_profiles endpoint."""
+"""Route tests for POST /api/v4/artifacts/cohorts/remove_profiles endpoint."""
 
 import asyncpg  # type: ignore
 import httpx
@@ -67,7 +67,7 @@ async def test_remove_profiles_from_cohort(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/cohorts/remove_profiles",
+        "/api/v4/artifacts/cohorts/remove_profiles",
         json={
             "cohortId": str(cohort_id),
             "profileIds": [str(profile_id)],

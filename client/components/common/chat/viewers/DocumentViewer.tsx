@@ -11,7 +11,7 @@ import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 
 // Use server type from documents list API
-type DocumentsListOut = OutputOf<"/api/v4/documents/list", "post">;
+type DocumentsListOut = OutputOf<"/api/v4/artifacts/documents/list", "post">;
 export type DocumentItem = NonNullable<DocumentsListOut["documents"]>[number];
 
 export interface DocumentViewerProps {
@@ -68,10 +68,10 @@ export default function DocumentViewer({
         let url = "";
         if (isFormDocument && document.upload_id) {
           // For form documents, use upload_id
-          url = `/api/uploads/download/${document.upload_id}`;
+          url = `/api/resources/uploads/download/${document.upload_id}`;
         } else if (document.upload_id) {
           // Use upload_id for download
-          url = `/api/uploads/download/${document.upload_id}`;
+          url = `/api/resources/uploads/download/${document.upload_id}`;
         } else {
           throw new Error("Document upload_id is required");
         }

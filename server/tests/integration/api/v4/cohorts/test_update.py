@@ -1,4 +1,4 @@
-"""Route tests for POST /api/v4/cohorts/save endpoint (update mode)."""
+"""Route tests for POST /api/v4/artifacts/cohorts/save endpoint (update mode)."""
 
 import asyncpg  # type: ignore
 import httpx
@@ -50,7 +50,7 @@ async def test_update_cohort(
     # v4 routes get profile_id from router dependency
     # Use unified save endpoint with input_cohort_id provided for update mode
     response = await client.post(
-        "/api/v4/cohorts/save",
+        "/api/v4/artifacts/cohorts/save",
         json={
             "input_cohort_id": str(cohort_id),
             "name_id": None,  # Will need to create/update name resource first in real usage

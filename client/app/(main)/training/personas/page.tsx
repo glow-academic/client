@@ -13,11 +13,11 @@ import type { Metadata } from "next";
 import { loadPersonasSearchParams } from "./searchParams";
 
 /** ---- Strong types from OpenAPI ---- */
-type PersonasListOut = OutputOf<"/api/v4/personas/list", "post">;
-type DuplicatePersonaIn = InputOf<"/api/v4/personas/duplicate", "post">;
-type DuplicatePersonaOut = OutputOf<"/api/v4/personas/duplicate", "post">;
-type DeletePersonaIn = InputOf<"/api/v4/personas/delete", "post">;
-type DeletePersonaOut = OutputOf<"/api/v4/personas/delete", "post">;
+type PersonasListOut = OutputOf<"/api/v4/artifacts/personas/list", "post">;
+type DuplicatePersonaIn = InputOf<"/api/v4/artifacts/personas/duplicate", "post">;
+type DuplicatePersonaOut = OutputOf<"/api/v4/artifacts/personas/duplicate", "post">;
+type DeletePersonaIn = InputOf<"/api/v4/artifacts/personas/delete", "post">;
+type DeletePersonaOut = OutputOf<"/api/v4/artifacts/personas/delete", "post">;
 
 /** ---- Body type for personas list request ---- */
 type PersonasListBody = {
@@ -39,7 +39,7 @@ type PersonasListBody = {
 const getPersonasList = async (body: PersonasListBody): Promise<PersonasListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/personas/list",
+    "/artifacts/personas/list",
     { body },
     {
       cache: "no-store",
@@ -59,7 +59,7 @@ async function duplicatePersona(
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/personas/duplicate", input);
+  return api.post("/artifacts/personas/duplicate", input);
 }
 
 async function deletePersona(
@@ -68,7 +68,7 @@ async function deletePersona(
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/personas/delete", input);
+  return api.post("/artifacts/personas/delete", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {

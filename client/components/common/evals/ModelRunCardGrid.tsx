@@ -12,8 +12,8 @@ import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { Badge } from "@/components/ui/badge";
 
-type EvalGetIn = InputOf<"/api/v4/evals/get", "post">;
-type EvalGetOut = OutputOf<"/api/v4/evals/get", "post">;
+type EvalGetIn = InputOf<"/api/v4/artifacts/evals/get", "post">;
+type EvalGetOut = OutputOf<"/api/v4/artifacts/evals/get", "post">;
 
 export interface ModelRunCardGridProps {
   profileId: string;
@@ -52,7 +52,7 @@ export function ModelRunCardGrid({
             available_model_runs_page: 1,
             available_model_runs_page_size: 50,
           };
-          const response = await api.post("/evals/get", {
+          const response = await api.post("/artifacts/evals/get", {
             body: requestBody,
           });
           const typedResponse = response as EvalGetOut;
@@ -64,7 +64,7 @@ export function ModelRunCardGrid({
             available_model_runs_page: 1,
             available_model_runs_page_size: 50,
           };
-          const response = await api.post("/evals/get", {
+          const response = await api.post("/artifacts/evals/get", {
             body: requestBody,
           });
           const typedResponse = response as EvalGetOut;

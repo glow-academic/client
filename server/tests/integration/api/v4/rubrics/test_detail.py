@@ -1,4 +1,4 @@
-"""Route tests for POST /api/v4/rubrics/detail endpoint."""
+"""Route tests for POST /api/v4/artifacts/rubrics/detail endpoint."""
 
 import asyncpg  # type: ignore
 import httpx
@@ -43,7 +43,7 @@ async def test_get_rubric_detail(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/rubrics/detail",
+        "/api/v4/artifacts/rubrics/detail",
         json={"rubric_id": str(rubric_id)},
     )
 
@@ -83,7 +83,7 @@ async def test_get_rubric_detail_not_found(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/rubrics/detail",
+        "/api/v4/artifacts/rubrics/detail",
         json={"rubric_id": "00000000-0000-0000-0000-000000000000"},
     )
 
@@ -133,7 +133,7 @@ async def test_get_rubric_detail_with_department_mapping(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/rubrics/detail",
+        "/api/v4/artifacts/rubrics/detail",
         json={"rubric_id": str(rubric_id)},
     )
 
@@ -205,7 +205,7 @@ async def test_get_rubric_detail_with_standard_groups(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/rubrics/detail",
+        "/api/v4/artifacts/rubrics/detail",
         json={"rubric_id": str(rubric_id)},
     )
 

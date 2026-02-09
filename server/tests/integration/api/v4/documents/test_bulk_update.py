@@ -1,4 +1,4 @@
-"""Route tests for POST /api/v4/documents/bulk-update endpoint."""
+"""Route tests for POST /api/v4/artifacts/documents/bulk-update endpoint."""
 
 import asyncpg  # type: ignore
 import httpx
@@ -80,7 +80,7 @@ async def test_bulk_update_documents(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/documents/bulk-update",
+        "/api/v4/artifacts/documents/bulk-update",
         json={
             "document_ids": [str(doc1_id), str(doc2_id)],
             "type": "homework",
@@ -201,7 +201,7 @@ async def test_bulk_update_documents_minimal(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/documents/bulk-update",
+        "/api/v4/artifacts/documents/bulk-update",
         json={
             "document_ids": [str(doc1_id), str(doc2_id)],
             "type": "lab",
@@ -243,7 +243,7 @@ async def test_bulk_update_documents_empty_list(
     # v4 routes get profile_id from router dependency
     # Empty list might cause SQL error with ANY($1), but endpoint should handle it gracefully
     response = await client.post(
-        "/api/v4/documents/bulk-update",
+        "/api/v4/artifacts/documents/bulk-update",
         json={
             "document_ids": [],
             "type": "homework",

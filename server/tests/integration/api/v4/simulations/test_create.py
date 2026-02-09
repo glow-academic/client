@@ -1,4 +1,4 @@
-"""Route tests for POST /api/v4/simulations/create endpoint."""
+"""Route tests for POST /api/v4/artifacts/simulations/create endpoint."""
 
 from uuid import UUID
 
@@ -48,7 +48,7 @@ async def test_create_simulation(
 
     # v4 routes get profile_id from router dependency, not request body
     response = await client.post(
-        "/api/v4/simulations/create",
+        "/api/v4/artifacts/simulations/create",
         json={
             "title": "Test Simulation",
             "description": "Test Description",

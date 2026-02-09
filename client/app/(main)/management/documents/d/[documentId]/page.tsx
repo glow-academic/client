@@ -13,13 +13,13 @@ import type { Metadata, ResolvingMetadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetDocumentIn = InputOf<"/api/v4/documents/get", "post">;
-type GetDocumentOut = OutputOf<"/api/v4/documents/get", "post">;
+type GetDocumentIn = InputOf<"/api/v4/artifacts/documents/get", "post">;
+type GetDocumentOut = OutputOf<"/api/v4/artifacts/documents/get", "post">;
 export type DocumentDetailOut = GetDocumentOut;
-type SaveDocumentIn = InputOf<"/api/v4/documents/save", "post">;
-type SaveDocumentOut = OutputOf<"/api/v4/documents/save", "post">;
-type PatchDocumentDraftIn = InputOf<"/api/v4/documents/draft", "patch">;
-type PatchDocumentDraftOut = OutputOf<"/api/v4/documents/draft", "patch">;
+type SaveDocumentIn = InputOf<"/api/v4/artifacts/documents/save", "post">;
+type SaveDocumentOut = OutputOf<"/api/v4/artifacts/documents/save", "post">;
+type PatchDocumentDraftIn = InputOf<"/api/v4/artifacts/documents/draft", "patch">;
+type PatchDocumentDraftOut = OutputOf<"/api/v4/artifacts/documents/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
@@ -39,7 +39,7 @@ type CreateDraftUploadsOut = OutputOf<"/api/v4/resources/uploads", "post">;
 const getDocumentDefault = async (
   input: GetDocumentIn
 ): Promise<GetDocumentOut> => {
-  return api.post("/documents/get", input, {
+  return api.post("/artifacts/documents/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -79,7 +79,7 @@ async function saveDocument(input: SaveDocumentIn): Promise<SaveDocumentOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/documents/save", input);
+  return api.post("/artifacts/documents/save", input);
 }
 
 async function patchDocumentDraft(
@@ -87,7 +87,7 @@ async function patchDocumentDraft(
 ): Promise<PatchDocumentDraftOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.patch("/documents/draft", input);
+  return api.patch("/artifacts/documents/draft", input);
 }
 
 async function createDraftNames(

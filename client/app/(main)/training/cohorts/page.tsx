@@ -13,11 +13,11 @@ import type { Metadata } from "next";
 import { loadCohortsListSearchParams } from "./listSearchParams";
 
 /** ---- Strong types from OpenAPI ---- */
-type CohortsListOut = OutputOf<"/api/v4/cohorts/list", "post">;
-type DuplicateCohortIn = InputOf<"/api/v4/cohorts/duplicate", "post">;
-type DuplicateCohortOut = OutputOf<"/api/v4/cohorts/duplicate", "post">;
-type DeleteCohortIn = InputOf<"/api/v4/cohorts/delete", "post">;
-type DeleteCohortOut = OutputOf<"/api/v4/cohorts/delete", "post">;
+type CohortsListOut = OutputOf<"/api/v4/artifacts/cohorts/list", "post">;
+type DuplicateCohortIn = InputOf<"/api/v4/artifacts/cohorts/duplicate", "post">;
+type DuplicateCohortOut = OutputOf<"/api/v4/artifacts/cohorts/duplicate", "post">;
+type DeleteCohortIn = InputOf<"/api/v4/artifacts/cohorts/delete", "post">;
+type DeleteCohortOut = OutputOf<"/api/v4/artifacts/cohorts/delete", "post">;
 
 /** ---- Body type for cohorts list request ---- */
 type CohortsListBody = {
@@ -39,7 +39,7 @@ type CohortsListBody = {
 const getCohortsList = async (body: CohortsListBody): Promise<CohortsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/cohorts/list",
+    "/artifacts/cohorts/list",
     { body },
     {
       cache: "no-store",
@@ -58,13 +58,13 @@ async function duplicateCohort(
 ): Promise<DuplicateCohortOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/cohorts/duplicate", input);
+  return api.post("/artifacts/cohorts/duplicate", input);
 }
 
 async function deleteCohort(input: DeleteCohortIn): Promise<DeleteCohortOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/cohorts/delete", input);
+  return api.post("/artifacts/cohorts/delete", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {

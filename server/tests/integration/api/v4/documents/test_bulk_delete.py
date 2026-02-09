@@ -1,4 +1,4 @@
-"""Route tests for POST /api/v4/documents/bulk-delete endpoint."""
+"""Route tests for POST /api/v4/artifacts/documents/bulk-delete endpoint."""
 
 import asyncpg  # type: ignore
 import httpx
@@ -51,7 +51,7 @@ async def test_bulk_delete_documents(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/documents/bulk-delete",
+        "/api/v4/artifacts/documents/bulk-delete",
         json={"document_ids": [str(doc1_id), str(doc2_id)]},
     )
 
@@ -89,7 +89,7 @@ async def test_bulk_delete_documents_empty_list(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/documents/bulk-delete",
+        "/api/v4/artifacts/documents/bulk-delete",
         json={"document_ids": []},
     )
 

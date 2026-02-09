@@ -1,4 +1,4 @@
-"""Route tests for POST /api/v4/rubrics/delete endpoint."""
+"""Route tests for POST /api/v4/artifacts/rubrics/delete endpoint."""
 
 import asyncpg  # type: ignore
 import httpx
@@ -41,7 +41,7 @@ async def test_delete_rubric(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/rubrics/delete",
+        "/api/v4/artifacts/rubrics/delete",
         json={"rubric_id": str(rubric_id)},
     )
 
@@ -97,7 +97,7 @@ async def test_delete_rubric_in_use(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/rubrics/delete",
+        "/api/v4/artifacts/rubrics/delete",
         json={"rubric_id": str(rubric_id)},
     )
 
@@ -126,7 +126,7 @@ async def test_delete_rubric_not_found(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/rubrics/delete",
+        "/api/v4/artifacts/rubrics/delete",
         json={"rubric_id": fake_rubric_id},
     )
 

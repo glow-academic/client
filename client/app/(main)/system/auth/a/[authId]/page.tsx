@@ -11,12 +11,12 @@ import type { Metadata, ResolvingMetadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetAuthIn = InputOf<"/api/v4/auths/get", "post">;
-type GetAuthOut = OutputOf<"/api/v4/auths/get", "post">;
-type SaveAuthIn = InputOf<"/api/v4/auths/save", "post">;
-type SaveAuthOut = OutputOf<"/api/v4/auths/save", "post">;
-type PatchAuthDraftIn = InputOf<"/api/v4/auths/draft", "patch">;
-type PatchAuthDraftOut = OutputOf<"/api/v4/auths/draft", "patch">;
+type GetAuthIn = InputOf<"/api/v4/artifacts/auths/get", "post">;
+type GetAuthOut = OutputOf<"/api/v4/artifacts/auths/get", "post">;
+type SaveAuthIn = InputOf<"/api/v4/artifacts/auths/save", "post">;
+type SaveAuthOut = OutputOf<"/api/v4/artifacts/auths/save", "post">;
+type PatchAuthDraftIn = InputOf<"/api/v4/artifacts/auths/draft", "patch">;
+type PatchAuthDraftOut = OutputOf<"/api/v4/artifacts/auths/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
@@ -38,7 +38,7 @@ type CreateDraftSlugsOut = OutputOf<"/api/v4/resources/slugs", "post">;
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
 const getAuth = async (input: GetAuthIn): Promise<GetAuthOut> => {
-  return api.post("/auths/get", input, {
+  return api.post("/artifacts/auths/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -83,7 +83,7 @@ async function saveAuth(input: SaveAuthIn): Promise<SaveAuthOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/auths/save", input);
+  return api.post("/artifacts/auths/save", input);
 }
 
 async function patchAuthDraft(
@@ -91,7 +91,7 @@ async function patchAuthDraft(
 ): Promise<PatchAuthDraftOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.patch("/auths/draft", input);
+  return api.patch("/artifacts/auths/draft", input);
 }
 
 async function createDraftNames(

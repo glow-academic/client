@@ -18,12 +18,12 @@ import {
 } from "../../searchParams";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetScenarioIn = InputOf<"/api/v4/scenarios/get", "post">;
-type GetScenarioOut = OutputOf<"/api/v4/scenarios/get", "post">;
-type SaveScenarioIn = InputOf<"/api/v4/scenarios/save", "post">;
-type SaveScenarioOut = OutputOf<"/api/v4/scenarios/save", "post">;
-type PatchScenarioDraftIn = InputOf<"/api/v4/scenarios/draft", "patch">;
-type PatchScenarioDraftOut = OutputOf<"/api/v4/scenarios/draft", "patch">;
+type GetScenarioIn = InputOf<"/api/v4/artifacts/scenarios/get", "post">;
+type GetScenarioOut = OutputOf<"/api/v4/artifacts/scenarios/get", "post">;
+type SaveScenarioIn = InputOf<"/api/v4/artifacts/scenarios/save", "post">;
+type SaveScenarioOut = OutputOf<"/api/v4/artifacts/scenarios/save", "post">;
+type PatchScenarioDraftIn = InputOf<"/api/v4/artifacts/scenarios/draft", "patch">;
+type PatchScenarioDraftOut = OutputOf<"/api/v4/artifacts/scenarios/draft", "patch">;
 // Resource creation types
 type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
@@ -180,7 +180,7 @@ const getScenario = async (
   }
 
   return api.post(
-    "/scenarios/get",
+    "/artifacts/scenarios/get",
     {
       body,
     },
@@ -221,7 +221,7 @@ export async function generateMetadata(
 async function saveScenario(input: SaveScenarioIn): Promise<SaveScenarioOut> {
   "use server";
   // Use unified save endpoint (works for both create and edit)
-  return api.post("/scenarios/save", input);
+  return api.post("/artifacts/scenarios/save", input);
 }
 
 async function patchScenarioDraft(
@@ -229,7 +229,7 @@ async function patchScenarioDraft(
 ): Promise<PatchScenarioDraftOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.patch("/scenarios/draft", input);
+  return api.patch("/artifacts/scenarios/draft", input);
 }
 
 async function createDraftTemplates(

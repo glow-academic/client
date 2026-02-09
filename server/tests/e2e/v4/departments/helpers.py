@@ -101,7 +101,7 @@ def fetch_departments_list(
     )
     return _post_json(
         request,
-        "/api/v4/departments/list",
+        "/api/v4/artifacts/departments/list",
         {"profileId": resolved_effective},
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
@@ -125,7 +125,7 @@ def fetch_department_detail(
     )
     return _post_json(
         request,
-        "/api/v4/departments/detail",
+        "/api/v4/artifacts/departments/detail",
         {"departmentId": department_id, "profileId": resolved_effective},
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
@@ -148,7 +148,7 @@ def fetch_department_new(
     )
     return _post_json(
         request,
-        "/api/v4/departments/new",
+        "/api/v4/artifacts/departments/new",
         {"profileId": resolved_effective},
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
@@ -179,7 +179,7 @@ def create_department_api(
     }
     data: dict[str, Any] = _post_json(
         request,
-        "/api/v4/departments/create",
+        "/api/v4/artifacts/departments/create",
         payload,
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
@@ -209,7 +209,7 @@ def update_department_api(
     )
     _post_json(
         request,
-        "/api/v4/departments/update",
+        "/api/v4/artifacts/departments/update",
         {
             "departmentId": department_id,
             "title": title,
@@ -237,7 +237,7 @@ def delete_department_api(
     )
     _post_json(
         request,
-        "/api/v4/departments/delete",
+        "/api/v4/artifacts/departments/delete",
         {"departmentId": department_id},
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
@@ -260,7 +260,7 @@ def duplicate_department_api(
     )
     data: dict[str, Any] = _post_json(
         request,
-        "/api/v4/departments/duplicate",
+        "/api/v4/artifacts/departments/duplicate",
         {"departmentId": department_id},
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,

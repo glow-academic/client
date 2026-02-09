@@ -1,4 +1,4 @@
-"""Route tests for POST /api/v4/personas/create endpoint."""
+"""Route tests for POST /api/v4/artifacts/personas/create endpoint."""
 
 from uuid import UUID
 
@@ -25,7 +25,7 @@ async def test_create_persona_minimal(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/personas/create",
+        "/api/v4/artifacts/personas/create",
         json={
             "name": "New Persona",
             "description": "",
@@ -75,7 +75,7 @@ async def test_create_persona_with_departments(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/personas/create",
+        "/api/v4/artifacts/personas/create",
         json={
             "name": "Department Persona",
             "description": "Test Description",
@@ -114,7 +114,7 @@ async def test_create_persona_validation_error(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/personas/create",
+        "/api/v4/artifacts/personas/create",
         json={
             "name": "",  # Empty name should fail
             "description": "",

@@ -1,4 +1,4 @@
-"""Route tests for POST /api/v4/personas/duplicate endpoint."""
+"""Route tests for POST /api/v4/artifacts/personas/duplicate endpoint."""
 
 from uuid import UUID
 
@@ -89,7 +89,7 @@ async def test_duplicate_persona(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/personas/duplicate",
+        "/api/v4/artifacts/personas/duplicate",
         json={"personaId": str(persona_id)},
     )
 
@@ -123,7 +123,7 @@ async def test_duplicate_persona_not_found(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/personas/duplicate",
+        "/api/v4/artifacts/personas/duplicate",
         json={"personaId": "00000000-0000-0000-0000-000000000000"},
     )
 

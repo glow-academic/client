@@ -45,8 +45,8 @@ import type { ResourceType } from "@/lib/resources/types";
 import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
 // Types defined inline using InputOf/OutputOf
-type SaveSimulationIn = InputOf<"/api/v4/simulations/save", "post">;
-type SaveSimulationOut = OutputOf<"/api/v4/simulations/save", "post">;
+type SaveSimulationIn = InputOf<"/api/v4/artifacts/simulations/save", "post">;
+type SaveSimulationOut = OutputOf<"/api/v4/artifacts/simulations/save", "post">;
 type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
@@ -97,10 +97,10 @@ type CreateDraftScenarioTimeLimitsOut = OutputOf<
   "/api/v4/resources/scenario_time_limits",
   "post"
 >;
-type PatchSimulationDraftIn = InputOf<"/api/v4/simulations/draft", "patch">;
-type PatchSimulationDraftOut = OutputOf<"/api/v4/simulations/draft", "patch">;
+type PatchSimulationDraftIn = InputOf<"/api/v4/artifacts/simulations/draft", "patch">;
+type PatchSimulationDraftOut = OutputOf<"/api/v4/artifacts/simulations/draft", "patch">;
 
-type SimulationData = OutputOf<"/api/v4/simulations/get", "post">;
+type SimulationData = OutputOf<"/api/v4/artifacts/simulations/get", "post">;
 type SimulationResourceType = ResourceType | "scenario_personas" | "scenario_time_limits";
 
 // Type for flush results - each resource returns its created ID(s)

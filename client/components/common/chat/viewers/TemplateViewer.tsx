@@ -26,7 +26,7 @@ export default function TemplateViewer({ template }: TemplateViewerProps) {
         setLoading(true);
         setError(null);
 
-        const response = await fetch("/api/templates/html", {
+        const response = await fetch("/api/resources/templates/html", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ id: template.template_id }),

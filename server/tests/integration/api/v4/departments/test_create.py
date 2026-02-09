@@ -1,4 +1,4 @@
-"""Route tests for POST /api/v4/departments/create endpoint."""
+"""Route tests for POST /api/v4/artifacts/departments/create endpoint."""
 
 from uuid import UUID
 
@@ -26,7 +26,7 @@ async def test_create_department(
 
     # v4 routes get profile_id from router dependency, not request body
     response = await client.post(
-        "/api/v4/departments/create",
+        "/api/v4/artifacts/departments/create",
         json={
             "title": "Test Department",
             "description": "Test Description",
@@ -77,7 +77,7 @@ async def test_create_department_minimal(
 
     # v4 routes get profile_id from router dependency, not request body
     response = await client.post(
-        "/api/v4/departments/create",
+        "/api/v4/artifacts/departments/create",
         json={
             "title": "Minimal Department",
             "description": "",  # Empty string

@@ -76,8 +76,8 @@ import { SingleProfileCertificateButton } from "./SingleProfileCertificateButton
 
 // Use strong server types directly (union of all history endpoint types)
 type HomeHistoryData = NonNullable<OutputOf<"/api/v4/home/list", "post">["data"]>;
-type DashboardHistoryData = NonNullable<OutputOf<"/api/v4/attempt/list", "post">["data"]>;
-type PracticeHistoryData = NonNullable<OutputOf<"/api/v4/attempt/list", "post">["data"]>;
+type DashboardHistoryData = NonNullable<OutputOf<"/api/v4/artifacts/attempt/list", "post">["data"]>;
+type PracticeHistoryData = NonNullable<OutputOf<"/api/v4/artifacts/attempt/list", "post">["data"]>;
 export type HistoryDataItem =
   | (HomeHistoryData extends Array<infer T> ? T : never)
   | (DashboardHistoryData extends Array<infer T> ? T : never)

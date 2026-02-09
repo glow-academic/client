@@ -9,11 +9,11 @@ import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type AuthListOut = OutputOf<"/api/v4/auths/list", "post">;
-type DuplicateAuthIn = InputOf<"/api/v4/auths/duplicate", "post">;
-type DuplicateAuthOut = OutputOf<"/api/v4/auths/duplicate", "post">;
-type DeleteAuthIn = InputOf<"/api/v4/auths/delete", "post">;
-type DeleteAuthOut = OutputOf<"/api/v4/auths/delete", "post">;
+type AuthListOut = OutputOf<"/api/v4/artifacts/auths/list", "post">;
+type DuplicateAuthIn = InputOf<"/api/v4/artifacts/auths/duplicate", "post">;
+type DuplicateAuthOut = OutputOf<"/api/v4/artifacts/auths/duplicate", "post">;
+type DeleteAuthIn = InputOf<"/api/v4/artifacts/auths/delete", "post">;
+type DeleteAuthOut = OutputOf<"/api/v4/artifacts/auths/delete", "post">;
 type CreateKeyIn = InputOf<"/api/v4/keys/create", "post">;
 type CreateKeyOut = OutputOf<"/api/v4/keys/create", "post">;
 type DecryptKeyIn = InputOf<"/api/v4/resources/keys/decrypt", "post">;
@@ -28,7 +28,7 @@ type UpdateKeyOut = OutputOf<"/api/v4/keys/update", "post">;
 const getAuthList = async (): Promise<AuthListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/auths/list",
+    "/artifacts/auths/list",
     { body: {} },
     {
       cache: "no-store",
@@ -48,14 +48,14 @@ async function duplicateAuth(
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/auths/duplicate", input);
+  return api.post("/artifacts/auths/duplicate", input);
 }
 
 async function deleteAuth(input: DeleteAuthIn): Promise<DeleteAuthOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/auths/delete", input);
+  return api.post("/artifacts/auths/delete", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {

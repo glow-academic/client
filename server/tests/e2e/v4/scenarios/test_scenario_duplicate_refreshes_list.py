@@ -38,7 +38,7 @@ def test_scenario_duplicate_refreshes_list(page: Page, base_url: str) -> None:
 
     # Wait for duplicate API response
     with page.expect_response(
-        lambda response: "/api/v4/scenarios/duplicate" in response.url
+        lambda response: "/api/v4/artifacts/scenarios/duplicate" in response.url
     ) as response_info:
         duplicate_button.click()
     response = response_info.value

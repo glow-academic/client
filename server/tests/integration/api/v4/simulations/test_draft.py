@@ -1,4 +1,4 @@
-"""Route tests for PATCH /api/v4/simulations/draft endpoint."""
+"""Route tests for PATCH /api/v4/artifacts/simulations/draft endpoint."""
 
 from uuid import UUID
 
@@ -18,7 +18,7 @@ async def test_patch_simulation_draft_create(
 
     # v4 routes get profile_id from router dependency
     response = await client.patch(
-        "/api/v4/simulations/draft",
+        "/api/v4/artifacts/simulations/draft",
         json={
             "patch": {"title": "Draft Simulation", "description": "Draft description"},
             "expected_version": 0,
@@ -46,7 +46,7 @@ async def test_patch_simulation_draft_update(
 
     # Create a draft first
     create_response = await client.patch(
-        "/api/v4/simulations/draft",
+        "/api/v4/artifacts/simulations/draft",
         json={
             "patch": {"title": "Original Draft", "description": "Original"},
             "expected_version": 0,
@@ -60,7 +60,7 @@ async def test_patch_simulation_draft_update(
 
     # Update the draft
     response = await client.patch(
-        "/api/v4/simulations/draft",
+        "/api/v4/artifacts/simulations/draft",
         json={
             "patch": {"title": "Updated Draft"},
             "expected_version": version,

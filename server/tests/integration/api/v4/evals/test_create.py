@@ -1,4 +1,4 @@
-"""Route tests for POST /api/v4/evals/create endpoint."""
+"""Route tests for POST /api/v4/artifacts/evals/create endpoint."""
 
 import asyncpg  # type: ignore
 import httpx
@@ -16,7 +16,7 @@ async def test_create_eval(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/evals/create",
+        "/api/v4/artifacts/evals/create",
         json={
             "name": "Test Eval",
             "description": "Test Description",
@@ -43,7 +43,7 @@ async def test_create_eval_minimal(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/evals/create",
+        "/api/v4/artifacts/evals/create",
         json={
             "name": "Minimal Eval",
             "description": "",

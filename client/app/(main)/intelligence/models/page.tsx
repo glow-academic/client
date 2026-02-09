@@ -11,11 +11,11 @@ import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type ModelsListOut = OutputOf<"/api/v4/models/list", "post">;
-type DuplicateModelIn = InputOf<"/api/v4/models/duplicate", "post">;
-type DuplicateModelOut = OutputOf<"/api/v4/models/duplicate", "post">;
-type DeleteModelIn = InputOf<"/api/v4/models/delete", "post">;
-type DeleteModelOut = OutputOf<"/api/v4/models/delete", "post">;
+type ModelsListOut = OutputOf<"/api/v4/artifacts/models/list", "post">;
+type DuplicateModelIn = InputOf<"/api/v4/artifacts/models/duplicate", "post">;
+type DuplicateModelOut = OutputOf<"/api/v4/artifacts/models/duplicate", "post">;
+type DeleteModelIn = InputOf<"/api/v4/artifacts/models/delete", "post">;
+type DeleteModelOut = OutputOf<"/api/v4/artifacts/models/delete", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
@@ -24,7 +24,7 @@ type DeleteModelOut = OutputOf<"/api/v4/models/delete", "post">;
 const getModelsList = async (): Promise<ModelsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/models/list",
+    "/artifacts/models/list",
     { body: {} },
     {
       cache: "no-store",
@@ -43,13 +43,13 @@ async function duplicateModel(
 ): Promise<DuplicateModelOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/models/duplicate", input);
+  return api.post("/artifacts/models/duplicate", input);
 }
 
 async function deleteModel(input: DeleteModelIn): Promise<DeleteModelOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/models/delete", input);
+  return api.post("/artifacts/models/delete", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {

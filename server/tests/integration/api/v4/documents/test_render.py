@@ -1,4 +1,4 @@
-"""Route tests for POST /api/v4/documents/_render endpoint."""
+"""Route tests for POST /api/v4/artifacts/documents/_render endpoint."""
 
 import uuid
 
@@ -55,7 +55,7 @@ async def test_render_document_template(
     # Note: This endpoint may fail if document doesn't have a template file
     # We test that the endpoint handles the request correctly
     response = await client.post(
-        "/api/v4/documents/_render",
+        "/api/v4/artifacts/documents/_render",
         json={
             "document_id": str(document_id),
             "template_args": {},
@@ -103,7 +103,7 @@ async def test_render_document_template_with_args(
     # v4 routes get profile_id from router dependency
     # Test with template args
     response = await client.post(
-        "/api/v4/documents/_render",
+        "/api/v4/artifacts/documents/_render",
         json={
             "document_id": str(document_id),
             "template_args": {
@@ -135,7 +135,7 @@ async def test_render_document_template_not_found(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/documents/_render",
+        "/api/v4/artifacts/documents/_render",
         json={
             "document_id": str(fake_document_id),
             "template_args": {},

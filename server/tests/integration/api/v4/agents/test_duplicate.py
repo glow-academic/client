@@ -1,4 +1,4 @@
-"""Route tests for POST /api/v4/agents/duplicate endpoint."""
+"""Route tests for POST /api/v4/artifacts/agents/duplicate endpoint."""
 
 import asyncpg  # type: ignore
 import httpx
@@ -98,7 +98,7 @@ async def test_duplicate_agent(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/agents/duplicate",
+        "/api/v4/artifacts/agents/duplicate",
         json={"agentId": str(agent_id)},
     )
 
@@ -218,7 +218,7 @@ async def test_duplicate_agent_without_departments(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/agents/duplicate",
+        "/api/v4/artifacts/agents/duplicate",
         json={"agentId": str(agent_id)},
     )
 
@@ -256,7 +256,7 @@ async def test_duplicate_agent_not_found(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/agents/duplicate",
+        "/api/v4/artifacts/agents/duplicate",
         json={"agentId": fake_agent_id},
     )
 

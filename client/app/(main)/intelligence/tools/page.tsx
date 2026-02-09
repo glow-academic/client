@@ -9,12 +9,12 @@ import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type ToolsListIn = InputOf<"/api/v4/tools/list", "post">;
-type ToolsListOut = OutputOf<"/api/v4/tools/list", "post">;
-type DeleteToolIn = InputOf<"/api/v4/tools/delete", "post">;
-type DeleteToolOut = OutputOf<"/api/v4/tools/delete", "post">;
-type DuplicateToolIn = InputOf<"/api/v4/tools/duplicate", "post">;
-type DuplicateToolOut = OutputOf<"/api/v4/tools/duplicate", "post">;
+type ToolsListIn = InputOf<"/api/v4/artifacts/tools/list", "post">;
+type ToolsListOut = OutputOf<"/api/v4/artifacts/tools/list", "post">;
+type DeleteToolIn = InputOf<"/api/v4/artifacts/tools/delete", "post">;
+type DeleteToolOut = OutputOf<"/api/v4/artifacts/tools/delete", "post">;
+type DuplicateToolIn = InputOf<"/api/v4/artifacts/tools/duplicate", "post">;
+type DuplicateToolOut = OutputOf<"/api/v4/artifacts/tools/duplicate", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
@@ -23,7 +23,7 @@ type DuplicateToolOut = OutputOf<"/api/v4/tools/duplicate", "post">;
 const getToolsList = async (): Promise<ToolsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/tools/list",
+    "/artifacts/tools/list",
     {} as ToolsListIn,
     {
       cache: "no-store",
@@ -41,7 +41,7 @@ async function deleteTool(input: DeleteToolIn): Promise<DeleteToolOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/tools/delete", input);
+  return api.post("/artifacts/tools/delete", input);
 }
 
 async function duplicateTool(
@@ -49,7 +49,7 @@ async function duplicateTool(
 ): Promise<DuplicateToolOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/tools/duplicate", input);
+  return api.post("/artifacts/tools/duplicate", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {

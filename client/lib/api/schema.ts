@@ -4,7 +4,7 @@
  */
 
 export interface paths {
-    "/api/v4/personas/get": {
+    "/api/v4/artifacts/personas/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -23,14 +23,14 @@ export interface paths {
          *     Query 2: ID fetching (resource IDs, suggestions, agents)
          *     Pass 2: Parallel resource fetching (each resource type has own cache)
          */
-        post: operations["get_persona_api_v4_personas_get_post"];
+        post: operations["get_persona_api_v4_artifacts_personas_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/personas/list": {
+    "/api/v4/artifacts/personas/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -43,14 +43,14 @@ export interface paths {
          * Get Persona List
          * @description Get personas list with permissions and scenario details.
          */
-        post: operations["get_persona_list_api_v4_personas_list_post"];
+        post: operations["get_persona_list_api_v4_artifacts_personas_list_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/personas/save": {
+    "/api/v4/artifacts/personas/save": {
         parameters: {
             query?: never;
             header?: never;
@@ -63,14 +63,14 @@ export interface paths {
          * Save Persona
          * @description Save persona - handles both create (persona_id = NULL) and update (persona_id provided).
          */
-        post: operations["save_persona_api_v4_personas_save_post"];
+        post: operations["save_persona_api_v4_artifacts_personas_save_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/personas/duplicate": {
+    "/api/v4/artifacts/personas/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -83,14 +83,14 @@ export interface paths {
          * Duplicate Persona
          * @description Duplicate a persona.
          */
-        post: operations["duplicate_persona_api_v4_personas_duplicate_post"];
+        post: operations["duplicate_persona_api_v4_artifacts_personas_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/personas/delete": {
+    "/api/v4/artifacts/personas/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -103,14 +103,14 @@ export interface paths {
          * Delete Persona
          * @description Delete a persona.
          */
-        post: operations["delete_persona_api_v4_personas_delete_post"];
+        post: operations["delete_persona_api_v4_artifacts_personas_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/personas/draft": {
+    "/api/v4/artifacts/personas/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -127,10 +127,10 @@ export interface paths {
          * Patch Persona Draft
          * @description Patch persona draft - accepts resource IDs and creates/updates draft.
          */
-        patch: operations["patch_persona_draft_api_v4_personas_draft_patch"];
+        patch: operations["patch_persona_draft_api_v4_artifacts_personas_draft_patch"];
         trace?: never;
     };
-    "/api/v4/personas/docs": {
+    "/api/v4/artifacts/personas/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -140,14 +140,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Docs */
-        post: operations["get_docs_api_v4_personas_docs_post"];
+        post: operations["get_docs_api_v4_artifacts_personas_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/scenarios/get": {
+    "/api/v4/artifacts/scenarios/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -166,14 +166,14 @@ export interface paths {
          *     Query 2: ID fetching (resource IDs, suggestions, agents)
          *     Pass 2: Parallel resource fetching (each resource type has own cache)
          */
-        post: operations["get_scenario_api_v4_scenarios_get_post"];
+        post: operations["get_scenario_api_v4_artifacts_scenarios_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/scenarios/list": {
+    "/api/v4/artifacts/scenarios/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -186,14 +186,14 @@ export interface paths {
          * Get Scenario List
          * @description Get scenarios list with all relationships.
          */
-        post: operations["get_scenario_list_api_v4_scenarios_list_post"];
+        post: operations["get_scenario_list_api_v4_artifacts_scenarios_list_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/scenarios/save": {
+    "/api/v4/artifacts/scenarios/save": {
         parameters: {
             query?: never;
             header?: never;
@@ -206,14 +206,14 @@ export interface paths {
          * Save Scenario
          * @description Save scenario - handles both create (input_scenario_id = NULL) and update (input_scenario_id provided).
          */
-        post: operations["save_scenario_api_v4_scenarios_save_post"];
+        post: operations["save_scenario_api_v4_artifacts_scenarios_save_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/scenarios/duplicate": {
+    "/api/v4/artifacts/scenarios/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -226,14 +226,14 @@ export interface paths {
          * Duplicate Scenario
          * @description Duplicate a scenario.
          */
-        post: operations["duplicate_scenario_api_v4_scenarios_duplicate_post"];
+        post: operations["duplicate_scenario_api_v4_artifacts_scenarios_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/scenarios/delete": {
+    "/api/v4/artifacts/scenarios/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -246,14 +246,14 @@ export interface paths {
          * Delete Scenario
          * @description Delete a scenario.
          */
-        post: operations["delete_scenario_api_v4_scenarios_delete_post"];
+        post: operations["delete_scenario_api_v4_artifacts_scenarios_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/scenarios/draft": {
+    "/api/v4/artifacts/scenarios/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -270,10 +270,10 @@ export interface paths {
          * Patch Scenario Draft
          * @description Patch scenario draft - accepts resource IDs and creates/updates draft.
          */
-        patch: operations["patch_scenario_draft_api_v4_scenarios_draft_patch"];
+        patch: operations["patch_scenario_draft_api_v4_artifacts_scenarios_draft_patch"];
         trace?: never;
     };
-    "/api/v4/scenarios/docs": {
+    "/api/v4/artifacts/scenarios/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -283,14 +283,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Docs */
-        post: operations["get_docs_api_v4_scenarios_docs_post"];
+        post: operations["get_docs_api_v4_artifacts_scenarios_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/simulations/get": {
+    "/api/v4/artifacts/simulations/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -305,14 +305,14 @@ export interface paths {
          *
          *     This is a thin HTTP wrapper around get_simulation_client().
          */
-        post: operations["get_simulation_api_v4_simulations_get_post"];
+        post: operations["get_simulation_api_v4_artifacts_simulations_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/simulations/list": {
+    "/api/v4/artifacts/simulations/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -325,14 +325,14 @@ export interface paths {
          * Get Simulation List
          * @description Get simulations list with SQL-computed permissions.
          */
-        post: operations["get_simulation_list_api_v4_simulations_list_post"];
+        post: operations["get_simulation_list_api_v4_artifacts_simulations_list_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/simulations/save": {
+    "/api/v4/artifacts/simulations/save": {
         parameters: {
             query?: never;
             header?: never;
@@ -349,14 +349,14 @@ export interface paths {
          *     1. Check access and permissions in Python
          *     2. Execute save if permitted
          */
-        post: operations["save_simulation_api_v4_simulations_save_post"];
+        post: operations["save_simulation_api_v4_artifacts_simulations_save_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/simulations/duplicate": {
+    "/api/v4/artifacts/simulations/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -373,14 +373,14 @@ export interface paths {
          *     1. Check access and permissions in Python
          *     2. Execute duplicate if permitted
          */
-        post: operations["duplicate_simulation_api_v4_simulations_duplicate_post"];
+        post: operations["duplicate_simulation_api_v4_artifacts_simulations_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/simulations/delete": {
+    "/api/v4/artifacts/simulations/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -397,14 +397,14 @@ export interface paths {
          *     1. Check access and permissions in Python
          *     2. Execute delete if permitted
          */
-        post: operations["delete_simulation_api_v4_simulations_delete_post"];
+        post: operations["delete_simulation_api_v4_artifacts_simulations_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/simulations/draft": {
+    "/api/v4/artifacts/simulations/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -423,10 +423,10 @@ export interface paths {
          *
          *     Uses Python permission checks before executing draft operation.
          */
-        patch: operations["patch_simulation_draft_api_v4_simulations_draft_patch"];
+        patch: operations["patch_simulation_draft_api_v4_artifacts_simulations_draft_patch"];
         trace?: never;
     };
-    "/api/v4/simulations/docs": {
+    "/api/v4/artifacts/simulations/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -436,14 +436,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Docs */
-        post: operations["get_docs_api_v4_simulations_docs_post"];
+        post: operations["get_docs_api_v4_artifacts_simulations_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/documents/list": {
+    "/api/v4/artifacts/documents/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -456,14 +456,14 @@ export interface paths {
          * Get Document List
          * @description Get documents list with tags and scenarios.
          */
-        post: operations["get_document_list_api_v4_documents_list_post"];
+        post: operations["get_document_list_api_v4_artifacts_documents_list_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/documents/get": {
+    "/api/v4/artifacts/documents/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -482,14 +482,14 @@ export interface paths {
          *     Query 2: ID fetching (resource IDs, suggestions, agents)
          *     Pass 2: Parallel resource fetching (each resource type has own cache)
          */
-        post: operations["get_document_api_v4_documents_get_post"];
+        post: operations["get_document_api_v4_artifacts_documents_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/documents/save": {
+    "/api/v4/artifacts/documents/save": {
         parameters: {
             query?: never;
             header?: never;
@@ -502,14 +502,14 @@ export interface paths {
          * Save Document
          * @description Save document - handles both create (input_document_id = NULL) and update (input_document_id provided).
          */
-        post: operations["save_document_api_v4_documents_save_post"];
+        post: operations["save_document_api_v4_artifacts_documents_save_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/documents/duplicate": {
+    "/api/v4/artifacts/documents/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -522,14 +522,14 @@ export interface paths {
          * Duplicate Document
          * @description Duplicate a document.
          */
-        post: operations["duplicate_document_api_v4_documents_duplicate_post"];
+        post: operations["duplicate_document_api_v4_artifacts_documents_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/documents/delete": {
+    "/api/v4/artifacts/documents/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -542,14 +542,14 @@ export interface paths {
          * Delete Document
          * @description Delete a document.
          */
-        post: operations["delete_document_api_v4_documents_delete_post"];
+        post: operations["delete_document_api_v4_artifacts_documents_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/documents/draft": {
+    "/api/v4/artifacts/documents/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -566,10 +566,10 @@ export interface paths {
          * Patch Document Draft
          * @description Patch document draft - accepts resource IDs and creates/updates draft.
          */
-        patch: operations["patch_document_draft_api_v4_documents_draft_patch"];
+        patch: operations["patch_document_draft_api_v4_artifacts_documents_draft_patch"];
         trace?: never;
     };
-    "/api/v4/documents/bulk/process": {
+    "/api/v4/artifacts/documents/bulk/process": {
         parameters: {
             query?: never;
             header?: never;
@@ -582,14 +582,14 @@ export interface paths {
          * Process Document
          * @description Process CSV file and map columns to target fields for documents.
          */
-        post: operations["process_document_api_v4_documents_bulk_process_post"];
+        post: operations["process_document_api_v4_artifacts_documents_bulk_process_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/documents/bulk/search": {
+    "/api/v4/artifacts/documents/bulk/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -602,14 +602,14 @@ export interface paths {
          * Search Document
          * @description Search documents for bulk operations.
          */
-        post: operations["search_document_api_v4_documents_bulk_search_post"];
+        post: operations["search_document_api_v4_artifacts_documents_bulk_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/documents/bulk/save": {
+    "/api/v4/artifacts/documents/bulk/save": {
         parameters: {
             query?: never;
             header?: never;
@@ -622,14 +622,14 @@ export interface paths {
          * Save Document
          * @description Bulk create or update documents.
          */
-        post: operations["save_document_api_v4_documents_bulk_save_post"];
+        post: operations["save_document_api_v4_artifacts_documents_bulk_save_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/documents/bulk/delete": {
+    "/api/v4/artifacts/documents/bulk/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -642,14 +642,14 @@ export interface paths {
          * Delete Document
          * @description Bulk delete documents.
          */
-        post: operations["delete_document_api_v4_documents_bulk_delete_post"];
+        post: operations["delete_document_api_v4_artifacts_documents_bulk_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/documents/docs": {
+    "/api/v4/artifacts/documents/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -659,14 +659,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Docs */
-        post: operations["get_docs_api_v4_documents_docs_post"];
+        post: operations["get_docs_api_v4_artifacts_documents_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/departments/get": {
+    "/api/v4/artifacts/departments/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -681,14 +681,14 @@ export interface paths {
          *
          *     This is a thin HTTP wrapper around get_department_internal().
          */
-        post: operations["get_department_api_v4_departments_get_post"];
+        post: operations["get_department_api_v4_artifacts_departments_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/departments/list": {
+    "/api/v4/artifacts/departments/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -701,14 +701,14 @@ export interface paths {
          * Get Department List
          * @description Get list of departments with computed fields.
          */
-        post: operations["get_department_list_api_v4_departments_list_post"];
+        post: operations["get_department_list_api_v4_artifacts_departments_list_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/departments/save": {
+    "/api/v4/artifacts/departments/save": {
         parameters: {
             query?: never;
             header?: never;
@@ -721,14 +721,14 @@ export interface paths {
          * Save Department
          * @description Save department - handles both create (department_id = NULL) and update (department_id provided).
          */
-        post: operations["save_department_api_v4_departments_save_post"];
+        post: operations["save_department_api_v4_artifacts_departments_save_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/departments/duplicate": {
+    "/api/v4/artifacts/departments/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -741,14 +741,14 @@ export interface paths {
          * Duplicate Department
          * @description Duplicate a department.
          */
-        post: operations["duplicate_department_api_v4_departments_duplicate_post"];
+        post: operations["duplicate_department_api_v4_artifacts_departments_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/departments/delete": {
+    "/api/v4/artifacts/departments/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -761,14 +761,14 @@ export interface paths {
          * Delete Department
          * @description Delete a department.
          */
-        post: operations["delete_department_api_v4_departments_delete_post"];
+        post: operations["delete_department_api_v4_artifacts_departments_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/departments/draft": {
+    "/api/v4/artifacts/departments/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -785,10 +785,10 @@ export interface paths {
          * Patch Department Draft
          * @description Patch department draft - accepts resource IDs and creates/updates draft.
          */
-        patch: operations["patch_department_draft_api_v4_departments_draft_patch"];
+        patch: operations["patch_department_draft_api_v4_artifacts_departments_draft_patch"];
         trace?: never;
     };
-    "/api/v4/departments/docs": {
+    "/api/v4/artifacts/departments/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -798,14 +798,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Docs */
-        post: operations["get_docs_api_v4_departments_docs_post"];
+        post: operations["get_docs_api_v4_artifacts_departments_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/cohorts/list": {
+    "/api/v4/artifacts/cohorts/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -818,14 +818,14 @@ export interface paths {
          * Get Cohort List
          * @description Get cohorts list with permissions and relationships.
          */
-        post: operations["get_cohort_list_api_v4_cohorts_list_post"];
+        post: operations["get_cohort_list_api_v4_artifacts_cohorts_list_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/cohorts/get": {
+    "/api/v4/artifacts/cohorts/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -844,14 +844,14 @@ export interface paths {
          *     Query 2: ID fetching (resource IDs, suggestions, agents)
          *     Pass 2: Parallel resource fetching (each resource type has own cache)
          */
-        post: operations["get_cohort_api_v4_cohorts_get_post"];
+        post: operations["get_cohort_api_v4_artifacts_cohorts_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/cohorts/save": {
+    "/api/v4/artifacts/cohorts/save": {
         parameters: {
             query?: never;
             header?: never;
@@ -864,14 +864,14 @@ export interface paths {
          * Save Cohort
          * @description Save cohort - draft-first create/update using draft resources.
          */
-        post: operations["save_cohort_api_v4_cohorts_save_post"];
+        post: operations["save_cohort_api_v4_artifacts_cohorts_save_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/cohorts/duplicate": {
+    "/api/v4/artifacts/cohorts/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -884,14 +884,14 @@ export interface paths {
          * Duplicate Cohort
          * @description Duplicate a cohort with relationships.
          */
-        post: operations["duplicate_cohort_api_v4_cohorts_duplicate_post"];
+        post: operations["duplicate_cohort_api_v4_artifacts_cohorts_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/cohorts/delete": {
+    "/api/v4/artifacts/cohorts/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -904,14 +904,14 @@ export interface paths {
          * Delete Cohort
          * @description Delete a cohort.
          */
-        post: operations["delete_cohort_api_v4_cohorts_delete_post"];
+        post: operations["delete_cohort_api_v4_artifacts_cohorts_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/cohorts/draft": {
+    "/api/v4/artifacts/cohorts/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -928,10 +928,10 @@ export interface paths {
          * Patch Cohort Draft
          * @description Patch cohort draft - accepts resource IDs and creates/updates draft.
          */
-        patch: operations["patch_cohort_draft_api_v4_cohorts_draft_patch"];
+        patch: operations["patch_cohort_draft_api_v4_artifacts_cohorts_draft_patch"];
         trace?: never;
     };
-    "/api/v4/cohorts/docs": {
+    "/api/v4/artifacts/cohorts/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -941,14 +941,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Docs */
-        post: operations["get_docs_api_v4_cohorts_docs_post"];
+        post: operations["get_docs_api_v4_artifacts_cohorts_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/evals/list": {
+    "/api/v4/artifacts/evals/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -961,14 +961,14 @@ export interface paths {
          * Get Eval List
          * @description Get evals list with permissions and status details.
          */
-        post: operations["get_eval_list_api_v4_evals_list_post"];
+        post: operations["get_eval_list_api_v4_artifacts_evals_list_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/evals/get": {
+    "/api/v4/artifacts/evals/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -987,14 +987,14 @@ export interface paths {
          *     Query 2: ID fetching (resource IDs, suggestions, agents)
          *     Pass 2: Parallel resource fetching (each resource type has own cache)
          */
-        post: operations["get_eval_api_v4_evals_get_post"];
+        post: operations["get_eval_api_v4_artifacts_evals_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/evals/save": {
+    "/api/v4/artifacts/evals/save": {
         parameters: {
             query?: never;
             header?: never;
@@ -1007,14 +1007,14 @@ export interface paths {
          * Save Eval
          * @description Save eval - handles both create (eval_id = NULL) and update (eval_id provided).
          */
-        post: operations["save_eval_api_v4_evals_save_post"];
+        post: operations["save_eval_api_v4_artifacts_evals_save_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/evals/duplicate": {
+    "/api/v4/artifacts/evals/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -1027,14 +1027,14 @@ export interface paths {
          * Duplicate Eval
          * @description Duplicate an eval.
          */
-        post: operations["duplicate_eval_api_v4_evals_duplicate_post"];
+        post: operations["duplicate_eval_api_v4_artifacts_evals_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/evals/delete": {
+    "/api/v4/artifacts/evals/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -1047,14 +1047,14 @@ export interface paths {
          * Delete Eval
          * @description Delete an eval.
          */
-        post: operations["delete_eval_api_v4_evals_delete_post"];
+        post: operations["delete_eval_api_v4_artifacts_evals_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/evals/draft": {
+    "/api/v4/artifacts/evals/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -1071,10 +1071,10 @@ export interface paths {
          * Patch Eval Draft
          * @description Patch eval draft - accepts resource IDs and creates/updates draft.
          */
-        patch: operations["patch_eval_draft_api_v4_evals_draft_patch"];
+        patch: operations["patch_eval_draft_api_v4_artifacts_evals_draft_patch"];
         trace?: never;
     };
-    "/api/v4/evals/docs": {
+    "/api/v4/artifacts/evals/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -1084,14 +1084,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Docs */
-        post: operations["get_docs_api_v4_evals_docs_post"];
+        post: operations["get_docs_api_v4_artifacts_evals_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/rubrics/get": {
+    "/api/v4/artifacts/rubrics/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -1108,14 +1108,14 @@ export interface paths {
          *     Query 2: ID fetching (resource IDs, suggestions, agents)
          *     Pass 2: Parallel resource fetching (each resource type has own cache)
          */
-        post: operations["get_rubric_api_v4_rubrics_get_post"];
+        post: operations["get_rubric_api_v4_artifacts_rubrics_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/rubrics/list": {
+    "/api/v4/artifacts/rubrics/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -1128,14 +1128,14 @@ export interface paths {
          * Get Rubric List
          * @description Get rubrics list with hierarchical structure and permissions.
          */
-        post: operations["get_rubric_list_api_v4_rubrics_list_post"];
+        post: operations["get_rubric_list_api_v4_artifacts_rubrics_list_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/rubrics/save": {
+    "/api/v4/artifacts/rubrics/save": {
         parameters: {
             query?: never;
             header?: never;
@@ -1148,14 +1148,14 @@ export interface paths {
          * Save Rubric
          * @description Save rubric - handles both create (rubric_id = NULL) and update (rubric_id provided).
          */
-        post: operations["save_rubric_api_v4_rubrics_save_post"];
+        post: operations["save_rubric_api_v4_artifacts_rubrics_save_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/rubrics/duplicate": {
+    "/api/v4/artifacts/rubrics/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -1168,14 +1168,14 @@ export interface paths {
          * Duplicate Rubric
          * @description Duplicate a rubric with entire hierarchy.
          */
-        post: operations["duplicate_rubric_api_v4_rubrics_duplicate_post"];
+        post: operations["duplicate_rubric_api_v4_artifacts_rubrics_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/rubrics/delete": {
+    "/api/v4/artifacts/rubrics/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -1188,14 +1188,14 @@ export interface paths {
          * Delete Rubric
          * @description Delete a rubric.
          */
-        post: operations["delete_rubric_api_v4_rubrics_delete_post"];
+        post: operations["delete_rubric_api_v4_artifacts_rubrics_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/rubrics/draft": {
+    "/api/v4/artifacts/rubrics/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -1212,10 +1212,10 @@ export interface paths {
          * Patch Rubric Draft
          * @description Patch rubric draft - accepts resource IDs and creates/updates draft.
          */
-        patch: operations["patch_rubric_draft_api_v4_rubrics_draft_patch"];
+        patch: operations["patch_rubric_draft_api_v4_artifacts_rubrics_draft_patch"];
         trace?: never;
     };
-    "/api/v4/rubrics/docs": {
+    "/api/v4/artifacts/rubrics/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -1225,14 +1225,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Docs */
-        post: operations["get_docs_api_v4_rubrics_docs_post"];
+        post: operations["get_docs_api_v4_artifacts_rubrics_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/settings/list": {
+    "/api/v4/artifacts/settings/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -1245,14 +1245,14 @@ export interface paths {
          * Get Setting List
          * @description Get list of all settings ordered by created_at DESC.
          */
-        post: operations["get_setting_list_api_v4_settings_list_post"];
+        post: operations["get_setting_list_api_v4_artifacts_settings_list_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/settings/get": {
+    "/api/v4/artifacts/settings/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -1270,14 +1270,14 @@ export interface paths {
          *     - Agents are OPTIONAL - NULL agent_id means manual entry only (no generate button shown)
          *     - Frontend components check agent_id before showing generate button
          */
-        post: operations["get_setting_api_v4_settings_get_post"];
+        post: operations["get_setting_api_v4_artifacts_settings_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/settings/save": {
+    "/api/v4/artifacts/settings/save": {
         parameters: {
             query?: never;
             header?: never;
@@ -1290,14 +1290,14 @@ export interface paths {
          * Save Setting
          * @description Save setting - handles both create (setting_id = NULL) and update (setting_id provided).
          */
-        post: operations["save_setting_api_v4_settings_save_post"];
+        post: operations["save_setting_api_v4_artifacts_settings_save_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/settings/duplicate": {
+    "/api/v4/artifacts/settings/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -1310,14 +1310,14 @@ export interface paths {
          * Duplicate Setting
          * @description Duplicate a setting.
          */
-        post: operations["duplicate_setting_api_v4_settings_duplicate_post"];
+        post: operations["duplicate_setting_api_v4_artifacts_settings_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/settings/delete": {
+    "/api/v4/artifacts/settings/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -1330,14 +1330,14 @@ export interface paths {
          * Delete Setting
          * @description Delete a setting.
          */
-        post: operations["delete_setting_api_v4_settings_delete_post"];
+        post: operations["delete_setting_api_v4_artifacts_settings_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/settings/draft": {
+    "/api/v4/artifacts/settings/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -1354,10 +1354,10 @@ export interface paths {
          * Patch Setting Draft
          * @description Patch setting draft - accepts resource IDs and creates/updates draft.
          */
-        patch: operations["patch_setting_draft_api_v4_settings_draft_patch"];
+        patch: operations["patch_setting_draft_api_v4_artifacts_settings_draft_patch"];
         trace?: never;
     };
-    "/api/v4/settings/docs": {
+    "/api/v4/artifacts/settings/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -1367,14 +1367,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Docs */
-        post: operations["get_docs_api_v4_settings_docs_post"];
+        post: operations["get_docs_api_v4_artifacts_settings_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/agents/get": {
+    "/api/v4/artifacts/agents/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -1387,14 +1387,14 @@ export interface paths {
          * Get Agent
          * @description Get agent information using two-pass architecture.
          */
-        post: operations["get_agent_api_v4_agents_get_post"];
+        post: operations["get_agent_api_v4_artifacts_agents_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/agents/list": {
+    "/api/v4/artifacts/agents/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -1407,14 +1407,14 @@ export interface paths {
          * Get Agent List
          * @description Get list of agents with permissions.
          */
-        post: operations["get_agent_list_api_v4_agents_list_post"];
+        post: operations["get_agent_list_api_v4_artifacts_agents_list_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/agents/save": {
+    "/api/v4/artifacts/agents/save": {
         parameters: {
             query?: never;
             header?: never;
@@ -1427,14 +1427,14 @@ export interface paths {
          * Save Agent
          * @description Save agent - handles both create (agent_id = NULL) and update (agent_id provided).
          */
-        post: operations["save_agent_api_v4_agents_save_post"];
+        post: operations["save_agent_api_v4_artifacts_agents_save_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/agents/duplicate": {
+    "/api/v4/artifacts/agents/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -1447,14 +1447,14 @@ export interface paths {
          * Duplicate Agent
          * @description Duplicate an agent.
          */
-        post: operations["duplicate_agent_api_v4_agents_duplicate_post"];
+        post: operations["duplicate_agent_api_v4_artifacts_agents_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/agents/delete": {
+    "/api/v4/artifacts/agents/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -1467,14 +1467,14 @@ export interface paths {
          * Delete Agent
          * @description Delete an agent.
          */
-        post: operations["delete_agent_api_v4_agents_delete_post"];
+        post: operations["delete_agent_api_v4_artifacts_agents_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/agents/draft": {
+    "/api/v4/artifacts/agents/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -1491,10 +1491,10 @@ export interface paths {
          * Patch Agent Draft
          * @description Patch agent draft - accepts resource IDs and creates/updates draft.
          */
-        patch: operations["patch_agent_draft_api_v4_agents_draft_patch"];
+        patch: operations["patch_agent_draft_api_v4_artifacts_agents_draft_patch"];
         trace?: never;
     };
-    "/api/v4/agents/docs": {
+    "/api/v4/artifacts/agents/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -1504,14 +1504,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Docs */
-        post: operations["get_docs_api_v4_agents_docs_post"];
+        post: operations["get_docs_api_v4_artifacts_agents_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/models/get": {
+    "/api/v4/artifacts/models/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -1526,14 +1526,14 @@ export interface paths {
          *
          *     This is a thin HTTP wrapper around get_model_internal().
          */
-        post: operations["get_model_api_v4_models_get_post"];
+        post: operations["get_model_api_v4_artifacts_models_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/models/list": {
+    "/api/v4/artifacts/models/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -1546,14 +1546,14 @@ export interface paths {
          * Get Model List
          * @description Get models list (flat structure with provider info).
          */
-        post: operations["get_model_list_api_v4_models_list_post"];
+        post: operations["get_model_list_api_v4_artifacts_models_list_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/models/save": {
+    "/api/v4/artifacts/models/save": {
         parameters: {
             query?: never;
             header?: never;
@@ -1566,14 +1566,14 @@ export interface paths {
          * Save Model
          * @description Save model - create (model_id=NULL) or update.
          */
-        post: operations["save_model_api_v4_models_save_post"];
+        post: operations["save_model_api_v4_artifacts_models_save_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/models/duplicate": {
+    "/api/v4/artifacts/models/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -1586,14 +1586,14 @@ export interface paths {
          * Duplicate Model
          * @description Duplicate a model.
          */
-        post: operations["duplicate_model_api_v4_models_duplicate_post"];
+        post: operations["duplicate_model_api_v4_artifacts_models_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/models/delete": {
+    "/api/v4/artifacts/models/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -1606,14 +1606,14 @@ export interface paths {
          * Delete Model
          * @description Delete a model if not in use.
          */
-        post: operations["delete_model_api_v4_models_delete_post"];
+        post: operations["delete_model_api_v4_artifacts_models_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/models/draft": {
+    "/api/v4/artifacts/models/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -1630,10 +1630,10 @@ export interface paths {
          * Patch Model Draft
          * @description Patch model draft - accepts resource IDs and creates/updates draft.
          */
-        patch: operations["patch_model_draft_api_v4_models_draft_patch"];
+        patch: operations["patch_model_draft_api_v4_artifacts_models_draft_patch"];
         trace?: never;
     };
-    "/api/v4/models/docs": {
+    "/api/v4/artifacts/models/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -1643,14 +1643,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Docs */
-        post: operations["get_docs_api_v4_models_docs_post"];
+        post: operations["get_docs_api_v4_artifacts_models_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/providers/list": {
+    "/api/v4/artifacts/providers/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -1663,14 +1663,14 @@ export interface paths {
          * Get Provider List
          * @description Get providers list with Python-computed permissions.
          */
-        post: operations["get_provider_list_api_v4_providers_list_post"];
+        post: operations["get_provider_list_api_v4_artifacts_providers_list_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/providers/get": {
+    "/api/v4/artifacts/providers/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -1683,14 +1683,14 @@ export interface paths {
          * Get Provider
          * @description Get provider information using two-pass architecture.
          */
-        post: operations["get_provider_api_v4_providers_get_post"];
+        post: operations["get_provider_api_v4_artifacts_providers_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/providers/save": {
+    "/api/v4/artifacts/providers/save": {
         parameters: {
             query?: never;
             header?: never;
@@ -1703,14 +1703,14 @@ export interface paths {
          * Save Provider
          * @description Save provider - handles both create (provider_id = NULL) and update (provider_id provided).
          */
-        post: operations["save_provider_api_v4_providers_save_post"];
+        post: operations["save_provider_api_v4_artifacts_providers_save_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/providers/duplicate": {
+    "/api/v4/artifacts/providers/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -1723,14 +1723,14 @@ export interface paths {
          * Duplicate Provider
          * @description Duplicate a provider.
          */
-        post: operations["duplicate_provider_api_v4_providers_duplicate_post"];
+        post: operations["duplicate_provider_api_v4_artifacts_providers_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/providers/delete": {
+    "/api/v4/artifacts/providers/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -1743,14 +1743,14 @@ export interface paths {
          * Delete Provider
          * @description Delete a provider (prevents deletion if used by models).
          */
-        post: operations["delete_provider_api_v4_providers_delete_post"];
+        post: operations["delete_provider_api_v4_artifacts_providers_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/providers/draft": {
+    "/api/v4/artifacts/providers/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -1767,10 +1767,10 @@ export interface paths {
          * Patch Provider Draft
          * @description Patch provider draft - accepts resource IDs and creates/updates draft.
          */
-        patch: operations["patch_provider_draft_api_v4_providers_draft_patch"];
+        patch: operations["patch_provider_draft_api_v4_artifacts_providers_draft_patch"];
         trace?: never;
     };
-    "/api/v4/providers/docs": {
+    "/api/v4/artifacts/providers/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -1780,14 +1780,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Docs */
-        post: operations["get_docs_api_v4_providers_docs_post"];
+        post: operations["get_docs_api_v4_artifacts_providers_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/parameters/get": {
+    "/api/v4/artifacts/parameters/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -1800,14 +1800,14 @@ export interface paths {
          * Get Parameter
          * @description Get parameter information using two-pass architecture.
          */
-        post: operations["get_parameter_api_v4_parameters_get_post"];
+        post: operations["get_parameter_api_v4_artifacts_parameters_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/parameters/list": {
+    "/api/v4/artifacts/parameters/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -1820,14 +1820,14 @@ export interface paths {
          * Get Parameter List
          * @description Get parameters list with permissions and scenario details.
          */
-        post: operations["get_parameter_list_api_v4_parameters_list_post"];
+        post: operations["get_parameter_list_api_v4_artifacts_parameters_list_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/parameters/save": {
+    "/api/v4/artifacts/parameters/save": {
         parameters: {
             query?: never;
             header?: never;
@@ -1840,14 +1840,14 @@ export interface paths {
          * Save Parameter
          * @description Save parameter - handles both create (parameter_id = NULL) and update (parameter_id provided).
          */
-        post: operations["save_parameter_api_v4_parameters_save_post"];
+        post: operations["save_parameter_api_v4_artifacts_parameters_save_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/parameters/duplicate": {
+    "/api/v4/artifacts/parameters/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -1860,14 +1860,14 @@ export interface paths {
          * Duplicate Parameter
          * @description Duplicate a parameter.
          */
-        post: operations["duplicate_parameter_api_v4_parameters_duplicate_post"];
+        post: operations["duplicate_parameter_api_v4_artifacts_parameters_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/parameters/delete": {
+    "/api/v4/artifacts/parameters/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -1880,14 +1880,14 @@ export interface paths {
          * Delete Parameter
          * @description Delete a parameter.
          */
-        post: operations["delete_parameter_api_v4_parameters_delete_post"];
+        post: operations["delete_parameter_api_v4_artifacts_parameters_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/parameters/draft": {
+    "/api/v4/artifacts/parameters/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -1904,10 +1904,10 @@ export interface paths {
          * Patch Parameter Draft
          * @description Patch parameter draft - accepts resource IDs and creates/updates draft.
          */
-        patch: operations["patch_parameter_draft_api_v4_parameters_draft_patch"];
+        patch: operations["patch_parameter_draft_api_v4_artifacts_parameters_draft_patch"];
         trace?: never;
     };
-    "/api/v4/parameters/docs": {
+    "/api/v4/artifacts/parameters/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -1917,14 +1917,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Docs */
-        post: operations["get_docs_api_v4_parameters_docs_post"];
+        post: operations["get_docs_api_v4_artifacts_parameters_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/fields/get": {
+    "/api/v4/artifacts/fields/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -1937,14 +1937,14 @@ export interface paths {
          * Get Field
          * @description Get field information using two-pass architecture.
          */
-        post: operations["get_field_api_v4_fields_get_post"];
+        post: operations["get_field_api_v4_artifacts_fields_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/fields/list": {
+    "/api/v4/artifacts/fields/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -1957,14 +1957,14 @@ export interface paths {
          * Get Field List
          * @description Get fields list with permissions and relationships.
          */
-        post: operations["get_field_list_api_v4_fields_list_post"];
+        post: operations["get_field_list_api_v4_artifacts_fields_list_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/fields/save": {
+    "/api/v4/artifacts/fields/save": {
         parameters: {
             query?: never;
             header?: never;
@@ -1977,14 +1977,14 @@ export interface paths {
          * Save Field
          * @description Save field - handles both create (field_id = NULL) and update (field_id provided).
          */
-        post: operations["save_field_api_v4_fields_save_post"];
+        post: operations["save_field_api_v4_artifacts_fields_save_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/fields/duplicate": {
+    "/api/v4/artifacts/fields/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -1997,14 +1997,14 @@ export interface paths {
          * Duplicate Field
          * @description Duplicate a field with all parameter and department associations.
          */
-        post: operations["duplicate_field_api_v4_fields_duplicate_post"];
+        post: operations["duplicate_field_api_v4_artifacts_fields_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/fields/delete": {
+    "/api/v4/artifacts/fields/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -2017,14 +2017,14 @@ export interface paths {
          * Delete Field
          * @description Delete a field.
          */
-        post: operations["delete_field_api_v4_fields_delete_post"];
+        post: operations["delete_field_api_v4_artifacts_fields_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/fields/draft": {
+    "/api/v4/artifacts/fields/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -2041,10 +2041,10 @@ export interface paths {
          * Patch Field Draft
          * @description Patch field draft - accepts resource IDs and creates/updates draft.
          */
-        patch: operations["patch_field_draft_api_v4_fields_draft_patch"];
+        patch: operations["patch_field_draft_api_v4_artifacts_fields_draft_patch"];
         trace?: never;
     };
-    "/api/v4/fields/docs": {
+    "/api/v4/artifacts/fields/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -2054,14 +2054,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Docs */
-        post: operations["get_docs_api_v4_fields_docs_post"];
+        post: operations["get_docs_api_v4_artifacts_fields_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/profiles/get": {
+    "/api/v4/artifacts/profiles/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -2074,14 +2074,14 @@ export interface paths {
          * Get Profile
          * @description Get profile information using two-pass architecture.
          */
-        post: operations["get_profile_api_v4_profiles_get_post"];
+        post: operations["get_profile_api_v4_artifacts_profiles_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/profiles/list": {
+    "/api/v4/artifacts/profiles/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -2094,14 +2094,14 @@ export interface paths {
          * Get Profile List
          * @description Get profile/staff list with permissions and relationships.
          */
-        post: operations["get_profile_list_api_v4_profiles_list_post"];
+        post: operations["get_profile_list_api_v4_artifacts_profiles_list_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/profiles/save": {
+    "/api/v4/artifacts/profiles/save": {
         parameters: {
             query?: never;
             header?: never;
@@ -2114,14 +2114,14 @@ export interface paths {
          * Save Profile
          * @description Save profile - handles both create and update with direct fields.
          */
-        post: operations["save_profile_api_v4_profiles_save_post"];
+        post: operations["save_profile_api_v4_artifacts_profiles_save_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/profiles/duplicate": {
+    "/api/v4/artifacts/profiles/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -2134,14 +2134,14 @@ export interface paths {
          * Duplicate Profile
          * @description Duplicate a profile.
          */
-        post: operations["duplicate_profile_api_v4_profiles_duplicate_post"];
+        post: operations["duplicate_profile_api_v4_artifacts_profiles_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/profiles/draft": {
+    "/api/v4/artifacts/profiles/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -2158,10 +2158,10 @@ export interface paths {
          * Patch Profile Draft
          * @description Patch profile draft - accepts resource IDs and creates/updates draft.
          */
-        patch: operations["patch_profile_draft_api_v4_profiles_draft_patch"];
+        patch: operations["patch_profile_draft_api_v4_artifacts_profiles_draft_patch"];
         trace?: never;
     };
-    "/api/v4/profiles/delete": {
+    "/api/v4/artifacts/profiles/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -2174,14 +2174,14 @@ export interface paths {
          * Delete Profile
          * @description Delete a profile.
          */
-        post: operations["delete_profile_api_v4_profiles_delete_post"];
+        post: operations["delete_profile_api_v4_artifacts_profiles_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/profiles/bulk/process": {
+    "/api/v4/artifacts/profiles/bulk/process": {
         parameters: {
             query?: never;
             header?: never;
@@ -2194,14 +2194,14 @@ export interface paths {
          * Process Staff
          * @description Process CSV file and map columns to target fields.
          */
-        post: operations["process_staff_api_v4_profiles_bulk_process_post"];
+        post: operations["process_staff_api_v4_artifacts_profiles_bulk_process_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/profiles/bulk/search": {
+    "/api/v4/artifacts/profiles/bulk/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -2214,14 +2214,14 @@ export interface paths {
          * Search Staff
          * @description Search staff with query and filters.
          */
-        post: operations["search_staff_api_v4_profiles_bulk_search_post"];
+        post: operations["search_staff_api_v4_artifacts_profiles_bulk_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/profiles/bulk/save": {
+    "/api/v4/artifacts/profiles/bulk/save": {
         parameters: {
             query?: never;
             header?: never;
@@ -2234,14 +2234,14 @@ export interface paths {
          * Save Staff
          * @description Bulk create or update staff members (upsert).
          */
-        post: operations["save_staff_api_v4_profiles_bulk_save_post"];
+        post: operations["save_staff_api_v4_artifacts_profiles_bulk_save_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/profiles/bulk/delete": {
+    "/api/v4/artifacts/profiles/bulk/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -2254,14 +2254,14 @@ export interface paths {
          * Delete Staff
          * @description Bulk delete profiles.
          */
-        post: operations["delete_staff_api_v4_profiles_bulk_delete_post"];
+        post: operations["delete_staff_api_v4_artifacts_profiles_bulk_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/profiles/docs": {
+    "/api/v4/artifacts/profiles/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -2271,14 +2271,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Docs */
-        post: operations["get_docs_api_v4_profiles_docs_post"];
+        post: operations["get_docs_api_v4_artifacts_profiles_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/auths/get": {
+    "/api/v4/artifacts/auths/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -2295,14 +2295,14 @@ export interface paths {
          *     Query 2: ID fetching (resource IDs, suggestions, agents)
          *     Pass 2: Parallel resource fetching (each resource type has own cache)
          */
-        post: operations["get_auth_api_v4_auths_get_post"];
+        post: operations["get_auth_api_v4_artifacts_auths_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/auths/list": {
+    "/api/v4/artifacts/auths/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -2315,14 +2315,14 @@ export interface paths {
          * Get Auth List
          * @description Get auth list with item counts and permissions.
          */
-        post: operations["get_auth_list_api_v4_auths_list_post"];
+        post: operations["get_auth_list_api_v4_artifacts_auths_list_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/auths/save": {
+    "/api/v4/artifacts/auths/save": {
         parameters: {
             query?: never;
             header?: never;
@@ -2335,14 +2335,14 @@ export interface paths {
          * Save Auth
          * @description Save auth - handles both create (auth_id = NULL) and update (auth_id provided).
          */
-        post: operations["save_auth_api_v4_auths_save_post"];
+        post: operations["save_auth_api_v4_artifacts_auths_save_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/auths/duplicate": {
+    "/api/v4/artifacts/auths/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -2355,14 +2355,14 @@ export interface paths {
          * Duplicate Auth
          * @description Duplicate an auth entry with all items and their key associations.
          */
-        post: operations["duplicate_auth_api_v4_auths_duplicate_post"];
+        post: operations["duplicate_auth_api_v4_artifacts_auths_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/auths/delete": {
+    "/api/v4/artifacts/auths/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -2375,14 +2375,14 @@ export interface paths {
          * Delete Auth
          * @description Delete an auth entry.
          */
-        post: operations["delete_auth_api_v4_auths_delete_post"];
+        post: operations["delete_auth_api_v4_artifacts_auths_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/auths/draft": {
+    "/api/v4/artifacts/auths/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -2399,10 +2399,10 @@ export interface paths {
          * Patch Auth Draft
          * @description Patch auth draft - accepts resource IDs and creates/updates draft.
          */
-        patch: operations["patch_auth_draft_api_v4_auths_draft_patch"];
+        patch: operations["patch_auth_draft_api_v4_artifacts_auths_draft_patch"];
         trace?: never;
     };
-    "/api/v4/auths/docs": {
+    "/api/v4/artifacts/auths/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -2412,14 +2412,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Docs */
-        post: operations["get_docs_api_v4_auths_docs_post"];
+        post: operations["get_docs_api_v4_artifacts_auths_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/tools/list": {
+    "/api/v4/artifacts/tools/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -2432,14 +2432,14 @@ export interface paths {
          * Get Tool List
          * @description Get tools list with permissions.
          */
-        post: operations["get_tool_list_api_v4_tools_list_post"];
+        post: operations["get_tool_list_api_v4_artifacts_tools_list_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/tools/get": {
+    "/api/v4/artifacts/tools/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -2452,14 +2452,14 @@ export interface paths {
          * Get Tool
          * @description Get tool information using two-pass architecture.
          */
-        post: operations["get_tool_api_v4_tools_get_post"];
+        post: operations["get_tool_api_v4_artifacts_tools_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/tools/save": {
+    "/api/v4/artifacts/tools/save": {
         parameters: {
             query?: never;
             header?: never;
@@ -2472,14 +2472,14 @@ export interface paths {
          * Save Tool
          * @description Save tool - handles both create (tool_id = NULL) and update (tool_id provided).
          */
-        post: operations["save_tool_api_v4_tools_save_post"];
+        post: operations["save_tool_api_v4_artifacts_tools_save_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/tools/duplicate": {
+    "/api/v4/artifacts/tools/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -2492,14 +2492,14 @@ export interface paths {
          * Duplicate Tool
          * @description Duplicate a tool.
          */
-        post: operations["duplicate_tool_api_v4_tools_duplicate_post"];
+        post: operations["duplicate_tool_api_v4_artifacts_tools_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/tools/delete": {
+    "/api/v4/artifacts/tools/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -2512,14 +2512,14 @@ export interface paths {
          * Delete Tool
          * @description Delete a tool.
          */
-        post: operations["delete_tool_api_v4_tools_delete_post"];
+        post: operations["delete_tool_api_v4_artifacts_tools_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/tools/draft": {
+    "/api/v4/artifacts/tools/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -2536,10 +2536,10 @@ export interface paths {
          * Patch Tool Draft
          * @description Patch tool draft - accepts resource IDs and creates/updates draft.
          */
-        patch: operations["patch_tool_draft_api_v4_tools_draft_patch"];
+        patch: operations["patch_tool_draft_api_v4_artifacts_tools_draft_patch"];
         trace?: never;
     };
-    "/api/v4/tools/docs": {
+    "/api/v4/artifacts/tools/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -2549,14 +2549,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Docs */
-        post: operations["get_docs_api_v4_tools_docs_post"];
+        post: operations["get_docs_api_v4_artifacts_tools_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/group/get": {
+    "/api/v4/artifacts/group/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -2569,14 +2569,14 @@ export interface paths {
          * Get Group
          * @description Get detailed group information with all runs and messages.
          */
-        post: operations["get_group_api_v4_group_get_post"];
+        post: operations["get_group_api_v4_artifacts_group_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/group/list": {
+    "/api/v4/artifacts/group/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -2589,14 +2589,14 @@ export interface paths {
          * List Groups
          * @description Get paginated group list with resource hydration.
          */
-        post: operations["list_groups_api_v4_group_list_post"];
+        post: operations["list_groups_api_v4_artifacts_group_list_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/group/docs": {
+    "/api/v4/artifacts/group/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -2606,14 +2606,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Docs */
-        post: operations["get_docs_api_v4_group_docs_post"];
+        post: operations["get_docs_api_v4_artifacts_group_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/session/get": {
+    "/api/v4/artifacts/session/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -2626,14 +2626,14 @@ export interface paths {
          * Get Session
          * @description Get session detail with paginated audits and groups.
          */
-        post: operations["get_session_api_v4_session_get_post"];
+        post: operations["get_session_api_v4_artifacts_session_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/session/list": {
+    "/api/v4/artifacts/session/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -2646,14 +2646,14 @@ export interface paths {
          * List Sessions
          * @description Get paginated session list with resource hydration.
          */
-        post: operations["list_sessions_api_v4_session_list_post"];
+        post: operations["list_sessions_api_v4_artifacts_session_list_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/session/docs": {
+    "/api/v4/artifacts/session/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -2663,14 +2663,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Docs */
-        post: operations["get_docs_api_v4_session_docs_post"];
+        post: operations["get_docs_api_v4_artifacts_session_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/training/get": {
+    "/api/v4/artifacts/training/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -2689,14 +2689,14 @@ export interface paths {
          *     Used by frontend to display available simulations and get data
          *     needed to start a training session (scenario_ids, etc).
          */
-        post: operations["training_get_api_v4_training_get_post"];
+        post: operations["training_get_api_v4_artifacts_training_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/training/refresh": {
+    "/api/v4/artifacts/training/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -2715,14 +2715,14 @@ export interface paths {
          *     3. mv_home_attempt_history (depends on chat_facts)
          *     4. mv_home_certificate_status (depends on chat_facts)
          */
-        post: operations["training_refresh_api_v4_training_refresh_post"];
+        post: operations["training_refresh_api_v4_artifacts_training_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/training/docs": {
+    "/api/v4/artifacts/training/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -2732,14 +2732,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Docs */
-        post: operations["get_docs_api_v4_training_docs_post"];
+        post: operations["get_docs_api_v4_artifacts_training_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/attempt/get": {
+    "/api/v4/artifacts/attempt/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -2760,14 +2760,14 @@ export interface paths {
          *     Each query runs on its own connection from the pool for true parallelism.
          *     The practice flag is determined from the attempt data itself.
          */
-        post: operations["attempt_get_api_v4_attempt_get_post"];
+        post: operations["attempt_get_api_v4_artifacts_attempt_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/attempt/list": {
+    "/api/v4/artifacts/attempt/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -2780,14 +2780,14 @@ export interface paths {
          * List Attempts
          * @description Get unified attempt history list for home/practice style screens.
          */
-        post: operations["list_attempts_api_v4_attempt_list_post"];
+        post: operations["list_attempts_api_v4_artifacts_attempt_list_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/attempt/archive": {
+    "/api/v4/artifacts/attempt/archive": {
         parameters: {
             query?: never;
             header?: never;
@@ -2800,14 +2800,14 @@ export interface paths {
          * Archive Attempts
          * @description Bulk archive or unarchive attempts (simulation or benchmark).
          */
-        post: operations["archive_attempts_api_v4_attempt_archive_post"];
+        post: operations["archive_attempts_api_v4_artifacts_attempt_archive_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/attempt/certificate": {
+    "/api/v4/artifacts/attempt/certificate": {
         parameters: {
             query?: never;
             header?: never;
@@ -2820,14 +2820,14 @@ export interface paths {
          * Export Certificate
          * @description Generate a certificate PDF/text for a profile.
          */
-        post: operations["export_certificate_api_v4_attempt_certificate_post"];
+        post: operations["export_certificate_api_v4_artifacts_attempt_certificate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/attempt/docs": {
+    "/api/v4/artifacts/attempt/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -2837,7 +2837,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Docs */
-        post: operations["get_docs_api_v4_attempt_docs_post"];
+        post: operations["get_docs_api_v4_artifacts_attempt_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10597,6 +10597,10 @@ export interface components {
              * Format: uuid
              */
             attempt_id: string;
+            /** Previous Chat Map */
+            previous_chat_map?: {
+                [key: string]: string;
+            } | null;
         };
         /**
          * AttemptEndPayload
@@ -10610,6 +10614,8 @@ export interface components {
              * Format: uuid
              */
             chat_id: string;
+            /** Previous Chat Id */
+            previous_chat_id?: string | null;
         };
         /**
          * AttemptEndedEvent
@@ -32094,7 +32100,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    get_persona_api_v4_personas_get_post: {
+    get_persona_api_v4_artifacts_personas_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -32131,7 +32137,7 @@ export interface operations {
             };
         };
     };
-    get_persona_list_api_v4_personas_list_post: {
+    get_persona_list_api_v4_artifacts_personas_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -32168,7 +32174,7 @@ export interface operations {
             };
         };
     };
-    save_persona_api_v4_personas_save_post: {
+    save_persona_api_v4_artifacts_personas_save_post: {
         parameters: {
             query?: never;
             header?: {
@@ -32205,7 +32211,7 @@ export interface operations {
             };
         };
     };
-    duplicate_persona_api_v4_personas_duplicate_post: {
+    duplicate_persona_api_v4_artifacts_personas_duplicate_post: {
         parameters: {
             query?: never;
             header?: {
@@ -32242,7 +32248,7 @@ export interface operations {
             };
         };
     };
-    delete_persona_api_v4_personas_delete_post: {
+    delete_persona_api_v4_artifacts_personas_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -32279,7 +32285,7 @@ export interface operations {
             };
         };
     };
-    patch_persona_draft_api_v4_personas_draft_patch: {
+    patch_persona_draft_api_v4_artifacts_personas_draft_patch: {
         parameters: {
             query?: never;
             header?: {
@@ -32316,7 +32322,7 @@ export interface operations {
             };
         };
     };
-    get_docs_api_v4_personas_docs_post: {
+    get_docs_api_v4_artifacts_personas_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -32351,7 +32357,7 @@ export interface operations {
             };
         };
     };
-    get_scenario_api_v4_scenarios_get_post: {
+    get_scenario_api_v4_artifacts_scenarios_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -32388,7 +32394,7 @@ export interface operations {
             };
         };
     };
-    get_scenario_list_api_v4_scenarios_list_post: {
+    get_scenario_list_api_v4_artifacts_scenarios_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -32425,7 +32431,7 @@ export interface operations {
             };
         };
     };
-    save_scenario_api_v4_scenarios_save_post: {
+    save_scenario_api_v4_artifacts_scenarios_save_post: {
         parameters: {
             query?: never;
             header?: {
@@ -32462,7 +32468,7 @@ export interface operations {
             };
         };
     };
-    duplicate_scenario_api_v4_scenarios_duplicate_post: {
+    duplicate_scenario_api_v4_artifacts_scenarios_duplicate_post: {
         parameters: {
             query?: never;
             header?: {
@@ -32499,7 +32505,7 @@ export interface operations {
             };
         };
     };
-    delete_scenario_api_v4_scenarios_delete_post: {
+    delete_scenario_api_v4_artifacts_scenarios_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -32536,7 +32542,7 @@ export interface operations {
             };
         };
     };
-    patch_scenario_draft_api_v4_scenarios_draft_patch: {
+    patch_scenario_draft_api_v4_artifacts_scenarios_draft_patch: {
         parameters: {
             query?: never;
             header?: {
@@ -32573,7 +32579,7 @@ export interface operations {
             };
         };
     };
-    get_docs_api_v4_scenarios_docs_post: {
+    get_docs_api_v4_artifacts_scenarios_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -32608,7 +32614,7 @@ export interface operations {
             };
         };
     };
-    get_simulation_api_v4_simulations_get_post: {
+    get_simulation_api_v4_artifacts_simulations_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -32645,7 +32651,7 @@ export interface operations {
             };
         };
     };
-    get_simulation_list_api_v4_simulations_list_post: {
+    get_simulation_list_api_v4_artifacts_simulations_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -32682,7 +32688,7 @@ export interface operations {
             };
         };
     };
-    save_simulation_api_v4_simulations_save_post: {
+    save_simulation_api_v4_artifacts_simulations_save_post: {
         parameters: {
             query?: never;
             header?: {
@@ -32719,7 +32725,7 @@ export interface operations {
             };
         };
     };
-    duplicate_simulation_api_v4_simulations_duplicate_post: {
+    duplicate_simulation_api_v4_artifacts_simulations_duplicate_post: {
         parameters: {
             query?: never;
             header?: {
@@ -32756,7 +32762,7 @@ export interface operations {
             };
         };
     };
-    delete_simulation_api_v4_simulations_delete_post: {
+    delete_simulation_api_v4_artifacts_simulations_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -32793,7 +32799,7 @@ export interface operations {
             };
         };
     };
-    patch_simulation_draft_api_v4_simulations_draft_patch: {
+    patch_simulation_draft_api_v4_artifacts_simulations_draft_patch: {
         parameters: {
             query?: never;
             header?: {
@@ -32830,7 +32836,7 @@ export interface operations {
             };
         };
     };
-    get_docs_api_v4_simulations_docs_post: {
+    get_docs_api_v4_artifacts_simulations_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -32865,7 +32871,7 @@ export interface operations {
             };
         };
     };
-    get_document_list_api_v4_documents_list_post: {
+    get_document_list_api_v4_artifacts_documents_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -32902,7 +32908,7 @@ export interface operations {
             };
         };
     };
-    get_document_api_v4_documents_get_post: {
+    get_document_api_v4_artifacts_documents_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -32939,7 +32945,7 @@ export interface operations {
             };
         };
     };
-    save_document_api_v4_documents_save_post: {
+    save_document_api_v4_artifacts_documents_save_post: {
         parameters: {
             query?: never;
             header?: {
@@ -32976,7 +32982,7 @@ export interface operations {
             };
         };
     };
-    duplicate_document_api_v4_documents_duplicate_post: {
+    duplicate_document_api_v4_artifacts_documents_duplicate_post: {
         parameters: {
             query?: never;
             header?: {
@@ -33013,7 +33019,7 @@ export interface operations {
             };
         };
     };
-    delete_document_api_v4_documents_delete_post: {
+    delete_document_api_v4_artifacts_documents_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -33050,7 +33056,7 @@ export interface operations {
             };
         };
     };
-    patch_document_draft_api_v4_documents_draft_patch: {
+    patch_document_draft_api_v4_artifacts_documents_draft_patch: {
         parameters: {
             query?: never;
             header?: {
@@ -33087,7 +33093,7 @@ export interface operations {
             };
         };
     };
-    process_document_api_v4_documents_bulk_process_post: {
+    process_document_api_v4_artifacts_documents_bulk_process_post: {
         parameters: {
             query?: never;
             header?: {
@@ -33124,7 +33130,7 @@ export interface operations {
             };
         };
     };
-    search_document_api_v4_documents_bulk_search_post: {
+    search_document_api_v4_artifacts_documents_bulk_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -33161,7 +33167,7 @@ export interface operations {
             };
         };
     };
-    save_document_api_v4_documents_bulk_save_post: {
+    save_document_api_v4_artifacts_documents_bulk_save_post: {
         parameters: {
             query?: never;
             header?: {
@@ -33198,7 +33204,7 @@ export interface operations {
             };
         };
     };
-    delete_document_api_v4_documents_bulk_delete_post: {
+    delete_document_api_v4_artifacts_documents_bulk_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -33235,7 +33241,7 @@ export interface operations {
             };
         };
     };
-    get_docs_api_v4_documents_docs_post: {
+    get_docs_api_v4_artifacts_documents_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -33270,7 +33276,7 @@ export interface operations {
             };
         };
     };
-    get_department_api_v4_departments_get_post: {
+    get_department_api_v4_artifacts_departments_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -33307,7 +33313,7 @@ export interface operations {
             };
         };
     };
-    get_department_list_api_v4_departments_list_post: {
+    get_department_list_api_v4_artifacts_departments_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -33344,7 +33350,7 @@ export interface operations {
             };
         };
     };
-    save_department_api_v4_departments_save_post: {
+    save_department_api_v4_artifacts_departments_save_post: {
         parameters: {
             query?: never;
             header?: {
@@ -33381,7 +33387,7 @@ export interface operations {
             };
         };
     };
-    duplicate_department_api_v4_departments_duplicate_post: {
+    duplicate_department_api_v4_artifacts_departments_duplicate_post: {
         parameters: {
             query?: never;
             header?: {
@@ -33418,7 +33424,7 @@ export interface operations {
             };
         };
     };
-    delete_department_api_v4_departments_delete_post: {
+    delete_department_api_v4_artifacts_departments_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -33455,7 +33461,7 @@ export interface operations {
             };
         };
     };
-    patch_department_draft_api_v4_departments_draft_patch: {
+    patch_department_draft_api_v4_artifacts_departments_draft_patch: {
         parameters: {
             query?: never;
             header?: {
@@ -33492,7 +33498,7 @@ export interface operations {
             };
         };
     };
-    get_docs_api_v4_departments_docs_post: {
+    get_docs_api_v4_artifacts_departments_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -33527,7 +33533,7 @@ export interface operations {
             };
         };
     };
-    get_cohort_list_api_v4_cohorts_list_post: {
+    get_cohort_list_api_v4_artifacts_cohorts_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -33564,7 +33570,7 @@ export interface operations {
             };
         };
     };
-    get_cohort_api_v4_cohorts_get_post: {
+    get_cohort_api_v4_artifacts_cohorts_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -33601,7 +33607,7 @@ export interface operations {
             };
         };
     };
-    save_cohort_api_v4_cohorts_save_post: {
+    save_cohort_api_v4_artifacts_cohorts_save_post: {
         parameters: {
             query?: never;
             header?: {
@@ -33638,7 +33644,7 @@ export interface operations {
             };
         };
     };
-    duplicate_cohort_api_v4_cohorts_duplicate_post: {
+    duplicate_cohort_api_v4_artifacts_cohorts_duplicate_post: {
         parameters: {
             query?: never;
             header?: {
@@ -33675,7 +33681,7 @@ export interface operations {
             };
         };
     };
-    delete_cohort_api_v4_cohorts_delete_post: {
+    delete_cohort_api_v4_artifacts_cohorts_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -33712,7 +33718,7 @@ export interface operations {
             };
         };
     };
-    patch_cohort_draft_api_v4_cohorts_draft_patch: {
+    patch_cohort_draft_api_v4_artifacts_cohorts_draft_patch: {
         parameters: {
             query?: never;
             header?: {
@@ -33749,7 +33755,7 @@ export interface operations {
             };
         };
     };
-    get_docs_api_v4_cohorts_docs_post: {
+    get_docs_api_v4_artifacts_cohorts_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -33784,7 +33790,7 @@ export interface operations {
             };
         };
     };
-    get_eval_list_api_v4_evals_list_post: {
+    get_eval_list_api_v4_artifacts_evals_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -33821,7 +33827,7 @@ export interface operations {
             };
         };
     };
-    get_eval_api_v4_evals_get_post: {
+    get_eval_api_v4_artifacts_evals_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -33858,7 +33864,7 @@ export interface operations {
             };
         };
     };
-    save_eval_api_v4_evals_save_post: {
+    save_eval_api_v4_artifacts_evals_save_post: {
         parameters: {
             query?: never;
             header?: {
@@ -33895,7 +33901,7 @@ export interface operations {
             };
         };
     };
-    duplicate_eval_api_v4_evals_duplicate_post: {
+    duplicate_eval_api_v4_artifacts_evals_duplicate_post: {
         parameters: {
             query?: never;
             header?: {
@@ -33932,7 +33938,7 @@ export interface operations {
             };
         };
     };
-    delete_eval_api_v4_evals_delete_post: {
+    delete_eval_api_v4_artifacts_evals_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -33969,7 +33975,7 @@ export interface operations {
             };
         };
     };
-    patch_eval_draft_api_v4_evals_draft_patch: {
+    patch_eval_draft_api_v4_artifacts_evals_draft_patch: {
         parameters: {
             query?: never;
             header?: {
@@ -34006,7 +34012,7 @@ export interface operations {
             };
         };
     };
-    get_docs_api_v4_evals_docs_post: {
+    get_docs_api_v4_artifacts_evals_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -34041,7 +34047,7 @@ export interface operations {
             };
         };
     };
-    get_rubric_api_v4_rubrics_get_post: {
+    get_rubric_api_v4_artifacts_rubrics_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -34078,7 +34084,7 @@ export interface operations {
             };
         };
     };
-    get_rubric_list_api_v4_rubrics_list_post: {
+    get_rubric_list_api_v4_artifacts_rubrics_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -34115,7 +34121,7 @@ export interface operations {
             };
         };
     };
-    save_rubric_api_v4_rubrics_save_post: {
+    save_rubric_api_v4_artifacts_rubrics_save_post: {
         parameters: {
             query?: never;
             header?: {
@@ -34152,7 +34158,7 @@ export interface operations {
             };
         };
     };
-    duplicate_rubric_api_v4_rubrics_duplicate_post: {
+    duplicate_rubric_api_v4_artifacts_rubrics_duplicate_post: {
         parameters: {
             query?: never;
             header?: {
@@ -34189,7 +34195,7 @@ export interface operations {
             };
         };
     };
-    delete_rubric_api_v4_rubrics_delete_post: {
+    delete_rubric_api_v4_artifacts_rubrics_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -34226,7 +34232,7 @@ export interface operations {
             };
         };
     };
-    patch_rubric_draft_api_v4_rubrics_draft_patch: {
+    patch_rubric_draft_api_v4_artifacts_rubrics_draft_patch: {
         parameters: {
             query?: never;
             header?: {
@@ -34263,7 +34269,7 @@ export interface operations {
             };
         };
     };
-    get_docs_api_v4_rubrics_docs_post: {
+    get_docs_api_v4_artifacts_rubrics_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -34298,7 +34304,7 @@ export interface operations {
             };
         };
     };
-    get_setting_list_api_v4_settings_list_post: {
+    get_setting_list_api_v4_artifacts_settings_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -34335,7 +34341,7 @@ export interface operations {
             };
         };
     };
-    get_setting_api_v4_settings_get_post: {
+    get_setting_api_v4_artifacts_settings_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -34372,7 +34378,7 @@ export interface operations {
             };
         };
     };
-    save_setting_api_v4_settings_save_post: {
+    save_setting_api_v4_artifacts_settings_save_post: {
         parameters: {
             query?: never;
             header?: {
@@ -34409,7 +34415,7 @@ export interface operations {
             };
         };
     };
-    duplicate_setting_api_v4_settings_duplicate_post: {
+    duplicate_setting_api_v4_artifacts_settings_duplicate_post: {
         parameters: {
             query?: never;
             header?: {
@@ -34446,7 +34452,7 @@ export interface operations {
             };
         };
     };
-    delete_setting_api_v4_settings_delete_post: {
+    delete_setting_api_v4_artifacts_settings_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -34483,7 +34489,7 @@ export interface operations {
             };
         };
     };
-    patch_setting_draft_api_v4_settings_draft_patch: {
+    patch_setting_draft_api_v4_artifacts_settings_draft_patch: {
         parameters: {
             query?: never;
             header?: {
@@ -34520,7 +34526,7 @@ export interface operations {
             };
         };
     };
-    get_docs_api_v4_settings_docs_post: {
+    get_docs_api_v4_artifacts_settings_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -34555,7 +34561,7 @@ export interface operations {
             };
         };
     };
-    get_agent_api_v4_agents_get_post: {
+    get_agent_api_v4_artifacts_agents_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -34592,7 +34598,7 @@ export interface operations {
             };
         };
     };
-    get_agent_list_api_v4_agents_list_post: {
+    get_agent_list_api_v4_artifacts_agents_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -34629,7 +34635,7 @@ export interface operations {
             };
         };
     };
-    save_agent_api_v4_agents_save_post: {
+    save_agent_api_v4_artifacts_agents_save_post: {
         parameters: {
             query?: never;
             header?: {
@@ -34666,7 +34672,7 @@ export interface operations {
             };
         };
     };
-    duplicate_agent_api_v4_agents_duplicate_post: {
+    duplicate_agent_api_v4_artifacts_agents_duplicate_post: {
         parameters: {
             query?: never;
             header?: {
@@ -34703,7 +34709,7 @@ export interface operations {
             };
         };
     };
-    delete_agent_api_v4_agents_delete_post: {
+    delete_agent_api_v4_artifacts_agents_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -34740,7 +34746,7 @@ export interface operations {
             };
         };
     };
-    patch_agent_draft_api_v4_agents_draft_patch: {
+    patch_agent_draft_api_v4_artifacts_agents_draft_patch: {
         parameters: {
             query?: never;
             header?: {
@@ -34777,7 +34783,7 @@ export interface operations {
             };
         };
     };
-    get_docs_api_v4_agents_docs_post: {
+    get_docs_api_v4_artifacts_agents_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -34812,7 +34818,7 @@ export interface operations {
             };
         };
     };
-    get_model_api_v4_models_get_post: {
+    get_model_api_v4_artifacts_models_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -34849,7 +34855,7 @@ export interface operations {
             };
         };
     };
-    get_model_list_api_v4_models_list_post: {
+    get_model_list_api_v4_artifacts_models_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -34886,7 +34892,7 @@ export interface operations {
             };
         };
     };
-    save_model_api_v4_models_save_post: {
+    save_model_api_v4_artifacts_models_save_post: {
         parameters: {
             query?: never;
             header?: {
@@ -34923,7 +34929,7 @@ export interface operations {
             };
         };
     };
-    duplicate_model_api_v4_models_duplicate_post: {
+    duplicate_model_api_v4_artifacts_models_duplicate_post: {
         parameters: {
             query?: never;
             header?: {
@@ -34960,7 +34966,7 @@ export interface operations {
             };
         };
     };
-    delete_model_api_v4_models_delete_post: {
+    delete_model_api_v4_artifacts_models_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -34997,7 +35003,7 @@ export interface operations {
             };
         };
     };
-    patch_model_draft_api_v4_models_draft_patch: {
+    patch_model_draft_api_v4_artifacts_models_draft_patch: {
         parameters: {
             query?: never;
             header?: {
@@ -35034,7 +35040,7 @@ export interface operations {
             };
         };
     };
-    get_docs_api_v4_models_docs_post: {
+    get_docs_api_v4_artifacts_models_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -35069,7 +35075,7 @@ export interface operations {
             };
         };
     };
-    get_provider_list_api_v4_providers_list_post: {
+    get_provider_list_api_v4_artifacts_providers_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -35106,7 +35112,7 @@ export interface operations {
             };
         };
     };
-    get_provider_api_v4_providers_get_post: {
+    get_provider_api_v4_artifacts_providers_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -35143,7 +35149,7 @@ export interface operations {
             };
         };
     };
-    save_provider_api_v4_providers_save_post: {
+    save_provider_api_v4_artifacts_providers_save_post: {
         parameters: {
             query?: never;
             header?: {
@@ -35180,7 +35186,7 @@ export interface operations {
             };
         };
     };
-    duplicate_provider_api_v4_providers_duplicate_post: {
+    duplicate_provider_api_v4_artifacts_providers_duplicate_post: {
         parameters: {
             query?: never;
             header?: {
@@ -35217,7 +35223,7 @@ export interface operations {
             };
         };
     };
-    delete_provider_api_v4_providers_delete_post: {
+    delete_provider_api_v4_artifacts_providers_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -35254,7 +35260,7 @@ export interface operations {
             };
         };
     };
-    patch_provider_draft_api_v4_providers_draft_patch: {
+    patch_provider_draft_api_v4_artifacts_providers_draft_patch: {
         parameters: {
             query?: never;
             header?: {
@@ -35291,7 +35297,7 @@ export interface operations {
             };
         };
     };
-    get_docs_api_v4_providers_docs_post: {
+    get_docs_api_v4_artifacts_providers_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -35326,7 +35332,7 @@ export interface operations {
             };
         };
     };
-    get_parameter_api_v4_parameters_get_post: {
+    get_parameter_api_v4_artifacts_parameters_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -35363,7 +35369,7 @@ export interface operations {
             };
         };
     };
-    get_parameter_list_api_v4_parameters_list_post: {
+    get_parameter_list_api_v4_artifacts_parameters_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -35400,7 +35406,7 @@ export interface operations {
             };
         };
     };
-    save_parameter_api_v4_parameters_save_post: {
+    save_parameter_api_v4_artifacts_parameters_save_post: {
         parameters: {
             query?: never;
             header?: {
@@ -35437,7 +35443,7 @@ export interface operations {
             };
         };
     };
-    duplicate_parameter_api_v4_parameters_duplicate_post: {
+    duplicate_parameter_api_v4_artifacts_parameters_duplicate_post: {
         parameters: {
             query?: never;
             header?: {
@@ -35474,7 +35480,7 @@ export interface operations {
             };
         };
     };
-    delete_parameter_api_v4_parameters_delete_post: {
+    delete_parameter_api_v4_artifacts_parameters_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -35511,7 +35517,7 @@ export interface operations {
             };
         };
     };
-    patch_parameter_draft_api_v4_parameters_draft_patch: {
+    patch_parameter_draft_api_v4_artifacts_parameters_draft_patch: {
         parameters: {
             query?: never;
             header?: {
@@ -35548,7 +35554,7 @@ export interface operations {
             };
         };
     };
-    get_docs_api_v4_parameters_docs_post: {
+    get_docs_api_v4_artifacts_parameters_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -35583,7 +35589,7 @@ export interface operations {
             };
         };
     };
-    get_field_api_v4_fields_get_post: {
+    get_field_api_v4_artifacts_fields_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -35620,7 +35626,7 @@ export interface operations {
             };
         };
     };
-    get_field_list_api_v4_fields_list_post: {
+    get_field_list_api_v4_artifacts_fields_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -35657,7 +35663,7 @@ export interface operations {
             };
         };
     };
-    save_field_api_v4_fields_save_post: {
+    save_field_api_v4_artifacts_fields_save_post: {
         parameters: {
             query?: never;
             header?: {
@@ -35694,7 +35700,7 @@ export interface operations {
             };
         };
     };
-    duplicate_field_api_v4_fields_duplicate_post: {
+    duplicate_field_api_v4_artifacts_fields_duplicate_post: {
         parameters: {
             query?: never;
             header?: {
@@ -35731,7 +35737,7 @@ export interface operations {
             };
         };
     };
-    delete_field_api_v4_fields_delete_post: {
+    delete_field_api_v4_artifacts_fields_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -35768,7 +35774,7 @@ export interface operations {
             };
         };
     };
-    patch_field_draft_api_v4_fields_draft_patch: {
+    patch_field_draft_api_v4_artifacts_fields_draft_patch: {
         parameters: {
             query?: never;
             header?: {
@@ -35805,7 +35811,7 @@ export interface operations {
             };
         };
     };
-    get_docs_api_v4_fields_docs_post: {
+    get_docs_api_v4_artifacts_fields_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -35840,7 +35846,7 @@ export interface operations {
             };
         };
     };
-    get_profile_api_v4_profiles_get_post: {
+    get_profile_api_v4_artifacts_profiles_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -35877,7 +35883,7 @@ export interface operations {
             };
         };
     };
-    get_profile_list_api_v4_profiles_list_post: {
+    get_profile_list_api_v4_artifacts_profiles_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -35914,7 +35920,7 @@ export interface operations {
             };
         };
     };
-    save_profile_api_v4_profiles_save_post: {
+    save_profile_api_v4_artifacts_profiles_save_post: {
         parameters: {
             query?: never;
             header?: {
@@ -35951,7 +35957,7 @@ export interface operations {
             };
         };
     };
-    duplicate_profile_api_v4_profiles_duplicate_post: {
+    duplicate_profile_api_v4_artifacts_profiles_duplicate_post: {
         parameters: {
             query?: never;
             header?: {
@@ -35988,7 +35994,7 @@ export interface operations {
             };
         };
     };
-    patch_profile_draft_api_v4_profiles_draft_patch: {
+    patch_profile_draft_api_v4_artifacts_profiles_draft_patch: {
         parameters: {
             query?: never;
             header?: {
@@ -36025,7 +36031,7 @@ export interface operations {
             };
         };
     };
-    delete_profile_api_v4_profiles_delete_post: {
+    delete_profile_api_v4_artifacts_profiles_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -36062,7 +36068,7 @@ export interface operations {
             };
         };
     };
-    process_staff_api_v4_profiles_bulk_process_post: {
+    process_staff_api_v4_artifacts_profiles_bulk_process_post: {
         parameters: {
             query?: never;
             header?: {
@@ -36099,7 +36105,7 @@ export interface operations {
             };
         };
     };
-    search_staff_api_v4_profiles_bulk_search_post: {
+    search_staff_api_v4_artifacts_profiles_bulk_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -36136,7 +36142,7 @@ export interface operations {
             };
         };
     };
-    save_staff_api_v4_profiles_bulk_save_post: {
+    save_staff_api_v4_artifacts_profiles_bulk_save_post: {
         parameters: {
             query?: never;
             header?: {
@@ -36173,7 +36179,7 @@ export interface operations {
             };
         };
     };
-    delete_staff_api_v4_profiles_bulk_delete_post: {
+    delete_staff_api_v4_artifacts_profiles_bulk_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -36210,7 +36216,7 @@ export interface operations {
             };
         };
     };
-    get_docs_api_v4_profiles_docs_post: {
+    get_docs_api_v4_artifacts_profiles_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -36245,7 +36251,7 @@ export interface operations {
             };
         };
     };
-    get_auth_api_v4_auths_get_post: {
+    get_auth_api_v4_artifacts_auths_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -36282,7 +36288,7 @@ export interface operations {
             };
         };
     };
-    get_auth_list_api_v4_auths_list_post: {
+    get_auth_list_api_v4_artifacts_auths_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -36319,7 +36325,7 @@ export interface operations {
             };
         };
     };
-    save_auth_api_v4_auths_save_post: {
+    save_auth_api_v4_artifacts_auths_save_post: {
         parameters: {
             query?: never;
             header?: {
@@ -36356,7 +36362,7 @@ export interface operations {
             };
         };
     };
-    duplicate_auth_api_v4_auths_duplicate_post: {
+    duplicate_auth_api_v4_artifacts_auths_duplicate_post: {
         parameters: {
             query?: never;
             header?: {
@@ -36393,7 +36399,7 @@ export interface operations {
             };
         };
     };
-    delete_auth_api_v4_auths_delete_post: {
+    delete_auth_api_v4_artifacts_auths_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -36430,7 +36436,7 @@ export interface operations {
             };
         };
     };
-    patch_auth_draft_api_v4_auths_draft_patch: {
+    patch_auth_draft_api_v4_artifacts_auths_draft_patch: {
         parameters: {
             query?: never;
             header?: {
@@ -36467,7 +36473,7 @@ export interface operations {
             };
         };
     };
-    get_docs_api_v4_auths_docs_post: {
+    get_docs_api_v4_artifacts_auths_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -36502,7 +36508,7 @@ export interface operations {
             };
         };
     };
-    get_tool_list_api_v4_tools_list_post: {
+    get_tool_list_api_v4_artifacts_tools_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -36535,7 +36541,7 @@ export interface operations {
             };
         };
     };
-    get_tool_api_v4_tools_get_post: {
+    get_tool_api_v4_artifacts_tools_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -36572,7 +36578,7 @@ export interface operations {
             };
         };
     };
-    save_tool_api_v4_tools_save_post: {
+    save_tool_api_v4_artifacts_tools_save_post: {
         parameters: {
             query?: never;
             header?: {
@@ -36609,7 +36615,7 @@ export interface operations {
             };
         };
     };
-    duplicate_tool_api_v4_tools_duplicate_post: {
+    duplicate_tool_api_v4_artifacts_tools_duplicate_post: {
         parameters: {
             query?: never;
             header?: {
@@ -36646,7 +36652,7 @@ export interface operations {
             };
         };
     };
-    delete_tool_api_v4_tools_delete_post: {
+    delete_tool_api_v4_artifacts_tools_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -36683,7 +36689,7 @@ export interface operations {
             };
         };
     };
-    patch_tool_draft_api_v4_tools_draft_patch: {
+    patch_tool_draft_api_v4_artifacts_tools_draft_patch: {
         parameters: {
             query?: never;
             header?: {
@@ -36720,7 +36726,7 @@ export interface operations {
             };
         };
     };
-    get_docs_api_v4_tools_docs_post: {
+    get_docs_api_v4_artifacts_tools_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -36755,7 +36761,7 @@ export interface operations {
             };
         };
     };
-    get_group_api_v4_group_get_post: {
+    get_group_api_v4_artifacts_group_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -36792,7 +36798,7 @@ export interface operations {
             };
         };
     };
-    list_groups_api_v4_group_list_post: {
+    list_groups_api_v4_artifacts_group_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -36829,7 +36835,7 @@ export interface operations {
             };
         };
     };
-    get_docs_api_v4_group_docs_post: {
+    get_docs_api_v4_artifacts_group_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -36864,7 +36870,7 @@ export interface operations {
             };
         };
     };
-    get_session_api_v4_session_get_post: {
+    get_session_api_v4_artifacts_session_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -36901,7 +36907,7 @@ export interface operations {
             };
         };
     };
-    list_sessions_api_v4_session_list_post: {
+    list_sessions_api_v4_artifacts_session_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -36938,7 +36944,7 @@ export interface operations {
             };
         };
     };
-    get_docs_api_v4_session_docs_post: {
+    get_docs_api_v4_artifacts_session_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -36973,7 +36979,7 @@ export interface operations {
             };
         };
     };
-    training_get_api_v4_training_get_post: {
+    training_get_api_v4_artifacts_training_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -37010,7 +37016,7 @@ export interface operations {
             };
         };
     };
-    training_refresh_api_v4_training_refresh_post: {
+    training_refresh_api_v4_artifacts_training_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -37047,7 +37053,7 @@ export interface operations {
             };
         };
     };
-    get_docs_api_v4_training_docs_post: {
+    get_docs_api_v4_artifacts_training_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -37082,7 +37088,7 @@ export interface operations {
             };
         };
     };
-    attempt_get_api_v4_attempt_get_post: {
+    attempt_get_api_v4_artifacts_attempt_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -37119,7 +37125,7 @@ export interface operations {
             };
         };
     };
-    list_attempts_api_v4_attempt_list_post: {
+    list_attempts_api_v4_artifacts_attempt_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -37156,7 +37162,7 @@ export interface operations {
             };
         };
     };
-    archive_attempts_api_v4_attempt_archive_post: {
+    archive_attempts_api_v4_artifacts_attempt_archive_post: {
         parameters: {
             query?: never;
             header?: {
@@ -37193,7 +37199,7 @@ export interface operations {
             };
         };
     };
-    export_certificate_api_v4_attempt_certificate_post: {
+    export_certificate_api_v4_artifacts_attempt_certificate_post: {
         parameters: {
             query?: never;
             header?: {
@@ -37230,7 +37236,7 @@ export interface operations {
             };
         };
     };
-    get_docs_api_v4_attempt_docs_post: {
+    get_docs_api_v4_artifacts_attempt_docs_post: {
         parameters: {
             query?: never;
             header?: {

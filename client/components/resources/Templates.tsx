@@ -394,9 +394,9 @@ export function Templates({
       if (htmlCache[templateId] !== undefined) {
         return htmlCache[templateId];
       }
-      // Fetch from BFF endpoint /api/templates/html
+      // Fetch from BFF endpoint /api/resources/templates/html
       try {
-        const response = await fetch("/api/templates/html", {
+        const response = await fetch("/api/resources/templates/html", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ id: templateId }),

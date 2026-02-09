@@ -13,12 +13,12 @@ import type { Metadata } from "next";
 import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetSimulationIn = InputOf<"/api/v4/simulations/get", "post">;
-type GetSimulationOut = OutputOf<"/api/v4/simulations/get", "post">;
-type SaveSimulationIn = InputOf<"/api/v4/simulations/save", "post">;
-type SaveSimulationOut = OutputOf<"/api/v4/simulations/save", "post">;
-type PatchSimulationDraftIn = InputOf<"/api/v4/simulations/draft", "patch">;
-type PatchSimulationDraftOut = OutputOf<"/api/v4/simulations/draft", "patch">;
+type GetSimulationIn = InputOf<"/api/v4/artifacts/simulations/get", "post">;
+type GetSimulationOut = OutputOf<"/api/v4/artifacts/simulations/get", "post">;
+type SaveSimulationIn = InputOf<"/api/v4/artifacts/simulations/save", "post">;
+type SaveSimulationOut = OutputOf<"/api/v4/artifacts/simulations/save", "post">;
+type PatchSimulationDraftIn = InputOf<"/api/v4/artifacts/simulations/draft", "patch">;
+type PatchSimulationDraftOut = OutputOf<"/api/v4/artifacts/simulations/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
@@ -72,7 +72,7 @@ const getSimulationDefault = async (
   const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
 
   try {
-    const result = await api.post("/simulations/get", input, {
+    const result = await api.post("/artifacts/simulations/get", input, {
       cache: "no-store",
       headers: {
         "X-Bypass-Cache": "1",
@@ -97,7 +97,7 @@ async function saveSimulation(
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/simulations/save", input);
+  return api.post("/artifacts/simulations/save", input);
 }
 
 async function patchSimulationDraft(
@@ -106,7 +106,7 @@ async function patchSimulationDraft(
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.patch("/simulations/draft", input);
+  return api.patch("/artifacts/simulations/draft", input);
 }
 
 async function createDraftNames(

@@ -1,4 +1,4 @@
-"""Route tests for POST /api/v4/documents/certificate endpoint."""
+"""Route tests for POST /api/v4/artifacts/documents/certificate endpoint."""
 
 import uuid
 
@@ -33,7 +33,7 @@ async def test_generate_certificate(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/documents/certificate",
+        "/api/v4/artifacts/documents/certificate",
         json={"profile_id": str(profile_id)},
     )
 
@@ -67,7 +67,7 @@ async def test_generate_certificate_profile_not_found(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/documents/certificate",
+        "/api/v4/artifacts/documents/certificate",
         json={"profile_id": str(fake_profile_id)},
     )
 

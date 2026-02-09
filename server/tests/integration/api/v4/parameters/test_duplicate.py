@@ -1,4 +1,4 @@
-"""Route tests for POST /api/v4/parameters/duplicate endpoint."""
+"""Route tests for POST /api/v4/artifacts/parameters/duplicate endpoint."""
 
 import asyncpg  # type: ignore
 import httpx
@@ -111,7 +111,7 @@ async def test_duplicate_parameter(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/parameters/duplicate",
+        "/api/v4/artifacts/parameters/duplicate",
         json={"parameter_id": str(original_parameter_id)},
     )
 
@@ -219,7 +219,7 @@ async def test_duplicate_parameter_without_department_links(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/parameters/duplicate",
+        "/api/v4/artifacts/parameters/duplicate",
         json={"parameter_id": str(original_parameter_id)},
     )
 
@@ -263,7 +263,7 @@ async def test_duplicate_parameter_not_found(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/parameters/duplicate",
+        "/api/v4/artifacts/parameters/duplicate",
         json={"parameter_id": fake_parameter_id},
     )
 

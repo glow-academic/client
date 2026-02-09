@@ -1,4 +1,4 @@
-"""Route tests for POST /api/v4/agents/list endpoint."""
+"""Route tests for POST /api/v4/artifacts/agents/list endpoint."""
 
 import asyncpg  # type: ignore
 import httpx
@@ -22,7 +22,7 @@ async def test_list_agents(
 
     # v4 routes get profile_id from router dependency, not request body
     response = await client.post(
-        "/api/v4/agents/list",
+        "/api/v4/artifacts/agents/list",
         json={},
     )
 
@@ -55,7 +55,7 @@ async def test_list_agents_empty(
 
     # v4 routes get profile_id from router dependency, not request body
     response = await client.post(
-        "/api/v4/agents/list",
+        "/api/v4/artifacts/agents/list",
         json={},
     )
 
@@ -77,7 +77,7 @@ async def test_list_agents_permissions_superadmin(
 
     # v4 routes get profile_id from router dependency, not request body
     response = await client.post(
-        "/api/v4/agents/list",
+        "/api/v4/artifacts/agents/list",
         json={},
     )
 
@@ -114,7 +114,7 @@ async def test_list_agents_permissions_non_superadmin(
     # v4 routes get profile_id from router dependency (header), not request body
     # For this test, we need to set the profile header
     response = await client.post(
-        "/api/v4/agents/list",
+        "/api/v4/artifacts/agents/list",
         json={},
         headers={"X-Profile-Id": str(ta_id)},
     )
@@ -138,7 +138,7 @@ async def test_list_agents_optimization(
 
     # v4 routes get profile_id from router dependency, not request body
     response = await client.post(
-        "/api/v4/agents/list",
+        "/api/v4/artifacts/agents/list",
         json={},
     )
 
@@ -214,7 +214,7 @@ async def test_list_agents_can_delete_default(
 
     # v4 routes get profile_id from router dependency, not request body
     response = await client.post(
-        "/api/v4/agents/list",
+        "/api/v4/artifacts/agents/list",
         json={},
     )
 
@@ -289,7 +289,7 @@ async def test_list_agents_can_delete_linked(
 
     # v4 routes get profile_id from router dependency, not request body
     response = await client.post(
-        "/api/v4/agents/list",
+        "/api/v4/artifacts/agents/list",
         json={},
     )
 
@@ -342,7 +342,7 @@ async def test_list_agents_can_delete_allowed(
 
     # v4 routes get profile_id from router dependency, not request body
     response = await client.post(
-        "/api/v4/agents/list",
+        "/api/v4/artifacts/agents/list",
         json={},
     )
 
@@ -367,7 +367,7 @@ async def test_list_agents_can_duplicate(
 
     # v4 routes get profile_id from router dependency, not request body
     response = await client.post(
-        "/api/v4/agents/list",
+        "/api/v4/artifacts/agents/list",
         json={},
     )
 

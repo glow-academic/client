@@ -28,8 +28,8 @@ import type { ResourceType } from "@/lib/resources/types";
 import { parseAsString, type Parser } from "nuqs";
 
 // Types defined inline using InputOf/OutputOf
-type SaveDepartmentIn = InputOf<"/api/v4/departments/save", "post">;
-type SaveDepartmentOut = OutputOf<"/api/v4/departments/save", "post">;
+type SaveDepartmentIn = InputOf<"/api/v4/artifacts/departments/save", "post">;
+type SaveDepartmentOut = OutputOf<"/api/v4/artifacts/departments/save", "post">;
 type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
@@ -44,10 +44,10 @@ type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
 type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
 type CreateDraftSettingsIn = InputOf<"/api/v4/resources/settings", "post">;
 type CreateDraftSettingsOut = OutputOf<"/api/v4/resources/settings", "post">;
-type PatchDepartmentDraftIn = InputOf<"/api/v4/departments/draft", "patch">;
-type PatchDepartmentDraftOut = OutputOf<"/api/v4/departments/draft", "patch">;
+type PatchDepartmentDraftIn = InputOf<"/api/v4/artifacts/departments/draft", "patch">;
+type PatchDepartmentDraftOut = OutputOf<"/api/v4/artifacts/departments/draft", "patch">;
 
-type DepartmentData = OutputOf<"/api/v4/departments/get", "post">;
+type DepartmentData = OutputOf<"/api/v4/artifacts/departments/get", "post">;
 
 export interface DepartmentProps {
   departmentId?: string;

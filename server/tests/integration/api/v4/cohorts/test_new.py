@@ -1,4 +1,4 @@
-"""Route tests for POST /api/v4/cohorts/get endpoint (new mode)."""
+"""Route tests for POST /api/v4/artifacts/cohorts/get endpoint (new mode)."""
 
 import asyncpg  # type: ignore
 import httpx
@@ -28,7 +28,7 @@ async def test_get_cohort_new(
     # v4 routes get profile_id from router dependency
     # Use unified get endpoint with cohort_id = null for new mode
     response = await client.post(
-        "/api/v4/cohorts/get",
+        "/api/v4/artifacts/cohorts/get",
         json={
             "cohort_id": None,
             "draft_id": None,
@@ -101,7 +101,7 @@ async def test_get_cohort_new_with_default_cohort(
     # v4 routes get profile_id from router dependency
     # Use unified get endpoint with cohort_id = null for new mode
     response = await client.post(
-        "/api/v4/cohorts/get",
+        "/api/v4/artifacts/cohorts/get",
         json={
             "cohort_id": None,
             "draft_id": None,
@@ -146,7 +146,7 @@ async def test_get_cohort_new_not_found(
     # v4 routes get profile_id from router dependency
     # Use unified get endpoint with cohort_id = null for new mode
     response = await client.post(
-        "/api/v4/cohorts/get",
+        "/api/v4/artifacts/cohorts/get",
         json={
             "cohort_id": None,
             "draft_id": None,

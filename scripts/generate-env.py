@@ -12,11 +12,10 @@ Usage:
 """
 
 import argparse
-import os
 import re
 import secrets
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 # ---------------------------------------------------------------------------
@@ -25,30 +24,75 @@ from pathlib import Path
 # Each entry: (yaml_path, env_var, default, description)
 FIELD_MAP = [
     # Instance
-    ("instance.name",              "COMPOSE_PROJECT_NAME",           "glow",              "Docker compose project name"),
-    ("instance.port",              "CLIENT_PORT",                    "3000",              "External port (nginx)"),
+    ("instance.name", "COMPOSE_PROJECT_NAME", "glow", "Docker compose project name"),
+    ("instance.port", "CLIENT_PORT", "3000", "External port (nginx)"),
     # Domain
-    ("domain.origin",              "ORIGIN",                         "http://localhost:3000", "Public URL origin"),
-    ("domain.prefix",              "APP_PREFIX",                     "",                  "URL prefix (e.g. /glow or empty)"),
+    ("domain.origin", "ORIGIN", "http://localhost:3000", "Public URL origin"),
+    ("domain.prefix", "APP_PREFIX", "", "URL prefix (e.g. /glow or empty)"),
     # Institution
-    ("institution.name",           "NEXT_PUBLIC_CAMPUS",             "University Name",   "Institution display name"),
-    ("institution.email_domain",   "NEXT_PUBLIC_CAMPUS_EMAIL",       "university.edu",    "Email domain"),
+    (
+        "institution.name",
+        "NEXT_PUBLIC_CAMPUS",
+        "University Name",
+        "Institution display name",
+    ),
+    (
+        "institution.email_domain",
+        "NEXT_PUBLIC_CAMPUS_EMAIL",
+        "university.edu",
+        "Email domain",
+    ),
     # Database
-    ("database.user",              "DB_USER",                        "myuser",            "Database username"),
-    ("database.password",          "DB_PASSWORD",                    "mypassword",        "Database password"),
-    ("database.name",              "DB_NAME",                        "mydb",              "Database name"),
-    ("database.operation",         "DB_OPERATION",                   "RESTORE",           "DB init mode: RESTORE, seed_*.sql, or empty"),
+    ("database.user", "DB_USER", "myuser", "Database username"),
+    ("database.password", "DB_PASSWORD", "mypassword", "Database password"),
+    ("database.name", "DB_NAME", "mydb", "Database name"),
+    (
+        "database.operation",
+        "DB_OPERATION",
+        "RESTORE",
+        "DB init mode: RESTORE, seed_*.sql, or empty",
+    ),
     # Auth
-    ("auth.secret",                "AUTH_SECRET",                    "__auto__",          "Auth.js secret (auto-generated if blank)"),
-    ("auth.secret_key",            "SECRET_KEY",                     "__auto__",          "JWT signing key (auto-generated if blank)"),
-    ("auth.keycloak.admin_password", "KEYCLOAK_ADMIN_PASSWORD",      "admin",             "Keycloak admin password"),
-    ("auth.keycloak.realm",        "KEYCLOAK_REALM",                 "master",            "Keycloak realm"),
-    ("auth.keycloak.client_id",    "AUTH_KEYCLOAK_ID",               "glow-client",       "Keycloak client ID"),
-    ("auth.microsoft.client_id",   "AUTH_MICROSOFT_ENTRA_ID_ID",     "",                  "Microsoft Entra app ID"),
-    ("auth.microsoft.client_secret", "AUTH_MICROSOFT_ENTRA_ID_SECRET", "",                "Microsoft Entra secret"),
+    (
+        "auth.secret",
+        "AUTH_SECRET",
+        "__auto__",
+        "Auth.js secret (auto-generated if blank)",
+    ),
+    (
+        "auth.secret_key",
+        "SECRET_KEY",
+        "__auto__",
+        "JWT signing key (auto-generated if blank)",
+    ),
+    (
+        "auth.keycloak.admin_password",
+        "KEYCLOAK_ADMIN_PASSWORD",
+        "admin",
+        "Keycloak admin password",
+    ),
+    ("auth.keycloak.realm", "KEYCLOAK_REALM", "master", "Keycloak realm"),
+    (
+        "auth.keycloak.client_id",
+        "AUTH_KEYCLOAK_ID",
+        "glow-client",
+        "Keycloak client ID",
+    ),
+    (
+        "auth.microsoft.client_id",
+        "AUTH_MICROSOFT_ENTRA_ID_ID",
+        "",
+        "Microsoft Entra app ID",
+    ),
+    (
+        "auth.microsoft.client_secret",
+        "AUTH_MICROSOFT_ENTRA_ID_SECRET",
+        "",
+        "Microsoft Entra secret",
+    ),
     # Providers
-    ("providers.openai_api_key",   "OPENAI_API_KEY",                 "",                  "OpenAI API key"),
-    ("providers.gemini_api_key",   "GEMINI_API_KEY",                 "",                  "Gemini API key"),
+    ("providers.openai_api_key", "OPENAI_API_KEY", "", "OpenAI API key"),
+    ("providers.gemini_api_key", "GEMINI_API_KEY", "", "Gemini API key"),
 ]
 
 # These are always derived/constant — not in the YAML
@@ -60,7 +104,10 @@ DERIVED_VARS = [
     # Keycloak URLs derived from ORIGIN + APP_PREFIX
     ("KEYCLOAK_PUBLIC_URL", lambda v: f"{v['ORIGIN']}{v['APP_PREFIX']}/auth"),
     ("NEXT_PUBLIC_KEYCLOAK_URL", lambda v: f"{v['ORIGIN']}{v['APP_PREFIX']}/auth"),
-    ("NEXT_PUBLIC_AUTH_KEYCLOAK_ID", lambda v: v.get("AUTH_KEYCLOAK_ID", "glow-client")),
+    (
+        "NEXT_PUBLIC_AUTH_KEYCLOAK_ID",
+        lambda v: v.get("AUTH_KEYCLOAK_ID", "glow-client"),
+    ),
     # Compose bake
     ("COMPOSE_BAKE", lambda _: "true"),
     # Local defaults (overridden in Docker)
@@ -103,7 +150,7 @@ def parse_yaml(text: str) -> dict:
         parent = stack[-1][1] if stack else result
 
         # Parse key: value — extract key and raw remainder
-        match = re.match(r'^([a-zA-Z_][a-zA-Z0-9_]*)\s*:\s*(.*)', stripped)
+        match = re.match(r"^([a-zA-Z_][a-zA-Z0-9_]*)\s*:\s*(.*)", stripped)
         if not match:
             continue
 
@@ -142,7 +189,7 @@ def _parse_scalar(s: str) -> str:
         return s[1:]
 
     # Unquoted: strip inline comment (` # ...` or `  # ...`)
-    s = re.sub(r'\s+#.*$', '', s).strip()
+    s = re.sub(r"\s+#.*$", "", s).strip()
     # Boolean
     if s.lower() == "true":
         return "true"
@@ -197,7 +244,10 @@ def generate_env(config_path: str | None, interactive: bool, output_path: str) -
         path = Path(config_path)
         if not path.exists():
             print(f"ERROR: Config file not found: {config_path}", file=sys.stderr)
-            print("Copy install-config.example.yaml to install-config.yaml and fill in your values.", file=sys.stderr)
+            print(
+                "Copy install-config.example.yaml to install-config.yaml and fill in your values.",
+                file=sys.stderr,
+            )
             sys.exit(1)
 
         data = parse_yaml(path.read_text())
@@ -222,12 +272,12 @@ def generate_env(config_path: str | None, interactive: bool, output_path: str) -
         values[env_var] = derive_fn(values)
 
     # Write .env
-    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    timestamp = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
     lines = [
-        f"# Generated by: make configure",
+        "# Generated by: make configure",
         f"# Timestamp: {timestamp}",
         f"# Source: {config_path or 'interactive'}",
-        f"# Do not edit manually — re-run 'make configure' to regenerate.",
+        "# Do not edit manually — re-run 'make configure' to regenerate.",
         "",
         "# Instance",
         f'COMPOSE_PROJECT_NAME="{values["COMPOSE_PROJECT_NAME"]}"',
@@ -285,13 +335,24 @@ def generate_env(config_path: str | None, interactive: bool, output_path: str) -
 # CLI
 # ---------------------------------------------------------------------------
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Generate .env from install-config.yaml")
-    parser.add_argument("--config", "-c", default="install-config.yaml",
-                        help="Path to YAML config file (default: install-config.yaml)")
-    parser.add_argument("--interactive", "-i", action="store_true",
-                        help="Prompt for values interactively")
-    parser.add_argument("--output", "-o", default=".env",
-                        help="Output .env file path (default: .env)")
+    parser = argparse.ArgumentParser(
+        description="Generate .env from install-config.yaml"
+    )
+    parser.add_argument(
+        "--config",
+        "-c",
+        default="install-config.yaml",
+        help="Path to YAML config file (default: install-config.yaml)",
+    )
+    parser.add_argument(
+        "--interactive",
+        "-i",
+        action="store_true",
+        help="Prompt for values interactively",
+    )
+    parser.add_argument(
+        "--output", "-o", default=".env", help="Output .env file path (default: .env)"
+    )
     args = parser.parse_args()
 
     generate_env(

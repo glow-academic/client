@@ -12,12 +12,12 @@ import type { Metadata } from "next";
 import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetFieldIn = InputOf<"/api/v4/fields/get", "post">;
-type GetFieldOut = OutputOf<"/api/v4/fields/get", "post">;
-type SaveFieldIn = InputOf<"/api/v4/fields/save", "post">;
-type SaveFieldOut = OutputOf<"/api/v4/fields/save", "post">;
-type PatchFieldDraftIn = InputOf<"/api/v4/fields/draft", "patch">;
-type PatchFieldDraftOut = OutputOf<"/api/v4/fields/draft", "patch">;
+type GetFieldIn = InputOf<"/api/v4/artifacts/fields/get", "post">;
+type GetFieldOut = OutputOf<"/api/v4/artifacts/fields/get", "post">;
+type SaveFieldIn = InputOf<"/api/v4/artifacts/fields/save", "post">;
+type SaveFieldOut = OutputOf<"/api/v4/artifacts/fields/save", "post">;
+type PatchFieldDraftIn = InputOf<"/api/v4/artifacts/fields/draft", "patch">;
+type PatchFieldDraftOut = OutputOf<"/api/v4/artifacts/fields/draft", "patch">;
 
 /** ---- Direct fetch for default field data with timeout ---- */
 const getFieldDefault = async (input: GetFieldIn): Promise<GetFieldOut> => {
@@ -27,7 +27,7 @@ const getFieldDefault = async (input: GetFieldIn): Promise<GetFieldOut> => {
   const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
   try {
-    const result = await api.post("/fields/get", input, {
+    const result = await api.post("/artifacts/fields/get", input, {
       cache: "no-store",
       headers: {
         "X-Bypass-Cache": "1",
@@ -63,7 +63,7 @@ async function saveField(input: SaveFieldIn): Promise<SaveFieldOut> {
   const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
   try {
-    const result = await api.post("/fields/save", input, {
+    const result = await api.post("/artifacts/fields/save", input, {
       signal: controller.signal,
     });
     clearTimeout(timeoutId);
@@ -83,7 +83,7 @@ async function patchFieldDraft(
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.patch("/fields/draft", input);
+  return api.patch("/artifacts/fields/draft", input);
 }
 
 /** ---- Server renders client with typed data and actions ---- */

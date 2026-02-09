@@ -101,7 +101,7 @@ def fetch_agents_list(
     )
     return _post_json(
         request,
-        "/api/v4/agents/list",
+        "/api/v4/artifacts/agents/list",
         {"profileId": resolved_effective},
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
@@ -125,7 +125,7 @@ def fetch_agent_detail(
     )
     return _post_json(
         request,
-        "/api/v4/agents/detail",
+        "/api/v4/artifacts/agents/detail",
         {"agentId": agent_id, "profileId": resolved_effective},
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
@@ -148,7 +148,7 @@ def fetch_agent_new(
     )
     return _post_json(
         request,
-        "/api/v4/agents/new",
+        "/api/v4/artifacts/agents/new",
         {"profileId": resolved_effective},
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
@@ -207,7 +207,7 @@ def create_agent_api(
     }
     data: dict[str, Any] = _post_json(
         request,
-        "/api/v4/agents/create",
+        "/api/v4/artifacts/agents/create",
         payload,
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
@@ -234,7 +234,7 @@ def delete_agent_api(
     )
     _post_json(
         request,
-        "/api/v4/agents/delete",
+        "/api/v4/artifacts/agents/delete",
         {"agentId": agent_id},
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,

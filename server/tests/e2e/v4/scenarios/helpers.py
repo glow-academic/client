@@ -101,7 +101,7 @@ def fetch_scenarios_list(
     )
     return _post_json(
         request,
-        "/api/v4/scenarios/list",
+        "/api/v4/artifacts/scenarios/list",
         {"profileId": resolved_effective},
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
@@ -125,7 +125,7 @@ def fetch_scenario_detail(
     )
     return _post_json(
         request,
-        "/api/v4/scenarios/detail",
+        "/api/v4/artifacts/scenarios/detail",
         {"scenarioId": scenario_id, "profileId": resolved_effective},
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
@@ -148,7 +148,7 @@ def fetch_scenario_new(
     )
     return _post_json(
         request,
-        "/api/v4/scenarios/new",
+        "/api/v4/artifacts/scenarios/new",
         {"profileId": resolved_effective},
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
@@ -200,7 +200,7 @@ def create_scenario_api(
     }
     data: dict[str, Any] = _post_json(
         request,
-        "/api/v4/scenarios/create",
+        "/api/v4/artifacts/scenarios/create",
         payload,
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
@@ -227,7 +227,7 @@ def delete_scenario_api(
     )
     _post_json(
         request,
-        "/api/v4/scenarios/delete",
+        "/api/v4/artifacts/scenarios/delete",
         {"scenarioId": scenario_id},
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,

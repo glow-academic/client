@@ -1,4 +1,4 @@
-"""Route tests for POST /api/v4/cohorts/search endpoint."""
+"""Route tests for POST /api/v4/artifacts/cohorts/search endpoint."""
 
 import asyncpg  # type: ignore
 import httpx
@@ -58,7 +58,7 @@ async def test_search_profiles_for_cohort(
     # v4 routes get profile_id from router dependency
     # Note: API uses p_cohort_id, p_dept_ids, p_query field names
     response = await client.post(
-        "/api/v4/cohorts/search",
+        "/api/v4/artifacts/cohorts/search",
         json={
             "p_cohort_id": str(cohort_id),
             "p_dept_ids": [str(dept_id)],
@@ -85,7 +85,7 @@ async def test_search_profiles_for_cohort_not_found(
     # v4 routes get profile_id from router dependency
     # Note: API uses p_cohort_id, p_dept_ids, p_query field names
     response = await client.post(
-        "/api/v4/cohorts/search",
+        "/api/v4/artifacts/cohorts/search",
         json={
             "p_cohort_id": fake_cohort_id,
             "p_dept_ids": [],

@@ -13,8 +13,8 @@ import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata, ResolvingMetadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type SessionDetailIn = InputOf<"/api/v4/session/get", "post">;
-type SessionDetailOut = OutputOf<"/api/v4/session/get", "post">;
+type SessionDetailIn = InputOf<"/api/v4/artifacts/session/get", "post">;
+type SessionDetailOut = OutputOf<"/api/v4/artifacts/session/get", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
@@ -25,7 +25,7 @@ const getSessionDetail = async (
 ): Promise<SessionDetailOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/session/get", input, {
+  return api.post("/artifacts/session/get", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {

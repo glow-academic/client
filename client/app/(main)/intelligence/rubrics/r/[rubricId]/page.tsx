@@ -13,11 +13,11 @@ import type { Metadata, ResolvingMetadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetRubricOut = OutputOf<"/api/v4/rubrics/get", "post">;
-type SaveRubricIn = InputOf<"/api/v4/rubrics/save", "post">;
-type SaveRubricOut = OutputOf<"/api/v4/rubrics/save", "post">;
-type PatchRubricDraftIn = InputOf<"/api/v4/rubrics/draft", "patch">;
-type PatchRubricDraftOut = OutputOf<"/api/v4/rubrics/draft", "patch">;
+type GetRubricOut = OutputOf<"/api/v4/artifacts/rubrics/get", "post">;
+type SaveRubricIn = InputOf<"/api/v4/artifacts/rubrics/save", "post">;
+type SaveRubricOut = OutputOf<"/api/v4/artifacts/rubrics/save", "post">;
+type PatchRubricDraftIn = InputOf<"/api/v4/artifacts/rubrics/draft", "patch">;
+type PatchRubricDraftOut = OutputOf<"/api/v4/artifacts/rubrics/draft", "patch">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -29,7 +29,7 @@ const getRubric = async (
   standardGroupSearch: string | null
 ): Promise<GetRubricOut> => {
   return api.post(
-    "/rubrics/get",
+    "/artifacts/rubrics/get",
     {
       body: {
         rubric_id: rubricId,
@@ -156,7 +156,7 @@ async function saveRubric(input: SaveRubricIn): Promise<SaveRubricOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/rubrics/save", input);
+  return api.post("/artifacts/rubrics/save", input);
 }
 
 async function patchRubricDraft(
@@ -165,7 +165,7 @@ async function patchRubricDraft(
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.patch("/rubrics/draft", input);
+  return api.patch("/artifacts/rubrics/draft", input);
 }
 
 // Types are now defined inline in components using InputOf/OutputOf

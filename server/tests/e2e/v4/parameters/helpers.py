@@ -101,7 +101,7 @@ def fetch_parameters_list(
     )
     return _post_json(
         request,
-        "/api/v4/parameters/list",
+        "/api/v4/artifacts/parameters/list",
         {"profileId": resolved_effective},
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
@@ -125,7 +125,7 @@ def fetch_parameter_detail(
     )
     return _post_json(
         request,
-        "/api/v4/parameters/detail",
+        "/api/v4/artifacts/parameters/detail",
         {"parameterId": parameter_id, "profileId": resolved_effective},
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
@@ -148,7 +148,7 @@ def fetch_parameter_new(
     )
     return _post_json(
         request,
-        "/api/v4/parameters/new",
+        "/api/v4/artifacts/parameters/new",
         {"profileId": resolved_effective},
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
@@ -197,7 +197,7 @@ def create_parameter_api(
     }
     data: dict[str, Any] = _post_json(
         request,
-        "/api/v4/parameters/create",
+        "/api/v4/artifacts/parameters/create",
         payload,
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
@@ -226,7 +226,7 @@ def update_parameter_api(
     payload = {"parameterId": parameter_id, **updates}
     return _post_json(
         request,
-        "/api/v4/parameters/update",
+        "/api/v4/artifacts/parameters/update",
         payload,
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
@@ -249,7 +249,7 @@ def delete_parameter_api(
     )
     _post_json(
         request,
-        "/api/v4/parameters/delete",
+        "/api/v4/artifacts/parameters/delete",
         {"parameterId": parameter_id},
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
@@ -272,7 +272,7 @@ def duplicate_parameter_api(
     )
     data: dict[str, Any] = _post_json(
         request,
-        "/api/v4/parameters/duplicate",
+        "/api/v4/artifacts/parameters/duplicate",
         {"parameterId": parameter_id},
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,

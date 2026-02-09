@@ -21,8 +21,8 @@ import { loadPricingSearchParams } from "./searchParams";
 /** ---- Strong types from OpenAPI ---- */
 type PricingIn = InputOf<"/api/v4/artifacts/pricing/get", "post">;
 type PricingOut = OutputOf<"/api/v4/artifacts/pricing/get", "post">;
-type PricingRunsIn = InputOf<"/api/v4/group/list", "post">;
-type PricingRunsOut = OutputOf<"/api/v4/group/list", "post">;
+type PricingRunsIn = InputOf<"/api/v4/artifacts/group/list", "post">;
+type PricingRunsOut = OutputOf<"/api/v4/artifacts/group/list", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ---- */
 const getPricingAnalytics = async (input: PricingIn): Promise<PricingOut> => {
@@ -43,7 +43,7 @@ const getPricingRuns = async (
 ): Promise<PricingRunsOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/group/list", input, {
+  return api.post("/artifacts/group/list", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {

@@ -1,4 +1,4 @@
-"""Route tests for POST /api/v4/rubrics/duplicate endpoint."""
+"""Route tests for POST /api/v4/artifacts/rubrics/duplicate endpoint."""
 
 import asyncpg  # type: ignore
 import httpx
@@ -99,7 +99,7 @@ async def test_duplicate_rubric(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/rubrics/duplicate",
+        "/api/v4/artifacts/rubrics/duplicate",
         json={"rubric_id": str(rubric_id)},
     )
 
@@ -205,7 +205,7 @@ async def test_duplicate_rubric_without_departments(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/rubrics/duplicate",
+        "/api/v4/artifacts/rubrics/duplicate",
         json={"rubric_id": str(rubric_id)},
     )
 
@@ -242,7 +242,7 @@ async def test_duplicate_rubric_not_found(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/rubrics/duplicate",
+        "/api/v4/artifacts/rubrics/duplicate",
         json={"rubric_id": fake_rubric_id},
     )
 

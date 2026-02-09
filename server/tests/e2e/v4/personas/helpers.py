@@ -101,7 +101,7 @@ def fetch_personas_list(
     )
     return _post_json(
         request,
-        "/api/v4/personas/list",
+        "/api/v4/artifacts/personas/list",
         {"profileId": resolved_effective},
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
@@ -125,7 +125,7 @@ def fetch_persona_detail(
     )
     return _post_json(
         request,
-        "/api/v4/personas/detail",
+        "/api/v4/artifacts/personas/detail",
         {"personaId": persona_id, "profileId": resolved_effective},
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
@@ -148,7 +148,7 @@ def fetch_persona_new(
     )
     return _post_json(
         request,
-        "/api/v4/personas/new",
+        "/api/v4/artifacts/personas/new",
         {"profileId": resolved_effective},
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
@@ -202,7 +202,7 @@ def create_persona_api(
     }
     data: dict[str, Any] = _post_json(
         request,
-        "/api/v4/personas/create",
+        "/api/v4/artifacts/personas/create",
         payload,
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
@@ -229,7 +229,7 @@ def delete_persona_api(
     )
     _post_json(
         request,
-        "/api/v4/personas/delete",
+        "/api/v4/artifacts/personas/delete",
         {"personaId": persona_id},
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,

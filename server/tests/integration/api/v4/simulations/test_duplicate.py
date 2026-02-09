@@ -1,4 +1,4 @@
-"""Route tests for POST /api/v4/simulations/duplicate endpoint."""
+"""Route tests for POST /api/v4/artifacts/simulations/duplicate endpoint."""
 
 import asyncpg  # type: ignore
 import httpx
@@ -51,7 +51,7 @@ async def test_duplicate_simulation(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/simulations/duplicate",
+        "/api/v4/artifacts/simulations/duplicate",
         json={"simulationId": str(simulation_id)},
     )
 
@@ -75,7 +75,7 @@ async def test_duplicate_simulation_not_found(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/simulations/duplicate",
+        "/api/v4/artifacts/simulations/duplicate",
         json={"simulationId": fake_simulation_id},
     )
 

@@ -1,4 +1,4 @@
-"""Route tests for PATCH /api/v4/documents/draft endpoint."""
+"""Route tests for PATCH /api/v4/artifacts/documents/draft endpoint."""
 
 from uuid import UUID
 
@@ -18,7 +18,7 @@ async def test_patch_document_draft_create(
 
     # v4 routes get profile_id from router dependency
     response = await client.patch(
-        "/api/v4/documents/draft",
+        "/api/v4/artifacts/documents/draft",
         json={
             "patch": {"name": "Draft Document", "type": "homework"},
             "expected_version": 0,
@@ -46,7 +46,7 @@ async def test_patch_document_draft_update(
 
     # Create a draft first
     create_response = await client.patch(
-        "/api/v4/documents/draft",
+        "/api/v4/artifacts/documents/draft",
         json={
             "patch": {"name": "Original Draft", "type": "homework"},
             "expected_version": 0,
@@ -60,7 +60,7 @@ async def test_patch_document_draft_update(
 
     # Update the draft
     response = await client.patch(
-        "/api/v4/documents/draft",
+        "/api/v4/artifacts/documents/draft",
         json={
             "patch": {"name": "Updated Draft"},
             "expected_version": version,
@@ -85,7 +85,7 @@ async def test_patch_document_draft_version_mismatch(
 
     # Create a draft first
     create_response = await client.patch(
-        "/api/v4/documents/draft",
+        "/api/v4/artifacts/documents/draft",
         json={
             "patch": {"name": "Original Draft"},
             "expected_version": 0,
@@ -98,7 +98,7 @@ async def test_patch_document_draft_version_mismatch(
 
     # Try to update with wrong version (should create new draft instead)
     response = await client.patch(
-        "/api/v4/documents/draft",
+        "/api/v4/artifacts/documents/draft",
         json={
             "patch": {"name": "Updated Draft"},
             "expected_version": 999,  # Wrong version

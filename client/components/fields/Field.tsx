@@ -45,12 +45,12 @@ import { Loader2, Sparkles } from "lucide-react";
 import { parseAsBoolean, parseAsString, useQueryStates, type Parser } from "nuqs";
 
 // Types defined inline using InputOf/OutputOf
-type GetFieldIn = InputOf<"/api/v4/fields/get", "post">;
-type GetFieldOut = OutputOf<"/api/v4/fields/get", "post">;
-type SaveFieldIn = InputOf<"/api/v4/fields/save", "post">;
-type SaveFieldOut = OutputOf<"/api/v4/fields/save", "post">;
-type PatchFieldDraftIn = InputOf<"/api/v4/fields/draft", "patch">;
-type PatchFieldDraftOut = OutputOf<"/api/v4/fields/draft", "patch">;
+type GetFieldIn = InputOf<"/api/v4/artifacts/fields/get", "post">;
+type GetFieldOut = OutputOf<"/api/v4/artifacts/fields/get", "post">;
+type SaveFieldIn = InputOf<"/api/v4/artifacts/fields/save", "post">;
+type SaveFieldOut = OutputOf<"/api/v4/artifacts/fields/save", "post">;
+type PatchFieldDraftIn = InputOf<"/api/v4/artifacts/fields/draft", "patch">;
+type PatchFieldDraftOut = OutputOf<"/api/v4/artifacts/fields/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<

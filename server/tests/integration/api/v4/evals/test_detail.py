@@ -1,4 +1,4 @@
-"""Route tests for POST /api/v4/evals/detail endpoint."""
+"""Route tests for POST /api/v4/artifacts/evals/detail endpoint."""
 
 import asyncpg  # type: ignore
 import httpx
@@ -18,7 +18,7 @@ async def test_get_eval_detail_not_found(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/evals/detail",
+        "/api/v4/artifacts/evals/detail",
         json={"evalId": fake_eval_id},
     )
 

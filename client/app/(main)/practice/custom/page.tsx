@@ -14,8 +14,8 @@ import { createLoader, parseAsString } from "nuqs/server";
 import { getLayoutContext, type ProfileItem } from "../../layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
-type PracticeIn = InputOf<"/api/v4/training/get", "post">;
-type PracticeOut = OutputOf<"/api/v4/training/get", "post">;
+type PracticeIn = InputOf<"/api/v4/artifacts/training/get", "post">;
+type PracticeOut = OutputOf<"/api/v4/artifacts/training/get", "post">;
 /** ---- Direct fetch (no Next.js cache) ----
  * Practice overview responses can get large and exceed Next.js 2MB cache limit.
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
@@ -24,7 +24,7 @@ type PracticeOut = OutputOf<"/api/v4/training/get", "post">;
 const getPractice = async (input: PracticeIn): Promise<PracticeOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/training/get", input, {
+  return api.post("/artifacts/training/get", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {

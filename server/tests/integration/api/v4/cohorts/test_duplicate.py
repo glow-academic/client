@@ -1,4 +1,4 @@
-"""Route tests for POST /api/v4/cohorts/duplicate endpoint."""
+"""Route tests for POST /api/v4/artifacts/cohorts/duplicate endpoint."""
 
 from uuid import UUID
 
@@ -63,7 +63,7 @@ async def test_duplicate_cohort(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/cohorts/duplicate",
+        "/api/v4/artifacts/cohorts/duplicate",
         json={"cohortId": str(cohort_id)},
     )
 

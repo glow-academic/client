@@ -22,8 +22,8 @@ import { loadDashboardSearchParams } from "./searchParams";
 type DashboardIn = InputOf<"/api/v4/artifacts/dashboard/get", "post">;
 type DashboardOut = OutputOf<"/api/v4/artifacts/dashboard/get", "post">;
 // Using /attempt/list for history section
-type DashboardHistoryIn = InputOf<"/api/v4/attempt/list", "post">;
-type DashboardHistoryOut = OutputOf<"/api/v4/attempt/list", "post">;
+type DashboardHistoryIn = InputOf<"/api/v4/artifacts/attempt/list", "post">;
+type DashboardHistoryOut = OutputOf<"/api/v4/artifacts/attempt/list", "post">;
 type BulkArchiveAttemptsIn = InputOf<
   "/api/v4/attempts/simulation/archive",
   "post"
@@ -60,7 +60,7 @@ const getDashboardHistory = async (
 ): Promise<DashboardHistoryOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/attempt/list", input, {
+  return api.post("/artifacts/attempt/list", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {

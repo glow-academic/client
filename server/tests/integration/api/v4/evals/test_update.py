@@ -1,4 +1,4 @@
-"""Route tests for POST /api/v4/evals/update endpoint."""
+"""Route tests for POST /api/v4/artifacts/evals/update endpoint."""
 
 import asyncpg  # type: ignore
 import httpx
@@ -18,7 +18,7 @@ async def test_update_eval_not_found(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/evals/update",
+        "/api/v4/artifacts/evals/update",
         json={
             "evalId": fake_eval_id,
             "name": "Updated Eval",

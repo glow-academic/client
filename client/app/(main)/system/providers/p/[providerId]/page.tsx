@@ -11,13 +11,13 @@ import type { Metadata, ResolvingMetadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetProviderIn = InputOf<"/api/v4/providers/get", "post">;
-type GetProviderOut = OutputOf<"/api/v4/providers/get", "post">;
+type GetProviderIn = InputOf<"/api/v4/artifacts/providers/get", "post">;
+type GetProviderOut = OutputOf<"/api/v4/artifacts/providers/get", "post">;
 
-type SaveProviderIn = InputOf<"/api/v4/providers/save", "post">;
-type SaveProviderOut = OutputOf<"/api/v4/providers/save", "post">;
-type PatchProviderDraftIn = InputOf<"/api/v4/providers/draft", "patch">;
-type PatchProviderDraftOut = OutputOf<"/api/v4/providers/draft", "patch">;
+type SaveProviderIn = InputOf<"/api/v4/artifacts/providers/save", "post">;
+type SaveProviderOut = OutputOf<"/api/v4/artifacts/providers/save", "post">;
+type PatchProviderDraftIn = InputOf<"/api/v4/artifacts/providers/draft", "patch">;
+type PatchProviderDraftOut = OutputOf<"/api/v4/artifacts/providers/draft", "patch">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -25,7 +25,7 @@ type PatchProviderDraftOut = OutputOf<"/api/v4/providers/draft", "patch">;
 const getProvider = async (
   input: GetProviderIn
 ): Promise<GetProviderOut> => {
-  return api.post("/providers/get", input, {
+  return api.post("/artifacts/providers/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -72,7 +72,7 @@ async function saveProvider(
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/providers/save", input, {
+  return api.post("/artifacts/providers/save", input, {
     signal: AbortSignal.timeout(30000), // 30 second timeout
   });
 }
@@ -82,7 +82,7 @@ async function patchProviderDraft(
 ): Promise<PatchProviderDraftOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.patch("/providers/draft", input);
+  return api.patch("/artifacts/providers/draft", input);
 }
 
 /** ---- Server renders client with typed data (read-only, mutations in child components) ---- */

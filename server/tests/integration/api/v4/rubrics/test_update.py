@@ -1,4 +1,4 @@
-"""Route tests for POST /api/v4/rubrics/update endpoint."""
+"""Route tests for POST /api/v4/artifacts/rubrics/update endpoint."""
 
 import asyncpg  # type: ignore
 import httpx
@@ -58,7 +58,7 @@ async def test_update_rubric(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/rubrics/update",
+        "/api/v4/artifacts/rubrics/update",
         json={
             "rubric_id": str(rubric_id),
             "name": "Updated Rubric",
@@ -155,7 +155,7 @@ async def test_update_rubric_not_found(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/rubrics/update",
+        "/api/v4/artifacts/rubrics/update",
         json={
             "rubric_id": fake_rubric_id,
             "name": "Updated Rubric",
@@ -214,7 +214,7 @@ async def test_update_rubric_remove_departments(
     # Update to remove department links
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/rubrics/update",
+        "/api/v4/artifacts/rubrics/update",
         json={
             "rubric_id": str(rubric_id),
             "name": "Test Rubric",

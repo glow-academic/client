@@ -101,7 +101,7 @@ def fetch_simulations_list(
     )
     return _post_json(
         request,
-        "/api/v4/simulations/list",
+        "/api/v4/artifacts/simulations/list",
         {"profileId": resolved_effective},
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
@@ -125,7 +125,7 @@ def fetch_simulation_detail(
     )
     return _post_json(
         request,
-        "/api/v4/simulations/detail",
+        "/api/v4/artifacts/simulations/detail",
         {"simulationId": simulation_id, "profileId": resolved_effective},
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
@@ -148,7 +148,7 @@ def fetch_simulation_new(
     )
     return _post_json(
         request,
-        "/api/v4/simulations/new",
+        "/api/v4/artifacts/simulations/new",
         {"profileId": resolved_effective},
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
@@ -203,7 +203,7 @@ def create_simulation_api(
     }
     data: dict[str, Any] = _post_json(
         request,
-        "/api/v4/simulations/create",
+        "/api/v4/artifacts/simulations/create",
         payload,
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
@@ -283,7 +283,7 @@ def update_simulation_api(
 
     _post_json(
         request,
-        "/api/v4/simulations/update",
+        "/api/v4/artifacts/simulations/update",
         payload,
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
@@ -306,7 +306,7 @@ def delete_simulation_api(
     )
     _post_json(
         request,
-        "/api/v4/simulations/delete",
+        "/api/v4/artifacts/simulations/delete",
         {"simulationId": simulation_id},
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
@@ -329,7 +329,7 @@ def duplicate_simulation_api(
     )
     data: dict[str, Any] = _post_json(
         request,
-        "/api/v4/simulations/duplicate",
+        "/api/v4/artifacts/simulations/duplicate",
         {"simulationId": simulation_id},
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,

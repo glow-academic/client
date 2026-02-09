@@ -11,11 +11,11 @@ import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type AgentsListOut = OutputOf<"/api/v4/agents/list", "post">;
-type DuplicateAgentIn = InputOf<"/api/v4/agents/duplicate", "post">;
-type DuplicateAgentOut = OutputOf<"/api/v4/agents/duplicate", "post">;
-type DeleteAgentIn = InputOf<"/api/v4/agents/delete", "post">;
-type DeleteAgentOut = OutputOf<"/api/v4/agents/delete", "post">;
+type AgentsListOut = OutputOf<"/api/v4/artifacts/agents/list", "post">;
+type DuplicateAgentIn = InputOf<"/api/v4/artifacts/agents/duplicate", "post">;
+type DuplicateAgentOut = OutputOf<"/api/v4/artifacts/agents/duplicate", "post">;
+type DeleteAgentIn = InputOf<"/api/v4/artifacts/agents/delete", "post">;
+type DeleteAgentOut = OutputOf<"/api/v4/artifacts/agents/delete", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
@@ -24,7 +24,7 @@ type DeleteAgentOut = OutputOf<"/api/v4/agents/delete", "post">;
 const getAgentsList = async (): Promise<AgentsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/agents/list",
+    "/artifacts/agents/list",
     { body: {} },
     {
       cache: "no-store",
@@ -43,13 +43,13 @@ async function duplicateAgent(
 ): Promise<DuplicateAgentOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/agents/duplicate", input);
+  return api.post("/artifacts/agents/duplicate", input);
 }
 
 async function deleteAgent(input: DeleteAgentIn): Promise<DeleteAgentOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/agents/delete", input);
+  return api.post("/artifacts/agents/delete", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {

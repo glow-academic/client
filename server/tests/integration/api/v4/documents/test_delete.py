@@ -1,4 +1,4 @@
-"""Route tests for POST /api/v4/documents/delete endpoint."""
+"""Route tests for POST /api/v4/artifacts/documents/delete endpoint."""
 
 import asyncpg  # type: ignore
 import httpx
@@ -40,7 +40,7 @@ async def test_delete_document(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/documents/delete",
+        "/api/v4/artifacts/documents/delete",
         json={"document_id": str(document_id)},
     )
 
@@ -70,7 +70,7 @@ async def test_delete_document_not_found(
     # v4 routes get profile_id from router dependency
     # Note: Delete endpoint may not check existence, so it might return success
     response = await client.post(
-        "/api/v4/documents/delete",
+        "/api/v4/artifacts/documents/delete",
         json={"document_id": "00000000-0000-0000-0000-000000000000"},
     )
 

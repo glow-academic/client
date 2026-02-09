@@ -268,7 +268,7 @@ async def _attempt_message_impl(
                 profile_id=profile_id,
                 attempt_id=context_row.attempt_id,
                 bypass_cache=True,
-                cache_key_path="/api/v4/attempt/get",
+                cache_key_path="/api/v4/artifacts/attempt/get",
                 http_request=None,
             )
             jinja_context = _build_attempt_jinja_context(attempt_response)

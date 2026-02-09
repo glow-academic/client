@@ -1,4 +1,4 @@
-"""Route tests for POST /api/v4/evals/delete endpoint."""
+"""Route tests for POST /api/v4/artifacts/evals/delete endpoint."""
 
 import asyncpg  # type: ignore
 import httpx
@@ -18,7 +18,7 @@ async def test_delete_eval_not_found(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/evals/delete",
+        "/api/v4/artifacts/evals/delete",
         json={"evalId": fake_eval_id},
     )
 

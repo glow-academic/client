@@ -40,8 +40,8 @@ import { Loader2, Sparkles } from "lucide-react";
 import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
 // Types defined inline using InputOf/OutputOf
-type SaveDocumentIn = InputOf<"/api/v4/documents/save", "post">;
-type SaveDocumentOut = OutputOf<"/api/v4/documents/save", "post">;
+type SaveDocumentIn = InputOf<"/api/v4/artifacts/documents/save", "post">;
+type SaveDocumentOut = OutputOf<"/api/v4/artifacts/documents/save", "post">;
 type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
@@ -54,11 +54,11 @@ type CreateDraftDescriptionsOut = OutputOf<
 >;
 type CreateDraftUploadsIn = InputOf<"/api/v4/resources/uploads", "post">;
 type CreateDraftUploadsOut = OutputOf<"/api/v4/resources/uploads", "post">;
-type PatchDocumentDraftIn = InputOf<"/api/v4/documents/draft", "patch">;
-type PatchDocumentDraftOut = OutputOf<"/api/v4/documents/draft", "patch">;
+type PatchDocumentDraftIn = InputOf<"/api/v4/artifacts/documents/draft", "patch">;
+type PatchDocumentDraftOut = OutputOf<"/api/v4/artifacts/documents/draft", "patch">;
 
-type DocumentData = OutputOf<"/api/v4/documents/get", "post">;
-type DocumentsListOut = OutputOf<"/api/v4/documents/list", "post">;
+type DocumentData = OutputOf<"/api/v4/artifacts/documents/get", "post">;
+type DocumentsListOut = OutputOf<"/api/v4/artifacts/documents/list", "post">;
 
 export interface DocumentProps {
   documentId?: string;

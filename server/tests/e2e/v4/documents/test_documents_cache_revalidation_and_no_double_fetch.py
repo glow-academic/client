@@ -235,7 +235,7 @@ def test_documents_cache_revalidation_after_delete(page: Page, base_url: str) ->
 
 def test_documents_no_double_fetch_on_navigation(page: Page, base_url: str) -> None:
     """Ensure navigating away and back doesn't cause double-fetch of list."""
-    list_counter, stop_counter = _set_request_counter(page, "/api/v4/documents/list")
+    list_counter, stop_counter = _set_request_counter(page, "/api/v4/artifacts/documents/list")
 
     page.goto(f"{base_url}/management/documents")
     page.wait_for_load_state("networkidle")

@@ -101,7 +101,7 @@ def fetch_documents_list(
     )
     return _post_json(
         request,
-        "/api/v4/documents/list",
+        "/api/v4/artifacts/documents/list",
         {"profileId": resolved_effective},
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
@@ -125,7 +125,7 @@ def fetch_document_detail(
     )
     return _post_json(
         request,
-        "/api/v4/documents/detail",
+        "/api/v4/artifacts/documents/detail",
         {"documentId": document_id, "profileId": resolved_effective},
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
@@ -149,7 +149,7 @@ def fetch_document_detail_bulk(
     )
     return _post_json(
         request,
-        "/api/v4/documents/detail-bulk",
+        "/api/v4/artifacts/documents/detail-bulk",
         {"documentIds": document_ids, "profileId": resolved_effective},
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
@@ -244,7 +244,7 @@ def create_document_api(
     # For E2E tests, you may need to ensure test files are available
     finalize_response = _post_json(
         request,
-        "/api/v4/documents/upload/finalize",
+        "/api/v4/artifacts/documents/upload/finalize",
         {
             "uploadId": upload_id,
             "fileId": file_id,
@@ -327,7 +327,7 @@ def update_document_api(
 
     _post_json(
         request,
-        "/api/v4/documents/update",
+        "/api/v4/artifacts/documents/update",
         payload,
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
@@ -359,7 +359,7 @@ def bulk_update_documents_api(
 
     _post_json(
         request,
-        "/api/v4/documents/bulk-update",
+        "/api/v4/artifacts/documents/bulk-update",
         payload,
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
@@ -382,7 +382,7 @@ def delete_document_api(
     )
     _post_json(
         request,
-        "/api/v4/documents/delete",
+        "/api/v4/artifacts/documents/delete",
         {"documentId": document_id},
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
@@ -405,7 +405,7 @@ def bulk_delete_documents_api(
     )
     _post_json(
         request,
-        "/api/v4/documents/bulk-delete",
+        "/api/v4/artifacts/documents/bulk-delete",
         {"documentIds": document_ids},
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,

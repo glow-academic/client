@@ -39,8 +39,8 @@ import { Check, Loader2, Sparkles } from "lucide-react";
 import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
 // Types defined inline using InputOf/OutputOf
-type SaveToolIn = InputOf<"/api/v4/tools/save", "post">;
-type SaveToolOut = OutputOf<"/api/v4/tools/save", "post">;
+type SaveToolIn = InputOf<"/api/v4/artifacts/tools/save", "post">;
+type SaveToolOut = OutputOf<"/api/v4/artifacts/tools/save", "post">;
 type CreateDraftArgsIn = InputOf<"/api/v4/resources/args", "post">;
 type CreateDraftArgsOut = OutputOf<"/api/v4/resources/args", "post">;
 type CreateDraftArgsOutputsIn = InputOf<
@@ -51,10 +51,10 @@ type CreateDraftArgsOutputsOut = OutputOf<
   "/api/v4/resources/args_outputs",
   "post"
 >;
-type PatchToolDraftIn = InputOf<"/api/v4/tools/draft", "patch">;
-type PatchToolDraftOut = OutputOf<"/api/v4/tools/draft", "patch">;
+type PatchToolDraftIn = InputOf<"/api/v4/artifacts/tools/draft", "patch">;
+type PatchToolDraftOut = OutputOf<"/api/v4/artifacts/tools/draft", "patch">;
 
-type ToolData = OutputOf<"/api/v4/tools/get", "post">;
+type ToolData = OutputOf<"/api/v4/artifacts/tools/get", "post">;
 
 // Resource types for tools
 type ToolResourceType = "args" | "args_outputs";

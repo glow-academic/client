@@ -44,8 +44,8 @@ import { Loader2, Sparkles } from "lucide-react";
 import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
 // Types defined inline using InputOf/OutputOf
-type SaveCohortIn = InputOf<"/api/v4/cohorts/save", "post">;
-type SaveCohortOut = OutputOf<"/api/v4/cohorts/save", "post">;
+type SaveCohortIn = InputOf<"/api/v4/artifacts/cohorts/save", "post">;
+type SaveCohortOut = OutputOf<"/api/v4/artifacts/cohorts/save", "post">;
 type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
@@ -64,10 +64,10 @@ type CreateDraftSimulationPositionsOut = OutputOf<
   "/api/v4/resources/simulation_positions",
   "post"
 >;
-type PatchCohortDraftIn = InputOf<"/api/v4/cohorts/draft", "patch">;
-type PatchCohortDraftOut = OutputOf<"/api/v4/cohorts/draft", "patch">;
+type PatchCohortDraftIn = InputOf<"/api/v4/artifacts/cohorts/draft", "patch">;
+type PatchCohortDraftOut = OutputOf<"/api/v4/artifacts/cohorts/draft", "patch">;
 
-type CohortData = OutputOf<"/api/v4/cohorts/get", "post">;
+type CohortData = OutputOf<"/api/v4/artifacts/cohorts/get", "post">;
 
 export interface CohortProps {
   cohortId?: string;

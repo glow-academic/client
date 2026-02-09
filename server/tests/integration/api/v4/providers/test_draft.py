@@ -1,4 +1,4 @@
-"""Route tests for PATCH /api/v4/providers/draft endpoint."""
+"""Route tests for PATCH /api/v4/artifacts/providers/draft endpoint."""
 
 import asyncpg  # type: ignore
 import httpx
@@ -16,7 +16,7 @@ async def test_patch_provider_draft_create(
 
     # v4 routes get profile_id from router dependency
     response = await client.patch(
-        "/api/v4/providers/draft",
+        "/api/v4/artifacts/providers/draft",
         json={
             "patch": {"name": "Draft Provider", "description": "Draft description"},
             "expected_version": 0,

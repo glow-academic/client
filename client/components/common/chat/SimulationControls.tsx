@@ -23,7 +23,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useProfile } from "@/contexts/profile-context";
 import { formatTime } from "@/utils/time";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 export interface SimulationControlsProps {
@@ -89,6 +89,10 @@ export function SimulationControls({
   );
   const [endChatLoading, setEndChatLoading] = useState(false);
 
+  // Refs for grade-then-end chain
+  const pendingEndAfterGradeRef = useRef(false);
+  const gradingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   // End chat function
   const endChat = useCallback(
     async (chatId?: string, previousChatId?: string) => {
@@ -104,6 +108,7 @@ export function SimulationControls({
       try {
         socket.emit("attempt_end", {
           chat_id: targetChatId,
+          ...(previousChatId ? { previous_chat_id: previousChatId } : {}),
         });
       } catch (error) {
         toast.error(`Failed to end chat: ${error}`);
@@ -125,6 +130,7 @@ export function SimulationControls({
       try {
         socket.emit("attempt_end_all", {
           attempt_id: attemptId,
+          ...(previousChatMap ? { previous_chat_map: previousChatMap } : {}),
         });
       } catch (error) {
         toast.error(`Failed to end all chats: ${error}`);
@@ -168,6 +174,34 @@ export function SimulationControls({
         setEndChatLoading(false);
         setEndingAction(null);
       }
+      if (data.type === "grade") {
+        setIsGrading(false);
+        setGradingProgress(null);
+        setEndChatLoading(false);
+        setEndingAction(null);
+        if (gradingTimeoutRef.current) {
+          clearTimeout(gradingTimeoutRef.current);
+          gradingTimeoutRef.current = null;
+        }
+        pendingEndAfterGradeRef.current = false;
+      }
+    };
+
+    const handleGraded = (data: {
+      attempt_id: string;
+      chat_id: string | null;
+      simulation_id: string;
+    }) => {
+      setIsGrading(false);
+      setGradingProgress(null);
+      if (gradingTimeoutRef.current) {
+        clearTimeout(gradingTimeoutRef.current);
+        gradingTimeoutRef.current = null;
+      }
+      if (pendingEndAfterGradeRef.current) {
+        pendingEndAfterGradeRef.current = false;
+        endAllChats();
+      }
     };
 
     const handleGradingProgress = (data: {
@@ -209,8 +243,9 @@ export function SimulationControls({
     socket.on("attempt_chat_ended", handleChatEnded);
     socket.on("attempt_ended", handleAttemptEnded);
     socket.on("attempt_error", handleAttemptError);
+    socket.on("attempt_graded", handleGraded);
     socket.on(
-      "simulation_text_grading_progress",
+      "attempt_grading_progress",
       handleGradingProgress,
     );
 
@@ -218,12 +253,13 @@ export function SimulationControls({
       socket.off("attempt_chat_ended", handleChatEnded);
       socket.off("attempt_ended", handleAttemptEnded);
       socket.off("attempt_error", handleAttemptError);
+      socket.off("attempt_graded", handleGraded);
       socket.off(
-        "simulation_text_grading_progress",
+        "attempt_grading_progress",
         handleGradingProgress,
       );
     };
-  }, [socket, currentChatId]);
+  }, [socket, currentChatId, endAllChats]);
 
   // Get previous chats for current chat to show red dot indicator
   // Must be computed before early returns to maintain hook order
@@ -411,25 +447,39 @@ export function SimulationControls({
     endChat();
   };
 
+  // Extract simulationId for grading
+  const simulationId = attemptData?.simulation?.id;
+
   // Handle End Session button click (always does default end session logic)
   const handleEndSession = () => {
     const totalMessages = currentMessages.length;
 
-    // Show confirmation if current chat has 0 messages
+    // N1: Show confirmation if current chat has 0 messages (skip grade)
     if (totalMessages === 0) {
       setIsEndingSessionFromZeroMessages(true);
       setConfirmEndChatOpen(true);
       return;
     }
 
-    // In infinite mode, skip confirmation dialog and end directly
-    if (isInfiniteMode) {
-      endAllChats();
-      return;
-    }
-
-    // Always end all chats with default behavior (no options)
-    endAllChats();
+    // N2: Has messages - grade first, then end all after grading completes
+    if (!simulationId || !currentChatId || !socket) return;
+    setEndChatLoading(true);
+    setEndingAction("endAll");
+    setIsGrading(true);
+    pendingEndAfterGradeRef.current = true;
+    gradingTimeoutRef.current = setTimeout(() => {
+      pendingEndAfterGradeRef.current = false;
+      setEndChatLoading(false);
+      setEndingAction(null);
+      setIsGrading(false);
+      setGradingProgress(null);
+      toast.error("Grading timed out. Please try again.");
+    }, 60000);
+    socket.emit("attempt_grade", {
+      simulation_id: simulationId,
+      attempt_id: attemptId,
+      chat_id: currentChatId,
+    });
   };
 
   // Handle Next Video button click

@@ -58,7 +58,7 @@ def test_scenarios_cache_revalidation_and_no_double_fetch(
     page: Page, base_url: str
 ) -> None:
     """Ensure default detail fetch happens once and mutations revalidate list data."""
-    detail_counter, stop_counter = _set_request_counter(page, "/api/v4/scenarios/new")
+    detail_counter, stop_counter = _set_request_counter(page, "/api/v4/artifacts/scenarios/new")
     page.goto(f"{base_url}/training/scenarios/new")
     page.wait_for_load_state("networkidle")
     stop_counter()
@@ -109,7 +109,7 @@ def test_scenarios_cache_revalidation_and_no_double_fetch(
 
     # Wait for duplicate API response
     with page.expect_response(
-        lambda response: "/api/v4/scenarios/duplicate" in response.url
+        lambda response: "/api/v4/artifacts/scenarios/duplicate" in response.url
     ) as response_info:
         duplicate_button.click()
     response = response_info.value

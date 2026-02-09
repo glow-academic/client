@@ -1,4 +1,4 @@
-"""Route tests for POST /api/v4/parameters/update endpoint."""
+"""Route tests for POST /api/v4/artifacts/parameters/update endpoint."""
 
 import asyncpg  # type: ignore
 import httpx
@@ -73,7 +73,7 @@ async def test_update_parameter(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/parameters/update",
+        "/api/v4/artifacts/parameters/update",
         json={
             "parameter_id": str(parameter_id),
             "name": "Updated Parameter",
@@ -150,7 +150,7 @@ async def test_update_parameter_not_found(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/parameters/update",
+        "/api/v4/artifacts/parameters/update",
         json={
             "parameter_id": fake_parameter_id,
             "name": "Updated Parameter",

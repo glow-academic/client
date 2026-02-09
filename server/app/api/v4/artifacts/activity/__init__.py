@@ -8,7 +8,7 @@ from app.api.v4.artifacts.activity.problem import router as problem_router
 from app.api.v4.artifacts.activity.refresh import router as refresh_router
 from app.api.v4.artifacts.activity.resolve import router as resolve_router
 
-router = APIRouter()
+router = APIRouter(prefix="/activity", tags=["activity"])
 router.include_router(get_router)
 router.include_router(problem_router)
 router.include_router(refresh_router)

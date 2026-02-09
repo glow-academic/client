@@ -101,7 +101,7 @@ def fetch_cohorts_list(
     )
     return _post_json(
         request,
-        "/api/v4/cohorts/list",
+        "/api/v4/artifacts/cohorts/list",
         {"profileId": resolved_effective},
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
@@ -125,7 +125,7 @@ def fetch_cohort_detail(
     )
     return _post_json(
         request,
-        "/api/v4/cohorts/detail",
+        "/api/v4/artifacts/cohorts/detail",
         {"cohortId": cohort_id, "profileId": resolved_effective},
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
@@ -148,7 +148,7 @@ def fetch_cohort_new(
     )
     return _post_json(
         request,
-        "/api/v4/cohorts/new",
+        "/api/v4/artifacts/cohorts/new",
         {"profileId": resolved_effective},
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
@@ -184,7 +184,7 @@ def create_cohort_api(
     }
     data: dict[str, Any] = _post_json(
         request,
-        "/api/v4/cohorts/create",
+        "/api/v4/artifacts/cohorts/create",
         payload,
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
@@ -242,7 +242,7 @@ def update_cohort_api(
     }
     _post_json(
         request,
-        "/api/v4/cohorts/update",
+        "/api/v4/artifacts/cohorts/update",
         payload,
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
@@ -265,7 +265,7 @@ def delete_cohort_api(
     )
     _post_json(
         request,
-        "/api/v4/cohorts/delete",
+        "/api/v4/artifacts/cohorts/delete",
         {"cohortId": cohort_id},
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
@@ -288,7 +288,7 @@ def duplicate_cohort_api(
     )
     data: dict[str, Any] = _post_json(
         request,
-        "/api/v4/cohorts/duplicate",
+        "/api/v4/artifacts/cohorts/duplicate",
         {"cohortId": cohort_id},
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
@@ -315,7 +315,7 @@ def leave_cohort_api(
     )
     _post_json(
         request,
-        "/api/v4/cohorts/leave",
+        "/api/v4/artifacts/cohorts/leave",
         {"cohortId": cohort_id, "profileId": resolved_effective},
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,

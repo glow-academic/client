@@ -1,4 +1,4 @@
-"""Route tests for POST /api/v4/parameters/delete endpoint."""
+"""Route tests for POST /api/v4/artifacts/parameters/delete endpoint."""
 
 import asyncpg  # type: ignore
 import httpx
@@ -59,7 +59,7 @@ async def test_delete_parameter(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/parameters/delete",
+        "/api/v4/artifacts/parameters/delete",
         json={"parameter_id": str(parameter_id)},
     )
 
@@ -137,7 +137,7 @@ async def test_delete_parameter_in_use(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/parameters/delete",
+        "/api/v4/artifacts/parameters/delete",
         json={"parameter_id": str(parameter_id)},
     )
 
@@ -157,7 +157,7 @@ async def test_delete_parameter_not_found(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/parameters/delete",
+        "/api/v4/artifacts/parameters/delete",
         json={"parameter_id": fake_parameter_id},
     )
 

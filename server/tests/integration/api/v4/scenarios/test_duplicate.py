@@ -1,4 +1,4 @@
-"""Route tests for POST /api/v4/scenarios/duplicate endpoint."""
+"""Route tests for POST /api/v4/artifacts/scenarios/duplicate endpoint."""
 
 from uuid import UUID
 
@@ -57,7 +57,7 @@ async def test_duplicate_scenario_with_departments(
 
     # v4 routes get profile_id from router dependency, not request body
     response = await client.post(
-        "/api/v4/scenarios/duplicate",
+        "/api/v4/artifacts/scenarios/duplicate",
         json={"scenarioId": str(scenario_id)},
     )
 
@@ -110,7 +110,7 @@ async def test_duplicate_scenario_without_departments(
 
     # v4 routes get profile_id from router dependency, not request body
     response = await client.post(
-        "/api/v4/scenarios/duplicate",
+        "/api/v4/artifacts/scenarios/duplicate",
         json={"scenarioId": str(scenario_id)},
     )
 

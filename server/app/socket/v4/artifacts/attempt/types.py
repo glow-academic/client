@@ -170,6 +170,7 @@ class AttemptEndPayload(BaseModel):
     """
 
     chat_id: UUID
+    previous_chat_id: UUID | None = None  # Reuse grade from previous attempt's chat
 
 
 class AttemptEndAllPayload(BaseModel):
@@ -179,6 +180,7 @@ class AttemptEndAllPayload(BaseModel):
     """
 
     attempt_id: UUID
+    previous_chat_map: dict[str, str] | None = None  # {scenario_id: previous_chat_id}
 
 
 class AttemptAudioStartPayload(BaseModel):

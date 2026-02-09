@@ -44,8 +44,8 @@ import { Check, Loader2, Sparkles } from "lucide-react";
 import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
 // Types defined inline using InputOf/OutputOf
-type SaveStaffIn = InputOf<"/api/v4/profiles/save", "post">;
-type SaveStaffOut = OutputOf<"/api/v4/profiles/save", "post">;
+type SaveStaffIn = InputOf<"/api/v4/artifacts/profiles/save", "post">;
+type SaveStaffOut = OutputOf<"/api/v4/artifacts/profiles/save", "post">;
 type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
 type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
@@ -70,10 +70,10 @@ type CreateDraftRequestLimitsOut = OutputOf<
 >;
 type CreateDraftCohortsIn = InputOf<"/api/v4/resources/cohorts", "post">;
 type CreateDraftCohortsOut = OutputOf<"/api/v4/resources/cohorts", "post">;
-type PatchProfileDraftIn = InputOf<"/api/v4/profiles/draft", "patch">;
-type PatchProfileDraftOut = OutputOf<"/api/v4/profiles/draft", "patch">;
+type PatchProfileDraftIn = InputOf<"/api/v4/artifacts/profiles/draft", "patch">;
+type PatchProfileDraftOut = OutputOf<"/api/v4/artifacts/profiles/draft", "patch">;
 
-type StaffData = OutputOf<"/api/v4/profiles/get", "post">;
+type StaffData = OutputOf<"/api/v4/artifacts/profiles/get", "post">;
 
 export interface ProfileProps {
   staffId?: string;

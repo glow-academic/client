@@ -12,10 +12,10 @@ import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type DocumentsListIn = InputOf<"/api/v4/documents/list", "post">;
-type DocumentsListOut = OutputOf<"/api/v4/documents/list", "post">;
-type DeleteDocumentIn = InputOf<"/api/v4/documents/delete", "post">;
-type DeleteDocumentOut = OutputOf<"/api/v4/documents/delete", "post">;
+type DocumentsListIn = InputOf<"/api/v4/artifacts/documents/list", "post">;
+type DocumentsListOut = OutputOf<"/api/v4/artifacts/documents/list", "post">;
+type DeleteDocumentIn = InputOf<"/api/v4/artifacts/documents/delete", "post">;
+type DeleteDocumentOut = OutputOf<"/api/v4/artifacts/documents/delete", "post">;
 // GenerateTemplate types removed - now using WebSocket
 type GenerateTemplateIn = never;
 type GenerateTemplateOut = never;
@@ -27,7 +27,7 @@ type GenerateTemplateOut = never;
 const getDocumentsList = async (): Promise<DocumentsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/documents/list",
+    "/artifacts/documents/list",
     { body: {} },
     {
       cache: "no-store",
@@ -46,7 +46,7 @@ async function deleteDocument(
 ): Promise<DeleteDocumentOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/documents/delete", input);
+  return api.post("/artifacts/documents/delete", input);
 }
 
 // generateTemplate removed - component now uses WebSocket directly

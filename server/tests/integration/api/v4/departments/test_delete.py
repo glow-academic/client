@@ -1,4 +1,4 @@
-"""Route tests for POST /api/v4/departments/delete endpoint."""
+"""Route tests for POST /api/v4/artifacts/departments/delete endpoint."""
 
 import asyncpg  # type: ignore
 import httpx
@@ -40,7 +40,7 @@ async def test_delete_department(
 
     # v4 routes get profile_id from router dependency, not request body
     response = await client.post(
-        "/api/v4/departments/delete",
+        "/api/v4/artifacts/departments/delete",
         json={"departmentId": str(dept_id)},
     )
 
@@ -122,7 +122,7 @@ async def test_delete_department_in_use(
 
     # v4 routes get profile_id from router dependency, not request body
     response = await client.post(
-        "/api/v4/departments/delete",
+        "/api/v4/artifacts/departments/delete",
         json={"departmentId": str(dept_id)},
     )
 
@@ -142,7 +142,7 @@ async def test_delete_department_not_found(
 
     # v4 routes get profile_id from router dependency, not request body
     response = await client.post(
-        "/api/v4/departments/delete",
+        "/api/v4/artifacts/departments/delete",
         json={"departmentId": fake_dept_id},
     )
 

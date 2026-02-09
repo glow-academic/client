@@ -6,15 +6,16 @@
     "version": "0.1.0"
   },
   "paths": {
-    "/api/v4/personas/get": {
+    "/api/v4/artifacts/personas/get": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "personas"
         ],
         "summary": "Get Persona",
         "description": "Get persona information using two-pass architecture.\n\nThis is a thin HTTP wrapper around get_persona_internal().\n\nQuery 1: Access check (user role, departments, persona state)\nQuery 2: ID fetching (resource IDs, suggestions, agents)\nPass 2: Parallel resource fetching (each resource type has own cache)",
-        "operationId": "get_persona_api_v4_personas_get_post",
+        "operationId": "get_persona_api_v4_artifacts_personas_get_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -99,19 +100,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "personas"
         ]
       }
     },
-    "/api/v4/personas/list": {
+    "/api/v4/artifacts/personas/list": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "personas"
         ],
         "summary": "Get Persona List",
         "description": "Get personas list with permissions and scenario details.",
-        "operationId": "get_persona_list_api_v4_personas_list_post",
+        "operationId": "get_persona_list_api_v4_artifacts_personas_list_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -196,19 +199,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "personas"
         ]
       }
     },
-    "/api/v4/personas/save": {
+    "/api/v4/artifacts/personas/save": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "personas"
         ],
         "summary": "Save Persona",
         "description": "Save persona - handles both create (persona_id = NULL) and update (persona_id provided).",
-        "operationId": "save_persona_api_v4_personas_save_post",
+        "operationId": "save_persona_api_v4_artifacts_personas_save_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -293,19 +298,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "personas"
         ]
       }
     },
-    "/api/v4/personas/duplicate": {
+    "/api/v4/artifacts/personas/duplicate": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "personas"
         ],
         "summary": "Duplicate Persona",
         "description": "Duplicate a persona.",
-        "operationId": "duplicate_persona_api_v4_personas_duplicate_post",
+        "operationId": "duplicate_persona_api_v4_artifacts_personas_duplicate_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -390,19 +397,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "personas"
         ]
       }
     },
-    "/api/v4/personas/delete": {
+    "/api/v4/artifacts/personas/delete": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "personas"
         ],
         "summary": "Delete Persona",
         "description": "Delete a persona.",
-        "operationId": "delete_persona_api_v4_personas_delete_post",
+        "operationId": "delete_persona_api_v4_artifacts_personas_delete_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -487,19 +496,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "personas"
         ]
       }
     },
-    "/api/v4/personas/draft": {
+    "/api/v4/artifacts/personas/draft": {
       "patch": {
         "tags": [
           "v4",
+          "artifacts",
           "personas"
         ],
         "summary": "Patch Persona Draft",
         "description": "Patch persona draft - accepts resource IDs and creates/updates draft.",
-        "operationId": "patch_persona_draft_api_v4_personas_draft_patch",
+        "operationId": "patch_persona_draft_api_v4_artifacts_personas_draft_patch",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -584,18 +595,20 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "personas"
         ]
       }
     },
-    "/api/v4/personas/docs": {
+    "/api/v4/artifacts/personas/docs": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "personas"
         ],
         "summary": "Get Docs",
-        "operationId": "get_docs_api_v4_personas_docs_post",
+        "operationId": "get_docs_api_v4_artifacts_personas_docs_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -654,7 +667,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Get Docs Api V4 Personas Docs Post"
+                  "title": "Response Get Docs Api V4 Artifacts Personas Docs Post"
                 }
               }
             }
@@ -672,19 +685,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "personas"
         ]
       }
     },
-    "/api/v4/scenarios/get": {
+    "/api/v4/artifacts/scenarios/get": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "scenarios"
         ],
         "summary": "Get Scenario",
         "description": "Get scenario information using two-pass architecture.\n\nThis is a thin HTTP wrapper around get_scenario_client().\n\nQuery 1: Access check (user role, departments, scenario state)\nQuery 2: ID fetching (resource IDs, suggestions, agents)\nPass 2: Parallel resource fetching (each resource type has own cache)",
-        "operationId": "get_scenario_api_v4_scenarios_get_post",
+        "operationId": "get_scenario_api_v4_artifacts_scenarios_get_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -769,19 +784,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "scenarios"
         ]
       }
     },
-    "/api/v4/scenarios/list": {
+    "/api/v4/artifacts/scenarios/list": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "scenarios"
         ],
         "summary": "Get Scenario List",
         "description": "Get scenarios list with all relationships.",
-        "operationId": "get_scenario_list_api_v4_scenarios_list_post",
+        "operationId": "get_scenario_list_api_v4_artifacts_scenarios_list_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -866,19 +883,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "scenarios"
         ]
       }
     },
-    "/api/v4/scenarios/save": {
+    "/api/v4/artifacts/scenarios/save": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "scenarios"
         ],
         "summary": "Save Scenario",
         "description": "Save scenario - handles both create (input_scenario_id = NULL) and update (input_scenario_id provided).",
-        "operationId": "save_scenario_api_v4_scenarios_save_post",
+        "operationId": "save_scenario_api_v4_artifacts_scenarios_save_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -963,19 +982,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "scenarios"
         ]
       }
     },
-    "/api/v4/scenarios/duplicate": {
+    "/api/v4/artifacts/scenarios/duplicate": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "scenarios"
         ],
         "summary": "Duplicate Scenario",
         "description": "Duplicate a scenario.",
-        "operationId": "duplicate_scenario_api_v4_scenarios_duplicate_post",
+        "operationId": "duplicate_scenario_api_v4_artifacts_scenarios_duplicate_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -1060,19 +1081,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "scenarios"
         ]
       }
     },
-    "/api/v4/scenarios/delete": {
+    "/api/v4/artifacts/scenarios/delete": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "scenarios"
         ],
         "summary": "Delete Scenario",
         "description": "Delete a scenario.",
-        "operationId": "delete_scenario_api_v4_scenarios_delete_post",
+        "operationId": "delete_scenario_api_v4_artifacts_scenarios_delete_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -1157,19 +1180,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "scenarios"
         ]
       }
     },
-    "/api/v4/scenarios/draft": {
+    "/api/v4/artifacts/scenarios/draft": {
       "patch": {
         "tags": [
           "v4",
+          "artifacts",
           "scenarios"
         ],
         "summary": "Patch Scenario Draft",
         "description": "Patch scenario draft - accepts resource IDs and creates/updates draft.",
-        "operationId": "patch_scenario_draft_api_v4_scenarios_draft_patch",
+        "operationId": "patch_scenario_draft_api_v4_artifacts_scenarios_draft_patch",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -1254,18 +1279,20 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "scenarios"
         ]
       }
     },
-    "/api/v4/scenarios/docs": {
+    "/api/v4/artifacts/scenarios/docs": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "scenarios"
         ],
         "summary": "Get Docs",
-        "operationId": "get_docs_api_v4_scenarios_docs_post",
+        "operationId": "get_docs_api_v4_artifacts_scenarios_docs_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -1324,7 +1351,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Get Docs Api V4 Scenarios Docs Post"
+                  "title": "Response Get Docs Api V4 Artifacts Scenarios Docs Post"
                 }
               }
             }
@@ -1342,19 +1369,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "scenarios"
         ]
       }
     },
-    "/api/v4/simulations/get": {
+    "/api/v4/artifacts/simulations/get": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "simulations"
         ],
         "summary": "Get Simulation",
         "description": "Get simulation information using two-pass architecture.\n\nThis is a thin HTTP wrapper around get_simulation_client().",
-        "operationId": "get_simulation_api_v4_simulations_get_post",
+        "operationId": "get_simulation_api_v4_artifacts_simulations_get_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -1439,19 +1468,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "simulations"
         ]
       }
     },
-    "/api/v4/simulations/list": {
+    "/api/v4/artifacts/simulations/list": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "simulations"
         ],
         "summary": "Get Simulation List",
         "description": "Get simulations list with SQL-computed permissions.",
-        "operationId": "get_simulation_list_api_v4_simulations_list_post",
+        "operationId": "get_simulation_list_api_v4_artifacts_simulations_list_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -1536,19 +1567,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "simulations"
         ]
       }
     },
-    "/api/v4/simulations/save": {
+    "/api/v4/artifacts/simulations/save": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "simulations"
         ],
         "summary": "Save Simulation",
         "description": "Save simulation - handles both create (input_simulation_id = NULL) and update (input_simulation_id provided).\n\nUses two-pass architecture:\n1. Check access and permissions in Python\n2. Execute save if permitted",
-        "operationId": "save_simulation_api_v4_simulations_save_post",
+        "operationId": "save_simulation_api_v4_artifacts_simulations_save_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -1633,19 +1666,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "simulations"
         ]
       }
     },
-    "/api/v4/simulations/duplicate": {
+    "/api/v4/artifacts/simulations/duplicate": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "simulations"
         ],
         "summary": "Duplicate Simulation",
         "description": "Duplicate a simulation.\n\nUses two-pass architecture:\n1. Check access and permissions in Python\n2. Execute duplicate if permitted",
-        "operationId": "duplicate_simulation_api_v4_simulations_duplicate_post",
+        "operationId": "duplicate_simulation_api_v4_artifacts_simulations_duplicate_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -1730,19 +1765,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "simulations"
         ]
       }
     },
-    "/api/v4/simulations/delete": {
+    "/api/v4/artifacts/simulations/delete": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "simulations"
         ],
         "summary": "Delete Simulation",
         "description": "Delete a simulation (with usage check).\n\nUses two-pass architecture:\n1. Check access and permissions in Python\n2. Execute delete if permitted",
-        "operationId": "delete_simulation_api_v4_simulations_delete_post",
+        "operationId": "delete_simulation_api_v4_artifacts_simulations_delete_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -1827,19 +1864,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "simulations"
         ]
       }
     },
-    "/api/v4/simulations/draft": {
+    "/api/v4/artifacts/simulations/draft": {
       "patch": {
         "tags": [
           "v4",
+          "artifacts",
           "simulations"
         ],
         "summary": "Patch Simulation Draft",
         "description": "Patch simulation draft - accepts resource IDs and creates/updates draft.\n\nUses Python permission checks before executing draft operation.",
-        "operationId": "patch_simulation_draft_api_v4_simulations_draft_patch",
+        "operationId": "patch_simulation_draft_api_v4_artifacts_simulations_draft_patch",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -1924,18 +1963,20 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "simulations"
         ]
       }
     },
-    "/api/v4/simulations/docs": {
+    "/api/v4/artifacts/simulations/docs": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "simulations"
         ],
         "summary": "Get Docs",
-        "operationId": "get_docs_api_v4_simulations_docs_post",
+        "operationId": "get_docs_api_v4_artifacts_simulations_docs_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -1994,7 +2035,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Get Docs Api V4 Simulations Docs Post"
+                  "title": "Response Get Docs Api V4 Artifacts Simulations Docs Post"
                 }
               }
             }
@@ -2012,19 +2053,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "simulations"
         ]
       }
     },
-    "/api/v4/documents/list": {
+    "/api/v4/artifacts/documents/list": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "documents"
         ],
         "summary": "Get Document List",
         "description": "Get documents list with tags and scenarios.",
-        "operationId": "get_document_list_api_v4_documents_list_post",
+        "operationId": "get_document_list_api_v4_artifacts_documents_list_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -2109,19 +2152,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "documents"
         ]
       }
     },
-    "/api/v4/documents/get": {
+    "/api/v4/artifacts/documents/get": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "documents"
         ],
         "summary": "Get Document",
         "description": "Get document information using two-pass architecture.\n\nThis is a thin HTTP wrapper around get_document_internal().\n\nQuery 1: Access check (user role, departments, document state)\nQuery 2: ID fetching (resource IDs, suggestions, agents)\nPass 2: Parallel resource fetching (each resource type has own cache)",
-        "operationId": "get_document_api_v4_documents_get_post",
+        "operationId": "get_document_api_v4_artifacts_documents_get_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -2206,19 +2251,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "documents"
         ]
       }
     },
-    "/api/v4/documents/save": {
+    "/api/v4/artifacts/documents/save": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "documents"
         ],
         "summary": "Save Document",
         "description": "Save document - handles both create (input_document_id = NULL) and update (input_document_id provided).",
-        "operationId": "save_document_api_v4_documents_save_post",
+        "operationId": "save_document_api_v4_artifacts_documents_save_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -2303,19 +2350,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "documents"
         ]
       }
     },
-    "/api/v4/documents/duplicate": {
+    "/api/v4/artifacts/documents/duplicate": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "documents"
         ],
         "summary": "Duplicate Document",
         "description": "Duplicate a document.",
-        "operationId": "duplicate_document_api_v4_documents_duplicate_post",
+        "operationId": "duplicate_document_api_v4_artifacts_documents_duplicate_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -2400,19 +2449,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "documents"
         ]
       }
     },
-    "/api/v4/documents/delete": {
+    "/api/v4/artifacts/documents/delete": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "documents"
         ],
         "summary": "Delete Document",
         "description": "Delete a document.",
-        "operationId": "delete_document_api_v4_documents_delete_post",
+        "operationId": "delete_document_api_v4_artifacts_documents_delete_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -2497,19 +2548,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "documents"
         ]
       }
     },
-    "/api/v4/documents/draft": {
+    "/api/v4/artifacts/documents/draft": {
       "patch": {
         "tags": [
           "v4",
+          "artifacts",
           "documents"
         ],
         "summary": "Patch Document Draft",
         "description": "Patch document draft - accepts resource IDs and creates/updates draft.",
-        "operationId": "patch_document_draft_api_v4_documents_draft_patch",
+        "operationId": "patch_document_draft_api_v4_artifacts_documents_draft_patch",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -2594,21 +2647,23 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "documents"
         ]
       }
     },
-    "/api/v4/documents/bulk/process": {
+    "/api/v4/artifacts/documents/bulk/process": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "documents",
           "documents",
           "bulk"
         ],
         "summary": "Process Document",
         "description": "Process CSV file and map columns to target fields for documents.",
-        "operationId": "process_document_api_v4_documents_bulk_process_post",
+        "operationId": "process_document_api_v4_artifacts_documents_bulk_process_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -2693,23 +2748,25 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "documents",
           "documents",
           "bulk"
         ]
       }
     },
-    "/api/v4/documents/bulk/search": {
+    "/api/v4/artifacts/documents/bulk/search": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "documents",
           "documents",
           "bulk"
         ],
         "summary": "Search Document",
         "description": "Search documents for bulk operations.",
-        "operationId": "search_document_api_v4_documents_bulk_search_post",
+        "operationId": "search_document_api_v4_artifacts_documents_bulk_search_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -2794,23 +2851,25 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "documents",
           "documents",
           "bulk"
         ]
       }
     },
-    "/api/v4/documents/bulk/save": {
+    "/api/v4/artifacts/documents/bulk/save": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "documents",
           "documents",
           "bulk"
         ],
         "summary": "Save Document",
         "description": "Bulk create or update documents.",
-        "operationId": "save_document_api_v4_documents_bulk_save_post",
+        "operationId": "save_document_api_v4_artifacts_documents_bulk_save_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -2895,23 +2954,25 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "documents",
           "documents",
           "bulk"
         ]
       }
     },
-    "/api/v4/documents/bulk/delete": {
+    "/api/v4/artifacts/documents/bulk/delete": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "documents",
           "documents",
           "bulk"
         ],
         "summary": "Delete Document",
         "description": "Bulk delete documents.",
-        "operationId": "delete_document_api_v4_documents_bulk_delete_post",
+        "operationId": "delete_document_api_v4_artifacts_documents_bulk_delete_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -2996,20 +3057,22 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "documents",
           "documents",
           "bulk"
         ]
       }
     },
-    "/api/v4/documents/docs": {
+    "/api/v4/artifacts/documents/docs": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "documents"
         ],
         "summary": "Get Docs",
-        "operationId": "get_docs_api_v4_documents_docs_post",
+        "operationId": "get_docs_api_v4_artifacts_documents_docs_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -3068,7 +3131,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Get Docs Api V4 Documents Docs Post"
+                  "title": "Response Get Docs Api V4 Artifacts Documents Docs Post"
                 }
               }
             }
@@ -3086,19 +3149,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "documents"
         ]
       }
     },
-    "/api/v4/departments/get": {
+    "/api/v4/artifacts/departments/get": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "departments"
         ],
         "summary": "Get Department",
         "description": "Get department information using two-pass architecture.\n\nThis is a thin HTTP wrapper around get_department_internal().",
-        "operationId": "get_department_api_v4_departments_get_post",
+        "operationId": "get_department_api_v4_artifacts_departments_get_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -3183,19 +3248,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "departments"
         ]
       }
     },
-    "/api/v4/departments/list": {
+    "/api/v4/artifacts/departments/list": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "departments"
         ],
         "summary": "Get Department List",
         "description": "Get list of departments with computed fields.",
-        "operationId": "get_department_list_api_v4_departments_list_post",
+        "operationId": "get_department_list_api_v4_artifacts_departments_list_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -3280,19 +3347,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "departments"
         ]
       }
     },
-    "/api/v4/departments/save": {
+    "/api/v4/artifacts/departments/save": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "departments"
         ],
         "summary": "Save Department",
         "description": "Save department - handles both create (department_id = NULL) and update (department_id provided).",
-        "operationId": "save_department_api_v4_departments_save_post",
+        "operationId": "save_department_api_v4_artifacts_departments_save_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -3377,19 +3446,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "departments"
         ]
       }
     },
-    "/api/v4/departments/duplicate": {
+    "/api/v4/artifacts/departments/duplicate": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "departments"
         ],
         "summary": "Duplicate Department",
         "description": "Duplicate a department.",
-        "operationId": "duplicate_department_api_v4_departments_duplicate_post",
+        "operationId": "duplicate_department_api_v4_artifacts_departments_duplicate_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -3474,19 +3545,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "departments"
         ]
       }
     },
-    "/api/v4/departments/delete": {
+    "/api/v4/artifacts/departments/delete": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "departments"
         ],
         "summary": "Delete Department",
         "description": "Delete a department.",
-        "operationId": "delete_department_api_v4_departments_delete_post",
+        "operationId": "delete_department_api_v4_artifacts_departments_delete_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -3571,19 +3644,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "departments"
         ]
       }
     },
-    "/api/v4/departments/draft": {
+    "/api/v4/artifacts/departments/draft": {
       "patch": {
         "tags": [
           "v4",
+          "artifacts",
           "departments"
         ],
         "summary": "Patch Department Draft",
         "description": "Patch department draft - accepts resource IDs and creates/updates draft.",
-        "operationId": "patch_department_draft_api_v4_departments_draft_patch",
+        "operationId": "patch_department_draft_api_v4_artifacts_departments_draft_patch",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -3668,18 +3743,20 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "departments"
         ]
       }
     },
-    "/api/v4/departments/docs": {
+    "/api/v4/artifacts/departments/docs": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "departments"
         ],
         "summary": "Get Docs",
-        "operationId": "get_docs_api_v4_departments_docs_post",
+        "operationId": "get_docs_api_v4_artifacts_departments_docs_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -3738,7 +3815,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Get Docs Api V4 Departments Docs Post"
+                  "title": "Response Get Docs Api V4 Artifacts Departments Docs Post"
                 }
               }
             }
@@ -3756,19 +3833,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "departments"
         ]
       }
     },
-    "/api/v4/cohorts/list": {
+    "/api/v4/artifacts/cohorts/list": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "cohorts"
         ],
         "summary": "Get Cohort List",
         "description": "Get cohorts list with permissions and relationships.",
-        "operationId": "get_cohort_list_api_v4_cohorts_list_post",
+        "operationId": "get_cohort_list_api_v4_artifacts_cohorts_list_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -3853,19 +3932,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "cohorts"
         ]
       }
     },
-    "/api/v4/cohorts/get": {
+    "/api/v4/artifacts/cohorts/get": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "cohorts"
         ],
         "summary": "Get Cohort",
         "description": "Get cohort information using two-pass architecture.\n\nThis is a thin HTTP wrapper around get_cohort_client().\n\nQuery 1: Access check (user role, departments, cohort state)\nQuery 2: ID fetching (resource IDs, suggestions, agents)\nPass 2: Parallel resource fetching (each resource type has own cache)",
-        "operationId": "get_cohort_api_v4_cohorts_get_post",
+        "operationId": "get_cohort_api_v4_artifacts_cohorts_get_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -3950,19 +4031,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "cohorts"
         ]
       }
     },
-    "/api/v4/cohorts/save": {
+    "/api/v4/artifacts/cohorts/save": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "cohorts"
         ],
         "summary": "Save Cohort",
         "description": "Save cohort - draft-first create/update using draft resources.",
-        "operationId": "save_cohort_api_v4_cohorts_save_post",
+        "operationId": "save_cohort_api_v4_artifacts_cohorts_save_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -4047,19 +4130,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "cohorts"
         ]
       }
     },
-    "/api/v4/cohorts/duplicate": {
+    "/api/v4/artifacts/cohorts/duplicate": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "cohorts"
         ],
         "summary": "Duplicate Cohort",
         "description": "Duplicate a cohort with relationships.",
-        "operationId": "duplicate_cohort_api_v4_cohorts_duplicate_post",
+        "operationId": "duplicate_cohort_api_v4_artifacts_cohorts_duplicate_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -4144,19 +4229,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "cohorts"
         ]
       }
     },
-    "/api/v4/cohorts/delete": {
+    "/api/v4/artifacts/cohorts/delete": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "cohorts"
         ],
         "summary": "Delete Cohort",
         "description": "Delete a cohort.",
-        "operationId": "delete_cohort_api_v4_cohorts_delete_post",
+        "operationId": "delete_cohort_api_v4_artifacts_cohorts_delete_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -4241,19 +4328,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "cohorts"
         ]
       }
     },
-    "/api/v4/cohorts/draft": {
+    "/api/v4/artifacts/cohorts/draft": {
       "patch": {
         "tags": [
           "v4",
+          "artifacts",
           "cohorts"
         ],
         "summary": "Patch Cohort Draft",
         "description": "Patch cohort draft - accepts resource IDs and creates/updates draft.",
-        "operationId": "patch_cohort_draft_api_v4_cohorts_draft_patch",
+        "operationId": "patch_cohort_draft_api_v4_artifacts_cohorts_draft_patch",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -4338,18 +4427,20 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "cohorts"
         ]
       }
     },
-    "/api/v4/cohorts/docs": {
+    "/api/v4/artifacts/cohorts/docs": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "cohorts"
         ],
         "summary": "Get Docs",
-        "operationId": "get_docs_api_v4_cohorts_docs_post",
+        "operationId": "get_docs_api_v4_artifacts_cohorts_docs_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -4408,7 +4499,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Get Docs Api V4 Cohorts Docs Post"
+                  "title": "Response Get Docs Api V4 Artifacts Cohorts Docs Post"
                 }
               }
             }
@@ -4426,19 +4517,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "cohorts"
         ]
       }
     },
-    "/api/v4/evals/list": {
+    "/api/v4/artifacts/evals/list": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "evals"
         ],
         "summary": "Get Eval List",
         "description": "Get evals list with permissions and status details.",
-        "operationId": "get_eval_list_api_v4_evals_list_post",
+        "operationId": "get_eval_list_api_v4_artifacts_evals_list_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -4523,19 +4616,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "evals"
         ]
       }
     },
-    "/api/v4/evals/get": {
+    "/api/v4/artifacts/evals/get": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "evals"
         ],
         "summary": "Get Eval",
         "description": "Get eval information using two-pass architecture.\n\nThis is a thin HTTP wrapper around get_eval_internal().\n\nQuery 1: Access check (user role, departments, eval state)\nQuery 2: ID fetching (resource IDs, suggestions, agents)\nPass 2: Parallel resource fetching (each resource type has own cache)",
-        "operationId": "get_eval_api_v4_evals_get_post",
+        "operationId": "get_eval_api_v4_artifacts_evals_get_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -4620,19 +4715,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "evals"
         ]
       }
     },
-    "/api/v4/evals/save": {
+    "/api/v4/artifacts/evals/save": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "evals"
         ],
         "summary": "Save Eval",
         "description": "Save eval - handles both create (eval_id = NULL) and update (eval_id provided).",
-        "operationId": "save_eval_api_v4_evals_save_post",
+        "operationId": "save_eval_api_v4_artifacts_evals_save_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -4717,19 +4814,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "evals"
         ]
       }
     },
-    "/api/v4/evals/duplicate": {
+    "/api/v4/artifacts/evals/duplicate": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "evals"
         ],
         "summary": "Duplicate Eval",
         "description": "Duplicate an eval.",
-        "operationId": "duplicate_eval_api_v4_evals_duplicate_post",
+        "operationId": "duplicate_eval_api_v4_artifacts_evals_duplicate_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -4814,19 +4913,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "evals"
         ]
       }
     },
-    "/api/v4/evals/delete": {
+    "/api/v4/artifacts/evals/delete": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "evals"
         ],
         "summary": "Delete Eval",
         "description": "Delete an eval.",
-        "operationId": "delete_eval_api_v4_evals_delete_post",
+        "operationId": "delete_eval_api_v4_artifacts_evals_delete_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -4911,19 +5012,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "evals"
         ]
       }
     },
-    "/api/v4/evals/draft": {
+    "/api/v4/artifacts/evals/draft": {
       "patch": {
         "tags": [
           "v4",
+          "artifacts",
           "evals"
         ],
         "summary": "Patch Eval Draft",
         "description": "Patch eval draft - accepts resource IDs and creates/updates draft.",
-        "operationId": "patch_eval_draft_api_v4_evals_draft_patch",
+        "operationId": "patch_eval_draft_api_v4_artifacts_evals_draft_patch",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -5008,18 +5111,20 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "evals"
         ]
       }
     },
-    "/api/v4/evals/docs": {
+    "/api/v4/artifacts/evals/docs": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "evals"
         ],
         "summary": "Get Docs",
-        "operationId": "get_docs_api_v4_evals_docs_post",
+        "operationId": "get_docs_api_v4_artifacts_evals_docs_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -5078,7 +5183,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Get Docs Api V4 Evals Docs Post"
+                  "title": "Response Get Docs Api V4 Artifacts Evals Docs Post"
                 }
               }
             }
@@ -5096,19 +5201,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "evals"
         ]
       }
     },
-    "/api/v4/rubrics/get": {
+    "/api/v4/artifacts/rubrics/get": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "rubrics"
         ],
         "summary": "Get Rubric",
         "description": "Get rubric information using two-pass architecture.\n\nQuery 1: Access check (user role, departments, rubric state)\nQuery 2: ID fetching (resource IDs, suggestions, agents)\nPass 2: Parallel resource fetching (each resource type has own cache)",
-        "operationId": "get_rubric_api_v4_rubrics_get_post",
+        "operationId": "get_rubric_api_v4_artifacts_rubrics_get_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -5193,19 +5300,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "rubrics"
         ]
       }
     },
-    "/api/v4/rubrics/list": {
+    "/api/v4/artifacts/rubrics/list": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "rubrics"
         ],
         "summary": "Get Rubric List",
         "description": "Get rubrics list with hierarchical structure and permissions.",
-        "operationId": "get_rubric_list_api_v4_rubrics_list_post",
+        "operationId": "get_rubric_list_api_v4_artifacts_rubrics_list_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -5290,19 +5399,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "rubrics"
         ]
       }
     },
-    "/api/v4/rubrics/save": {
+    "/api/v4/artifacts/rubrics/save": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "rubrics"
         ],
         "summary": "Save Rubric",
         "description": "Save rubric - handles both create (rubric_id = NULL) and update (rubric_id provided).",
-        "operationId": "save_rubric_api_v4_rubrics_save_post",
+        "operationId": "save_rubric_api_v4_artifacts_rubrics_save_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -5387,19 +5498,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "rubrics"
         ]
       }
     },
-    "/api/v4/rubrics/duplicate": {
+    "/api/v4/artifacts/rubrics/duplicate": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "rubrics"
         ],
         "summary": "Duplicate Rubric",
         "description": "Duplicate a rubric with entire hierarchy.",
-        "operationId": "duplicate_rubric_api_v4_rubrics_duplicate_post",
+        "operationId": "duplicate_rubric_api_v4_artifacts_rubrics_duplicate_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -5484,19 +5597,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "rubrics"
         ]
       }
     },
-    "/api/v4/rubrics/delete": {
+    "/api/v4/artifacts/rubrics/delete": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "rubrics"
         ],
         "summary": "Delete Rubric",
         "description": "Delete a rubric.",
-        "operationId": "delete_rubric_api_v4_rubrics_delete_post",
+        "operationId": "delete_rubric_api_v4_artifacts_rubrics_delete_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -5581,19 +5696,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "rubrics"
         ]
       }
     },
-    "/api/v4/rubrics/draft": {
+    "/api/v4/artifacts/rubrics/draft": {
       "patch": {
         "tags": [
           "v4",
+          "artifacts",
           "rubrics"
         ],
         "summary": "Patch Rubric Draft",
         "description": "Patch rubric draft - accepts resource IDs and creates/updates draft.",
-        "operationId": "patch_rubric_draft_api_v4_rubrics_draft_patch",
+        "operationId": "patch_rubric_draft_api_v4_artifacts_rubrics_draft_patch",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -5678,18 +5795,20 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "rubrics"
         ]
       }
     },
-    "/api/v4/rubrics/docs": {
+    "/api/v4/artifacts/rubrics/docs": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "rubrics"
         ],
         "summary": "Get Docs",
-        "operationId": "get_docs_api_v4_rubrics_docs_post",
+        "operationId": "get_docs_api_v4_artifacts_rubrics_docs_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -5748,7 +5867,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Get Docs Api V4 Rubrics Docs Post"
+                  "title": "Response Get Docs Api V4 Artifacts Rubrics Docs Post"
                 }
               }
             }
@@ -5766,19 +5885,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "rubrics"
         ]
       }
     },
-    "/api/v4/settings/list": {
+    "/api/v4/artifacts/settings/list": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "settings"
         ],
         "summary": "Get Setting List",
         "description": "Get list of all settings ordered by created_at DESC.",
-        "operationId": "get_setting_list_api_v4_settings_list_post",
+        "operationId": "get_setting_list_api_v4_artifacts_settings_list_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -5863,19 +5984,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "settings"
         ]
       }
     },
-    "/api/v4/settings/get": {
+    "/api/v4/artifacts/settings/get": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "settings"
         ],
         "summary": "Get Setting",
         "description": "Get setting information - handles both new (settings_id = NULL) and detail (settings_id provided).\n\nValidation Logic:\n- Tools are REQUIRED for resources - error if no tools exist (via missing_tools_check CTE)\n- Agents are OPTIONAL - NULL agent_id means manual entry only (no generate button shown)\n- Frontend components check agent_id before showing generate button",
-        "operationId": "get_setting_api_v4_settings_get_post",
+        "operationId": "get_setting_api_v4_artifacts_settings_get_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -5960,19 +6083,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "settings"
         ]
       }
     },
-    "/api/v4/settings/save": {
+    "/api/v4/artifacts/settings/save": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "settings"
         ],
         "summary": "Save Setting",
         "description": "Save setting - handles both create (setting_id = NULL) and update (setting_id provided).",
-        "operationId": "save_setting_api_v4_settings_save_post",
+        "operationId": "save_setting_api_v4_artifacts_settings_save_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -6057,19 +6182,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "settings"
         ]
       }
     },
-    "/api/v4/settings/duplicate": {
+    "/api/v4/artifacts/settings/duplicate": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "settings"
         ],
         "summary": "Duplicate Setting",
         "description": "Duplicate a setting.",
-        "operationId": "duplicate_setting_api_v4_settings_duplicate_post",
+        "operationId": "duplicate_setting_api_v4_artifacts_settings_duplicate_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -6154,19 +6281,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "settings"
         ]
       }
     },
-    "/api/v4/settings/delete": {
+    "/api/v4/artifacts/settings/delete": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "settings"
         ],
         "summary": "Delete Setting",
         "description": "Delete a setting.",
-        "operationId": "delete_setting_api_v4_settings_delete_post",
+        "operationId": "delete_setting_api_v4_artifacts_settings_delete_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -6251,19 +6380,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "settings"
         ]
       }
     },
-    "/api/v4/settings/draft": {
+    "/api/v4/artifacts/settings/draft": {
       "patch": {
         "tags": [
           "v4",
+          "artifacts",
           "settings"
         ],
         "summary": "Patch Setting Draft",
         "description": "Patch setting draft - accepts resource IDs and creates/updates draft.",
-        "operationId": "patch_setting_draft_api_v4_settings_draft_patch",
+        "operationId": "patch_setting_draft_api_v4_artifacts_settings_draft_patch",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -6348,18 +6479,20 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "settings"
         ]
       }
     },
-    "/api/v4/settings/docs": {
+    "/api/v4/artifacts/settings/docs": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "settings"
         ],
         "summary": "Get Docs",
-        "operationId": "get_docs_api_v4_settings_docs_post",
+        "operationId": "get_docs_api_v4_artifacts_settings_docs_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -6418,7 +6551,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Get Docs Api V4 Settings Docs Post"
+                  "title": "Response Get Docs Api V4 Artifacts Settings Docs Post"
                 }
               }
             }
@@ -6436,19 +6569,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "settings"
         ]
       }
     },
-    "/api/v4/agents/get": {
+    "/api/v4/artifacts/agents/get": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "agents"
         ],
         "summary": "Get Agent",
         "description": "Get agent information using two-pass architecture.",
-        "operationId": "get_agent_api_v4_agents_get_post",
+        "operationId": "get_agent_api_v4_artifacts_agents_get_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -6533,19 +6668,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "agents"
         ]
       }
     },
-    "/api/v4/agents/list": {
+    "/api/v4/artifacts/agents/list": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "agents"
         ],
         "summary": "Get Agent List",
         "description": "Get list of agents with permissions.",
-        "operationId": "get_agent_list_api_v4_agents_list_post",
+        "operationId": "get_agent_list_api_v4_artifacts_agents_list_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -6630,19 +6767,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "agents"
         ]
       }
     },
-    "/api/v4/agents/save": {
+    "/api/v4/artifacts/agents/save": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "agents"
         ],
         "summary": "Save Agent",
         "description": "Save agent - handles both create (agent_id = NULL) and update (agent_id provided).",
-        "operationId": "save_agent_api_v4_agents_save_post",
+        "operationId": "save_agent_api_v4_artifacts_agents_save_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -6727,19 +6866,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "agents"
         ]
       }
     },
-    "/api/v4/agents/duplicate": {
+    "/api/v4/artifacts/agents/duplicate": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "agents"
         ],
         "summary": "Duplicate Agent",
         "description": "Duplicate an agent.",
-        "operationId": "duplicate_agent_api_v4_agents_duplicate_post",
+        "operationId": "duplicate_agent_api_v4_artifacts_agents_duplicate_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -6824,19 +6965,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "agents"
         ]
       }
     },
-    "/api/v4/agents/delete": {
+    "/api/v4/artifacts/agents/delete": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "agents"
         ],
         "summary": "Delete Agent",
         "description": "Delete an agent.",
-        "operationId": "delete_agent_api_v4_agents_delete_post",
+        "operationId": "delete_agent_api_v4_artifacts_agents_delete_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -6921,19 +7064,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "agents"
         ]
       }
     },
-    "/api/v4/agents/draft": {
+    "/api/v4/artifacts/agents/draft": {
       "patch": {
         "tags": [
           "v4",
+          "artifacts",
           "agents"
         ],
         "summary": "Patch Agent Draft",
         "description": "Patch agent draft - accepts resource IDs and creates/updates draft.",
-        "operationId": "patch_agent_draft_api_v4_agents_draft_patch",
+        "operationId": "patch_agent_draft_api_v4_artifacts_agents_draft_patch",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -7018,18 +7163,20 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "agents"
         ]
       }
     },
-    "/api/v4/agents/docs": {
+    "/api/v4/artifacts/agents/docs": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "agents"
         ],
         "summary": "Get Docs",
-        "operationId": "get_docs_api_v4_agents_docs_post",
+        "operationId": "get_docs_api_v4_artifacts_agents_docs_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -7088,7 +7235,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Get Docs Api V4 Agents Docs Post"
+                  "title": "Response Get Docs Api V4 Artifacts Agents Docs Post"
                 }
               }
             }
@@ -7106,19 +7253,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "agents"
         ]
       }
     },
-    "/api/v4/models/get": {
+    "/api/v4/artifacts/models/get": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "models"
         ],
         "summary": "Get Model",
         "description": "Get model information using two-pass architecture.\n\nThis is a thin HTTP wrapper around get_model_internal().",
-        "operationId": "get_model_api_v4_models_get_post",
+        "operationId": "get_model_api_v4_artifacts_models_get_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -7203,19 +7352,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "models"
         ]
       }
     },
-    "/api/v4/models/list": {
+    "/api/v4/artifacts/models/list": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "models"
         ],
         "summary": "Get Model List",
         "description": "Get models list (flat structure with provider info).",
-        "operationId": "get_model_list_api_v4_models_list_post",
+        "operationId": "get_model_list_api_v4_artifacts_models_list_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -7300,19 +7451,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "models"
         ]
       }
     },
-    "/api/v4/models/save": {
+    "/api/v4/artifacts/models/save": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "models"
         ],
         "summary": "Save Model",
         "description": "Save model - create (model_id=NULL) or update.",
-        "operationId": "save_model_api_v4_models_save_post",
+        "operationId": "save_model_api_v4_artifacts_models_save_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -7397,19 +7550,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "models"
         ]
       }
     },
-    "/api/v4/models/duplicate": {
+    "/api/v4/artifacts/models/duplicate": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "models"
         ],
         "summary": "Duplicate Model",
         "description": "Duplicate a model.",
-        "operationId": "duplicate_model_api_v4_models_duplicate_post",
+        "operationId": "duplicate_model_api_v4_artifacts_models_duplicate_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -7494,19 +7649,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "models"
         ]
       }
     },
-    "/api/v4/models/delete": {
+    "/api/v4/artifacts/models/delete": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "models"
         ],
         "summary": "Delete Model",
         "description": "Delete a model if not in use.",
-        "operationId": "delete_model_api_v4_models_delete_post",
+        "operationId": "delete_model_api_v4_artifacts_models_delete_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -7591,19 +7748,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "models"
         ]
       }
     },
-    "/api/v4/models/draft": {
+    "/api/v4/artifacts/models/draft": {
       "patch": {
         "tags": [
           "v4",
+          "artifacts",
           "models"
         ],
         "summary": "Patch Model Draft",
         "description": "Patch model draft - accepts resource IDs and creates/updates draft.",
-        "operationId": "patch_model_draft_api_v4_models_draft_patch",
+        "operationId": "patch_model_draft_api_v4_artifacts_models_draft_patch",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -7688,18 +7847,20 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "models"
         ]
       }
     },
-    "/api/v4/models/docs": {
+    "/api/v4/artifacts/models/docs": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "models"
         ],
         "summary": "Get Docs",
-        "operationId": "get_docs_api_v4_models_docs_post",
+        "operationId": "get_docs_api_v4_artifacts_models_docs_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -7758,7 +7919,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Get Docs Api V4 Models Docs Post"
+                  "title": "Response Get Docs Api V4 Artifacts Models Docs Post"
                 }
               }
             }
@@ -7776,19 +7937,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "models"
         ]
       }
     },
-    "/api/v4/providers/list": {
+    "/api/v4/artifacts/providers/list": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "providers"
         ],
         "summary": "Get Provider List",
         "description": "Get providers list with Python-computed permissions.",
-        "operationId": "get_provider_list_api_v4_providers_list_post",
+        "operationId": "get_provider_list_api_v4_artifacts_providers_list_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -7873,19 +8036,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "providers"
         ]
       }
     },
-    "/api/v4/providers/get": {
+    "/api/v4/artifacts/providers/get": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "providers"
         ],
         "summary": "Get Provider",
         "description": "Get provider information using two-pass architecture.",
-        "operationId": "get_provider_api_v4_providers_get_post",
+        "operationId": "get_provider_api_v4_artifacts_providers_get_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -7970,19 +8135,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "providers"
         ]
       }
     },
-    "/api/v4/providers/save": {
+    "/api/v4/artifacts/providers/save": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "providers"
         ],
         "summary": "Save Provider",
         "description": "Save provider - handles both create (provider_id = NULL) and update (provider_id provided).",
-        "operationId": "save_provider_api_v4_providers_save_post",
+        "operationId": "save_provider_api_v4_artifacts_providers_save_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -8067,19 +8234,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "providers"
         ]
       }
     },
-    "/api/v4/providers/duplicate": {
+    "/api/v4/artifacts/providers/duplicate": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "providers"
         ],
         "summary": "Duplicate Provider",
         "description": "Duplicate a provider.",
-        "operationId": "duplicate_provider_api_v4_providers_duplicate_post",
+        "operationId": "duplicate_provider_api_v4_artifacts_providers_duplicate_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -8164,19 +8333,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "providers"
         ]
       }
     },
-    "/api/v4/providers/delete": {
+    "/api/v4/artifacts/providers/delete": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "providers"
         ],
         "summary": "Delete Provider",
         "description": "Delete a provider (prevents deletion if used by models).",
-        "operationId": "delete_provider_api_v4_providers_delete_post",
+        "operationId": "delete_provider_api_v4_artifacts_providers_delete_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -8261,19 +8432,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "providers"
         ]
       }
     },
-    "/api/v4/providers/draft": {
+    "/api/v4/artifacts/providers/draft": {
       "patch": {
         "tags": [
           "v4",
+          "artifacts",
           "providers"
         ],
         "summary": "Patch Provider Draft",
         "description": "Patch provider draft - accepts resource IDs and creates/updates draft.",
-        "operationId": "patch_provider_draft_api_v4_providers_draft_patch",
+        "operationId": "patch_provider_draft_api_v4_artifacts_providers_draft_patch",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -8358,18 +8531,20 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "providers"
         ]
       }
     },
-    "/api/v4/providers/docs": {
+    "/api/v4/artifacts/providers/docs": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "providers"
         ],
         "summary": "Get Docs",
-        "operationId": "get_docs_api_v4_providers_docs_post",
+        "operationId": "get_docs_api_v4_artifacts_providers_docs_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -8428,7 +8603,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Get Docs Api V4 Providers Docs Post"
+                  "title": "Response Get Docs Api V4 Artifacts Providers Docs Post"
                 }
               }
             }
@@ -8446,19 +8621,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "providers"
         ]
       }
     },
-    "/api/v4/parameters/get": {
+    "/api/v4/artifacts/parameters/get": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "parameters"
         ],
         "summary": "Get Parameter",
         "description": "Get parameter information using two-pass architecture.",
-        "operationId": "get_parameter_api_v4_parameters_get_post",
+        "operationId": "get_parameter_api_v4_artifacts_parameters_get_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -8543,19 +8720,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "parameters"
         ]
       }
     },
-    "/api/v4/parameters/list": {
+    "/api/v4/artifacts/parameters/list": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "parameters"
         ],
         "summary": "Get Parameter List",
         "description": "Get parameters list with permissions and scenario details.",
-        "operationId": "get_parameter_list_api_v4_parameters_list_post",
+        "operationId": "get_parameter_list_api_v4_artifacts_parameters_list_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -8640,19 +8819,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "parameters"
         ]
       }
     },
-    "/api/v4/parameters/save": {
+    "/api/v4/artifacts/parameters/save": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "parameters"
         ],
         "summary": "Save Parameter",
         "description": "Save parameter - handles both create (parameter_id = NULL) and update (parameter_id provided).",
-        "operationId": "save_parameter_api_v4_parameters_save_post",
+        "operationId": "save_parameter_api_v4_artifacts_parameters_save_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -8737,19 +8918,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "parameters"
         ]
       }
     },
-    "/api/v4/parameters/duplicate": {
+    "/api/v4/artifacts/parameters/duplicate": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "parameters"
         ],
         "summary": "Duplicate Parameter",
         "description": "Duplicate a parameter.",
-        "operationId": "duplicate_parameter_api_v4_parameters_duplicate_post",
+        "operationId": "duplicate_parameter_api_v4_artifacts_parameters_duplicate_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -8834,19 +9017,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "parameters"
         ]
       }
     },
-    "/api/v4/parameters/delete": {
+    "/api/v4/artifacts/parameters/delete": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "parameters"
         ],
         "summary": "Delete Parameter",
         "description": "Delete a parameter.",
-        "operationId": "delete_parameter_api_v4_parameters_delete_post",
+        "operationId": "delete_parameter_api_v4_artifacts_parameters_delete_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -8931,19 +9116,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "parameters"
         ]
       }
     },
-    "/api/v4/parameters/draft": {
+    "/api/v4/artifacts/parameters/draft": {
       "patch": {
         "tags": [
           "v4",
+          "artifacts",
           "parameters"
         ],
         "summary": "Patch Parameter Draft",
         "description": "Patch parameter draft - accepts resource IDs and creates/updates draft.",
-        "operationId": "patch_parameter_draft_api_v4_parameters_draft_patch",
+        "operationId": "patch_parameter_draft_api_v4_artifacts_parameters_draft_patch",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -9028,18 +9215,20 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "parameters"
         ]
       }
     },
-    "/api/v4/parameters/docs": {
+    "/api/v4/artifacts/parameters/docs": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "parameters"
         ],
         "summary": "Get Docs",
-        "operationId": "get_docs_api_v4_parameters_docs_post",
+        "operationId": "get_docs_api_v4_artifacts_parameters_docs_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -9098,7 +9287,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Get Docs Api V4 Parameters Docs Post"
+                  "title": "Response Get Docs Api V4 Artifacts Parameters Docs Post"
                 }
               }
             }
@@ -9116,19 +9305,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "parameters"
         ]
       }
     },
-    "/api/v4/fields/get": {
+    "/api/v4/artifacts/fields/get": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "fields"
         ],
         "summary": "Get Field",
         "description": "Get field information using two-pass architecture.",
-        "operationId": "get_field_api_v4_fields_get_post",
+        "operationId": "get_field_api_v4_artifacts_fields_get_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -9213,19 +9404,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "fields"
         ]
       }
     },
-    "/api/v4/fields/list": {
+    "/api/v4/artifacts/fields/list": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "fields"
         ],
         "summary": "Get Field List",
         "description": "Get fields list with permissions and relationships.",
-        "operationId": "get_field_list_api_v4_fields_list_post",
+        "operationId": "get_field_list_api_v4_artifacts_fields_list_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -9310,19 +9503,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "fields"
         ]
       }
     },
-    "/api/v4/fields/save": {
+    "/api/v4/artifacts/fields/save": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "fields"
         ],
         "summary": "Save Field",
         "description": "Save field - handles both create (field_id = NULL) and update (field_id provided).",
-        "operationId": "save_field_api_v4_fields_save_post",
+        "operationId": "save_field_api_v4_artifacts_fields_save_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -9407,19 +9602,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "fields"
         ]
       }
     },
-    "/api/v4/fields/duplicate": {
+    "/api/v4/artifacts/fields/duplicate": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "fields"
         ],
         "summary": "Duplicate Field",
         "description": "Duplicate a field with all parameter and department associations.",
-        "operationId": "duplicate_field_api_v4_fields_duplicate_post",
+        "operationId": "duplicate_field_api_v4_artifacts_fields_duplicate_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -9504,19 +9701,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "fields"
         ]
       }
     },
-    "/api/v4/fields/delete": {
+    "/api/v4/artifacts/fields/delete": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "fields"
         ],
         "summary": "Delete Field",
         "description": "Delete a field.",
-        "operationId": "delete_field_api_v4_fields_delete_post",
+        "operationId": "delete_field_api_v4_artifacts_fields_delete_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -9601,19 +9800,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "fields"
         ]
       }
     },
-    "/api/v4/fields/draft": {
+    "/api/v4/artifacts/fields/draft": {
       "patch": {
         "tags": [
           "v4",
+          "artifacts",
           "fields"
         ],
         "summary": "Patch Field Draft",
         "description": "Patch field draft - accepts resource IDs and creates/updates draft.",
-        "operationId": "patch_field_draft_api_v4_fields_draft_patch",
+        "operationId": "patch_field_draft_api_v4_artifacts_fields_draft_patch",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -9698,18 +9899,20 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "fields"
         ]
       }
     },
-    "/api/v4/fields/docs": {
+    "/api/v4/artifacts/fields/docs": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "fields"
         ],
         "summary": "Get Docs",
-        "operationId": "get_docs_api_v4_fields_docs_post",
+        "operationId": "get_docs_api_v4_artifacts_fields_docs_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -9768,7 +9971,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Get Docs Api V4 Fields Docs Post"
+                  "title": "Response Get Docs Api V4 Artifacts Fields Docs Post"
                 }
               }
             }
@@ -9786,19 +9989,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "fields"
         ]
       }
     },
-    "/api/v4/profiles/get": {
+    "/api/v4/artifacts/profiles/get": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "profiles"
         ],
         "summary": "Get Profile",
         "description": "Get profile information using two-pass architecture.",
-        "operationId": "get_profile_api_v4_profiles_get_post",
+        "operationId": "get_profile_api_v4_artifacts_profiles_get_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -9883,19 +10088,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "profiles"
         ]
       }
     },
-    "/api/v4/profiles/list": {
+    "/api/v4/artifacts/profiles/list": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "profiles"
         ],
         "summary": "Get Profile List",
         "description": "Get profile/staff list with permissions and relationships.",
-        "operationId": "get_profile_list_api_v4_profiles_list_post",
+        "operationId": "get_profile_list_api_v4_artifacts_profiles_list_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -9980,19 +10187,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "profiles"
         ]
       }
     },
-    "/api/v4/profiles/save": {
+    "/api/v4/artifacts/profiles/save": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "profiles"
         ],
         "summary": "Save Profile",
         "description": "Save profile - handles both create and update with direct fields.",
-        "operationId": "save_profile_api_v4_profiles_save_post",
+        "operationId": "save_profile_api_v4_artifacts_profiles_save_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -10077,19 +10286,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "profiles"
         ]
       }
     },
-    "/api/v4/profiles/duplicate": {
+    "/api/v4/artifacts/profiles/duplicate": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "profiles"
         ],
         "summary": "Duplicate Profile",
         "description": "Duplicate a profile.",
-        "operationId": "duplicate_profile_api_v4_profiles_duplicate_post",
+        "operationId": "duplicate_profile_api_v4_artifacts_profiles_duplicate_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -10174,19 +10385,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "profiles"
         ]
       }
     },
-    "/api/v4/profiles/draft": {
+    "/api/v4/artifacts/profiles/draft": {
       "patch": {
         "tags": [
           "v4",
+          "artifacts",
           "profiles"
         ],
         "summary": "Patch Profile Draft",
         "description": "Patch profile draft - accepts resource IDs and creates/updates draft.",
-        "operationId": "patch_profile_draft_api_v4_profiles_draft_patch",
+        "operationId": "patch_profile_draft_api_v4_artifacts_profiles_draft_patch",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -10271,19 +10484,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "profiles"
         ]
       }
     },
-    "/api/v4/profiles/delete": {
+    "/api/v4/artifacts/profiles/delete": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "profiles"
         ],
         "summary": "Delete Profile",
         "description": "Delete a profile.",
-        "operationId": "delete_profile_api_v4_profiles_delete_post",
+        "operationId": "delete_profile_api_v4_artifacts_profiles_delete_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -10368,21 +10583,23 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "profiles"
         ]
       }
     },
-    "/api/v4/profiles/bulk/process": {
+    "/api/v4/artifacts/profiles/bulk/process": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "profiles",
           "profiles",
           "bulk"
         ],
         "summary": "Process Staff",
         "description": "Process CSV file and map columns to target fields.",
-        "operationId": "process_staff_api_v4_profiles_bulk_process_post",
+        "operationId": "process_staff_api_v4_artifacts_profiles_bulk_process_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -10467,23 +10684,25 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "profiles",
           "profiles",
           "bulk"
         ]
       }
     },
-    "/api/v4/profiles/bulk/search": {
+    "/api/v4/artifacts/profiles/bulk/search": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "profiles",
           "profiles",
           "bulk"
         ],
         "summary": "Search Staff",
         "description": "Search staff with query and filters.",
-        "operationId": "search_staff_api_v4_profiles_bulk_search_post",
+        "operationId": "search_staff_api_v4_artifacts_profiles_bulk_search_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -10568,23 +10787,25 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "profiles",
           "profiles",
           "bulk"
         ]
       }
     },
-    "/api/v4/profiles/bulk/save": {
+    "/api/v4/artifacts/profiles/bulk/save": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "profiles",
           "profiles",
           "bulk"
         ],
         "summary": "Save Staff",
         "description": "Bulk create or update staff members (upsert).",
-        "operationId": "save_staff_api_v4_profiles_bulk_save_post",
+        "operationId": "save_staff_api_v4_artifacts_profiles_bulk_save_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -10669,23 +10890,25 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "profiles",
           "profiles",
           "bulk"
         ]
       }
     },
-    "/api/v4/profiles/bulk/delete": {
+    "/api/v4/artifacts/profiles/bulk/delete": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "profiles",
           "profiles",
           "bulk"
         ],
         "summary": "Delete Staff",
         "description": "Bulk delete profiles.",
-        "operationId": "delete_staff_api_v4_profiles_bulk_delete_post",
+        "operationId": "delete_staff_api_v4_artifacts_profiles_bulk_delete_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -10770,20 +10993,22 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "profiles",
           "profiles",
           "bulk"
         ]
       }
     },
-    "/api/v4/profiles/docs": {
+    "/api/v4/artifacts/profiles/docs": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "profiles"
         ],
         "summary": "Get Docs",
-        "operationId": "get_docs_api_v4_profiles_docs_post",
+        "operationId": "get_docs_api_v4_artifacts_profiles_docs_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -10842,7 +11067,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Get Docs Api V4 Profiles Docs Post"
+                  "title": "Response Get Docs Api V4 Artifacts Profiles Docs Post"
                 }
               }
             }
@@ -10860,19 +11085,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "profiles"
         ]
       }
     },
-    "/api/v4/auths/get": {
+    "/api/v4/artifacts/auths/get": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "auths"
         ],
         "summary": "Get Auth",
         "description": "Get auth information using two-pass architecture.\n\nQuery 1: Access check (user role, auth state)\nQuery 2: ID fetching (resource IDs, suggestions, agents)\nPass 2: Parallel resource fetching (each resource type has own cache)",
-        "operationId": "get_auth_api_v4_auths_get_post",
+        "operationId": "get_auth_api_v4_artifacts_auths_get_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -10957,19 +11184,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "auths"
         ]
       }
     },
-    "/api/v4/auths/list": {
+    "/api/v4/artifacts/auths/list": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "auths"
         ],
         "summary": "Get Auth List",
         "description": "Get auth list with item counts and permissions.",
-        "operationId": "get_auth_list_api_v4_auths_list_post",
+        "operationId": "get_auth_list_api_v4_artifacts_auths_list_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -11054,19 +11283,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "auths"
         ]
       }
     },
-    "/api/v4/auths/save": {
+    "/api/v4/artifacts/auths/save": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "auths"
         ],
         "summary": "Save Auth",
         "description": "Save auth - handles both create (auth_id = NULL) and update (auth_id provided).",
-        "operationId": "save_auth_api_v4_auths_save_post",
+        "operationId": "save_auth_api_v4_artifacts_auths_save_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -11151,19 +11382,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "auths"
         ]
       }
     },
-    "/api/v4/auths/duplicate": {
+    "/api/v4/artifacts/auths/duplicate": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "auths"
         ],
         "summary": "Duplicate Auth",
         "description": "Duplicate an auth entry with all items and their key associations.",
-        "operationId": "duplicate_auth_api_v4_auths_duplicate_post",
+        "operationId": "duplicate_auth_api_v4_artifacts_auths_duplicate_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -11248,19 +11481,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "auths"
         ]
       }
     },
-    "/api/v4/auths/delete": {
+    "/api/v4/artifacts/auths/delete": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "auths"
         ],
         "summary": "Delete Auth",
         "description": "Delete an auth entry.",
-        "operationId": "delete_auth_api_v4_auths_delete_post",
+        "operationId": "delete_auth_api_v4_artifacts_auths_delete_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -11345,19 +11580,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "auths"
         ]
       }
     },
-    "/api/v4/auths/draft": {
+    "/api/v4/artifacts/auths/draft": {
       "patch": {
         "tags": [
           "v4",
+          "artifacts",
           "auths"
         ],
         "summary": "Patch Auth Draft",
         "description": "Patch auth draft - accepts resource IDs and creates/updates draft.",
-        "operationId": "patch_auth_draft_api_v4_auths_draft_patch",
+        "operationId": "patch_auth_draft_api_v4_artifacts_auths_draft_patch",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -11442,18 +11679,20 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "auths"
         ]
       }
     },
-    "/api/v4/auths/docs": {
+    "/api/v4/artifacts/auths/docs": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "auths"
         ],
         "summary": "Get Docs",
-        "operationId": "get_docs_api_v4_auths_docs_post",
+        "operationId": "get_docs_api_v4_artifacts_auths_docs_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -11512,7 +11751,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Get Docs Api V4 Auths Docs Post"
+                  "title": "Response Get Docs Api V4 Artifacts Auths Docs Post"
                 }
               }
             }
@@ -11530,19 +11769,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "auths"
         ]
       }
     },
-    "/api/v4/tools/list": {
+    "/api/v4/artifacts/tools/list": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "tools"
         ],
         "summary": "Get Tool List",
         "description": "Get tools list with permissions.",
-        "operationId": "get_tool_list_api_v4_tools_list_post",
+        "operationId": "get_tool_list_api_v4_artifacts_tools_list_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -11617,19 +11858,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "tools"
         ]
       }
     },
-    "/api/v4/tools/get": {
+    "/api/v4/artifacts/tools/get": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "tools"
         ],
         "summary": "Get Tool",
         "description": "Get tool information using two-pass architecture.",
-        "operationId": "get_tool_api_v4_tools_get_post",
+        "operationId": "get_tool_api_v4_artifacts_tools_get_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -11714,19 +11957,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "tools"
         ]
       }
     },
-    "/api/v4/tools/save": {
+    "/api/v4/artifacts/tools/save": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "tools"
         ],
         "summary": "Save Tool",
         "description": "Save tool - handles both create (tool_id = NULL) and update (tool_id provided).",
-        "operationId": "save_tool_api_v4_tools_save_post",
+        "operationId": "save_tool_api_v4_artifacts_tools_save_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -11811,19 +12056,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "tools"
         ]
       }
     },
-    "/api/v4/tools/duplicate": {
+    "/api/v4/artifacts/tools/duplicate": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "tools"
         ],
         "summary": "Duplicate Tool",
         "description": "Duplicate a tool.",
-        "operationId": "duplicate_tool_api_v4_tools_duplicate_post",
+        "operationId": "duplicate_tool_api_v4_artifacts_tools_duplicate_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -11908,19 +12155,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "tools"
         ]
       }
     },
-    "/api/v4/tools/delete": {
+    "/api/v4/artifacts/tools/delete": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "tools"
         ],
         "summary": "Delete Tool",
         "description": "Delete a tool.",
-        "operationId": "delete_tool_api_v4_tools_delete_post",
+        "operationId": "delete_tool_api_v4_artifacts_tools_delete_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -12005,19 +12254,21 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "tools"
         ]
       }
     },
-    "/api/v4/tools/draft": {
+    "/api/v4/artifacts/tools/draft": {
       "patch": {
         "tags": [
           "v4",
+          "artifacts",
           "tools"
         ],
         "summary": "Patch Tool Draft",
         "description": "Patch tool draft - accepts resource IDs and creates/updates draft.",
-        "operationId": "patch_tool_draft_api_v4_tools_draft_patch",
+        "operationId": "patch_tool_draft_api_v4_artifacts_tools_draft_patch",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -12102,18 +12353,20 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "tools"
         ]
       }
     },
-    "/api/v4/tools/docs": {
+    "/api/v4/artifacts/tools/docs": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "tools"
         ],
         "summary": "Get Docs",
-        "operationId": "get_docs_api_v4_tools_docs_post",
+        "operationId": "get_docs_api_v4_artifacts_tools_docs_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -12172,7 +12425,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Get Docs Api V4 Tools Docs Post"
+                  "title": "Response Get Docs Api V4 Artifacts Tools Docs Post"
                 }
               }
             }
@@ -12190,20 +12443,22 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "tools"
         ]
       }
     },
-    "/api/v4/group/get": {
+    "/api/v4/artifacts/group/get": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "artifacts",
           "group"
         ],
         "summary": "Get Group",
         "description": "Get detailed group information with all runs and messages.",
-        "operationId": "get_group_api_v4_group_get_post",
+        "operationId": "get_group_api_v4_artifacts_group_get_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -12289,20 +12544,22 @@
         "x-cache-tags": [
           "v4",
           "artifacts",
+          "artifacts",
           "group"
         ]
       }
     },
-    "/api/v4/group/list": {
+    "/api/v4/artifacts/group/list": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "artifacts",
           "group"
         ],
         "summary": "List Groups",
         "description": "Get paginated group list with resource hydration.",
-        "operationId": "list_groups_api_v4_group_list_post",
+        "operationId": "list_groups_api_v4_artifacts_group_list_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -12388,19 +12645,21 @@
         "x-cache-tags": [
           "v4",
           "artifacts",
+          "artifacts",
           "group"
         ]
       }
     },
-    "/api/v4/group/docs": {
+    "/api/v4/artifacts/group/docs": {
       "post": {
         "tags": [
           "v4",
           "artifacts",
+          "artifacts",
           "group"
         ],
         "summary": "Get Docs",
-        "operationId": "get_docs_api_v4_group_docs_post",
+        "operationId": "get_docs_api_v4_artifacts_group_docs_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -12459,7 +12718,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Get Docs Api V4 Group Docs Post"
+                  "title": "Response Get Docs Api V4 Artifacts Group Docs Post"
                 }
               }
             }
@@ -12478,20 +12737,22 @@
         "x-cache-tags": [
           "v4",
           "artifacts",
+          "artifacts",
           "group"
         ]
       }
     },
-    "/api/v4/session/get": {
+    "/api/v4/artifacts/session/get": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "artifacts",
           "session"
         ],
         "summary": "Get Session",
         "description": "Get session detail with paginated audits and groups.",
-        "operationId": "get_session_api_v4_session_get_post",
+        "operationId": "get_session_api_v4_artifacts_session_get_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -12577,20 +12838,22 @@
         "x-cache-tags": [
           "v4",
           "artifacts",
+          "artifacts",
           "session"
         ]
       }
     },
-    "/api/v4/session/list": {
+    "/api/v4/artifacts/session/list": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "artifacts",
           "session"
         ],
         "summary": "List Sessions",
         "description": "Get paginated session list with resource hydration.",
-        "operationId": "list_sessions_api_v4_session_list_post",
+        "operationId": "list_sessions_api_v4_artifacts_session_list_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -12676,19 +12939,21 @@
         "x-cache-tags": [
           "v4",
           "artifacts",
+          "artifacts",
           "session"
         ]
       }
     },
-    "/api/v4/session/docs": {
+    "/api/v4/artifacts/session/docs": {
       "post": {
         "tags": [
           "v4",
           "artifacts",
+          "artifacts",
           "session"
         ],
         "summary": "Get Docs",
-        "operationId": "get_docs_api_v4_session_docs_post",
+        "operationId": "get_docs_api_v4_artifacts_session_docs_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -12747,7 +13012,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Get Docs Api V4 Session Docs Post"
+                  "title": "Response Get Docs Api V4 Artifacts Session Docs Post"
                 }
               }
             }
@@ -12766,20 +13031,22 @@
         "x-cache-tags": [
           "v4",
           "artifacts",
+          "artifacts",
           "session"
         ]
       }
     },
-    "/api/v4/training/get": {
+    "/api/v4/artifacts/training/get": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "artifacts",
           "training"
         ],
         "summary": "Training Get",
         "description": "Get simulations available for training (operational).\n\nOPERATIONAL endpoint: Returns simulations user can take, scoped by\ntheir cohorts based on practice mode.\n\nUsed by frontend to display available simulations and get data\nneeded to start a training session (scenario_ids, etc).",
-        "operationId": "training_get_api_v4_training_get_post",
+        "operationId": "training_get_api_v4_artifacts_training_get_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -12865,20 +13132,22 @@
         "x-cache-tags": [
           "v4",
           "artifacts",
+          "artifacts",
           "training"
         ]
       }
     },
-    "/api/v4/training/refresh": {
+    "/api/v4/artifacts/training/refresh": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "artifacts",
           "training"
         ],
         "summary": "Training Refresh",
         "description": "Refresh all training section materialized views.\n\nUses SQL function that refreshes MVs in dependency order:\n1. mv_home_chat_facts (base fact table)\n2. mv_home_simulation_status (depends on chat_facts)\n3. mv_home_attempt_history (depends on chat_facts)\n4. mv_home_certificate_status (depends on chat_facts)",
-        "operationId": "training_refresh_api_v4_training_refresh_post",
+        "operationId": "training_refresh_api_v4_artifacts_training_refresh_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -12964,19 +13233,21 @@
         "x-cache-tags": [
           "v4",
           "artifacts",
+          "artifacts",
           "training"
         ]
       }
     },
-    "/api/v4/training/docs": {
+    "/api/v4/artifacts/training/docs": {
       "post": {
         "tags": [
           "v4",
           "artifacts",
+          "artifacts",
           "training"
         ],
         "summary": "Get Docs",
-        "operationId": "get_docs_api_v4_training_docs_post",
+        "operationId": "get_docs_api_v4_artifacts_training_docs_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -13035,7 +13306,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Get Docs Api V4 Training Docs Post"
+                  "title": "Response Get Docs Api V4 Artifacts Training Docs Post"
                 }
               }
             }
@@ -13054,20 +13325,22 @@
         "x-cache-tags": [
           "v4",
           "artifacts",
+          "artifacts",
           "training"
         ]
       }
     },
-    "/api/v4/attempt/get": {
+    "/api/v4/artifacts/attempt/get": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "artifacts",
           "attempt"
         ],
         "summary": "Attempt Get",
         "description": "Get attempt detail with parallel MV fetching.\n\nUses view internal handlers with pool-based parallel fetch:\n- View 1: simulation_attempts (attempt-level aggregates)\n- View 2: simulation_chats (chat-level data with grades/feedbacks)\n- View 3: simulation_messages (message-level data with strengths/improvements/hints)\n\nEach query runs on its own connection from the pool for true parallelism.\nThe practice flag is determined from the attempt data itself.",
-        "operationId": "attempt_get_api_v4_attempt_get_post",
+        "operationId": "attempt_get_api_v4_artifacts_attempt_get_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -13153,20 +13426,22 @@
         "x-cache-tags": [
           "v4",
           "artifacts",
+          "artifacts",
           "attempt"
         ]
       }
     },
-    "/api/v4/attempt/list": {
+    "/api/v4/artifacts/attempt/list": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "artifacts",
           "attempt"
         ],
         "summary": "List Attempts",
         "description": "Get unified attempt history list for home/practice style screens.",
-        "operationId": "list_attempts_api_v4_attempt_list_post",
+        "operationId": "list_attempts_api_v4_artifacts_attempt_list_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -13252,20 +13527,22 @@
         "x-cache-tags": [
           "v4",
           "artifacts",
+          "artifacts",
           "attempt"
         ]
       }
     },
-    "/api/v4/attempt/archive": {
+    "/api/v4/artifacts/attempt/archive": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "artifacts",
           "attempt"
         ],
         "summary": "Archive Attempts",
         "description": "Bulk archive or unarchive attempts (simulation or benchmark).",
-        "operationId": "archive_attempts_api_v4_attempt_archive_post",
+        "operationId": "archive_attempts_api_v4_artifacts_attempt_archive_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -13351,20 +13628,22 @@
         "x-cache-tags": [
           "v4",
           "artifacts",
+          "artifacts",
           "attempt"
         ]
       }
     },
-    "/api/v4/attempt/certificate": {
+    "/api/v4/artifacts/attempt/certificate": {
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "artifacts",
           "attempt"
         ],
         "summary": "Export Certificate",
         "description": "Generate a certificate PDF/text for a profile.",
-        "operationId": "export_certificate_api_v4_attempt_certificate_post",
+        "operationId": "export_certificate_api_v4_artifacts_attempt_certificate_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -13448,19 +13727,21 @@
         "x-cache-tags": [
           "v4",
           "artifacts",
+          "artifacts",
           "attempt"
         ]
       }
     },
-    "/api/v4/attempt/docs": {
+    "/api/v4/artifacts/attempt/docs": {
       "post": {
         "tags": [
           "v4",
           "artifacts",
+          "artifacts",
           "attempt"
         ],
         "summary": "Get Docs",
-        "operationId": "get_docs_api_v4_attempt_docs_post",
+        "operationId": "get_docs_api_v4_artifacts_attempt_docs_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -13519,7 +13800,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Get Docs Api V4 Attempt Docs Post"
+                  "title": "Response Get Docs Api V4 Artifacts Attempt Docs Post"
                 }
               }
             }
@@ -13538,6 +13819,7 @@
         "x-cache-tags": [
           "v4",
           "artifacts",
+          "artifacts",
           "attempt"
         ]
       }
@@ -13545,7 +13827,9 @@
     "/api/v4/artifacts/dashboard/get": {
       "post": {
         "tags": [
-          "v4"
+          "v4",
+          "artifacts",
+          "dashboard"
         ],
         "summary": "Get Dashboard",
         "description": "Get dashboard artifact data.\n\nFetches analytics MV slices in parallel and assembles dashboard bundle.\nBusiness calculations are performed in permissions.py.",
@@ -13633,14 +13917,18 @@
           }
         },
         "x-cache-tags": [
-          "v4"
+          "v4",
+          "artifacts",
+          "dashboard"
         ]
       }
     },
     "/api/v4/artifacts/dashboard/refresh": {
       "post": {
         "tags": [
-          "v4"
+          "v4",
+          "artifacts",
+          "dashboard"
         ],
         "summary": "Dashboard Refresh",
         "description": "Refresh all dashboard section materialized views.",
@@ -13728,14 +14016,18 @@
           }
         },
         "x-cache-tags": [
-          "v4"
+          "v4",
+          "artifacts",
+          "dashboard"
         ]
       }
     },
     "/api/v4/artifacts/dashboard/docs": {
       "post": {
         "tags": [
-          "v4"
+          "v4",
+          "artifacts",
+          "dashboard"
         ],
         "summary": "Get Docs",
         "operationId": "get_docs_api_v4_artifacts_dashboard_docs_post",
@@ -13814,7 +14106,9 @@
           }
         },
         "x-cache-tags": [
-          "v4"
+          "v4",
+          "artifacts",
+          "dashboard"
         ]
       }
     },
@@ -13822,6 +14116,8 @@
       "post": {
         "tags": [
           "v4",
+          "artifacts",
+          "reports",
           "reports"
         ],
         "summary": "Export Report",
@@ -13909,6 +14205,8 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
+          "reports",
           "reports"
         ]
       }
@@ -13916,7 +14214,9 @@
     "/api/v4/artifacts/reports/get": {
       "post": {
         "tags": [
-          "v4"
+          "v4",
+          "artifacts",
+          "reports"
         ],
         "summary": "Get Reports",
         "description": "Get reports artifact data.\n\nPulls four analytics MV slices in parallel and computes section skeletons.",
@@ -14004,14 +14304,18 @@
           }
         },
         "x-cache-tags": [
-          "v4"
+          "v4",
+          "artifacts",
+          "reports"
         ]
       }
     },
     "/api/v4/artifacts/reports/refresh": {
       "post": {
         "tags": [
-          "v4"
+          "v4",
+          "artifacts",
+          "reports"
         ],
         "summary": "Reports Refresh",
         "description": "Refresh all reports section materialized views.",
@@ -14099,14 +14403,18 @@
           }
         },
         "x-cache-tags": [
-          "v4"
+          "v4",
+          "artifacts",
+          "reports"
         ]
       }
     },
     "/api/v4/artifacts/reports/docs": {
       "post": {
         "tags": [
-          "v4"
+          "v4",
+          "artifacts",
+          "reports"
         ],
         "summary": "Get Docs",
         "operationId": "get_docs_api_v4_artifacts_reports_docs_post",
@@ -14185,14 +14493,18 @@
           }
         },
         "x-cache-tags": [
-          "v4"
+          "v4",
+          "artifacts",
+          "reports"
         ]
       }
     },
     "/api/v4/artifacts/leaderboard/get": {
       "post": {
         "tags": [
-          "v4"
+          "v4",
+          "artifacts",
+          "leaderboard"
         ],
         "summary": "Get Leaderboard",
         "description": "Get leaderboard artifact data.\n\nPulls four analytics MV slices in parallel and computes leaderboard\nsection skeletons.",
@@ -14280,14 +14592,18 @@
           }
         },
         "x-cache-tags": [
-          "v4"
+          "v4",
+          "artifacts",
+          "leaderboard"
         ]
       }
     },
     "/api/v4/artifacts/leaderboard/refresh": {
       "post": {
         "tags": [
-          "v4"
+          "v4",
+          "artifacts",
+          "leaderboard"
         ],
         "summary": "Leaderboard Refresh",
         "description": "Refresh all leaderboard section materialized views.",
@@ -14375,14 +14691,18 @@
           }
         },
         "x-cache-tags": [
-          "v4"
+          "v4",
+          "artifacts",
+          "leaderboard"
         ]
       }
     },
     "/api/v4/artifacts/leaderboard/docs": {
       "post": {
         "tags": [
-          "v4"
+          "v4",
+          "artifacts",
+          "leaderboard"
         ],
         "summary": "Get Docs",
         "operationId": "get_docs_api_v4_artifacts_leaderboard_docs_post",
@@ -14461,14 +14781,18 @@
           }
         },
         "x-cache-tags": [
-          "v4"
+          "v4",
+          "artifacts",
+          "leaderboard"
         ]
       }
     },
     "/api/v4/artifacts/pricing/get": {
       "post": {
         "tags": [
-          "v4"
+          "v4",
+          "artifacts",
+          "pricing"
         ],
         "summary": "Get Pricing",
         "description": "Get pricing artifact data.",
@@ -14556,14 +14880,18 @@
           }
         },
         "x-cache-tags": [
-          "v4"
+          "v4",
+          "artifacts",
+          "pricing"
         ]
       }
     },
     "/api/v4/artifacts/pricing/refresh": {
       "post": {
         "tags": [
-          "v4"
+          "v4",
+          "artifacts",
+          "pricing"
         ],
         "summary": "Pricing Refresh",
         "description": "Refresh all pricing section materialized views.",
@@ -14651,14 +14979,18 @@
           }
         },
         "x-cache-tags": [
-          "v4"
+          "v4",
+          "artifacts",
+          "pricing"
         ]
       }
     },
     "/api/v4/artifacts/pricing/docs": {
       "post": {
         "tags": [
-          "v4"
+          "v4",
+          "artifacts",
+          "pricing"
         ],
         "summary": "Get Docs",
         "operationId": "get_docs_api_v4_artifacts_pricing_docs_post",
@@ -14737,14 +15069,18 @@
           }
         },
         "x-cache-tags": [
-          "v4"
+          "v4",
+          "artifacts",
+          "pricing"
         ]
       }
     },
     "/api/v4/artifacts/activity/get": {
       "post": {
         "tags": [
-          "v4"
+          "v4",
+          "artifacts",
+          "activity"
         ],
         "summary": "Get Activity",
         "description": "Get activity artifact data.",
@@ -14832,7 +15168,9 @@
           }
         },
         "x-cache-tags": [
-          "v4"
+          "v4",
+          "artifacts",
+          "activity"
         ]
       }
     },
@@ -14840,6 +15178,8 @@
       "post": {
         "tags": [
           "v4",
+          "artifacts",
+          "activity",
           "activity"
         ],
         "summary": "Create Problem",
@@ -14929,6 +15269,8 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
+          "activity",
           "activity"
         ]
       }
@@ -14936,7 +15278,9 @@
     "/api/v4/artifacts/activity/refresh": {
       "post": {
         "tags": [
-          "v4"
+          "v4",
+          "artifacts",
+          "activity"
         ],
         "summary": "Activity Refresh",
         "description": "Refresh all activity section materialized views.",
@@ -15024,7 +15368,9 @@
           }
         },
         "x-cache-tags": [
-          "v4"
+          "v4",
+          "artifacts",
+          "activity"
         ]
       }
     },
@@ -15032,6 +15378,8 @@
       "post": {
         "tags": [
           "v4",
+          "artifacts",
+          "activity",
           "activity"
         ],
         "summary": "Resolve Problem",
@@ -15121,6 +15469,8 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
+          "activity",
           "activity"
         ]
       }
@@ -15128,7 +15478,9 @@
     "/api/v4/artifacts/activity/docs": {
       "post": {
         "tags": [
-          "v4"
+          "v4",
+          "artifacts",
+          "activity"
         ],
         "summary": "Get Docs",
         "operationId": "get_docs_api_v4_artifacts_activity_docs_post",
@@ -15207,14 +15559,18 @@
           }
         },
         "x-cache-tags": [
-          "v4"
+          "v4",
+          "artifacts",
+          "activity"
         ]
       }
     },
     "/api/v4/artifacts/health/get": {
       "post": {
         "tags": [
-          "v4"
+          "v4",
+          "artifacts",
+          "health"
         ],
         "summary": "Get Health",
         "description": "Get health artifact data.",
@@ -15302,14 +15658,18 @@
           }
         },
         "x-cache-tags": [
-          "v4"
+          "v4",
+          "artifacts",
+          "health"
         ]
       }
     },
     "/api/v4/artifacts/health/refresh": {
       "post": {
         "tags": [
-          "v4"
+          "v4",
+          "artifacts",
+          "health"
         ],
         "summary": "Health Refresh",
         "description": "Refresh all health section materialized views.",
@@ -15397,14 +15757,18 @@
           }
         },
         "x-cache-tags": [
-          "v4"
+          "v4",
+          "artifacts",
+          "health"
         ]
       }
     },
     "/api/v4/artifacts/health/docs": {
       "post": {
         "tags": [
-          "v4"
+          "v4",
+          "artifacts",
+          "health"
         ],
         "summary": "Get Docs",
         "operationId": "get_docs_api_v4_artifacts_health_docs_post",
@@ -15483,14 +15847,18 @@
           }
         },
         "x-cache-tags": [
-          "v4"
+          "v4",
+          "artifacts",
+          "health"
         ]
       }
     },
     "/api/v4/artifacts/benchmark/get": {
       "post": {
         "tags": [
-          "v4"
+          "v4",
+          "artifacts",
+          "benchmark"
         ],
         "summary": "Get Benchmark",
         "description": "Get benchmark artifact data with full resource hydration.",
@@ -15578,14 +15946,18 @@
           }
         },
         "x-cache-tags": [
-          "v4"
+          "v4",
+          "artifacts",
+          "benchmark"
         ]
       }
     },
     "/api/v4/artifacts/benchmark/refresh": {
       "post": {
         "tags": [
-          "v4"
+          "v4",
+          "artifacts",
+          "benchmark"
         ],
         "summary": "Benchmark Refresh",
         "description": "Refresh all benchmark section materialized views.",
@@ -15673,14 +16045,18 @@
           }
         },
         "x-cache-tags": [
-          "v4"
+          "v4",
+          "artifacts",
+          "benchmark"
         ]
       }
     },
     "/api/v4/artifacts/benchmark/docs": {
       "post": {
         "tags": [
-          "v4"
+          "v4",
+          "artifacts",
+          "benchmark"
         ],
         "summary": "Get Docs",
         "operationId": "get_docs_api_v4_artifacts_benchmark_docs_post",
@@ -15759,7 +16135,9 @@
           }
         },
         "x-cache-tags": [
-          "v4"
+          "v4",
+          "artifacts",
+          "benchmark"
         ]
       }
     },
@@ -15767,6 +16145,7 @@
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "artifacts",
           "test"
         ],
@@ -15858,6 +16237,7 @@
         "x-cache-tags": [
           "v4",
           "artifacts",
+          "artifacts",
           "test"
         ]
       }
@@ -15866,6 +16246,7 @@
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "artifacts",
           "test"
         ],
@@ -15957,6 +16338,7 @@
         "x-cache-tags": [
           "v4",
           "artifacts",
+          "artifacts",
           "test"
         ]
       }
@@ -15965,6 +16347,7 @@
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "artifacts",
           "test"
         ],
@@ -16056,6 +16439,7 @@
         "x-cache-tags": [
           "v4",
           "artifacts",
+          "artifacts",
           "test"
         ]
       }
@@ -16064,6 +16448,7 @@
       "post": {
         "tags": [
           "v4",
+          "artifacts",
           "artifacts",
           "test"
         ],
@@ -16145,6 +16530,7 @@
         },
         "x-cache-tags": [
           "v4",
+          "artifacts",
           "artifacts",
           "test"
         ]
@@ -43269,6 +43655,20 @@
             "type": "string",
             "format": "uuid",
             "title": "Attempt Id"
+          },
+          "previous_chat_map": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Chat Map"
           }
         },
         "type": "object",
@@ -43284,6 +43684,18 @@
             "type": "string",
             "format": "uuid",
             "title": "Chat Id"
+          },
+          "previous_chat_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Chat Id"
           }
         },
         "type": "object",

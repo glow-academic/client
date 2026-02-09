@@ -124,7 +124,7 @@ def test_parameter_create_validation_and_success(page: Page, base_url: str) -> N
         # Fallback: delete via API
         try:
             data = page.context.request.get(
-                f"{base_url.replace(':3000', ':8000')}/api/v4/parameters/list",
+                f"{base_url.replace(':3000', ':8000')}/api/v4/artifacts/parameters/list",
                 headers={"X-Bypass-Cache": "1"},
             )
             if data.ok:

@@ -34,8 +34,8 @@ import { Loader2, Sparkles } from "lucide-react";
 import { parseAsString, type Parser } from "nuqs";
 
 // Types defined inline using InputOf/OutputOf
-type SaveProviderIn = InputOf<"/api/v4/providers/save", "post">;
-type SaveProviderOut = OutputOf<"/api/v4/providers/save", "post">;
+type SaveProviderIn = InputOf<"/api/v4/artifacts/providers/save", "post">;
+type SaveProviderOut = OutputOf<"/api/v4/artifacts/providers/save", "post">;
 type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
@@ -48,10 +48,10 @@ type CreateDraftDescriptionsOut = OutputOf<
 >;
 type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
 type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
-type PatchProviderDraftIn = InputOf<"/api/v4/providers/draft", "patch">;
-type PatchProviderDraftOut = OutputOf<"/api/v4/providers/draft", "patch">;
+type PatchProviderDraftIn = InputOf<"/api/v4/artifacts/providers/draft", "patch">;
+type PatchProviderDraftOut = OutputOf<"/api/v4/artifacts/providers/draft", "patch">;
 
-type ProviderData = OutputOf<"/api/v4/providers/get", "post">;
+type ProviderData = OutputOf<"/api/v4/artifacts/providers/get", "post">;
 
 export interface ProviderProps {
   providerId?: string;

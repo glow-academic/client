@@ -110,7 +110,7 @@ const DocumentPreviewThumb = ({ document }: { document: DocumentRow }) => {
   return (
     <div className="h-12 w-10 rounded border overflow-hidden bg-muted/40">
       <img
-        src={`/api/uploads/download/${document.upload_id}?preview=true`}
+        src={`/api/resources/uploads/download/${document.upload_id}?preview=true`}
         alt={document.name ?? "Document preview"}
         className="h-full w-full object-cover"
         loading="lazy"

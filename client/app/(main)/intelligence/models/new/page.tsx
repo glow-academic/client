@@ -12,12 +12,12 @@ import type { Metadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetModelIn = InputOf<"/api/v4/models/get", "post">;
-type GetModelOut = OutputOf<"/api/v4/models/get", "post">;
-type SaveModelIn = InputOf<"/api/v4/models/save", "post">;
-type SaveModelOut = OutputOf<"/api/v4/models/save", "post">;
-type PatchModelDraftIn = InputOf<"/api/v4/models/draft", "patch">;
-type PatchModelDraftOut = OutputOf<"/api/v4/models/draft", "patch">;
+type GetModelIn = InputOf<"/api/v4/artifacts/models/get", "post">;
+type GetModelOut = OutputOf<"/api/v4/artifacts/models/get", "post">;
+type SaveModelIn = InputOf<"/api/v4/artifacts/models/save", "post">;
+type SaveModelOut = OutputOf<"/api/v4/artifacts/models/save", "post">;
+type PatchModelDraftIn = InputOf<"/api/v4/artifacts/models/draft", "patch">;
+type PatchModelDraftOut = OutputOf<"/api/v4/artifacts/models/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
@@ -63,7 +63,7 @@ type CreateDraftQualitiesOut = OutputOf<"/api/v4/resources/qualities", "post">;
 const getModelDetailDefault = async (
   input: GetModelIn
 ): Promise<GetModelOut> => {
-  return api.post("/models/get", input, {
+  return api.post("/artifacts/models/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -85,7 +85,7 @@ async function saveModel(input: SaveModelIn): Promise<SaveModelOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/models/save", input);
+  return api.post("/artifacts/models/save", input);
 }
 
 async function patchModelDraft(
@@ -94,7 +94,7 @@ async function patchModelDraft(
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.patch("/models/draft", input);
+  return api.patch("/artifacts/models/draft", input);
 }
 
 async function createDraftNames(

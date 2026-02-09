@@ -13,11 +13,11 @@ import type { Metadata } from "next";
 import { loadSimulationsListSearchParams } from "./listSearchParams";
 
 /** ---- Strong types from OpenAPI ---- */
-type SimulationsListOut = OutputOf<"/api/v4/simulations/list", "post">;
-type DuplicateSimulationIn = InputOf<"/api/v4/simulations/duplicate", "post">;
-type DuplicateSimulationOut = OutputOf<"/api/v4/simulations/duplicate", "post">;
-type DeleteSimulationIn = InputOf<"/api/v4/simulations/delete", "post">;
-type DeleteSimulationOut = OutputOf<"/api/v4/simulations/delete", "post">;
+type SimulationsListOut = OutputOf<"/api/v4/artifacts/simulations/list", "post">;
+type DuplicateSimulationIn = InputOf<"/api/v4/artifacts/simulations/duplicate", "post">;
+type DuplicateSimulationOut = OutputOf<"/api/v4/artifacts/simulations/duplicate", "post">;
+type DeleteSimulationIn = InputOf<"/api/v4/artifacts/simulations/delete", "post">;
+type DeleteSimulationOut = OutputOf<"/api/v4/artifacts/simulations/delete", "post">;
 
 /** ---- Body type for simulations list request ---- */
 type SimulationsListBody = {
@@ -39,7 +39,7 @@ type SimulationsListBody = {
 const getSimulationsList = async (body: SimulationsListBody): Promise<SimulationsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/simulations/list",
+    "/artifacts/simulations/list",
     { body },
     {
       cache: "no-store",
@@ -58,7 +58,7 @@ async function duplicateSimulation(
 ): Promise<DuplicateSimulationOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/simulations/duplicate", input);
+  return api.post("/artifacts/simulations/duplicate", input);
 }
 
 async function deleteSimulation(
@@ -66,7 +66,7 @@ async function deleteSimulation(
 ): Promise<DeleteSimulationOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/simulations/delete", input);
+  return api.post("/artifacts/simulations/delete", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {

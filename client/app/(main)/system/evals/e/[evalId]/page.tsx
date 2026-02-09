@@ -12,17 +12,17 @@ import type { Metadata } from "next";
 import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetEvalIn = InputOf<"/api/v4/evals/get", "post">;
-type GetEvalOut = OutputOf<"/api/v4/evals/get", "post">;
-type SaveEvalIn = InputOf<"/api/v4/evals/save", "post">;
-type SaveEvalOut = OutputOf<"/api/v4/evals/save", "post">;
-type PatchEvalDraftIn = InputOf<"/api/v4/evals/draft", "patch">;
-type PatchEvalDraftOut = OutputOf<"/api/v4/evals/draft", "patch">;
+type GetEvalIn = InputOf<"/api/v4/artifacts/evals/get", "post">;
+type GetEvalOut = OutputOf<"/api/v4/artifacts/evals/get", "post">;
+type SaveEvalIn = InputOf<"/api/v4/artifacts/evals/save", "post">;
+type SaveEvalOut = OutputOf<"/api/v4/artifacts/evals/save", "post">;
+type PatchEvalDraftIn = InputOf<"/api/v4/artifacts/evals/draft", "patch">;
+type PatchEvalDraftOut = OutputOf<"/api/v4/artifacts/evals/draft", "patch">;
 // Note: Run/stop eval functionality moved to websocket events (evals_start, evals_stop)
 
 /** ---- Direct fetch for eval detail ---- */
 const getEvalDetail = async (input: GetEvalIn): Promise<GetEvalOut> => {
-  return api.post("/evals/get", input, {
+  return api.post("/artifacts/evals/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -43,7 +43,7 @@ export async function generateMetadata(): Promise<Metadata> {
 async function saveEval(input: SaveEvalIn): Promise<SaveEvalOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/evals/save", input);
+  return api.post("/artifacts/evals/save", input);
 }
 
 async function patchEvalDraft(
@@ -51,7 +51,7 @@ async function patchEvalDraft(
 ): Promise<PatchEvalDraftOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.patch("/evals/draft", input);
+  return api.patch("/artifacts/evals/draft", input);
 }
 
 /** ---- Server renders client with typed data and actions ---- */

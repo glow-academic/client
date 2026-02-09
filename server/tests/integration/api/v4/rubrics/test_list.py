@@ -1,4 +1,4 @@
-"""Route tests for POST /api/v4/rubrics/list endpoint."""
+"""Route tests for POST /api/v4/artifacts/rubrics/list endpoint."""
 
 import asyncpg  # type: ignore
 import httpx
@@ -35,7 +35,7 @@ async def test_list_rubrics(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/rubrics/list",
+        "/api/v4/artifacts/rubrics/list",
         json={"department_ids": [str(dept_id)]},
     )
 
@@ -67,7 +67,7 @@ async def test_list_rubrics_empty_departments(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/rubrics/list",
+        "/api/v4/artifacts/rubrics/list",
         json={"department_ids": []},
     )
 
@@ -100,7 +100,7 @@ async def test_list_rubrics_permissions_superadmin(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/rubrics/list",
+        "/api/v4/artifacts/rubrics/list",
         json={"department_ids": [str(dept_id)]},
     )
 
@@ -165,7 +165,7 @@ async def test_list_rubrics_can_edit_with_active_simulation(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/rubrics/list",
+        "/api/v4/artifacts/rubrics/list",
         json={"department_ids": [str(dept_id)]},
     )
 
@@ -226,7 +226,7 @@ async def test_list_rubrics_can_delete_with_simulation_links(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/rubrics/list",
+        "/api/v4/artifacts/rubrics/list",
         json={"department_ids": [str(dept_id)]},
     )
 
@@ -275,7 +275,7 @@ async def test_list_rubrics_can_delete_allowed(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/rubrics/list",
+        "/api/v4/artifacts/rubrics/list",
         json={"department_ids": [str(dept_id)]},
     )
 

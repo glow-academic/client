@@ -1,4 +1,4 @@
-"""Route tests for POST /api/v4/cohorts/get endpoint (detail mode)."""
+"""Route tests for POST /api/v4/artifacts/cohorts/get endpoint (detail mode)."""
 
 import asyncpg  # type: ignore
 import httpx
@@ -37,7 +37,7 @@ async def test_get_cohort_detail(
     # v4 routes get profile_id from router dependency
     # Use unified get endpoint with cohort_id provided for detail mode
     response = await client.post(
-        "/api/v4/cohorts/get",
+        "/api/v4/artifacts/cohorts/get",
         json={
             "cohort_id": str(cohort_id),
             "draft_id": None,
@@ -68,7 +68,7 @@ async def test_get_cohort_detail_not_found(
     # v4 routes get profile_id from router dependency
     # Use unified get endpoint with cohort_id provided for detail mode
     response = await client.post(
-        "/api/v4/cohorts/get",
+        "/api/v4/artifacts/cohorts/get",
         json={
             "cohort_id": "00000000-0000-0000-0000-000000000000",
             "draft_id": None,

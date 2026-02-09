@@ -1,4 +1,4 @@
-"""Route tests for POST /api/v4/agents/detail endpoint."""
+"""Route tests for POST /api/v4/artifacts/agents/detail endpoint."""
 
 import asyncpg  # type: ignore
 import httpx
@@ -20,7 +20,7 @@ async def test_get_agent_detail(
 
     # v4 routes get profile_id from router dependency, not request body
     list_response = await client.post(
-        "/api/v4/agents/list",
+        "/api/v4/artifacts/agents/list",
         json={},
     )
     assert list_response.status_code == 200
@@ -33,7 +33,7 @@ async def test_get_agent_detail(
 
     # Get agent detail - v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/agents/detail",
+        "/api/v4/artifacts/agents/detail",
         json={"agentId": agent_id},
     )
 
@@ -108,7 +108,7 @@ async def test_get_agent_detail_no_debug_info(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/agents/detail",
+        "/api/v4/artifacts/agents/detail",
         json={"agentId": str(agent_id)},
     )
 
@@ -130,7 +130,7 @@ async def test_get_agent_detail_not_found(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/agents/detail",
+        "/api/v4/artifacts/agents/detail",
         json={"agentId": fake_id},
     )
 
@@ -149,7 +149,7 @@ async def test_get_agent_detail_model_mapping(
 
     # v4 routes get profile_id from router dependency
     list_response = await client.post(
-        "/api/v4/agents/list",
+        "/api/v4/artifacts/agents/list",
         json={},
     )
     assert list_response.status_code == 200
@@ -162,7 +162,7 @@ async def test_get_agent_detail_model_mapping(
 
     # Get agent detail
     response = await client.post(
-        "/api/v4/agents/detail",
+        "/api/v4/artifacts/agents/detail",
         json={"agentId": agent_id},
     )
 
@@ -209,7 +209,7 @@ async def test_get_agent_detail_optimization(
 
     # v4 routes get profile_id from router dependency
     list_response = await client.post(
-        "/api/v4/agents/list",
+        "/api/v4/artifacts/agents/list",
         json={},
     )
     assert list_response.status_code == 200
@@ -221,7 +221,7 @@ async def test_get_agent_detail_optimization(
     agent_id = list_data["agents"][0]["agent_id"]
 
     response = await client.post(
-        "/api/v4/agents/detail",
+        "/api/v4/artifacts/agents/detail",
         json={"agentId": agent_id},
     )
 

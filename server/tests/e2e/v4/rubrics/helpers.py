@@ -101,7 +101,7 @@ def fetch_rubrics_list(
     )
     return _post_json(
         request,
-        "/api/v4/rubrics/list",
+        "/api/v4/artifacts/rubrics/list",
         {"profileId": resolved_effective},
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
@@ -125,7 +125,7 @@ def fetch_rubric_detail(
     )
     return _post_json(
         request,
-        "/api/v4/rubrics/detail",
+        "/api/v4/artifacts/rubrics/detail",
         {"rubricId": rubric_id, "profileId": resolved_effective},
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
@@ -148,7 +148,7 @@ def fetch_rubric_new(
     )
     return _post_json(
         request,
-        "/api/v4/rubrics/new",
+        "/api/v4/artifacts/rubrics/new",
         {"profileId": resolved_effective},
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
@@ -186,7 +186,7 @@ def create_rubric_api(
     }
     data: dict[str, Any] = _post_json(
         request,
-        "/api/v4/rubrics/create",
+        "/api/v4/artifacts/rubrics/create",
         payload,
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
@@ -213,7 +213,7 @@ def delete_rubric_api(
     )
     _post_json(
         request,
-        "/api/v4/rubrics/delete",
+        "/api/v4/artifacts/rubrics/delete",
         {"rubricId": rubric_id},
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,

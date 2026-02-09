@@ -1,4 +1,4 @@
-"""Route tests for POST /api/v4/cohorts/leave endpoint."""
+"""Route tests for POST /api/v4/artifacts/cohorts/leave endpoint."""
 
 import asyncpg  # type: ignore
 import httpx
@@ -67,7 +67,7 @@ async def test_leave_cohort(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/cohorts/leave",
+        "/api/v4/artifacts/cohorts/leave",
         json={"cohortId": str(cohort_id)},
     )
 

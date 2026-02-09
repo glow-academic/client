@@ -16,8 +16,8 @@ import { loadActivitySearchParams } from "./searchParams";
 /** ---- Strong types from OpenAPI ---- */
 type ActivityBundleIn = InputOf<"/api/v4/artifacts/activity/get", "post">;
 type ActivityBundleOut = OutputOf<"/api/v4/artifacts/activity/get", "post">;
-type ActivityListIn = InputOf<"/api/v4/session/list", "post">;
-type ActivityListOut = OutputOf<"/api/v4/session/list", "post">;
+type ActivityListIn = InputOf<"/api/v4/artifacts/session/list", "post">;
+type ActivityListOut = OutputOf<"/api/v4/artifacts/session/list", "post">;
 
 export type ActivityOut = {
   bundleData: ActivityBundleOut | null;
@@ -45,7 +45,7 @@ const getActivityList = async (
 ): Promise<ActivityListOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/session/list", input, {
+  return api.post("/artifacts/session/list", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {

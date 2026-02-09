@@ -1,4 +1,4 @@
-"""Route tests for POST /api/v4/agents/new endpoint."""
+"""Route tests for POST /api/v4/artifacts/agents/new endpoint."""
 
 import asyncpg  # type: ignore
 import httpx
@@ -16,7 +16,7 @@ async def test_get_agent_new(
 
     # v4 routes get profile_id from router dependency, not request body
     response = await client.post(
-        "/api/v4/agents/new",
+        "/api/v4/artifacts/agents/new",
         json={},
     )
 
@@ -84,7 +84,7 @@ async def test_get_agent_new_includes_models(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/agents/new",
+        "/api/v4/artifacts/agents/new",
         json={},
     )
 
@@ -113,7 +113,7 @@ async def test_get_agent_new_includes_departments(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/agents/new",
+        "/api/v4/artifacts/agents/new",
         json={},
     )
 

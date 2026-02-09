@@ -17,7 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useMemo } from "react";
 import type { OutputOf } from "@/lib/api/types";
 
-type AgentDetailOut = OutputOf<"/api/v4/agents/detail", "post">;
+type AgentDetailOut = OutputOf<"/api/v4/artifacts/agents/detail", "post">;
 
 export interface AgentConfigCardProps {
   agentId: string;

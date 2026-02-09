@@ -21,7 +21,7 @@ import type { Metadata, ResolvingMetadata } from "next";
 const getAttemptDetail = async (
   attemptId: string,
 ): Promise<AttemptDetailOut> => {
-  return api.post("/attempt/get", {
+  return api.post("/artifacts/attempt/get", {
     body: { attempt_id: attemptId },
   }, {
     cache: "no-store",

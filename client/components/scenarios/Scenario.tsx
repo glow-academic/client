@@ -54,11 +54,11 @@ import { Sparkles } from "lucide-react";
 import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
 // Types defined inline using InputOf/OutputOf
-type GetScenarioOut = OutputOf<"/api/v4/scenarios/get", "post">;
-type SaveScenarioIn = InputOf<"/api/v4/scenarios/save", "post">;
-type SaveScenarioOut = OutputOf<"/api/v4/scenarios/save", "post">;
-type PatchScenarioDraftIn = InputOf<"/api/v4/scenarios/draft", "patch">;
-type PatchScenarioDraftOut = OutputOf<"/api/v4/scenarios/draft", "patch">;
+type GetScenarioOut = OutputOf<"/api/v4/artifacts/scenarios/get", "post">;
+type SaveScenarioIn = InputOf<"/api/v4/artifacts/scenarios/save", "post">;
+type SaveScenarioOut = OutputOf<"/api/v4/artifacts/scenarios/save", "post">;
+type PatchScenarioDraftIn = InputOf<"/api/v4/artifacts/scenarios/draft", "patch">;
+type PatchScenarioDraftOut = OutputOf<"/api/v4/artifacts/scenarios/draft", "patch">;
 
 type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;

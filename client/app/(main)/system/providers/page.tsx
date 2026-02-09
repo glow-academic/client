@@ -9,9 +9,9 @@ import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type ProvidersListOut = OutputOf<"/api/v4/providers/list", "post">;
-type DeleteProviderIn = InputOf<"/api/v4/providers/delete", "post">;
-type DeleteProviderOut = OutputOf<"/api/v4/providers/delete", "post">;
+type ProvidersListOut = OutputOf<"/api/v4/artifacts/providers/list", "post">;
+type DeleteProviderIn = InputOf<"/api/v4/artifacts/providers/delete", "post">;
+type DeleteProviderOut = OutputOf<"/api/v4/artifacts/providers/delete", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
@@ -20,7 +20,7 @@ type DeleteProviderOut = OutputOf<"/api/v4/providers/delete", "post">;
 const getProvidersList = async (): Promise<ProvidersListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/providers/list",
+    "/artifacts/providers/list",
     { body: {} },
     {
       cache: "no-store",
@@ -39,7 +39,7 @@ async function deleteProvider(
 ): Promise<DeleteProviderOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/providers/delete", {
+  return api.post("/artifacts/providers/delete", {
     ...input,
     body: { ...input.body },
   });

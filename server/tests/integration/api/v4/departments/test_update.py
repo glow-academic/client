@@ -1,4 +1,4 @@
-"""Route tests for POST /api/v4/departments/update endpoint."""
+"""Route tests for POST /api/v4/artifacts/departments/update endpoint."""
 
 from uuid import UUID
 
@@ -38,7 +38,7 @@ async def test_update_department(
 
     # v4 routes get profile_id from router dependency, not request body
     response = await client.post(
-        "/api/v4/departments/update",
+        "/api/v4/artifacts/departments/update",
         json={
             "departmentId": str(dept_id),
             "title": "Updated Title",
@@ -77,7 +77,7 @@ async def test_update_department_not_found(
 
     # v4 routes get profile_id from router dependency, not request body
     response = await client.post(
-        "/api/v4/departments/update",
+        "/api/v4/artifacts/departments/update",
         json={
             "departmentId": fake_dept_id,
             "title": "Updated Title",

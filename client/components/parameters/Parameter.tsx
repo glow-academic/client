@@ -41,8 +41,8 @@ import { Loader2, Sparkles } from "lucide-react";
 import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
 // Types defined inline using InputOf/OutputOf
-type SaveParameterIn = InputOf<"/api/v4/parameters/save", "post">;
-type SaveParameterOut = OutputOf<"/api/v4/parameters/save", "post">;
+type SaveParameterIn = InputOf<"/api/v4/artifacts/parameters/save", "post">;
+type SaveParameterOut = OutputOf<"/api/v4/artifacts/parameters/save", "post">;
 type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
@@ -65,10 +65,10 @@ type CreateDraftDepartmentsOut = OutputOf<
   "/api/v4/resources/departments",
   "post"
 >;
-type PatchParameterDraftIn = InputOf<"/api/v4/parameters/draft", "patch">;
-type PatchParameterDraftOut = OutputOf<"/api/v4/parameters/draft", "patch">;
+type PatchParameterDraftIn = InputOf<"/api/v4/artifacts/parameters/draft", "patch">;
+type PatchParameterDraftOut = OutputOf<"/api/v4/artifacts/parameters/draft", "patch">;
 
-type ParameterData = OutputOf<"/api/v4/parameters/get", "post">;
+type ParameterData = OutputOf<"/api/v4/artifacts/parameters/get", "post">;
 
 export interface ParameterProps {
   parameterId?: string;

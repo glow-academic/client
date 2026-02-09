@@ -1,4 +1,4 @@
-"""Route tests for POST /api/v4/documents/detail-bulk endpoint."""
+"""Route tests for POST /api/v4/artifacts/documents/detail-bulk endpoint."""
 
 import asyncpg  # type: ignore
 import httpx
@@ -78,7 +78,7 @@ async def test_get_document_detail_bulk(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/documents/detail-bulk",
+        "/api/v4/artifacts/documents/detail-bulk",
         json={"document_ids": [str(doc1_id), str(doc2_id)]},
     )
 
@@ -109,7 +109,7 @@ async def test_get_document_detail_bulk_not_found(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/documents/detail-bulk",
+        "/api/v4/artifacts/documents/detail-bulk",
         json={"document_ids": ["00000000-0000-0000-0000-000000000000"]},
     )
 

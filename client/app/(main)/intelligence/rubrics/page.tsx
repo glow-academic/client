@@ -11,13 +11,13 @@ import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type RubricsListOut = OutputOf<"/api/v4/rubrics/list", "post">;
-type DuplicateRubricIn = InputOf<"/api/v4/rubrics/duplicate", "post">;
-type DuplicateRubricOut = OutputOf<"/api/v4/rubrics/duplicate", "post">;
-type DeleteRubricIn = InputOf<"/api/v4/rubrics/delete", "post">;
-type DeleteRubricOut = OutputOf<"/api/v4/rubrics/delete", "post">;
-type SaveRubricIn = InputOf<"/api/v4/rubrics/save", "post">;
-type SaveRubricOut = OutputOf<"/api/v4/rubrics/save", "post">;
+type RubricsListOut = OutputOf<"/api/v4/artifacts/rubrics/list", "post">;
+type DuplicateRubricIn = InputOf<"/api/v4/artifacts/rubrics/duplicate", "post">;
+type DuplicateRubricOut = OutputOf<"/api/v4/artifacts/rubrics/duplicate", "post">;
+type DeleteRubricIn = InputOf<"/api/v4/artifacts/rubrics/delete", "post">;
+type DeleteRubricOut = OutputOf<"/api/v4/artifacts/rubrics/delete", "post">;
+type SaveRubricIn = InputOf<"/api/v4/artifacts/rubrics/save", "post">;
+type SaveRubricOut = OutputOf<"/api/v4/artifacts/rubrics/save", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
@@ -26,7 +26,7 @@ type SaveRubricOut = OutputOf<"/api/v4/rubrics/save", "post">;
 const getRubricsList = async (): Promise<RubricsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/rubrics/list",
+    "/artifacts/rubrics/list",
     { body: {} },
     {
       cache: "no-store",
@@ -46,7 +46,7 @@ export async function duplicateRubric(
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/rubrics/duplicate", input);
+  return api.post("/artifacts/rubrics/duplicate", input);
 }
 
 export async function deleteRubric(
@@ -55,14 +55,14 @@ export async function deleteRubric(
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/rubrics/delete", input);
+  return api.post("/artifacts/rubrics/delete", input);
 }
 
 export async function saveRubric(input: SaveRubricIn): Promise<SaveRubricOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/rubrics/save", input);
+  return api.post("/artifacts/rubrics/save", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {

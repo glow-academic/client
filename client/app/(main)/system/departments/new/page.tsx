@@ -13,14 +13,14 @@ import { createLoader, parseAsString } from "nuqs/server";
 import { cache } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetDepartmentIn = InputOf<"/api/v4/departments/get", "post">;
-type GetDepartmentOut = OutputOf<"/api/v4/departments/get", "post">;
+type GetDepartmentIn = InputOf<"/api/v4/artifacts/departments/get", "post">;
+type GetDepartmentOut = OutputOf<"/api/v4/artifacts/departments/get", "post">;
 
-type SaveDepartmentIn = InputOf<"/api/v4/departments/save", "post">;
-type SaveDepartmentOut = OutputOf<"/api/v4/departments/save", "post">;
+type SaveDepartmentIn = InputOf<"/api/v4/artifacts/departments/save", "post">;
+type SaveDepartmentOut = OutputOf<"/api/v4/artifacts/departments/save", "post">;
 
-type PatchDepartmentDraftIn = InputOf<"/api/v4/departments/draft", "patch">;
-type PatchDepartmentDraftOut = OutputOf<"/api/v4/departments/draft", "patch">;
+type PatchDepartmentDraftIn = InputOf<"/api/v4/artifacts/departments/draft", "patch">;
+type PatchDepartmentDraftOut = OutputOf<"/api/v4/artifacts/departments/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
@@ -39,7 +39,7 @@ type CreateDraftSettingsOut = OutputOf<"/api/v4/resources/settings", "post">;
 /** ---- Cached fetch used by both page + metadata (prevents double hit) ---- */
 const getDepartmentDefault = cache(
   async (input: GetDepartmentIn): Promise<GetDepartmentOut> => {
-    return api.post("/departments/get", input, {
+    return api.post("/artifacts/departments/get", input, {
       cache: "no-store",
       headers: {
         "X-Bypass-Cache": "1",
@@ -53,7 +53,7 @@ async function saveDepartment(
   input: SaveDepartmentIn
 ): Promise<SaveDepartmentOut> {
   "use server";
-  const out = await api.post("/departments/save", input);
+  const out = await api.post("/artifacts/departments/save", input);
   // No revalidateTag needed - Redis cache handles invalidation
   return out;
 }
@@ -92,7 +92,7 @@ async function patchDepartmentDraft(
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.patch("/departments/draft", input);
+  return api.patch("/artifacts/departments/draft", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {

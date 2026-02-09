@@ -10,12 +10,12 @@ import type { Metadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetSettingIn = InputOf<"/api/v4/settings/get", "post">;
-type GetSettingOut = OutputOf<"/api/v4/settings/get", "post">;
-type SaveSettingIn = InputOf<"/api/v4/settings/save", "post">;
-type SaveSettingOut = OutputOf<"/api/v4/settings/save", "post">;
-type PatchSettingDraftIn = InputOf<"/api/v4/settings/draft", "patch">;
-type PatchSettingDraftOut = OutputOf<"/api/v4/settings/draft", "patch">;
+type GetSettingIn = InputOf<"/api/v4/artifacts/settings/get", "post">;
+type GetSettingOut = OutputOf<"/api/v4/artifacts/settings/get", "post">;
+type SaveSettingIn = InputOf<"/api/v4/artifacts/settings/save", "post">;
+type SaveSettingOut = OutputOf<"/api/v4/artifacts/settings/save", "post">;
+type PatchSettingDraftIn = InputOf<"/api/v4/artifacts/settings/draft", "patch">;
+type PatchSettingDraftOut = OutputOf<"/api/v4/artifacts/settings/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
@@ -57,7 +57,7 @@ type CreateDraftKeysOut = OutputOf<"/api/v4/resources/keys", "post">;
 const getSettingDefault = async (
   input: GetSettingIn
 ): Promise<GetSettingOut> => {
-  return api.post("/settings/get", input, {
+  return api.post("/artifacts/settings/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -70,7 +70,7 @@ async function saveSetting(input: SaveSettingIn): Promise<SaveSettingOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/settings/save", input);
+  return api.post("/artifacts/settings/save", input);
 }
 
 async function patchSettingDraft(
@@ -78,7 +78,7 @@ async function patchSettingDraft(
 ): Promise<PatchSettingDraftOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.patch("/settings/draft", input);
+  return api.patch("/artifacts/settings/draft", input);
 }
 
 async function createDraftNames(

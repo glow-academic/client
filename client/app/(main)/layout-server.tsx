@@ -18,7 +18,7 @@ type CreateFeedbackIn = InputOf<"/api/v4/artifacts/activity/problem", "post">;
 type CreateFeedbackOut = OutputOf<"/api/v4/artifacts/activity/problem", "post">;
 /** Page-specific refresh endpoint mapping */
 const REFRESH_ENDPOINT_MAP: Record<string, string> = {
-  training: "/training/refresh",
+  training: "/artifacts/training/refresh",
   dashboard: "/artifacts/dashboard/refresh",
   leaderboard: "/artifacts/leaderboard/refresh",
   reports: "/artifacts/reports/refresh",
@@ -27,22 +27,22 @@ const REFRESH_ENDPOINT_MAP: Record<string, string> = {
   activity: "/artifacts/activity/refresh",
   health: "/artifacts/health/refresh",
 };
-type AttemptFullIn = InputOf<"/api/v4/attempt/get", "post">;
-type AttemptFullOut = OutputOf<"/api/v4/attempt/get", "post">;
+type AttemptFullIn = InputOf<"/api/v4/artifacts/attempt/get", "post">;
+type AttemptFullOut = OutputOf<"/api/v4/artifacts/attempt/get", "post">;
 type SearchSimulatableProfilesIn = InputOf<"/api/v4/auth/simulatable", "post">;
 type SearchSimulatableProfilesOut = OutputOf<
   "/api/v4/auth/simulatable",
   "post"
 >;
-type SearchStaffIn = InputOf<"/api/v4/profiles/bulk/search", "post">;
-type SearchStaffOut = OutputOf<"/api/v4/profiles/bulk/search", "post">;
+type SearchStaffIn = InputOf<"/api/v4/artifacts/profiles/bulk/search", "post">;
+type SearchStaffOut = OutputOf<"/api/v4/artifacts/profiles/bulk/search", "post">;
 // Use profiles/get with null target_profile_id to get create staff data (replaces staff/data/create)
-type GetProfileIn = InputOf<"/api/v4/profiles/get", "post">;
-type GetProfileOut = OutputOf<"/api/v4/profiles/get", "post">;
-type ProcessCSVIn = InputOf<"/api/v4/profiles/bulk/process", "post">;
-type ProcessCSVOut = OutputOf<"/api/v4/profiles/bulk/process", "post">;
-type BulkCreateOrUpdateStaffIn = InputOf<"/api/v4/profiles/bulk/save", "post">;
-type BulkCreateOrUpdateStaffOut = OutputOf<"/api/v4/profiles/bulk/save", "post">;
+type GetProfileIn = InputOf<"/api/v4/artifacts/profiles/get", "post">;
+type GetProfileOut = OutputOf<"/api/v4/artifacts/profiles/get", "post">;
+type ProcessCSVIn = InputOf<"/api/v4/artifacts/profiles/bulk/process", "post">;
+type ProcessCSVOut = OutputOf<"/api/v4/artifacts/profiles/bulk/process", "post">;
+type BulkCreateOrUpdateStaffIn = InputOf<"/api/v4/artifacts/profiles/bulk/save", "post">;
+type BulkCreateOrUpdateStaffOut = OutputOf<"/api/v4/artifacts/profiles/bulk/save", "post">;
 /** ---- Client-side settings type (excludes guestProfileId) ----
  * guestProfileId is server-side only and should not be exposed to client components
  *
@@ -130,7 +130,7 @@ const getAttemptFull = async (
   _attemptId: string,
   input: AttemptFullIn
 ): Promise<AttemptFullOut> => {
-  return api.post("/attempt/get", input, {
+  return api.post("/artifacts/attempt/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -425,7 +425,7 @@ export async function searchStaff(
   input: SearchStaffIn
 ): Promise<SearchStaffOut> {
   "use server";
-  return api.post("/profiles/bulk/search", input);
+  return api.post("/artifacts/profiles/bulk/search", input);
 }
 
 export async function getCreateStaffData(
@@ -437,7 +437,7 @@ export async function getCreateStaffData(
 
 export async function processCSV(input: ProcessCSVIn): Promise<ProcessCSVOut> {
   "use server";
-  return api.post("/profiles/bulk/process", input);
+  return api.post("/artifacts/profiles/bulk/process", input);
 }
 
 export async function bulkCreateOrUpdateStaff(
@@ -445,7 +445,7 @@ export async function bulkCreateOrUpdateStaff(
 ): Promise<BulkCreateOrUpdateStaffOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/profiles/bulk/save", input);
+  return api.post("/artifacts/profiles/bulk/save", input);
 }
 
 /** ---- Export types for client component (type-only imports) ---- */

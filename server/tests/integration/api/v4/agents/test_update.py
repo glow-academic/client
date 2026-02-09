@@ -1,4 +1,4 @@
-"""Route tests for POST /api/v4/agents/update endpoint."""
+"""Route tests for POST /api/v4/artifacts/agents/update endpoint."""
 
 import asyncpg  # type: ignore
 import httpx
@@ -65,7 +65,7 @@ async def test_update_agent(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/agents/update",
+        "/api/v4/artifacts/agents/update",
         json={
             "agentId": str(agent_id),
             "name": "Updated Name",
@@ -171,7 +171,7 @@ async def test_update_agent_with_existing_prompt(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/agents/update",
+        "/api/v4/artifacts/agents/update",
         json={
             "agentId": str(agent_id),
             "name": "Updated Agent",
@@ -275,7 +275,7 @@ async def test_update_agent_removes_department_links(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/agents/update",
+        "/api/v4/artifacts/agents/update",
         json={
             "agentId": str(agent_id),
             "name": "Test Agent",
@@ -339,7 +339,7 @@ async def test_update_agent_not_found(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/agents/update",
+        "/api/v4/artifacts/agents/update",
         json={
             "agentId": fake_agent_id,
             "name": "Test",
@@ -394,7 +394,7 @@ async def test_update_agent_empty_model_id(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/agents/update",
+        "/api/v4/artifacts/agents/update",
         json={
             "agentId": str(agent_id),
             "name": "Updated Name",

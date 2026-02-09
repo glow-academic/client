@@ -1,4 +1,4 @@
-"""Route tests for POST /api/v4/agents/delete endpoint."""
+"""Route tests for POST /api/v4/artifacts/agents/delete endpoint."""
 
 import asyncpg  # type: ignore
 import httpx
@@ -48,7 +48,7 @@ async def test_delete_agent(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/agents/delete",
+        "/api/v4/artifacts/agents/delete",
         json={"agentId": str(agent_id)},
     )
 
@@ -127,7 +127,7 @@ async def test_delete_agent_in_use(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/agents/delete",
+        "/api/v4/artifacts/agents/delete",
         json={"agentId": str(agent_id)},
     )
 
@@ -158,7 +158,7 @@ async def test_delete_agent_not_found(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/agents/delete",
+        "/api/v4/artifacts/agents/delete",
         json={"agentId": fake_agent_id},
     )
 

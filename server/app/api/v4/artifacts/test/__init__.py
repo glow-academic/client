@@ -7,7 +7,7 @@ from app.api.v4.artifacts.test.docs import router as docs_router
 from app.api.v4.artifacts.test.get import router as get_router
 from app.api.v4.artifacts.test.list import router as list_router
 
-router = APIRouter(tags=["artifacts", "test"])
+router = APIRouter(prefix="/test", tags=["artifacts", "test"])
 
 router.include_router(get_router)
 router.include_router(list_router)

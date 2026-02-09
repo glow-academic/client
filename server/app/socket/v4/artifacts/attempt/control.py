@@ -17,7 +17,7 @@ from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.websocket.cancel_active_run import cancel_active_run
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
-from app.main import get_internal_sio, sio
+from app.main import sio
 from app.socket.v4.artifacts.attempt.types import (
     AttemptChatEndedEvent,
     AttemptEndAllPayload,
@@ -31,8 +31,6 @@ from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
-
-internal_sio = get_internal_sio()
 
 client_router = APIRouter()
 server_router = APIRouter()
@@ -215,6 +213,25 @@ async def _attempt_end_impl(
             """
             await conn.execute(insert_completion_sql, chat_id_uuid)
 
+            # Copy grade from previous chat if provided (Use Previous flow)
+            if data.previous_chat_id:
+                copy_grade_sql = """
+                    INSERT INTO simulation_grades_entry (
+                        chat_id, run_id, rubric_grade_agent_id, rubric_id,
+                        score, passed, time_taken, total_points, pass_points,
+                        generated, active
+                    )
+                    SELECT $2, g.run_id, g.rubric_grade_agent_id, g.rubric_id,
+                           g.score, g.passed, g.time_taken, g.total_points, g.pass_points,
+                           g.generated, true
+                    FROM simulation_grades_entry g
+                    WHERE g.chat_id = $1 AND g.active = true
+                    ORDER BY g.created_at DESC
+                    LIMIT 1
+                """
+                prev_chat_uuid = uuid.UUID(str(data.previous_chat_id))
+                await conn.execute(copy_grade_sql, prev_chat_uuid, chat_id_uuid)
+
             # Create end_conversation call entry
             end_conv_sql = """
                 WITH last_run AS (
@@ -258,19 +275,6 @@ async def _attempt_end_impl(
 
             if next_scenario_row and next_scenario_row.get("has_next_scenario"):
                 is_attempt_finished = False
-                # There's a next scenario - emit to next.py handler
-                next_scenario_id = next_scenario_row.get("next_scenario_id")
-                simulation_id = next_scenario_row.get("simulation_id")
-                if next_scenario_id and simulation_id:
-                    await internal_sio.emit(
-                        "simulation_next",
-                        {
-                            "attempt_id": attempt_id,
-                            "scenario_id": str(next_scenario_id),
-                            "profile_id": str(profile_id),
-                            "simulation_id": str(simulation_id),
-                        },
-                    )
 
             # Emit attempt_chat_ended event
             event = AttemptChatEndedEvent(
@@ -430,6 +434,49 @@ async def _attempt_end_all_impl(sid: str, data: AttemptEndAllPayload) -> None:
                     str(uuid.uuid4()),
                     '{"end_reason":"user_ended_all"}',
                 )
+
+            # Copy grades from previous chats if provided (Use Previous flow)
+            if data.previous_chat_map:
+                copy_grade_sql = """
+                    INSERT INTO simulation_grades_entry (
+                        chat_id, run_id, rubric_grade_agent_id, rubric_id,
+                        score, passed, time_taken, total_points, pass_points,
+                        generated, active
+                    )
+                    SELECT $2, g.run_id, g.rubric_grade_agent_id, g.rubric_id,
+                           g.score, g.passed, g.time_taken, g.total_points, g.pass_points,
+                           g.generated, true
+                    FROM simulation_grades_entry g
+                    WHERE g.chat_id = $1 AND g.active = true
+                    ORDER BY g.created_at DESC
+                    LIMIT 1
+                """
+                find_chat_sql = """
+                    SELECT c.id
+                    FROM simulation_chats_entry c
+                    JOIN simulation_chats_scenarios_connection csc ON csc.chat_id = c.id
+                    JOIN scenario_scenarios_junction ssj ON ssj.scenarios_id = csc.scenarios_id
+                    WHERE c.attempt_id = $1 AND ssj.scenario_id = $2 AND c.active = TRUE
+                    LIMIT 1
+                """
+                for scenario_id_str, prev_chat_id_str in data.previous_chat_map.items():
+                    if prev_chat_id_str:
+                        try:
+                            chat_row = await conn.fetchrow(
+                                find_chat_sql,
+                                attempt_id_uuid,
+                                uuid.UUID(scenario_id_str),
+                            )
+                            if chat_row:
+                                await conn.execute(
+                                    copy_grade_sql,
+                                    uuid.UUID(prev_chat_id_str),
+                                    chat_row["id"],
+                                )
+                        except Exception as e:
+                            logger.warning(
+                                f"Failed to copy grade for scenario {scenario_id_str}: {e}"
+                            )
 
             # Emit attempt_ended event
             event = AttemptEndedEvent(

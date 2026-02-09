@@ -13,10 +13,10 @@ import { createLoader, parseAsString } from "nuqs/server";
 import { cache } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetStaffIn = InputOf<"/api/v4/profiles/get", "post">;
-type GetStaffOut = OutputOf<"/api/v4/profiles/get", "post">;
-type SaveStaffIn = InputOf<"/api/v4/profiles/save", "post">;
-type SaveStaffOut = OutputOf<"/api/v4/profiles/save", "post">;
+type GetStaffIn = InputOf<"/api/v4/artifacts/profiles/get", "post">;
+type GetStaffOut = OutputOf<"/api/v4/artifacts/profiles/get", "post">;
+type SaveStaffIn = InputOf<"/api/v4/artifacts/profiles/save", "post">;
+type SaveStaffOut = OutputOf<"/api/v4/artifacts/profiles/save", "post">;
 type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
 type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
@@ -39,13 +39,13 @@ type CreateDraftRequestLimitsOut = OutputOf<
   "/api/v4/resources/request_limits",
   "post"
 >;
-type PatchProfileDraftIn = InputOf<"/api/v4/profiles/draft", "patch">;
-type PatchProfileDraftOut = OutputOf<"/api/v4/profiles/draft", "patch">;
+type PatchProfileDraftIn = InputOf<"/api/v4/artifacts/profiles/draft", "patch">;
+type PatchProfileDraftOut = OutputOf<"/api/v4/artifacts/profiles/draft", "patch">;
 
 /** ---- Direct fetch (no caching - source of truth) ---- */
 const getStaffDefault = cache(
   async (input: GetStaffIn): Promise<GetStaffOut> => {
-    return api.post("/profiles/get", input, {
+    return api.post("/artifacts/profiles/get", input, {
       cache: "no-store",
       headers: {
         "X-Bypass-Cache": "1",
@@ -59,7 +59,7 @@ async function saveStaff(input: SaveStaffIn): Promise<SaveStaffOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/profiles/save", input);
+  return api.post("/artifacts/profiles/save", input);
 }
 
 async function createDraftNames(
@@ -107,7 +107,7 @@ async function patchProfileDraft(
 ): Promise<PatchProfileDraftOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.patch("/profiles/draft", input);
+  return api.patch("/artifacts/profiles/draft", input);
 }
 
 /** ---- Metadata ---- */

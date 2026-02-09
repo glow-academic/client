@@ -1,4 +1,4 @@
-"""Route tests for POST /api/v4/agents/create endpoint."""
+"""Route tests for POST /api/v4/artifacts/agents/create endpoint."""
 
 from uuid import UUID
 
@@ -49,7 +49,7 @@ async def test_create_agent(
     dept_id = typed_dept.department_id
 
     response = await client.post(
-        "/api/v4/agents/create",
+        "/api/v4/artifacts/agents/create",
         json={
             "name": "Test Agent",
             "description": "Test Description",
@@ -139,7 +139,7 @@ async def test_create_agent_with_existing_prompt(
     model_id = typed_model.model_id
 
     response = await client.post(
-        "/api/v4/agents/create",
+        "/api/v4/artifacts/agents/create",
         json={
             "name": "Agent With Prompt",
             "description": "Test",
@@ -189,7 +189,7 @@ async def test_create_agent_without_departments(
     model_id = typed_model.model_id
 
     response = await client.post(
-        "/api/v4/agents/create",
+        "/api/v4/artifacts/agents/create",
         json={
             "name": "Cross-Dept Agent",
             "description": "Available to all departments",
@@ -238,7 +238,7 @@ async def test_create_agent_invalid_model(
     fake_model_id = "00000000-0000-0000-0000-000000000000"
 
     response = await client.post(
-        "/api/v4/agents/create",
+        "/api/v4/artifacts/agents/create",
         json={
             "name": "Invalid Agent",
             "description": "Test",

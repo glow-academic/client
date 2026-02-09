@@ -1,4 +1,4 @@
-"""Route tests for POST /api/v4/documents/update endpoint."""
+"""Route tests for POST /api/v4/artifacts/documents/update endpoint."""
 
 import asyncpg  # type: ignore
 import httpx
@@ -69,7 +69,7 @@ async def test_update_document(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/documents/update",
+        "/api/v4/artifacts/documents/update",
         json={
             "document_id": str(document_id),
             "type": "homework",
@@ -146,7 +146,7 @@ async def test_update_document_minimal(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/documents/update",
+        "/api/v4/artifacts/documents/update",
         json={
             "document_id": str(document_id),
             "type": "lab",
@@ -180,7 +180,7 @@ async def test_update_document_not_found(
     # v4 routes get profile_id from router dependency
     # Note: Update endpoint may not check existence, so it might return success
     response = await client.post(
-        "/api/v4/documents/update",
+        "/api/v4/artifacts/documents/update",
         json={
             "document_id": "00000000-0000-0000-0000-000000000000",
             "type": "homework",

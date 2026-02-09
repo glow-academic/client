@@ -34,7 +34,7 @@ export function SingleProfileCertificateButton<TData>({
       const profileId = profile.id;
 
       // Call the certificate generation API
-      const response = await fetch("/api/documents/certificate", {
+      const response = await fetch("/api/artifacts/attempt/certificate", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

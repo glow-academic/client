@@ -11,15 +11,15 @@ import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type EvalsListOut = OutputOf<"/api/v4/evals/list", "post">;
-type DeleteEvalIn = InputOf<"/api/v4/evals/delete", "post">;
-type DeleteEvalOut = OutputOf<"/api/v4/evals/delete", "post">;
+type EvalsListOut = OutputOf<"/api/v4/artifacts/evals/list", "post">;
+type DeleteEvalIn = InputOf<"/api/v4/artifacts/evals/delete", "post">;
+type DeleteEvalOut = OutputOf<"/api/v4/artifacts/evals/delete", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ---- */
 const getEvalsList = async (): Promise<EvalsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/evals/list",
+    "/artifacts/evals/list",
     { body: {} },
     {
       cache: "no-store",
@@ -36,7 +36,7 @@ const getEvalsList = async (): Promise<EvalsListOut> => {
 async function deleteEval(input: DeleteEvalIn): Promise<DeleteEvalOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/evals/delete", input);
+  return api.post("/artifacts/evals/delete", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {

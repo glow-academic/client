@@ -13,13 +13,13 @@ import type { Metadata, ResolvingMetadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetAgentIn = InputOf<"/api/v4/agents/get", "post">;
-type GetAgentOut = OutputOf<"/api/v4/agents/get", "post">;
-type SaveAgentIn = InputOf<"/api/v4/agents/save", "post">;
-type SaveAgentOut = OutputOf<"/api/v4/agents/save", "post">;
+type GetAgentIn = InputOf<"/api/v4/artifacts/agents/get", "post">;
+type GetAgentOut = OutputOf<"/api/v4/artifacts/agents/get", "post">;
+type SaveAgentIn = InputOf<"/api/v4/artifacts/agents/save", "post">;
+type SaveAgentOut = OutputOf<"/api/v4/artifacts/agents/save", "post">;
 // Prompts delete removed - no prompts delete functionality needed
-type PatchAgentDraftIn = InputOf<"/api/v4/agents/draft", "patch">;
-type PatchAgentDraftOut = OutputOf<"/api/v4/agents/draft", "patch">;
+type PatchAgentDraftIn = InputOf<"/api/v4/artifacts/agents/draft", "patch">;
+type PatchAgentDraftOut = OutputOf<"/api/v4/artifacts/agents/draft", "patch">;
 type CreateDraftReasoningLevelsIn = InputOf<
   "/api/v4/resources/reasoning_levels",
   "post"
@@ -45,7 +45,7 @@ type CreateDraftPromptsOut = OutputOf<"/api/v4/resources/prompts", "post">;
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
 const getAgent = async (input: GetAgentIn): Promise<GetAgentOut> => {
-  return api.post("/agents/get", input, {
+  return api.post("/artifacts/agents/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -87,7 +87,7 @@ async function saveAgent(input: SaveAgentIn): Promise<SaveAgentOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/agents/save", input);
+  return api.post("/artifacts/agents/save", input);
 }
 
 // Prompts delete removed - no prompts delete functionality needed
@@ -97,7 +97,7 @@ async function patchAgentDraft(
 ): Promise<PatchAgentDraftOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.patch("/agents/draft", input);
+  return api.patch("/artifacts/agents/draft", input);
 }
 
 async function createDraftReasoningLevels(

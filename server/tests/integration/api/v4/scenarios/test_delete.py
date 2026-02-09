@@ -1,4 +1,4 @@
-"""Route tests for POST /api/v4/scenarios/delete endpoint."""
+"""Route tests for POST /api/v4/artifacts/scenarios/delete endpoint."""
 
 import asyncpg  # type: ignore
 import httpx
@@ -43,7 +43,7 @@ async def test_delete_scenario(
 
     # v4 routes get profile_id from router dependency, not request body
     response = await client.post(
-        "/api/v4/scenarios/delete",
+        "/api/v4/artifacts/scenarios/delete",
         json={"scenarioId": str(scenario_id)},
     )
 
@@ -129,7 +129,7 @@ async def test_delete_scenario_in_use(
 
     # v4 routes get profile_id from router dependency, not request body
     response = await client.post(
-        "/api/v4/scenarios/delete",
+        "/api/v4/artifacts/scenarios/delete",
         json={"scenarioId": str(scenario_id)},
     )
 
@@ -148,7 +148,7 @@ async def test_delete_scenario_not_found(
 
     # v4 routes get profile_id from router dependency, not request body
     response = await client.post(
-        "/api/v4/scenarios/delete",
+        "/api/v4/artifacts/scenarios/delete",
         json={"scenarioId": fake_scenario_id},
     )
 

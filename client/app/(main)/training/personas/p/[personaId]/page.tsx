@@ -13,12 +13,12 @@ import type { Metadata, ResolvingMetadata } from "next";
 import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetPersonaIn = InputOf<"/api/v4/personas/get", "post">;
-type GetPersonaOut = OutputOf<"/api/v4/personas/get", "post">;
-type SavePersonaIn = InputOf<"/api/v4/personas/save", "post">;
-type SavePersonaOut = OutputOf<"/api/v4/personas/save", "post">;
-type PatchPersonaDraftIn = InputOf<"/api/v4/personas/draft", "patch">;
-type PatchPersonaDraftOut = OutputOf<"/api/v4/personas/draft", "patch">;
+type GetPersonaIn = InputOf<"/api/v4/artifacts/personas/get", "post">;
+type GetPersonaOut = OutputOf<"/api/v4/artifacts/personas/get", "post">;
+type SavePersonaIn = InputOf<"/api/v4/artifacts/personas/save", "post">;
+type SavePersonaOut = OutputOf<"/api/v4/artifacts/personas/save", "post">;
+type PatchPersonaDraftIn = InputOf<"/api/v4/artifacts/personas/draft", "patch">;
+type PatchPersonaDraftOut = OutputOf<"/api/v4/artifacts/personas/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
@@ -54,7 +54,7 @@ type CreateDraftParameterFieldsOut = OutputOf<
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
 const getPersona = async (input: GetPersonaIn): Promise<GetPersonaOut> => {
-  return api.post("/personas/get", input, {
+  return api.post("/artifacts/personas/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -98,7 +98,7 @@ async function savePersona(input: SavePersonaIn): Promise<SavePersonaOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/personas/save", input);
+  return api.post("/artifacts/personas/save", input);
 }
 
 async function patchPersonaDraft(
@@ -106,7 +106,7 @@ async function patchPersonaDraft(
 ): Promise<PatchPersonaDraftOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.patch("/personas/draft", input);
+  return api.patch("/artifacts/personas/draft", input);
 }
 
 async function createDraftNames(

@@ -1,4 +1,4 @@
-"""Route tests for POST /api/v4/providers/delete endpoint."""
+"""Route tests for POST /api/v4/artifacts/providers/delete endpoint."""
 
 import asyncpg  # type: ignore
 import httpx
@@ -18,7 +18,7 @@ async def test_delete_provider_not_found(
 
     # v4 routes get profile_id from router dependency
     response = await client.post(
-        "/api/v4/providers/delete",
+        "/api/v4/artifacts/providers/delete",
         json={"providerId": fake_provider_id},
     )
 

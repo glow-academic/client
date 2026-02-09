@@ -1315,7 +1315,7 @@ export default function Reports({
         simulation_filters: filters.simulationFilters || ["general"],
       };
 
-      const response = await fetch("/api/documents/reports", {
+      const response = await fetch("/api/artifacts/reports/export", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

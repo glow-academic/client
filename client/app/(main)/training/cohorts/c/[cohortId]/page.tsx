@@ -13,12 +13,12 @@ import type { Metadata, ResolvingMetadata } from "next";
 import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetCohortIn = InputOf<"/api/v4/cohorts/get", "post">;
-type GetCohortOut = OutputOf<"/api/v4/cohorts/get", "post">;
-type SaveCohortIn = InputOf<"/api/v4/cohorts/save", "post">;
-type SaveCohortOut = OutputOf<"/api/v4/cohorts/save", "post">;
-type PatchCohortDraftIn = InputOf<"/api/v4/cohorts/draft", "patch">;
-type PatchCohortDraftOut = OutputOf<"/api/v4/cohorts/draft", "patch">;
+type GetCohortIn = InputOf<"/api/v4/artifacts/cohorts/get", "post">;
+type GetCohortOut = OutputOf<"/api/v4/artifacts/cohorts/get", "post">;
+type SaveCohortIn = InputOf<"/api/v4/artifacts/cohorts/save", "post">;
+type SaveCohortOut = OutputOf<"/api/v4/artifacts/cohorts/save", "post">;
+type PatchCohortDraftIn = InputOf<"/api/v4/artifacts/cohorts/draft", "patch">;
+type PatchCohortDraftOut = OutputOf<"/api/v4/artifacts/cohorts/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
@@ -42,7 +42,7 @@ type CreateDraftSimulationPositionsOut = OutputOf<
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
 const getCohort = async (input: GetCohortIn): Promise<GetCohortOut> => {
-  return api.post("/cohorts/get", input, {
+  return api.post("/artifacts/cohorts/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -91,7 +91,7 @@ async function saveCohort(input: SaveCohortIn): Promise<SaveCohortOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/cohorts/save", input);
+  return api.post("/artifacts/cohorts/save", input);
 }
 
 async function patchCohortDraft(
@@ -100,7 +100,7 @@ async function patchCohortDraft(
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.patch("/cohorts/draft", input);
+  return api.patch("/artifacts/cohorts/draft", input);
 }
 
 async function createDraftNames(

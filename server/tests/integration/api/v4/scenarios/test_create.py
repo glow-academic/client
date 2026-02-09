@@ -1,4 +1,4 @@
-"""Route tests for POST /api/v4/scenarios/create endpoint."""
+"""Route tests for POST /api/v4/artifacts/scenarios/create endpoint."""
 
 from uuid import UUID
 
@@ -30,7 +30,7 @@ async def test_create_scenario_minimal(
 
     # v4 routes get profile_id from router dependency, not request body
     response = await client.post(
-        "/api/v4/scenarios/create",
+        "/api/v4/artifacts/scenarios/create",
         json={
             "name": "Test Scenario",
             "problem_statement": "Test problem statement",
@@ -104,7 +104,7 @@ async def test_create_scenario_with_departments(
 
     # v4 routes get profile_id from router dependency, not request body
     response = await client.post(
-        "/api/v4/scenarios/create",
+        "/api/v4/artifacts/scenarios/create",
         json={
             "name": "Test Scenario with Depts",
             "problem_statement": "Test problem",
