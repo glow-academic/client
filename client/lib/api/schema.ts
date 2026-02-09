@@ -17767,6 +17767,8 @@ export interface components {
             parameter_fields?: components["schemas"]["PersonaParameterFieldSection"] | null;
             examples?: components["schemas"]["PersonaExampleSection"] | null;
             parameters?: components["schemas"]["PersonaParameterSection"] | null;
+            /** Fields */
+            fields?: components["schemas"]["QGetFieldsV4Item"][] | null;
         };
         /** GetPersonaResourceApiRequest */
         GetPersonaResourceApiRequest: {
@@ -25338,6 +25340,8 @@ export interface components {
             value: string | null;
             /** Generated */
             generated: boolean | null;
+            /** Conditional Parameter Ids */
+            conditional_parameter_ids: string[] | null;
         };
         /** QGetFlagsV4Item */
         QGetFlagsV4Item: {
@@ -25540,6 +25544,8 @@ export interface components {
             video_parameter: boolean | null;
             /** Conditional */
             conditional: boolean | null;
+            /** Field Ids */
+            field_ids: string[] | null;
         };
         /** QGetPersonaResourceV4Item */
         QGetPersonaResourceV4Item: {

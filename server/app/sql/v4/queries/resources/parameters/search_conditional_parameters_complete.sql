@@ -73,7 +73,8 @@ SELECT COALESCE(
             COALESCE(pr.document_parameter, false),
             COALESCE(pr.scenario_parameter, false),
             COALESCE(pr.video_parameter, false),
-            true  -- conditional = true for all results from this function
+            true,  -- conditional = true for all results from this function
+            COALESCE(pr.field_ids, ARRAY[]::uuid[])
         )::types.q_get_parameters_v4_item
         ORDER BY pr.name
     ),

@@ -72,6 +72,7 @@ from app.api.v4.resources.descriptions.get import get_descriptions_internal
 from app.api.v4.resources.descriptions.search import search_descriptions_internal
 from app.api.v4.resources.examples.get import get_examples_internal
 from app.api.v4.resources.examples.search import search_examples_internal
+from app.api.v4.resources.fields.search import search_fields_internal
 from app.api.v4.resources.flags.get import get_flags_internal
 from app.api.v4.resources.flags.search import search_flags_internal
 from app.api.v4.resources.icons.get import get_icons_internal
@@ -81,14 +82,8 @@ from app.api.v4.resources.instructions.search import search_instructions_interna
 from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.names.search import search_names_internal
 from app.api.v4.resources.parameter_fields.get import get_parameter_fields_internal
-from app.api.v4.resources.parameter_fields.search import (
-    search_parameter_fields_internal,
-)
 from app.api.v4.resources.parameters.get import get_parameters_internal
-from app.api.v4.resources.parameters.search import (
-    search_conditional_parameters_internal,
-    search_parameters_internal,
-)
+from app.api.v4.resources.parameters.search import search_parameters_internal
 from app.api.v4.types import CandidateAgent
 from app.api.v4.views.drafts.get import get_draft_resources_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
@@ -482,17 +477,22 @@ async def get_persona_internal(
             )
             return (selected, suggestions)
 
-    async def fetch_parameter_fields(param_ids: list[UUID]):
+    async def fetch_parameter_fields():
         async with pool.acquire() as c:
-            selected = await get_parameter_fields_internal(
+            return await get_parameter_fields_internal(
                 c, parameter_field_ids, bypass_cache
             )
-            # Get all available fields for ALL parameters (persona + conditional)
-            # This enables instant UI when user selects a parameter
-            available = await search_parameter_fields_internal(
-                c, param_ids, bypass_cache
+
+    async def fetch_fields():
+        async with pool.acquire() as c:
+            return await search_fields_internal(
+                c,
+                search=None,
+                limit_count=200,
+                offset_count=0,
+                user_department_ids=user_department_ids,
+                bypass_cache=bypass_cache,
             )
-            return (selected, available)
 
     async def fetch_examples():
         async with pool.acquire() as c:
@@ -535,38 +535,9 @@ async def get_persona_internal(
             )
             return (selected, suggestions)
 
-    # === TWO-PHASE FETCH ===
-    # Phase 1a: Fetch persona parameters FIRST to get all persona parameter IDs
-    # This is needed because parameter_fields needs to know which parameters to scope to
-    (parameters_selected, parameters_suggestions) = await fetch_parameters()
-
-    # Extract ALL persona parameter IDs (both selected and available)
-    all_persona_parameter_ids = list(
-        {p.parameter_id for p in parameters_selected}
-        | {p.parameter_id for p in parameters_suggestions}
-    )
-
-    # Phase 1b: Fetch ALL conditional parameters transitively
-    # This uses a recursive approach to find the full chain (e.g., Persona Type -> Temperament -> Intensity)
-    async def fetch_conditional_parameters():
-        async with pool.acquire() as c:
-            return await search_conditional_parameters_internal(
-                c,
-                [pid for pid in all_persona_parameter_ids if pid is not None],
-                bypass_cache,
-            )
-
-    conditional_params = await fetch_conditional_parameters()
-
-    # Combine ALL parameter IDs for Phase 2 (includes transitive conditional params)
-    all_parameter_ids = list(
-        set(
-            all_persona_parameter_ids
-            + [p.parameter_id for p in conditional_params if p.parameter_id]
-        )
-    )
-
-    # Phase 2: Fetch remaining resources in parallel (including parameter_fields with proper IDs)
+    # === PARALLEL FETCH (all resources at once) ===
+    # Fields are now a top-level catalog resource. Parameters carry field_ids and
+    # fields carry conditional_parameter_ids, so no two-phase fetch is needed.
     (
         (names_selected, names_suggestions),
         (descriptions_selected, descriptions_suggestions),
@@ -575,8 +546,10 @@ async def get_persona_internal(
         (instructions_selected, instructions_suggestions),
         (flags_selected, flags_suggestions),
         (departments_selected, departments_suggestions),
-        (parameter_fields_selected, parameter_fields_suggestions),
+        parameter_fields_selected,
         (examples_selected, examples_suggestions),
+        (parameters_selected, parameters_suggestions),
+        fields_catalog,
     ) = await asyncio.gather(
         fetch_names(),
         fetch_descriptions(),
@@ -585,8 +558,10 @@ async def get_persona_internal(
         fetch_instructions(),
         fetch_flags(),
         fetch_departments(),
-        fetch_parameter_fields([pid for pid in all_parameter_ids if pid is not None]),
+        fetch_parameter_fields(),
         fetch_examples(),
+        fetch_parameters(),
+        fetch_fields(),
     )
 
     names = _dedupe_by_id(names_selected + names_suggestions, "id")
@@ -600,15 +575,9 @@ async def get_persona_internal(
     departments = _dedupe_by_id(
         departments_selected + departments_suggestions, "department_id"
     )
-    # Dedupe by field_id since selected resources use parameter_fields_resource.id
-    # while available fields use field_id as their id
-    parameter_fields = _dedupe_by_id(
-        parameter_fields_selected + parameter_fields_suggestions, "field_id"
-    )
     examples = _dedupe_by_id(examples_selected + examples_suggestions, "id")
-    # Combine persona parameters with conditional parameters (conditional params have conditional=true)
     parameters = _dedupe_by_id(
-        parameters_selected + parameters_suggestions + conditional_params,
+        parameters_selected + parameters_suggestions,
         "parameter_id",
     )
 
@@ -629,9 +598,7 @@ async def get_persona_internal(
     department_resources = [
         d for d in departments if d.department_id in selected_department_ids
     ]
-    parameter_field_resources = [
-        f for f in parameter_fields if f.id in selected_parameter_field_ids
-    ]
+    parameter_field_resources = parameter_fields_selected
     example_resources = [e for e in examples if e.id in selected_example_ids]
     parameter_resources = [
         p for p in parameters if p.parameter_id in selected_parameter_ids
@@ -643,7 +610,7 @@ async def get_persona_internal(
     icon_suggestions = [i.id for i in icons_suggestions]
     instructions_suggestions_ids = [i.id for i in instructions_suggestions]
     department_suggestions = [d.department_id for d in departments_suggestions]
-    parameter_field_suggestions = [f.id for f in parameter_fields_suggestions]
+    parameter_field_suggestions: list[UUID] = []
     example_suggestions = [e.id for e in examples_suggestions]
     parameter_suggestions = [p.parameter_id for p in parameters_suggestions]
 
@@ -655,7 +622,7 @@ async def get_persona_internal(
     show_instructions_flag = compute_show_instructions(instructions_has_tools)
     show_flag = compute_show_flag()
     show_departments_flag = compute_show_departments(len(departments))
-    show_parameter_fields_flag = compute_show_parameter_fields(len(parameter_fields))
+    show_parameter_fields_flag = compute_show_parameter_fields(len(fields_catalog))
     show_examples_flag = compute_show_examples(len(examples))
     show_parameters_flag = compute_show_parameters(len(parameters))
 
@@ -727,9 +694,10 @@ async def get_persona_internal(
             instructions=instructions_list,
             flags=persona_flags,
             departments=departments,
-            parameter_fields=parameter_fields,
+            parameter_fields=parameter_fields_selected,
             examples=examples,
             parameters=parameters,
+            fields=fields_catalog,
         ),
         current=PersonaResourceBucket(
             names=[name_resource] if name_resource else [],
@@ -742,6 +710,7 @@ async def get_persona_internal(
             parameter_fields=parameter_field_resources or [],
             examples=example_resources or [],
             parameters=parameter_resources or [],
+            fields=None,
         ),
     )
 
@@ -931,6 +900,8 @@ async def get_persona_client(
             current=current.parameters if current else [],
             resources=all_resources.parameters if all_resources else [],
         ),
+        # Fields catalog
+        fields=all_resources.fields if all_resources else [],
     )
 
 

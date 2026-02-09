@@ -54,7 +54,8 @@ CREATE TYPE types.q_get_fields_v4_item AS (
     name text,
     description text,
     value text,
-    generated boolean
+    generated boolean,
+    conditional_parameter_ids uuid[]
 );
 
 -- Create function - query fields_resource directly
@@ -74,7 +75,8 @@ SELECT COALESCE(
             f.name,
             COALESCE(f.description, ''),
             COALESCE(f.value, ''),
-            COALESCE(f.generated, false)
+            COALESCE(f.generated, false),
+            COALESCE(f.conditional_parameter_ids, ARRAY[]::uuid[])
         )::types.q_get_fields_v4_item
         ORDER BY array_position(ids, f.id)
     ),

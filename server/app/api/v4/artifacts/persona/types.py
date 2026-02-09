@@ -13,6 +13,7 @@ from app.sql.types import (
     QGetDepartmentsV4Item,
     QGetDescriptionsV4Item,
     QGetExamplesV4Item,
+    QGetFieldsV4Item,
     QGetIconsV4Item,
     QGetInstructionsV4Item,
     QGetNamesV4Item,
@@ -145,6 +146,8 @@ class GetPersonaApiResponse(BaseModel):
     parameter_fields: PersonaParameterFieldSection | None = None
     examples: PersonaExampleSection | None = None
     parameters: PersonaParameterSection | None = None
+    # Fields catalog (not a section — computed resource, never saved)
+    fields: list[QGetFieldsV4Item] | None = None
 
 
 class GetPersonaWebsocketResponse(BaseModel):
@@ -179,6 +182,7 @@ class PersonaResourceBucket(BaseModel):
     parameter_fields: list[QGetParameterFieldsV4Item] | None = None
     examples: list[QGetExamplesV4Item] | None = None
     parameters: list[QGetParametersV4Item] | None = None
+    fields: list[QGetFieldsV4Item] | None = None
 
 
 class PersonaResources(BaseModel):

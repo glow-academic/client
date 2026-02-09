@@ -74,7 +74,8 @@ CREATE TYPE types.q_get_parameters_v4_item AS (
     document_parameter boolean,
     scenario_parameter boolean,
     video_parameter boolean,
-    conditional boolean
+    conditional boolean,
+    field_ids uuid[]
 );
 
 -- Create function
@@ -107,7 +108,8 @@ SELECT COALESCE(
             EXISTS (
                 SELECT 1 FROM conditional_parameters_resource cpr
                 WHERE cpr.parameter_id = p.id AND cpr.active = true
-            )
+            ),
+            COALESCE(p.field_ids, ARRAY[]::uuid[])
         )::types.q_get_parameters_v4_item
         ORDER BY array_position(ids, p.id)
     ),

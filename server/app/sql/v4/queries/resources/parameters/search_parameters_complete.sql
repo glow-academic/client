@@ -48,7 +48,8 @@ SELECT COALESCE(
             q.document_parameter,
             q.scenario_parameter,
             q.video_parameter,
-            q.conditional
+            q.conditional,
+            q.field_ids
         )::types.q_get_parameters_v4_item
         ORDER BY q.name
     ),
@@ -68,7 +69,8 @@ FROM (
         EXISTS (
             SELECT 1 FROM conditional_parameters_resource cpr
             WHERE cpr.parameter_id = p.id AND cpr.active = true
-        ) AS conditional
+        ) AS conditional,
+        COALESCE(p.field_ids, ARRAY[]::uuid[]) AS field_ids
     FROM parameters_resource p
     WHERE p.active = true
       AND p.name IS NOT NULL

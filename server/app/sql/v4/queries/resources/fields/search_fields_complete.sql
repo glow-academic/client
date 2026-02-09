@@ -37,7 +37,7 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (q.field_id, q.name, q.description, q.value, q.generated)::types.q_get_fields_v4_item
+        (q.field_id, q.name, q.description, q.value, q.generated, q.conditional_parameter_ids)::types.q_get_fields_v4_item
         ORDER BY q.name
     ),
     ARRAY[]::types.q_get_fields_v4_item[]
@@ -48,7 +48,8 @@ FROM (
         f.name,
         COALESCE(f.description, '') AS description,
         COALESCE(f.value, '') AS value,
-        COALESCE(f.generated, false) AS generated
+        COALESCE(f.generated, false) AS generated,
+        COALESCE(f.conditional_parameter_ids, ARRAY[]::uuid[]) AS conditional_parameter_ids
     FROM fields_resource f
     WHERE f.active = true
       AND f.name IS NOT NULL
