@@ -88,7 +88,7 @@ from app.api.v4.resources.parameters.get import get_parameters_internal
 from app.api.v4.resources.parameters.search import search_parameters_internal
 from app.api.v4.resources.providers.get import get_providers_internal
 from app.api.v4.types import CandidateAgent
-from app.api.v4.views.drafts.get import get_draft_resources_internal
+from app.api.v4.views.drafts.get import get_draft_persona_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -142,7 +142,7 @@ async def get_persona_internal(
     draft_item = None
     if draft_id is not None:
         async with pool.acquire() as draft_conn:
-            draft_items = await get_draft_resources_internal(
+            draft_items = await get_draft_persona_internal(
                 conn=draft_conn,
                 draft_ids=[draft_id],
                 bypass_cache=bypass_cache,

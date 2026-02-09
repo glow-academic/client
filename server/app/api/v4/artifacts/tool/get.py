@@ -55,7 +55,7 @@ from app.api.v4.resources.flags.search import search_flags_internal
 from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.names.search import search_names_internal
 from app.api.v4.types import CandidateAgent
-from app.api.v4.views.drafts.get import get_draft_resources_internal
+from app.api.v4.views.drafts.get import get_draft_tool_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -141,7 +141,7 @@ async def get_tool_internal(
     draft_item = None
     if draft_id is not None:
         async with pool.acquire() as draft_conn:
-            draft_items = await get_draft_resources_internal(
+            draft_items = await get_draft_tool_internal(
                 conn=draft_conn,
                 draft_ids=[draft_id],
                 bypass_cache=bypass_cache,
@@ -227,15 +227,11 @@ async def get_tool_internal(
 
     # Build per-resource group_ids from draft_item
     resource_group_ids: dict[str, UUID | None] = {
-        "names": draft_item.names_group_id if draft_item else None,
-        "descriptions": draft_item.descriptions_group_id if draft_item else None,
-        "args": draft_item.args_group_id
-        if draft_item and hasattr(draft_item, "args_group_id")
-        else None,
-        "args_outputs": draft_item.args_outputs_group_id
-        if draft_item and hasattr(draft_item, "args_outputs_group_id")
-        else None,
-        "flags": draft_item.flags_group_id if draft_item else None,
+        "names": draft_item.group_id if draft_item else None,
+        "descriptions": draft_item.group_id if draft_item else None,
+        "args": draft_item.group_id if draft_item else None,
+        "args_outputs": draft_item.group_id if draft_item else None,
+        "flags": draft_item.group_id if draft_item else None,
     }
 
     # Get tools existence flags from Query 2

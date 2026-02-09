@@ -1,113 +1,92 @@
-"""Get endpoint for drafts resources view."""
+"""Get endpoints for per-artifact draft views."""
 
-from typing import Annotated, Any
+from typing import Any, TypeVar
 from uuid import UUID
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.views.drafts.types import (
-    DraftResourcesViewItem,
-    GetDraftResourcesRequest,
-    GetDraftResourcesResponse,
+    DraftAgentViewItem,
+    DraftAuthViewItem,
+    DraftCohortViewItem,
+    DraftDepartmentViewItem,
+    DraftDocumentViewItem,
+    DraftEvalViewItem,
+    DraftFieldViewItem,
+    DraftModelViewItem,
+    DraftParameterViewItem,
+    DraftPersonaViewItem,
+    DraftProfileViewItem,
+    DraftProviderViewItem,
+    DraftRubricViewItem,
+    DraftScenarioViewItem,
+    DraftSettingViewItem,
+    DraftSimulationViewItem,
+    DraftToolViewItem,
+    DraftViewItemBase,
 )
-from app.infra.v4.activity.audit import audit_activity
-from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/v4/queries/views/drafts/get_draft_resources_view_complete.sql"
+# === Generic helper to build a draft view item from SQL result ===
 
-router = APIRouter()
+T = TypeVar("T", bound=DraftViewItemBase)
 
 
-async def get_draft_resources_internal(
+def _build_item(item_cls: type[T], item: Any) -> T:
+    """Build a typed draft view item from a SQL composite row."""
+    data: dict[str, Any] = {
+        "draft_id": item.draft_id,
+        "created_at": item.created_at,
+        "updated_at": item.updated_at,
+        "version": item.version or 0,
+        "generated": item.generated or False,
+        "mcp": item.mcp or False,
+        "active": item.active if item.active is not None else True,
+        "group_id": item.group_id,
+    }
+    # Dynamically add all uuid[] fields from the item
+    for field_name in item_cls.model_fields:
+        if field_name in data:
+            continue
+        val = getattr(item, field_name, None)
+        data[field_name] = list(val) if val else []
+    return item_cls(**data)
+
+
+async def _get_draft_internal(
     conn: asyncpg.Connection,
     draft_ids: list[UUID],
+    artifact: str,
+    sql_path: str,
+    item_cls: type[T],
     bypass_cache: bool = False,
-) -> list[DraftResourcesViewItem]:
-    """Internal function for fetching draft resources view rows."""
-    from app.sql.types import GetDraftResourcesViewSqlParams
-
+) -> list[T]:
+    """Generic internal function for fetching per-artifact draft view rows."""
     cache_key_val = cache_key(
-        "views/drafts/get",
+        f"views/drafts/{artifact}/get",
         {"draft_ids": [str(d) for d in draft_ids]},
     )
 
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
         if cached:
-            return [
-                DraftResourcesViewItem.model_validate(item) for item in cached["items"]
-            ]
+            return [item_cls.model_validate(item) for item in cached["items"]]
 
-    params = GetDraftResourcesViewSqlParams(draft_ids=draft_ids)
-    result = await execute_sql_typed(conn, SQL_PATH, params=params)
+    # Lazy import to avoid circular imports and allow sql-compile to generate types
+    from app.sql import types as sql_types
 
-    items: list[DraftResourcesViewItem] = []
+    params_cls_name = f"GetDraft{artifact.title()}ViewSqlParams"
+    params_cls = getattr(sql_types, params_cls_name)
+    params = params_cls(draft_ids=draft_ids)
+    result = await execute_sql_typed(conn, sql_path, params=params)
+
+    items: list[T] = []
     if result and result.items:
         for item in result.items:
-            items.append(
-                DraftResourcesViewItem(
-                    draft_id=item.draft_id,
-                    created_at=item.created_at,
-                    updated_at=item.updated_at,
-                    version=item.version or 0,
-                    generated=item.generated or False,
-                    mcp=item.mcp or False,
-                    active=item.active if item.active is not None else True,
-                    group_id=item.group_id,
-                    resource_types=[str(t) for t in item.resource_types]
-                    if item.resource_types
-                    else [],
-                    resource_ids=list(item.resource_ids) if item.resource_ids else [],
-                    name_ids=list(item.name_ids) if item.name_ids else [],
-                    description_ids=list(item.description_ids)
-                    if item.description_ids
-                    else [],
-                    flag_ids=list(item.flag_ids) if item.flag_ids else [],
-                    color_ids=list(item.color_ids) if item.color_ids else [],
-                    icon_ids=list(item.icon_ids) if item.icon_ids else [],
-                    auth_ids=list(item.auth_ids) if item.auth_ids else [],
-                    tool_ids=list(item.tool_ids) if item.tool_ids else [],
-                    instruction_ids=list(item.instruction_ids)
-                    if item.instruction_ids
-                    else [],
-                    document_ids=list(item.document_ids) if item.document_ids else [],
-                    department_ids=list(item.department_ids)
-                    if item.department_ids
-                    else [],
-                    parameter_ids=list(item.parameter_ids)
-                    if item.parameter_ids
-                    else [],
-                    parameter_field_ids=list(item.parameter_field_ids)
-                    if item.parameter_field_ids
-                    else [],
-                    field_ids=list(item.field_ids) if item.field_ids else [],
-                    example_ids=list(item.example_ids) if item.example_ids else [],
-                    question_ids=list(item.question_ids) if item.question_ids else [],
-                    template_ids=list(item.template_ids) if item.template_ids else [],
-                    text_ids=list(item.text_ids) if item.text_ids else [],
-                    run_rubric_ids=list(item.run_rubric_ids)
-                    if item.run_rubric_ids
-                    else [],
-                    group_rubric_ids=list(item.group_rubric_ids)
-                    if item.group_rubric_ids
-                    else [],
-                    binding_ids=list(item.binding_ids) if item.binding_ids else [],
-                    conditional_parameter_ids=list(item.conditional_parameter_ids)
-                    if item.conditional_parameter_ids
-                    else [],
-                    persona_ids=list(item.persona_ids) if item.persona_ids else [],
-                    scenario_ids=list(item.scenario_ids) if item.scenario_ids else [],
-                    simulation_ids=list(item.simulation_ids)
-                    if item.simulation_ids
-                    else [],
-                )
-            )
+            items.append(_build_item(item_cls, item))
 
     await set_cached(
         cache_key_val,
@@ -119,50 +98,261 @@ async def get_draft_resources_internal(
     return items
 
 
-@router.post(
-    "/get",
-    response_model=GetDraftResourcesResponse,
-    dependencies=[
-        audit_activity(
-            "views.drafts.get",
-            "{{ actor.name }} fetched draft resources view data",
-        )
-    ],
-)
-async def get_draft_resources(
-    request: GetDraftResourcesRequest,
-    http_request: Request,
-    response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> GetDraftResourcesResponse:
-    """Get denormalized draft resources data from mv_draft_resources."""
-    tags = ["views", "drafts"]
+# === Per-artifact internal functions ===
 
-    bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
+_SQL_BASE = "app/sql/v4/queries/views/drafts"
 
-    sql_query: str | None = None
-    sql_params: tuple[Any, ...] | None = None
 
-    try:
-        items = await get_draft_resources_internal(
-            conn=conn,
-            draft_ids=request.draft_ids,
-            bypass_cache=bypass_cache,
-        )
+async def get_draft_agent_internal(
+    conn: asyncpg.Connection,
+    draft_ids: list[UUID],
+    bypass_cache: bool = False,
+) -> list[DraftAgentViewItem]:
+    return await _get_draft_internal(
+        conn,
+        draft_ids,
+        "agent",
+        f"{_SQL_BASE}/get_draft_agent_view_complete.sql",
+        DraftAgentViewItem,
+        bypass_cache,
+    )
 
-        response.headers["X-Cache-Tags"] = ",".join(tags)
-        return GetDraftResourcesResponse(items=items)
 
-    except HTTPException:
-        raise
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e)) from e
-    except Exception as e:
-        handle_route_error(
-            error=e,
-            route_path=http_request.url.path,
-            operation="views_drafts_get",
-            sql_query=sql_query,
-            sql_params=sql_params,
-            request=http_request,
-        )
+async def get_draft_auth_internal(
+    conn: asyncpg.Connection,
+    draft_ids: list[UUID],
+    bypass_cache: bool = False,
+) -> list[DraftAuthViewItem]:
+    return await _get_draft_internal(
+        conn,
+        draft_ids,
+        "auth",
+        f"{_SQL_BASE}/get_draft_auth_view_complete.sql",
+        DraftAuthViewItem,
+        bypass_cache,
+    )
+
+
+async def get_draft_cohort_internal(
+    conn: asyncpg.Connection,
+    draft_ids: list[UUID],
+    bypass_cache: bool = False,
+) -> list[DraftCohortViewItem]:
+    return await _get_draft_internal(
+        conn,
+        draft_ids,
+        "cohort",
+        f"{_SQL_BASE}/get_draft_cohort_view_complete.sql",
+        DraftCohortViewItem,
+        bypass_cache,
+    )
+
+
+async def get_draft_department_internal(
+    conn: asyncpg.Connection,
+    draft_ids: list[UUID],
+    bypass_cache: bool = False,
+) -> list[DraftDepartmentViewItem]:
+    return await _get_draft_internal(
+        conn,
+        draft_ids,
+        "department",
+        f"{_SQL_BASE}/get_draft_department_view_complete.sql",
+        DraftDepartmentViewItem,
+        bypass_cache,
+    )
+
+
+async def get_draft_document_internal(
+    conn: asyncpg.Connection,
+    draft_ids: list[UUID],
+    bypass_cache: bool = False,
+) -> list[DraftDocumentViewItem]:
+    return await _get_draft_internal(
+        conn,
+        draft_ids,
+        "document",
+        f"{_SQL_BASE}/get_draft_document_view_complete.sql",
+        DraftDocumentViewItem,
+        bypass_cache,
+    )
+
+
+async def get_draft_eval_internal(
+    conn: asyncpg.Connection,
+    draft_ids: list[UUID],
+    bypass_cache: bool = False,
+) -> list[DraftEvalViewItem]:
+    return await _get_draft_internal(
+        conn,
+        draft_ids,
+        "eval",
+        f"{_SQL_BASE}/get_draft_eval_view_complete.sql",
+        DraftEvalViewItem,
+        bypass_cache,
+    )
+
+
+async def get_draft_field_internal(
+    conn: asyncpg.Connection,
+    draft_ids: list[UUID],
+    bypass_cache: bool = False,
+) -> list[DraftFieldViewItem]:
+    return await _get_draft_internal(
+        conn,
+        draft_ids,
+        "field",
+        f"{_SQL_BASE}/get_draft_field_view_complete.sql",
+        DraftFieldViewItem,
+        bypass_cache,
+    )
+
+
+async def get_draft_model_internal(
+    conn: asyncpg.Connection,
+    draft_ids: list[UUID],
+    bypass_cache: bool = False,
+) -> list[DraftModelViewItem]:
+    return await _get_draft_internal(
+        conn,
+        draft_ids,
+        "model",
+        f"{_SQL_BASE}/get_draft_model_view_complete.sql",
+        DraftModelViewItem,
+        bypass_cache,
+    )
+
+
+async def get_draft_parameter_internal(
+    conn: asyncpg.Connection,
+    draft_ids: list[UUID],
+    bypass_cache: bool = False,
+) -> list[DraftParameterViewItem]:
+    return await _get_draft_internal(
+        conn,
+        draft_ids,
+        "parameter",
+        f"{_SQL_BASE}/get_draft_parameter_view_complete.sql",
+        DraftParameterViewItem,
+        bypass_cache,
+    )
+
+
+async def get_draft_persona_internal(
+    conn: asyncpg.Connection,
+    draft_ids: list[UUID],
+    bypass_cache: bool = False,
+) -> list[DraftPersonaViewItem]:
+    return await _get_draft_internal(
+        conn,
+        draft_ids,
+        "persona",
+        f"{_SQL_BASE}/get_draft_persona_view_complete.sql",
+        DraftPersonaViewItem,
+        bypass_cache,
+    )
+
+
+async def get_draft_profile_internal(
+    conn: asyncpg.Connection,
+    draft_ids: list[UUID],
+    bypass_cache: bool = False,
+) -> list[DraftProfileViewItem]:
+    return await _get_draft_internal(
+        conn,
+        draft_ids,
+        "profile",
+        f"{_SQL_BASE}/get_draft_profile_view_complete.sql",
+        DraftProfileViewItem,
+        bypass_cache,
+    )
+
+
+async def get_draft_provider_internal(
+    conn: asyncpg.Connection,
+    draft_ids: list[UUID],
+    bypass_cache: bool = False,
+) -> list[DraftProviderViewItem]:
+    return await _get_draft_internal(
+        conn,
+        draft_ids,
+        "provider",
+        f"{_SQL_BASE}/get_draft_provider_view_complete.sql",
+        DraftProviderViewItem,
+        bypass_cache,
+    )
+
+
+async def get_draft_rubric_internal(
+    conn: asyncpg.Connection,
+    draft_ids: list[UUID],
+    bypass_cache: bool = False,
+) -> list[DraftRubricViewItem]:
+    return await _get_draft_internal(
+        conn,
+        draft_ids,
+        "rubric",
+        f"{_SQL_BASE}/get_draft_rubric_view_complete.sql",
+        DraftRubricViewItem,
+        bypass_cache,
+    )
+
+
+async def get_draft_scenario_internal(
+    conn: asyncpg.Connection,
+    draft_ids: list[UUID],
+    bypass_cache: bool = False,
+) -> list[DraftScenarioViewItem]:
+    return await _get_draft_internal(
+        conn,
+        draft_ids,
+        "scenario",
+        f"{_SQL_BASE}/get_draft_scenario_view_complete.sql",
+        DraftScenarioViewItem,
+        bypass_cache,
+    )
+
+
+async def get_draft_setting_internal(
+    conn: asyncpg.Connection,
+    draft_ids: list[UUID],
+    bypass_cache: bool = False,
+) -> list[DraftSettingViewItem]:
+    return await _get_draft_internal(
+        conn,
+        draft_ids,
+        "setting",
+        f"{_SQL_BASE}/get_draft_setting_view_complete.sql",
+        DraftSettingViewItem,
+        bypass_cache,
+    )
+
+
+async def get_draft_simulation_internal(
+    conn: asyncpg.Connection,
+    draft_ids: list[UUID],
+    bypass_cache: bool = False,
+) -> list[DraftSimulationViewItem]:
+    return await _get_draft_internal(
+        conn,
+        draft_ids,
+        "simulation",
+        f"{_SQL_BASE}/get_draft_simulation_view_complete.sql",
+        DraftSimulationViewItem,
+        bypass_cache,
+    )
+
+
+async def get_draft_tool_internal(
+    conn: asyncpg.Connection,
+    draft_ids: list[UUID],
+    bypass_cache: bool = False,
+) -> list[DraftToolViewItem]:
+    return await _get_draft_internal(
+        conn,
+        draft_ids,
+        "tool",
+        f"{_SQL_BASE}/get_draft_tool_view_complete.sql",
+        DraftToolViewItem,
+        bypass_cache,
+    )

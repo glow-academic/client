@@ -59,7 +59,7 @@ from app.api.v4.resources.parameter_fields.get import get_parameter_fields_inter
 from app.api.v4.resources.uploads.get import get_uploads_internal
 from app.api.v4.resources.uploads.search import search_uploads_internal
 from app.api.v4.types import CandidateAgent
-from app.api.v4.views.drafts.get import get_draft_resources_internal
+from app.api.v4.views.drafts.get import get_draft_document_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -149,7 +149,7 @@ async def get_document_internal(
     draft_item = None
     if draft_id is not None:
         async with pool.acquire() as draft_conn:
-            draft_items = await get_draft_resources_internal(
+            draft_items = await get_draft_document_internal(
                 conn=draft_conn,
                 draft_ids=[draft_id],
                 bypass_cache=bypass_cache,
@@ -241,12 +241,12 @@ async def get_document_internal(
 
     # Build per-resource group_ids from draft_item
     resource_group_ids: dict[str, UUID | None] = {
-        "names": draft_item.names_group_id if draft_item else None,
-        "descriptions": draft_item.descriptions_group_id if draft_item else None,
-        "flags": draft_item.flags_group_id if draft_item else None,
-        "departments": draft_item.departments_group_id if draft_item else None,
-        "fields": draft_item.parameter_fields_group_id if draft_item else None,
-        "uploads": draft_item.uploads_group_id if draft_item else None,
+        "names": draft_item.group_id if draft_item else None,
+        "descriptions": draft_item.group_id if draft_item else None,
+        "flags": draft_item.group_id if draft_item else None,
+        "departments": draft_item.group_id if draft_item else None,
+        "fields": draft_item.group_id if draft_item else None,
+        "uploads": draft_item.group_id if draft_item else None,
     }
 
     # Get tools existence flags from Query 2 (used for show_* UI flags)

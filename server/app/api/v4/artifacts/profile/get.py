@@ -60,7 +60,7 @@ from app.api.v4.resources.names.search import search_names_internal
 from app.api.v4.resources.request_limits.get import get_request_limits_internal
 from app.api.v4.resources.request_limits.search import search_request_limits_internal
 from app.api.v4.types import CandidateAgent
-from app.api.v4.views.drafts.get import get_draft_resources_internal
+from app.api.v4.views.drafts.get import get_draft_profile_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -154,7 +154,7 @@ async def get_profile_internal(
     draft_item = None
     if draft_id is not None:
         async with pool.acquire() as draft_conn:
-            draft_items = await get_draft_resources_internal(
+            draft_items = await get_draft_profile_internal(
                 conn=draft_conn,
                 draft_ids=[draft_id],
                 bypass_cache=bypass_cache,
@@ -256,12 +256,12 @@ async def get_profile_internal(
 
     # Build per-resource group_ids from draft_item
     resource_group_ids: dict[str, UUID | None] = {
-        "names": draft_item.names_group_id if draft_item else None,
-        "emails": None,  # No draft group_id for emails
-        "request_limits": None,  # No draft group_id for request_limits
-        "flags": draft_item.flags_group_id if draft_item else None,
-        "departments": draft_item.departments_group_id if draft_item else None,
-        "cohorts": None,  # No draft group_id for cohorts
+        "names": draft_item.group_id if draft_item else None,
+        "emails": draft_item.group_id if draft_item else None,
+        "request_limits": draft_item.group_id if draft_item else None,
+        "flags": draft_item.group_id if draft_item else None,
+        "departments": draft_item.group_id if draft_item else None,
+        "cohorts": draft_item.group_id if draft_item else None,
     }
 
     # Get tools existence flags from Query 2 (used for show_* UI flags)

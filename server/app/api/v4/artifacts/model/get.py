@@ -80,7 +80,7 @@ from app.api.v4.resources.temperature_levels.get import get_temperature_levels_i
 from app.api.v4.resources.values.get import get_values_internal
 from app.api.v4.resources.voices.get import get_voices_internal
 from app.api.v4.types import CandidateAgent
-from app.api.v4.views.drafts.get import get_draft_resources_internal
+from app.api.v4.views.drafts.get import get_draft_model_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -171,7 +171,7 @@ async def get_model_internal(
     draft_item = None
     if draft_id is not None:
         async with pool.acquire() as draft_conn:
-            draft_items = await get_draft_resources_internal(
+            draft_items = await get_draft_model_internal(
                 conn=draft_conn,
                 draft_ids=[draft_id],
                 bypass_cache=bypass_cache,
@@ -279,20 +279,20 @@ async def get_model_internal(
 
     # Build per-resource group_ids from draft_item
     resource_group_ids: dict[str, UUID | None] = {
-        "names": draft_item.names_group_id if draft_item else None,
-        "descriptions": draft_item.descriptions_group_id if draft_item else None,
-        "values": None,  # Model-specific, not in generic draft view
-        "endpoints": None,
-        "providers": None,
-        "keys": None,
-        "flags": draft_item.flags_group_id if draft_item else None,
-        "departments": draft_item.departments_group_id if draft_item else None,
-        "modalities": None,
-        "temperature_levels": None,
-        "pricing": None,
-        "reasoning_levels": None,
-        "qualities": None,
-        "voices": None,
+        "names": draft_item.group_id if draft_item else None,
+        "descriptions": draft_item.group_id if draft_item else None,
+        "values": draft_item.group_id if draft_item else None,
+        "endpoints": draft_item.group_id if draft_item else None,
+        "providers": draft_item.group_id if draft_item else None,
+        "keys": draft_item.group_id if draft_item else None,
+        "flags": draft_item.group_id if draft_item else None,
+        "departments": draft_item.group_id if draft_item else None,
+        "modalities": draft_item.group_id if draft_item else None,
+        "temperature_levels": draft_item.group_id if draft_item else None,
+        "pricing": draft_item.group_id if draft_item else None,
+        "reasoning_levels": draft_item.group_id if draft_item else None,
+        "qualities": draft_item.group_id if draft_item else None,
+        "voices": draft_item.group_id if draft_item else None,
     }
 
     # Get tools existence flags from Query 2

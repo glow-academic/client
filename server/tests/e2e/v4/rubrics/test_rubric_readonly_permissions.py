@@ -27,7 +27,7 @@ def test_rubric_readonly_permissions(page: Page, base_url: str) -> None:
     rubric_id = readonly_rubric["rubric_id"]
     rubric_name = readonly_rubric["name"]
 
-    page.goto(f"{base_url}/intelligence/rubrics")
+    page.goto(f"{base_url}/system/rubrics")
     page.wait_for_load_state("networkidle")
 
     search_input = page.get_by_test_id("rubrics-search")
@@ -53,7 +53,7 @@ def test_rubric_readonly_permissions(page: Page, base_url: str) -> None:
 
     view_button.click()
 
-    page.wait_for_url(f"{base_url}/intelligence/rubrics/r/{rubric_id}")
+    page.wait_for_url(f"{base_url}/system/rubrics/r/{rubric_id}")
     page.wait_for_load_state("networkidle")
 
     # Verify page attributes

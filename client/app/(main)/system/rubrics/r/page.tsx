@@ -1,5 +1,5 @@
 /**
- * app/(main)/intelligence/rubrics/r/page.tsx
+ * app/(main)/system/rubrics/r/page.tsx
  * Rubric page for the rubrics section. Redirects to rubrics page.
  * @AshokSaravanan222 & @siladiea
  * 06/08/2025
@@ -17,5 +17,5 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default function RubricsPage() {
-  return redirect("/intelligence/rubrics");
+  return redirect("/system/rubrics");
 }

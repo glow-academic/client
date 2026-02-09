@@ -18,7 +18,7 @@ pytestmark = [pytest.mark.e2e, pytest.mark.test_profile_id(ADMIN_PROFILE_ID)]
 
 def test_rubrics_list_filters_and_empty_state(page: Page, base_url: str) -> None:
     """Ensure rubric list SSR renders and search/filter flows work."""
-    page.goto(f"{base_url}/intelligence/rubrics")
+    page.goto(f"{base_url}/system/rubrics")
     page.wait_for_load_state("networkidle")
 
     # Verify page attribute
@@ -150,10 +150,10 @@ def test_rubrics_pagination_persists_filters(page: Page, base_url: str) -> None:
                     effective_profile_id=ADMIN_PROFILE_ID,
                 )
                 created_rubric_ids.append(rubric_id)
-            page.goto(f"{base_url}/intelligence/rubrics")
+            page.goto(f"{base_url}/system/rubrics")
             page.wait_for_load_state("networkidle")
 
-        page.goto(f"{base_url}/intelligence/rubrics")
+        page.goto(f"{base_url}/system/rubrics")
         page.wait_for_load_state("networkidle")
 
         next_button = page.get_by_role("button", name="Go to next page")

@@ -23,7 +23,7 @@ def test_rubric_create_with_standard_groups(page: Page, base_url: str) -> None:
     rubric_id = None
 
     try:
-        page.goto(f"{base_url}/intelligence/rubrics/new", timeout=30000)
+        page.goto(f"{base_url}/system/rubrics/new", timeout=30000)
         page.wait_for_load_state("networkidle", timeout=30000)
 
         # Verify page attribute
@@ -51,9 +51,7 @@ def test_rubric_create_with_standard_groups(page: Page, base_url: str) -> None:
         submit_button.click()
 
         # Wait for redirect to edit page (rubrics redirect to edit page after creation)
-        page.wait_for_url(
-            re.compile(r".*/intelligence/rubrics/r/[a-f0-9-]+"), timeout=20000
-        )
+        page.wait_for_url(re.compile(r".*/system/rubrics/r/[a-f0-9-]+"), timeout=20000)
         page.wait_for_load_state("networkidle")
 
         # Extract rubric ID from URL

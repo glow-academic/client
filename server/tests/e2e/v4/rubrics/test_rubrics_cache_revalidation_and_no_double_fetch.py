@@ -63,7 +63,7 @@ def test_rubrics_cache_revalidation_and_no_double_fetch(
     detail_counter, stop_counter = _set_request_counter(
         page, "/api/v4/artifacts/rubrics/new"
     )
-    page.goto(f"{base_url}/intelligence/rubrics/new")
+    page.goto(f"{base_url}/system/rubrics/new")
     page.wait_for_load_state("networkidle")
     stop_counter()
     assert detail_counter["total"] <= 1, (
@@ -78,7 +78,7 @@ def test_rubrics_cache_revalidation_and_no_double_fetch(
     )
 
     # Verify rubric appears in list
-    page.goto(f"{base_url}/intelligence/rubrics")
+    page.goto(f"{base_url}/system/rubrics")
     page.wait_for_load_state("networkidle")
 
     search_input = page.get_by_test_id("rubrics-search")
@@ -130,7 +130,7 @@ def test_rubrics_cache_revalidation_and_no_double_fetch(
     if edit_button.count():
         edit_button.click()
 
-        page.wait_for_url(f"{base_url}/intelligence/rubrics/r/{rubric_id}")
+        page.wait_for_url(f"{base_url}/system/rubrics/r/{rubric_id}")
         page.wait_for_load_state("networkidle")
 
         # Click edit button to enter edit mode (form starts in view mode)
@@ -154,7 +154,7 @@ def test_rubrics_cache_revalidation_and_no_double_fetch(
             page.wait_for_timeout(1000)
 
             # Navigate back to list
-            page.goto(f"{base_url}/intelligence/rubrics")
+            page.goto(f"{base_url}/system/rubrics")
             page.wait_for_load_state("networkidle")
 
             search_input = page.get_by_test_id("rubrics-search")

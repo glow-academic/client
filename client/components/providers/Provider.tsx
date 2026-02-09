@@ -677,7 +677,7 @@ function ProviderComponent({
         toast.success(
           `Provider ${isEditMode ? "updated" : "created"} successfully!`
         );
-        router.push("/system/providers");
+        router.push("/intelligence/providers");
       } catch (error) {
         toast.error(
           `Failed to ${isEditMode ? "update" : "create"} provider: ${
@@ -765,7 +765,7 @@ function ProviderComponent({
   // Memoize submitButton
   const submitButton = useMemo(
     () => ({
-      backUrl: "/system/providers",
+      backUrl: "/intelligence/providers",
       backLabel: "Back",
       createLabel: "Create Provider",
       updateLabel: "Update Provider",

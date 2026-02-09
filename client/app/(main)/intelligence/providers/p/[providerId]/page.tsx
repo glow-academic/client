@@ -1,5 +1,5 @@
 /**
- * app/(main)/system/providers/p/[providerId]/page.tsx
+ * app/(main)/intelligence/providers/p/[providerId]/page.tsx
  * Provider editing page
  */
 
@@ -156,7 +156,7 @@ export default async function EditProviderPage({
         <UnifiedAccessDenied
           reason="department"
           resourceType="provider"
-          redirectPath="/system/providers"
+          redirectPath="/intelligence/providers"
         />
       );
     }

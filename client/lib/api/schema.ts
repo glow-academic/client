@@ -7015,26 +7015,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/views/drafts/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Draft Resources
-         * @description Get denormalized draft resources data from mv_draft_resources.
-         */
-        post: operations["get_draft_resources_api_v4_views_drafts_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v4/views/artifacts/session-list/get": {
         parameters: {
             query?: never;
@@ -13474,95 +13454,6 @@ export interface components {
              */
             show: boolean;
         };
-        /**
-         * DraftResourcesViewItem
-         * @description Single draft row from mv_draft_resources.
-         */
-        DraftResourcesViewItem: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
-            /** Created At */
-            created_at?: string | null;
-            /** Updated At */
-            updated_at?: string | null;
-            /**
-             * Version
-             * @default 0
-             */
-            version: number;
-            /**
-             * Generated
-             * @default false
-             */
-            generated: boolean;
-            /**
-             * Mcp
-             * @default false
-             */
-            mcp: boolean;
-            /**
-             * Active
-             * @default true
-             */
-            active: boolean;
-            /** Group Id */
-            group_id?: string | null;
-            /** Resource Types */
-            resource_types?: string[];
-            /** Resource Ids */
-            resource_ids?: string[];
-            /** Name Ids */
-            name_ids?: string[];
-            /** Description Ids */
-            description_ids?: string[];
-            /** Flag Ids */
-            flag_ids?: string[];
-            /** Color Ids */
-            color_ids?: string[];
-            /** Icon Ids */
-            icon_ids?: string[];
-            /** Auth Ids */
-            auth_ids?: string[];
-            /** Tool Ids */
-            tool_ids?: string[];
-            /** Instruction Ids */
-            instruction_ids?: string[];
-            /** Document Ids */
-            document_ids?: string[];
-            /** Department Ids */
-            department_ids?: string[];
-            /** Parameter Ids */
-            parameter_ids?: string[];
-            /** Parameter Field Ids */
-            parameter_field_ids?: string[];
-            /** Field Ids */
-            field_ids?: string[];
-            /** Example Ids */
-            example_ids?: string[];
-            /** Question Ids */
-            question_ids?: string[];
-            /** Template Ids */
-            template_ids?: string[];
-            /** Text Ids */
-            text_ids?: string[];
-            /** Run Rubric Ids */
-            run_rubric_ids?: string[];
-            /** Group Rubric Ids */
-            group_rubric_ids?: string[];
-            /** Binding Ids */
-            binding_ids?: string[];
-            /** Conditional Parameter Ids */
-            conditional_parameter_ids?: string[];
-            /** Persona Ids */
-            persona_ids?: string[];
-            /** Scenario Ids */
-            scenario_ids?: string[];
-            /** Simulation Ids */
-            simulation_ids?: string[];
-        };
         /** DuplicateAgentApiRequest */
         DuplicateAgentApiRequest: {
             /**
@@ -16528,25 +16419,6 @@ export interface components {
             valid_department_ids?: string[] | null;
             /** Document Type Options */
             document_type_options?: string[] | null;
-        };
-        /**
-         * GetDraftResourcesRequest
-         * @description Request for getting draft resources view rows.
-         */
-        GetDraftResourcesRequest: {
-            /**
-             * Draft Ids
-             * @description Optional draft IDs to fetch. Empty list returns all rows.
-             */
-            draft_ids?: string[];
-        };
-        /**
-         * GetDraftResourcesResponse
-         * @description Response containing draft resources view rows.
-         */
-        GetDraftResourcesResponse: {
-            /** Items */
-            items?: components["schemas"]["DraftResourcesViewItem"][];
         };
         /** GetEmailsApiRequest */
         GetEmailsApiRequest: {
@@ -25406,6 +25278,14 @@ export interface components {
             name: string | null;
             /** Description */
             description: string | null;
+            /** Value */
+            value: string | null;
+            /** Endpoint */
+            endpoint: string | null;
+            /** Key */
+            key: string | null;
+            /** Modality */
+            modality: string | null;
             /** Active */
             active: boolean | null;
             /** Generated */
@@ -26380,8 +26260,6 @@ export interface components {
             id: string | null;
             /** Temperature */
             temperature: number | null;
-            /** Is Upper */
-            is_upper: boolean | null;
             /** Generated */
             generated: boolean | null;
         };
@@ -44999,43 +44877,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetBenchmarkEvalSummaryResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_draft_resources_api_v4_views_drafts_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetDraftResourcesRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetDraftResourcesResponse"];
                 };
             };
             /** @description Validation Error */

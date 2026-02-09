@@ -215,9 +215,9 @@ function MainLayoutContent({
       );
     }
 
-    if (pathname === "/intelligence/rubrics") {
+    if (pathname === "/system/rubrics") {
       return (
-        <Button onClick={() => router.push("/intelligence/rubrics/new")} size="sm">
+        <Button onClick={() => router.push("/system/rubrics/new")} size="sm">
           <Plus className="h-4 w-4 mr-2" />
           Create Rubric
         </Button>
@@ -233,9 +233,9 @@ function MainLayoutContent({
       );
     }
 
-    if (pathname === "/system/providers") {
+    if (pathname === "/intelligence/providers") {
       return (
-        <Button onClick={() => router.push("/system/providers/new")} size="sm">
+        <Button onClick={() => router.push("/intelligence/providers/new")} size="sm">
           <Plus className="h-4 w-4 mr-2" />
           Create Provider
         </Button>

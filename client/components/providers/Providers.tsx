@@ -12,7 +12,7 @@ import type {
   DeleteProviderIn,
   DeleteProviderOut,
   ProvidersListOut,
-} from "@/app/(main)/system/providers/page";
+} from "@/app/(main)/intelligence/providers/page";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import { Input } from "@/components/ui/input";
@@ -291,11 +291,11 @@ export default function Providers({
   };
 
   const handleEdit = (id: string) => {
-    router.push(`/system/providers/p/${id}`);
+    router.push(`/intelligence/providers/p/${id}`);
   };
 
   const handleCreateNew = () => {
-    router.push("/system/providers/new");
+    router.push("/intelligence/providers/new");
   };
 
   const renderProviderCard = (provider: (typeof providers)[number]) => {

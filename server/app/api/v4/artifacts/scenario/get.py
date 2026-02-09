@@ -98,7 +98,7 @@ from app.api.v4.resources.templates.search import search_templates_internal
 from app.api.v4.resources.videos.get import get_videos_internal
 from app.api.v4.resources.videos.search import search_videos_internal
 from app.api.v4.types import CandidateAgent, DomainAgent, build_domain_data
-from app.api.v4.views.drafts.get import get_draft_resources_internal
+from app.api.v4.views.drafts.get import get_draft_scenario_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -263,7 +263,7 @@ async def get_scenario_internal(
     draft_item = None
     if draft_id is not None:
         async with pool.acquire() as draft_conn:
-            draft_items = await get_draft_resources_internal(
+            draft_items = await get_draft_scenario_internal(
                 conn=draft_conn,
                 draft_ids=[draft_id],
                 bypass_cache=bypass_cache,
@@ -450,20 +450,20 @@ async def get_scenario_internal(
 
     # Build per-resource group_ids from draft_item
     resource_group_ids: dict[str, UUID | None] = {
-        "names": draft_item.names_group_id if draft_item else None,
-        "descriptions": draft_item.descriptions_group_id if draft_item else None,
-        "problem_statements": None,  # No problem_statements_group_id on draft
-        "flags": draft_item.flags_group_id if draft_item else None,
-        "departments": draft_item.departments_group_id if draft_item else None,
-        "personas": draft_item.personas_group_id if draft_item else None,
-        "documents": draft_item.documents_group_id if draft_item else None,
-        "parameters": draft_item.parameters_group_id if draft_item else None,
-        "fields": draft_item.parameter_fields_group_id if draft_item else None,
-        "objectives": None,  # No objectives_group_id on draft
-        "images": None,  # No images_group_id on draft
-        "videos": None,  # No videos_group_id on draft
-        "questions": draft_item.questions_group_id if draft_item else None,
-        "templates": draft_item.templates_group_id if draft_item else None,
+        "names": draft_item.group_id if draft_item else None,
+        "descriptions": draft_item.group_id if draft_item else None,
+        "problem_statements": draft_item.group_id if draft_item else None,
+        "flags": draft_item.group_id if draft_item else None,
+        "departments": draft_item.group_id if draft_item else None,
+        "personas": draft_item.group_id if draft_item else None,
+        "documents": draft_item.group_id if draft_item else None,
+        "parameters": draft_item.group_id if draft_item else None,
+        "fields": draft_item.group_id if draft_item else None,
+        "objectives": draft_item.group_id if draft_item else None,
+        "images": draft_item.group_id if draft_item else None,
+        "videos": draft_item.group_id if draft_item else None,
+        "questions": draft_item.group_id if draft_item else None,
+        "templates": draft_item.group_id if draft_item else None,
     }
 
     # Parallel fetch all resources

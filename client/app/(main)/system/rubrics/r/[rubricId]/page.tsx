@@ -142,7 +142,7 @@ export default async function EditRubricPage({
         <UnifiedAccessDenied
           reason="department"
           resourceType="rubric"
-          redirectPath="/intelligence/rubrics"
+          redirectPath="/system/rubrics"
         />
       );
     }

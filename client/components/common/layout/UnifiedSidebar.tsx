@@ -316,9 +316,9 @@ export function UnifiedSidebar({
         section: "models",
       });
       intelligenceItems.push({
-        title: "Rubrics",
+        title: "Providers",
         url: "#",
-        section: "rubrics",
+        section: "providers",
       });
       intelligenceItems.push({
         title: "Tools",
@@ -346,9 +346,9 @@ export function UnifiedSidebar({
         section: "departments",
       });
       systemItems.push({
-        title: "Providers",
+        title: "Rubrics",
         url: "#",
-        section: "providers",
+        section: "rubrics",
       });
       systemItems.push({
         title: "Auth",

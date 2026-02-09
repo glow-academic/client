@@ -819,7 +819,7 @@ function RubricComponent({
         toast.success(
           `Rubric ${isEditMode ? "updated" : "created"} successfully!`
         );
-        router.push("/intelligence/rubrics");
+        router.push("/system/rubrics");
       } catch (error) {
         toast.error(
           `Failed to ${isEditMode ? "update" : "create"} rubric: ${
@@ -970,7 +970,7 @@ function RubricComponent({
 
   const submitButton = useMemo(
     () => ({
-      backUrl: "/intelligence/rubrics",
+      backUrl: "/system/rubrics",
       backLabel: "Back",
       createLabel: "Create Rubric",
       updateLabel: "Update Rubric",

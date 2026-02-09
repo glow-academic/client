@@ -138,7 +138,7 @@ export function UnifiedAccessDenied({
         case "agent":
           return "/intelligence/agents";
         case "rubric":
-          return "/intelligence/rubrics";
+          return "/system/rubrics";
         case "parameter":
           return "/management/parameters";
         case "key":

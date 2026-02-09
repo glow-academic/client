@@ -117,7 +117,7 @@ export const getSectionRoute = (
     case "models":
       return "/intelligence/models";
     case "rubrics":
-      return "/intelligence/rubrics";
+      return "/system/rubrics";
     case "tools":
       return "/intelligence/tools";
     case "evals":
@@ -127,7 +127,7 @@ export const getSectionRoute = (
     case "system":
       return "/system";
     case "providers":
-      return "/system/providers";
+      return "/intelligence/providers";
     case "auth":
       return "/system/auth";
     case "settings":
@@ -166,7 +166,7 @@ export const getSectionRoute = (
       }
       if (section.startsWith("rubric-")) {
         const rubricId = section.replace("rubric-", "");
-        return `/intelligence/rubrics/r/${rubricId}`;
+        return `/system/rubrics/r/${rubricId}`;
       }
       if (section.startsWith("document-")) {
         const documentId = section.replace("document-", "");

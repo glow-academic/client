@@ -32600,101 +32600,6 @@
         }
       }
     },
-    "/api/v4/views/drafts/get": {
-      "post": {
-        "tags": [
-          "v4",
-          "views",
-          "views",
-          "drafts"
-        ],
-        "summary": "Get Draft Resources",
-        "description": "Get denormalized draft resources data from mv_draft_resources.",
-        "operationId": "get_draft_resources_api_v4_views_drafts_get_post",
-        "parameters": [
-          {
-            "name": "X-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Profile-Id"
-            }
-          },
-          {
-            "name": "X-Session-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Session-Id"
-            }
-          },
-          {
-            "name": "X-MCP",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Mcp"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GetDraftResourcesRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GetDraftResourcesResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/v4/views/artifacts/session-list/get": {
       "post": {
         "tags": [
@@ -50271,284 +50176,6 @@
         "title": "DomainData",
         "description": "Rich metadata for a domain, used in generate/regenerate modals."
       },
-      "DraftResourcesViewItem": {
-        "properties": {
-          "draft_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Draft Id"
-          },
-          "created_at": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Created At"
-          },
-          "updated_at": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Updated At"
-          },
-          "version": {
-            "type": "integer",
-            "title": "Version",
-            "default": 0
-          },
-          "generated": {
-            "type": "boolean",
-            "title": "Generated",
-            "default": false
-          },
-          "mcp": {
-            "type": "boolean",
-            "title": "Mcp",
-            "default": false
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active",
-            "default": true
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
-          },
-          "resource_types": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Resource Types"
-          },
-          "resource_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "title": "Resource Ids"
-          },
-          "name_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "title": "Name Ids"
-          },
-          "description_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "title": "Description Ids"
-          },
-          "flag_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "title": "Flag Ids"
-          },
-          "color_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "title": "Color Ids"
-          },
-          "icon_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "title": "Icon Ids"
-          },
-          "auth_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "title": "Auth Ids"
-          },
-          "tool_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "title": "Tool Ids"
-          },
-          "instruction_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "title": "Instruction Ids"
-          },
-          "document_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "title": "Document Ids"
-          },
-          "department_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "title": "Department Ids"
-          },
-          "parameter_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "title": "Parameter Ids"
-          },
-          "parameter_field_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "title": "Parameter Field Ids"
-          },
-          "field_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "title": "Field Ids"
-          },
-          "example_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "title": "Example Ids"
-          },
-          "question_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "title": "Question Ids"
-          },
-          "template_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "title": "Template Ids"
-          },
-          "text_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "title": "Text Ids"
-          },
-          "run_rubric_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "title": "Run Rubric Ids"
-          },
-          "group_rubric_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "title": "Group Rubric Ids"
-          },
-          "binding_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "title": "Binding Ids"
-          },
-          "conditional_parameter_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "title": "Conditional Parameter Ids"
-          },
-          "persona_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "title": "Persona Ids"
-          },
-          "scenario_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "title": "Scenario Ids"
-          },
-          "simulation_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "title": "Simulation Ids"
-          }
-        },
-        "type": "object",
-        "required": [
-          "draft_id"
-        ],
-        "title": "DraftResourcesViewItem",
-        "description": "Single draft row from mv_draft_resources."
-      },
       "DuplicateAgentApiRequest": {
         "properties": {
           "agent_id": {
@@ -60575,36 +60202,6 @@
         },
         "type": "object",
         "title": "GetDocumentsListApiResponse"
-      },
-      "GetDraftResourcesRequest": {
-        "properties": {
-          "draft_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "title": "Draft Ids",
-            "description": "Optional draft IDs to fetch. Empty list returns all rows."
-          }
-        },
-        "type": "object",
-        "title": "GetDraftResourcesRequest",
-        "description": "Request for getting draft resources view rows."
-      },
-      "GetDraftResourcesResponse": {
-        "properties": {
-          "items": {
-            "items": {
-              "$ref": "#/components/schemas/DraftResourcesViewItem"
-            },
-            "type": "array",
-            "title": "Items"
-          }
-        },
-        "type": "object",
-        "title": "GetDraftResourcesResponse",
-        "description": "Response containing draft resources view rows."
       },
       "GetEmailsApiRequest": {
         "properties": {
@@ -95184,6 +94781,50 @@
             ],
             "title": "Description"
           },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "endpoint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Endpoint"
+          },
+          "key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key"
+          },
+          "modality": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Modality"
+          },
           "active": {
             "anyOf": [
               {
@@ -95212,6 +94853,10 @@
           "id",
           "name",
           "description",
+          "value",
+          "endpoint",
+          "key",
+          "modality",
           "active",
           "generated"
         ],
@@ -100354,17 +99999,6 @@
             ],
             "title": "Temperature"
           },
-          "is_upper": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Is Upper"
-          },
           "generated": {
             "anyOf": [
               {
@@ -100381,7 +100015,6 @@
         "required": [
           "id",
           "temperature",
-          "is_upper",
           "generated"
         ],
         "title": "QGetTemperatureLevelsV4Item"

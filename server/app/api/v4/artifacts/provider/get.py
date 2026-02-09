@@ -59,7 +59,7 @@ from app.api.v4.resources.regenerates.search import search_regenerates_internal
 from app.api.v4.resources.values.get import get_values_internal
 from app.api.v4.resources.values.search import search_values_internal
 from app.api.v4.types import CandidateAgent
-from app.api.v4.views.drafts.get import get_draft_resources_internal
+from app.api.v4.views.drafts.get import get_draft_provider_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -141,7 +141,7 @@ async def get_provider_internal(
     draft_item = None
     if draft_id is not None:
         async with pool.acquire() as draft_conn:
-            draft_items = await get_draft_resources_internal(
+            draft_items = await get_draft_provider_internal(
                 conn=draft_conn,
                 draft_ids=[draft_id],
                 bypass_cache=bypass_cache,
@@ -231,12 +231,12 @@ async def get_provider_internal(
 
     # Build per-resource group_ids from draft_item
     resource_group_ids: dict[str, UUID | None] = {
-        "names": draft_item.names_group_id if draft_item else None,
-        "descriptions": draft_item.descriptions_group_id if draft_item else None,
-        "flags": draft_item.flags_group_id if draft_item else None,
-        "departments": draft_item.departments_group_id if draft_item else None,
-        "values": draft_item.values_group_id if draft_item else None,
-        "regenerates": draft_item.regenerates_group_id if draft_item else None,
+        "names": draft_item.group_id if draft_item else None,
+        "descriptions": draft_item.group_id if draft_item else None,
+        "flags": draft_item.group_id if draft_item else None,
+        "departments": draft_item.group_id if draft_item else None,
+        "values": draft_item.group_id if draft_item else None,
+        "regenerates": draft_item.group_id if draft_item else None,
     }
 
     # Get tools existence flags from Query 2

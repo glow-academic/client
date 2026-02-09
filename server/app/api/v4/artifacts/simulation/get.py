@@ -92,7 +92,7 @@ from app.api.v4.resources.scenario_time_limits.search import (
 )
 from app.api.v4.resources.scenarios.search import search_scenarios_internal
 from app.api.v4.types import CandidateAgent
-from app.api.v4.views.drafts.get import get_draft_resources_internal
+from app.api.v4.views.drafts.get import get_draft_simulation_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -190,7 +190,7 @@ async def get_simulation_internal(
     draft_item = None
     if draft_id is not None:
         async with pool.acquire() as draft_conn:
-            draft_items = await get_draft_resources_internal(
+            draft_items = await get_draft_simulation_internal(
                 conn=draft_conn,
                 draft_ids=[draft_id],
                 bypass_cache=bypass_cache,
@@ -668,28 +668,16 @@ async def get_simulation_internal(
 
     # Build per-resource group_ids from draft_item
     resource_group_ids: dict[str, UUID | None] = {
-        "names": draft_item.names_group_id if draft_item else None,
-        "descriptions": draft_item.descriptions_group_id if draft_item else None,
-        "flags": draft_item.flags_group_id if draft_item else None,
-        "departments": draft_item.departments_group_id if draft_item else None,
-        "scenarios": draft_item.scenarios_group_id if draft_item else None,
-        "scenario_flags": getattr(draft_item, "scenario_flags_group_id", None)
-        if draft_item
-        else None,
-        "scenario_personas": getattr(draft_item, "scenario_personas_group_id", None)
-        if draft_item
-        else None,
-        "scenario_positions": getattr(draft_item, "scenario_positions_group_id", None)
-        if draft_item
-        else None,
-        "scenario_rubrics": getattr(draft_item, "scenario_rubrics_group_id", None)
-        if draft_item
-        else None,
-        "scenario_time_limits": getattr(
-            draft_item, "scenario_time_limits_group_id", None
-        )
-        if draft_item
-        else None,
+        "names": draft_item.group_id if draft_item else None,
+        "descriptions": draft_item.group_id if draft_item else None,
+        "flags": draft_item.group_id if draft_item else None,
+        "departments": draft_item.group_id if draft_item else None,
+        "scenarios": draft_item.group_id if draft_item else None,
+        "scenario_flags": draft_item.group_id if draft_item else None,
+        "scenario_personas": draft_item.group_id if draft_item else None,
+        "scenario_positions": draft_item.group_id if draft_item else None,
+        "scenario_rubrics": draft_item.group_id if draft_item else None,
+        "scenario_time_limits": draft_item.group_id if draft_item else None,
     }
 
     # Validation for new mode
