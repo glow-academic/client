@@ -136,11 +136,9 @@ endpoint_resource_data AS (
 ),
 provider_resource_data AS (
     SELECT
-        (SELECT p.id
-         FROM model_providers_junction mp
-         JOIN providers_resource p ON p.id = mp.providers_id
-         JOIN models_resource m_res ON m_res.id = mp.model_id
-         WHERE m_res.id = (SELECT model_id FROM params) AND p.active = true
+        (SELECT pm.provider_id
+         FROM provider_models_junction pm
+         WHERE pm.model_id = (SELECT model_id FROM params)
          LIMIT 1) as provider_id
     FROM params
 ),
@@ -239,7 +237,7 @@ temperature_level_ids_data AS (
         CASE
             WHEN (SELECT model_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
-                (SELECT ARRAY_AGG(tl.id ORDER BY tl.temperature, tl.is_upper)
+                (SELECT ARRAY_AGG(tl.id ORDER BY tl.temperature)
                  FROM model_temperature_levels_junction mtl
                  JOIN temperature_levels_resource tl ON tl.id = mtl.temperature_level_id
                  WHERE mtl.model_id = (SELECT model_id FROM params)

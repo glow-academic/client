@@ -298,8 +298,8 @@ BEGIN
           AND j.setting_id = p.setting_id
         RETURNING r.id
     )
-    -- Note: Keys are handled separately via setting_provider_keys_junction (ternary relationship with providers)
-    -- Keys require both setting_id and providers_id, so they're managed in a separate endpoint
+    -- Note: Keys are handled separately via setting_provider_keys_junction (2-way: setting_id -> provider_keys_resource)
+    -- Keys are managed in a separate endpoint
     SELECT
         x.setting_id AS setting_id,
         ap.actor_name AS actor_name

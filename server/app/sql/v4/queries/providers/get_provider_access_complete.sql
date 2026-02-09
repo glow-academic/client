@@ -114,10 +114,9 @@ provider_departments_data AS (
 model_usage_data AS (
     SELECT COALESCE(
         (
-            SELECT COUNT(DISTINCT mpj.model_id)::int
-            FROM provider_providers_junction ppj
-            JOIN model_providers_junction mpj ON mpj.providers_id = ppj.providers_id
-            WHERE ppj.provider_id = (SELECT provider_id FROM params)
+            SELECT COUNT(DISTINCT pmj.model_id)::int
+            FROM provider_models_junction pmj
+            WHERE pmj.provider_id = (SELECT provider_id FROM params)
         ),
         0
     ) as model_usage_count

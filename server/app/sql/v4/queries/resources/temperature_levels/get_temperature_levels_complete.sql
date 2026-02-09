@@ -52,7 +52,6 @@ END $$;
 CREATE TYPE types.q_get_temperature_levels_v4_item AS (
     id uuid,
     temperature real,
-    is_upper boolean,
     generated boolean
 );
 
@@ -68,7 +67,7 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (t.id, t.temperature, t.is_upper, COALESCE(t.generated, false))::types.q_get_temperature_levels_v4_item
+        (t.id, t.temperature, COALESCE(t.generated, false))::types.q_get_temperature_levels_v4_item
         ORDER BY array_position(ids, t.id)
     ),
     ARRAY[]::types.q_get_temperature_levels_v4_item[]

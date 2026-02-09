@@ -964,20 +964,21 @@ provider_mapping_data AS (
     GROUP BY p.id, (SELECT n.name FROM provider_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.provider_id = pr.id LIMIT 1), COALESCE((SELECT d.description FROM provider_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.provider_id = pr.id LIMIT 1), ''), p.active
 ),
 -- Key IDs (selected key IDs for setting)
--- Keys are linked via setting_provider_keys_junction and setting_auth_keys_junction
+-- Keys are linked via setting_provider_keys_junction -> provider_keys_resource and setting_auth_keys_junction
 setting_key_ids_data AS (
-    SELECT 
-        CASE 
+    SELECT
+        CASE
             WHEN (SELECT setting_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
                 (
                     SELECT ARRAY_AGG(key_id ORDER BY created_at)
                     FROM (
-                        SELECT DISTINCT spk.key_id, MIN(spk.created_at) as created_at
+                        SELECT DISTINCT pkr.key_id, MIN(spk.created_at) as created_at
                         FROM setting_provider_keys_junction spk
-                        WHERE spk.settings_id = (SELECT setting_id FROM params)
+                        JOIN provider_keys_resource pkr ON pkr.id = spk.provider_key_id
+                        WHERE spk.setting_id = (SELECT setting_id FROM params)
                           AND spk.active = true
-                        GROUP BY spk.key_id
+                        GROUP BY pkr.key_id
                         UNION
                         SELECT DISTINCT sak.key_id, MIN(sak.created_at) as created_at
                         FROM setting_auth_keys_junction sak
@@ -993,18 +994,19 @@ setting_key_ids_data AS (
     -- Always return at least one row
     LIMIT 1
 ),
--- Key suggestions: linked to settings via setting_provider_keys_junction or setting_auth_keys_junction
+-- Key suggestions: linked to settings via setting_provider_keys_junction -> provider_keys_resource or setting_auth_keys_junction
 key_suggestions_data AS (
-    SELECT 
+    SELECT
         COALESCE(
             (
                 SELECT ARRAY_AGG(key_id ORDER BY created_at DESC)
                 FROM (
-                    SELECT DISTINCT spk.key_id, MAX(spk.created_at) as created_at
+                    SELECT DISTINCT pkr.key_id, MAX(spk.created_at) as created_at
                     FROM setting_provider_keys_junction spk
-                    WHERE spk.key_id IS NOT NULL
+                    JOIN provider_keys_resource pkr ON pkr.id = spk.provider_key_id
+                    WHERE pkr.key_id IS NOT NULL
                       AND spk.active = true
-                    GROUP BY spk.key_id
+                    GROUP BY pkr.key_id
                     UNION
                     SELECT DISTINCT sak.key_id, MAX(sak.created_at) as created_at
                     FROM setting_auth_keys_junction sak
@@ -1037,29 +1039,32 @@ key_mapping_data AS (
              FROM (
                  SELECT DISTINCT ds.department_id
                  FROM setting_provider_keys_junction spk
-                 JOIN setting_artifact s ON s.id = spk.settings_id
+                 JOIN provider_keys_resource pkr ON pkr.id = spk.provider_key_id
+                 JOIN setting_artifact s ON s.id = spk.setting_id
                  JOIN department_settings_junction ds ON ds.settings_id = s.id AND ds.active = true
-                 WHERE spk.key_id = kr.id AND spk.active = true
+                 WHERE pkr.key_id = kr.id AND spk.active = true
              ) ds),
             ARRAY[]::text[]
         ) as department_ids
     FROM params x
     CROSS JOIN user_profile up
     JOIN keys_resource kr ON true
-    WHERE 
+    WHERE
         -- Include keys with matching department links OR default keys (no department links) OR superadmin can see all
         EXISTS (
             SELECT 1 FROM setting_provider_keys_junction spk
-            JOIN setting_artifact s ON s.id = spk.settings_id
+            JOIN provider_keys_resource pkr ON pkr.id = spk.provider_key_id
+            JOIN setting_artifact s ON s.id = spk.setting_id
             JOIN department_settings_junction ds ON ds.settings_id = s.id AND ds.active = true
             JOIN user_departments ud ON ud.department_id = ds.department_id
-            WHERE spk.key_id = kr.id AND spk.active = true
+            WHERE pkr.key_id = kr.id AND spk.active = true
         )
         OR NOT EXISTS (
             SELECT 1 FROM setting_provider_keys_junction spk2
-            JOIN setting_artifact s2 ON s2.id = spk2.settings_id
+            JOIN provider_keys_resource pkr2 ON pkr2.id = spk2.provider_key_id
+            JOIN setting_artifact s2 ON s2.id = spk2.setting_id
             JOIN department_settings_junction ds2 ON ds2.settings_id = s2.id AND ds2.active = true
-            WHERE spk2.key_id = kr.id AND spk2.active = true
+            WHERE pkr2.key_id = kr.id AND spk2.active = true
         )
         OR up.role = 'superadmin'
 ),

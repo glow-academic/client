@@ -41,13 +41,12 @@ user_profile AS (
     WHERE profile_id = (SELECT profile_id FROM params)
 ),
 usage_check AS (
-    -- Count distinct models using this provider via providers_resource link
+    -- Count distinct models using this provider via provider_models_junction
     SELECT COALESCE(
         (
-            SELECT COUNT(DISTINCT mpj.model_id)::bigint
-            FROM provider_providers_junction ppj
-            JOIN model_providers_junction mpj ON mpj.providers_id = ppj.providers_id
-            WHERE ppj.provider_id = (SELECT provider_id FROM params)
+            SELECT COUNT(DISTINCT pmj.model_id)::bigint
+            FROM provider_models_junction pmj
+            WHERE pmj.provider_id = (SELECT provider_id FROM params)
         ),
         0
     ) as usage_count

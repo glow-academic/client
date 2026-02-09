@@ -46,57 +46,24 @@ WITH chat_info AS (
     WHERE c.id = p_chat_id
     LIMIT 1
 ),
--- Get profile's primary department for settings resolution
-profile_primary_department AS (
-    SELECT pd.department_id
-    FROM profile_departments_junction pd
-    WHERE pd.profile_id = p_profile_id
-      AND pd.is_primary = TRUE
-      AND pd.active = true
-    LIMIT 1
-),
--- Get OpenAI provider ID (for Realtime API)
+-- Get OpenAI provider and API key from models_resource via provider_models_junction
 openai_provider AS (
-    SELECT p.id as providers_id, n.name as provider_name
-    FROM providers_resource p
-    JOIN provider_providers_junction ppj ON ppj.providers_id = p.id
-    JOIN provider_artifact pa ON pa.id = ppj.provider_id
+    SELECT n.name as provider_name, m.key as api_key
+    FROM provider_artifact pa
     JOIN provider_names_junction pnj ON pnj.provider_id = pa.id
     JOIN names_resource n ON n.id = pnj.name_id
+    JOIN provider_models_junction pmj ON pmj.provider_id = pa.id
+    JOIN models_resource m ON m.id = pmj.model_id
     WHERE LOWER(n.name) = 'openai'
-    LIMIT 1
-),
--- Get active settings with OpenAI key
-active_settings_with_key AS (
-    SELECT
-        s.id as settings_id,
-        kr.key as api_key
-    FROM setting_artifact s
-    JOIN setting_provider_keys_junction spk ON spk.settings_id = s.id AND spk.active = true
-    JOIN keys_resource kr ON kr.id = spk.key_id AND kr.active
-    CROSS JOIN openai_provider op
-    WHERE spk.providers_id = op.providers_id
-      AND EXISTS (
-          SELECT 1 FROM setting_flags_junction sf
-          JOIN flags_resource f ON sf.flag_id = f.id
-          WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = true
-      )
-    -- Prefer department-specific settings
-    ORDER BY
-        CASE WHEN EXISTS (
-            SELECT 1 FROM department_settings_junction ds
-            JOIN profile_primary_department ppd ON ds.department_id = ppd.department_id
-            WHERE ds.settings_id = s.id AND ds.active = true
-        ) THEN 0 ELSE 1 END
+      AND m.key IS NOT NULL AND m.key != ''
     LIMIT 1
 )
 SELECT
     ci.chat_id,
     ci.attempt_id,
     ci.simulation_id,
-    ask.api_key,
+    op.api_key,
     op.provider_name
 FROM chat_info ci
-LEFT JOIN active_settings_with_key ask ON TRUE
 LEFT JOIN openai_provider op ON TRUE
 $$;

@@ -260,26 +260,26 @@ BEGIN
         DELETE FROM model_values_junction WHERE model_id = v_model_id;
     END IF;
 
-    -- Handle provider link (via model_providers_junction table)
-    -- Note: model_providers_junction.model_id REFERENCES models_resource.id (resource), not model.id (artifact)
+    -- Handle provider link (via provider_models_junction table)
+    -- Note: provider_models_junction.model_id REFERENCES models_resource.id (resource), not model.id (artifact)
     -- So we need to get or create the models resource entry first
     -- Get or create models resource entry
     SELECT id INTO v_models_resource_id
     FROM models_resource
     WHERE model_id = v_model_id
     LIMIT 1;
-    
+
     IF v_models_resource_id IS NULL THEN
         -- Create models resource entry if it doesn't exist (use active_flag_id to determine active status)
         INSERT INTO models_resource (model_id, active, generated, mcp, created_at)
         VALUES (v_model_id, active_flag_id IS NOT NULL, false, false, NOW())
         RETURNING id INTO v_models_resource_id;
     END IF;
-    
-    -- Link provider via model_providers_junction
-    INSERT INTO model_providers_junction (model_id, providers_id, active, created_at)
-    VALUES (v_models_resource_id, provider_id, true, NOW())
-    ON CONFLICT (model_id, providers_id) DO UPDATE SET
+
+    -- Link provider via provider_models_junction (provider_id -> provider_artifact, model_id -> models_resource)
+    INSERT INTO provider_models_junction (provider_id, model_id, active, created_at)
+    VALUES (provider_id, v_models_resource_id, true, NOW())
+    ON CONFLICT (provider_id, model_id) DO UPDATE SET
         active = true;
 
     -- Handle departments

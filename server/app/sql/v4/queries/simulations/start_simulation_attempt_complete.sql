@@ -274,47 +274,6 @@ resolved_dept AS (
         (SELECT department_id FROM any_active_dept)
     ) as department_id
 ),
--- Get active settings for profile (for key lookup via setting_provider_keys_junction)
-default_settings AS (
-    -- Get settings with no department links (cross-department/default)
-    SELECT s.id as settings_id
-    FROM setting_artifact s
-    WHERE EXISTS (SELECT 1 FROM setting_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = TRUE)
-      AND NOT EXISTS (
-          SELECT 1 FROM department_settings_junction sd
-          WHERE sd.settings_id = s.id AND sd.active = true
-      )
-    LIMIT 1
-),
-profile_primary_department AS (
-    -- Get profile's primary department ID (only if profile_id is provided)
-    SELECT pd.department_id
-    FROM params p
-    JOIN profile_departments_junction pd ON pd.profile_id = p.profile_id
-    WHERE pd.is_primary = TRUE
-      AND pd.active = true
-    LIMIT 1
-),
-dept_specific_settings AS (
-    -- Get department-specific settings (if primary_department_id exists)
-    SELECT s.id as settings_id
-    FROM setting_artifact s
-    JOIN department_settings_junction sd ON sd.settings_id = s.id
-    JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
-    WHERE EXISTS (SELECT 1 FROM setting_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = TRUE)
-      AND sd.active = true
-    LIMIT 1
-),
-active_settings AS (
-    -- For authenticated users: prefer department-specific, then default, then any active
-    -- For NULL profile_id: use default settings
-    SELECT
-        COALESCE(
-            (SELECT settings_id FROM dept_specific_settings),
-            (SELECT settings_id FROM default_settings),
-            (SELECT id FROM setting_artifact s WHERE EXISTS (SELECT 1 FROM setting_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = TRUE) LIMIT 1)
-        ) as settings_id
-),
 -- Document data for composite type aggregation
 document_data AS (
     SELECT
@@ -377,7 +336,7 @@ scenario_full_data_raw AS (
         (SELECT v.value FROM model_values_junction mv JOIN values_resource v ON mv.value_id = v.id WHERE mv.model_id = m.id LIMIT 1) as model_name,
         COALESCE(n_prov.name, '') as provider,
         COALESCE(e.base_url, '') as base_url,
-        kr.key as api_key,
+        m.key as api_key,
         -- Check if scenario needs generation
         CASE
             WHEN ps.problem_statement IS NULL OR ps.problem_statement = '' THEN true
@@ -391,37 +350,28 @@ scenario_full_data_raw AS (
     CROSS JOIN simulation_data sd_agents
 
     LEFT JOIN agents_resource a ON a.id = NULL::uuid AND EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
-    LEFT JOIN agent_models_junction am ON am.agent_id = a.id
-    LEFT JOIN models_resource m ON m.id = am.model_id
+    LEFT JOIN models_resource m ON m.id = a.model_id
     -- Join temperature and reasoning FROM model_artifact levels via agent
     LEFT JOIN agent_temperature_levels_junction atl ON atl.agent_id = a.id AND atl.active = true
     LEFT JOIN model_temperature_levels_junction mtl ON mtl.temperature_level_id = atl.temperature_level_id AND mtl.model_id = m.id
-LEFT JOIN temperature_levels_resource tl ON tl.id = mtl.temperature_level_id AND tl.active = true
+    LEFT JOIN temperature_levels_resource tl ON tl.id = mtl.temperature_level_id AND tl.active = true
     LEFT JOIN agent_reasoning_levels_junction arl ON arl.agent_id = a.id AND arl.active = true
     -- IMPORTANT: Only join reasoning levels that belong to the agent's model (m.id = mrl.model_id)
     LEFT JOIN model_reasoning_levels_junction mrl ON mrl.reasoning_level_id = arl.reasoning_level_id AND mrl.model_id = m.id
-LEFT JOIN reasoning_levels_resource rl ON rl.id = mrl.reasoning_level_id AND rl.active = true
+    LEFT JOIN reasoning_levels_resource rl ON rl.id = mrl.reasoning_level_id AND rl.active = true
     LEFT JOIN agent_prompts_junction ap_default ON ap_default.agent_id = a.id AND ap_default.active = true
     LEFT JOIN prompts_resource pr_prompt_default ON pr_prompt_default.id = ap_default.prompt_id
     LEFT JOIN model_endpoints_junction me_j ON me_j.model_id = m.id
     LEFT JOIN endpoints_resource e ON e.id = me_j.endpoint_id AND e.active = true
-    -- Get keys via settings system: provider -> active settings -> setting_provider_keys_junction
-    LEFT JOIN model_providers_junction mp ON mp.model_id = m.id
-    LEFT JOIN providers_resource p_prov ON p_prov.id = mp.providers_id
-    LEFT JOIN provider_providers_junction ppj_prov ON ppj_prov.providers_id = p_prov.id
-    LEFT JOIN provider_artifact pr_prov ON pr_prov.id = ppj_prov.provider_id
-    LEFT JOIN provider_names_junction pn_prov ON pn_prov.provider_id = pr_prov.id
+    -- Get provider via provider_models_junction
+    LEFT JOIN provider_models_junction pm ON pm.model_id = m.id
+    LEFT JOIN provider_names_junction pn_prov ON pn_prov.provider_id = pm.provider_id
     LEFT JOIN names_resource n_prov ON n_prov.id = pn_prov.name_id
-    CROSS JOIN active_settings act_s
-    LEFT JOIN setting_provider_keys_junction spk ON spk.providers_id = p_prov.id
-        AND spk.settings_id = act_s.settings_id
-        AND spk.active = true
-    LEFT JOIN keys_resource kr ON kr.id = spk.key_id AND kr.active
     WHERE s.id = csi.scenario_id
     GROUP BY s.id, (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1), ps.problem_statement, EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'scenario_active' AND sf.value = TRUE),
              CASE WHEN ps.problem_statement IS NULL OR ps.problem_statement = '' THEN true ELSE false END, sp.persona_id, (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = sp.persona_id LIMIT 1), pr_prompt_default.system_prompt,
              COALESCE(tl.temperature, 0.0), rl.reasoning_level, (SELECT c.hex_code FROM persona_colors_junction pc JOIN colors_resource c ON pc.color_id = c.id WHERE pc.persona_id = sp.persona_id LIMIT 1), (SELECT i.name FROM persona_icons_junction pi JOIN icons_resource i ON pi.icon_id = i.id WHERE pi.persona_id = sp.persona_id LIMIT 1), m.id, (SELECT v.value FROM model_values_junction mv JOIN values_resource v ON mv.value_id = v.id WHERE mv.model_id = m.id LIMIT 1), n_prov.name,
-             kr.key, e.base_url, act_s.settings_id
+             m.key, e.base_url
 ),
 -- Select only ONE row per scenario (deterministic: pick first model by ID)
 scenario_full_data AS (

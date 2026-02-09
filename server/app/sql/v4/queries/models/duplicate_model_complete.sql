@@ -49,7 +49,7 @@ source_model AS (
         (SELECT d.description FROM model_descriptions_junction md JOIN descriptions_resource d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1) as description,
         EXISTS (SELECT 1 FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = m.id AND f.name = 'model_active' AND mf.value = TRUE) as active,
         NULL::uuid as domain_id,  -- Domain no longer exists, use NULL
-        (SELECT p_prov.id FROM model_providers_junction mp JOIN providers_resource p_prov ON p_prov.id = mp.providers_id WHERE mp.model_id = m.id LIMIT 1) as providers_id,
+        (SELECT pm.provider_id FROM provider_models_junction pm JOIN model_models_junction mmj ON mmj.models_id = pm.model_id WHERE mmj.model_id = m.id LIMIT 1) as provider_id,
         (SELECT v.value FROM model_values_junction mv JOIN values_resource v ON mv.value_id = v.id WHERE mv.model_id = m.id LIMIT 1) as value
     FROM params x
     JOIN model_artifact m ON m.id = x.model_id
@@ -169,17 +169,17 @@ link_model_description AS (
     CROSS JOIN new_description_resource ndr
     ON CONFLICT (model_id, description_id) DO NOTHING
 ),
--- Link model to provider (via model_providers_junction)
+-- Link model to provider (via provider_models_junction)
 link_model_provider AS (
-    INSERT INTO model_providers_junction (model_id, providers_id, created_at)
-    SELECT 
-        dmr.id,  -- Use models.id (resource) from duplicated model resource
-        sm.providers_id,
+    INSERT INTO provider_models_junction (provider_id, model_id, created_at)
+    SELECT
+        sm.provider_id,
+        dmr.id,  -- Use models_resource.id from duplicated model resource
         NOW()
     FROM duplicated_model_resource dmr
     CROSS JOIN source_model sm
-    WHERE sm.providers_id IS NOT NULL
-    ON CONFLICT (model_id, providers_id) DO NOTHING
+    WHERE sm.provider_id IS NOT NULL
+    ON CONFLICT (provider_id, model_id) DO NOTHING
 ),
 -- Link model active flag (set to false for duplicate)
 link_model_active_flag AS (

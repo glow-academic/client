@@ -114,14 +114,12 @@ CREATE TYPE types.q_get_model_v4_modality_option AS (
 CREATE TYPE types.q_get_model_v4_temperature_level_resource AS (
     temperature_level_id uuid,
     temperature real,
-    is_upper boolean,
     generated boolean
 );
 
 CREATE TYPE types.q_get_model_v4_temperature_level_option AS (
     temperature_level_id uuid,
     temperature real,
-    is_upper boolean,
     generated boolean
 );
 
@@ -723,9 +721,9 @@ model_departments_fallback AS (
 model_temperature_data AS (
     SELECT 
         mtl.model_id,
-        MIN(tl.temperature) FILTER (WHERE tl.is_upper = false) as temperature_lower,
-        MAX(tl.temperature) FILTER (WHERE tl.is_upper = true) as temperature_upper,
-        ARRAY_AGG(DISTINCT tl.temperature::text ORDER BY tl.temperature::text) FILTER (WHERE tl.is_upper = false) as temperature_values
+        MIN(tl.temperature) as temperature_lower,
+        MAX(tl.temperature) as temperature_upper,
+        ARRAY_AGG(DISTINCT tl.temperature::text ORDER BY tl.temperature::text) as temperature_values
     FROM model_temperature_levels_junction mtl
     JOIN temperature_levels_resource tl ON tl.id = mtl.temperature_level_id
     WHERE mtl.model_id = (SELECT model_id FROM params)
@@ -790,7 +788,7 @@ temperature_level_ids_data AS (
     SELECT 
         CASE 
             WHEN (SELECT model_id FROM params) IS NULL THEN ARRAY[]::uuid[]
-            ELSE ARRAY_AGG(tl.id ORDER BY tl.temperature, tl.is_upper)::uuid[]
+            ELSE ARRAY_AGG(tl.id ORDER BY tl.temperature)::uuid[]
         END as temperature_level_ids
     FROM model_temperature_levels_junction mtl
     JOIN temperature_levels_resource tl ON tl.id = mtl.temperature_level_id
@@ -802,7 +800,7 @@ temperature_levels_draft_data AS (
     SELECT 
         CASE 
             WHEN (SELECT draft_id FROM params) IS NULL THEN NULL::uuid[]
-            ELSE COALESCE(ARRAY_AGG(dt.temperature_levels_id ORDER BY tl.temperature, tl.is_upper), ARRAY[]::uuid[])
+            ELSE COALESCE(ARRAY_AGG(dt.temperature_levels_id ORDER BY tl.temperature), ARRAY[]::uuid[])
         END as temperature_level_ids
     FROM temperature_levels_drafts_connection dt
     JOIN temperature_levels_resource tl ON tl.id = dt.temperature_levels_id
@@ -952,12 +950,12 @@ provider_resource_data AS (
             CASE 
                 WHEN (SELECT model_id FROM params) IS NULL THEN NULL::uuid
                 ELSE (
-                    SELECT p.id 
-                    FROM model_providers_junction mp 
-                    JOIN providers_resource p ON p.id = mp.providers_id 
-                    JOIN models_resource m_res ON m_res.id = mp.model_id
-                    JOIN model_models_junction mmj ON mmj.models_id = m_res.id
-                    WHERE mmj.model_id = (SELECT model_id FROM params) 
+                    SELECT p.id
+                    FROM provider_models_junction pm
+                    JOIN model_models_junction mmj ON mmj.models_id = pm.model_id
+                    JOIN provider_providers_junction ppj ON ppj.provider_id = pm.provider_id
+                    JOIN providers_resource p ON p.id = ppj.providers_id
+                    WHERE mmj.model_id = (SELECT model_id FROM params)
                     LIMIT 1
                 )
             END
@@ -986,14 +984,13 @@ provider_resource_data AS (
                         COALESCE((SELECT d.description FROM provider_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.provider_id = pr.id LIMIT 1), ''),
                         false
                     )::types.q_get_model_v4_provider_resource
-                    FROM model_providers_junction mp
-                    JOIN providers_resource p ON p.id = mp.providers_id
-                    JOIN provider_providers_junction ppj ON ppj.providers_id = p.id
-                    JOIN provider_artifact pr ON pr.id = ppj.provider_id
+                    FROM provider_models_junction pm
+                    JOIN model_models_junction mmj ON mmj.models_id = pm.model_id
+                    JOIN provider_artifact pr ON pr.id = pm.provider_id
+                    JOIN provider_providers_junction ppj ON ppj.provider_id = pr.id
+                    JOIN providers_resource p ON p.id = ppj.providers_id
                     JOIN provider_names_junction pn ON pn.provider_id = pr.id
                     JOIN names_resource n ON n.id = pn.name_id
-                    JOIN models_resource m_res ON m_res.id = mp.model_id
-                    JOIN model_models_junction mmj ON mmj.models_id = m_res.id
                     WHERE mmj.model_id = (SELECT model_id FROM params)
                     LIMIT 1
                 )
@@ -1022,10 +1019,10 @@ model_all_keys AS (
     FROM model_artifact m
     JOIN models_resource m_res ON TRUE
     JOIN model_models_junction mmj ON mmj.models_id = m_res.id AND mmj.model_id = m.id
-    LEFT JOIN model_providers_junction mp ON mp.model_id = m_res.id
-    LEFT JOIN providers_resource p ON p.id = mp.providers_id
-    LEFT JOIN provider_providers_junction ppj ON ppj.providers_id = p.id
-    LEFT JOIN provider_artifact pr ON pr.id = ppj.provider_id
+    LEFT JOIN provider_models_junction pm ON pm.model_id = m_res.id
+    LEFT JOIN provider_artifact pr ON pr.id = pm.provider_id
+    LEFT JOIN provider_providers_junction ppj ON ppj.provider_id = pr.id
+    LEFT JOIN providers_resource p ON p.id = ppj.providers_id
     LEFT JOIN provider_names_junction pn ON pn.provider_id = pr.id
     LEFT JOIN names_resource n_prov ON n_prov.id = pn.name_id
     JOIN setting_provider_keys_junction spk ON spk.providers_id = p.id AND spk.active = true
@@ -1057,9 +1054,9 @@ model_all_keys AS (
             -- Exclude keys already included via setting_provider_keys_junction for this model's provider
             SELECT 1 FROM model_artifact m2
             JOIN model_models_junction mmj2 ON mmj2.model_id = m2.id
-            JOIN models_resource m_res2 ON m_res2.id = mmj2.models_id
-            JOIN model_providers_junction mp2 ON mp2.model_id = m_res2.id
-            JOIN providers_resource p2 ON p2.id = mp2.providers_id
+            JOIN provider_models_junction pm2 ON pm2.model_id = mmj2.models_id
+            JOIN provider_providers_junction ppj2 ON ppj2.provider_id = pm2.provider_id
+            JOIN providers_resource p2 ON p2.id = ppj2.providers_id
             JOIN setting_provider_keys_junction spk2 ON spk2.providers_id = p2.id AND spk2.key_id = kr.id AND spk2.active = true
             WHERE m2.id = (SELECT model_id FROM params)
         )
@@ -1872,17 +1869,16 @@ all_temperature_levels_data AS (
     SELECT 
         tl.id as temperature_level_id,
         tl.temperature,
-        tl.is_upper,
         COALESCE(tl.generated, false) as generated
     FROM temperature_levels_resource tl
     WHERE tl.active = true
-    ORDER BY tl.temperature, tl.is_upper
+    ORDER BY tl.temperature
 ),
 temperature_levels_aggregated AS (
     SELECT 
         ARRAY_AGG(
-            (t.temperature_level_id, t.temperature, t.is_upper, t.generated)::types.q_get_model_v4_temperature_level_option
-            ORDER BY t.temperature, t.is_upper
+            (t.temperature_level_id, t.temperature, t.generated)::types.q_get_model_v4_temperature_level_option
+            ORDER BY t.temperature
         ) as temperature_levels
     FROM all_temperature_levels_data t
 ),
@@ -2342,8 +2338,8 @@ SELECT
         (SELECT CASE
             WHEN (SELECT draft_id FROM params) IS NULL THEN NULL::types.q_get_model_v4_temperature_level_resource[]
             ELSE COALESCE(ARRAY_AGG(
-                (tl.id, tl.temperature, tl.is_upper, COALESCE(tl.generated, false))::types.q_get_model_v4_temperature_level_resource
-                ORDER BY tl.temperature, tl.is_upper
+                (tl.id, tl.temperature, COALESCE(tl.generated, false))::types.q_get_model_v4_temperature_level_resource
+                ORDER BY tl.temperature
             ), '{}'::types.q_get_model_v4_temperature_level_resource[])
         END
         FROM temperature_levels_drafts_connection dt
@@ -2351,8 +2347,8 @@ SELECT
         WHERE dt.draft_id = (SELECT draft_id FROM params)
         AND tl.active = true),
         (SELECT ARRAY_AGG(
-            (tl.id, tl.temperature, tl.is_upper, COALESCE(tl.generated, false))::types.q_get_model_v4_temperature_level_resource
-            ORDER BY tl.temperature, tl.is_upper
+            (tl.id, tl.temperature, COALESCE(tl.generated, false))::types.q_get_model_v4_temperature_level_resource
+            ORDER BY tl.temperature
         )
         FROM model_temperature_levels_junction mtl
         JOIN temperature_levels_resource tl ON tl.id = mtl.temperature_level_id

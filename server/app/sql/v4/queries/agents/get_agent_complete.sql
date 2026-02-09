@@ -119,7 +119,6 @@ CREATE TYPE types.q_get_agent_v4_reasoning_level_resource AS (
 CREATE TYPE types.q_get_agent_v4_temperature_level_resource AS (
     id uuid,
     temperature real,
-    is_upper boolean,
     generated boolean
 );
 
@@ -1070,8 +1069,7 @@ model_temperature_levels_data_with_ids AS (
     SELECT 
         mtl.model_id::uuid as model_id,
         tl.id::uuid as temperature_level_id,
-        tl.temperature::text as temperature_value,
-        tl.is_upper::boolean as is_upper
+        tl.temperature::text as temperature_value
     FROM model_temperature_levels_junction mtl
     JOIN temperature_levels_resource tl ON tl.id = mtl.temperature_level_id
     WHERE tl.active = true
@@ -1079,8 +1077,8 @@ model_temperature_levels_data_with_ids AS (
 model_temperature_levels_bounds AS (
     SELECT 
         mtl.model_id::uuid as model_id,
-        MIN(tl.temperature) FILTER (WHERE tl.is_upper = false)::float as temperature_lower,
-        MAX(tl.temperature) FILTER (WHERE tl.is_upper = true)::float as temperature_upper
+        MIN(tl.temperature)::float as temperature_lower,
+        MAX(tl.temperature)::float as temperature_upper
     FROM model_temperature_levels_junction mtl
     JOIN temperature_levels_resource tl ON tl.id = mtl.temperature_level_id
     WHERE tl.active = true
@@ -1117,7 +1115,7 @@ models_agg AS (
         COALESCE(
             jsonb_object_agg(
                 mtl.temperature_level_id::text,
-                jsonb_build_object('temperature', mtl.temperature_value, 'is_upper', mtl.is_upper)
+                jsonb_build_object('temperature', mtl.temperature_value)
             ) FILTER (WHERE mtl.temperature_level_id IS NOT NULL),
             '{}'::jsonb
         ) as temperature_levels,
@@ -2150,7 +2148,7 @@ temperature_level_resource_data AS (
             (SELECT atl.temperature_level_id FROM agent_temperature_levels_junction atl WHERE atl.agent_id = (SELECT agent_id FROM params) AND atl.active = true LIMIT 1),
             NULL
         ) as temperature_level_id,
-        (SELECT ROW(tl.id, tl.temperature, tl.is_upper, COALESCE(tl.generated, false))::types.q_get_agent_v4_temperature_level_resource FROM agent_temperature_levels_junction atl JOIN temperature_levels_resource tl ON atl.temperature_level_id = tl.id WHERE atl.agent_id = (SELECT agent_id FROM params) AND atl.active = true LIMIT 1) as agent_temperature_level_resource
+        (SELECT ROW(tl.id, tl.temperature, COALESCE(tl.generated, false))::types.q_get_agent_v4_temperature_level_resource FROM agent_temperature_levels_junction atl JOIN temperature_levels_resource tl ON atl.temperature_level_id = tl.id WHERE atl.agent_id = (SELECT agent_id FROM params) AND atl.active = true LIMIT 1) as agent_temperature_level_resource
     FROM params
 ),
 -- Voice resource data (for detail mode and draft mode)
@@ -2313,17 +2311,16 @@ temperature_levels_data AS (
     SELECT DISTINCT
         tl.id,
         tl.temperature,
-        tl.is_upper,
         COALESCE(mtl.generated, false) as generated
     FROM params p
     JOIN agent_info ai_selected ON ai_selected.agent_id = (SELECT agent_id FROM params)
     JOIN model_temperature_levels_junction mtl ON mtl.model_id = ai_selected.model_id
     JOIN temperature_levels_resource tl ON tl.id = mtl.temperature_level_id
-    WHERE 
+    WHERE
         tl.active = true
         AND tl.temperature IS NOT NULL
         AND ai_selected.model_id IS NOT NULL
-    ORDER BY tl.temperature, tl.is_upper
+    ORDER BY tl.temperature
 ),
 -- Voices data: from selected model's available_voices (model-dependent resource)
 -- Note: Options come from model_voices_junction junction table, filtered by selected model
@@ -2367,8 +2364,8 @@ temperature_levels_suggestions_objects AS (
         COALESCE(
             (
                 SELECT ARRAY_AGG(
-                    (tld.id, tld.temperature, tld.is_upper, tld.generated)::types.q_get_agent_v4_temperature_level_resource
-                    ORDER BY tld.temperature, tld.is_upper
+                    (tld.id, tld.temperature, tld.generated)::types.q_get_agent_v4_temperature_level_resource
+                    ORDER BY tld.temperature
                 )
                 FROM temperature_levels_data tld
             ),

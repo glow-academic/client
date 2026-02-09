@@ -89,12 +89,32 @@ BEGIN
     VALUES (NOW(), NOW(), true, false, true)
     RETURNING id INTO v_config_id;
 
-    -- Snapshot agent config into config
+    -- Snapshot agent config into config (3 tables)
     IF v_agent_id IS NOT NULL THEN
+        -- 1. agents
         INSERT INTO config_agents_connection (config_id, agents_id, created_at, active, generated, mcp)
         SELECT v_config_id, aaj.agents_id, NOW(), true, false, false
         FROM agent_agents_junction aaj WHERE aaj.agent_id = v_agent_id AND aaj.active = true
         ON CONFLICT (config_id, agents_id) DO NOTHING;
+
+        -- 2. models (via denormalized agents_resource.model_id)
+        INSERT INTO config_models_connection (config_id, models_id, created_at, active, generated, mcp)
+        SELECT v_config_id, ar.model_id, NOW(), true, false, false
+        FROM agent_agents_junction aaj
+        JOIN agents_resource ar ON ar.id = aaj.agents_id
+        WHERE aaj.agent_id = v_agent_id AND aaj.active = true AND ar.model_id IS NOT NULL
+        ON CONFLICT (config_id, models_id) DO NOTHING;
+
+        -- 3. providers (via agents_resource.model_id -> provider_models_junction)
+        INSERT INTO config_providers_connection (config_id, providers_id, created_at, active, generated, mcp)
+        SELECT v_config_id, pr.id, NOW(), true, false, false
+        FROM agent_agents_junction aaj
+        JOIN agents_resource ar ON ar.id = aaj.agents_id
+        JOIN provider_models_junction pmj ON pmj.model_id = ar.model_id
+        JOIN provider_providers_junction ppj ON ppj.provider_id = pmj.provider_id AND ppj.active = true
+        JOIN providers_resource pr ON pr.id = ppj.providers_id
+        WHERE aaj.agent_id = v_agent_id AND aaj.active = true
+        ON CONFLICT (config_id, providers_id) DO NOTHING;
     END IF;
 
     -- Create new runs_entry with config_id
@@ -115,22 +135,29 @@ BEGIN
         FROM groups_entry g
         WHERE g.id = v_group_id
     ),
+    agent_config AS (
+        SELECT aaj.agents_id, ar.model_id
+        FROM config_agents_connection cac
+        JOIN agent_agents_junction aaj ON aaj.agents_id = cac.agents_id AND aaj.active = true
+        JOIN agents_resource ar ON ar.id = aaj.agents_id
+        WHERE cac.config_id = v_config_id AND cac.active = true
+        LIMIT 1
+    ),
     prompt_data AS (
         SELECT
             pr.system_prompt
-        FROM config_prompts_connection cpc
-        JOIN prompts_resource pr ON pr.id = cpc.prompts_id
-        WHERE cpc.config_id = v_config_id AND cpc.active = true
+        FROM agent_config ac
+        JOIN agent_agents_junction aaj ON aaj.agents_id = ac.agents_id AND aaj.active = true
+        JOIN agent_prompts_junction apj ON apj.agent_id = aaj.agent_id AND apj.active = true
+        JOIN prompts_resource pr ON pr.id = apj.prompt_id
         LIMIT 1
     ),
     model_config AS (
         SELECT
-            (SELECT v.value FROM model_values_junction mv JOIN values_resource v ON mv.value_id = v.id WHERE mv.model_id = m.id LIMIT 1) as model_name,
-            COALESCE(e.base_url, '') as base_url
+            m.value as model_name,
+            COALESCE(m.endpoint, '') as base_url
         FROM config_models_connection cmc
         JOIN models_resource m ON m.id = cmc.models_id
-        LEFT JOIN model_endpoints_junction mej ON mej.model_id = m.id
-        LEFT JOIN endpoints_resource e ON e.id = mej.endpoint_id AND e.active = true
         WHERE cmc.config_id = v_config_id AND cmc.active = true
         LIMIT 1
     ),
@@ -146,26 +173,26 @@ BEGIN
     ),
     key_config AS (
         SELECT
-            k.key as api_key
-        FROM config_keys_connection ckc
-        JOIN keys_resource k ON k.id = ckc.keys_id AND k.active = true
-        WHERE ckc.config_id = v_config_id AND ckc.active = true
+            m.key as api_key
+        FROM config_models_connection cmc
+        JOIN models_resource m ON m.id = cmc.models_id
+        WHERE cmc.config_id = v_config_id AND cmc.active = true AND m.key IS NOT NULL
         LIMIT 1
     ),
     temp_config AS (
         SELECT
-            tl.temperature
-        FROM config_temperature_levels_connection ctlc
-        JOIN temperature_levels_resource tl ON tl.id = ctlc.temperature_levels_id AND tl.active = true
-        WHERE ctlc.config_id = v_config_id AND ctlc.active = true
+            ar.temperature
+        FROM agent_config ac
+        JOIN agents_resource ar ON ar.id = ac.agents_id
+        WHERE ar.temperature IS NOT NULL
         LIMIT 1
     ),
     reasoning_config AS (
         SELECT
-            rl.reasoning_level as reasoning
-        FROM config_reasoning_levels_connection crlc
-        JOIN reasoning_levels_resource rl ON rl.id = crlc.reasoning_levels_id AND rl.active = true
-        WHERE crlc.config_id = v_config_id AND crlc.active = true
+            ar.reasoning
+        FROM agent_config ac
+        JOIN agents_resource ar ON ar.id = ac.agents_id
+        WHERE ar.reasoning IS NOT NULL
         LIMIT 1
     ),
     tool_config AS (
@@ -175,19 +202,21 @@ BEGIN
                 'description', (SELECT d.description FROM tool_descriptions_junction td JOIN descriptions_resource d ON td.description_id = d.id WHERE td.tool_id = t.id LIMIT 1),
                 'parameters', '{}'::jsonb
             )), '[]'::jsonb) as tools
-        FROM config_tools_connection ctc
-        JOIN tools_resource tr ON tr.id = ctc.tools_id
-        JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
+        FROM agent_config ac
+        JOIN agent_agents_junction aaj ON aaj.agents_id = ac.agents_id AND aaj.active = true
+        JOIN agents_resource ar ON ar.id = aaj.agents_id
+        CROSS JOIN LATERAL unnest(ar.tool_ids) AS tid(tool_id)
+        JOIN tool_tools_junction ttj ON ttj.tools_id = tid.tool_id
         JOIN tool_artifact t ON t.id = ttj.tool_id
-        WHERE ctc.config_id = v_config_id AND ctc.active = true
-          AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
+        WHERE EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
     ),
     instruction_config AS (
         SELECT
             COALESCE(ARRAY_AGG(i.template ORDER BY i.created_at), ARRAY[]::text[]) as templates
-        FROM config_instructions_connection cic
-        JOIN instructions_resource i ON i.id = cic.instructions_id AND i.active = true
-        WHERE cic.config_id = v_config_id AND cic.active = true
+        FROM agent_config ac
+        JOIN agent_agents_junction aaj ON aaj.agents_id = ac.agents_id AND aaj.active = true
+        JOIN agent_instructions_junction aij ON aij.agent_id = aaj.agent_id AND aij.active = true
+        JOIN instructions_resource i ON i.id = aij.instruction_id AND i.active = true
     ),
     -- Get original conversation from the run_resource
     -- This needs to find the runs_entry linked to runs_resource and get its messages

@@ -90,10 +90,9 @@ provider_data AS (
             ARRAY[]::uuid[]
         ) as department_ids,
         COALESCE(
-            (SELECT COUNT(DISTINCT mpj.model_id)::int
-             FROM provider_providers_junction ppj
-             JOIN model_providers_junction mpj ON mpj.providers_id = ppj.providers_id
-             WHERE ppj.provider_id = pr.id),
+            (SELECT COUNT(DISTINCT pmj.model_id)::int
+             FROM provider_models_junction pmj
+             WHERE pmj.provider_id = pr.id),
             0
         ) as model_usage_count
     FROM providers_resource p

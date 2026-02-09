@@ -849,9 +849,10 @@ keys_data AS (
         OR
         EXISTS (
             SELECT 1 FROM setting_provider_keys_junction spk
-            JOIN setting_artifact s ON s.id = spk.settings_id
+            JOIN provider_keys_resource pkr ON pkr.id = spk.provider_key_id
+            JOIN setting_artifact s ON s.id = spk.setting_id
             JOIN department_settings_junction ds ON ds.settings_id = s.id AND ds.active = true
-            WHERE spk.key_id = kr.id AND spk.active = true
+            WHERE pkr.key_id = kr.id AND spk.active = true
             AND ds.department_id = (SELECT department_id FROM params)
         )
     )
@@ -879,15 +880,18 @@ key_suggestions_data AS (
 model_key_associations AS (
     SELECT DISTINCT
         dm.model_id,
-        spk.key_id
+        pkr.key_id
     FROM department_models dm
     LEFT JOIN department_settings_for_model_keys dsfmk ON true
-    LEFT JOIN model_providers_junction mp ON mp.model_id = dm.model_id
-    LEFT JOIN providers_resource p_prov ON p_prov.id = mp.providers_id
-    LEFT JOIN setting_provider_keys_junction spk ON spk.providers_id = p_prov.id 
-        AND spk.settings_id = dsfmk.settings_id 
+    LEFT JOIN provider_models_junction pm ON pm.model_id = dm.model_id
+    LEFT JOIN provider_providers_junction ppj ON ppj.provider_id = pm.provider_id
+    LEFT JOIN providers_resource p_prov ON p_prov.id = ppj.providers_id
+    LEFT JOIN provider_keys_resource pkr ON pkr.provider_id = p_prov.id
+    LEFT JOIN setting_provider_keys_junction spk ON spk.provider_key_id = pkr.id
+        AND spk.setting_id = dsfmk.settings_id
         AND spk.active = true
-    WHERE spk.key_id IS NOT NULL
+    WHERE pkr.key_id IS NOT NULL
+    AND spk.provider_key_id IS NOT NULL
     AND (SELECT department_id FROM params) IS NOT NULL
 ),
 -- Additional detail endpoint CTEs

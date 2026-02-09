@@ -68,90 +68,28 @@ agent_data AS (
     WHERE a.id = p.agent_id
     LIMIT 1
 ),
--- Get model via junction traversal
+-- Get model via denormalized agents_resource.model_id
 model_data AS (
-    SELECT
-        mr.id as model_id,
-        mr.value as model_name,
-        ma.id as model_artifact_id
+    SELECT mr.id as model_id, mr.value as model_name, mr.key as model_key
     FROM params p
-    JOIN agent_models_junction am ON am.agent_id = p.agent_id
-    JOIN model_artifact ma ON ma.id = am.model_id
-    JOIN model_models_junction mmj ON mmj.model_id = ma.id
-    JOIN models_resource mr ON mr.id = mmj.models_id
+    JOIN agent_agents_junction aaj ON aaj.agent_id = p.agent_id
+    JOIN agents_resource ar ON ar.id = aaj.agents_id
+    JOIN models_resource mr ON mr.id = ar.model_id
     LIMIT 1
 ),
--- Get provider via full junction chain
+-- Get provider via provider_models_junction
 provider_data AS (
     SELECT
-        p_prov.id as provider_id,
-        (SELECT n.name FROM provider_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.provider_id = p_prov.id LIMIT 1) as provider_name
+        pm.provider_id as provider_id,
+        (SELECT n.name FROM provider_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.provider_id = pm.provider_id LIMIT 1) as provider_name
     FROM model_data md
-    JOIN model_providers_junction mp ON mp.model_id = md.model_artifact_id
-    JOIN providers_resource p_res ON p_res.id = mp.providers_id
-    JOIN provider_providers_junction ppj ON ppj.providers_id = p_res.id
-    JOIN provider_artifact p_prov ON p_prov.id = ppj.provider_id
+    JOIN provider_models_junction pm ON pm.model_id = md.model_id
     LIMIT 1
 ),
--- Get primary department for profile (for key lookup)
-profile_primary_department AS (
-    SELECT pd.department_id
-    FROM params p
-    JOIN profile_departments_junction pd ON pd.profile_id = p.profile_id
-    WHERE pd.is_primary = TRUE
-      AND pd.active = true
-    LIMIT 1
-),
--- Get active settings (for API key lookup)
-settings_with_keys AS (
-    SELECT DISTINCT spk.settings_id
-    FROM setting_provider_keys_junction spk
-    JOIN keys_resource kr ON kr.id = spk.key_id
-    WHERE spk.active = true AND kr.active
-),
-dept_specific_settings_with_keys AS (
-    SELECT s.id as settings_id
-    FROM setting_artifact s
-    JOIN department_settings_junction sd ON sd.settings_id = s.id
-    JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
-    JOIN settings_with_keys swk ON swk.settings_id = s.id
-    WHERE ppd.department_id IS NOT NULL
-      AND EXISTS (SELECT 1 FROM setting_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = TRUE)
-      AND sd.active = true
-    LIMIT 1
-),
-default_settings_with_keys AS (
-    SELECT s.id as settings_id
-    FROM setting_artifact s
-    JOIN settings_with_keys swk ON swk.settings_id = s.id
-    WHERE EXISTS (SELECT 1 FROM setting_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = TRUE)
-      AND NOT EXISTS (
-          SELECT 1 FROM department_settings_junction sd
-          WHERE sd.settings_id = s.id AND sd.active = true
-      )
-    LIMIT 1
-),
-active_settings AS (
-    SELECT
-        COALESCE(
-            (SELECT settings_id FROM dept_specific_settings_with_keys),
-            (SELECT settings_id FROM default_settings_with_keys),
-            (SELECT settings_id FROM settings_with_keys LIMIT 1)
-        ) as settings_id
-),
--- Check if provider has API key in active settings
+-- Check if model has API key (denormalized on models_resource.key)
 api_key_check AS (
-    SELECT
-        EXISTS (
-            SELECT 1
-            FROM model_data md
-            JOIN model_providers_junction mp ON mp.model_id = md.model_artifact_id
-            CROSS JOIN active_settings act_s
-            JOIN setting_provider_keys_junction spk ON spk.providers_id = mp.providers_id
-                AND spk.settings_id = act_s.settings_id
-                AND spk.active = true
-            JOIN keys_resource kr ON kr.id = spk.key_id AND kr.active = true
-        ) as has_api_key
+    SELECT (md.model_key IS NOT NULL AND md.model_key != '') as has_api_key
+    FROM model_data md
 ),
 -- Get rate limit for profile (raw data)
 rate_limit_data AS (

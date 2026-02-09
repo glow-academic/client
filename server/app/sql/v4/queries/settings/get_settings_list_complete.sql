@@ -90,16 +90,17 @@ user_profile AS (
     FROM view_user_profile_context
     WHERE profile_id = (SELECT profile_id FROM params)
 ),
--- Get department_ids via setting_provider_keys_junction -> settings -> department_settings_junction
+-- Get department_ids via setting_provider_keys_junction -> provider_keys_resource -> settings -> department_settings_junction
 key_departments_data AS (
-    SELECT 
-        spk.key_id,
+    SELECT
+        pkr.key_id,
         ARRAY_AGG(DISTINCT ds.department_id::text ORDER BY ds.department_id::text) as department_ids
     FROM setting_provider_keys_junction spk
-    JOIN setting_artifact s ON s.id = spk.settings_id AND EXISTS (SELECT 1 FROM setting_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = true)
+    JOIN provider_keys_resource pkr ON pkr.id = spk.provider_key_id
+    JOIN setting_artifact s ON s.id = spk.setting_id AND EXISTS (SELECT 1 FROM setting_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = true)
     JOIN department_settings_junction ds ON ds.settings_id = s.id AND ds.active = true
     WHERE spk.active = true
-    GROUP BY spk.key_id
+    GROUP BY pkr.key_id
 ),
 settings_keys_data AS (
     -- Get all keys accessible to user (similar to keys/list logic)
@@ -127,10 +128,11 @@ settings_keys_data AS (
         -- Include keys with matching department links OR default keys (no department links) OR superadmin can see all
         EXISTS (
             SELECT 1 FROM setting_provider_keys_junction spk
-            JOIN setting_artifact s ON s.id = spk.settings_id AND EXISTS (SELECT 1 FROM setting_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = true)
+            JOIN provider_keys_resource pkr ON pkr.id = spk.provider_key_id
+            JOIN setting_artifact s ON s.id = spk.setting_id AND EXISTS (SELECT 1 FROM setting_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = true)
             JOIN department_settings_junction ds ON ds.settings_id = s.id AND ds.active = true
             JOIN user_departments ud ON ud.department_id = ds.department_id
-            WHERE spk.key_id = kr.id AND spk.active = true
+            WHERE pkr.key_id = kr.id AND spk.active = true
         )
         OR NOT EXISTS (SELECT 1 FROM key_departments_data kdd2 WHERE kdd2.key_id = kr.id)
         OR up.role = 'superadmin'

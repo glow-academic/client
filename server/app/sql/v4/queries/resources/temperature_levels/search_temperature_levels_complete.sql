@@ -32,13 +32,13 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (q.id, q.temperature, q.is_upper, q.generated)::types.q_get_temperature_levels_v4_item
+        (q.id, q.temperature, q.generated)::types.q_get_temperature_levels_v4_item
         ORDER BY q.temperature ASC
     ),
     ARRAY[]::types.q_get_temperature_levels_v4_item[]
 ) as items
 FROM (
-    SELECT t.id, t.temperature, t.is_upper, COALESCE(t.generated, false) AS generated
+    SELECT t.id, t.temperature, COALESCE(t.generated, false) AS generated
     FROM temperature_levels_resource t
     WHERE t.active = true
       -- Search filter

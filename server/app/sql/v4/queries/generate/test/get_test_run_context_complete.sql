@@ -127,7 +127,8 @@ agent_data AS (
 model_data AS (
     SELECT
         m.id as model_id,
-        (SELECT v.value FROM model_values_junction mv JOIN values_resource v ON mv.value_id = v.id WHERE mv.model_id = m.id LIMIT 1) as model_name
+        m.value as model_name,
+        m.key as model_key
     FROM group_binding gb
     JOIN runs_entry r ON r.group_id = gb.group_id
     JOIN config_models_connection cmc ON cmc.config_id = r.config_id AND cmc.active = true
@@ -138,25 +139,16 @@ model_data AS (
 -- Provider from model
 provider_data AS (
     SELECT
-        pr.id as provider_id,
-        (SELECT n.name FROM provider_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.provider_id = pr.id LIMIT 1) as provider_name
-    FROM model_providers_junction mp
-    JOIN model_data md ON mp.model_id = md.model_id
-    JOIN providers_resource prov ON prov.id = mp.providers_id
-    JOIN provider_providers_junction ppj ON ppj.providers_id = prov.id
-    JOIN provider_artifact pr ON pr.id = ppj.provider_id
+        pm.provider_id as provider_id,
+        (SELECT n.name FROM provider_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.provider_id = pm.provider_id LIMIT 1) as provider_name
+    FROM model_data md
+    JOIN provider_models_junction pm ON pm.model_id = md.model_id
     LIMIT 1
 ),
--- API key from latest run's config
+-- API key check (denormalized on models_resource.key)
 api_key_data AS (
-    SELECT
-        TRUE as has_api_key
-    FROM group_binding gb
-    JOIN runs_entry r ON r.group_id = gb.group_id
-    JOIN config_keys_connection ckc ON ckc.config_id = r.config_id AND ckc.active = true
-    JOIN keys_resource k ON k.id = ckc.keys_id AND k.active = true
-    ORDER BY r.created_at DESC
-    LIMIT 1
+    SELECT (md.model_key IS NOT NULL AND md.model_key != '') as has_api_key
+    FROM model_data md
 ),
 -- Rate limit data
 profile_rate_limit AS (

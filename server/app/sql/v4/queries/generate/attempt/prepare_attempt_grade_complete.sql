@@ -138,32 +138,20 @@ BEGIN
     WITH agent_config AS (
         SELECT
             (SELECT pr.system_prompt FROM agent_prompts_junction ap JOIN prompts_resource pr ON ap.prompt_id = pr.id WHERE ap.agent_id = v_agent_id AND ap.active = true LIMIT 1) as system_prompt,
-            (SELECT tl.temperature FROM agent_temperature_levels_junction atl JOIN temperature_levels_resource tl ON atl.temperature_level_id = tl.id WHERE atl.agent_id = v_agent_id AND atl.active = true LIMIT 1) as temperature,
-            (SELECT rl.reasoning_level FROM agent_reasoning_levels_junction arl JOIN reasoning_levels_resource rl ON arl.reasoning_level_id = rl.id WHERE arl.agent_id = v_agent_id AND arl.active = true LIMIT 1) as reasoning
+            (SELECT ar.temperature FROM agent_agents_junction aaj JOIN agents_resource ar ON ar.id = aaj.agents_id WHERE aaj.agent_id = v_agent_id AND aaj.active = true LIMIT 1) as temperature,
+            (SELECT ar.reasoning FROM agent_agents_junction aaj JOIN agents_resource ar ON ar.id = aaj.agents_id WHERE aaj.agent_id = v_agent_id AND aaj.active = true LIMIT 1) as reasoning
     ),
     model_config AS (
         SELECT
-            mr.value as model_name,
-            ma.id as model_artifact_id,
-            (SELECT n.name FROM provider_names_junction pn JOIN names_resource n ON pn.name_id = n.id
-             JOIN provider_providers_junction ppj ON ppj.provider_id = pn.provider_id
-             JOIN providers_resource pr ON pr.id = ppj.providers_id
-             JOIN model_providers_junction mp ON mp.providers_id = pr.id
-             WHERE mp.model_id = ma.id LIMIT 1) as provider_name,
-            (SELECT e.base_url FROM model_endpoints_junction me JOIN endpoints_resource e ON me.endpoint_id = e.id WHERE me.model_id = ma.id AND e.active = true LIMIT 1) as base_url
-        FROM agent_models_junction am
-        JOIN model_artifact ma ON ma.id = am.model_id
-        JOIN model_models_junction mmj ON mmj.model_id = ma.id
-        JOIN models_resource mr ON mr.id = mmj.models_id
-        WHERE am.agent_id = v_agent_id
-        LIMIT 1
-    ),
-    api_key_data AS (
-        SELECT kr.key as api_key
-        FROM model_config mc
-        JOIN model_providers_junction mp ON mp.model_id = mc.model_artifact_id
-        JOIN setting_provider_keys_junction spk ON spk.providers_id = mp.providers_id AND spk.active = true
-        JOIN keys_resource kr ON kr.id = spk.key_id AND kr.active = true
+            m.value as model_name,
+            m.id as model_id,
+            (SELECT n.name FROM provider_models_junction pmj JOIN provider_names_junction pn ON pn.provider_id = pmj.provider_id JOIN names_resource n ON pn.name_id = n.id WHERE pmj.model_id = m.id LIMIT 1) as provider_name,
+            COALESCE(m.endpoint, '') as base_url,
+            m.key as api_key
+        FROM agent_agents_junction aaj
+        JOIN agents_resource ar ON ar.id = aaj.agents_id
+        JOIN models_resource m ON m.id = ar.model_id
+        WHERE aaj.agent_id = v_agent_id AND aaj.active = true
         LIMIT 1
     ),
     tools_data AS (
@@ -249,7 +237,7 @@ BEGIN
         mc.model_name,
         mc.provider_name,
         mc.base_url,
-        akd.api_key,
+        mc.api_key,
         ac.temperature,
         ac.reasoning,
         ac.system_prompt,
@@ -258,7 +246,6 @@ BEGIN
         jc.context
     FROM agent_config ac
     LEFT JOIN model_config mc ON TRUE
-    LEFT JOIN api_key_data akd ON TRUE
     LEFT JOIN tools_data td ON TRUE
     LEFT JOIN developer_instructions di ON TRUE
     LEFT JOIN jinja_ctx jc ON TRUE;

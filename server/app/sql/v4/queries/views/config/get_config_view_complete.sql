@@ -46,23 +46,9 @@ END $$;
 
 CREATE TYPE types.q_get_config_view_v4_item AS (
     config_id uuid,
-
-    -- Inference config resource IDs
     agents_id uuid,
     models_id uuid,
-    model_values_id uuid,
     providers_id uuid,
-    provider_values_id uuid,
-    endpoints_id uuid,
-    keys_id uuid,
-    prompts_id uuid,
-    instructions_ids uuid[],
-    temperature_levels_id uuid,
-    reasoning_levels_id uuid,
-    qualities_id uuid,
-    voices_id uuid,
-    tools_ids uuid[],
-
     created_at timestamptz
 );
 
@@ -85,18 +71,7 @@ AS $$
                 mc.config_id,
                 mc.agents_id,
                 mc.models_id,
-                mc.model_values_id,
                 mc.providers_id,
-                mc.provider_values_id,
-                mc.endpoints_id,
-                mc.keys_id,
-                mc.prompts_id,
-                mc.instructions_ids,
-                mc.temperature_levels_id,
-                mc.reasoning_levels_id,
-                mc.qualities_id,
-                mc.voices_id,
-                mc.tools_ids,
                 mc.config_created_at
             )::types.q_get_config_view_v4_item
             ORDER BY mc.config_created_at

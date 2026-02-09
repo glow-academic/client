@@ -150,52 +150,6 @@ link_run_to_profile AS (
     CROSS JOIN create_run cr
     WHERE p.profile_id IS NOT NULL
 ),
--- Get primary department for profile (for key lookup)
-profile_primary_department AS (
-    SELECT pd.department_id
-    FROM params p
-    JOIN profile_departments_junction pd ON pd.profile_id = p.profile_id
-    WHERE pd.is_primary = TRUE
-      AND pd.active = true
-    LIMIT 1
-),
--- Get active settings with keys
-settings_with_keys AS (
-    SELECT DISTINCT spk.settings_id
-    FROM setting_provider_keys_junction spk
-    JOIN keys_resource kr ON kr.id = spk.key_id
-    WHERE spk.active = true AND kr.active
-),
-dept_specific_settings_with_keys AS (
-    SELECT s.id as settings_id
-    FROM setting_artifact s
-    JOIN department_settings_junction sd ON sd.settings_id = s.id
-    JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
-    JOIN settings_with_keys swk ON swk.settings_id = s.id
-    WHERE ppd.department_id IS NOT NULL
-      AND EXISTS (SELECT 1 FROM setting_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = TRUE)
-      AND sd.active = true
-    LIMIT 1
-),
-default_settings_with_keys AS (
-    SELECT s.id as settings_id
-    FROM setting_artifact s
-    JOIN settings_with_keys swk ON swk.settings_id = s.id
-    WHERE EXISTS (SELECT 1 FROM setting_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = TRUE)
-      AND NOT EXISTS (
-          SELECT 1 FROM department_settings_junction sd
-          WHERE sd.settings_id = s.id AND sd.active = true
-      )
-    LIMIT 1
-),
-active_settings AS (
-    SELECT
-        COALESCE(
-            (SELECT settings_id FROM dept_specific_settings_with_keys),
-            (SELECT settings_id FROM default_settings_with_keys),
-            (SELECT settings_id FROM settings_with_keys LIMIT 1)
-        ) as settings_id
-),
 -- Build tool arguments from args_resource
 tool_schema_data AS (
     SELECT
@@ -416,14 +370,14 @@ context_data AS (
         -- Agent data
         (SELECT n.name FROM agent_names_junction an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) as agent_name,
         COALESCE(pr_prompt.system_prompt, '') as system_prompt,
-        COALESCE(tl.temperature, 0.0) as temperature,
-        rl.reasoning_level as reasoning,
+        COALESCE(ar.temperature, 0.0) as temperature,
+        ar.reasoning as reasoning,
 
-        -- Model data (models_resource.value contains the model name directly)
+        -- Model data (denormalized on agents_resource and models_resource)
         m.value as model_name,
         COALESCE(n_prov.name, '') as provider_name,
-        COALESCE(e.base_url, '') as base_url,
-        kr.key as api_key,
+        COALESCE(m.endpoint, '') as base_url,
+        m.key as api_key,
 
         -- Tools data
         COALESCE(atd.tools, '{}'::types.i_get_text_run_context_and_create_run_v4_tool[]) as tools,
@@ -434,42 +388,22 @@ context_data AS (
     FROM selected_agent sa
     INNER JOIN agent_artifact a ON a.id = sa.agent_id
 
+    -- agents_resource for denormalized fields
+    INNER JOIN agent_agents_junction aaj ON aaj.agent_id = a.id AND aaj.active = true
+    INNER JOIN agents_resource ar ON ar.id = aaj.agents_id
+
     -- Agent prompt
     LEFT JOIN agent_prompts_junction ap_default ON ap_default.agent_id = a.id AND ap_default.active = true
     LEFT JOIN prompts_resource pr_prompt ON pr_prompt.id = ap_default.prompt_id
 
-    -- Model: agent_models_junction.model_id -> model_artifact -> model_models_junction -> models_resource
-    INNER JOIN agent_models_junction am ON am.agent_id = a.id
-    INNER JOIN model_artifact ma ON ma.id = am.model_id
-    INNER JOIN model_models_junction mmj ON mmj.model_id = ma.id
-    INNER JOIN models_resource m ON m.id = mmj.models_id
+    -- Model via denormalized agents_resource.model_id
+    INNER JOIN models_resource m ON m.id = ar.model_id
 
-    -- Temperature (uses model_artifact.id)
-    LEFT JOIN agent_temperature_levels_junction atl ON atl.agent_id = a.id AND atl.active = true
-    LEFT JOIN model_temperature_levels_junction mtl ON mtl.temperature_level_id = atl.temperature_level_id AND mtl.model_id = ma.id
-    LEFT JOIN temperature_levels_resource tl ON tl.id = mtl.temperature_level_id AND tl.active = true
-
-    -- Reasoning (uses model_artifact.id)
-    LEFT JOIN agent_reasoning_levels_junction arl ON arl.agent_id = a.id AND arl.active = true
-    LEFT JOIN model_reasoning_levels_junction mrl ON mrl.reasoning_level_id = arl.reasoning_level_id AND mrl.model_id = ma.id
-    LEFT JOIN reasoning_levels_resource rl ON rl.id = mrl.reasoning_level_id AND rl.active = true
-
-    -- Endpoint/base_url (uses model_artifact.id)
-    LEFT JOIN model_endpoints_junction me_j ON me_j.model_id = ma.id
-    LEFT JOIN endpoints_resource e ON e.id = me_j.endpoint_id AND e.active = true
-
-    -- API key via provider -> settings -> keys (uses model_artifact.id)
-    LEFT JOIN model_providers_junction mp ON mp.model_id = ma.id
-    LEFT JOIN providers_resource p_prov ON p_prov.id = mp.providers_id
-    LEFT JOIN provider_providers_junction ppj ON ppj.providers_id = p_prov.id
-    LEFT JOIN provider_artifact pr_prov ON pr_prov.id = ppj.provider_id
+    -- Get provider via provider_models_junction
+    LEFT JOIN provider_models_junction pmj ON pmj.model_id = m.id
+    LEFT JOIN provider_artifact pr_prov ON pr_prov.id = pmj.provider_id
     LEFT JOIN provider_names_junction pn_prov ON pn_prov.provider_id = pr_prov.id
     LEFT JOIN names_resource n_prov ON n_prov.id = pn_prov.name_id
-    CROSS JOIN active_settings act_s
-    LEFT JOIN setting_provider_keys_junction spk ON spk.providers_id = p_prov.id
-        AND spk.settings_id = act_s.settings_id
-        AND spk.active = true
-    LEFT JOIN keys_resource kr ON kr.id = spk.key_id AND kr.active
 
     -- Tools
     LEFT JOIN agent_tools_data atd ON atd.agent_id = sa.agent_id
