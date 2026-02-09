@@ -8,6 +8,8 @@
 
 import { useRouter } from "next/navigation";
 import React, {
+  type Dispatch,
+  type SetStateAction,
   useCallback,
   useEffect,
   useMemo,
@@ -21,7 +23,6 @@ import {
   type StepStatus,
 } from "@/components/common/forms/GenericForm";
 import { StepCard } from "@/components/common/forms/StepCard";
-import type { GenerateRegenerateModalResource } from "@/components/common/GenerateRegenerateModal";
 import { GenerateRegenerateModal } from "@/components/common/GenerateRegenerateModal";
 import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
 import { Departments } from "@/components/resources/Departments";
@@ -44,7 +45,9 @@ import {
 } from "@/components/ui/tooltip";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
+import { useAiGeneration } from "@/hooks/use-ai-generation";
 import { useDraftAutosave } from "@/hooks/use-draft-autosave";
+import { useGenerationModal } from "@/hooks/use-generation-modal";
 import type { ResourceType } from "@/lib/resources/types";
 import {
   getDefaultDepartmentIds,
@@ -145,26 +148,6 @@ export default function Agent({
   } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
   const isSuperadmin = profile?.role === "superadmin";
-
-  // Generation state for AI workflows
-  const [generatingResources, setGeneratingResources] = useState<
-    Set<ResourceType>
-  >(new Set());
-
-  // Modal state for generate/regenerate
-  const [showGenerateModal, setShowGenerateModal] = useState(false);
-  const [modalMode, setModalMode] = useState<"generate" | "regenerate" | null>(
-    null
-  );
-  const [modalResources, setModalResources] = useState<
-    GenerateRegenerateModalResource[]
-  >([]);
-  const [modalInstructions, setModalInstructions] = useState("");
-
-  const isGenerating = useCallback(
-    (resourceType: ResourceType) => generatingResources.has(resourceType),
-    [generatingResources]
-  );
 
   // Stabilize server props to prevent unnecessary re-renders from object reference changes
   const stabilizeServerProp = React.useCallback(
@@ -884,6 +867,112 @@ export default function Agent({
     []
   );
 
+  // Valid resource types for AI generation
+  const AGENT_VALID_RESOURCE_TYPES: ResourceType[] = useMemo(
+    () => [
+      "names",
+      "descriptions",
+      "models",
+      "prompts",
+      "instructions",
+      "flags",
+      "departments",
+      "reasoning_levels",
+      "temperature_levels",
+      "voices",
+      "tools",
+    ],
+    []
+  );
+
+  // AI generation completion handler
+  const onAiComplete = useCallback(
+    (data: Record<string, unknown>) => {
+      return {
+        aiUpdates: {} as Record<string, unknown>,
+        formStateUpdater: (prev: Record<string, unknown>) => {
+          const updates: Record<string, unknown> = {};
+
+          // Single-value fields
+          if (data["name_id"]) updates["name_id"] = data["name_id"];
+          if (data["description_id"])
+            updates["description_id"] = data["description_id"];
+          if (data["model_id"]) updates["modelId"] = data["model_id"]; // Note: data has model_id, state has modelId
+          if (data["prompt_id"]) updates["prompt_id"] = data["prompt_id"];
+          if (data["active_flag_id"])
+            updates["active_flag_id"] = data["active_flag_id"];
+          if (data["instructions_id"])
+            updates["instructions_id"] = data["instructions_id"];
+
+          // Single-value with type check
+          const reasoningLevelId = data["reasoning_level_id"];
+          if (reasoningLevelId && typeof reasoningLevelId === "string") {
+            updates["reasoning_level_id"] = reasoningLevelId;
+          }
+          const temperatureLevelId = data["temperature_level_id"];
+          if (temperatureLevelId && typeof temperatureLevelId === "string") {
+            updates["temperature_level_id"] = temperatureLevelId;
+          }
+
+          // Array fields with dedup
+          const voiceIds = data["voice_ids"];
+          if (Array.isArray(voiceIds) && voiceIds.length > 0) {
+            const prevVoiceIds = (prev["voice_ids"] as string[]) ?? [];
+            updates["voice_ids"] = [
+              ...new Set([
+                ...prevVoiceIds,
+                ...voiceIds.filter(
+                  (id): id is string => typeof id === "string"
+                ),
+              ]),
+            ];
+          }
+
+          const deptIds = data["department_ids"];
+          if (Array.isArray(deptIds) && deptIds.length > 0) {
+            const prevDeptIds = (prev["departmentIds"] as string[]) ?? [];
+            updates["departmentIds"] = [
+              ...new Set([...prevDeptIds, ...(deptIds as string[])]),
+            ];
+          }
+
+          const toolIds = data["tool_ids"];
+          if (Array.isArray(toolIds) && toolIds.length > 0) {
+            const prevToolIds = (prev["tool_ids"] as string[]) ?? [];
+            updates["tool_ids"] = [
+              ...new Set([
+                ...prevToolIds,
+                ...toolIds.filter(
+                  (id): id is string => typeof id === "string"
+                ),
+              ]),
+            ];
+          }
+
+          return { ...prev, ...updates };
+        },
+      };
+    },
+    []
+  );
+
+  // AI generation hook (replaces WebSocket useEffect + generatingResources state)
+  const { setGeneratingResources, isGenerating } = useAiGeneration<
+    ResourceType,
+    Record<string, unknown>
+  >({
+    socket,
+    isConnected,
+    artifactType: "agent",
+    groupId: agentData?.group_id,
+    eventPrefix: "agent_generation",
+    validResourceTypes: AGENT_VALID_RESOURCE_TYPES,
+    onComplete: onAiComplete,
+    setFormState: setDraftState as Dispatch<
+      SetStateAction<Record<string, unknown>>
+    >,
+  });
+
   // Multi-generation handler - accepts list of resource types and optional user instructions
   const handleGenerateResources = useCallback(
     async (
@@ -913,7 +1002,7 @@ export default function Agent({
         mcp: false,
       });
     },
-    [socket, isConnected, agentId, draftId]
+    [socket, isConnected, agentId, draftId, setGeneratingResources]
   );
 
   // Individual generation handlers
@@ -1011,278 +1100,24 @@ export default function Agent({
     []
   );
 
-  // Handler to open modal for step card generation
-  const handleOpenStepCardModal = useCallback(
-    (stepId: string, mode: "generate" | "regenerate") => {
-      const resourceTypes = stepResources[stepId] || [];
-      const resources: GenerateRegenerateModalResource[] = resourceTypes.map(
-        (rt) => ({
-          id: rt,
-          label: resourceLabels[rt] || rt,
-          active: mode === "regenerate" ? canRegenerate(rt) : true,
-        })
-      );
-
-      setModalResources(resources);
-      setModalMode(mode);
-      setModalInstructions("");
-      setShowGenerateModal(true);
+  // Modal generate handler (with agent-specific determineAgentType)
+  const onModalGenerate = useCallback(
+    (selectedResources: ResourceType[], instructions?: string) => {
+      const agentType = determineAgentType(selectedResources);
+      handleGenerateResources(selectedResources, agentType, instructions);
     },
-    [stepResources, resourceLabels, canRegenerate]
+    [determineAgentType, handleGenerateResources]
   );
 
-  // Listen for full-page-generate event from layout
-  useEffect(() => {
-    const handleFullPageGenerate = (
-      event: CustomEvent<{ agentId?: string }>
-    ) => {
-      const eventAgentId = event.detail?.agentId;
-      if (eventAgentId) {
-        // Open modal instead of directly generating
-        handleOpenStepCardModal("all", "generate");
-      }
-    };
-    window.addEventListener(
-      "full-page-generate",
-      handleFullPageGenerate as EventListener
-    );
-    return () =>
-      window.removeEventListener(
-        "full-page-generate",
-        handleFullPageGenerate as EventListener
-      );
-  }, [handleOpenStepCardModal]);
-
-  // WebSocket handlers for AI generation
-  // Use refs to minimize dependencies and prevent stale closures (canonical pattern)
-  const agentDataRef = React.useRef(agentData);
-  React.useEffect(() => {
-    agentDataRef.current = agentData;
-  }, [agentData]);
-
-  const groupIdRef = React.useRef(agentData?.group_id ?? null);
-  React.useEffect(() => {
-    groupIdRef.current = agentData?.group_id ?? null;
-  }, [agentData?.group_id]);
-
-  const draftStateRef = React.useRef(draftState);
-  React.useEffect(() => {
-    draftStateRef.current = draftState;
-  }, [draftState]);
-
-  useEffect(() => {
-    if (!socket || !isConnected) return;
-
-    const handleGenerationComplete = (data: {
-      artifact_type?: string;
-      group_id?: string;
-      resource_type?: string;
-      name_id?: string | null;
-      description_id?: string | null;
-      model_id?: string | null;
-      prompt_id?: string | null;
-      instructions_id?: string | null;
-      active_flag_id?: string | null;
-      department_ids?: string[];
-      tool_ids?: string[];
-      message?: string;
-      success?: boolean;
-      [key: string]: unknown;
-    }) => {
-      const currentGroupId = groupIdRef.current;
-      if (
-        data.artifact_type !== "agent" ||
-        !data.group_id ||
-        data.group_id !== currentGroupId
-      ) {
-        return;
-      }
-
-      const validResourceTypes: ResourceType[] = [
-        "names",
-        "descriptions",
-        "models",
-        "prompts",
-        "instructions",
-        "flags",
-        "departments",
-        "reasoning_levels",
-        "temperature_levels",
-        "voices",
-        "tools", // Add tools to valid resource types
-      ];
-      if (
-        data.resource_type &&
-        validResourceTypes.includes(data.resource_type as ResourceType)
-      ) {
-        // Update draftState with generated resource IDs directly (canonical pattern)
-        // Don't lookup text from arrays - IDs are source of truth
-        setDraftState((prev) => {
-          const updates: Partial<DraftState> = {};
-          if (data.name_id) {
-            updates.name_id = data.name_id;
-          }
-          if (data.description_id) {
-            updates.description_id = data.description_id;
-          }
-          if (data.model_id) updates.modelId = data.model_id;
-          if (data.prompt_id) updates.prompt_id = data.prompt_id;
-          if (data["reasoning_level_id"]) {
-            const reasoningLevelId = data["reasoning_level_id"];
-            if (typeof reasoningLevelId === "string") {
-              updates.reasoning_level_id = reasoningLevelId;
-            }
-          }
-          if (data["temperature_level_id"]) {
-            const temperatureLevelId = data["temperature_level_id"];
-            if (typeof temperatureLevelId === "string") {
-              updates.temperature_level_id = temperatureLevelId;
-            }
-          }
-          if (data["voice_ids"]) {
-            const voiceIds = data["voice_ids"];
-            if (Array.isArray(voiceIds) && voiceIds.length > 0) {
-              updates.voice_ids = [
-                ...new Set([
-                  ...prev.voice_ids,
-                  ...voiceIds.filter(
-                    (id): id is string => typeof id === "string"
-                  ),
-                ]),
-              ];
-            }
-          }
-          if (data.active_flag_id) {
-            updates.active_flag_id = data.active_flag_id;
-          }
-          if (data.department_ids && data.department_ids.length > 0) {
-            updates.departmentIds = [
-              ...new Set([...prev.departmentIds, ...data.department_ids]),
-            ];
-          }
-          if (data.instructions_id) {
-            updates.instructions_id = data.instructions_id;
-          }
-          if (
-            data.tool_ids &&
-            Array.isArray(data.tool_ids) &&
-            data.tool_ids.length > 0
-          ) {
-            updates.tool_ids = [
-              ...new Set([
-                ...prev.tool_ids,
-                ...data.tool_ids.filter(
-                  (id): id is string => typeof id === "string"
-                ),
-              ]),
-            ];
-          }
-          return { ...prev, ...updates };
-        });
-
-        setGeneratingResources((prev) => {
-          const next = new Set(prev);
-          next.delete(data.resource_type as ResourceType);
-          return next;
-        });
-        if (data.success) {
-          toast.success(
-            data.message || `${data.resource_type} generated successfully`
-          );
-        } else {
-          toast.error(
-            data.message || `Failed to generate ${data.resource_type}`
-          );
-        }
-      }
-    };
-
-    const handleGenerationProgress = (data: {
-      artifact_type?: string;
-      group_id?: string;
-      resource_type?: string;
-      [key: string]: unknown;
-    }) => {
-      const currentGroupId = groupIdRef.current;
-      if (
-        data.artifact_type !== "agent" ||
-        !data.group_id ||
-        data.group_id !== currentGroupId
-      ) {
-        return;
-      }
-      // Handle progress updates if needed
-    };
-
-    const handleGenerationError = (data: {
-      artifact_type?: string;
-      group_id?: string;
-      message?: string;
-      resource_type?: string;
-      resource_types?: string[];
-    }) => {
-      const currentGroupId = groupIdRef.current;
-      if (
-        data.artifact_type !== "agent" ||
-        !data.group_id ||
-        data.group_id !== currentGroupId
-      ) {
-        return;
-      }
-
-      const validResourceTypes: ResourceType[] = [
-        "names",
-        "descriptions",
-        "models",
-        "prompts",
-        "instructions",
-        "flags",
-        "departments",
-        "reasoning_levels",
-        "temperature_levels",
-        "voices",
-        "tools", // Add tools to valid resource types
-      ];
-      const resourceTypes =
-        data.resource_types || (data.resource_type ? [data.resource_type] : []);
-      setGeneratingResources((prev) => {
-        const next = new Set(prev);
-        resourceTypes.forEach((rt) => {
-          if (validResourceTypes.includes(rt as ResourceType)) {
-            next.delete(rt as ResourceType);
-          }
-        });
-        return next;
-      });
-      toast.error(data.message || "Generation failed");
-    };
-
-    socket.on("agent_generation_progress", handleGenerationProgress);
-    socket.on("agent_generation_complete", handleGenerationComplete);
-    socket.on("agent_generation_error", handleGenerationError);
-
-    return () => {
-      socket.off("agent_generation_progress", handleGenerationProgress);
-      socket.off("agent_generation_complete", handleGenerationComplete);
-      socket.off("agent_generation_error", handleGenerationError);
-    };
-  }, [socket, isConnected]); // Minimal dependencies - use refs inside handlers
-
-  // Handler for modal generate/regenerate action
-  const handleModalGenerate = useCallback(
-    async (selectedResources: string[], instructions: string) => {
-      const resourceTypes = selectedResources as ResourceType[];
-      const agentType = determineAgentType(resourceTypes);
-      await handleGenerateResources(
-        resourceTypes,
-        agentType,
-        instructions.trim() || undefined
-      );
-      setShowGenerateModal(false);
-      setModalInstructions("");
-    },
-    [handleGenerateResources, determineAgentType]
-  );
+  // Generation modal hook (replaces modal state + handleOpenStepCardModal + full-page-generate listener)
+  const { handleOpenStepCardModal, modalProps } =
+    useGenerationModal<ResourceType>({
+      stepResources,
+      resourceLabels,
+      canRegenerate,
+      onGenerate: onModalGenerate,
+      isGenerating,
+    });
 
   return (
     <TooltipProvider>
@@ -2213,20 +2048,8 @@ export default function Agent({
         </div>
 
         {/* Generate/Regenerate Modal */}
-        {modalMode && (
-          <GenerateRegenerateModal
-            open={showGenerateModal}
-            onOpenChange={setShowGenerateModal}
-            resources={modalResources}
-            onResourcesChange={setModalResources}
-            instructions={modalInstructions}
-            onInstructionsChange={setModalInstructions}
-            onGenerate={handleModalGenerate}
-            isGenerating={modalResources.some((r) =>
-              isGenerating(r.id as ResourceType)
-            )}
-            mode={modalMode}
-          />
+        {modalProps.mode && (
+          <GenerateRegenerateModal {...modalProps} />
         )}
       </div>
     </TooltipProvider>

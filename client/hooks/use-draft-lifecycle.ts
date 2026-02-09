@@ -46,6 +46,8 @@ export function useDraftLifecycle(config: {
     Map<string, () => Promise<Record<string, unknown> | void>>
   >;
   formStateRef: MutableRefObject<Record<string, unknown>>;
+  /** Called after a successful patch (autosave or flush-and-save) */
+  onPatchSuccess?: () => void;
 }) {
   const {
     formStateKey,
@@ -57,6 +59,7 @@ export function useDraftLifecycle(config: {
     hasResourceIds,
     flushRegistryRef,
     formStateRef,
+    onPatchSuccess,
   } = config;
 
   // --- draftId from GenericForm URL state ---
@@ -184,6 +187,7 @@ export function useDraftLifecycle(config: {
         }
 
         hasPendingChangesRef.current = false;
+        onPatchSuccess?.();
 
         window.dispatchEvent(
           new CustomEvent("save-status-change", {
@@ -312,6 +316,7 @@ export function useDraftLifecycle(config: {
         );
 
         hasPendingChangesRef.current = false;
+        onPatchSuccess?.();
         toast.success(isNewDraft ? "Draft created" : "Draft saved");
         return resolvedDraftId;
       } catch {

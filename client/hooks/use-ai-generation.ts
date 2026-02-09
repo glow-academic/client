@@ -30,6 +30,10 @@ export function useAiGeneration<
   onComplete: (data: Record<string, unknown>) => {
     aiUpdates: Partial<AiFormData>;
     formStateUpdates?: Record<string, unknown>;
+    /** For complex merging that needs access to prev state (e.g. array dedup) */
+    formStateUpdater?: (
+      prev: Record<string, unknown>
+    ) => Record<string, unknown>;
   };
   setFormState?: Dispatch<SetStateAction<Record<string, unknown>>>;
 }) {
@@ -80,15 +84,20 @@ export function useAiGeneration<
         data.resource_type &&
         validResourceTypes.includes(data.resource_type as RT)
       ) {
-        const { aiUpdates, formStateUpdates } = onComplete(data);
+        const { aiUpdates, formStateUpdates, formStateUpdater } =
+          onComplete(data);
 
         setAiFormData((prev) => ({ ...prev, ...aiUpdates }));
 
-        if (formStateUpdates && setFormState) {
-          setFormState((prev: Record<string, unknown>) => ({
-            ...prev,
-            ...formStateUpdates,
-          }));
+        if (setFormState) {
+          if (formStateUpdater) {
+            setFormState(formStateUpdater);
+          } else if (formStateUpdates) {
+            setFormState((prev: Record<string, unknown>) => ({
+              ...prev,
+              ...formStateUpdates,
+            }));
+          }
         }
 
         setGeneratingResources((prev) => {

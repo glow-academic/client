@@ -116,10 +116,8 @@ async def save_persona(
 
         async with conn.transaction():
             # Convert API request to SQL params (add profile_id from header)
-            # Map input_persona_id from API request (already correct field name)
-            params = SavePersonaSqlParams(
-                **request.model_dump(),
-                profile_id=profile_id,
+            params = SavePersonaSqlParams.from_request(
+                request, profile_id=profile_id
             )
             sql_params = params.to_tuple()
 

@@ -9,6 +9,8 @@ from app.api.v4.artifacts.persona.permissions import compute_can_draft
 from app.api.v4.artifacts.persona.types import (
     PatchPersonaDraftApiRequest,
     PatchPersonaDraftApiResponse,
+    PatchPersonaDraftSqlParams,
+    PatchPersonaDraftSqlRow,
 )
 from app.infra.v4.activity.audit import audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
@@ -16,8 +18,6 @@ from app.main import get_db
 from app.sql.types import (
     CheckPersonaDuplicateAccessSqlParams,
     CheckPersonaDuplicateAccessSqlRow,
-    PatchPersonaDraftSqlParams,
-    PatchPersonaDraftSqlRow,
     load_sql_query,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
@@ -85,8 +85,8 @@ async def patch_persona_draft(
             )
 
         async with conn.transaction():
-            params = PatchPersonaDraftSqlParams(
-                **request.model_dump(), profile_id=profile_id
+            params = PatchPersonaDraftSqlParams.from_request(
+                request, profile_id=profile_id
             )
             sql_params = params.to_tuple()
 

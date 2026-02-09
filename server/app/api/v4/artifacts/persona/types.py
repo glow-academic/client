@@ -302,42 +302,44 @@ class ListPersonaApiResponse(BaseModel):
     total_count: int | None = None
 
 
+# ========== Resource Action Types (for tool call tracking) ==========
+
+
+class PersonaResourceAction(BaseModel):
+    """Single-select resource with tool call tracking."""
+
+    resource_id: UUID | None = None
+    group_id: UUID | None = None
+    create_tool_id: UUID | None = None  # Set if resource was just created (flush)
+    link_tool_id: UUID | None = None  # Set if selection changed from previous
+
+
+class PersonaMultiResourceAction(BaseModel):
+    """Multi-select resource with tool call tracking."""
+
+    resource_ids: list[UUID] | None = None
+    group_id: UUID | None = None
+    create_tool_id: UUID | None = None
+    link_tool_id: UUID | None = None
+
+
 # ========== Save Endpoint Types ==========
 
 
 class SavePersonaApiRequest(BaseModel):
-    """Request model for save persona endpoint - accepts form data directly (no draft_id)."""
+    """Request model for save persona endpoint - accepts nested resource actions."""
 
-    # Context
-    input_persona_id: UUID | None = None  # For update mode
-
-    # Per-resource group IDs
-    names_group_id: UUID | None = None
-    descriptions_group_id: UUID | None = None
-    colors_group_id: UUID | None = None
-    icons_group_id: UUID | None = None
-    instructions_group_id: UUID | None = None
-    flags_group_id: UUID | None = None
-    departments_group_id: UUID | None = None
-    parameter_fields_group_id: UUID | None = None
-    examples_group_id: UUID | None = None
-    parameters_group_id: UUID | None = None
-
-    # Required single-select resources
-    name_id: UUID  # REQUIRED
-    color_id: UUID  # REQUIRED
-    icon_id: UUID  # REQUIRED
-    instructions_id: UUID  # REQUIRED
-
-    # Optional single-select resources
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-
-    # Optional multi-select resources
-    department_ids: list[UUID] | None = None
-    parameter_field_ids: list[UUID] | None = None
-    example_ids: list[UUID] | None = None
-    parameter_ids: list[UUID] | None = None
+    input_persona_id: UUID | None = None
+    names: PersonaResourceAction
+    descriptions: PersonaResourceAction
+    colors: PersonaResourceAction
+    icons: PersonaResourceAction
+    instructions: PersonaResourceAction
+    flags: PersonaResourceAction
+    departments: PersonaMultiResourceAction
+    parameter_fields: PersonaMultiResourceAction
+    examples: PersonaMultiResourceAction
+    parameters: PersonaMultiResourceAction
 
 
 class SavePersonaApiResponse(BaseModel):
@@ -349,65 +351,49 @@ class SavePersonaApiResponse(BaseModel):
 
 
 class SavePersonaSqlParams(BaseModel):
-    """SQL parameters for save persona - accepts form data directly (no draft_id)."""
+    """SQL parameters for save persona - nested resource actions with tool call tracking."""
 
-    # Context
-    profile_id: UUID  # Added from header
-    input_persona_id: UUID | None = None  # For update mode
+    profile_id: UUID
+    input_persona_id: UUID | None = None
+    names: PersonaResourceAction
+    descriptions: PersonaResourceAction
+    colors: PersonaResourceAction
+    icons: PersonaResourceAction
+    instructions: PersonaResourceAction
+    flags: PersonaResourceAction
+    departments: PersonaMultiResourceAction
+    parameter_fields: PersonaMultiResourceAction
+    examples: PersonaMultiResourceAction
+    parameters: PersonaMultiResourceAction
 
-    # Per-resource group IDs
-    names_group_id: UUID | None = None
-    descriptions_group_id: UUID | None = None
-    colors_group_id: UUID | None = None
-    icons_group_id: UUID | None = None
-    instructions_group_id: UUID | None = None
-    flags_group_id: UUID | None = None
-    departments_group_id: UUID | None = None
-    parameter_fields_group_id: UUID | None = None
-    examples_group_id: UUID | None = None
-    parameters_group_id: UUID | None = None
-
-    # Required single-select resources
-    name_id: UUID  # REQUIRED
-    color_id: UUID  # REQUIRED
-    icon_id: UUID  # REQUIRED
-    instructions_id: UUID  # REQUIRED
-
-    # Optional single-select resources
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-
-    # Optional multi-select resources
-    department_ids: list[UUID] | None = None
-    parameter_field_ids: list[UUID] | None = None
-    example_ids: list[UUID] | None = None
-    parameter_ids: list[UUID] | None = None
+    @classmethod
+    def from_request(
+        cls, request: SavePersonaApiRequest, profile_id: UUID
+    ) -> "SavePersonaSqlParams":
+        return cls(profile_id=profile_id, **request.model_dump())
 
     def to_tuple(self) -> tuple:
         """Convert to tuple for SQL execution."""
+
+        def single(a: PersonaResourceAction) -> tuple:
+            return (a.resource_id, a.group_id, a.create_tool_id, a.link_tool_id)
+
+        def multi(a: PersonaMultiResourceAction) -> tuple:
+            return (a.resource_ids, a.group_id, a.create_tool_id, a.link_tool_id)
+
         return (
             self.profile_id,
             self.input_persona_id,
-            self.names_group_id,
-            self.descriptions_group_id,
-            self.colors_group_id,
-            self.icons_group_id,
-            self.instructions_group_id,
-            self.flags_group_id,
-            self.departments_group_id,
-            self.parameter_fields_group_id,
-            self.examples_group_id,
-            self.parameters_group_id,
-            self.name_id,
-            self.color_id,
-            self.icon_id,
-            self.instructions_id,
-            self.description_id,
-            self.active_flag_id,
-            self.department_ids,
-            self.parameter_field_ids,
-            self.example_ids,
-            self.parameter_ids,
+            single(self.names),
+            single(self.descriptions),
+            single(self.colors),
+            single(self.icons),
+            single(self.instructions),
+            single(self.flags),
+            multi(self.departments),
+            multi(self.parameter_fields),
+            multi(self.examples),
+            multi(self.parameters),
         )
 
 
@@ -455,20 +441,20 @@ class DuplicatePersonaApiResponse(BaseModel):
 
 
 class PatchPersonaDraftApiRequest(BaseModel):
-    """Request model for patch persona draft endpoint."""
+    """Request model for patch persona draft endpoint - nested resource actions."""
 
     input_draft_id: UUID | None = None
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    color_id: UUID | None = None
-    icon_id: UUID | None = None
-    instructions_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    parameter_field_ids: list[UUID] | None = None
-    example_ids: list[UUID] | None = None
-    parameter_ids: list[UUID] | None = None
     expected_version: int = 0
+    names: PersonaResourceAction | None = None
+    descriptions: PersonaResourceAction | None = None
+    colors: PersonaResourceAction | None = None
+    icons: PersonaResourceAction | None = None
+    instructions: PersonaResourceAction | None = None
+    flags: PersonaResourceAction | None = None
+    departments: PersonaMultiResourceAction | None = None
+    parameter_fields: PersonaMultiResourceAction | None = None
+    examples: PersonaMultiResourceAction | None = None
+    parameters: PersonaMultiResourceAction | None = None
 
 
 class PatchPersonaDraftApiResponse(BaseModel):
@@ -478,3 +464,76 @@ class PatchPersonaDraftApiResponse(BaseModel):
     draft_id: UUID
     new_version: int
     message: str
+
+
+class PatchPersonaDraftSqlParams(BaseModel):
+    """SQL parameters for patch persona draft - nested resource actions."""
+
+    profile_id: UUID
+    input_draft_id: UUID | None = None
+    names: PersonaResourceAction
+    descriptions: PersonaResourceAction
+    colors: PersonaResourceAction
+    icons: PersonaResourceAction
+    instructions: PersonaResourceAction
+    flags: PersonaResourceAction
+    departments: PersonaMultiResourceAction
+    parameter_fields: PersonaMultiResourceAction
+    examples: PersonaMultiResourceAction
+    parameters: PersonaMultiResourceAction
+    expected_version: int = 0
+
+    @classmethod
+    def from_request(
+        cls, request: PatchPersonaDraftApiRequest, profile_id: UUID
+    ) -> "PatchPersonaDraftSqlParams":
+        _empty_single = PersonaResourceAction()
+        _empty_multi = PersonaMultiResourceAction()
+        return cls(
+            profile_id=profile_id,
+            input_draft_id=request.input_draft_id,
+            names=request.names or _empty_single,
+            descriptions=request.descriptions or _empty_single,
+            colors=request.colors or _empty_single,
+            icons=request.icons or _empty_single,
+            instructions=request.instructions or _empty_single,
+            flags=request.flags or _empty_single,
+            departments=request.departments or _empty_multi,
+            parameter_fields=request.parameter_fields or _empty_multi,
+            examples=request.examples or _empty_multi,
+            parameters=request.parameters or _empty_multi,
+            expected_version=request.expected_version,
+        )
+
+    def to_tuple(self) -> tuple:
+        """Convert to tuple for SQL execution."""
+
+        def single(a: PersonaResourceAction) -> tuple:
+            return (a.resource_id, a.group_id, a.create_tool_id, a.link_tool_id)
+
+        def multi(a: PersonaMultiResourceAction) -> tuple:
+            return (a.resource_ids, a.group_id, a.create_tool_id, a.link_tool_id)
+
+        return (
+            self.profile_id,
+            self.input_draft_id,
+            single(self.names),
+            single(self.descriptions),
+            single(self.colors),
+            single(self.icons),
+            single(self.instructions),
+            single(self.flags),
+            multi(self.departments),
+            multi(self.parameter_fields),
+            multi(self.examples),
+            multi(self.parameters),
+            self.expected_version,
+        )
+
+
+class PatchPersonaDraftSqlRow(BaseModel):
+    """SQL row for patch persona draft."""
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None

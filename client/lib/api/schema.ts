@@ -23225,36 +23225,26 @@ export interface components {
         };
         /**
          * PatchPersonaDraftApiRequest
-         * @description Request model for patch persona draft endpoint.
+         * @description Request model for patch persona draft endpoint - nested resource actions.
          */
         PatchPersonaDraftApiRequest: {
             /** Input Draft Id */
             input_draft_id?: string | null;
-            /** Name Id */
-            name_id?: string | null;
-            /** Description Id */
-            description_id?: string | null;
-            /** Color Id */
-            color_id?: string | null;
-            /** Icon Id */
-            icon_id?: string | null;
-            /** Instructions Id */
-            instructions_id?: string | null;
-            /** Active Flag Id */
-            active_flag_id?: string | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Parameter Field Ids */
-            parameter_field_ids?: string[] | null;
-            /** Example Ids */
-            example_ids?: string[] | null;
-            /** Parameter Ids */
-            parameter_ids?: string[] | null;
             /**
              * Expected Version
              * @default 0
              */
             expected_version: number;
+            names?: components["schemas"]["PersonaResourceAction"] | null;
+            descriptions?: components["schemas"]["PersonaResourceAction"] | null;
+            colors?: components["schemas"]["PersonaResourceAction"] | null;
+            icons?: components["schemas"]["PersonaResourceAction"] | null;
+            instructions?: components["schemas"]["PersonaResourceAction"] | null;
+            flags?: components["schemas"]["PersonaResourceAction"] | null;
+            departments?: components["schemas"]["PersonaMultiResourceAction"] | null;
+            parameter_fields?: components["schemas"]["PersonaMultiResourceAction"] | null;
+            examples?: components["schemas"]["PersonaMultiResourceAction"] | null;
+            parameters?: components["schemas"]["PersonaMultiResourceAction"] | null;
         };
         /**
          * PatchPersonaDraftApiResponse
@@ -23981,6 +23971,20 @@ export interface components {
             /** Resources */
             resources?: components["schemas"]["QGetInstructionsV4Item"][] | null;
         };
+        /**
+         * PersonaMultiResourceAction
+         * @description Multi-select resource with tool call tracking.
+         */
+        PersonaMultiResourceAction: {
+            /** Resource Ids */
+            resource_ids?: string[] | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+        };
         /** PersonaNameSection */
         PersonaNameSection: {
             /**
@@ -24069,6 +24073,20 @@ export interface components {
             current?: components["schemas"]["QGetParametersV4Item"][] | null;
             /** Resources */
             resources?: components["schemas"]["QGetParametersV4Item"][] | null;
+        };
+        /**
+         * PersonaResourceAction
+         * @description Single-select resource with tool call tracking.
+         */
+        PersonaResourceAction: {
+            /** Resource Id */
+            resource_id?: string | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
         };
         /** PersonaTrendPoint */
         PersonaTrendPoint: {
@@ -28482,63 +28500,21 @@ export interface components {
         };
         /**
          * SavePersonaApiRequest
-         * @description Request model for save persona endpoint - accepts form data directly (no draft_id).
+         * @description Request model for save persona endpoint - accepts nested resource actions.
          */
         SavePersonaApiRequest: {
             /** Input Persona Id */
             input_persona_id?: string | null;
-            /** Names Group Id */
-            names_group_id?: string | null;
-            /** Descriptions Group Id */
-            descriptions_group_id?: string | null;
-            /** Colors Group Id */
-            colors_group_id?: string | null;
-            /** Icons Group Id */
-            icons_group_id?: string | null;
-            /** Instructions Group Id */
-            instructions_group_id?: string | null;
-            /** Flags Group Id */
-            flags_group_id?: string | null;
-            /** Departments Group Id */
-            departments_group_id?: string | null;
-            /** Parameter Fields Group Id */
-            parameter_fields_group_id?: string | null;
-            /** Examples Group Id */
-            examples_group_id?: string | null;
-            /** Parameters Group Id */
-            parameters_group_id?: string | null;
-            /**
-             * Name Id
-             * Format: uuid
-             */
-            name_id: string;
-            /**
-             * Color Id
-             * Format: uuid
-             */
-            color_id: string;
-            /**
-             * Icon Id
-             * Format: uuid
-             */
-            icon_id: string;
-            /**
-             * Instructions Id
-             * Format: uuid
-             */
-            instructions_id: string;
-            /** Description Id */
-            description_id?: string | null;
-            /** Active Flag Id */
-            active_flag_id?: string | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Parameter Field Ids */
-            parameter_field_ids?: string[] | null;
-            /** Example Ids */
-            example_ids?: string[] | null;
-            /** Parameter Ids */
-            parameter_ids?: string[] | null;
+            names: components["schemas"]["PersonaResourceAction"];
+            descriptions: components["schemas"]["PersonaResourceAction"];
+            colors: components["schemas"]["PersonaResourceAction"];
+            icons: components["schemas"]["PersonaResourceAction"];
+            instructions: components["schemas"]["PersonaResourceAction"];
+            flags: components["schemas"]["PersonaResourceAction"];
+            departments: components["schemas"]["PersonaMultiResourceAction"];
+            parameter_fields: components["schemas"]["PersonaMultiResourceAction"];
+            examples: components["schemas"]["PersonaMultiResourceAction"];
+            parameters: components["schemas"]["PersonaMultiResourceAction"];
         };
         /**
          * SavePersonaApiResponse

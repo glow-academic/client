@@ -12,6 +12,7 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { toast } from "sonner";
@@ -404,6 +405,7 @@ function PersonaComponent({
 
   const [formState, setFormState] = useState<PersonaFormState>(getInitialFormState);
   const formStateRef = React.useRef<Record<string, unknown>>(formState as unknown as Record<string, unknown>);
+  const lastPatchedFormStateRef = useRef<PersonaFormState | null>(getInitialFormState());
   React.useEffect(() => {
     formStateRef.current = formState as unknown as Record<string, unknown>;
   }, [formState]);
@@ -458,6 +460,7 @@ function PersonaComponent({
         JSON.stringify(prev.parameter_ids) !== JSON.stringify(newState.parameter_ids)
       ) {
         serverSyncPendingRef.current = true;
+        lastPatchedFormStateRef.current = newState;
         return newState;
       }
       return prev;
@@ -566,30 +569,75 @@ function PersonaComponent({
       expectedVersion: number,
       flushResults?: Record<string, unknown>
     ): Record<string, unknown> => {
-      const currentFormState = formStateRef.current as unknown as PersonaFormState;
+      const current = formStateRef.current as unknown as PersonaFormState;
+      const lastPatched = lastPatchedFormStateRef.current;
       const fr = (flushResults ?? {}) as Partial<FlushResult>;
+      const s = stablePersonaDataFields;
+
+      // Helper: single-select resource action with change detection
+      const singleAction = (
+        key: keyof PersonaFormState,
+        flushKey: keyof FlushResult,
+        sectionKey: string,
+      ) => {
+        const effectiveId = fr[flushKey] !== undefined ? fr[flushKey] : current[key];
+        const wasCreated = fr[flushKey] !== undefined && fr[flushKey] !== null;
+        const changed = lastPatched ? effectiveId !== lastPatched[key] : !!effectiveId;
+        const section = s?.[sectionKey as keyof typeof s] as { group_id?: string | null; create_tool_id?: string | null; link_tool_id?: string | null } | undefined;
+        return {
+          resource_id: effectiveId ?? null,
+          group_id: section?.group_id ?? null,
+          create_tool_id: wasCreated ? (section?.create_tool_id ?? null) : null,
+          link_tool_id: changed ? (section?.link_tool_id ?? null) : null,
+        };
+      };
+
+      // Helper: multi-select resource action with change detection
+      const multiAction = (
+        key: keyof PersonaFormState,
+        flushKey: keyof FlushResult | null,
+        sectionKey: string,
+      ) => {
+        const ids = current[key] as string[];
+        const effectiveIds = (flushKey && fr[flushKey as keyof FlushResult] !== undefined) ? fr[flushKey as keyof FlushResult] as string[] : ids;
+        const wasCreated = flushKey !== null && fr[flushKey as keyof FlushResult] !== undefined;
+        const lastIds = lastPatched ? (lastPatched[key] as string[]) : [];
+        const changed = JSON.stringify(effectiveIds) !== JSON.stringify(lastIds);
+        const section = s?.[sectionKey as keyof typeof s] as { group_id?: string | null; create_tool_id?: string | null; link_tool_id?: string | null } | undefined;
+        return {
+          resource_ids: (effectiveIds as string[])?.length > 0 ? effectiveIds : null,
+          group_id: section?.group_id ?? null,
+          create_tool_id: wasCreated ? (section?.create_tool_id ?? null) : null,
+          link_tool_id: changed ? (section?.link_tool_id ?? null) : null,
+        };
+      };
+
       return {
         input_draft_id: draftId || null,
-        name_id: fr.name_id !== undefined ? fr.name_id : currentFormState.name_id,
-        description_id: fr.description_id !== undefined ? fr.description_id : currentFormState.description_id,
-        color_id: fr.color_id !== undefined ? fr.color_id : currentFormState.color_id,
-        icon_id: currentFormState.icon_id,
-        instructions_id: fr.instructions_id !== undefined ? fr.instructions_id : currentFormState.instructions_id,
-        active_flag_id: currentFormState.active_flag_id,
-        department_ids: currentFormState.department_ids,
-        parameter_field_ids: fr.parameter_field_ids !== undefined ? fr.parameter_field_ids : currentFormState.parameter_field_ids,
-        example_ids: fr.example_ids !== undefined ? fr.example_ids : currentFormState.example_ids,
-        parameter_ids: currentFormState.parameter_ids,
+        names: singleAction("name_id", "name_id", "names"),
+        descriptions: singleAction("description_id", "description_id", "descriptions"),
+        colors: singleAction("color_id", "color_id", "colors"),
+        icons: singleAction("icon_id", "icon_id" as keyof FlushResult, "icons"),
+        instructions: singleAction("instructions_id", "instructions_id", "instructions"),
+        flags: singleAction("active_flag_id", "active_flag_id" as keyof FlushResult, "flags"),
+        departments: multiAction("department_ids", null, "departments"),
+        parameter_fields: multiAction("parameter_field_ids", "parameter_field_ids", "parameter_fields"),
+        examples: multiAction("example_ids", "example_ids", "examples"),
+        parameters: multiAction("parameter_ids", null, "parameters"),
         expected_version: expectedVersion,
       };
     },
-    []
+    [stablePersonaDataFields]
   );
 
   const draftVersion =
     personaData && "draft_version" in personaData
       ? (personaData as { draft_version?: number | null }).draft_version
       : null;
+
+  const onPatchSuccess = useCallback(() => {
+    lastPatchedFormStateRef.current = { ...(formStateRef.current as unknown as PersonaFormState) };
+  }, []);
 
   const {
     setUrlFormDataRef,
@@ -607,6 +655,7 @@ function PersonaComponent({
     hasResourceIds,
     flushRegistryRef,
     formStateRef,
+    onPatchSuccess,
   });
 
   // --- Conditional Parameter Toggle ---
@@ -849,31 +898,56 @@ function PersonaComponent({
       }
 
       try {
+        // Compare against initial server state for tool call tracking
+        const initialState = getInitialFormState();
+
+        // Helper: build single resource action for save
+        const saveSingle = (
+          resourceId: string | null | undefined,
+          initialId: string | null,
+          sectionKey: string,
+          wasCreated: boolean,
+        ) => {
+          const section = personaData?.[sectionKey as keyof typeof personaData] as { group_id?: string | null; create_tool_id?: string | null; link_tool_id?: string | null } | undefined;
+          const changed = resourceId !== initialId;
+          return {
+            resource_id: resourceId ?? null,
+            group_id: section?.group_id ?? null,
+            create_tool_id: wasCreated ? (section?.create_tool_id ?? null) : null,
+            link_tool_id: changed ? (section?.link_tool_id ?? null) : null,
+          };
+        };
+
+        // Helper: build multi resource action for save
+        const saveMulti = (
+          ids: string[],
+          initialIds: string[],
+          sectionKey: string,
+          wasCreated: boolean,
+        ) => {
+          const section = personaData?.[sectionKey as keyof typeof personaData] as { group_id?: string | null; create_tool_id?: string | null; link_tool_id?: string | null } | undefined;
+          const changed = JSON.stringify(ids) !== JSON.stringify(initialIds);
+          return {
+            resource_ids: ids.length > 0 ? ids : null,
+            group_id: section?.group_id ?? null,
+            create_tool_id: wasCreated ? (section?.create_tool_id ?? null) : null,
+            link_tool_id: changed ? (section?.link_tool_id ?? null) : null,
+          };
+        };
+
         await savePersonaAction({
           body: {
             input_persona_id: isEditMode && personaId ? personaId : null,
-            // Per-resource group IDs from sections
-            names_group_id: personaData?.names?.group_id ?? null,
-            descriptions_group_id: personaData?.descriptions?.group_id ?? null,
-            colors_group_id: personaData?.colors?.group_id ?? null,
-            icons_group_id: personaData?.icons?.group_id ?? null,
-            instructions_group_id: personaData?.instructions?.group_id ?? null,
-            flags_group_id: personaData?.flags?.group_id ?? null,
-            departments_group_id: personaData?.departments?.group_id ?? null,
-            parameter_fields_group_id: personaData?.parameter_fields?.group_id ?? null,
-            examples_group_id: personaData?.examples?.group_id ?? null,
-            parameters_group_id: personaData?.parameters?.group_id ?? null,
-            // Resource IDs
-            name_id: effectiveFormState.name_id,
-            color_id: effectiveFormState.color_id,
-            icon_id: effectiveFormState.icon_id,
-            instructions_id: effectiveFormState.instructions_id,
-            description_id: effectiveFormState.description_id ?? null,
-            active_flag_id: effectiveFormState.active_flag_id ?? null,
-            department_ids: effectiveFormState.department_ids.length > 0 ? effectiveFormState.department_ids : null,
-            parameter_field_ids: effectiveFormState.parameter_field_ids.length > 0 ? effectiveFormState.parameter_field_ids : null,
-            example_ids: effectiveFormState.example_ids.length > 0 ? effectiveFormState.example_ids : null,
-            parameter_ids: effectiveFormState.parameter_ids.length > 0 ? effectiveFormState.parameter_ids : null,
+            names: saveSingle(effectiveFormState.name_id, initialState.name_id, "names", flushResults.name_id !== undefined && flushResults.name_id !== null),
+            descriptions: saveSingle(effectiveFormState.description_id, initialState.description_id, "descriptions", flushResults.description_id !== undefined && flushResults.description_id !== null),
+            colors: saveSingle(effectiveFormState.color_id, initialState.color_id, "colors", flushResults.color_id !== undefined && flushResults.color_id !== null),
+            icons: saveSingle(effectiveFormState.icon_id, initialState.icon_id, "icons", false),
+            instructions: saveSingle(effectiveFormState.instructions_id, initialState.instructions_id, "instructions", flushResults.instructions_id !== undefined && flushResults.instructions_id !== null),
+            flags: saveSingle(effectiveFormState.active_flag_id, initialState.active_flag_id, "flags", false),
+            departments: saveMulti(effectiveFormState.department_ids, initialState.department_ids, "departments", false),
+            parameter_fields: saveMulti(effectiveFormState.parameter_field_ids, initialState.parameter_field_ids, "parameter_fields", flushResults.parameter_field_ids !== undefined),
+            examples: saveMulti(effectiveFormState.example_ids, initialState.example_ids, "examples", flushResults.example_ids !== undefined),
+            parameters: saveMulti(effectiveFormState.parameter_ids, initialState.parameter_ids, "parameters", false),
           },
         });
         toast.success(`Persona ${isEditMode ? "updated" : "created"} successfully!`);

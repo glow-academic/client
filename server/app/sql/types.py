@@ -13316,70 +13316,6 @@ class GetPersonasListApiResponse(BaseModel):
 
 # Generated from: patch_persona_draft
 
-class PatchPersonaDraftSqlParams(BaseModel):
-
-    profile_id: UUID
-    input_draft_id: UUID | None = None
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    color_id: UUID | None = None
-    icon_id: UUID | None = None
-    instructions_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    parameter_field_ids: list[UUID] | None = None
-    example_ids: list[UUID] | None = None
-    parameter_ids: list[UUID] | None = None
-    expected_version: int | None = 0
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.input_draft_id,
-            self.name_id,
-            self.description_id,
-            self.color_id,
-            self.icon_id,
-            self.instructions_id,
-            self.active_flag_id,
-            self.department_ids,
-            self.parameter_field_ids,
-            self.example_ids,
-            self.parameter_ids,
-            self.expected_version,
-        )
-
-class PatchPersonaDraftSqlRow(BaseModel):
-
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None
-
-class PatchPersonaDraftApiRequest(BaseModel):
-
-    input_draft_id: UUID | None = None
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    color_id: UUID | None = None
-    icon_id: UUID | None = None
-    instructions_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    parameter_field_ids: list[UUID] | None = None
-    example_ids: list[UUID] | None = None
-    parameter_ids: list[UUID] | None = None
-    expected_version: int | None = 0
-
-class PatchPersonaDraftApiResponse(BaseModel):
-
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None
-
-
-
-# Generated from: save_persona
-
 class PersonaMultiResourceAction(BaseModel):
 
     resource_ids: list[UUID] | None
@@ -13396,6 +13332,70 @@ class PersonaResourceAction(BaseModel):
     group_id: UUID | None
     create_tool_id: UUID | None
     link_tool_id: UUID | None
+
+class PatchPersonaDraftSqlParams(BaseModel):
+
+    profile_id: UUID
+    input_draft_id: UUID | None = None
+    names: PersonaResourceAction | None = None
+    descriptions: PersonaResourceAction | None = None
+    colors: PersonaResourceAction | None = None
+    icons: PersonaResourceAction | None = None
+    instructions: PersonaResourceAction | None = None
+    flags: PersonaResourceAction | None = None
+    departments: PersonaMultiResourceAction | None = None
+    parameter_fields: PersonaMultiResourceAction | None = None
+    examples: PersonaMultiResourceAction | None = None
+    parameters: PersonaMultiResourceAction | None = None
+    expected_version: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.input_draft_id,
+            self.names,
+            self.descriptions,
+            self.colors,
+            self.icons,
+            self.instructions,
+            self.flags,
+            self.departments,
+            self.parameter_fields,
+            self.examples,
+            self.parameters,
+            self.expected_version,
+        )
+
+class PatchPersonaDraftSqlRow(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+class PatchPersonaDraftApiRequest(BaseModel):
+
+    input_draft_id: UUID | None = None
+    names: PersonaResourceAction | None = None
+    descriptions: PersonaResourceAction | None = None
+    colors: PersonaResourceAction | None = None
+    icons: PersonaResourceAction | None = None
+    instructions: PersonaResourceAction | None = None
+    flags: PersonaResourceAction | None = None
+    departments: PersonaMultiResourceAction | None = None
+    parameter_fields: PersonaMultiResourceAction | None = None
+    examples: PersonaMultiResourceAction | None = None
+    parameters: PersonaMultiResourceAction | None = None
+    expected_version: int | None = 0
+
+class PatchPersonaDraftApiResponse(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+
+
+# Generated from: save_persona
 
 class SavePersonaSqlParams(BaseModel):
 

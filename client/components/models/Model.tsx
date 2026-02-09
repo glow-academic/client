@@ -8,7 +8,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, {
+  type Dispatch,
+  type SetStateAction,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { toast } from "sonner";
 
 import {
@@ -38,12 +45,25 @@ import type { ResourceType } from "@/lib/resources/types";
 import { getDefaultDepartmentIds } from "@/utils/department-picker-helpers";
 import { parseAsString, type Parser } from "nuqs";
 
+import { useAiGeneration } from "@/hooks/use-ai-generation";
+
+const MODEL_VALID_RESOURCE_TYPES: ResourceType[] = [
+  "names",
+  "descriptions",
+  "flags",
+  "temperature_levels",
+  "reasoning_levels",
+  "voices",
+];
+
 // Helper: find current flag option ID from resources.current.flags by key
 const findCurrentFlagId = (
-  flags: Array<{ key?: string; flag_option_id?: string | null }> | null | undefined,
-  key: string
-): string | null =>
-  flags?.find((f) => f.key === key)?.flag_option_id ?? null;
+  flags:
+    | Array<{ key?: string; flag_option_id?: string | null }>
+    | null
+    | undefined,
+  key: string,
+): string | null => flags?.find((f) => f.key === key)?.flag_option_id ?? null;
 
 // Types defined inline using InputOf/OutputOf
 type SaveModelIn = InputOf<"/api/v4/artifacts/models/save", "post">;
@@ -70,7 +90,10 @@ type CreateDraftEndpointsOut = OutputOf<"/api/v4/resources/endpoints", "post">;
 type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
 type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
 type CreateDraftModalitiesIn = InputOf<"/api/v4/resources/modalities", "post">;
-type CreateDraftModalitiesOut = OutputOf<"/api/v4/resources/modalities", "post">;
+type CreateDraftModalitiesOut = OutputOf<
+  "/api/v4/resources/modalities",
+  "post"
+>;
 type CreateDraftTemperatureLevelsIn = InputOf<
   "/api/v4/resources/temperature_levels",
   "post"
@@ -129,40 +152,40 @@ export interface ModelProps {
   modelDetail?: ModelData;
   saveModelAction?: (input: SaveModelIn) => Promise<SaveModelOut>;
   patchModelDraftAction?: (
-    input: PatchModelDraftIn
+    input: PatchModelDraftIn,
   ) => Promise<PatchModelDraftOut>;
   createNamesAction?: (
-    input: CreateDraftNamesIn
+    input: CreateDraftNamesIn,
   ) => Promise<CreateDraftNamesOut>;
   createDescriptionsAction?: (
-    input: CreateDraftDescriptionsIn
+    input: CreateDraftDescriptionsIn,
   ) => Promise<CreateDraftDescriptionsOut>;
   createValuesAction?: (
-    input: CreateDraftValuesIn
+    input: CreateDraftValuesIn,
   ) => Promise<CreateDraftValuesOut>;
   createEndpointsAction?: (
-    input: CreateDraftEndpointsIn
+    input: CreateDraftEndpointsIn,
   ) => Promise<CreateDraftEndpointsOut>;
   createFlagsAction?: (
-    input: CreateDraftFlagsIn
+    input: CreateDraftFlagsIn,
   ) => Promise<CreateDraftFlagsOut>;
   createModalitiesAction?: (
-    input: CreateDraftModalitiesIn
+    input: CreateDraftModalitiesIn,
   ) => Promise<CreateDraftModalitiesOut>;
   createTemperatureLevelsAction?: (
-    input: CreateDraftTemperatureLevelsIn
+    input: CreateDraftTemperatureLevelsIn,
   ) => Promise<CreateDraftTemperatureLevelsOut>;
   createReasoningLevelsAction?: (
-    input: CreateDraftReasoningLevelsIn
+    input: CreateDraftReasoningLevelsIn,
   ) => Promise<CreateDraftReasoningLevelsOut>;
   createPricingAction?: (
-    input: CreateDraftPricingIn
+    input: CreateDraftPricingIn,
   ) => Promise<CreateDraftPricingOut>;
   createVoicesAction?: (
-    input: CreateDraftVoicesIn
+    input: CreateDraftVoicesIn,
   ) => Promise<CreateDraftVoicesOut>;
   createQualitiesAction?: (
-    input: CreateDraftQualitiesIn
+    input: CreateDraftQualitiesIn,
   ) => Promise<CreateDraftQualitiesOut>;
 }
 
@@ -186,24 +209,67 @@ function ModelComponent({
 }: ModelProps) {
   const router = useRouter();
   const isEditMode = !!modelId;
-  const {
-    profile,
-    selectedDraftId,
-    setSelectedDraftId,
-    socket,
-    isConnected,
-  } = useProfile();
+  const { profile, selectedDraftId, setSelectedDraftId, socket, isConnected } =
+    useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
 
-  // Generation state for AI workflows - simplified using ResourceType
-  const [generatingResources, setGeneratingResources] = useState<
-    Set<ResourceType>
-  >(new Set());
+  // AI generation completion handler - uses formStateUpdater for complex array dedup
+  const onAiComplete = useCallback((data: Record<string, unknown>) => {
+    return {
+      aiUpdates: {} as Record<string, unknown>,
+      formStateUpdater: (prev: Record<string, unknown>) => {
+        const updates: Record<string, unknown> = {};
 
-  const isGenerating = useCallback(
-    (resourceType: ResourceType) => generatingResources.has(resourceType),
-    [generatingResources]
-  );
+        // Single-value fields
+        if (data["name_id"]) updates["name_id"] = data["name_id"];
+        if (data["description_id"])
+          updates["description_id"] = data["description_id"];
+        if (data["value_id"]) updates["value_id"] = data["value_id"];
+        if (data["endpoint_id"]) updates["endpoint_id"] = data["endpoint_id"];
+        if (data["active_flag_id"])
+          updates["active_flag_id"] = data["active_flag_id"];
+        if (data["modalities_enabled_flag_id"])
+          updates["modalities_enabled_flag_id"] =
+            data["modalities_enabled_flag_id"];
+        if (data["temperature_enabled_flag_id"])
+          updates["temperature_enabled_flag_id"] =
+            data["temperature_enabled_flag_id"];
+        if (data["pricing_enabled_flag_id"])
+          updates["pricing_enabled_flag_id"] = data["pricing_enabled_flag_id"];
+        if (data["voices_enabled_flag_id"])
+          updates["voices_enabled_flag_id"] = data["voices_enabled_flag_id"];
+        if (data["reasoning_levels_enabled_flag_id"])
+          updates["reasoning_levels_enabled_flag_id"] =
+            data["reasoning_levels_enabled_flag_id"];
+        if (data["qualities_enabled_flag_id"])
+          updates["qualities_enabled_flag_id"] =
+            data["qualities_enabled_flag_id"];
+
+        // Array fields with dedup
+        const arrayFields = [
+          { key: "input_modality_ids" },
+          { key: "output_modality_ids" },
+          { key: "temperature_level_ids" },
+          { key: "reasoning_level_ids" },
+          { key: "quality_ids" },
+          { key: "pricing_ids" },
+          { key: "voice_ids" },
+        ];
+        for (const { key } of arrayFields) {
+          const newIds = data[key] as string[] | undefined;
+          if (newIds && newIds.length > 0) {
+            const prevIds = (prev[key] as string[]) ?? [];
+            updates[key] = [
+              ...prevIds,
+              ...newIds.filter((id: string) => !prevIds.includes(id)),
+            ];
+          }
+        }
+
+        return { ...prev, ...updates };
+      },
+    };
+  }, []);
 
   // nuqs parsers for URL-backed state (will be passed to GenericForm)
   // Memoize to prevent new object reference on every render
@@ -223,7 +289,7 @@ function ModelComponent({
       voiceSearch: parseAsString,
       qualitySearch: parseAsString,
     }),
-    []
+    [],
   );
 
   // Use server-provided data
@@ -242,9 +308,9 @@ function ModelComponent({
     () =>
       getDefaultDepartmentIds(
         isSuperadmin,
-        profile?.primary_department_id || null
+        profile?.primary_department_id || null,
       ),
-    [isSuperadmin, profile?.primary_department_id]
+    [isSuperadmin, profile?.primary_department_id],
   );
 
   const getInitialFormState = useCallback(() => {
@@ -287,29 +353,74 @@ function ModelComponent({
 
       // Flag IDs from resources.current.flags by key
       active_flag_id: findCurrentFlagId(curFlags, "active"),
-      modalities_enabled_flag_id: findCurrentFlagId(curFlags, "modalities_enabled"),
-      temperature_enabled_flag_id: findCurrentFlagId(curFlags, "temperature_enabled"),
+      modalities_enabled_flag_id: findCurrentFlagId(
+        curFlags,
+        "modalities_enabled",
+      ),
+      temperature_enabled_flag_id: findCurrentFlagId(
+        curFlags,
+        "temperature_enabled",
+      ),
       pricing_enabled_flag_id: findCurrentFlagId(curFlags, "pricing_enabled"),
       voices_enabled_flag_id: findCurrentFlagId(curFlags, "voices_enabled"),
-      reasoning_levels_enabled_flag_id: findCurrentFlagId(curFlags, "reasoning_levels_enabled"),
-      qualities_enabled_flag_id: findCurrentFlagId(curFlags, "qualities_enabled"),
+      reasoning_levels_enabled_flag_id: findCurrentFlagId(
+        curFlags,
+        "reasoning_levels_enabled",
+      ),
+      qualities_enabled_flag_id: findCurrentFlagId(
+        curFlags,
+        "qualities_enabled",
+      ),
 
       // Multi-select IDs from resources.current.* arrays
-      input_modality_ids: (cur?.input_modalities ?? []).map((m) => m.id as string).filter(Boolean),
-      output_modality_ids: (cur?.output_modalities ?? []).map((m) => m.id as string).filter(Boolean),
-      temperature_level_ids: (cur?.temperature_levels ?? []).map((t) => t.id as string).filter(Boolean),
-      reasoning_level_ids: (cur?.reasoning_levels ?? []).map((r) => r.id as string).filter(Boolean),
-      quality_ids: (cur?.qualities ?? []).map((q) => q.id as string).filter(Boolean),
-      pricing_ids: (cur?.pricing ?? []).map((p) => p.id as string).filter(Boolean),
+      input_modality_ids: (cur?.input_modalities ?? [])
+        .map((m) => m.id as string)
+        .filter(Boolean),
+      output_modality_ids: (cur?.output_modalities ?? [])
+        .map((m) => m.id as string)
+        .filter(Boolean),
+      temperature_level_ids: (cur?.temperature_levels ?? [])
+        .map((t) => t.id as string)
+        .filter(Boolean),
+      reasoning_level_ids: (cur?.reasoning_levels ?? [])
+        .map((r) => r.id as string)
+        .filter(Boolean),
+      quality_ids: (cur?.qualities ?? [])
+        .map((q) => q.id as string)
+        .filter(Boolean),
+      pricing_ids: (cur?.pricing ?? [])
+        .map((p) => p.id as string)
+        .filter(Boolean),
       voice_ids: (cur?.voices ?? []).map((v) => v.id as string).filter(Boolean),
       departmentIds: (() => {
-        const ids = (cur?.departments ?? []).map((d) => d.department_id as string).filter(Boolean);
+        const ids = (cur?.departments ?? [])
+          .map((d) => d.department_id as string)
+          .filter(Boolean);
         return ids.length > 0 ? ids : defaultDepartmentIds;
       })(),
     };
   }, [defaultDepartmentIds]);
 
   const [formState, setFormState] = useState(getInitialFormState);
+
+  // AI generation via shared hook - replaces manual WebSocket useEffect
+  const {
+    generatingResources: _generatingResources,
+    setGeneratingResources,
+    isGenerating,
+  } = useAiGeneration<ResourceType, Record<string, unknown>>({
+    socket,
+    isConnected,
+    artifactType: "model",
+    groupId: modelData?.group_id,
+    eventPrefix: "model_generation",
+    validResourceTypes: MODEL_VALID_RESOURCE_TYPES,
+    onComplete: onAiComplete,
+    setFormState: setFormState as Dispatch<
+      SetStateAction<Record<string, unknown>>
+    >,
+  });
+
   // Use ref to access formState in renderStep without depending on it
   const formStateRef = React.useRef(formState);
   React.useEffect(() => {
@@ -319,70 +430,86 @@ function ModelComponent({
   // Memoize stringified array dependencies to prevent effect from running when array references change but content is same
   const cur = modelData?.resources?.current;
   const departmentIdsStr = React.useMemo(
-    () => JSON.stringify((cur?.departments ?? []).map((d) => d.department_id).filter(Boolean)),
-    [cur?.departments]
+    () =>
+      JSON.stringify(
+        (cur?.departments ?? []).map((d) => d.department_id).filter(Boolean),
+      ),
+    [cur?.departments],
   );
   const inputModalityIdsStr = React.useMemo(
-    () => JSON.stringify((cur?.input_modalities ?? []).map((m) => m.id).filter(Boolean)),
-    [cur?.input_modalities]
+    () =>
+      JSON.stringify(
+        (cur?.input_modalities ?? []).map((m) => m.id).filter(Boolean),
+      ),
+    [cur?.input_modalities],
   );
   const outputModalityIdsStr = React.useMemo(
-    () => JSON.stringify((cur?.output_modalities ?? []).map((m) => m.id).filter(Boolean)),
-    [cur?.output_modalities]
+    () =>
+      JSON.stringify(
+        (cur?.output_modalities ?? []).map((m) => m.id).filter(Boolean),
+      ),
+    [cur?.output_modalities],
   );
   const temperatureLevelIdsStr = React.useMemo(
-    () => JSON.stringify((cur?.temperature_levels ?? []).map((t) => t.id).filter(Boolean)),
-    [cur?.temperature_levels]
+    () =>
+      JSON.stringify(
+        (cur?.temperature_levels ?? []).map((t) => t.id).filter(Boolean),
+      ),
+    [cur?.temperature_levels],
   );
   const reasoningLevelIdsStr = React.useMemo(
-    () => JSON.stringify((cur?.reasoning_levels ?? []).map((r) => r.id).filter(Boolean)),
-    [cur?.reasoning_levels]
+    () =>
+      JSON.stringify(
+        (cur?.reasoning_levels ?? []).map((r) => r.id).filter(Boolean),
+      ),
+    [cur?.reasoning_levels],
   );
   const qualityIdsStr = React.useMemo(
-    () => JSON.stringify((cur?.qualities ?? []).map((q) => q.id).filter(Boolean)),
-    [cur?.qualities]
+    () =>
+      JSON.stringify((cur?.qualities ?? []).map((q) => q.id).filter(Boolean)),
+    [cur?.qualities],
   );
   const pricingIdsStr = React.useMemo(
     () => JSON.stringify((cur?.pricing ?? []).map((p) => p.id).filter(Boolean)),
-    [cur?.pricing]
+    [cur?.pricing],
   );
   const voiceIdsStr = React.useMemo(
     () => JSON.stringify((cur?.voices ?? []).map((v) => v.id).filter(Boolean)),
-    [cur?.voices]
+    [cur?.voices],
   );
 
   // Memoize stringified formState arrays for draft listener effect dependencies
   const formStateDepartmentIdsStr = React.useMemo(
     () => JSON.stringify(formState.departmentIds),
-    [formState.departmentIds]
+    [formState.departmentIds],
   );
   const formStateInputModalityIdsStr = React.useMemo(
     () => JSON.stringify(formState.input_modality_ids),
-    [formState.input_modality_ids]
+    [formState.input_modality_ids],
   );
   const formStateOutputModalityIdsStr = React.useMemo(
     () => JSON.stringify(formState.output_modality_ids),
-    [formState.output_modality_ids]
+    [formState.output_modality_ids],
   );
   const formStateTemperatureLevelIdsStr = React.useMemo(
     () => JSON.stringify(formState.temperature_level_ids),
-    [formState.temperature_level_ids]
+    [formState.temperature_level_ids],
   );
   const formStateReasoningLevelIdsStr = React.useMemo(
     () => JSON.stringify(formState.reasoning_level_ids),
-    [formState.reasoning_level_ids]
+    [formState.reasoning_level_ids],
   );
   const formStateQualityIdsStr = React.useMemo(
     () => JSON.stringify(formState.quality_ids),
-    [formState.quality_ids]
+    [formState.quality_ids],
   );
   const formStatePricingIdsStr = React.useMemo(
     () => JSON.stringify(formState.pricing_ids),
-    [formState.pricing_ids]
+    [formState.pricing_ids],
   );
   const formStateVoiceIdsStr = React.useMemo(
     () => JSON.stringify(formState.voice_ids),
-    [formState.voice_ids]
+    [formState.voice_ids],
   );
 
   // Update form state when server data changes
@@ -586,10 +713,9 @@ function ModelComponent({
     const timer = setTimeout(async () => {
       try {
         if (!patchModelDraftActionRef.current) return;
-        const patchAction =
-          patchModelDraftActionRef.current as
-            | ((input: PatchModelDraftActionInput) => Promise<PatchModelDraftOut>)
-            | undefined;
+        const patchAction = patchModelDraftActionRef.current as
+          | ((input: PatchModelDraftActionInput) => Promise<PatchModelDraftOut>)
+          | undefined;
         if (!patchAction) return;
         const result = await patchAction({
           body: {
@@ -641,229 +767,6 @@ function ModelComponent({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draftPatchKey]);
 
-  // WebSocket handlers for AI generation - unified handler for all resource types
-  useEffect(() => {
-    if (!socket || !isConnected) return;
-
-    // Use single group_id from modelData (no need to track multiple)
-    const currentGroupId = modelData?.group_id;
-
-    const handleGenerationComplete = (data: {
-      artifact_type?: string;
-      group_id?: string;
-      resource_type?: string;
-      name_id?: string | null;
-      description_id?: string | null;
-      value_id?: string | null;
-      endpoint_id?: string | null;
-      active_flag_id?: string | null;
-      modalities_enabled_flag_id?: string | null;
-      temperature_enabled_flag_id?: string | null;
-      pricing_enabled_flag_id?: string | null;
-      voices_enabled_flag_id?: string | null;
-      reasoning_levels_enabled_flag_id?: string | null;
-      qualities_enabled_flag_id?: string | null;
-      input_modality_ids?: string[];
-      output_modality_ids?: string[];
-      temperature_level_ids?: string[];
-      reasoning_level_ids?: string[];
-      quality_ids?: string[];
-      pricing_ids?: string[];
-      voice_ids?: string[];
-      message?: string;
-      success?: boolean;
-      [key: string]: unknown;
-    }) => {
-      // Filter by artifact_type and group_id
-      if (
-        data.artifact_type !== "model" ||
-        !data.group_id ||
-        data.group_id !== currentGroupId
-      ) {
-        return; // Not for this model or wrong group_id
-      }
-
-      const validResourceTypes: ResourceType[] = [
-        "names",
-        "descriptions",
-        "flags",
-        "temperature_levels",
-        "reasoning_levels",
-        "voices",
-      ];
-      if (
-        data.resource_type &&
-        validResourceTypes.includes(data.resource_type as ResourceType)
-      ) {
-        // Update formState with the resource ID that was generated
-        setFormState((prev) => {
-          const updates: Partial<typeof prev> = {};
-
-          if (data.name_id) updates.name_id = data.name_id;
-          if (data.description_id) updates.description_id = data.description_id;
-          if (data.value_id) updates.value_id = data.value_id;
-          if (data.endpoint_id) updates.endpoint_id = data.endpoint_id;
-          if (data.active_flag_id) updates.active_flag_id = data.active_flag_id;
-          if (data.modalities_enabled_flag_id)
-            updates.modalities_enabled_flag_id =
-              data.modalities_enabled_flag_id;
-          if (data.temperature_enabled_flag_id)
-            updates.temperature_enabled_flag_id =
-              data.temperature_enabled_flag_id;
-          if (data.pricing_enabled_flag_id)
-            updates.pricing_enabled_flag_id = data.pricing_enabled_flag_id;
-          if (data.voices_enabled_flag_id)
-            updates.voices_enabled_flag_id = data.voices_enabled_flag_id;
-          if (data.reasoning_levels_enabled_flag_id)
-            updates.reasoning_levels_enabled_flag_id =
-              data.reasoning_levels_enabled_flag_id;
-          if (data.qualities_enabled_flag_id)
-            updates.qualities_enabled_flag_id = data.qualities_enabled_flag_id;
-          if (data.input_modality_ids && data.input_modality_ids.length > 0) {
-            const newIds = data.input_modality_ids.filter(
-              (id) => !prev.input_modality_ids.includes(id)
-            );
-            updates.input_modality_ids = [
-              ...prev.input_modality_ids,
-              ...newIds,
-            ];
-          }
-          if (data.output_modality_ids && data.output_modality_ids.length > 0) {
-            const newIds = data.output_modality_ids.filter(
-              (id) => !prev.output_modality_ids.includes(id)
-            );
-            updates.output_modality_ids = [
-              ...prev.output_modality_ids,
-              ...newIds,
-            ];
-          }
-          if (
-            data.temperature_level_ids &&
-            data.temperature_level_ids.length > 0
-          ) {
-            const newIds = data.temperature_level_ids.filter(
-              (id) => !prev.temperature_level_ids.includes(id)
-            );
-            updates.temperature_level_ids = [
-              ...prev.temperature_level_ids,
-              ...newIds,
-            ];
-          }
-          if (data.reasoning_level_ids && data.reasoning_level_ids.length > 0) {
-            const newIds = data.reasoning_level_ids.filter(
-              (id) => !prev.reasoning_level_ids.includes(id)
-            );
-            updates.reasoning_level_ids = [
-              ...prev.reasoning_level_ids,
-              ...newIds,
-            ];
-          }
-          if (data.quality_ids && data.quality_ids.length > 0) {
-            const newIds = data.quality_ids.filter(
-              (id) => !prev.quality_ids.includes(id)
-            );
-            updates.quality_ids = [...prev.quality_ids, ...newIds];
-          }
-          if (data.pricing_ids && data.pricing_ids.length > 0) {
-            const newIds = data.pricing_ids.filter(
-              (id) => !prev.pricing_ids.includes(id)
-            );
-            updates.pricing_ids = [...prev.pricing_ids, ...newIds];
-          }
-          if (data.voice_ids && data.voice_ids.length > 0) {
-            const newIds = data.voice_ids.filter(
-              (id) => !prev.voice_ids.includes(id)
-            );
-            updates.voice_ids = [...prev.voice_ids, ...newIds];
-          }
-
-          return { ...prev, ...updates };
-        });
-
-        setGeneratingResources((prev) => {
-          const next = new Set(prev);
-          next.delete(data.resource_type as ResourceType);
-          return next;
-        });
-        if (data.success) {
-          toast.success(
-            data.message || `${data.resource_type} generated successfully`
-          );
-        } else {
-          toast.error(
-            data.message || `Failed to generate ${data.resource_type}`
-          );
-        }
-      }
-    };
-
-    const handleGenerationProgress = (data: {
-      artifact_type?: string;
-      group_id?: string;
-      resource_type?: string;
-      [key: string]: unknown;
-    }) => {
-      // Filter by artifact_type and group_id
-      if (
-        data.artifact_type !== "model" ||
-        !data.group_id ||
-        data.group_id !== currentGroupId
-      ) {
-        return; // Not for this model or wrong group_id
-      }
-      // Handle progress updates if needed
-    };
-
-    const handleGenerationError = (data: {
-      artifact_type?: string;
-      group_id?: string;
-      message?: string;
-      resource_type?: string;
-      resource_types?: string[];
-    }) => {
-      // Filter by artifact_type and group_id
-      if (
-        data.artifact_type !== "model" ||
-        !data.group_id ||
-        data.group_id !== currentGroupId
-      ) {
-        return; // Not for this model or wrong group_id
-      }
-
-      const validResourceTypes: ResourceType[] = [
-        "names",
-        "descriptions",
-        "flags",
-        "temperature_levels",
-        "reasoning_levels",
-        "voices",
-      ];
-      const resourceTypes =
-        data.resource_types || (data.resource_type ? [data.resource_type] : []);
-      setGeneratingResources((prev) => {
-        const next = new Set(prev);
-        resourceTypes.forEach((rt) => {
-          if (validResourceTypes.includes(rt as ResourceType)) {
-            next.delete(rt as ResourceType);
-          }
-        });
-        return next;
-      });
-      toast.error(data.message || "Generation failed");
-    };
-
-    // Listen to model-specific events filtered by artifact_type and group_id
-    socket.on("model_generation_progress", handleGenerationProgress);
-    socket.on("model_generation_complete", handleGenerationComplete);
-    socket.on("model_generation_error", handleGenerationError);
-
-    return () => {
-      socket.off("model_generation_progress", handleGenerationProgress);
-      socket.off("model_generation_complete", handleGenerationComplete);
-      socket.off("model_generation_error", handleGenerationError);
-    };
-  }, [socket, isConnected, modelData?.group_id]);
-
   // Multi-generation handler - accepts list of resource types and optional user instructions
   // Helper function to get domain_ids from resource types
   const getDomainIds = useCallback(
@@ -882,14 +785,11 @@ function ModelComponent({
         .map((rt) => domainIdMap[rt])
         .filter((id): id is string => id != null);
     },
-    [modelData]
+    [modelData],
   );
 
   const handleGenerateResources = useCallback(
-    async (
-      resourceTypes: ResourceType[],
-      userInstructions?: string
-    ) => {
+    async (resourceTypes: ResourceType[], userInstructions?: string) => {
       if (!socket || !isConnected) {
         toast.error("WebSocket not connected");
         return;
@@ -917,18 +817,18 @@ function ModelComponent({
         model_id: modelId || null,
       });
     },
-    [socket, isConnected, modelId, getDomainIds]
+    [socket, isConnected, modelId, getDomainIds, setGeneratingResources],
   );
 
   // Individual generation handlers - generate directly without modals
   const handleGenerateName = useCallback(
     async () => handleGenerateResources(["names"]),
-    [handleGenerateResources]
+    [handleGenerateResources],
   );
 
   const handleGenerateDescription = useCallback(
     async () => handleGenerateResources(["descriptions"]),
-    [handleGenerateResources]
+    [handleGenerateResources],
   );
 
   // Disabled logic based on can_edit flag - standardized for all resource components
@@ -1000,13 +900,13 @@ function ModelComponent({
         "voices",
       ], // All resources for full-page generation (only those in ResourceType enum)
     }),
-    []
+    [],
   );
 
   // Listen for full-page-generate event from layout
   useEffect(() => {
     const handleFullPageGenerate = (
-      event: CustomEvent<{ agentId?: string }>
+      event: CustomEvent<{ agentId?: string }>,
     ) => {
       const agentId = event.detail?.agentId;
       if (agentId) {
@@ -1017,12 +917,12 @@ function ModelComponent({
     };
     window.addEventListener(
       "full-page-generate",
-      handleFullPageGenerate as EventListener
+      handleFullPageGenerate as EventListener,
     );
     return () =>
       window.removeEventListener(
         "full-page-generate",
-        handleFullPageGenerate as EventListener
+        handleFullPageGenerate as EventListener,
       );
   }, [handleGenerateResources, stepResources]);
 
@@ -1102,12 +1002,12 @@ function ModelComponent({
           },
         });
         toast.success(
-          `Model ${isEditMode ? "updated" : "created"} successfully!`
+          `Model ${isEditMode ? "updated" : "created"} successfully!`,
         );
         router.push(`/intelligence/models`);
       } catch (error) {
         toast.error(
-          `Failed to ${isEditMode ? "update" : "create"} model: ${error instanceof Error ? error.message : "Unknown error"}`
+          `Failed to ${isEditMode ? "update" : "create"} model: ${error instanceof Error ? error.message : "Unknown error"}`,
         );
         throw error;
       }
@@ -1121,7 +1021,7 @@ function ModelComponent({
       router,
       modelData?.name_required,
       modelData?.value_required,
-    ]
+    ],
   );
 
   // Step status logic (for GenericForm) - check resource IDs instead of display values
@@ -1239,7 +1139,7 @@ function ModelComponent({
           return "pending";
       }
     },
-    [formState]
+    [formState],
   );
 
   // Steps configuration for GenericForm
@@ -1329,7 +1229,7 @@ function ModelComponent({
         optional: true,
       },
     ],
-    []
+    [],
   );
 
   // Form field keys (for GenericForm) - using resource IDs
@@ -1367,7 +1267,7 @@ function ModelComponent({
       "voiceSearch",
       "qualitySearch",
     ],
-    []
+    [],
   );
 
   // Reset success message (for GenericForm)
@@ -1476,7 +1376,7 @@ function ModelComponent({
       createLabel: "Create Model",
       updateLabel: "Update Model",
     }),
-    []
+    [],
   );
 
   // Memoize renderStep to prevent GenericForm re-renders
@@ -1528,13 +1428,15 @@ function ModelComponent({
       const flagConfig = (key: string) => allFlags.find((f) => f.key === key);
       const flagResource = (key: string) => {
         const cfg = flagConfig(key);
-        return cfg ? {
-          id: cfg.flag_option_id ?? null,
-          name: cfg.label ?? null,
-          description: cfg.description ?? null,
-          icon: cfg.icon_id ?? null,
-          generated: cfg.generated ?? null,
-        } : null;
+        return cfg
+          ? {
+              id: cfg.flag_option_id ?? null,
+              name: cfg.label ?? null,
+              description: cfg.description ?? null,
+              icon: cfg.icon_id ?? null,
+              generated: cfg.generated ?? null,
+            }
+          : null;
       };
 
       switch (stepId) {
@@ -1550,7 +1452,9 @@ function ModelComponent({
               customHeader={
                 <Names
                   name_id={formState.name_id ?? null}
-                  name_resource={modelData?.resources?.current?.names?.[0] ?? null}
+                  name_resource={
+                    modelData?.resources?.current?.names?.[0] ?? null
+                  }
                   show_name={modelData?.show_name ?? true}
                   name_suggestions={modelData?.name_suggestions ?? []}
                   names={modelData?.resources?.resources?.names ?? []}
@@ -1591,12 +1495,16 @@ function ModelComponent({
               <div className="space-y-4">
                 <Descriptions
                   description_id={formState.description_id ?? null}
-                  description_resource={modelData?.resources?.current?.descriptions?.[0] ?? null}
+                  description_resource={
+                    modelData?.resources?.current?.descriptions?.[0] ?? null
+                  }
                   show_description={modelData?.show_description ?? true}
                   description_suggestions={
                     modelData?.description_suggestions ?? []
                   }
-                  descriptions={modelData?.resources?.resources?.descriptions ?? []}
+                  descriptions={
+                    modelData?.resources?.resources?.descriptions ?? []
+                  }
                   searchTerm={descriptionSearch}
                   onSearchChange={(term: string) =>
                     setFormData({ descriptionSearch: term || null })
@@ -1612,32 +1520,36 @@ function ModelComponent({
                   group_id={modelData?.descriptions_group_id ?? null}
                   create_tool_id={modelData?.description_create_tool_id ?? null}
                   link_tool_id={modelData?.description_link_tool_id ?? null}
-                  showAiGenerate={modelData?.description_show_ai_generate ?? false}
+                  showAiGenerate={
+                    modelData?.description_show_ai_generate ?? false
+                  }
                   createDescriptionsAction={createDescriptionsAction}
                 />
 
                 <Values
                   value_ids={formState.value_id ? [formState.value_id] : []}
                   value_resources={
-                    formState.value_id && modelData?.resources?.current?.values?.[0]
+                    formState.value_id &&
+                    modelData?.resources?.current?.values?.[0]
                       ? [
                           {
                             value_id: modelData.resources.current.values[0].id,
                             name: modelData.resources.current.values[0].value,
-                            generated: modelData.resources.current.values[0].generated,
+                            generated:
+                              modelData.resources.current.values[0].generated,
                           },
                         ]
                       : []
                   }
                   show_values={modelData?.show_value ?? true}
                   value_suggestions={modelData?.value_suggestions ?? []}
-                  values={
-                    (modelData?.resources?.resources?.values ?? []).map((v) => ({
+                  values={(modelData?.resources?.resources?.values ?? []).map(
+                    (v) => ({
                       value_id: v.id,
                       name: v.value,
                       generated: v.generated,
-                    }))
-                  }
+                    }),
+                  )}
                   searchTerm={valueSearch}
                   onSearchChange={(term: string) =>
                     setFormData({ valueSearch: term || null })
@@ -1754,7 +1666,9 @@ function ModelComponent({
                   }}
                   label="Temperature"
                   helpText="Configure temperature levels for this model"
-                  required={flagConfig("temperature_enabled")?.required ?? false}
+                  required={
+                    flagConfig("temperature_enabled")?.required ?? false
+                  }
                   group_id={modelData?.flags_group_id ?? null}
                   link_tool_id={modelData?.flag_link_tool_id ?? null}
                   showAiGenerate={modelData?.flag_show_ai_generate ?? false}
@@ -1806,7 +1720,9 @@ function ModelComponent({
                 <Flags
                   flag_id={formState.reasoning_levels_enabled_flag_id ?? null}
                   flag_resource={flagResource("reasoning_levels_enabled")}
-                  show_flag={flagConfig("reasoning_levels_enabled")?.show ?? false}
+                  show_flag={
+                    flagConfig("reasoning_levels_enabled")?.show ?? false
+                  }
                   disabled={disabled}
                   onFlagIdChange={(id) => {
                     setFormState((prev) => ({
@@ -1817,7 +1733,9 @@ function ModelComponent({
                   }}
                   label="Reasoning Levels"
                   helpText="Select reasoning levels for this model"
-                  required={flagConfig("reasoning_levels_enabled")?.required ?? false}
+                  required={
+                    flagConfig("reasoning_levels_enabled")?.required ?? false
+                  }
                   group_id={modelData?.flags_group_id ?? null}
                   link_tool_id={modelData?.flag_link_tool_id ?? null}
                   showAiGenerate={modelData?.flag_show_ai_generate ?? false}
@@ -1873,25 +1791,29 @@ function ModelComponent({
                   formState.endpoint_id ? [formState.endpoint_id] : []
                 }
                 endpoint_resources={
-                  formState.endpoint_id && modelData?.resources?.current?.endpoints?.[0]
+                  formState.endpoint_id &&
+                  modelData?.resources?.current?.endpoints?.[0]
                     ? [
                         {
-                          endpoint_id: modelData.resources.current.endpoints[0].id,
-                          name: modelData.resources.current.endpoints[0].base_url,
-                          generated: modelData.resources.current.endpoints[0].generated,
+                          endpoint_id:
+                            modelData.resources.current.endpoints[0].id,
+                          name: modelData.resources.current.endpoints[0]
+                            .base_url,
+                          generated:
+                            modelData.resources.current.endpoints[0].generated,
                         },
                       ]
                     : []
                 }
                 show_endpoints={modelData?.show_endpoint ?? true}
                 endpoint_suggestions={modelData?.endpoint_suggestions ?? []}
-                endpoints={
-                  (modelData?.resources?.resources?.endpoints ?? []).map((e) => ({
-                    endpoint_id: e.id,
-                    name: e.base_url,
-                    generated: e.generated,
-                  }))
-                }
+                endpoints={(
+                  modelData?.resources?.resources?.endpoints ?? []
+                ).map((e) => ({
+                  endpoint_id: e.id,
+                  name: e.base_url,
+                  generated: e.generated,
+                }))}
                 searchTerm={endpointSearch}
                 onSearchChange={(term: string) =>
                   setFormData({ endpointSearch: term || null })
@@ -1933,7 +1855,7 @@ function ModelComponent({
                 providerMapping={providers.reduce(
                   (
                     acc: Record<string, { name: string; description: string }>,
-                    p
+                    p,
                   ) => {
                     const providerId = p.id ?? null;
                     if (providerId) {
@@ -1944,7 +1866,7 @@ function ModelComponent({
                     }
                     return acc;
                   },
-                  {} as Record<string, { name: string; description: string }>
+                  {} as Record<string, { name: string; description: string }>,
                 )}
                 validProviderIds={providers
                   .map((p) => p.id ?? null)
@@ -1983,24 +1905,24 @@ function ModelComponent({
             >
               <Modalities
                 modality_ids={formState.input_modality_ids}
-                modality_resources={
-                  (modelData?.resources?.current?.input_modalities ?? []).map((m) => ({
-                    modality_id: m.id,
-                    name: m.modality,
-                    generated: m.generated,
-                  }))
-                }
+                modality_resources={(
+                  modelData?.resources?.current?.input_modalities ?? []
+                ).map((m) => ({
+                  modality_id: m.id,
+                  name: m.modality,
+                  generated: m.generated,
+                }))}
                 show_modalities={modelData?.show_modalities ?? true}
                 modality_suggestions={
                   modelData?.input_modality_suggestions ?? []
                 }
-                modalities={
-                  (modelData?.resources?.resources?.input_modalities ?? []).map((m) => ({
-                    modality_id: m.id,
-                    name: m.modality,
-                    generated: m.generated,
-                  }))
-                }
+                modalities={(
+                  modelData?.resources?.resources?.input_modalities ?? []
+                ).map((m) => ({
+                  modality_id: m.id,
+                  name: m.modality,
+                  generated: m.generated,
+                }))}
                 searchTerm={inputModalitySearch}
                 onSearchChange={(term: string) =>
                   setFormData({ inputModalitySearch: term || null })
@@ -2041,24 +1963,24 @@ function ModelComponent({
             >
               <Modalities
                 modality_ids={formState.output_modality_ids}
-                modality_resources={
-                  (modelData?.resources?.current?.output_modalities ?? []).map((m) => ({
-                    modality_id: m.id,
-                    name: m.modality,
-                    generated: m.generated,
-                  }))
-                }
+                modality_resources={(
+                  modelData?.resources?.current?.output_modalities ?? []
+                ).map((m) => ({
+                  modality_id: m.id,
+                  name: m.modality,
+                  generated: m.generated,
+                }))}
                 show_modalities={modelData?.show_modalities ?? true}
                 modality_suggestions={
                   modelData?.output_modality_suggestions ?? []
                 }
-                modalities={
-                  (modelData?.resources?.resources?.output_modalities ?? []).map((m) => ({
-                    modality_id: m.id,
-                    name: m.modality,
-                    generated: m.generated,
-                  }))
-                }
+                modalities={(
+                  modelData?.resources?.resources?.output_modalities ?? []
+                ).map((m) => ({
+                  modality_id: m.id,
+                  name: m.modality,
+                  generated: m.generated,
+                }))}
                 searchTerm={outputModalitySearch}
                 onSearchChange={(term: string) =>
                   setFormData({ outputModalitySearch: term || null })
@@ -2107,14 +2029,18 @@ function ModelComponent({
                   formState.temperature_level_ids.length > 0 &&
                   modelData?.resources?.current?.temperature_levels?.[0]
                     ? {
-                        id: modelData.resources.current.temperature_levels[0].id,
+                        id: modelData.resources.current.temperature_levels[0]
+                          .id,
                         temperature: String(
-                          modelData.resources.current.temperature_levels[0].temperature
+                          modelData.resources.current.temperature_levels[0]
+                            .temperature,
                         ),
                         is_upper:
-                          modelData.resources.current.temperature_levels[0].is_upper,
+                          modelData.resources.current.temperature_levels[0]
+                            .is_upper,
                         generated:
-                          modelData.resources.current.temperature_levels[0].generated,
+                          modelData.resources.current.temperature_levels[0]
+                            .generated,
                       }
                     : null
                 }
@@ -2124,14 +2050,14 @@ function ModelComponent({
                 temperature_level_suggestions={
                   modelData?.temperature_level_suggestions ?? []
                 }
-                temperature_levels={
-                  (modelData?.resources?.resources?.temperature_levels ?? []).map((t) => ({
-                    id: t.id,
-                    temperature: String(t.temperature),
-                    is_upper: t.is_upper,
-                    generated: t.generated,
-                  }))
-                }
+                temperature_levels={(
+                  modelData?.resources?.resources?.temperature_levels ?? []
+                ).map((t) => ({
+                  id: t.id,
+                  temperature: String(t.temperature),
+                  is_upper: t.is_upper,
+                  generated: t.generated,
+                }))}
                 searchTerm={temperatureSearch}
                 onSearchChange={(term: string) =>
                   setFormData({ temperatureSearch: term || null })
@@ -2147,8 +2073,12 @@ function ModelComponent({
                 placeholder="Select temperature levels"
                 required={modelData?.temperature_levels_required ?? false}
                 group_id={modelData?.temperature_levels_group_id ?? null}
-                link_tool_id={modelData?.temperature_levels_link_tool_id ?? null}
-                showAiGenerate={modelData?.temperature_levels_show_ai_generate ?? false}
+                link_tool_id={
+                  modelData?.temperature_levels_link_tool_id ?? null
+                }
+                showAiGenerate={
+                  modelData?.temperature_levels_show_ai_generate ?? false
+                }
                 createTemperatureLevelsAction={createTemperatureLevelsAction}
               />
             </StepCard>
@@ -2175,24 +2105,24 @@ function ModelComponent({
             >
               <Pricing
                 pricing_ids={formState.pricing_ids}
-                pricing_resources={
-                  (modelData?.resources?.current?.pricing ?? []).map((p) => ({
-                    pricing_id: p.id,
-                    name: `${p.pricing_type}`,
-                    description: `${p.price}`,
-                    generated: p.generated,
-                  }))
-                }
+                pricing_resources={(
+                  modelData?.resources?.current?.pricing ?? []
+                ).map((p) => ({
+                  pricing_id: p.id,
+                  name: `${p.pricing_type}`,
+                  description: `${p.price}`,
+                  generated: p.generated,
+                }))}
                 show_pricing={modelData?.show_pricing ?? true}
                 pricing_suggestions={modelData?.pricing_suggestions ?? []}
-                pricings={
-                  (modelData?.resources?.resources?.pricing ?? []).map((p) => ({
+                pricings={(modelData?.resources?.resources?.pricing ?? []).map(
+                  (p) => ({
                     pricing_id: p.id,
                     name: `${p.pricing_type}`,
                     description: `${p.price}`,
                     generated: p.generated,
-                  }))
-                }
+                  }),
+                )}
                 searchTerm={pricingSearch}
                 onSearchChange={(term: string) =>
                   setFormData({ pricingSearch: term || null })
@@ -2246,7 +2176,8 @@ function ModelComponent({
                           modelData.resources.current.reasoning_levels[0]
                             .reasoning_level,
                         generated:
-                          modelData.resources.current.reasoning_levels[0].generated,
+                          modelData.resources.current.reasoning_levels[0]
+                            .generated,
                       }
                     : null
                 }
@@ -2254,13 +2185,13 @@ function ModelComponent({
                 reasoning_level_suggestions={
                   modelData?.reasoning_level_suggestions ?? []
                 }
-                reasoning_levels={
-                  (modelData?.resources?.resources?.reasoning_levels ?? []).map((r) => ({
-                    id: r.id,
-                    reasoning_level: r.reasoning_level,
-                    generated: r.generated,
-                  }))
-                }
+                reasoning_levels={(
+                  modelData?.resources?.resources?.reasoning_levels ?? []
+                ).map((r) => ({
+                  id: r.id,
+                  reasoning_level: r.reasoning_level,
+                  generated: r.generated,
+                }))}
                 searchTerm={reasoningSearch}
                 onSearchChange={(term: string) =>
                   setFormData({ reasoningSearch: term || null })
@@ -2277,7 +2208,9 @@ function ModelComponent({
                 required={modelData?.reasoning_levels_required ?? false}
                 group_id={modelData?.reasoning_levels_group_id ?? null}
                 link_tool_id={modelData?.reasoning_levels_link_tool_id ?? null}
-                showAiGenerate={modelData?.reasoning_levels_show_ai_generate ?? false}
+                showAiGenerate={
+                  modelData?.reasoning_levels_show_ai_generate ?? false
+                }
                 createReasoningLevelsAction={createReasoningLevelsAction}
               />
             </StepCard>
@@ -2347,22 +2280,22 @@ function ModelComponent({
             >
               <Qualities
                 quality_ids={formState.quality_ids}
-                quality_resources={
-                  (modelData?.resources?.current?.qualities ?? []).map((q) => ({
-                    quality_id: q.id,
-                    name: q.quality,
-                    generated: q.generated,
-                  }))
-                }
+                quality_resources={(
+                  modelData?.resources?.current?.qualities ?? []
+                ).map((q) => ({
+                  quality_id: q.id,
+                  name: q.quality,
+                  generated: q.generated,
+                }))}
                 show_qualities={modelData?.show_qualities ?? true}
                 quality_suggestions={modelData?.quality_suggestions ?? []}
-                qualities={
-                  (modelData?.resources?.resources?.qualities ?? []).map((q) => ({
-                    quality_id: q.id,
-                    name: q.quality,
-                    generated: q.generated,
-                  }))
-                }
+                qualities={(
+                  modelData?.resources?.resources?.qualities ?? []
+                ).map((q) => ({
+                  quality_id: q.id,
+                  name: q.quality,
+                  generated: q.generated,
+                }))}
                 searchTerm={qualitySearch}
                 onSearchChange={(term: string) =>
                   setFormData({ qualitySearch: term || null })
@@ -2408,7 +2341,7 @@ function ModelComponent({
       createPricingAction,
       createVoicesAction,
       createQualitiesAction,
-    ]
+    ],
   );
 
   return (
