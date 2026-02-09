@@ -431,6 +431,21 @@ async def _persona_generate_impl(
             )
             jinja_context = persona_jinja_context
 
+            # Inject config view into Jinja context for template access
+            jinja_context["views"] = {
+                "config": {
+                    "config_id": str(prepare_row.config_id)
+                    if prepare_row.config_id
+                    else None,
+                    "model_name": model_name,
+                    "provider_name": provider_name,
+                    "temperature": temperature,
+                    "reasoning": reasoning,
+                    "voice": voice,
+                    "quality": quality,
+                },
+            }
+
             # Step 5: Render developer instructions with Jinja
             rendered_developer_messages = render_developer_instructions(
                 templates=developer_instruction_templates,

@@ -7992,6 +7992,7 @@ class PreparePersonaGenerationSqlRow(BaseModel):
     developer_instruction_templates: list[str] | None = None
     jinja_context: Any | None = None
     output_modalities: list[str] | None = None
+    config_id: UUID | None = None
 
 
 class PreparePersonaGenerationApiRequest(BaseModel):
@@ -8021,6 +8022,7 @@ class PreparePersonaGenerationApiResponse(BaseModel):
     developer_instruction_templates: list[str] | None = None
     jinja_context: Any | None = None
     output_modalities: list[str] | None = None
+    config_id: UUID | None = None
 
 
 # Generated from: get_generation_run_context_and_create_run
