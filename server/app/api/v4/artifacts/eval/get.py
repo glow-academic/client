@@ -37,12 +37,13 @@ from app.api.v4.artifacts.eval.permissions import (
     has_access,
 )
 from app.api.v4.artifacts.eval.types import (
-    DomainAgent,
     EvalFlagConfig,
     EvalGroupRubricMapping,
     EvalResourceBucket,
     EvalResources,
     EvalRunRubricMapping,
+    EvalWebsocketResources,
+    EvalWebsocketViews,
     GetEvalApiRequest,
     GetEvalApiResponse,
     GetEvalWebsocketResponse,
@@ -56,7 +57,7 @@ from app.api.v4.resources.flags.get import get_flags_internal
 from app.api.v4.resources.flags.search import search_flags_internal
 from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.names.search import search_names_internal
-from app.api.v4.types import CandidateAgent
+from app.api.v4.types import CandidateAgent, DomainAgent
 from app.api.v4.views.drafts.get import get_draft_eval_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
@@ -611,10 +612,9 @@ async def get_eval_websocket(
     """Minimal response for WebSocket handlers.
 
     Returns only what's needed for AI generation:
-    - Domain IDs (for domain_to_resource mapping)
-    - Domains list (for agent_id lookup)
     - Group ID (for existing group context)
-    - Resources (for Jinja template context)
+    - Selected resources (for Jinja template context)
+    - resource_agent_ids (server-side agent routing)
     """
     data = await get_eval_internal(
         profile_id=profile_id,
@@ -623,19 +623,28 @@ async def get_eval_websocket(
         bypass_cache=bypass_cache,
     )
 
+    current = data.resources_payload.current or EvalResourceBucket()
+
     return GetEvalWebsocketResponse(
+        views=EvalWebsocketViews(draft_eval=None),
         group_id=data.group_id,
-        # Domain IDs for domain_to_resource mapping
-        name_domain_id=data.domain_ids_map.get("names"),
-        description_domain_id=data.domain_ids_map.get("descriptions"),
-        flag_domain_id=data.domain_ids_map.get("flags"),
-        departments_domain_id=data.domain_ids_map.get("departments"),
-        agents_domain_id=data.domain_ids_map.get("agents"),
-        rubrics_domain_id=data.domain_ids_map.get("rubrics"),
-        # Domains mapping for agent lookup
-        domains=data.domains_list,
-        # Resources for Jinja context
-        resources=data.resources_payload,
+        resource_agent_ids=data.domain_agent_ids,
+        resources=EvalWebsocketResources(
+            names=current.names,
+            descriptions=current.descriptions,
+            flags=current.flags,
+            departments=current.departments,
+            eval_agents=current.eval_agents,
+            rubrics=current.rubrics,
+            run_positions=None,
+            group_positions=None,
+            run_rubrics=None,
+            group_rubrics=None,
+            agents=None,
+            models=None,
+            providers=None,
+            tools=None,
+        ),
     )
 
 

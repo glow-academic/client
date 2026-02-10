@@ -1,11 +1,4 @@
-"""WebSocket-specific types for provider generation.
-
-Extends base artifact types with provider-specific fields.
-Types are registered in OpenAPI via FastAPI endpoints, enabling
-automatic type extraction in the frontend via InputOf/OutputOf.
-"""
-
-from uuid import UUID
+"""WebSocket-specific types for provider generation."""
 
 from app.api.v4.artifacts.provider.types import GetProviderApiRequest
 from app.socket.v4.artifacts.types import (
@@ -16,9 +9,10 @@ from app.socket.v4.artifacts.types import (
 from app.sql.types import (
     QGetDepartmentsV4Item,
     QGetDescriptionsV4Item,
+    QGetEndpointsV4Item,
     QGetFlagsV4Item,
+    QGetKeysV4Item,
     QGetNamesV4Item,
-    QGetRegeneratesV4Item,
     QGetValuesV4Item,
 )
 
@@ -30,18 +24,11 @@ from app.sql.types import (
 class GenerateProviderPayload(GetProviderApiRequest):
     """Request payload for provider_generate WebSocket event.
 
-    Extends GetProviderApiRequest (which has provider_id, draft_id)
-    with generation-specific fields.
+    Extends GetProviderApiRequest with generation-specific fields.
     """
 
-    # Generation-specific fields - domain-based API
-    domain_ids: list[
-        UUID
-    ]  # Required: which domains to generate (client passes these through)
-    user_instructions: list[str] | None = None  # Optional: user instructions
-
-    # Note: current selections are derived from draft-backed API response.
-    # The server looks up agent_ids and group_ids from the domains mapping in get_provider_internal().
+    resource_types: list[str]
+    user_instructions: list[str] | None = None
 
 
 # =============================================================================
@@ -63,7 +50,8 @@ class ProviderGenerationCompleteEvent(GenerationCompleteEvent):
     description_resource: QGetDescriptionsV4Item | None = None
     flag_resource: QGetFlagsV4Item | None = None
     value_resource: QGetValuesV4Item | None = None
-    regenerates_resource: QGetRegeneratesV4Item | None = None
+    endpoint_resource: QGetEndpointsV4Item | None = None
+    key_resource: QGetKeysV4Item | None = None
 
     # Multi-select resources (arrays of full objects)
     department_resources: list[QGetDepartmentsV4Item] | None = None

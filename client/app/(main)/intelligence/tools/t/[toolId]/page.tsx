@@ -55,8 +55,8 @@ export async function generateMetadata(
       },
     };
     const tool = await getTool(input);
-    const toolName = tool?.resources?.current?.names?.[0]?.name;
-    const toolDesc = tool?.resources?.current?.descriptions?.[0]?.description;
+    const toolName = tool?.names?.resource?.name;
+    const toolDesc = tool?.descriptions?.resource?.description;
     return {
       title: `${toolName || "Tool"} - ${parentMetadata.title?.absolute || "Tools"}`,
       description:
@@ -148,7 +148,7 @@ export default async function ToolDetailPage({
 
     // Check access
     if (!toolDetail.tool_exists) {
-      return <UnifiedAccessDenied />;
+      return <UnifiedAccessDenied reason="route-denied" />;
     }
 
     return (
@@ -178,8 +178,7 @@ export default async function ToolDetailPage({
     ) {
       return (
         <UnifiedAccessDenied
-          reason="not_found"
-          resourceType="tool"
+          reason="route-denied"
           redirectPath="/intelligence/tools"
         />
       );

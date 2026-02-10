@@ -34,6 +34,7 @@ interface UnifiedAccessDeniedProps {
   role?: ProfileRole;
   redirectPath?: string;
   resourceType?:
+    | "field"
     | "scenario"
     | "simulation"
     | "cohort"
@@ -98,6 +99,8 @@ export function UnifiedAccessDenied({
       switch (resourceType) {
         case "scenario":
           return "scenario";
+        case "field":
+          return "field";
         case "simulation":
           return "simulation";
         case "cohort":
@@ -127,6 +130,8 @@ export function UnifiedAccessDenied({
       switch (resourceType) {
         case "scenario":
           return "/training/scenarios";
+        case "field":
+          return "/management/fields";
         case "simulation":
           return "/training/simulations";
         case "cohort":

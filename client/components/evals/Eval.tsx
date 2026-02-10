@@ -115,7 +115,14 @@ export interface EvalProps {
   ) => Promise<CreateDraftGroupsOut>;
 }
 
-type EvalResourceType = ResourceType | "agents" | "rubrics";
+type EvalResourceType =
+  | ResourceType
+  | "agents"
+  | "rubrics"
+  | "run_positions"
+  | "group_positions"
+  | "run_rubrics"
+  | "group_rubrics";
 
 interface EvalFormState {
   name_id: string | null;
@@ -616,13 +623,19 @@ function EvalComponent({
       group_id?: string;
       resource_type?: string;
       resource_types?: string[];
-      name_id?: string | null;
-      description_id?: string | null;
-      active_flag_id?: string | null;
-      dynamic_flag_id?: string | null;
-      groups_flag_id?: string | null;
-      department_ids?: string[];
-      agent_ids?: string[];
+      name_resource?: { id?: string | null } | null;
+      description_resource?: { id?: string | null } | null;
+      flag_resource?: { id?: string | null } | null;
+      department_resources?: Array<{ department_id?: string | null }> | null;
+      agent_resources?: Array<{ id?: string | null }> | null;
+      run_rubric_resources?: Array<{
+        runs_id?: string | null;
+        rubric_id?: string | null;
+      }> | null;
+      group_rubric_resources?: Array<{
+        groups_id?: string | null;
+        rubric_id?: string | null;
+      }> | null;
       success?: boolean;
       message?: string;
     }) => {
@@ -636,25 +649,59 @@ function EvalComponent({
 
       setFormState((prev) => {
         const updates: Partial<EvalFormState> = {};
-        if (data.name_id) updates.name_id = data.name_id;
-        if (data.description_id) updates.description_id = data.description_id;
-        if (data.active_flag_id) updates.active_flag_id = data.active_flag_id;
-        if (data.dynamic_flag_id)
-          updates.dynamic_flag_id = data.dynamic_flag_id;
-        if (data.groups_flag_id) updates.groups_flag_id = data.groups_flag_id;
-        if (data.department_ids && data.department_ids.length > 0) {
-          const newIds = data.department_ids.filter(
+        if (data.name_resource?.id) updates.name_id = data.name_resource.id;
+        if (data.description_resource?.id) {
+          updates.description_id = data.description_resource.id;
+        }
+        if (data.flag_resource?.id) updates.active_flag_id = data.flag_resource.id;
+        const generatedDepartmentIds = (data.department_resources ?? [])
+          .map((d) => d.department_id)
+          .filter(Boolean) as string[];
+        if (generatedDepartmentIds.length > 0) {
+          const newIds = generatedDepartmentIds.filter(
             (id) => !prev.department_ids.includes(id)
           );
           updates.department_ids = [...prev.department_ids, ...newIds];
         }
-        if (data.agent_ids && data.agent_ids.length > 0) {
-          const newIds = data.agent_ids.filter(
+        const generatedAgentIds = (data.agent_resources ?? [])
+          .map((a) => a.id)
+          .filter(Boolean) as string[];
+        if (generatedAgentIds.length > 0) {
+          const newIds = generatedAgentIds.filter(
             (id) => !prev.agent_ids.includes(id)
           );
           updates.agent_ids = [...prev.agent_ids, ...newIds];
         }
-        return { ...prev, ...updates } as EvalFormState;
+        let next = { ...prev, ...updates } as EvalFormState;
+
+        for (const item of data.run_rubric_resources ?? []) {
+          if (!item.runs_id || !item.rubric_id) continue;
+          const existing = new Set(next.run_rubric_links[item.runs_id] ?? []);
+          existing.add(item.rubric_id);
+          next = {
+            ...next,
+            run_rubric_links: {
+              ...next.run_rubric_links,
+              [item.runs_id]: Array.from(existing),
+            },
+          };
+        }
+        for (const item of data.group_rubric_resources ?? []) {
+          if (!item.groups_id || !item.rubric_id) continue;
+          const existing = new Set(
+            next.group_rubric_links[item.groups_id] ?? []
+          );
+          existing.add(item.rubric_id);
+          next = {
+            ...next,
+            group_rubric_links: {
+              ...next.group_rubric_links,
+              [item.groups_id]: Array.from(existing),
+            },
+          };
+        }
+
+        return next;
       });
 
       const resourceTypes =
@@ -728,15 +775,18 @@ function EvalComponent({
     () => ({
       basic: ["names", "descriptions", "flags", "departments"],
       agents: ["agents"],
-      runs: ["rubrics"],
-      groups: ["rubrics"],
+      runs: ["run_positions", "run_rubrics"],
+      groups: ["group_positions", "group_rubrics"],
       all: [
         "names",
         "descriptions",
         "flags",
         "departments",
         "agents",
-        "rubrics",
+        "run_positions",
+        "group_positions",
+        "run_rubrics",
+        "group_rubrics",
       ],
     }),
     []
@@ -749,23 +799,14 @@ function EvalComponent({
       flags: "Flags",
       departments: "Departments",
       agents: "Agents",
-      rubrics: "Rubrics",
+      rubrics: "Rubrics (Legacy)",
+      run_positions: "Run Positions",
+      group_positions: "Group Positions",
+      run_rubrics: "Run Rubrics",
+      group_rubrics: "Group Rubrics",
     }),
     []
   );
-
-  // Map resource types to domain_ids from server response
-  const resourceToDomainId = useMemo(() => {
-    if (!evalData) return {};
-    return {
-      names: evalData.name_domain_id,
-      descriptions: evalData.description_domain_id,
-      flags: evalData.active_flag_domain_id, // All flags share same domain
-      departments: evalData.departments_domain_id,
-      agents: evalData.agents_domain_id,
-      rubrics: evalData.rubrics_domain_id,
-    } as Record<string, string | null | undefined>;
-  }, [evalData]);
 
   const handleGenerateResources = useCallback(
     async (
@@ -775,16 +816,6 @@ function EvalComponent({
     ) => {
       if (!socket || !isConnected) {
         toast.error("WebSocket not connected");
-        return;
-      }
-
-      // Convert resource types to domain_ids
-      const domainIds = resourceTypes
-        .map((rt) => resourceToDomainId[rt])
-        .filter(Boolean) as string[];
-
-      if (domainIds.length === 0) {
-        toast.error("No generation domains configured for these resources");
         return;
       }
 
@@ -798,13 +829,13 @@ function EvalComponent({
       const draftId = (formData["draftId"] as string | undefined) ?? null;
 
       socket.emit("eval_generate", {
-        domain_ids: domainIds,
+        resource_types: resourceTypes,
         user_instructions: userInstructions ? [userInstructions] : null,
         draft_id: draftId || null,
         eval_id: evalId || null,
       });
     },
-    [socket, isConnected, evalId, resourceToDomainId]
+    [socket, isConnected, evalId]
   );
 
   // Individual generation handlers

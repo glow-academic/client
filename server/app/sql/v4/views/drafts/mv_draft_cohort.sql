@@ -24,6 +24,7 @@ WITH draft_links AS (
     UNION ALL SELECT draft_id, 'flags'::resource_type AS resource_type, flags_id::uuid AS resource_id FROM flags_drafts_connection WHERE active = true
     UNION ALL SELECT draft_id, 'departments'::resource_type AS resource_type, departments_id::uuid AS resource_id FROM departments_drafts_connection WHERE active = true
     UNION ALL SELECT draft_id, 'simulations'::resource_type AS resource_type, simulations_id::uuid AS resource_id FROM simulations_drafts_connection WHERE active = true
+    UNION ALL SELECT draft_id, 'simulation_positions'::resource_type AS resource_type, simulation_positions_id::uuid AS resource_id FROM simulation_positions_drafts_connection WHERE active = true
 )
 SELECT
     d.id AS draft_id,
@@ -34,11 +35,13 @@ SELECT
     d.mcp,
     d.active,
     (SELECT ggc.groups_id FROM groups_groups_connection ggc WHERE ggc.group_id = d.group_id AND ggc.active = true LIMIT 1) AS group_id,
+    COALESCE((SELECT ARRAY_AGG(re.instructions ORDER BY re.created_at ASC, re.id ASC) FROM regenerates_entry re WHERE re.draft_id = d.id AND re.active = true), ARRAY[]::text[]) AS regeneration_descriptions,
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'names'::resource_type), ARRAY[]::uuid[]) AS name_ids,
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'descriptions'::resource_type), ARRAY[]::uuid[]) AS description_ids,
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'flags'::resource_type), ARRAY[]::uuid[]) AS flag_ids,
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'departments'::resource_type), ARRAY[]::uuid[]) AS department_ids,
-    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'simulations'::resource_type), ARRAY[]::uuid[]) AS simulation_ids
+    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'simulations'::resource_type), ARRAY[]::uuid[]) AS simulation_ids,
+    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'simulation_positions'::resource_type), ARRAY[]::uuid[]) AS simulation_position_ids
 FROM drafts_entry d
 LEFT JOIN draft_links l ON l.draft_id = d.id
 WHERE d.artifact = 'cohort'::artifact_type

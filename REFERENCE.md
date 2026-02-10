@@ -801,6 +801,80 @@ Known deviations from gold standard (acceptable for now, migration deferred):
 - `generate.py` uses shared SQL (`get_generation_run_context_and_create_run_complete.sql` + `get_text_run_context_for_existing_run_complete.sql`) instead of artifact-specific prepare SQL
 - Mutation endpoints (delete/duplicate) still use auto-generated SQL types
 
+### Provider Parity Rules (Persona-Style)
+
+Provider artifact is hard-migrated to section-first parity with **7 resources**:
+`names`, `descriptions`, `flags`, `departments`, `values`, `endpoints`, `keys`.
+
+Architecture notes:
+- API `get` response is section-first: `names`, `descriptions`, `flags`, `departments`, `values`, `endpoints`, `keys`
+- Each section carries: `show`, `required`, `suggestions`, `show_ai_generate`, `create_tool_id`, `link_tool_id`
+- Remove legacy provider contract fields:
+  - no `*_domain_id`
+  - no `domains`
+  - no top-level `current`
+  - no nested `resources.current`
+- Websocket `get_provider_websocket()` returns only:
+  - `views.draft_provider`
+  - selected `resources` + hydrated config resources (`agents`, `models`, `providers`, `tools`)
+  - `resource_agent_ids`
+  - `group_id`
+- `provider_generate` payload uses `resource_types` (never `domain_ids`)
+- Provider keys are never AI-generated:
+  - `keys.show_ai_generate` is false
+  - socket rejects `resource_types` that include `keys`
+- Save/draft payloads are flat provider action payloads for now (`name_id`, `description_id`, `active_flag_id`, `department_ids`, `value_id`, `endpoint_id`, `key_id`) and must not include legacy `regenerates`.
+- SQL workflow requirements for provider save/draft:
+  - `value_id` is required
+  - update path deactivates/replaces old provider-resource links and writes fresh active links
+  - provider integrations are persisted through `provider_endpoints_junction` and `provider_keys_junction`
+  - draft persistence uses `endpoints_drafts_connection` and `keys_drafts_connection`
+- `regenerates` is removed from provider API/socket/frontend contracts (hard cut, no legacy backfill).
+
+Frontend notes:
+- `client/components/providers/Provider.tsx` is canonical and uses parity stack:
+  - `useDraftLifecycle` + `useFlushRegistry` + `useAiGeneration` + `useGenerationModal`
+  - step-level AI actions use `StepCardAiButton`
+- Provider frontend reads sections directly (`s.names`, `s.descriptions`, etc.) and does not parse legacy payload shapes.
+- Provider page server actions should include resource creation actions for creatable resources used in flush (`names`, `descriptions`, `values`).
+
+### Tool Parity Rules (Persona-Style)
+
+Tool artifact is hard-migrated to section-first parity with **5 resources**:
+`names`, `descriptions`, `flags`, `args`, `args_outputs`.
+
+Contract and routing rules:
+- API `get` response is section-first and should not expose legacy flat routing/internal fields:
+  - no `*_domain_id`, no `domain_data`, no `domains`
+  - no top-level `current`, no nested `resources.current` in external contracts
+- Websocket `get_tool_websocket()` returns only:
+  - `views.draft_tool`
+  - selected `resources` + hydrated config resources (`agents`, `models`, `providers`, `tools`)
+  - `resource_agent_ids`
+  - `group_id`
+- `tool_generate` websocket payload uses `resource_types` (never `domain_ids`)
+- Socket generation resolves agent routing internally from `resource_agent_ids`, not client-provided routing IDs
+- Frontend does not read or depend on per-resource `agent_id` fields
+
+Save/draft parity rules:
+- Save/draft request contracts use nested section actions:
+  - single: `names`, `descriptions`, `flags` (`resource_id`, `create_tool_id`, `link_tool_id`)
+  - multi: `args`, `args_outputs` (`resource_ids`, `create_tool_id`, `link_tool_id`)
+- Save SQL workflow should be update-safe:
+  - deactivate existing single-select active links, then upsert selected active links
+  - replace multi links (`args`, `args_outputs`) for update path
+- Draft SQL workflow should use draft-connection replacement:
+  - delete then insert all `*_drafts_connection` rows for current draft version
+- Save/draft SQL must create tool-call lineage for non-null tool IDs:
+  - one `runs_entry` per mutation
+  - `calls_entry` + `tool_calls_junction`
+  - resource call links: `names_calls_connection`, `descriptions_calls_connection`, `flags_calls_connection`, `args_calls_connection`, `args_outputs_calls_connection`
+
+Frontend parity rules:
+- `Tool.tsx` should consume section data directly via compact section alias (`s.<section>...`)
+- Step AI controls use shared `StepCardAiButton` + generation modal hooks (no ad-hoc legacy button wiring)
+- Draft/save flow uses nested section actions and should not send legacy flat IDs (`name_id`, `args_ids`, etc.) as external API contract
+
 ### Agent Parity Rules (Persona-Style)
 
 Agent artifact follows hard-cut section-first contracts with **11 resources**:
@@ -970,3 +1044,88 @@ Frontend notes:
   - `description_search`
   - `conditional_parameter_search`
   - `conditional_parameter_show_selected`
+
+Audit hygiene:
+- Remove unused legacy helper/components that keep domain-based routing patterns alive (e.g., old scenario basic-info/domain-picker components).
+- Keep frontend scenario/field type files free of legacy `*_domain_id` fields unless explicitly required by an actively used contract.
+
+### Auth Artifact Parity Rules (Persona-Style)
+
+`/api/v4/auth/*` is a separate auth/session surface and is not part of this migration.
+This section applies to artifact auth management (`/api/v4/artifacts/auths/*`, `auth_generate`, and `client/components/auth/Auth.tsx`).
+
+Architecture notes:
+- API `get` response is section-first only:
+  - `names`, `descriptions`, `flags`, `protocols`, `slugs`, `items`
+  - no legacy flat fields, no top-level `current`, no nested `resources.current`, no `*_domain_id`/`*_agent_id`.
+- Websocket `get_auth_websocket()` returns only:
+  - `views.draft_auth`
+  - `resources` (selected auth resources + hydrated `agents/models/providers/tools`)
+  - `resource_agent_ids`
+  - `group_id`
+- `auth_generate` payload must use `resource_types` and requires `draft_id`.
+- Agent selection must resolve internally via `resource_agent_ids`; frontend never receives or routes by `agent_id`.
+
+Save/draft contract notes:
+- Save/draft endpoint bodies are nested section actions, not flat IDs:
+  - single: `{ resource_id, create_tool_id, link_tool_id }`
+  - multi: `{ resource_ids, create_tool_id, link_tool_id }`
+- Auth save includes `items` action payload:
+  - `{ items, create_tool_id, link_tool_id }`
+- Internal DB naming remains junction/table based (`auth_items_junction`, `items_resource`) while external API/socket/frontend contracts use `items`.
+- Save/draft SQL signatures must accept composite action types and create lineage rows when tool IDs are provided:
+  - `runs_entry`
+  - `calls_entry`
+  - `tool_calls_junction`
+  - resource call links (`names/descriptions/flags/protocols/slugs/items_calls_connection`)
+
+Frontend notes:
+- `client/components/auth/Auth.tsx` must follow compact parity pattern:
+  - `const s = authData`
+  - section-first field reads (`s.names.resource`, `s.protocols.current`, etc.)
+  - `useSaveContext` + `useDraftLifecycle` + `useFlushRegistry`
+  - `buildResourceActions` / `computeEffectiveFormState` / `checkHasResourceIds`
+  - `useAiGeneration` + `useGenerationModal` + `StepCardAiButton`
+- Metadata/pages must read section fields directly (`names.resource`, `descriptions.resource`) and never parse legacy `resources.current`.
+- Do not reintroduce legacy compatibility adapters for auth flat payloads.
+
+### Eval Artifact Parity Rules (Persona-Style)
+
+Architecture notes:
+- Eval generation routing is resource-first, not domain-first.
+- Eval section model is:
+  - top-level: `names`, `descriptions`, `flags`, `departments`, `agents`, `runs`, `groups`
+  - scoped-by-target: `run_positions`, `group_positions`, `run_rubrics`, `group_rubrics`
+- Do not expose a generic top-level `rubrics` section for eval; rubric selection is scoped to run/group targets.
+- `get_eval_websocket()` returns only:
+  - `views.draft_eval` (optional)
+  - selected flat `resources`
+  - `resource_agent_ids`
+  - `group_id`
+- `eval_generate` payload must use `resource_types` and optional `user_instructions`; never `domain_ids`.
+- Agent routing resolves server-side via `resource_agent_ids` only.
+
+Frontend notes:
+- Eval generation emits:
+  - `eval_id`
+  - `draft_id`
+  - `resource_types`
+  - optional `user_instructions`
+- Do not route eval generation with `*_domain_id` or any domain mapping adapter.
+
+Schema alignment notes:
+- Resource tables:
+  - `run_positions_resource`
+  - `group_positions_resource`
+  - `run_rubrics_resource`
+  - `group_rubrics_resource`
+- Eval junction tables:
+  - `eval_run_positions_junction` -> `run_positions_resource`
+  - `eval_group_positions_junction` -> `group_positions_resource`
+  - `eval_runs_rubrics_junction` -> `run_rubrics_resource`
+  - `eval_groups_rubrics_junction` -> `group_rubrics_resource`
+- Keep `agents` top-level on eval.
+- Auth socket parity normalization:
+  - `auth_generation_complete` emits resource-complete payloads only from `generate_call_complete` tool results.
+  - Auth socket `progress`/`error` handlers are scoped to call-based generation events and filtered to valid auth resource types.
+  - No auth-specific legacy text/run completion side paths in artifact socket handlers.

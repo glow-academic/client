@@ -19,6 +19,7 @@ class DraftViewItemBase(BaseModel):
     mcp: bool = False
     active: bool = True
     group_id: UUID | None = None
+    regeneration_descriptions: list[str] = Field(default_factory=list)
 
 
 # === Per-artifact draft view item types ===
@@ -45,6 +46,7 @@ class DraftCohortViewItem(DraftViewItemBase):
     flag_ids: list[UUID] = Field(default_factory=list)
     department_ids: list[UUID] = Field(default_factory=list)
     simulation_ids: list[UUID] = Field(default_factory=list)
+    simulation_position_ids: list[UUID] = Field(default_factory=list)
 
 
 class DraftDepartmentViewItem(DraftViewItemBase):
@@ -119,7 +121,8 @@ class DraftProviderViewItem(DraftViewItemBase):
     description_ids: list[UUID] = Field(default_factory=list)
     flag_ids: list[UUID] = Field(default_factory=list)
     value_ids: list[UUID] = Field(default_factory=list)
-    regenerate_ids: list[UUID] = Field(default_factory=list)
+    endpoint_ids: list[UUID] = Field(default_factory=list)
+    key_ids: list[UUID] = Field(default_factory=list)
     department_ids: list[UUID] = Field(default_factory=list)
 
 
@@ -157,6 +160,10 @@ class DraftSimulationViewItem(DraftViewItemBase):
     flag_ids: list[UUID] = Field(default_factory=list)
     department_ids: list[UUID] = Field(default_factory=list)
     scenario_ids: list[UUID] = Field(default_factory=list)
+    scenario_flag_ids: list[UUID] = Field(default_factory=list)
+    scenario_position_ids: list[UUID] = Field(default_factory=list)
+    scenario_rubric_ids: list[UUID] = Field(default_factory=list)
+    scenario_time_limit_ids: list[UUID] = Field(default_factory=list)
 
 
 class DraftToolViewItem(DraftViewItemBase):

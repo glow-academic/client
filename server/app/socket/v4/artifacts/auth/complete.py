@@ -1,47 +1,41 @@
-"""Auth completion handler - listens to generate_call_complete events and emits granular auth events."""
+"""Auth completion handler - emits auth generation completion events."""
 
 import uuid
 from typing import Any
 
 from fastapi import APIRouter
 
+from app.api.v4.artifacts.auth.get import derive_flag_key_and_label
+from app.api.v4.artifacts.auth.types import AuthFlagConfig
 from app.api.v4.resources.descriptions.get import get_descriptions_internal
 from app.api.v4.resources.flags.get import get_flags_internal
+from app.api.v4.resources.items.get import get_items_internal
 from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.protocols.get import get_protocols_internal
 from app.api.v4.resources.slugs.get import get_slugs_internal
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
-from app.socket.v4.artifacts.auth.types import AuthGenerationCompleteEvent
-from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import load_sql
-
-logger = get_logger(__name__)
+from app.socket.v4.artifacts.auth.types import (
+    AUTH_GENERATE_RESOURCE_TYPES,
+    AuthGenerationCompleteEvent,
+)
 
 internal_sio = get_internal_sio()
-SQL_PATH_CREATE_MESSAGE_WITH_TEXT = (
-    "app/sql/v4/queries/messages/create_message_with_text_complete.sql"
-)
 
 client_router = APIRouter()
 server_router = APIRouter()
 
 
 @internal_sio.on("generate_call_complete")  # type: ignore
-@internal_sio.on("generate_text_complete")  # type: ignore
 async def handle_auth_artifact_complete(data: dict[str, Any]) -> None:
-    """Handle generate_call_complete and generate_text_complete events - filter by auth artifact_type."""
-    # Skip processing if in eval mode
-    eval_mode = data.get("eval_mode", False)
-    if eval_mode:
+    if data.get("eval_mode", False):
         return
 
-    artifact_type = data.get("artifact_type")
-    if artifact_type != "auth":
+    if data.get("artifact_type") != "auth":
         return
 
-    sid = data.get("sid", "")
+    sid = data.get("sid")
     if not sid:
         return
 
@@ -49,45 +43,31 @@ async def handle_auth_artifact_complete(data: dict[str, Any]) -> None:
     if not profile_id_str:
         return
 
-    group_id_str = data.get("group_id")
-    resource_type = data.get("resource_type")
-    event_type = data.get("event_type")
-
-    # Handle text completion - save assistant message
-    if event_type == "text_complete":
-        await _handle_auth_text_complete(sid, data)
-        return
-
-    # Handle run complete - save final assistant content + update tokens
-    if event_type == "run_complete":
-        await _handle_auth_run_complete(sid, data)
-        return
-
-    # Only process tool completion events for resource generation
-    if event_type not in ("tool_call_complete", "tool_result"):
+    if data.get("event_type") not in ("tool_call_complete", "tool_result"):
         return
 
     tool_result = data.get("result") or {}
     tool_results = data.get("tool_results") or []
     if not tool_result and tool_results:
         tool_result = tool_results[0]
-    if event_type == "tool_call_complete" and not tool_result and not tool_results:
-        return
+
+    resource_type = data.get("resource_type")
+    group_id = data.get("group_id")
     resource_id_str = tool_result.get("resource_id")
 
-    if not group_id_str or not resource_type:
+    if not group_id or not resource_type:
+        return
+
+    if resource_type not in AUTH_GENERATE_RESOURCE_TYPES:
         return
 
     if not resource_id_str:
-        tool_success = tool_result.get("success", True)
-        if not tool_success:
-            return
         await sio.emit(
             "auth_generation_error",
             {
                 "artifact_type": "auth",
                 "resource_type": resource_type,
-                "group_id": group_id_str,
+                "group_id": group_id,
                 "success": False,
                 "message": f"Missing resource_id for {resource_type} tool result",
             },
@@ -95,41 +75,55 @@ async def handle_auth_artifact_complete(data: dict[str, Any]) -> None:
         )
         return
 
-    resource_id = uuid.UUID(resource_id_str)
-
     event = AuthGenerationCompleteEvent(
         artifact_type="auth",
-        group_id=group_id_str,
+        group_id=group_id,
         resource_type=resource_type,
         run_id=data.get("run_id"),
         success=True,
-        message=f"{resource_type} generation completed successfully",
+        message=f"{resource_type} generation completed",
     )
 
     try:
+        resource_id = uuid.UUID(resource_id_str)
         async with get_db_connection() as conn:
             if resource_type == "names":
-                items = await get_names_internal(conn, [resource_id])
+                items = await get_names_internal(conn, [resource_id], True)
                 event.name_resource = items[0] if items else None
             elif resource_type == "descriptions":
-                items = await get_descriptions_internal(conn, [resource_id])
+                items = await get_descriptions_internal(conn, [resource_id], True)
                 event.description_resource = items[0] if items else None
             elif resource_type == "flags":
-                items = await get_flags_internal(conn, [resource_id])
-                event.flag_resource = items[0] if items else None
+                items = await get_flags_internal(conn, [resource_id], True)
+                flag = items[0] if items else None
+                if flag is not None:
+                    key, label = derive_flag_key_and_label(flag.name)
+                    event.flag_resource = AuthFlagConfig(
+                        key=key,
+                        label=label,
+                        description=flag.description,
+                        icon_id=flag.icon,
+                        flag_option_id=flag.id,
+                        show=True,
+                        required=False,
+                        generated=flag.generated,
+                    )
             elif resource_type == "protocols":
-                items = await get_protocols_internal(conn, [resource_id])
+                items = await get_protocols_internal(conn, [resource_id], True)
                 event.protocol_resources = items if items else None
             elif resource_type == "slugs":
-                items = await get_slugs_internal(conn, [resource_id])
+                items = await get_slugs_internal(conn, [resource_id], True)
                 event.slug_resources = items if items else None
+            elif resource_type == "items":
+                items = await get_items_internal(conn, [resource_id], True)
+                event.item_resources = items if items else None
     except Exception as e:
         await sio.emit(
             "auth_generation_error",
             {
                 "artifact_type": "auth",
                 "resource_type": resource_type,
-                "group_id": group_id_str,
+                "group_id": group_id,
                 "success": False,
                 "message": str(e),
             },
@@ -137,96 +131,12 @@ async def handle_auth_artifact_complete(data: dict[str, Any]) -> None:
         )
         return
 
-    await sio.emit(
-        "auth_generation_complete",
-        event.model_dump(mode="json"),
-        room=sid,
-    )
-
-
-async def _handle_auth_text_complete(sid: str, data: dict[str, Any]) -> None:
-    """Handle auth text generation completion - save assistant message."""
-    run_id = data.get("run_id")
-    final_content = data.get("text") or ""
-
-    if not run_id or not final_content:
-        return
-
-    try:
-        async with get_db_connection() as conn:
-            create_message_sql = load_sql(SQL_PATH_CREATE_MESSAGE_WITH_TEXT)
-            await conn.fetchval(
-                create_message_sql,
-                uuid.UUID(run_id),
-                "assistant",
-                final_content,
-                True,
-                False,
-            )
-    except Exception as e:
-        logger.exception(f"Failed to save auth text message: {str(e)}")
-
-
-async def _handle_auth_run_complete(sid: str, data: dict[str, Any]) -> None:
-    """Handle auth generation run completion - save assistant output if present."""
-    run_id = data.get("run_id")
-    assistant_output = data.get("assistant_output") or ""
-    input_tokens = data.get("input_text_tokens", 0)
-    output_tokens = data.get("output_text_tokens", 0)
-
-    if not run_id:
-        return
-
-    try:
-        async with get_db_connection() as conn:
-            if assistant_output:
-                existing = await conn.fetchval(
-                    """
-                    SELECT id FROM messages_entry
-                    WHERE run_id = $1 AND role = 'assistant'::message_type
-                    LIMIT 1
-                    """,
-                    uuid.UUID(run_id),
-                )
-                if not existing:
-                    create_message_sql = load_sql(SQL_PATH_CREATE_MESSAGE_WITH_TEXT)
-                    await conn.fetchval(
-                        create_message_sql,
-                        uuid.UUID(run_id),
-                        "assistant",
-                        assistant_output,
-                        True,
-                        False,
-                    )
-
-            if input_tokens or output_tokens:
-                await conn.execute(
-                    """
-                    UPDATE runs_entry
-                    SET input_tokens = COALESCE($2, input_tokens),
-                        output_tokens = COALESCE($3, output_tokens)
-                    WHERE id = $1
-                    """,
-                    uuid.UUID(run_id),
-                    input_tokens,
-                    output_tokens,
-                )
-    except Exception as e:
-        logger.exception(f"Failed to save auth run complete: {str(e)}")
-
-
-# =============================================================================
-# FastAPI endpoint for OpenAPI documentation
-# =============================================================================
+    await sio.emit("auth_generation_complete", event.model_dump(mode="json"), room=sid)
 
 
 @server_router.post("/auth_generation_complete")
 async def auth_generation_complete_api(
     request: AuthGenerationCompleteEvent,
 ) -> dict[str, bool]:
-    """Server-to-client event: Auth generation completed.
-
-    Emitted when an auth resource is successfully generated.
-    Contains full resource objects for immediate frontend use.
-    """
+    _ = request
     return {"success": True}

@@ -63,14 +63,7 @@ RETURNS TABLE (
     -- Tools existence (for Python to compute show_* flags)
     names_has_tools boolean,
     protocols_has_tools boolean,
-    slugs_has_tools boolean,
-
-    -- Domain IDs (for domain-based generation)
-    name_domain_id uuid,
-    description_domain_id uuid,
-    flag_domain_id uuid,
-    protocols_domain_id uuid,
-    slugs_domain_id uuid
+    slugs_has_tools boolean
 )
 LANGUAGE sql
 STABLE
@@ -279,15 +272,6 @@ tools_existence_check AS (
         EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'protocols'::resource_type AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as protocols_has_tools,
         EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'slugs'::resource_type AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as slugs_has_tools
     FROM params x
-),
--- Domain IDs from domains_resource table
-domain_ids_data AS (
-    SELECT
-        (SELECT id FROM domains_resource WHERE resource = 'names'::resource_type AND active = true LIMIT 1) as name_domain_id,
-        (SELECT id FROM domains_resource WHERE resource = 'descriptions'::resource_type AND active = true LIMIT 1) as description_domain_id,
-        (SELECT id FROM domains_resource WHERE resource = 'flags'::resource_type AND active = true LIMIT 1) as flag_domain_id,
-        (SELECT id FROM domains_resource WHERE resource = 'protocols'::resource_type AND active = true LIMIT 1) as protocols_domain_id,
-        (SELECT id FROM domains_resource WHERE resource = 'slugs'::resource_type AND active = true LIMIT 1) as slugs_domain_id
 )
 SELECT
     -- Single-select resource IDs
@@ -311,15 +295,7 @@ SELECT
     -- Tools existence
     tec.names_has_tools,
     tec.protocols_has_tools,
-    tec.slugs_has_tools,
-
-    -- Domain IDs
-    did.name_domain_id,
-    did.description_domain_id,
-    did.flag_domain_id,
-    did.protocols_domain_id,
-    did.slugs_domain_id
+    tec.slugs_has_tools
 FROM params x
-CROSS JOIN tools_existence_check tec
-CROSS JOIN domain_ids_data did;
+CROSS JOIN tools_existence_check tec;
 $$;

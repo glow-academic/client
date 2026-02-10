@@ -15,7 +15,7 @@ CONFIG = ArtifactDocsConfig(
     junction_prefix="tool",
     fk_pattern="tool_%",
     api_routing={
-        "base_path": "/api/v4/tools",
+        "base_path": "/api/v4/artifacts/tools",
         "endpoints": {
             "get": {
                 "path": "/get",

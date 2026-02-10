@@ -524,7 +524,7 @@ function FieldComponent({
     setEntityMetadata({
       entityId: fieldId,
       entityName: name,
-      entityType: "parameter",
+      entityType: "field",
     });
     return () => clearEntityMetadata();
   }, [

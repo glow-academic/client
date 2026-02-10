@@ -2283,10 +2283,6 @@ export interface paths {
         /**
          * Get Auth
          * @description Get auth information using two-pass architecture.
-         *
-         *     Query 1: Access check (user role, auth state)
-         *     Query 2: ID fetching (resource IDs, suggestions, agents)
-         *     Pass 2: Parallel resource fetching (each resource type has own cache)
          */
         post: operations["get_auth_api_v4_artifacts_auths_get_post"];
         delete?: never;
@@ -2443,7 +2439,7 @@ export interface paths {
         put?: never;
         /**
          * Get Tool
-         * @description Get tool information using two-pass architecture.
+         * @description Get tool information via section-first BFF response.
          */
         post: operations["get_tool_api_v4_artifacts_tools_get_post"];
         delete?: never;
@@ -7760,13 +7756,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Auth Generation Complete Api
-         * @description Server-to-client event: Auth generation completed.
-         *
-         *     Emitted when an auth resource is successfully generated.
-         *     Contains full resource objects for immediate frontend use.
-         */
+        /** Auth Generation Complete Api */
         post: operations["auth_generation_complete_api_socket_v4_server_auth_generation_complete_post"];
         delete?: never;
         options?: never;
@@ -11541,6 +11531,33 @@ export interface components {
             /** Simulation Messages */
             simulation_messages?: components["schemas"]["MessageData"][] | null;
         };
+        /** AuthDescriptionSection */
+        AuthDescriptionSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            resource?: components["schemas"]["QGetDescriptionsV4Item"] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetDescriptionsV4Item"][] | null;
+        };
         /**
          * AuthFlagConfig
          * @description Enriched flag config for direct client consumption.
@@ -11566,17 +11583,40 @@ export interface components {
              * @default false
              */
             required: boolean;
-            /** Domain Id */
-            domain_id?: string | null;
             /** Generated */
             generated?: boolean | null;
+        };
+        /** AuthFlagSection */
+        AuthFlagSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["AuthFlagConfig"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["AuthFlagConfig"][] | null;
         };
         /**
          * AuthGenerationCompleteEvent
          * @description Server-to-client event: auth_generation_complete.
-         *
-         *     Emitted when an auth resource generation completes successfully.
-         *     Contains full resource objects (not just IDs) for immediate frontend use.
          */
         AuthGenerationCompleteEvent: {
             /**
@@ -11598,17 +11638,17 @@ export interface components {
             type?: string | null;
             name_resource?: components["schemas"]["QGetNamesV4Item"] | null;
             description_resource?: components["schemas"]["QGetDescriptionsV4Item"] | null;
-            flag_resource?: components["schemas"]["QGetFlagsV4Item"] | null;
+            flag_resource?: components["schemas"]["AuthFlagConfig"] | null;
             /** Protocol Resources */
             protocol_resources?: components["schemas"]["QGetProtocolsV4Item"][] | null;
             /** Slug Resources */
             slug_resources?: components["schemas"]["QGetSlugsV4Item"][] | null;
+            /** Item Resources */
+            item_resources?: components["schemas"]["QGetItemsV4Item"][] | null;
         };
         /**
          * AuthGenerationErrorEvent
          * @description Server-to-client event: auth_generation_error.
-         *
-         *     Emitted when auth resource generation fails.
          */
         AuthGenerationErrorEvent: {
             /**
@@ -11639,8 +11679,6 @@ export interface components {
         /**
          * AuthGenerationProgressEvent
          * @description Server-to-client event: auth_generation_progress.
-         *
-         *     Emitted during auth resource generation to show progress.
          */
         AuthGenerationProgressEvent: {
             /**
@@ -11675,11 +11713,20 @@ export interface components {
             /** Trace Id */
             trace_id?: string | null;
         };
+        /** AuthItemAction */
+        AuthItemAction: {
+            /** Items */
+            items?: components["schemas"]["SaveAuthItemInput"][] | null;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+        };
         /**
-         * AuthItemData
-         * @description Auth item data for display.
+         * AuthItemResource
+         * @description Auth item resource shape for client/editing.
          */
-        AuthItemData: {
+        AuthItemResource: {
             /** Auth Item Id */
             auth_item_id?: string | null;
             /** Name */
@@ -11696,30 +11743,137 @@ export interface components {
             key_id?: string | null;
             /** Encrypted */
             encrypted?: boolean | null;
+            /** Generated */
+            generated?: boolean | null;
         };
-        /**
-         * AuthResourceBucket
-         * @description Generic resources bucket with full objects.
-         */
-        AuthResourceBucket: {
-            /** Names */
-            names?: components["schemas"]["QGetNamesV4Item"][] | null;
-            /** Descriptions */
-            descriptions?: components["schemas"]["QGetDescriptionsV4Item"][] | null;
-            /** Flags */
-            flags?: components["schemas"]["AuthFlagConfig"][] | null;
-            /** Protocols */
-            protocols?: components["schemas"]["QGetProtocolsV4Item"][] | null;
-            /** Slugs */
-            slugs?: components["schemas"]["QGetSlugsV4Item"][] | null;
+        /** AuthItemSection */
+        AuthItemSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["AuthItemResource"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["AuthItemResource"][] | null;
         };
-        /**
-         * AuthResources
-         * @description Full resources + current selections.
-         */
-        AuthResources: {
-            resources?: components["schemas"]["AuthResourceBucket"] | null;
-            current?: components["schemas"]["AuthResourceBucket"] | null;
+        /** AuthMultiResourceAction */
+        AuthMultiResourceAction: {
+            /** Resource Ids */
+            resource_ids?: string[] | null;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+        };
+        /** AuthNameSection */
+        AuthNameSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            resource?: components["schemas"]["QGetNamesV4Item"] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetNamesV4Item"][] | null;
+        };
+        /** AuthProtocolSection */
+        AuthProtocolSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["QGetProtocolsV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetProtocolsV4Item"][] | null;
+        };
+        /** AuthResourceAction */
+        AuthResourceAction: {
+            /** Resource Id */
+            resource_id?: string | null;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+        };
+        /** AuthSlugSection */
+        AuthSlugSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["QGetSlugsV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetSlugsV4Item"][] | null;
         };
         /**
          * AvailableContinuationOptions
@@ -13671,10 +13825,7 @@ export interface components {
             /** Message */
             message: string;
         };
-        /**
-         * DeleteProviderApiRequest
-         * @description Request model for delete provider endpoint.
-         */
+        /** DeleteProviderApiRequest */
         DeleteProviderApiRequest: {
             /**
              * Provider Id
@@ -13682,10 +13833,7 @@ export interface components {
              */
             provider_id: string;
         };
-        /**
-         * DeleteProviderApiResponse
-         * @description Response model for delete provider endpoint.
-         */
+        /** DeleteProviderApiResponse */
         DeleteProviderApiResponse: {
             /** Success */
             success: boolean;
@@ -13776,10 +13924,7 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
-        /**
-         * DeleteToolApiRequest
-         * @description Request model for delete tool endpoint.
-         */
+        /** DeleteToolApiRequest */
         DeleteToolApiRequest: {
             /**
              * Tool Id
@@ -13787,10 +13932,7 @@ export interface components {
              */
             tool_id: string;
         };
-        /**
-         * DeleteToolApiResponse
-         * @description Response model for delete tool endpoint.
-         */
+        /** DeleteToolApiResponse */
         DeleteToolApiResponse: {
             /** Success */
             success: boolean;
@@ -14548,10 +14690,7 @@ export interface components {
             /** Message */
             message: string;
         };
-        /**
-         * DuplicateProviderApiRequest
-         * @description Request model for duplicate provider endpoint.
-         */
+        /** DuplicateProviderApiRequest */
         DuplicateProviderApiRequest: {
             /**
              * Provider Id
@@ -14559,10 +14698,7 @@ export interface components {
              */
             provider_id: string;
         };
-        /**
-         * DuplicateProviderApiResponse
-         * @description Response model for duplicate provider endpoint.
-         */
+        /** DuplicateProviderApiResponse */
         DuplicateProviderApiResponse: {
             /** Success */
             success: boolean;
@@ -14653,10 +14789,7 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
-        /**
-         * DuplicateToolApiRequest
-         * @description Request model for duplicate tool endpoint.
-         */
+        /** DuplicateToolApiRequest */
         DuplicateToolApiRequest: {
             /**
              * Tool Id
@@ -14664,10 +14797,7 @@ export interface components {
              */
             tool_id: string;
         };
-        /**
-         * DuplicateToolApiResponse
-         * @description Response model for duplicate tool endpoint.
-         */
+        /** DuplicateToolApiResponse */
         DuplicateToolApiResponse: {
             /** Success */
             success: boolean;
@@ -14876,6 +15006,18 @@ export interface components {
             flag_resource?: components["schemas"]["QGetFlagsV4Item"] | null;
             /** Department Resources */
             department_resources?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
+            /** Agent Resources */
+            agent_resources?: components["schemas"]["QGetAgentsV4Item"][] | null;
+            /** Rubric Resources */
+            rubric_resources?: components["schemas"]["QGetRubricsBatchV4Item"][] | null;
+            /** Run Position Resources */
+            run_position_resources?: components["schemas"]["QGetRunPositionsV4Item"][] | null;
+            /** Group Position Resources */
+            group_position_resources?: components["schemas"]["QGetGroupPositionsV4Item"][] | null;
+            /** Run Rubric Resources */
+            run_rubric_resources?: components["schemas"]["QGetRunRubricsV4Item"][] | null;
+            /** Group Rubric Resources */
+            group_rubric_resources?: components["schemas"]["QGetGroupRubricsV4Item"][] | null;
         };
         /**
          * EvalGroupRubricMapping
@@ -16227,89 +16369,14 @@ export interface components {
             draft_version?: number | null;
             /** Group Id */
             group_id?: string | null;
-            /** Names Group Id */
-            names_group_id?: string | null;
-            /** Descriptions Group Id */
-            descriptions_group_id?: string | null;
-            /** Flags Group Id */
-            flags_group_id?: string | null;
-            /** Protocols Group Id */
-            protocols_group_id?: string | null;
-            /** Slugs Group Id */
-            slugs_group_id?: string | null;
-            /** Show Name */
-            show_name?: boolean | null;
-            /** Name Domain Id */
-            name_domain_id?: string | null;
-            /** Name Required */
-            name_required?: boolean | null;
-            /** Name Suggestions */
-            name_suggestions?: string[] | null;
-            /** Name Show Ai Generate */
-            name_show_ai_generate?: boolean | null;
-            /** Show Description */
-            show_description?: boolean | null;
-            /** Description Domain Id */
-            description_domain_id?: string | null;
-            /** Description Required */
-            description_required?: boolean | null;
-            /** Description Suggestions */
-            description_suggestions?: string[] | null;
-            /** Description Show Ai Generate */
-            description_show_ai_generate?: boolean | null;
-            /** Show Flag */
-            show_flag?: boolean | null;
-            /** Flag Domain Id */
-            flag_domain_id?: string | null;
-            /** Flag Required */
-            flag_required?: boolean | null;
-            /** Flag Show Ai Generate */
-            flag_show_ai_generate?: boolean | null;
-            /** Show Protocols */
-            show_protocols?: boolean | null;
-            /** Protocols Domain Id */
-            protocols_domain_id?: string | null;
-            /** Protocols Required */
-            protocols_required?: boolean | null;
-            /** Protocol Suggestions */
-            protocol_suggestions?: string[] | null;
-            /** Protocols Show Ai Generate */
-            protocols_show_ai_generate?: boolean | null;
-            /** Show Slugs */
-            show_slugs?: boolean | null;
-            /** Slugs Domain Id */
-            slugs_domain_id?: string | null;
-            /** Slugs Required */
-            slugs_required?: boolean | null;
-            /** Slug Suggestions */
-            slug_suggestions?: string[] | null;
-            /** Slugs Show Ai Generate */
-            slugs_show_ai_generate?: boolean | null;
             /** Basic Show Ai Generate */
             basic_show_ai_generate?: boolean | null;
-            /** Name Create Tool Id */
-            name_create_tool_id?: string | null;
-            /** Description Create Tool Id */
-            description_create_tool_id?: string | null;
-            /** Protocols Create Tool Id */
-            protocols_create_tool_id?: string | null;
-            /** Slugs Create Tool Id */
-            slugs_create_tool_id?: string | null;
-            /** Name Link Tool Id */
-            name_link_tool_id?: string | null;
-            /** Description Link Tool Id */
-            description_link_tool_id?: string | null;
-            /** Flag Link Tool Id */
-            flag_link_tool_id?: string | null;
-            /** Protocols Link Tool Id */
-            protocols_link_tool_id?: string | null;
-            /** Slugs Link Tool Id */
-            slugs_link_tool_id?: string | null;
-            /** Domain Data */
-            domain_data?: components["schemas"]["DomainData"][] | null;
-            resources?: components["schemas"]["AuthResources"] | null;
-            /** Auth Items */
-            auth_items?: components["schemas"]["AuthItemData"][] | null;
+            names?: components["schemas"]["AuthNameSection"] | null;
+            descriptions?: components["schemas"]["AuthDescriptionSection"] | null;
+            flags?: components["schemas"]["AuthFlagSection"] | null;
+            protocols?: components["schemas"]["AuthProtocolSection"] | null;
+            slugs?: components["schemas"]["AuthSlugSection"] | null;
+            items?: components["schemas"]["AuthItemSection"] | null;
         };
         /** GetAuthListApiRequest */
         GetAuthListApiRequest: Record<string, never>;
@@ -18435,7 +18502,7 @@ export interface components {
         };
         /**
          * GetProviderApiResponse
-         * @description Response model for get provider endpoint.
+         * @description Section-first response for provider editor.
          */
         GetProviderApiResponse: {
             /** Actor Name */
@@ -18450,101 +18517,17 @@ export interface components {
             draft_version?: number | null;
             /** Group Id */
             group_id?: string | null;
-            /** Names Group Id */
-            names_group_id?: string | null;
-            /** Descriptions Group Id */
-            descriptions_group_id?: string | null;
-            /** Flags Group Id */
-            flags_group_id?: string | null;
-            /** Departments Group Id */
-            departments_group_id?: string | null;
-            /** Values Group Id */
-            values_group_id?: string | null;
-            /** Regenerates Group Id */
-            regenerates_group_id?: string | null;
-            /** Show Name */
-            show_name?: boolean | null;
-            /** Name Domain Id */
-            name_domain_id?: string | null;
-            /** Name Required */
-            name_required?: boolean | null;
-            /** Name Suggestions */
-            name_suggestions?: string[] | null;
-            /** Name Show Ai Generate */
-            name_show_ai_generate?: boolean | null;
-            /** Show Description */
-            show_description?: boolean | null;
-            /** Description Domain Id */
-            description_domain_id?: string | null;
-            /** Description Required */
-            description_required?: boolean | null;
-            /** Description Suggestions */
-            description_suggestions?: string[] | null;
-            /** Description Show Ai Generate */
-            description_show_ai_generate?: boolean | null;
-            /** Show Flag */
-            show_flag?: boolean | null;
-            /** Flag Domain Id */
-            flag_domain_id?: string | null;
-            /** Flag Required */
-            flag_required?: boolean | null;
-            /** Flag Show Ai Generate */
-            flag_show_ai_generate?: boolean | null;
-            /** Show Departments */
-            show_departments?: boolean | null;
-            /** Departments Domain Id */
-            departments_domain_id?: string | null;
-            /** Departments Required */
-            departments_required?: boolean | null;
-            /** Department Suggestions */
-            department_suggestions?: string[] | null;
-            /** Departments Show Ai Generate */
-            departments_show_ai_generate?: boolean | null;
-            /** Show Value */
-            show_value?: boolean | null;
-            /** Value Domain Id */
-            value_domain_id?: string | null;
-            /** Value Required */
-            value_required?: boolean | null;
-            /** Value Suggestions */
-            value_suggestions?: string[] | null;
-            /** Value Show Ai Generate */
-            value_show_ai_generate?: boolean | null;
-            /** Show Regenerates */
-            show_regenerates?: boolean | null;
-            /** Regenerates Domain Id */
-            regenerates_domain_id?: string | null;
-            /** Regenerates Required */
-            regenerates_required?: boolean | null;
-            /** Regenerates Suggestions */
-            regenerates_suggestions?: string[] | null;
-            /** Regenerates Show Ai Generate */
-            regenerates_show_ai_generate?: boolean | null;
             /** Basic Show Ai Generate */
             basic_show_ai_generate?: boolean | null;
-            /** Name Create Tool Id */
-            name_create_tool_id?: string | null;
-            /** Description Create Tool Id */
-            description_create_tool_id?: string | null;
-            /** Value Create Tool Id */
-            value_create_tool_id?: string | null;
-            /** Regenerates Create Tool Id */
-            regenerates_create_tool_id?: string | null;
-            /** Name Link Tool Id */
-            name_link_tool_id?: string | null;
-            /** Description Link Tool Id */
-            description_link_tool_id?: string | null;
-            /** Flag Link Tool Id */
-            flag_link_tool_id?: string | null;
-            /** Departments Link Tool Id */
-            departments_link_tool_id?: string | null;
-            /** Value Link Tool Id */
-            value_link_tool_id?: string | null;
-            /** Regenerates Link Tool Id */
-            regenerates_link_tool_id?: string | null;
-            /** Domain Data */
-            domain_data?: components["schemas"]["DomainData"][] | null;
-            resources?: components["schemas"]["ProviderResources"] | null;
+            /** Integrations Show Ai Generate */
+            integrations_show_ai_generate?: boolean | null;
+            names?: components["schemas"]["ProviderNameSection"] | null;
+            descriptions?: components["schemas"]["ProviderDescriptionSection"] | null;
+            flags?: components["schemas"]["ProviderFlagSection"] | null;
+            departments?: components["schemas"]["ProviderDepartmentSection"] | null;
+            values?: components["schemas"]["ProviderValueSection"] | null;
+            endpoints?: components["schemas"]["ProviderEndpointSection"] | null;
+            keys?: components["schemas"]["ProviderKeySection"] | null;
         };
         /** GetProvidersListApiRequest */
         GetProvidersListApiRequest: Record<string, never>;
@@ -19618,20 +19601,14 @@ export interface components {
             /** Eval Options */
             eval_options?: components["schemas"]["TestListFilterOption"][];
         };
-        /**
-         * GetToolApiRequest
-         * @description Request model for get tool endpoint.
-         */
+        /** GetToolApiRequest */
         GetToolApiRequest: {
             /** Tool Id */
             tool_id?: string | null;
             /** Draft Id */
             draft_id?: string | null;
         };
-        /**
-         * GetToolApiResponse
-         * @description Response model for get tool endpoint.
-         */
+        /** GetToolApiResponse */
         GetToolApiResponse: {
             /** Actor Name */
             actor_name?: string | null;
@@ -19645,85 +19622,17 @@ export interface components {
             draft_version?: number | null;
             /** Group Id */
             group_id?: string | null;
-            /** Names Group Id */
-            names_group_id?: string | null;
-            /** Descriptions Group Id */
-            descriptions_group_id?: string | null;
-            /** Args Group Id */
-            args_group_id?: string | null;
-            /** Args Outputs Group Id */
-            args_outputs_group_id?: string | null;
-            /** Flags Group Id */
-            flags_group_id?: string | null;
-            /** Show Name */
-            show_name?: boolean | null;
-            /** Name Domain Id */
-            name_domain_id?: string | null;
-            /** Name Required */
-            name_required?: boolean | null;
-            /** Name Suggestions */
-            name_suggestions?: string[] | null;
-            /** Name Show Ai Generate */
-            name_show_ai_generate?: boolean | null;
-            /** Show Description */
-            show_description?: boolean | null;
-            /** Description Domain Id */
-            description_domain_id?: string | null;
-            /** Description Required */
-            description_required?: boolean | null;
-            /** Description Suggestions */
-            description_suggestions?: string[] | null;
-            /** Description Show Ai Generate */
-            description_show_ai_generate?: boolean | null;
-            /** Show Flag */
-            show_flag?: boolean | null;
-            /** Flag Domain Id */
-            flag_domain_id?: string | null;
-            /** Flag Required */
-            flag_required?: boolean | null;
-            /** Flag Show Ai Generate */
-            flag_show_ai_generate?: boolean | null;
-            /** Show Args */
-            show_args?: boolean | null;
-            /** Args Domain Id */
-            args_domain_id?: string | null;
-            /** Args Required */
-            args_required?: boolean | null;
-            /** Args Suggestions */
-            args_suggestions?: string[] | null;
+            /** Basic Show Ai Generate */
+            basic_show_ai_generate?: boolean | null;
             /** Args Show Ai Generate */
             args_show_ai_generate?: boolean | null;
-            /** Show Args Outputs */
-            show_args_outputs?: boolean | null;
-            /** Args Outputs Domain Id */
-            args_outputs_domain_id?: string | null;
-            /** Args Outputs Required */
-            args_outputs_required?: boolean | null;
-            /** Args Outputs Suggestions */
-            args_outputs_suggestions?: string[] | null;
             /** Args Outputs Show Ai Generate */
             args_outputs_show_ai_generate?: boolean | null;
-            /** Name Create Tool Id */
-            name_create_tool_id?: string | null;
-            /** Description Create Tool Id */
-            description_create_tool_id?: string | null;
-            /** Args Create Tool Id */
-            args_create_tool_id?: string | null;
-            /** Args Outputs Create Tool Id */
-            args_outputs_create_tool_id?: string | null;
-            /** Name Link Tool Id */
-            name_link_tool_id?: string | null;
-            /** Description Link Tool Id */
-            description_link_tool_id?: string | null;
-            /** Flag Link Tool Id */
-            flag_link_tool_id?: string | null;
-            /** Args Link Tool Id */
-            args_link_tool_id?: string | null;
-            /** Args Outputs Link Tool Id */
-            args_outputs_link_tool_id?: string | null;
-            /** Domain Data */
-            domain_data?: components["schemas"]["DomainData"][] | null;
-            resources?: components["schemas"]["ToolResources"] | null;
+            names?: components["schemas"]["ToolNameSection"] | null;
+            descriptions?: components["schemas"]["ToolDescriptionSection"] | null;
+            flags?: components["schemas"]["ToolFlagSection"] | null;
+            args?: components["schemas"]["ToolArgSection"] | null;
+            args_outputs?: components["schemas"]["ToolArgOutputSection"] | null;
         };
         /** GetToolsApiRequest */
         GetToolsApiRequest: {
@@ -21534,20 +21443,14 @@ export interface components {
             /** Can Duplicate */
             can_duplicate?: boolean | null;
         };
-        /**
-         * ListProviderApiProviderOption
-         * @description Provider option type for list endpoint.
-         */
+        /** ListProviderApiProviderOption */
         ListProviderApiProviderOption: {
             /** Value */
             value?: string | null;
             /** Label */
             label?: string | null;
         };
-        /**
-         * ListProviderApiResponse
-         * @description Response model for list provider endpoint with computed permissions.
-         */
+        /** ListProviderApiResponse */
         ListProviderApiResponse: {
             /** Actor Name */
             actor_name?: string | null;
@@ -21560,10 +21463,7 @@ export interface components {
             /** Total Count */
             total_count?: number | null;
         };
-        /**
-         * ListProviderApiStatusOption
-         * @description Status option type for list endpoint.
-         */
+        /** ListProviderApiStatusOption */
         ListProviderApiStatusOption: {
             /** Value */
             value?: string | null;
@@ -21738,10 +21638,7 @@ export interface components {
             /** Department Ids */
             department_ids?: string[] | null;
         };
-        /**
-         * ListToolApiResponse
-         * @description Response model for list tool endpoint with computed permissions.
-         */
+        /** ListToolApiResponse */
         ListToolApiResponse: {
             /** Actor Name */
             actor_name?: string | null;
@@ -21750,10 +21647,7 @@ export interface components {
             /** Total Count */
             total_count?: number | null;
         };
-        /**
-         * ListToolApiTool
-         * @description Tool type for list endpoint with computed permissions.
-         */
+        /** ListToolApiTool */
         ListToolApiTool: {
             /** Tool Id */
             tool_id?: string | null;
@@ -22686,16 +22580,13 @@ export interface components {
         PatchAuthDraftApiRequest: {
             /** Input Draft Id */
             input_draft_id?: string | null;
-            /** Name Id */
-            name_id?: string | null;
-            /** Description Id */
-            description_id?: string | null;
-            /** Active Flag Id */
-            active_flag_id?: string | null;
-            /** Protocol Ids */
-            protocol_ids?: string[] | null;
-            /** Slug Ids */
-            slug_ids?: string[] | null;
+            /** Group Id */
+            group_id?: string | null;
+            names?: components["schemas"]["AuthResourceAction"] | null;
+            descriptions?: components["schemas"]["AuthResourceAction"] | null;
+            flags?: components["schemas"]["AuthResourceAction"] | null;
+            protocols?: components["schemas"]["AuthMultiResourceAction"] | null;
+            slugs?: components["schemas"]["AuthMultiResourceAction"] | null;
             /**
              * Expected Version
              * @default 0
@@ -23053,10 +22944,7 @@ export interface components {
             /** Message */
             message: string;
         };
-        /**
-         * PatchProviderDraftApiRequest
-         * @description Request model for patch provider draft endpoint.
-         */
+        /** PatchProviderDraftApiRequest */
         PatchProviderDraftApiRequest: {
             /** Input Draft Id */
             input_draft_id?: string | null;
@@ -23068,8 +22956,10 @@ export interface components {
             active_flag_id?: string | null;
             /** Value Id */
             value_id?: string | null;
-            /** Regenerates Id */
-            regenerates_id?: string | null;
+            /** Endpoint Id */
+            endpoint_id?: string | null;
+            /** Key Id */
+            key_id?: string | null;
             /** Department Ids */
             department_ids?: string[] | null;
             /**
@@ -23078,10 +22968,7 @@ export interface components {
              */
             expected_version: number;
         };
-        /**
-         * PatchProviderDraftApiResponse
-         * @description Response model for patch provider draft endpoint.
-         */
+        /** PatchProviderDraftApiResponse */
         PatchProviderDraftApiResponse: {
             /** Success */
             success: boolean;
@@ -23250,33 +23137,24 @@ export interface components {
             /** Draft Exists */
             draft_exists?: boolean | null;
         };
-        /**
-         * PatchToolDraftApiRequest
-         * @description Request model for patch tool draft endpoint.
-         */
+        /** PatchToolDraftApiRequest */
         PatchToolDraftApiRequest: {
             /** Input Draft Id */
             input_draft_id?: string | null;
-            /** Name Id */
-            name_id?: string | null;
-            /** Description Id */
-            description_id?: string | null;
-            /** Active Flag Id */
-            active_flag_id?: string | null;
-            /** Args Ids */
-            args_ids?: string[] | null;
-            /** Args Outputs Ids */
-            args_outputs_ids?: string[] | null;
+            /** Group Id */
+            group_id?: string | null;
             /**
              * Expected Version
              * @default 0
              */
             expected_version: number;
+            names?: components["schemas"]["ToolResourceAction"] | null;
+            descriptions?: components["schemas"]["ToolResourceAction"] | null;
+            flags?: components["schemas"]["ToolResourceAction"] | null;
+            args?: components["schemas"]["ToolMultiResourceAction"] | null;
+            args_outputs?: components["schemas"]["ToolMultiResourceAction"] | null;
         };
-        /**
-         * PatchToolDraftApiResponse
-         * @description Response model for patch tool draft endpoint.
-         */
+        /** PatchToolDraftApiResponse */
         PatchToolDraftApiResponse: {
             /** Success */
             success: boolean;
@@ -24910,6 +24788,88 @@ export interface components {
             /** Protocols Id */
             protocols_id?: string | null;
         };
+        /** ProviderDepartmentSection */
+        ProviderDepartmentSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
+        };
+        /** ProviderDescriptionSection */
+        ProviderDescriptionSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            resource?: components["schemas"]["QGetDescriptionsV4Item"] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetDescriptionsV4Item"][] | null;
+        };
+        /** ProviderEndpointSection */
+        ProviderEndpointSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            resource?: components["schemas"]["QGetEndpointsV4Item"] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetEndpointsV4Item"][] | null;
+        };
         /**
          * ProviderFlagConfig
          * @description Enriched flag config for direct client consumption.
@@ -24935,10 +24895,36 @@ export interface components {
              * @default false
              */
             required: boolean;
-            /** Domain Id */
-            domain_id?: string | null;
             /** Generated */
             generated?: boolean | null;
+        };
+        /** ProviderFlagSection */
+        ProviderFlagSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["ProviderFlagConfig"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["ProviderFlagConfig"][] | null;
         };
         /**
          * ProviderGenerationCompleteEvent
@@ -24969,35 +24955,120 @@ export interface components {
             description_resource?: components["schemas"]["QGetDescriptionsV4Item"] | null;
             flag_resource?: components["schemas"]["QGetFlagsV4Item"] | null;
             value_resource?: components["schemas"]["QGetValuesV4Item"] | null;
-            regenerates_resource?: components["schemas"]["QGetRegeneratesV4Item"] | null;
+            endpoint_resource?: components["schemas"]["QGetEndpointsV4Item"] | null;
+            key_resource?: components["schemas"]["QGetKeysV4Item"] | null;
             /** Department Resources */
             department_resources?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
         };
-        /**
-         * ProviderResourceBucket
-         * @description Generic resources bucket with full objects (always plural lists).
-         */
-        ProviderResourceBucket: {
-            /** Names */
-            names?: components["schemas"]["QGetNamesV4Item"][] | null;
-            /** Descriptions */
-            descriptions?: components["schemas"]["QGetDescriptionsV4Item"][] | null;
-            /** Flags */
-            flags?: components["schemas"]["ProviderFlagConfig"][] | null;
-            /** Departments */
-            departments?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
-            /** Values */
-            values?: components["schemas"]["QGetValuesV4Item"][] | null;
-            /** Regenerates */
-            regenerates?: components["schemas"]["QGetRegeneratesV4Item"][] | null;
+        /** ProviderKeySection */
+        ProviderKeySection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            resource?: components["schemas"]["QGetKeysV4Item"] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetKeysV4Item"][] | null;
         };
-        /**
-         * ProviderResources
-         * @description Full resources + current selections.
-         */
-        ProviderResources: {
-            resources?: components["schemas"]["ProviderResourceBucket"] | null;
-            current?: components["schemas"]["ProviderResourceBucket"] | null;
+        /** ProviderNameSection */
+        ProviderNameSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            resource?: components["schemas"]["QGetNamesV4Item"] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetNamesV4Item"][] | null;
+        };
+        /** ProviderValueSection */
+        ProviderValueSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            resource?: components["schemas"]["QGetValuesV4Item"] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetValuesV4Item"][] | null;
+        };
+        /** QGetAgentsV4Item */
+        QGetAgentsV4Item: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Model Id */
+            model_id: string | null;
+            /** Temperature */
+            temperature: number | null;
+            /** Reasoning */
+            reasoning: string | null;
+            /** Tool Ids */
+            tool_ids: string[] | null;
+            /** Quality */
+            quality: string | null;
+            /** Voice */
+            voice: string | null;
+            /** Prompt Id */
+            prompt_id: string | null;
+            /** Instruction Ids */
+            instruction_ids: string[] | null;
+            /** Active */
+            active: boolean | null;
+            /** Generated */
+            generated: boolean | null;
         };
         /** QGetArgsOutputsV4Item */
         QGetArgsOutputsV4Item: {
@@ -25713,6 +25784,19 @@ export interface components {
             icon_value?: string | null;
             /** Color Hex */
             color_hex?: string | null;
+        };
+        /** QGetRubricsBatchV4Item */
+        QGetRubricsBatchV4Item: {
+            /** Rubric Id */
+            rubric_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Total Points */
+            total_points: number | null;
+            /** Pass Points */
+            pass_points: number | null;
         };
         /** QGetRubricsListV4Department */
         QGetRubricsListV4Department: {
@@ -28115,7 +28199,7 @@ export interface components {
         };
         /**
          * SaveAuthApiRequest
-         * @description Request model for save auth endpoint - accepts form data directly.
+         * @description Request model for save auth endpoint.
          */
         SaveAuthApiRequest: {
             /**
@@ -28125,21 +28209,12 @@ export interface components {
             group_id: string;
             /** Input Auth Id */
             input_auth_id?: string | null;
-            /**
-             * Name Id
-             * Format: uuid
-             */
-            name_id: string;
-            /** Description Id */
-            description_id?: string | null;
-            /** Active Flag Id */
-            active_flag_id?: string | null;
-            /** Protocol Ids */
-            protocol_ids?: string[] | null;
-            /** Slug Ids */
-            slug_ids?: string[] | null;
-            /** Auth Items */
-            auth_items?: components["schemas"]["SaveAuthItemInput"][] | null;
+            names: components["schemas"]["AuthResourceAction"];
+            descriptions: components["schemas"]["AuthResourceAction"];
+            flags: components["schemas"]["AuthResourceAction"];
+            protocols: components["schemas"]["AuthMultiResourceAction"];
+            slugs: components["schemas"]["AuthMultiResourceAction"];
+            items?: components["schemas"]["AuthItemAction"] | null;
         };
         /**
          * SaveAuthApiResponse
@@ -28158,7 +28233,7 @@ export interface components {
         };
         /**
          * SaveAuthItemInput
-         * @description Auth item input for save endpoint.
+         * @description Auth item input for save/draft endpoints.
          */
         SaveAuthItemInput: {
             /** Name */
@@ -28453,7 +28528,7 @@ export interface components {
         };
         /**
          * SaveProviderApiRequest
-         * @description Request model for save provider endpoint - accepts form data directly (no draft_id).
+         * @description Request model for save provider endpoint.
          */
         SaveProviderApiRequest: {
             /**
@@ -28472,17 +28547,19 @@ export interface components {
             description_id?: string | null;
             /** Active Flag Id */
             active_flag_id?: string | null;
-            /** Value Id */
-            value_id?: string | null;
-            /** Regenerates Id */
-            regenerates_id?: string | null;
+            /**
+             * Value Id
+             * Format: uuid
+             */
+            value_id: string;
+            /** Endpoint Id */
+            endpoint_id?: string | null;
+            /** Key Id */
+            key_id?: string | null;
             /** Department Ids */
             department_ids?: string[] | null;
         };
-        /**
-         * SaveProviderApiResponse
-         * @description Response model for save provider endpoint.
-         */
+        /** SaveProviderApiResponse */
         SaveProviderApiResponse: {
             /** Success */
             success: boolean;
@@ -28628,10 +28705,7 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
-        /**
-         * SaveToolApiRequest
-         * @description Request model for save tool endpoint - accepts resource IDs directly.
-         */
+        /** SaveToolApiRequest */
         SaveToolApiRequest: {
             /**
              * Group Id
@@ -28640,24 +28714,13 @@ export interface components {
             group_id: string;
             /** Input Tool Id */
             input_tool_id?: string | null;
-            /**
-             * Name Id
-             * Format: uuid
-             */
-            name_id: string;
-            /** Description Id */
-            description_id?: string | null;
-            /** Active Flag Id */
-            active_flag_id?: string | null;
-            /** Args Ids */
-            args_ids?: string[] | null;
-            /** Args Outputs Ids */
-            args_outputs_ids?: string[] | null;
+            names: components["schemas"]["ToolResourceAction"];
+            descriptions: components["schemas"]["ToolResourceAction"];
+            flags: components["schemas"]["ToolResourceAction"];
+            args: components["schemas"]["ToolMultiResourceAction"];
+            args_outputs: components["schemas"]["ToolMultiResourceAction"];
         };
-        /**
-         * SaveToolApiResponse
-         * @description Response model for save tool endpoint.
-         */
+        /** SaveToolApiResponse */
         SaveToolApiResponse: {
             /** Success */
             success: boolean;
@@ -31779,6 +31842,89 @@ export interface components {
             /** Negative */
             negative?: boolean | null;
         };
+        /** ToolArgOutputSection */
+        ToolArgOutputSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["QGetArgsOutputsV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetArgsOutputsV4Item"][] | null;
+        };
+        /** ToolArgSection */
+        ToolArgSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["QGetArgsV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetArgsV4Item"][] | null;
+        };
+        /** ToolDescriptionSection */
+        ToolDescriptionSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            resource?: components["schemas"]["QGetDescriptionsV4Item"] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetDescriptionsV4Item"][] | null;
+        };
         /**
          * ToolFlagConfig
          * @description Enriched flag config for direct client consumption.
@@ -31804,10 +31950,35 @@ export interface components {
              * @default false
              */
             required: boolean;
-            /** Domain Id */
-            domain_id?: string | null;
             /** Generated */
             generated?: boolean | null;
+        };
+        /** ToolFlagSection */
+        ToolFlagSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            current?: components["schemas"]["ToolFlagConfig"] | null;
+            /** Resources */
+            resources?: components["schemas"]["ToolFlagConfig"][] | null;
         };
         /**
          * ToolGenerationCompleteEvent
@@ -31913,29 +32084,50 @@ export interface components {
             /** Trace Id */
             trace_id?: string | null;
         };
-        /**
-         * ToolResourceBucket
-         * @description Generic resources bucket with full objects (always plural lists).
-         */
-        ToolResourceBucket: {
-            /** Names */
-            names?: components["schemas"]["QGetNamesV4Item"][] | null;
-            /** Descriptions */
-            descriptions?: components["schemas"]["QGetDescriptionsV4Item"][] | null;
-            /** Args */
-            args?: components["schemas"]["QGetArgsV4Item"][] | null;
-            /** Args Outputs */
-            args_outputs?: components["schemas"]["QGetArgsOutputsV4Item"][] | null;
-            /** Flags */
-            flags?: components["schemas"]["ToolFlagConfig"][] | null;
+        /** ToolMultiResourceAction */
+        ToolMultiResourceAction: {
+            /** Resource Ids */
+            resource_ids?: string[] | null;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
         };
-        /**
-         * ToolResources
-         * @description Full resources + current selections.
-         */
-        ToolResources: {
-            resources?: components["schemas"]["ToolResourceBucket"] | null;
-            current?: components["schemas"]["ToolResourceBucket"] | null;
+        /** ToolNameSection */
+        ToolNameSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            resource?: components["schemas"]["QGetNamesV4Item"] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetNamesV4Item"][] | null;
+        };
+        /** ToolResourceAction */
+        ToolResourceAction: {
+            /** Resource Id */
+            resource_id?: string | null;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
         };
         /**
          * TrainingErrorEvent

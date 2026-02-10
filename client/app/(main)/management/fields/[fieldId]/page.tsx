@@ -208,7 +208,7 @@ export default async function FieldEditPage({
       return (
         <UnifiedAccessDenied
           reason="department"
-          resourceType="parameter"
+          resourceType="field"
           redirectPath="/management/fields"
         />
       );

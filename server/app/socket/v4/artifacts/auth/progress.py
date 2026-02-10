@@ -6,7 +6,10 @@ from fastapi import APIRouter
 
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.main import get_internal_sio, sio
-from app.socket.v4.artifacts.auth.types import AuthGenerationProgressEvent
+from app.socket.v4.artifacts.auth.types import (
+    AUTH_GENERATE_RESOURCE_TYPES,
+    AuthGenerationProgressEvent,
+)
 
 internal_sio = get_internal_sio()
 
@@ -32,8 +35,6 @@ async def auth_generation_progress_api(
 
 @internal_sio.on("generate_call_start")  # type: ignore
 @internal_sio.on("generate_call_progress")  # type: ignore
-@internal_sio.on("generate_text_start")  # type: ignore
-@internal_sio.on("generate_text_progress")  # type: ignore
 async def handle_auth_call_progress(data: dict[str, Any]) -> None:
     """Handle generate_call_* events - filter by auth artifact_type and emit auth-specific event."""
     artifact_type = data.get("artifact_type")
@@ -51,6 +52,8 @@ async def handle_auth_call_progress(data: dict[str, Any]) -> None:
     resource_type = data.get("resource_type")
     group_id_str = data.get("group_id")
     if not group_id_str or not resource_type:
+        return
+    if resource_type not in AUTH_GENERATE_RESOURCE_TYPES:
         return
 
     event = AuthGenerationProgressEvent(

@@ -6,7 +6,10 @@ from fastapi import APIRouter
 
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.main import get_internal_sio, sio
-from app.socket.v4.artifacts.auth.types import AuthGenerationErrorEvent
+from app.socket.v4.artifacts.auth.types import (
+    AUTH_GENERATE_RESOURCE_TYPES,
+    AuthGenerationErrorEvent,
+)
 
 internal_sio = get_internal_sio()
 
@@ -31,7 +34,6 @@ async def auth_generation_error_api(
 
 
 @internal_sio.on("generate_call_error")  # type: ignore
-@internal_sio.on("generate_text_error")  # type: ignore
 async def handle_auth_error(data: dict[str, Any]) -> None:
     """Handle generate_*_error event - filter by auth artifact_type and emit auth-specific event."""
     artifact_type = data.get("artifact_type")
@@ -47,7 +49,11 @@ async def handle_auth_error(data: dict[str, Any]) -> None:
         return
 
     resource_type = data.get("resource_type")
-    resource_types = data.get("resource_types", [])
+    resource_types = [
+        rt for rt in (data.get("resource_types", []) or []) if rt in AUTH_GENERATE_RESOURCE_TYPES
+    ]
+    if resource_type and resource_type not in AUTH_GENERATE_RESOURCE_TYPES:
+        resource_type = None
 
     error_message = data.get("error_message") or data.get(
         "message", "An error occurred during auth generation"

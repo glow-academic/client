@@ -15,6 +15,8 @@ from app.api.v4.artifacts.auth.permissions import (
 from app.api.v4.artifacts.auth.types import (
     SaveAuthApiRequest,
     SaveAuthApiResponse,
+    SaveAuthSqlParams,
+    SaveAuthSqlRow,
 )
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.auth.keycloak_sync import perform_keycloak_sync
@@ -23,9 +25,6 @@ from app.main import get_db
 from app.sql.types import (
     CheckAuthSaveAccessSqlParams,
     CheckAuthSaveAccessSqlRow,
-    ISaveAuthV4AuthItem,
-    SaveAuthSqlParams,
-    SaveAuthSqlRow,
     load_sql_query,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
@@ -102,32 +101,7 @@ async def save_auth(
             )
 
         async with conn.transaction():
-            # Build auth_items_junction as ISaveAuthV4AuthItem objects for SQL
-            auth_items_junction = None
-            if request.auth_items:
-                auth_items_junction = [
-                    ISaveAuthV4AuthItem(
-                        name=item.name,
-                        description=item.description,
-                        encrypted=item.encrypted,
-                        position=item.position,
-                        active=item.active,
-                        key_id=item.key_id,
-                    )
-                    for item in request.auth_items
-                ]
-
-            params = SaveAuthSqlParams(
-                profile_id=profile_id,
-                group_id=request.group_id,
-                input_auth_id=request.input_auth_id,
-                name_id=request.name_id,
-                description_id=request.description_id,
-                active_flag_id=request.active_flag_id,
-                protocol_ids=request.protocol_ids,
-                slug_ids=request.slug_ids,
-                auth_items_junction=auth_items_junction,
-            )
+            params = SaveAuthSqlParams.from_request(request, profile_id)
             sql_params = params.to_tuple()
 
             result = cast(

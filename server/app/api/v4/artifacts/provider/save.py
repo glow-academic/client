@@ -93,7 +93,7 @@ async def save_provider(
         if not request.input_provider_id:
             can_save_result = compute_can_create(
                 user_role=access_result.user_role,
-                department_ids=None,  # Validated when saving
+                department_ids=request.department_ids,  # Validated in SQL
             )
         else:
             can_save_result = compute_can_save(

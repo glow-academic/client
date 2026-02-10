@@ -9,6 +9,7 @@ interface EntityMetadata {
   entityId: string;
   entityName: string;
   entityType:
+    | "field"
     | "auth"
     | "persona"
     | "cohort"

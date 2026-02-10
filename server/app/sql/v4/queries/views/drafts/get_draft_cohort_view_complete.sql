@@ -41,11 +41,13 @@ CREATE TYPE types.q_get_draft_cohort_view_v4_item AS (
     mcp boolean,
     active boolean,
     group_id uuid,
+    regeneration_descriptions text[],
     name_ids uuid[],
     description_ids uuid[],
     flag_ids uuid[],
     department_ids uuid[],
-    simulation_ids uuid[]
+    simulation_ids uuid[],
+    simulation_position_ids uuid[]
 );
 
 CREATE OR REPLACE FUNCTION api_get_draft_cohort_view_v4(
@@ -77,11 +79,13 @@ AS $$
                     mcp,
                     active,
                     group_id,
+                    regeneration_descriptions,
                     name_ids,
                     description_ids,
                     flag_ids,
                     department_ids,
-                    simulation_ids
+                    simulation_ids,
+                    simulation_position_ids
                 )::types.q_get_draft_cohort_view_v4_item
                 ORDER BY updated_at DESC
             ),

@@ -15,27 +15,22 @@ import {
   type StepStatus,
 } from "@/components/common/forms/GenericForm";
 import { StepCard } from "@/components/common/forms/StepCard";
+import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
 import type { GenerateRegenerateModalResource } from "@/components/common/GenerateRegenerateModal";
 import { GenerateRegenerateModal } from "@/components/common/GenerateRegenerateModal";
 import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
 import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { Args } from "@/components/resources/Args";
 import { ArgsOutputs } from "@/components/resources/ArgsOutputs";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
-import { Check, Loader2, Sparkles } from "lucide-react";
+import { Check } from "lucide-react";
 import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
 // Types defined inline using InputOf/OutputOf
@@ -136,43 +131,30 @@ function ToolComponent({
   // Memoize toolData fields used in renderStep
   const stableToolDataFields = React.useMemo(() => {
     if (!toolData) return null;
-    const resources = toolData.resources?.resources;
-    const current = toolData.resources?.current;
-    // Derive selected IDs from current bucket
-    const currentArgsIds = (current?.args ?? [])
+    const s = toolData;
+    const currentArgsIds = (s.args?.current ?? [])
       .map((a) => a.id)
       .filter((id): id is string => !!id);
-    const currentArgsOutputsIds = (current?.args_outputs ?? [])
+    const currentArgsOutputsIds = (s.args_outputs?.current ?? [])
       .map((a) => a.id)
       .filter((id): id is string => !!id);
     return {
       group_id: toolData.group_id,
-      // Selected IDs (from current bucket)
       args_ids: currentArgsIds,
       args_outputs_ids: currentArgsOutputsIds,
-      // Selected resources (from current bucket)
-      args_resources: current?.args ?? [],
-      args_outputs_resources: current?.args_outputs ?? [],
-      // All resources (from resources bucket)
-      args: resources?.args ?? [],
-      args_outputs: resources?.args_outputs ?? [],
-      // Show/required/suggestions (flat on response)
-      show_args: toolData.show_args,
-      args_suggestions: toolData.args_suggestions,
-      args_required: toolData.args_required,
-      show_args_outputs: toolData.show_args_outputs,
-      args_outputs_suggestions: toolData.args_outputs_suggestions,
-      args_outputs_required: toolData.args_outputs_required,
-      // Domain IDs for generation
-      args_domain_id: toolData.args_domain_id,
-      args_outputs_domain_id: toolData.args_outputs_domain_id,
-      // AI generate flags (replaces agent_id checks)
-      args_show_ai_generate: toolData.args_show_ai_generate,
-      args_outputs_show_ai_generate: toolData.args_outputs_show_ai_generate,
-      // Name/description current selections (for save)
-      name_id: current?.names?.[0]?.id ?? null,
-      description_id: current?.descriptions?.[0]?.id ?? null,
-      active_flag_id: current?.flags?.[0]?.flag_option_id ?? null,
+      args_resources: s.args?.current ?? [],
+      args_outputs_resources: s.args_outputs?.current ?? [],
+      args: s.args?.resources ?? [],
+      args_outputs: s.args_outputs?.resources ?? [],
+      args_suggestions: s.args?.suggestions ?? [],
+      args_required: s.args?.required ?? false,
+      args_outputs_suggestions: s.args_outputs?.suggestions ?? [],
+      args_outputs_required: s.args_outputs?.required ?? false,
+      args_show_ai_generate: s.args?.show_ai_generate ?? false,
+      args_outputs_show_ai_generate: s.args_outputs?.show_ai_generate ?? false,
+      names: s.names,
+      descriptions: s.descriptions,
+      flags: s.flags,
     };
   }, [toolData]);
 
@@ -264,16 +246,15 @@ function ToolComponent({
         args_outputs_ids: [] as string[],
       };
     }
-    const current = data.resources?.current;
-    const currentName = current?.names?.[0];
-    const currentDesc = current?.descriptions?.[0];
+    const currentName = data.names?.resource;
+    const currentDesc = data.descriptions?.resource;
     return {
       name: currentName?.name || "",
       description: currentDesc?.description || "",
-      args_ids: (current?.args ?? [])
+      args_ids: (data.args?.current ?? [])
         .map((a) => a.id)
         .filter((id): id is string => !!id),
-      args_outputs_ids: (current?.args_outputs ?? [])
+      args_outputs_ids: (data.args_outputs?.current ?? [])
         .map((a) => a.id)
         .filter((id): id is string => !!id),
     };
@@ -311,20 +292,20 @@ function ToolComponent({
   const argsIdsStr = React.useMemo(
     () =>
       JSON.stringify(
-        (toolData?.resources?.current?.args ?? [])
+        (toolData?.args?.current ?? [])
           .map((a) => a.id)
           .filter(Boolean)
       ),
-    [toolData?.resources?.current?.args]
+    [toolData?.args]
   );
   const argsOutputsIdsStr = React.useMemo(
     () =>
       JSON.stringify(
-        (toolData?.resources?.current?.args_outputs ?? [])
+        (toolData?.args_outputs?.current ?? [])
           .map((a) => a.id)
           .filter(Boolean)
       ),
-    [toolData?.resources?.current?.args_outputs]
+    [toolData?.args_outputs]
   );
 
   // Update form state when server data changes
@@ -343,8 +324,8 @@ function ToolComponent({
       return prev;
     });
   }, [
-    toolData?.resources?.current?.names,
-    toolData?.resources?.current?.descriptions,
+    toolData?.names?.resource,
+    toolData?.descriptions?.resource,
     argsIdsStr,
     argsOutputsIdsStr,
     getInitialFormState,
@@ -397,26 +378,24 @@ function ToolComponent({
     }
   }, [draftVersion]);
 
-  const formArgsIdsStr = useMemo(
-    () => JSON.stringify(formState.args_ids ?? []),
-    [formState.args_ids]
-  );
-  const formArgsOutputsIdsStr = useMemo(
-    () => JSON.stringify(formState.args_outputs_ids ?? []),
-    [formState.args_outputs_ids]
-  );
-
   const draftPatchKey = useMemo(
     () =>
       JSON.stringify({
         draftId: draftId || null,
-        name_id: stableToolDataFields?.name_id,
-        description_id: stableToolDataFields?.description_id,
-        active_flag_id: stableToolDataFields?.active_flag_id,
+        name_id: stableToolDataFields?.names?.resource?.id ?? null,
+        description_id: stableToolDataFields?.descriptions?.resource?.id ?? null,
+        active_flag_id: stableToolDataFields?.flags?.current?.flag_option_id ?? null,
         args_ids: formState.args_ids,
         args_outputs_ids: formState.args_outputs_ids,
       }),
-    [draftId, stableToolDataFields?.name_id, stableToolDataFields?.description_id, stableToolDataFields?.active_flag_id, formArgsIdsStr, formArgsOutputsIdsStr]
+    [
+      draftId,
+      stableToolDataFields?.names?.resource?.id,
+      stableToolDataFields?.descriptions?.resource?.id,
+      stableToolDataFields?.flags,
+      formState.args_ids,
+      formState.args_outputs_ids,
+    ]
   );
 
   const lastPatchedKeyRef = React.useRef<string | null>(null);
@@ -437,15 +416,35 @@ function ToolComponent({
       try {
         if (!patchToolDraftActionRef.current) return;
         const currentFields = toolDataRef.current;
-        const currentBucket = currentFields?.resources?.current;
         const result = await patchToolDraftActionRef.current({
           body: {
             input_draft_id: draftId || null,
-            name_id: currentBucket?.names?.[0]?.id ?? null,
-            description_id: currentBucket?.descriptions?.[0]?.id ?? null,
-            active_flag_id: currentBucket?.flags?.[0]?.flag_option_id ?? null,
-            args_ids: formState.args_ids,
-            args_outputs_ids: formState.args_outputs_ids,
+            group_id: currentFields?.group_id ?? null,
+            names: {
+              resource_id: currentFields?.names?.resource?.id ?? null,
+              create_tool_id: currentFields?.names?.create_tool_id ?? null,
+              link_tool_id: currentFields?.names?.link_tool_id ?? null,
+            },
+            descriptions: {
+              resource_id: currentFields?.descriptions?.resource?.id ?? null,
+              create_tool_id: currentFields?.descriptions?.create_tool_id ?? null,
+              link_tool_id: currentFields?.descriptions?.link_tool_id ?? null,
+            },
+            flags: {
+              resource_id: currentFields?.flags?.current?.flag_option_id ?? null,
+              create_tool_id: currentFields?.flags?.create_tool_id ?? null,
+              link_tool_id: currentFields?.flags?.link_tool_id ?? null,
+            },
+            args: {
+              resource_ids: formState.args_ids,
+              create_tool_id: currentFields?.args?.create_tool_id ?? null,
+              link_tool_id: currentFields?.args?.link_tool_id ?? null,
+            },
+            args_outputs: {
+              resource_ids: formState.args_outputs_ids,
+              create_tool_id: currentFields?.args_outputs?.create_tool_id ?? null,
+              link_tool_id: currentFields?.args_outputs?.link_tool_id ?? null,
+            },
             expected_version: lastSavedVersionRef.current,
           },
         });
@@ -479,8 +478,8 @@ function ToolComponent({
       artifact_type?: string;
       group_id?: string;
       resource_type?: string;
-      args_ids?: string[];
-      args_outputs_ids?: string[];
+      args_resources?: Array<{ id?: string | null }>;
+      args_outputs_resources?: Array<{ id?: string | null }>;
       message?: string;
       success?: boolean;
       [key: string]: unknown;
@@ -503,16 +502,25 @@ function ToolComponent({
         setFormState((prev) => {
           const updates: Partial<typeof prev> = {};
 
-          if (data.args_ids && data.args_ids.length > 0) {
+          if (data.args_resources && data.args_resources.length > 0) {
             // For arrays, append new IDs (avoid duplicates)
-            const newArgsIds = data.args_ids.filter(
+            const newArgsIds = data.args_resources
+              .map((r) => r?.id)
+              .filter((id): id is string => !!id)
+              .filter(
               (id) => !prev.args_ids.includes(id)
             );
             updates.args_ids = [...prev.args_ids, ...newArgsIds];
           }
-          if (data.args_outputs_ids && data.args_outputs_ids.length > 0) {
+          if (
+            data.args_outputs_resources &&
+            data.args_outputs_resources.length > 0
+          ) {
             // For arrays, append new IDs (avoid duplicates)
-            const newArgsOutputsIds = data.args_outputs_ids.filter(
+            const newArgsOutputsIds = data.args_outputs_resources
+              .map((r) => r?.id)
+              .filter((id): id is string => !!id)
+              .filter(
               (id) => !prev.args_outputs_ids.includes(id)
             );
             updates.args_outputs_ids = [
@@ -601,29 +609,6 @@ function ToolComponent({
     };
   }, [socket, isConnected, toolData?.group_id]);
 
-  // Map resource types to domain_ids for generation
-  const getDomainIds = useCallback(
-    (resourceTypes: ToolResourceType[]): string[] => {
-      const ids: string[] = [];
-      resourceTypes.forEach((rt) => {
-        switch (rt) {
-          case "args":
-            if (stableToolDataFields?.args_domain_id) {
-              ids.push(stableToolDataFields.args_domain_id);
-            }
-            break;
-          case "args_outputs":
-            if (stableToolDataFields?.args_outputs_domain_id) {
-              ids.push(stableToolDataFields.args_outputs_domain_id);
-            }
-            break;
-        }
-      });
-      return ids;
-    },
-    [stableToolDataFields]
-  );
-
   const handleGenerateResources = useCallback(
     async (
       resourceTypes: ToolResourceType[],
@@ -632,12 +617,6 @@ function ToolComponent({
     ) => {
       if (!socket || !isConnected) {
         toast.error("WebSocket not connected");
-        return;
-      }
-
-      const domainIds = getDomainIds(resourceTypes);
-      if (domainIds.length === 0) {
-        toast.error("No generation domains available for selected resources");
         return;
       }
 
@@ -652,15 +631,15 @@ function ToolComponent({
       const formData = formDataRef.current;
       const draftId = (formData["draftId"] as string | undefined) ?? null;
 
-      // Emit tool_generate event with domain_ids
+      // Emit tool_generate event with resource_types
       socket.emit("tool_generate", {
-        domain_ids: domainIds,
+        resource_types: resourceTypes,
         user_instructions: userInstructions ? [userInstructions] : null,
         draft_id: draftId || null,
         tool_id: toolId || null,
       });
     },
-    [socket, isConnected, toolId, getDomainIds]
+    [socket, isConnected, toolId]
   );
 
   // Disabled logic based on can_edit flag - check in both new and edit modes
@@ -671,7 +650,7 @@ function ToolComponent({
 
   // Set breadcrumb context when tool data is loaded
   useEffect(() => {
-    const toolName = toolData?.resources?.current?.names?.[0]?.name;
+    const toolName = toolData?.names?.resource?.name;
     if (toolName && toolId && isEditMode) {
       setEntityMetadata({
         entityId: toolId,
@@ -686,13 +665,13 @@ function ToolComponent({
   const handleSubmit = useCallback(
     async (_formData: Record<string, unknown>) => {
       // Validate required resource IDs
-      if (toolData?.args_required && formState.args_ids.length === 0) {
+      if (toolData?.args?.required && formState.args_ids.length === 0) {
         toast.error("Args are required");
         throw new Error("Args are required");
       }
 
       if (
-        toolData?.args_outputs_required &&
+        toolData?.args_outputs?.required &&
         formState.args_outputs_ids.length === 0
       ) {
         toast.error("Args outputs are required");
@@ -715,8 +694,7 @@ function ToolComponent({
       }
 
       // Get resource IDs from current selections
-      const currentBucket = toolData?.resources?.current;
-      const nameId = currentBucket?.names?.[0]?.id;
+      const nameId = toolData?.names?.resource?.id;
       if (!nameId) {
         toast.error("A name resource must be selected");
         throw new Error("A name resource must be selected");
@@ -732,11 +710,31 @@ function ToolComponent({
           body: {
             group_id: groupId,
             input_tool_id: isEditMode && toolId ? toolId : null,
-            name_id: nameId,
-            description_id: currentBucket?.descriptions?.[0]?.id ?? null,
-            active_flag_id: currentBucket?.flags?.[0]?.flag_option_id ?? null,
-            args_ids: formState.args_ids,
-            args_outputs_ids: formState.args_outputs_ids,
+            names: {
+              resource_id: nameId,
+              create_tool_id: toolData?.names?.create_tool_id ?? null,
+              link_tool_id: toolData?.names?.link_tool_id ?? null,
+            },
+            descriptions: {
+              resource_id: toolData?.descriptions?.resource?.id ?? null,
+              create_tool_id: toolData?.descriptions?.create_tool_id ?? null,
+              link_tool_id: toolData?.descriptions?.link_tool_id ?? null,
+            },
+            flags: {
+              resource_id: toolData?.flags?.current?.flag_option_id ?? null,
+              create_tool_id: toolData?.flags?.create_tool_id ?? null,
+              link_tool_id: toolData?.flags?.link_tool_id ?? null,
+            },
+            args: {
+              resource_ids: formState.args_ids,
+              create_tool_id: toolData?.args?.create_tool_id ?? null,
+              link_tool_id: toolData?.args?.link_tool_id ?? null,
+            },
+            args_outputs: {
+              resource_ids: formState.args_outputs_ids,
+              create_tool_id: toolData?.args_outputs?.create_tool_id ?? null,
+              link_tool_id: toolData?.args_outputs?.link_tool_id ?? null,
+            },
           },
         });
         toast.success(
@@ -759,8 +757,20 @@ function ToolComponent({
       profile?.id,
       saveToolAction,
       router,
-      toolData?.args_required,
-      toolData?.args_outputs_required,
+      toolData?.args?.required,
+      toolData?.args_outputs?.required,
+      toolData?.group_id,
+      toolData?.names?.resource?.id,
+      toolData?.names?.create_tool_id,
+      toolData?.names?.link_tool_id,
+      toolData?.descriptions?.resource?.id,
+      toolData?.descriptions?.create_tool_id,
+      toolData?.descriptions?.link_tool_id,
+      toolData?.flags,
+      toolData?.args?.create_tool_id,
+      toolData?.args?.link_tool_id,
+      toolData?.args_outputs?.create_tool_id,
+      toolData?.args_outputs?.link_tool_id,
     ]
   );
 
@@ -1091,45 +1101,14 @@ function ToolComponent({
                 stepResources["args"] &&
                 stepResources["args"].length > 0 &&
                 currentToolData?.args_show_ai_generate ? (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            const hasRegeneratable = stepResources[
-                              "args"
-                            ]!.some((rt) => canRegenerate(rt));
-                            handleOpenStepCardModal(
-                              "args",
-                              hasRegeneratable ? "regenerate" : "generate"
-                            );
-                          }}
-                          disabled={
-                            disabled ||
-                            stepResources["args"]!.some((rt) =>
-                              isGenerating(rt)
-                            )
-                          }
-                        >
-                          {stepResources["args"]!.some((rt) =>
-                            isGenerating(rt)
-                          ) ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Sparkles className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {stepResources["args"]!.some((rt) => canRegenerate(rt))
-                          ? "Regenerate"
-                          : "Generate"}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                  <StepCardAiButton
+                    stepId="args"
+                    resourceTypes={stepResources["args"] ?? []}
+                    canRegenerate={(rt) => canRegenerate(rt as ToolResourceType)}
+                    isGenerating={(rt) => isGenerating(rt as ToolResourceType)}
+                    onOpenModal={handleOpenStepCardModal}
+                    disabled={disabled}
+                  />
                 ) : undefined
               }
             >
@@ -1295,47 +1274,14 @@ function ToolComponent({
                 stepResources["args_outputs"] &&
                 stepResources["args_outputs"].length > 0 &&
                 currentToolData?.args_outputs_show_ai_generate ? (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            const hasRegeneratable = stepResources[
-                              "args_outputs"
-                            ]!.some((rt) => canRegenerate(rt));
-                            handleOpenStepCardModal(
-                              "args_outputs",
-                              hasRegeneratable ? "regenerate" : "generate"
-                            );
-                          }}
-                          disabled={
-                            disabled ||
-                            stepResources["args_outputs"]!.some((rt) =>
-                              isGenerating(rt)
-                            )
-                          }
-                        >
-                          {stepResources["args_outputs"]!.some((rt) =>
-                            isGenerating(rt)
-                          ) ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Sparkles className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {stepResources["args_outputs"]!.some((rt) =>
-                          canRegenerate(rt)
-                        )
-                          ? "Regenerate"
-                          : "Generate"}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                  <StepCardAiButton
+                    stepId="args_outputs"
+                    resourceTypes={stepResources["args_outputs"] ?? []}
+                    canRegenerate={(rt) => canRegenerate(rt as ToolResourceType)}
+                    isGenerating={(rt) => isGenerating(rt as ToolResourceType)}
+                    onOpenModal={handleOpenStepCardModal}
+                    disabled={disabled}
+                  />
                 ) : undefined
               }
             >
@@ -1509,15 +1455,15 @@ function ToolComponent({
           nuqsParsers={
             toolSearchParamsClient as Record<string, Parser<unknown>>
           }
-        steps={steps}
-        getStepStatus={getStepStatus}
-        serverData={toolData}
-        formFieldKeys={formFieldKeys}
-        onReset={(stepId) => handleReset(stepId)}
-        resetSuccessMessage={resetSuccessMessage}
-        onSubmit={handleSubmit}
-        submitButton={submitButton}
-        isReadonly={disabled}
+          steps={steps}
+          getStepStatus={getStepStatus}
+          serverData={toolData}
+          formFieldKeys={formFieldKeys}
+          onReset={(stepId) => handleReset(stepId)}
+          resetSuccessMessage={resetSuccessMessage}
+          onSubmit={handleSubmit}
+          submitButton={submitButton}
+          isReadonly={disabled}
           isEditMode={isEditMode}
           renderStep={renderStep}
           onFormDataChange={onFormDataChange}
@@ -1549,20 +1495,18 @@ function ToolComponent({
 
 // Memoize component to prevent re-renders when only prop references change
 export default React.memo(ToolComponent, (prevProps, nextProps) => {
-  // Compare toolData by resource IDs, not object reference
-  const prevCurrent = prevProps.toolData?.resources?.current;
-  const nextCurrent = nextProps.toolData?.resources?.current;
+  // Compare toolData by selected section resource IDs, not object reference
   const prevIds = {
-    name: prevCurrent?.names?.[0]?.name,
-    description: prevCurrent?.descriptions?.[0]?.description,
-    args_ids: prevCurrent?.args?.map((a) => a.id),
-    args_outputs_ids: prevCurrent?.args_outputs?.map((a) => a.id),
+    name: prevProps.toolData?.names?.resource?.name,
+    description: prevProps.toolData?.descriptions?.resource?.description,
+    args_ids: prevProps.toolData?.args?.current?.map((a) => a.id),
+    args_outputs_ids: prevProps.toolData?.args_outputs?.current?.map((a) => a.id),
   };
   const nextIds = {
-    name: nextCurrent?.names?.[0]?.name,
-    description: nextCurrent?.descriptions?.[0]?.description,
-    args_ids: nextCurrent?.args?.map((a) => a.id),
-    args_outputs_ids: nextCurrent?.args_outputs?.map((a) => a.id),
+    name: nextProps.toolData?.names?.resource?.name,
+    description: nextProps.toolData?.descriptions?.resource?.description,
+    args_ids: nextProps.toolData?.args?.current?.map((a) => a.id),
+    args_outputs_ids: nextProps.toolData?.args_outputs?.current?.map((a) => a.id),
   };
 
   // Compare primitive props

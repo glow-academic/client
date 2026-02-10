@@ -122,6 +122,7 @@ AUTH_RESOURCES: set[str] = {
     "flags",
     "protocols",
     "slugs",
+    "items",
 }
 
 # Multi-resource agent definitions for auth

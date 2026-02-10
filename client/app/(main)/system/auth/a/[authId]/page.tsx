@@ -27,8 +27,6 @@ type CreateDraftDescriptionsOut = OutputOf<
   "/api/v4/resources/descriptions",
   "post"
 >;
-type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
-type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
 type CreateDraftProtocolsIn = InputOf<"/api/v4/resources/protocols", "post">;
 type CreateDraftProtocolsOut = OutputOf<"/api/v4/resources/protocols", "post">;
 type CreateDraftSlugsIn = InputOf<"/api/v4/resources/slugs", "post">;
@@ -61,8 +59,8 @@ export async function generateMetadata(
       } as GetAuthIn["body"],
     };
     const auth = await getAuth(input);
-    const authName = auth?.resources?.current?.names?.[0]?.name;
-    const authDescription = auth?.resources?.current?.descriptions?.[0]?.description;
+    const authName = auth?.names?.resource?.name;
+    const authDescription = auth?.descriptions?.resource?.description;
     return {
       title: `${authName || "Auth"} Auth`,
       description: `${authName ? `${authName} - ` : ""}Authentication method configuration for teaching assistant training platform.${authDescription ? ` ${authDescription}` : ""} Manage identity providers and secure access mechanisms for educational institutions and L&D programs.`,
@@ -108,14 +106,6 @@ async function createDraftDescriptions(
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.post("/resources/descriptions", input);
-}
-
-async function createDraftFlags(
-  input: CreateDraftFlagsIn
-): Promise<CreateDraftFlagsOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/flags", input);
 }
 
 async function createDraftProtocols(
@@ -185,7 +175,6 @@ export default async function AuthEditPage({
           patchAuthDraftAction={patchAuthDraft}
           createNamesAction={createDraftNames}
           createDescriptionsAction={createDraftDescriptions}
-          createFlagsAction={createDraftFlags}
           createProtocolsAction={createDraftProtocols}
           createSlugsAction={createDraftSlugs}
         />
@@ -216,8 +205,6 @@ export default async function AuthEditPage({
 export type {
   CreateDraftDescriptionsIn,
   CreateDraftDescriptionsOut,
-  CreateDraftFlagsIn,
-  CreateDraftFlagsOut,
   CreateDraftNamesIn,
   CreateDraftNamesOut,
   CreateDraftProtocolsIn,

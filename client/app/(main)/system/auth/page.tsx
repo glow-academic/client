@@ -14,12 +14,6 @@ type DuplicateAuthIn = InputOf<"/api/v4/artifacts/auths/duplicate", "post">;
 type DuplicateAuthOut = OutputOf<"/api/v4/artifacts/auths/duplicate", "post">;
 type DeleteAuthIn = InputOf<"/api/v4/artifacts/auths/delete", "post">;
 type DeleteAuthOut = OutputOf<"/api/v4/artifacts/auths/delete", "post">;
-type CreateKeyIn = InputOf<"/api/v4/keys/create", "post">;
-type CreateKeyOut = OutputOf<"/api/v4/keys/create", "post">;
-type DecryptKeyIn = InputOf<"/api/v4/resources/keys/decrypt", "post">;
-type DecryptKeyOut = OutputOf<"/api/v4/resources/keys/decrypt", "post">;
-type UpdateKeyIn = InputOf<"/api/v4/keys/update", "post">;
-type UpdateKeyOut = OutputOf<"/api/v4/keys/update", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
@@ -86,14 +80,8 @@ export default async function AuthPage() {
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
   AuthListOut,
-  CreateKeyIn,
-  CreateKeyOut,
-  DecryptKeyIn,
-  DecryptKeyOut,
   DeleteAuthIn,
   DeleteAuthOut,
   DuplicateAuthIn,
   DuplicateAuthOut,
-  UpdateKeyIn,
-  UpdateKeyOut,
 };

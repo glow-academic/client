@@ -1,16 +1,6 @@
-"""Provider get endpoint - Three-layer architecture.
-
-This implements the three-layer BFF pattern:
-1. get_provider_internal() - Core data fetching (cacheable, returns dataclass)
-2. get_provider_websocket() - Minimal data for WebSocket handlers
-3. get_provider_client() - Full BFF response for HTTP endpoint/frontend
-
-The internal layer handles SQL queries and resource fetching.
-The presentation layers transform internal data into consumer-specific formats.
-"""
+"""Provider get endpoint - Three-layer architecture."""
 
 import asyncio
-from dataclasses import dataclass
 from typing import Annotated, Any, cast
 from uuid import UUID
 
@@ -19,43 +9,55 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.artifacts.provider.permissions import (
     PROVIDER_RESOURCES,
-    build_domain_data,
     compute_can_edit,
     compute_departments_required,
     compute_description_required,
     compute_disabled_reason,
+    compute_endpoint_required,
     compute_flag_required,
+    compute_key_required,
     compute_name_required,
-    compute_regenerates_required,
     compute_show_departments,
     compute_show_description,
+    compute_show_endpoint,
     compute_show_flag,
+    compute_show_key,
     compute_show_name,
-    compute_show_regenerates,
     compute_show_value,
     compute_value_required,
     has_access,
 )
 from app.api.v4.artifacts.provider.types import (
-    DomainAgent,
     GetProviderApiRequest,
     GetProviderApiResponse,
     GetProviderWebsocketResponse,
+    ProviderDepartmentSection,
+    ProviderDescriptionSection,
+    ProviderEndpointSection,
     ProviderFlagConfig,
-    ProviderResourceBucket,
-    ProviderResources,
+    ProviderFlagSection,
+    ProviderInternalData,
+    ProviderKeySection,
+    ProviderNameSection,
+    ProviderValueSection,
+    ProviderWebsocketResources,
+    ProviderWebsocketViews,
 )
 from app.api.v4.permissions import select_agents_for_artifact
+from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.departments.search import search_departments_internal
 from app.api.v4.resources.descriptions.get import get_descriptions_internal
 from app.api.v4.resources.descriptions.search import search_descriptions_internal
+from app.api.v4.resources.endpoints.get import get_endpoints_internal
 from app.api.v4.resources.flags.get import get_flags_internal
 from app.api.v4.resources.flags.search import search_flags_internal
+from app.api.v4.resources.keys.get import get_keys_internal
+from app.api.v4.resources.models.get import get_models_internal
 from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.names.search import search_names_internal
-from app.api.v4.resources.regenerates.get import get_regenerates_internal
-from app.api.v4.resources.regenerates.search import search_regenerates_internal
+from app.api.v4.resources.providers.get import get_providers_internal
+from app.api.v4.resources.tools.get import get_tools_internal
 from app.api.v4.resources.values.get import get_values_internal
 from app.api.v4.resources.values.search import search_values_internal
 from app.api.v4.types import CandidateAgent
@@ -72,53 +74,10 @@ from app.sql.types import (
 )
 from app.utils.sql_helper import execute_sql_typed
 
-# SQL paths
 QUERY1_SQL_PATH = "app/sql/v4/queries/providers/get_provider_access_complete.sql"
 QUERY2_SQL_PATH = "app/sql/v4/queries/providers/get_provider_ids_complete.sql"
 
 router = APIRouter()
-
-
-@dataclass
-class ProviderInternalData:
-    """Internal data from core provider fetching (cacheable layer)."""
-
-    # Access/context
-    actor_name: str | None
-    provider_exists: bool | None
-    can_edit: bool
-    disabled_reason: str | None
-    draft_version: int | None
-    group_id: UUID | None
-
-    # Domain mappings
-    domain_ids_map: dict[str, UUID | None]
-    agent_ids: dict[str, UUID | None]
-    domains_list: list[DomainAgent]
-
-    # Show/required flags
-    show_flags_map: dict[str, bool]
-    required_flags_map: dict[str, bool]
-
-    # Suggestions (resource -> list of suggestion IDs)
-    suggestions_map: dict[str, list[UUID]]
-
-    # Show AI generate flags (computed: domain_id exists AND agent exists)
-    show_ai_generate_map: dict[str, bool]
-    basic_show_ai_generate: bool
-
-    # Domain data for modals
-    domain_data_list: list[Any]  # list[DomainData]
-
-    # Resources payload
-    resources_payload: ProviderResources
-
-    # Per-resource group IDs (from draft MV)
-    resource_group_ids: dict[str, UUID | None]
-
-    # Per-resource tool IDs (from selected agents)
-    create_tool_ids_map: dict[str, UUID | None]
-    link_tool_ids_map: dict[str, UUID | None]
 
 
 async def get_provider_internal(
@@ -127,13 +86,7 @@ async def get_provider_internal(
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
 ) -> ProviderInternalData:
-    """Core data fetching layer (cacheable).
-
-    Fetches all provider data using two-pass architecture and returns
-    a dataclass with all computed values.
-    """
-
-    # === QUERY 1: Access Check (always fresh, no cache) ===
+    """Core data fetching layer (cacheable)."""
     pool = get_pool()
     if not pool:
         raise RuntimeError("Database pool not initialized")
@@ -155,27 +108,22 @@ async def get_provider_internal(
             provider_id=provider_id,
             draft_id=draft_id,
         )
-
         access_result = cast(
             GetProviderAccessSqlRow,
             await execute_sql_typed(conn, QUERY1_SQL_PATH, params=query1_params),
         )
 
-        # Extract user context from Query 1
         user_role = access_result.user_role
         user_department_ids = access_result.user_department_ids or []
         provider_department_ids = access_result.provider_department_ids or []
         model_usage_count = access_result.model_usage_count or 0
 
-        # Early validation: check provider exists
         if provider_id is not None:
             if access_result.provider_exists is False:
                 raise HTTPException(
                     status_code=404,
                     detail=f"Provider {provider_id} not found",
                 )
-
-            # Check access
             if not has_access(user_role, user_department_ids, provider_department_ids):
                 raise HTTPException(
                     status_code=403,
@@ -188,12 +136,9 @@ async def get_provider_internal(
             else access_result.group_id
         )
         effective_draft_version = (
-            draft_item.version
-            if draft_item is not None
-            else access_result.draft_version
+            draft_item.version if draft_item is not None else access_result.draft_version
         )
 
-        # === QUERY 2: ID Fetching (using user_department_ids from Query 1) ===
         query2_params = GetProviderIdsSqlParams(
             profile_id=profile_id,
             provider_id=provider_id,
@@ -201,7 +146,6 @@ async def get_provider_internal(
             group_id=effective_group_id,
             user_department_ids=user_department_ids,
         )
-
         ids_result = cast(
             GetProviderIdsSqlRow,
             await execute_sql_typed(conn, QUERY2_SQL_PATH, params=query2_params),
@@ -211,10 +155,10 @@ async def get_provider_internal(
     selected_description_id = ids_result.description_id
     selected_active_flag_id = ids_result.active_flag_id
     selected_value_id = ids_result.value_id
-    selected_regenerates_id = ids_result.regenerates_id
+    selected_endpoint_id = ids_result.endpoint_id
+    selected_key_id = ids_result.key_id
     selected_department_ids = ids_result.department_ids or []
 
-    # Draft values override canonical provider-junction values.
     if draft_item is not None:
         if draft_item.name_ids:
             selected_name_id = draft_item.name_ids[0]
@@ -224,124 +168,76 @@ async def get_provider_internal(
             selected_active_flag_id = draft_item.flag_ids[0]
         if draft_item.value_ids:
             selected_value_id = draft_item.value_ids[0]
-        if draft_item.regenerates_ids:
-            selected_regenerates_id = draft_item.regenerates_ids[0]
+        endpoint_ids = getattr(draft_item, "endpoint_ids", [])
+        if endpoint_ids:
+            selected_endpoint_id = endpoint_ids[0]
+        key_ids = getattr(draft_item, "key_ids", [])
+        if key_ids:
+            selected_key_id = key_ids[0]
         if draft_item.department_ids:
             selected_department_ids = draft_item.department_ids
 
-    # Build per-resource group_ids from draft_item
-    resource_group_ids: dict[str, UUID | None] = {
-        "names": draft_item.group_id if draft_item else None,
-        "descriptions": draft_item.group_id if draft_item else None,
-        "flags": draft_item.group_id if draft_item else None,
-        "departments": draft_item.group_id if draft_item else None,
-        "values": draft_item.group_id if draft_item else None,
-        "regenerates": draft_item.group_id if draft_item else None,
-    }
-
-    # Get tools existence flags from Query 2
-    names_has_tools = ids_result.names_has_tools or False
-
-    # === PARSE CANDIDATE AGENTS FROM QUERY 2 AND COMPUTE AGENT IDS IN PYTHON ===
     candidate_agents = CandidateAgent.from_sql_rows(ids_result.candidate_agents)
-
-    # Use Python scoring to select best agents for each resource
-    user_dept_set = set(user_department_ids) if user_department_ids else None
-    resources_needed = list(PROVIDER_RESOURCES)
     agent_ids = select_agents_for_artifact(
         candidates=candidate_agents,
         artifact_resources=PROVIDER_RESOURCES,
-        resources_needed=resources_needed,
-        user_department_ids=user_dept_set,
+        resources_needed=list(PROVIDER_RESOURCES),
+        user_department_ids=set(user_department_ids) if user_department_ids else None,
         require_mcp=False,
     )
 
-    # === BUILD TOOL_IDS MAPS FROM SELECTED AGENTS ===
     create_tool_ids_map: dict[str, UUID | None] = {}
     link_tool_ids_map: dict[str, UUID | None] = {}
-
     for resource in PROVIDER_RESOURCES:
         selected_agent_id = agent_ids.get(resource)
-        if selected_agent_id:
-            for candidate in candidate_agents:
-                if candidate.agent_id == selected_agent_id:
-                    create_tool_ids_map[resource] = candidate.create_tool_ids.get(
-                        resource
-                    )
-                    link_tool_ids_map[resource] = candidate.link_tool_ids.get(resource)
-                    break
+        if selected_agent_id is None:
+            continue
+        for candidate in candidate_agents:
+            if candidate.agent_id == selected_agent_id:
+                create_tool_ids_map[resource] = candidate.create_tool_ids.get(resource)
+                link_tool_ids_map[resource] = candidate.link_tool_ids.get(resource)
+                break
 
-    # === EXTRACT DOMAIN IDS FROM QUERY 2 ===
-    domain_ids_map: dict[str, UUID | None] = {
-        "names": ids_result.name_domain_id,
-        "descriptions": ids_result.description_domain_id,
-        "flags": ids_result.flag_domain_id,
-        "departments": ids_result.departments_domain_id,
-        "values": ids_result.value_domain_id,
-        "regenerates": ids_result.regenerates_domain_id,
+    show_ai_generate_map = {
+        resource: agent_ids.get(resource) is not None
+        for resource in PROVIDER_RESOURCES
     }
-
-    # === COMPUTE SHOW_AI_GENERATE FLAGS ===
-    def compute_show_ai_generate(resource: str) -> bool:
-        """Returns True if domain_id exists AND agent exists for that resource."""
-        domain_id = domain_ids_map.get(resource)
-        agent_id = agent_ids.get(resource)
-        return domain_id is not None and agent_id is not None
-
-    # Per-resource show_ai_generate flags
-    name_show_ai_generate = compute_show_ai_generate("names")
-    description_show_ai_generate = compute_show_ai_generate("descriptions")
-    flag_show_ai_generate = compute_show_ai_generate("flags")
-    departments_show_ai_generate = compute_show_ai_generate("departments")
-    value_show_ai_generate = compute_show_ai_generate("values")
-    regenerates_show_ai_generate = compute_show_ai_generate("regenerates")
-
-    # Step-level show_ai_generate flags
     basic_show_ai_generate = any(
-        [
-            name_show_ai_generate,
-            description_show_ai_generate,
-            flag_show_ai_generate,
-            departments_show_ai_generate,
-        ]
+        show_ai_generate_map.get(r, False)
+        for r in ("names", "descriptions", "flags", "departments")
     )
+    integrations_show_ai_generate = any(
+        show_ai_generate_map.get(r, False) for r in ("values", "endpoints")
+    )
+    show_ai_generate_map["keys"] = False
 
-    # === PYTHON BUSINESS LOGIC ===
     can_edit = compute_can_edit(
         user_role=user_role,
         provider_department_ids=provider_department_ids,
         model_usage_count=model_usage_count,
     )
-
     disabled_reason = compute_disabled_reason(
         user_role=user_role,
         provider_department_ids=provider_department_ids,
         model_usage_count=model_usage_count,
     )
 
-    # === PASS 2: Parallel Resource Fetching ===
-
-    # Selected IDs for fetching
     name_ids = [selected_name_id] if selected_name_id else []
     description_ids = [selected_description_id] if selected_description_id else []
     flag_ids = [selected_active_flag_id] if selected_active_flag_id else []
     department_ids = selected_department_ids
     value_ids = [selected_value_id] if selected_value_id else []
-    regenerates_ids = [selected_regenerates_id] if selected_regenerates_id else []
+    endpoint_ids = [selected_endpoint_id] if selected_endpoint_id else []
+    key_ids = [selected_key_id] if selected_key_id else []
 
-    # Each query needs its own connection from the pool
+    endpoint_suggestion_ids = ids_result.endpoint_suggestion_ids or []
+    key_suggestion_ids = ids_result.key_suggestion_ids or []
+
     async def fetch_names():
         async with pool.acquire() as c:
             selected = await get_names_internal(c, name_ids, bypass_cache)
             suggestions = await search_names_internal(
-                c,
-                None,
-                20,
-                0,
-                effective_group_id,
-                "recent",
-                name_ids,
-                bypass_cache,
+                c, None, 20, 0, effective_group_id, "recent", name_ids, bypass_cache
             )
             return (selected, suggestions)
 
@@ -360,23 +256,13 @@ async def get_provider_internal(
             )
             return (selected, suggestions)
 
-    # Provider-specific flag names
-    PROVIDER_FLAG_NAMES = {"provider_active"}
-
     async def fetch_flags():
         async with pool.acquire() as c:
             selected = await get_flags_internal(c, flag_ids, bypass_cache)
             all_flags = await search_flags_internal(
-                c,
-                None,
-                50,
-                0,
-                flag_ids,
-                bypass_cache,
-                artifact_type="provider",
+                c, None, 50, 0, flag_ids, bypass_cache, artifact_type="provider"
             )
-            # Filter to only provider-specific flags
-            suggestions = [f for f in all_flags if f.name in PROVIDER_FLAG_NAMES]
+            suggestions = [f for f in all_flags if (f.name or "") == "provider_active"]
             return (selected, suggestions)
 
     async def fetch_departments():
@@ -398,113 +284,82 @@ async def get_provider_internal(
         async with pool.acquire() as c:
             selected = await get_values_internal(c, value_ids, bypass_cache)
             suggestions = await search_values_internal(
-                c,
-                None,
-                20,
-                0,
-                effective_group_id,
-                "recent",
-                value_ids,
-                bypass_cache,
+                c, None, 20, 0, effective_group_id, "recent", value_ids, bypass_cache
             )
             return (selected, suggestions)
 
-    async def fetch_regenerates():
+    async def fetch_endpoints():
         async with pool.acquire() as c:
-            selected = await get_regenerates_internal(c, regenerates_ids, bypass_cache)
-            suggestions = await search_regenerates_internal(
-                c,
-                None,
-                20,
-                0,
-                effective_group_id,
-                "recent",
-                regenerates_ids,
-                bypass_cache,
+            selected = await get_endpoints_internal(c, endpoint_ids, bypass_cache)
+            suggestions = await get_endpoints_internal(
+                c, endpoint_suggestion_ids, bypass_cache
             )
             return (selected, suggestions)
 
-    # Parallel fetch all resources
+    async def fetch_keys():
+        async with pool.acquire() as c:
+            selected = await get_keys_internal(c, key_ids, bypass_cache)
+            suggestions = await get_keys_internal(c, key_suggestion_ids, bypass_cache)
+            return (selected, suggestions)
+
     (
         (names_selected, names_suggestions),
         (descriptions_selected, descriptions_suggestions),
         (flags_selected, flags_suggestions),
         (departments_selected, departments_suggestions),
         (values_selected, values_suggestions),
-        (regenerates_selected, regenerates_suggestions),
+        (endpoints_selected, endpoints_suggestions),
+        (keys_selected, keys_suggestions),
     ) = await asyncio.gather(
         fetch_names(),
         fetch_descriptions(),
         fetch_flags(),
         fetch_departments(),
         fetch_values(),
-        fetch_regenerates(),
+        fetch_endpoints(),
+        fetch_keys(),
     )
 
     names = _dedupe_by_id(names_selected + names_suggestions, "id")
     descriptions = _dedupe_by_id(descriptions_selected + descriptions_suggestions, "id")
-    flags = _dedupe_by_id(flags_selected + flags_suggestions, "id")
+    raw_flags = _dedupe_by_id(flags_selected + flags_suggestions, "id")
     departments = _dedupe_by_id(
         departments_selected + departments_suggestions, "department_id"
     )
     values = _dedupe_by_id(values_selected + values_suggestions, "id")
-    regenerates = _dedupe_by_id(regenerates_selected + regenerates_suggestions, "id")
+    endpoints = _dedupe_by_id(endpoints_selected + endpoints_suggestions, "id")
+    keys = _dedupe_by_id(keys_selected + keys_suggestions, "id")
 
-    # Find selected resources
     name_resource = next((n for n in names if n.id == selected_name_id), None)
     description_resource = next(
-        (d for d in descriptions if d.id == selected_description_id),
-        None,
+        (d for d in descriptions if d.id == selected_description_id), None
     )
-    flag_resource = next((f for f in flags if f.id == selected_active_flag_id), None)
+    value_resource = next((v for v in values if v.id == selected_value_id), None)
+    endpoint_resource = next((e for e in endpoints if e.id == selected_endpoint_id), None)
+    key_resource = next((k for k in keys if k.id == selected_key_id), None)
     department_resources = [
         d for d in departments if d.department_id in selected_department_ids
     ]
-    value_resource = next((v for v in values if v.id == selected_value_id), None)
-    regenerates_resource = next(
-        (r for r in regenerates if r.id == selected_regenerates_id),
-        None,
-    )
 
-    name_suggestions = [n.id for n in names_suggestions]
-    description_suggestions = [d.id for d in descriptions_suggestions]
-    department_suggestions = [d.department_id for d in departments_suggestions]
-    value_suggestions = [v.id for v in values_suggestions]
-    regenerates_suggestions = [r.id for r in regenerates_suggestions]
-
-    # Compute final show flags
-    show_name = compute_show_name(names_has_tools)
-    show_description_flag = compute_show_description()
-    show_flag = compute_show_flag()
-    show_departments_flag = compute_show_departments(len(departments))
-    show_value_flag = compute_show_value()
-    show_regenerates_flag = compute_show_regenerates()
-
-    # Build show and required flags maps for domain_data
     show_flags_map = {
-        "names": show_name,
-        "descriptions": show_description_flag,
-        "flags": show_flag,
-        "departments": show_departments_flag,
-        "values": show_value_flag,
-        "regenerates": show_regenerates_flag,
+        "names": compute_show_name(ids_result.names_has_tools or False),
+        "descriptions": compute_show_description(),
+        "flags": compute_show_flag(),
+        "departments": compute_show_departments(len(departments)),
+        "values": compute_show_value(),
+        "endpoints": compute_show_endpoint(),
+        "keys": compute_show_key(),
     }
-
     required_flags_map = {
         "names": compute_name_required(),
         "descriptions": compute_description_required(),
         "flags": compute_flag_required(),
         "departments": compute_departments_required(),
         "values": compute_value_required(),
-        "regenerates": compute_regenerates_required(),
+        "endpoints": compute_endpoint_required(),
+        "keys": compute_key_required(),
     }
 
-    # Build rich domain metadata for client display
-    domain_data_list = build_domain_data(
-        domain_ids_map, show_flags_map, required_flags_map
-    )
-
-    # Transform flags to enriched format for client
     provider_flags = [
         ProviderFlagConfig(
             key=derive_flag_key_and_label(flag.name)[0],
@@ -512,101 +367,111 @@ async def get_provider_internal(
             description=flag.description,
             icon_id=flag.icon,
             flag_option_id=flag.id,
-            show=show_flag,
-            required=compute_flag_required(),
-            domain_id=domain_ids_map.get("flags"),
+            show=show_flags_map["flags"],
+            required=required_flags_map["flags"],
             generated=flag.generated,
         )
-        for flag in flags
+        for flag in raw_flags
         if flag.id
     ]
 
-    # Detail mode: check access via name_resource
+    selected_flag = next(
+        (
+            f
+            for f in provider_flags
+            if f.flag_option_id is not None and f.flag_option_id == selected_active_flag_id
+        ),
+        None,
+    )
+    selected_flags = [selected_flag] if selected_flag else []
+
+    selected_agent_ids = [aid for aid in agent_ids.values() if aid]
+    unique_agent_ids = list(dict.fromkeys(selected_agent_ids))
+    config_agents_result: list[Any] = []
+    config_models_result: list[Any] = []
+    config_providers_result: list[Any] = []
+    if unique_agent_ids:
+        async with pool.acquire() as c:
+            config_agents_result = await get_agents_internal(
+                c, unique_agent_ids, bypass_cache
+            )
+    model_ids_for_config = list(
+        dict.fromkeys(
+            [
+                getattr(agent, "model_id", None)
+                for agent in config_agents_result
+                if getattr(agent, "model_id", None) is not None
+            ]
+        )
+    )
+    if model_ids_for_config:
+        async with pool.acquire() as c:
+            config_models_result = await get_models_internal(
+                c, model_ids_for_config, bypass_cache
+            )
+    provider_ids_for_config = list(
+        dict.fromkeys(
+            [
+                getattr(model, "provider_id", None)
+                for model in config_models_result
+                if getattr(model, "provider_id", None) is not None
+            ]
+        )
+    )
+    if provider_ids_for_config:
+        async with pool.acquire() as c:
+            config_providers_result = await get_providers_internal(
+                c, provider_ids_for_config, bypass_cache
+            )
+
     if provider_id is not None and not name_resource:
         raise HTTPException(
             status_code=403,
             detail="You don't have access to this provider. It may be restricted to other departments.",
         )
 
-    # === Construct Response ===
-    resources_payload = ProviderResources(
-        resources=ProviderResourceBucket(
-            names=names,
-            descriptions=descriptions,
-            flags=provider_flags,
-            departments=departments,
-            values=values,
-            regenerates=regenerates,
-        ),
-        current=ProviderResourceBucket(
-            names=[name_resource] if name_resource else [],
-            descriptions=[description_resource] if description_resource else [],
-            flags=[flag_resource] if flag_resource else [],
-            departments=department_resources or [],
-            values=[value_resource] if value_resource else [],
-            regenerates=[regenerates_resource] if regenerates_resource else [],
-        ),
-    )
-
-    # Build domains list for WebSocket handler
-    domains_list: list[DomainAgent] = []
-    for resource, domain_id in domain_ids_map.items():
-        if domain_id is not None:
-            domains_list.append(
-                DomainAgent(
-                    domain_id=domain_id,
-                    agent_id=agent_ids.get(resource),
-                    group_id=resource_group_ids.get(resource),
-                )
-            )
-
-    # Build show_ai_generate map
-    show_ai_generate_map = {
-        "names": name_show_ai_generate,
-        "descriptions": description_show_ai_generate,
-        "flags": flag_show_ai_generate,
-        "departments": departments_show_ai_generate,
-        "values": value_show_ai_generate,
-        "regenerates": regenerates_show_ai_generate,
-    }
-
-    # Build suggestions map
-    suggestions_map = {
-        "names": name_suggestions,
-        "descriptions": description_suggestions,
-        "departments": department_suggestions,
-        "values": value_suggestions,
-        "regenerates": regenerates_suggestions,
-    }
-
     return ProviderInternalData(
-        # Access/context
         actor_name=access_result.actor_name,
         provider_exists=access_result.provider_exists,
         can_edit=can_edit,
         disabled_reason=disabled_reason,
         draft_version=effective_draft_version,
         group_id=effective_group_id,
-        # Domain mappings
-        domain_ids_map=domain_ids_map,
         agent_ids=agent_ids,
-        domains_list=domains_list,
-        # Show/required flags
         show_flags_map=show_flags_map,
         required_flags_map=required_flags_map,
-        # Suggestions
-        suggestions_map=suggestions_map,
-        # Show AI generate
+        suggestions_map={
+            "names": [n.id for n in names_suggestions if n.id],
+            "descriptions": [d.id for d in descriptions_suggestions if d.id],
+            "departments": [
+                d.department_id for d in departments_suggestions if d.department_id
+            ],
+            "values": [v.id for v in values_suggestions if v.id],
+            "endpoints": [e.id for e in endpoints_suggestions if e.id],
+            "keys": [k.id for k in keys_suggestions if k.id],
+        },
         show_ai_generate_map=show_ai_generate_map,
         basic_show_ai_generate=basic_show_ai_generate,
-        # Domain data and resources
-        domain_data_list=domain_data_list,
-        resources_payload=resources_payload,
-        # Per-resource group IDs
-        resource_group_ids=resource_group_ids,
-        # Per-resource tool IDs
+        integrations_show_ai_generate=integrations_show_ai_generate,
+        name_resource=name_resource,
+        description_resource=description_resource,
+        value_resource=value_resource,
+        endpoint_resource=endpoint_resource,
+        key_resource=key_resource,
+        provider_flags=selected_flags,
+        department_resources=department_resources,
+        names=names,
+        descriptions=descriptions,
+        flags=provider_flags,
+        departments=departments,
+        values=values,
+        endpoints=endpoints,
+        keys=keys,
         create_tool_ids_map=create_tool_ids_map,
         link_tool_ids_map=link_tool_ids_map,
+        config_agent_resources=config_agents_result or None,
+        config_model_resources=config_models_result or None,
+        config_provider_resources=config_providers_result or None,
     )
 
 
@@ -624,19 +489,51 @@ async def get_provider_websocket(
         bypass_cache=bypass_cache,
     )
 
+    draft_view = None
+    if draft_id is not None:
+        pool = get_pool()
+        if not pool:
+            raise RuntimeError("Database pool not initialized")
+        async with pool.acquire() as conn:
+            draft_items = await get_draft_provider_internal(
+                conn=conn,
+                draft_ids=[draft_id],
+                bypass_cache=bypass_cache,
+            )
+            draft_view = draft_items[0] if draft_items else None
+
+    selected_tool_ids = set()
+    for agent in data.config_agent_resources or []:
+        for tool_id in getattr(agent, "tool_ids", []) or []:
+            if tool_id:
+                selected_tool_ids.add(tool_id)
+    tools_result = None
+    if selected_tool_ids:
+        pool = get_pool()
+        if not pool:
+            raise RuntimeError("Database pool not initialized")
+        async with pool.acquire() as conn:
+            tools_result = await get_tools_internal(
+                conn, list(selected_tool_ids), bypass_cache
+            )
+
     return GetProviderWebsocketResponse(
+        views=ProviderWebsocketViews(draft_provider=draft_view) if draft_view else None,
         group_id=data.group_id,
-        # Domain IDs for domain_to_resource mapping
-        name_domain_id=data.domain_ids_map.get("names"),
-        description_domain_id=data.domain_ids_map.get("descriptions"),
-        flag_domain_id=data.domain_ids_map.get("flags"),
-        departments_domain_id=data.domain_ids_map.get("departments"),
-        value_domain_id=data.domain_ids_map.get("values"),
-        regenerates_domain_id=data.domain_ids_map.get("regenerates"),
-        # Domains mapping for agent lookup
-        domains=data.domains_list,
-        # Resources for Jinja context
-        resources=data.resources_payload,
+        resource_agent_ids=data.agent_ids,
+        resources=ProviderWebsocketResources(
+            names=[data.name_resource] if data.name_resource else None,
+            descriptions=[data.description_resource] if data.description_resource else None,
+            flags=data.provider_flags or None,
+            departments=data.department_resources or None,
+            values=[data.value_resource] if data.value_resource else None,
+            endpoints=[data.endpoint_resource] if data.endpoint_resource else None,
+            keys=[data.key_resource] if data.key_resource else None,
+            agents=data.config_agent_resources,
+            models=data.config_model_resources,
+            providers=data.config_provider_resources,
+            tools=tools_result or None,
+        ),
     )
 
 
@@ -654,79 +551,64 @@ async def get_provider_client(
         bypass_cache=bypass_cache,
     )
 
+    def section_common(resource_key: str) -> dict[str, Any]:
+        return {
+            "show": data.show_flags_map.get(resource_key, False),
+            "required": data.required_flags_map.get(resource_key, False),
+            "suggestions": data.suggestions_map.get(resource_key, []),
+            "show_ai_generate": data.show_ai_generate_map.get(resource_key, False),
+            "create_tool_id": data.create_tool_ids_map.get(resource_key),
+            "link_tool_id": data.link_tool_ids_map.get(resource_key),
+        }
+
     return GetProviderApiResponse(
-        # Required fields
         actor_name=data.actor_name,
         provider_exists=data.provider_exists,
         can_edit=data.can_edit,
         disabled_reason=data.disabled_reason,
         draft_version=data.draft_version,
         group_id=data.group_id,
-        # Per-resource group IDs
-        names_group_id=data.resource_group_ids.get("names"),
-        descriptions_group_id=data.resource_group_ids.get("descriptions"),
-        flags_group_id=data.resource_group_ids.get("flags"),
-        departments_group_id=data.resource_group_ids.get("departments"),
-        values_group_id=data.resource_group_ids.get("values"),
-        regenerates_group_id=data.resource_group_ids.get("regenerates"),
-        # Name
-        show_name=data.show_flags_map.get("names"),
-        name_domain_id=data.domain_ids_map.get("names"),
-        name_required=data.required_flags_map.get("names"),
-        name_suggestions=data.suggestions_map.get("names"),
-        name_show_ai_generate=data.show_ai_generate_map.get("names"),
-        # Description
-        show_description=data.show_flags_map.get("descriptions"),
-        description_domain_id=data.domain_ids_map.get("descriptions"),
-        description_required=data.required_flags_map.get("descriptions"),
-        description_suggestions=data.suggestions_map.get("descriptions"),
-        description_show_ai_generate=data.show_ai_generate_map.get("descriptions"),
-        # Flag
-        show_flag=data.show_flags_map.get("flags"),
-        flag_domain_id=data.domain_ids_map.get("flags"),
-        flag_required=data.required_flags_map.get("flags"),
-        flag_show_ai_generate=data.show_ai_generate_map.get("flags"),
-        # Departments
-        show_departments=data.show_flags_map.get("departments"),
-        departments_domain_id=data.domain_ids_map.get("departments"),
-        departments_required=data.required_flags_map.get("departments"),
-        department_suggestions=data.suggestions_map.get("departments"),
-        departments_show_ai_generate=data.show_ai_generate_map.get("departments"),
-        # Value
-        show_value=data.show_flags_map.get("values"),
-        value_domain_id=data.domain_ids_map.get("values"),
-        value_required=data.required_flags_map.get("values"),
-        value_suggestions=data.suggestions_map.get("values"),
-        value_show_ai_generate=data.show_ai_generate_map.get("values"),
-        # Regenerates
-        show_regenerates=data.show_flags_map.get("regenerates"),
-        regenerates_domain_id=data.domain_ids_map.get("regenerates"),
-        regenerates_required=data.required_flags_map.get("regenerates"),
-        regenerates_suggestions=data.suggestions_map.get("regenerates"),
-        regenerates_show_ai_generate=data.show_ai_generate_map.get("regenerates"),
-        # Step-level AI generation flags
         basic_show_ai_generate=data.basic_show_ai_generate,
-        # Domain metadata for client display in modals
-        domain_data=data.domain_data_list,
-        # Resources
-        resources=data.resources_payload,
-        # Per-resource CREATE tool IDs
-        name_create_tool_id=data.create_tool_ids_map.get("names"),
-        description_create_tool_id=data.create_tool_ids_map.get("descriptions"),
-        value_create_tool_id=data.create_tool_ids_map.get("values"),
-        regenerates_create_tool_id=data.create_tool_ids_map.get("regenerates"),
-        # Per-resource LINK tool IDs
-        name_link_tool_id=data.link_tool_ids_map.get("names"),
-        description_link_tool_id=data.link_tool_ids_map.get("descriptions"),
-        flag_link_tool_id=data.link_tool_ids_map.get("flags"),
-        departments_link_tool_id=data.link_tool_ids_map.get("departments"),
-        value_link_tool_id=data.link_tool_ids_map.get("values"),
-        regenerates_link_tool_id=data.link_tool_ids_map.get("regenerates"),
+        integrations_show_ai_generate=data.integrations_show_ai_generate,
+        names=ProviderNameSection(
+            resource=data.name_resource,
+            resources=data.names,
+            **section_common("names"),
+        ),
+        descriptions=ProviderDescriptionSection(
+            resource=data.description_resource,
+            resources=data.descriptions,
+            **section_common("descriptions"),
+        ),
+        flags=ProviderFlagSection(
+            current=data.provider_flags or None,
+            resources=data.flags,
+            **section_common("flags"),
+        ),
+        departments=ProviderDepartmentSection(
+            current=data.department_resources or None,
+            resources=data.departments,
+            **section_common("departments"),
+        ),
+        values=ProviderValueSection(
+            resource=data.value_resource,
+            resources=data.values,
+            **section_common("values"),
+        ),
+        endpoints=ProviderEndpointSection(
+            resource=data.endpoint_resource,
+            resources=data.endpoints,
+            **section_common("endpoints"),
+        ),
+        keys=ProviderKeySection(
+            resource=data.key_resource,
+            resources=data.keys,
+            **section_common("keys"),
+        ),
     )
 
 
 def derive_flag_key_and_label(name: str | None) -> tuple[str, str]:
-    """Derive key and label from flag name like 'provider_active' -> ('active', 'Active')"""
     if not name:
         return ("unknown", "Unknown")
     key = name.replace("provider_", "")
@@ -735,7 +617,6 @@ def derive_flag_key_and_label(name: str | None) -> tuple[str, str]:
 
 
 def _dedupe_by_id(items: list[Any], id_attr: str) -> list[Any]:
-    """Preserve order while deduplicating by id attribute."""
     seen: set[UUID] = set()
     output: list[Any] = []
     for item in items:
@@ -763,11 +644,10 @@ async def get_provider(
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetProviderApiResponse:
     """Get provider information using two-pass architecture."""
-    # Check for cache bypass header
+    _ = conn
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     try:
-        # Get profile_id from header (set by router-level dependency)
         profile_id = http_request.state.profile_id
         if not profile_id:
             raise HTTPException(
@@ -775,7 +655,6 @@ async def get_provider(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Call the client (BFF) function
         response_data = await get_provider_client(
             profile_id=profile_id,
             provider_id=request.provider_id,
@@ -783,17 +662,11 @@ async def get_provider(
             bypass_cache=bypass_cache,
         )
 
-        # Set audit context
         if response_data.actor_name:
             audit_ctx: dict[str, Any] = {
                 "actor": {"name": response_data.actor_name, "id": profile_id}
             }
-            current_name = None
-            current_resources = (
-                response_data.resources.current if response_data.resources else None
-            )
-            if current_resources and current_resources.names:
-                current_name = getattr(current_resources.names[0], "name", None)
+            current_name = response_data.names.resource.name if response_data.names else None
             if request.provider_id and current_name:
                 audit_ctx["provider"] = {
                     "name": current_name,
@@ -801,11 +674,9 @@ async def get_provider(
                 }
             audit_set(http_request, **audit_ctx)
 
-        # No global cache - individual resources are cached
         response.headers["X-Cache-Tags"] = "providers"
         response.headers["X-Cache-Hit"] = "0"
         response.headers["X-Two-Pass"] = "1"
-
         return response_data
     except HTTPException:
         raise

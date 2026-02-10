@@ -7,15 +7,23 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.api.v4.types import DomainAgent, DomainData
+from app.api.v4.types import DomainData
+from app.api.v4.views.drafts.types import DraftEvalViewItem
 from app.sql.types import (
+    QGetAgentsV4Item,
     QGetDepartmentsV4Item,
     QGetDescriptionsV4Item,
+    QGetGroupPositionsV4Item,
+    QGetGroupRubricsV4Item,
+    QGetModelsV4Item,
     QGetNamesV4Item,
+    QGetProvidersV4Item,
+    QGetRunPositionsV4Item,
+    QGetRunRubricsV4Item,
+    QGetToolsV4Item,
 )
 
-# Re-export for backwards compatibility
-__all__ = ["DomainAgent", "DomainData"]
+__all__ = ["DomainData"]
 
 
 # ========== Eval-specific resource types ==========
@@ -232,31 +240,32 @@ class GetEvalApiResponse(BaseModel):
     available_groups: list[EvalAvailableGroup] | None = None
 
 
+class EvalWebsocketViews(BaseModel):
+    draft_eval: DraftEvalViewItem | None = None
+
+
+class EvalWebsocketResources(BaseModel):
+    names: list[QGetNamesV4Item] | None = None
+    descriptions: list[QGetDescriptionsV4Item] | None = None
+    flags: list[EvalFlagConfig] | None = None
+    departments: list[QGetDepartmentsV4Item] | None = None
+    eval_agents: list[EvalAgentItem] | None = None
+    rubrics: list[EvalRubricItem] | None = None
+    run_positions: list[QGetRunPositionsV4Item] | None = None
+    group_positions: list[QGetGroupPositionsV4Item] | None = None
+    run_rubrics: list[QGetRunRubricsV4Item] | None = None
+    group_rubrics: list[QGetGroupRubricsV4Item] | None = None
+    agents: list[QGetAgentsV4Item] | None = None
+    models: list[QGetModelsV4Item] | None = None
+    providers: list[QGetProvidersV4Item] | None = None
+    tools: list[QGetToolsV4Item] | None = None
+
+
 class GetEvalWebsocketResponse(BaseModel):
-    """Minimal response for WebSocket handlers (get_eval_websocket).
-
-    Contains only what's needed for AI generation:
-    - Domain IDs (for domain_to_resource mapping)
-    - Domains list (for agent_id lookup)
-    - Group ID
-    - Resources (for Jinja template context)
-    """
-
+    views: EvalWebsocketViews | None = None
+    resources: EvalWebsocketResources
+    resource_agent_ids: dict[str, UUID | None] | None = None
     group_id: UUID | None = None
-
-    # Domain IDs for domain_to_resource mapping
-    name_domain_id: UUID | None = None
-    description_domain_id: UUID | None = None
-    flag_domain_id: UUID | None = None
-    departments_domain_id: UUID | None = None
-    agents_domain_id: UUID | None = None
-    rubrics_domain_id: UUID | None = None
-
-    # Domains mapping (domain_id -> agent_id)
-    domains: list[DomainAgent] | None = None
-
-    # Resources for Jinja template context
-    resources: EvalResources | None = None
 
 
 class EvalResourceBucket(BaseModel):

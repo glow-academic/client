@@ -4,9 +4,6 @@ This implements the three-layer BFF pattern:
 1. get_auth_internal() - Core data fetching (cacheable, returns dataclass)
 2. get_auth_websocket() - Minimal data for WebSocket handlers
 3. get_auth_client() - Full BFF response for HTTP endpoint/frontend
-
-The internal layer handles SQL queries and resource fetching.
-The presentation layers transform internal data into consumer-specific formats.
 """
 
 import asyncio
@@ -19,7 +16,6 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.artifacts.auth.permissions import (
     AUTH_RESOURCES,
-    build_domain_data,
     compute_can_edit,
     compute_description_required,
     compute_disabled_reason,
@@ -34,27 +30,38 @@ from app.api.v4.artifacts.auth.permissions import (
     compute_slugs_required,
 )
 from app.api.v4.artifacts.auth.types import (
+    AuthDescriptionSection,
     AuthFlagConfig,
-    AuthItemData,
-    AuthResourceBucket,
-    AuthResources,
-    DomainAgent,
+    AuthFlagSection,
+    AuthItemResource,
+    AuthItemSection,
+    AuthNameSection,
+    AuthProtocolSection,
+    AuthSlugSection,
+    AuthWebsocketResources,
+    AuthWebsocketViews,
     GetAuthApiRequest,
     GetAuthApiResponse,
     GetAuthWebsocketResponse,
 )
 from app.api.v4.permissions import select_agents_for_artifact
+from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.descriptions.get import get_descriptions_internal
 from app.api.v4.resources.descriptions.search import search_descriptions_internal
 from app.api.v4.resources.flags.get import get_flags_internal
 from app.api.v4.resources.flags.search import search_flags_internal
+from app.api.v4.resources.items.get import get_items_internal
+from app.api.v4.resources.models.get import get_models_internal
 from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.names.search import search_names_internal
 from app.api.v4.resources.protocols.get import get_protocols_internal
 from app.api.v4.resources.protocols.search import search_protocols_internal
+from app.api.v4.resources.providers.get import get_providers_internal
 from app.api.v4.resources.slugs.get import get_slugs_internal
 from app.api.v4.resources.slugs.search import search_slugs_internal
+from app.api.v4.resources.tools.get import get_tools_internal
 from app.api.v4.types import CandidateAgent
+from app.api.v4.views.drafts.get import get_draft_auth_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -63,7 +70,6 @@ from app.sql.types import (
     GetAuthAccessSqlRow,
     GetAuthIdsSqlParams,
     GetAuthIdsSqlRow,
-    load_sql_query,
 )
 from app.utils.sql_helper import execute_sql_typed
 
@@ -76,25 +82,16 @@ router = APIRouter()
 
 @dataclass
 class AuthInternalData:
-    """Internal data from core auth fetching (cacheable layer).
-
-    This dataclass contains all computed data needed by both:
-    - get_auth_websocket() - minimal data for WebSocket handlers
-    - get_auth_client() - full BFF response for HTTP/frontend
-    """
-
-    # Access/context
     actor_name: str | None
     auth_exists: bool | None
     can_edit: bool
     disabled_reason: str | None
     draft_version: int | None
     group_id: UUID | None
+    draft_view: Any | None
 
-    # Domain mappings
-    domain_ids_map: dict[str, UUID | None]
-    agent_ids: dict[str, UUID | None]
-    domains_list: list[DomainAgent]
+    # Agent mappings (resource_type -> agent_id)
+    resource_agent_ids: dict[str, UUID | None]
 
     # Show/required flags
     show_flags_map: dict[str, bool]
@@ -103,25 +100,33 @@ class AuthInternalData:
     # Suggestions (resource -> list of suggestion IDs)
     suggestions_map: dict[str, list[UUID]]
 
-    # Show AI generate flags (computed: domain_id exists AND agent exists)
+    # Show AI generate flags
     show_ai_generate_map: dict[str, bool]
     basic_show_ai_generate: bool
 
-    # Domain data for modals
-    domain_data_list: list[Any]  # list[DomainData]
+    # Resources
+    names: list[Any]
+    descriptions: list[Any]
+    flags: list[AuthFlagConfig]
+    protocols: list[Any]
+    slugs: list[Any]
+    items: list[AuthItemResource]
 
-    # Resources payload
-    resources_payload: AuthResources
+    names_current: list[Any]
+    descriptions_current: list[Any]
+    flags_current: list[AuthFlagConfig]
+    protocols_current: list[Any]
+    slugs_current: list[Any]
 
-    # Per-resource group IDs
-    resource_group_ids: dict[str, UUID | None]
+    # Config resources for websocket generation context
+    config_agents: list[Any]
+    config_models: list[Any]
+    config_providers: list[Any]
+    config_tools: list[Any]
 
     # Per-resource tool IDs (from selected agents)
     create_tool_ids_map: dict[str, UUID | None]
     link_tool_ids_map: dict[str, UUID | None]
-
-    # Auth items (special junction)
-    auth_items: list[AuthItemData]
 
 
 async def get_auth_internal(
@@ -130,61 +135,65 @@ async def get_auth_internal(
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
 ) -> AuthInternalData:
-    """Core data fetching layer (cacheable).
-
-    Fetches all auth data using two-pass architecture and returns
-    a dataclass with all computed values. This is the shared layer used by:
-    - get_auth_websocket() - minimal data for WebSocket handlers
-    - get_auth_client() - full BFF response for HTTP/frontend
-    """
-
-    # === QUERY 1: Access Check (always fresh, no cache) ===
     pool = get_pool()
     if not pool:
         raise RuntimeError("Database pool not initialized")
 
-    async with pool.acquire() as conn:
-        query1_params = GetAuthAccessSqlParams(
-            profile_id=profile_id,
-            auth_id=auth_id,
-            draft_id=draft_id,
-        )
+    draft_item = None
+    if draft_id is not None:
+        async with pool.acquire() as draft_conn:
+            draft_items = await get_draft_auth_internal(
+                conn=draft_conn,
+                draft_ids=[draft_id],
+                bypass_cache=bypass_cache,
+            )
+            if draft_items:
+                draft_item = draft_items[0]
 
+    async with pool.acquire() as conn:
         access_result = cast(
             GetAuthAccessSqlRow,
-            await execute_sql_typed(conn, QUERY1_SQL_PATH, params=query1_params),
+            await execute_sql_typed(
+                conn,
+                QUERY1_SQL_PATH,
+                params=GetAuthAccessSqlParams(
+                    profile_id=profile_id,
+                    auth_id=auth_id,
+                    draft_id=draft_id,
+                ),
+            ),
         )
 
-        # Extract user context from Query 1
         user_role = access_result.user_role
         user_department_ids = access_result.user_department_ids or []
 
-        # Early validation: check auth exists
-        if auth_id is not None:
-            if access_result.auth_exists is False:
-                raise HTTPException(
-                    status_code=404,
-                    detail=f"Auth {auth_id} not found",
-                )
+        if auth_id is not None and access_result.auth_exists is False:
+            raise HTTPException(status_code=404, detail=f"Auth {auth_id} not found")
 
-        effective_group_id = access_result.group_id
-        effective_draft_version = access_result.draft_version
-
-        # === QUERY 2: ID Fetching (using user_department_ids from Query 1) ===
-        query2_params = GetAuthIdsSqlParams(
-            profile_id=profile_id,
-            auth_id=auth_id,
-            draft_id=draft_id,
-            group_id=effective_group_id,
-            user_department_ids=user_department_ids,
+        effective_group_id = (
+            draft_item.group_id
+            if draft_item is not None and draft_item.group_id is not None
+            else access_result.group_id
+        )
+        effective_draft_version = (
+            draft_item.version if draft_item is not None else access_result.draft_version
         )
 
         ids_result = cast(
             GetAuthIdsSqlRow,
-            await execute_sql_typed(conn, QUERY2_SQL_PATH, params=query2_params),
+            await execute_sql_typed(
+                conn,
+                QUERY2_SQL_PATH,
+                params=GetAuthIdsSqlParams(
+                    profile_id=profile_id,
+                    auth_id=auth_id,
+                    draft_id=draft_id,
+                    group_id=effective_group_id,
+                    user_department_ids=user_department_ids,
+                ),
+            ),
         )
 
-    # Extract selected IDs from Query 2
     selected_name_id = ids_result.name_id
     selected_description_id = ids_result.description_id
     selected_active_flag_id = ids_result.active_flag_id
@@ -192,85 +201,71 @@ async def get_auth_internal(
     selected_slug_ids = ids_result.slug_ids or []
     auth_item_ids = ids_result.auth_item_ids or []
 
-    # Get tools existence flags from Query 2 (used for show_* UI flags)
+    if draft_item is not None:
+        if draft_item.name_ids:
+            selected_name_id = draft_item.name_ids[0]
+        if draft_item.description_ids:
+            selected_description_id = draft_item.description_ids[0]
+        if draft_item.flag_ids:
+            selected_active_flag_id = draft_item.flag_ids[0]
+        if draft_item.protocol_ids:
+            selected_protocol_ids = draft_item.protocol_ids
+        if draft_item.slug_ids:
+            selected_slug_ids = draft_item.slug_ids
+
     names_has_tools = ids_result.names_has_tools or False
     protocols_has_tools = ids_result.protocols_has_tools or False
     slugs_has_tools = ids_result.slugs_has_tools or False
 
-    # === PARSE CANDIDATE AGENTS FROM QUERY 2 AND COMPUTE AGENT IDS IN PYTHON ===
+    # Agent scoring
     candidate_agents = CandidateAgent.from_sql_rows(ids_result.candidate_agents)
-
-    # Use Python scoring to select best agents for each resource
     user_dept_set = set(user_department_ids) if user_department_ids else None
-    resources_needed = list(AUTH_RESOURCES)
-    agent_ids = select_agents_for_artifact(
+    resource_agent_ids = select_agents_for_artifact(
         candidates=candidate_agents,
         artifact_resources=AUTH_RESOURCES,
-        resources_needed=resources_needed,
+        resources_needed=list(AUTH_RESOURCES),
         user_department_ids=user_dept_set,
         require_mcp=False,
     )
 
-    # === BUILD TOOL_IDS MAPS FROM SELECTED AGENTS ===
     create_tool_ids_map: dict[str, UUID | None] = {}
     link_tool_ids_map: dict[str, UUID | None] = {}
-
     for resource in AUTH_RESOURCES:
-        selected_agent_id = agent_ids.get(resource)
-        if selected_agent_id:
-            for candidate in candidate_agents:
-                if candidate.agent_id == selected_agent_id:
-                    create_tool_ids_map[resource] = candidate.create_tool_ids.get(
-                        resource
-                    )
-                    link_tool_ids_map[resource] = candidate.link_tool_ids.get(resource)
-                    break
+        selected_agent_id = resource_agent_ids.get(resource)
+        if not selected_agent_id:
+            continue
+        for candidate in candidate_agents:
+            if candidate.agent_id == selected_agent_id:
+                create_tool_ids_map[resource] = candidate.create_tool_ids.get(resource)
+                link_tool_ids_map[resource] = candidate.link_tool_ids.get(resource)
+                break
 
-    # === EXTRACT DOMAIN IDS FROM QUERY 2 ===
-    domain_ids_map: dict[str, UUID | None] = {
-        "names": ids_result.name_domain_id,
-        "descriptions": ids_result.description_domain_id,
-        "flags": ids_result.flag_domain_id,
-        "protocols": ids_result.protocols_domain_id,
-        "slugs": ids_result.slugs_domain_id,
-    }
-
-    # === COMPUTE SHOW_AI_GENERATE FLAGS ===
     def compute_show_ai_generate(resource: str) -> bool:
-        """Returns True if domain_id exists AND agent exists for that resource."""
-        domain_id = domain_ids_map.get(resource)
-        agent_id_val = agent_ids.get(resource)
-        return domain_id is not None and agent_id_val is not None
+        return resource_agent_ids.get(resource) is not None
 
-    name_show_ai_generate = compute_show_ai_generate("names")
-    description_show_ai_generate = compute_show_ai_generate("descriptions")
-    flag_show_ai_generate = compute_show_ai_generate("flags")
-    protocols_show_ai_generate = compute_show_ai_generate("protocols")
-    slugs_show_ai_generate = compute_show_ai_generate("slugs")
-
-    # Step-level show_ai_generate flag
+    show_ai_generate_map = {
+        "names": compute_show_ai_generate("names"),
+        "descriptions": compute_show_ai_generate("descriptions"),
+        "flags": compute_show_ai_generate("flags"),
+        "protocols": compute_show_ai_generate("protocols"),
+        "slugs": compute_show_ai_generate("slugs"),
+    }
     basic_show_ai_generate = any(
         [
-            name_show_ai_generate,
-            description_show_ai_generate,
-            flag_show_ai_generate,
+            show_ai_generate_map["names"],
+            show_ai_generate_map["descriptions"],
+            show_ai_generate_map["flags"],
         ]
     )
 
-    # === PYTHON BUSINESS LOGIC ===
     can_edit = compute_can_edit(user_role=user_role)
     disabled_reason = compute_disabled_reason(user_role=user_role)
 
-    # === PASS 2: Parallel Resource Fetching ===
-
-    # Selected IDs for fetching
     name_ids = [selected_name_id] if selected_name_id else []
     description_ids = [selected_description_id] if selected_description_id else []
     flag_ids = [selected_active_flag_id] if selected_active_flag_id else []
-    protocol_ids = selected_protocol_ids
-    slug_ids = selected_slug_ids
 
-    async def fetch_names():
+    async def fetch_names() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
             selected = await get_names_internal(c, name_ids, bypass_cache)
             suggestions = await search_names_internal(
@@ -285,7 +280,7 @@ async def get_auth_internal(
             )
             return (selected, suggestions)
 
-    async def fetch_descriptions():
+    async def fetch_descriptions() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
             selected = await get_descriptions_internal(c, description_ids, bypass_cache)
             suggestions = await search_descriptions_internal(
@@ -302,7 +297,7 @@ async def get_auth_internal(
 
     AUTH_FLAG_NAMES = {"auth_active"}
 
-    async def fetch_flags():
+    async def fetch_flags() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
             selected = await get_flags_internal(c, flag_ids, bypass_cache)
             all_flags = await search_flags_internal(
@@ -314,13 +309,12 @@ async def get_auth_internal(
                 bypass_cache,
                 artifact_type="auth",
             )
-            # Filter to only auth-specific flags
             suggestions = [f for f in all_flags if f.name in AUTH_FLAG_NAMES]
             return (selected, suggestions)
 
-    async def fetch_protocols():
+    async def fetch_protocols() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
-            selected = await get_protocols_internal(c, protocol_ids, bypass_cache)
+            selected = await get_protocols_internal(c, selected_protocol_ids, bypass_cache)
             suggestions = await search_protocols_internal(
                 c,
                 None,
@@ -328,14 +322,14 @@ async def get_auth_internal(
                 0,
                 effective_group_id,
                 "recent",
-                protocol_ids,
+                selected_protocol_ids,
                 bypass_cache,
             )
             return (selected, suggestions)
 
-    async def fetch_slugs():
+    async def fetch_slugs() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
-            selected = await get_slugs_internal(c, slug_ids, bypass_cache)
+            selected = await get_slugs_internal(c, selected_slug_ids, bypass_cache)
             suggestions = await search_slugs_internal(
                 c,
                 None,
@@ -343,119 +337,87 @@ async def get_auth_internal(
                 0,
                 effective_group_id,
                 "recent",
-                slug_ids,
+                selected_slug_ids,
                 bypass_cache,
             )
             return (selected, suggestions)
 
-    async def fetch_auth_items():
-        """Fetch auth items from items_resource using IDs from Q2."""
+    async def fetch_items() -> list[AuthItemResource]:
         if not auth_item_ids:
             return []
         async with pool.acquire() as c:
-            # Direct SQL query for auth items
-            items_sql = """
-                SELECT
-                    i.id as auth_item_id,
-                    i.name,
-                    i.description,
-                    i.position,
-                    i.active,
-                    CASE
-                        WHEN i.encrypted THEN '••••••••'
-                        ELSE i.name
-                    END as value_masked,
-                    NULL::uuid as key_id,
-                    i.encrypted
-                FROM items_resource i
-                WHERE i.id = ANY($1::uuid[])
-                ORDER BY i.position
-            """
-            rows = await c.fetch(items_sql, auth_item_ids)
+            items = await get_items_internal(c, auth_item_ids, bypass_cache)
             return [
-                AuthItemData(
-                    auth_item_id=row["auth_item_id"],
-                    name=row["name"],
-                    description=row["description"],
-                    position=row["position"],
-                    active=row["active"],
-                    value_masked=row["value_masked"],
-                    key_id=row["key_id"],
-                    encrypted=row["encrypted"],
+                AuthItemResource(
+                    auth_item_id=item.id,
+                    name=item.name,
+                    description=item.description,
+                    position=item.position,
+                    active=True,
+                    value_masked=None,
+                    key_id=None,
+                    encrypted=item.encrypted,
+                    generated=item.generated,
                 )
-                for row in rows
+                for item in items
             ]
 
-    # Parallel fetch all resources
     (
         (names_selected, names_suggestions),
         (descriptions_selected, descriptions_suggestions),
         (flags_selected, flags_suggestions),
         (protocols_selected, protocols_suggestions),
         (slugs_selected, slugs_suggestions),
-        auth_items,
+        items,
     ) = await asyncio.gather(
         fetch_names(),
         fetch_descriptions(),
         fetch_flags(),
         fetch_protocols(),
         fetch_slugs(),
-        fetch_auth_items(),
+        fetch_items(),
     )
 
-    # Dedupe resources
     names = _dedupe_by_id(names_selected + names_suggestions, "id")
     descriptions = _dedupe_by_id(descriptions_selected + descriptions_suggestions, "id")
-    flags = _dedupe_by_id(flags_selected + flags_suggestions, "id")
+    flags_raw = _dedupe_by_id(flags_selected + flags_suggestions, "id")
     protocols = _dedupe_by_id(protocols_selected + protocols_suggestions, "id")
     slugs = _dedupe_by_id(slugs_selected + slugs_suggestions, "id")
 
-    # Find selected resources
     name_resource = next((n for n in names if n.id == selected_name_id), None)
     description_resource = next(
         (d for d in descriptions if d.id == selected_description_id),
         None,
     )
-    flag_resource = next((f for f in flags if f.id == selected_active_flag_id), None)
-    protocol_resources = [p for p in protocols if p.id in selected_protocol_ids]
-    slug_resources = [s for s in slugs if s.id in selected_slug_ids]
+    protocols_current = [p for p in protocols if p.id in selected_protocol_ids]
+    slugs_current = [s for s in slugs if s.id in selected_slug_ids]
 
-    # Build suggestion ID lists
-    name_suggestions = [n.id for n in names_suggestions]
-    description_suggestions = [d.id for d in descriptions_suggestions]
-    protocol_suggestions_ids = [p.id for p in protocols_suggestions]
-    slug_suggestions_ids = [s.id for s in slugs_suggestions]
-
-    # Compute show flags
-    show_name = compute_show_name(names_has_tools)
-    show_description_flag = compute_show_description()
-    show_flag = compute_show_flag()
-    show_protocols_flag = compute_show_protocols(protocols_has_tools, len(protocols))
-    show_slugs_flag = compute_show_slugs(slugs_has_tools, len(slugs))
-
-    # Build show and required flags maps
     show_flags_map = {
-        "names": show_name,
-        "descriptions": show_description_flag,
-        "flags": show_flag,
-        "protocols": show_protocols_flag,
-        "slugs": show_slugs_flag,
+        "names": compute_show_name(names_has_tools),
+        "descriptions": compute_show_description(),
+        "flags": compute_show_flag(),
+        "protocols": compute_show_protocols(protocols_has_tools, len(protocols)),
+        "slugs": compute_show_slugs(slugs_has_tools, len(slugs)),
+        "items": True,
     }
 
     required_flags_map = {
         "names": compute_name_required(),
         "descriptions": compute_description_required(),
         "flags": compute_flag_required(),
-        "protocols": compute_protocols_required(show_protocols_flag),
-        "slugs": compute_slugs_required(show_slugs_flag),
+        "protocols": compute_protocols_required(show_flags_map["protocols"]),
+        "slugs": compute_slugs_required(show_flags_map["slugs"]),
+        "items": False,
     }
 
-    # Build rich domain metadata for client display
-    domain_data_list = build_domain_data(
-        domain_ids_map, show_flags_map, required_flags_map
-    )
+    suggestions_map: dict[str, list[UUID]] = {
+        "names": [n.id for n in names_suggestions if n.id],
+        "descriptions": [d.id for d in descriptions_suggestions if d.id],
+        "protocols": [p.id for p in protocols_suggestions if p.id],
+        "slugs": [s.id for s in slugs_suggestions if s.id],
+        "items": [],
+    }
 
-    # Transform flags to enriched format for client
     auth_flags = [
         AuthFlagConfig(
             key=derive_flag_key_and_label(flag.name)[0],
@@ -463,100 +425,109 @@ async def get_auth_internal(
             description=flag.description,
             icon_id=flag.icon,
             flag_option_id=flag.id,
-            show=show_flag,
-            required=compute_flag_required(),
-            domain_id=domain_ids_map.get("flags"),
+            show=show_flags_map["flags"],
+            required=required_flags_map["flags"],
             generated=flag.generated,
         )
-        for flag in flags
+        for flag in flags_raw
         if flag.id
     ]
 
-    # === Construct Response ===
-    resources_payload = AuthResources(
-        resources=AuthResourceBucket(
-            names=names,
-            descriptions=descriptions,
-            flags=auth_flags,
-            protocols=protocols,
-            slugs=slugs,
-        ),
-        current=AuthResourceBucket(
-            names=[name_resource] if name_resource else [],
-            descriptions=[description_resource] if description_resource else [],
-            flags=[flag_resource] if flag_resource else [],
-            protocols=protocol_resources or [],
-            slugs=slug_resources or [],
-        ),
+    selected_flag_config = (
+        [
+            cfg
+            for cfg in auth_flags
+            if cfg.flag_option_id is not None and cfg.flag_option_id == selected_active_flag_id
+        ]
+        if selected_active_flag_id
+        else []
     )
 
-    # Build domains list for WebSocket handler
-    domains_list: list[DomainAgent] = []
-    # Per-resource group IDs (not from drafts view for auth — set to None)
-    resource_group_ids: dict[str, UUID | None] = {
-        "names": None,
-        "descriptions": None,
-        "flags": None,
-        "protocols": None,
-        "slugs": None,
-    }
-    for resource, domain_id in domain_ids_map.items():
-        if domain_id is not None:
-            domains_list.append(
-                DomainAgent(
-                    domain_id=domain_id,
-                    agent_id=agent_ids.get(resource),
-                    group_id=resource_group_ids.get(resource),
-                )
+    selected_agent_ids = [aid for aid in resource_agent_ids.values() if aid is not None]
+    selected_agent_ids = list(dict.fromkeys(selected_agent_ids))
+    config_agents: list[Any] = []
+    config_models: list[Any] = []
+    config_providers: list[Any] = []
+    config_tools: list[Any] = []
+    if selected_agent_ids:
+        async with pool.acquire() as c:
+            config_agents = await get_agents_internal(
+                c,
+                selected_agent_ids,
+                bypass_cache=bypass_cache,
             )
 
-    # Build show_ai_generate map
-    show_ai_generate_map = {
-        "names": name_show_ai_generate,
-        "descriptions": description_show_ai_generate,
-        "flags": flag_show_ai_generate,
-        "protocols": protocols_show_ai_generate,
-        "slugs": slugs_show_ai_generate,
-    }
+        model_ids = list(
+            dict.fromkeys([a.model_id for a in config_agents if a.model_id is not None])
+        )
+        if model_ids:
+            async with pool.acquire() as c:
+                config_models = await get_models_internal(
+                    c,
+                    model_ids,
+                    bypass_cache=bypass_cache,
+                )
 
-    # Build suggestions map
-    suggestions_map: dict[str, list[UUID]] = {
-        "names": name_suggestions,
-        "descriptions": description_suggestions,
-        "protocols": protocol_suggestions_ids,
-        "slugs": slug_suggestions_ids,
-    }
+        provider_ids = list(
+            dict.fromkeys(
+                [m.provider_id for m in config_models if m.provider_id is not None]
+            )
+        )
+        if provider_ids:
+            async with pool.acquire() as c:
+                config_providers = await get_providers_internal(
+                    c,
+                    provider_ids,
+                    bypass_cache=bypass_cache,
+                )
+
+        tool_ids: list[UUID] = []
+        for agent in config_agents:
+            raw = getattr(agent, "tool_ids", None) or []
+            tool_ids.extend([tid for tid in raw if tid is not None])
+        tool_ids = list(dict.fromkeys(tool_ids))
+        if tool_ids:
+            async with pool.acquire() as c:
+                config_tools = await get_tools_internal(
+                    c,
+                    tool_ids,
+                    bypass_cache=bypass_cache,
+                )
 
     return AuthInternalData(
-        # Access/context
         actor_name=access_result.actor_name,
         auth_exists=access_result.auth_exists,
         can_edit=can_edit,
         disabled_reason=disabled_reason,
         draft_version=effective_draft_version,
         group_id=effective_group_id,
-        # Domain mappings
-        domain_ids_map=domain_ids_map,
-        agent_ids=agent_ids,
-        domains_list=domains_list,
-        # Show/required flags
+        draft_view=draft_item,
+        resource_agent_ids=resource_agent_ids,
         show_flags_map=show_flags_map,
         required_flags_map=required_flags_map,
-        # Suggestions
         suggestions_map=suggestions_map,
-        # Show AI generate
-        show_ai_generate_map=show_ai_generate_map,
+        show_ai_generate_map={
+            **show_ai_generate_map,
+            "items": compute_show_ai_generate("items"),
+        },
         basic_show_ai_generate=basic_show_ai_generate,
-        # Domain data and resources
-        domain_data_list=domain_data_list,
-        resources_payload=resources_payload,
-        # Per-resource group IDs
-        resource_group_ids=resource_group_ids,
-        # Per-resource tool IDs
+        names=names,
+        descriptions=descriptions,
+        flags=auth_flags,
+        protocols=protocols,
+        slugs=slugs,
+        items=items,
+        names_current=[name_resource] if name_resource else [],
+        descriptions_current=[description_resource] if description_resource else [],
+        flags_current=selected_flag_config,
+        protocols_current=protocols_current,
+        slugs_current=slugs_current,
+        config_agents=config_agents,
+        config_models=config_models,
+        config_providers=config_providers,
+        config_tools=config_tools,
         create_tool_ids_map=create_tool_ids_map,
         link_tool_ids_map=link_tool_ids_map,
-        # Auth items
-        auth_items=auth_items,
     )
 
 
@@ -566,14 +537,7 @@ async def get_auth_websocket(
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
 ) -> GetAuthWebsocketResponse:
-    """Minimal response for WebSocket handlers.
-
-    Returns only what's needed for AI generation:
-    - Domain IDs (for domain_to_resource mapping)
-    - Domains list (for agent_id lookup)
-    - Group ID (for existing group context)
-    - Resources (for Jinja template context)
-    """
+    """Minimal response for websocket handlers."""
     data = await get_auth_internal(
         profile_id=profile_id,
         auth_id=auth_id,
@@ -582,17 +546,21 @@ async def get_auth_websocket(
     )
 
     return GetAuthWebsocketResponse(
+        views=AuthWebsocketViews(draft_auth=data.draft_view),
+        resources=AuthWebsocketResources(
+            names=data.names_current,
+            descriptions=data.descriptions_current,
+            flags=data.flags_current,
+            protocols=data.protocols_current,
+            slugs=data.slugs_current,
+            items=data.items,
+            agents=data.config_agents,
+            models=data.config_models,
+            providers=data.config_providers,
+            tools=data.config_tools,
+        ),
+        resource_agent_ids=data.resource_agent_ids,
         group_id=data.group_id,
-        # Domain IDs for domain_to_resource mapping
-        name_domain_id=data.domain_ids_map.get("names"),
-        description_domain_id=data.domain_ids_map.get("descriptions"),
-        flag_domain_id=data.domain_ids_map.get("flags"),
-        protocols_domain_id=data.domain_ids_map.get("protocols"),
-        slugs_domain_id=data.domain_ids_map.get("slugs"),
-        # Domains mapping for agent lookup
-        domains=data.domains_list,
-        # Resources for Jinja context
-        resources=data.resources_payload,
     )
 
 
@@ -602,12 +570,7 @@ async def get_auth_client(
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
 ) -> GetAuthApiResponse:
-    """BFF response for HTTP endpoint/frontend.
-
-    Returns the full response with all UI fields, suggestions, and
-    computed *_show_ai_generate flags. Does NOT include domains
-    (agent lookup is server-side only).
-    """
+    """BFF response for HTTP endpoint/frontend."""
     data = await get_auth_internal(
         profile_id=profile_id,
         auth_id=auth_id,
@@ -616,72 +579,77 @@ async def get_auth_client(
     )
 
     return GetAuthApiResponse(
-        # Required fields
         actor_name=data.actor_name,
         auth_exists=data.auth_exists,
         can_edit=data.can_edit,
         disabled_reason=data.disabled_reason,
         draft_version=data.draft_version,
         group_id=data.group_id,
-        # Per-resource group IDs
-        names_group_id=data.resource_group_ids.get("names"),
-        descriptions_group_id=data.resource_group_ids.get("descriptions"),
-        flags_group_id=data.resource_group_ids.get("flags"),
-        protocols_group_id=data.resource_group_ids.get("protocols"),
-        slugs_group_id=data.resource_group_ids.get("slugs"),
-        # Name
-        show_name=data.show_flags_map.get("names"),
-        name_domain_id=data.domain_ids_map.get("names"),
-        name_required=data.required_flags_map.get("names"),
-        name_suggestions=data.suggestions_map.get("names"),
-        name_show_ai_generate=data.show_ai_generate_map.get("names"),
-        # Description
-        show_description=data.show_flags_map.get("descriptions"),
-        description_domain_id=data.domain_ids_map.get("descriptions"),
-        description_required=data.required_flags_map.get("descriptions"),
-        description_suggestions=data.suggestions_map.get("descriptions"),
-        description_show_ai_generate=data.show_ai_generate_map.get("descriptions"),
-        # Flag
-        show_flag=data.show_flags_map.get("flags"),
-        flag_domain_id=data.domain_ids_map.get("flags"),
-        flag_required=data.required_flags_map.get("flags"),
-        flag_show_ai_generate=data.show_ai_generate_map.get("flags"),
-        # Protocols
-        show_protocols=data.show_flags_map.get("protocols"),
-        protocols_domain_id=data.domain_ids_map.get("protocols"),
-        protocols_required=data.required_flags_map.get("protocols"),
-        protocol_suggestions=data.suggestions_map.get("protocols"),
-        protocols_show_ai_generate=data.show_ai_generate_map.get("protocols"),
-        # Slugs
-        show_slugs=data.show_flags_map.get("slugs"),
-        slugs_domain_id=data.domain_ids_map.get("slugs"),
-        slugs_required=data.required_flags_map.get("slugs"),
-        slug_suggestions=data.suggestions_map.get("slugs"),
-        slugs_show_ai_generate=data.show_ai_generate_map.get("slugs"),
-        # Step-level AI generation flags
         basic_show_ai_generate=data.basic_show_ai_generate,
-        # Per-resource CREATE tool IDs
-        name_create_tool_id=data.create_tool_ids_map.get("names"),
-        description_create_tool_id=data.create_tool_ids_map.get("descriptions"),
-        protocols_create_tool_id=data.create_tool_ids_map.get("protocols"),
-        slugs_create_tool_id=data.create_tool_ids_map.get("slugs"),
-        # Per-resource LINK tool IDs
-        name_link_tool_id=data.link_tool_ids_map.get("names"),
-        description_link_tool_id=data.link_tool_ids_map.get("descriptions"),
-        flag_link_tool_id=data.link_tool_ids_map.get("flags"),
-        protocols_link_tool_id=data.link_tool_ids_map.get("protocols"),
-        slugs_link_tool_id=data.link_tool_ids_map.get("slugs"),
-        # Domain metadata for client display in modals
-        domain_data=data.domain_data_list,
-        # Resources
-        resources=data.resources_payload,
-        # Auth items
-        auth_items=data.auth_items,
+        names=AuthNameSection(
+            show=data.show_flags_map.get("names", False),
+            required=data.required_flags_map.get("names", False),
+            suggestions=data.suggestions_map.get("names"),
+            show_ai_generate=data.show_ai_generate_map.get("names", False),
+            create_tool_id=data.create_tool_ids_map.get("names"),
+            link_tool_id=data.link_tool_ids_map.get("names"),
+            resource=data.names_current[0] if data.names_current else None,
+            resources=data.names,
+        ),
+        descriptions=AuthDescriptionSection(
+            show=data.show_flags_map.get("descriptions", False),
+            required=data.required_flags_map.get("descriptions", False),
+            suggestions=data.suggestions_map.get("descriptions"),
+            show_ai_generate=data.show_ai_generate_map.get("descriptions", False),
+            create_tool_id=data.create_tool_ids_map.get("descriptions"),
+            link_tool_id=data.link_tool_ids_map.get("descriptions"),
+            resource=data.descriptions_current[0] if data.descriptions_current else None,
+            resources=data.descriptions,
+        ),
+        flags=AuthFlagSection(
+            show=data.show_flags_map.get("flags", False),
+            required=data.required_flags_map.get("flags", False),
+            suggestions=data.suggestions_map.get("flags"),
+            show_ai_generate=data.show_ai_generate_map.get("flags", False),
+            create_tool_id=data.create_tool_ids_map.get("flags"),
+            link_tool_id=data.link_tool_ids_map.get("flags"),
+            current=data.flags_current,
+            resources=data.flags,
+        ),
+        protocols=AuthProtocolSection(
+            show=data.show_flags_map.get("protocols", False),
+            required=data.required_flags_map.get("protocols", False),
+            suggestions=data.suggestions_map.get("protocols"),
+            show_ai_generate=data.show_ai_generate_map.get("protocols", False),
+            create_tool_id=data.create_tool_ids_map.get("protocols"),
+            link_tool_id=data.link_tool_ids_map.get("protocols"),
+            current=data.protocols_current,
+            resources=data.protocols,
+        ),
+        slugs=AuthSlugSection(
+            show=data.show_flags_map.get("slugs", False),
+            required=data.required_flags_map.get("slugs", False),
+            suggestions=data.suggestions_map.get("slugs"),
+            show_ai_generate=data.show_ai_generate_map.get("slugs", False),
+            create_tool_id=data.create_tool_ids_map.get("slugs"),
+            link_tool_id=data.link_tool_ids_map.get("slugs"),
+            current=data.slugs_current,
+            resources=data.slugs,
+        ),
+        items=AuthItemSection(
+            show=data.show_flags_map.get("items", True),
+            required=data.required_flags_map.get("items", False),
+            suggestions=[],
+            show_ai_generate=data.show_ai_generate_map.get("items", False),
+            create_tool_id=data.create_tool_ids_map.get("items"),
+            link_tool_id=data.link_tool_ids_map.get("items"),
+            current=data.items,
+            resources=data.items,
+        ),
     )
 
 
 def derive_flag_key_and_label(name: str | None) -> tuple[str, str]:
-    """Derive key and label from flag name like 'auth_active' -> ('active', 'Active')"""
     if not name:
         return ("unknown", "Unknown")
     key = name.replace("auth_", "")
@@ -690,7 +658,6 @@ def derive_flag_key_and_label(name: str | None) -> tuple[str, str]:
 
 
 def _dedupe_by_id(items: list[Any], id_attr: str) -> list[Any]:
-    """Preserve order while deduplicating by id attribute."""
     seen: set[UUID] = set()
     output: list[Any] = []
     for item in items:
@@ -717,12 +684,7 @@ async def get_auth(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetAuthApiResponse:
-    """Get auth information using two-pass architecture.
-
-    Query 1: Access check (user role, auth state)
-    Query 2: ID fetching (resource IDs, suggestions, agents)
-    Pass 2: Parallel resource fetching (each resource type has own cache)
-    """
+    """Get auth information using two-pass architecture."""
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     try:
@@ -740,17 +702,11 @@ async def get_auth(
             bypass_cache=bypass_cache,
         )
 
-        # Set audit context
         if response_data.actor_name:
             audit_ctx: dict[str, Any] = {
                 "actor": {"name": response_data.actor_name, "id": profile_id}
             }
-            current_name = None
-            current_resources = (
-                response_data.resources.current if response_data.resources else None
-            )
-            if current_resources and current_resources.names:
-                current_name = getattr(current_resources.names[0], "name", None)
+            current_name = response_data.names.resource.name if response_data.names and response_data.names.resource else None
             if request.auth_id and current_name:
                 audit_ctx["auth"] = {
                     "name": current_name,
@@ -758,21 +714,16 @@ async def get_auth(
                 }
             audit_set(http_request, **audit_ctx)
 
-        response.headers["X-Cache-Tags"] = "auth"
-        response.headers["X-Cache-Hit"] = "0"
-        response.headers["X-Two-Pass"] = "1"
-
         return response_data
+
     except HTTPException:
         raise
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
             operation="get_auth",
-            sql_query=load_sql_query(QUERY1_SQL_PATH),
-            sql_params=None,
+            sql_query=None,
+            sql_params=(request.auth_id, request.draft_id),
             request=http_request,
         )

@@ -1,8 +1,27 @@
--- Unified save tool function - handles both create (input_tool_id = NULL) and update (input_tool_id provided)
--- Accepts resource IDs directly (not raw strings) following persona gold standard
--- Permission checks are handled in Python (permissions.py)
+-- Unified save tool function - section-action based (persona parity)
 
--- 1) Drop function first (breaks dependency on types)
+DO $$
+BEGIN
+    DROP TYPE IF EXISTS types.tool_resource_action CASCADE;
+    CREATE TYPE types.tool_resource_action AS (
+        resource_id uuid,
+        create_tool_id uuid,
+        link_tool_id uuid
+    );
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
+DO $$
+BEGIN
+    DROP TYPE IF EXISTS types.tool_multi_resource_action CASCADE;
+    CREATE TYPE types.tool_multi_resource_action AS (
+        resource_ids uuid[],
+        create_tool_id uuid,
+        link_tool_id uuid
+    );
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
 DO $$
 DECLARE
     r RECORD;
@@ -17,19 +36,15 @@ BEGIN
     END LOOP;
 END $$;
 
--- 2) Recreate function with resource ID parameters (no raw strings)
 CREATE OR REPLACE FUNCTION api_save_tool_v4(
     profile_id uuid,
     group_id uuid,
     input_tool_id uuid DEFAULT NULL,
-    -- Required single-select resources
-    name_id uuid DEFAULT NULL,
-    -- Optional single-select resources
-    description_id uuid DEFAULT NULL,
-    active_flag_id uuid DEFAULT NULL,
-    -- Optional multi-select resources
-    args_ids uuid[] DEFAULT NULL,
-    args_outputs_ids uuid[] DEFAULT NULL
+    names types.tool_resource_action DEFAULT NULL,
+    descriptions types.tool_resource_action DEFAULT NULL,
+    flags types.tool_resource_action DEFAULT NULL,
+    args types.tool_multi_resource_action DEFAULT NULL,
+    args_outputs types.tool_multi_resource_action DEFAULT NULL
 )
 RETURNS TABLE (
     tool_id uuid,
@@ -42,71 +57,42 @@ AS $$
 DECLARE
     v_tool_id uuid;
     v_actor_name text;
-    v_group_id uuid;
-    v_profile_id uuid;
-    v_input_tool_id uuid;
-    is_create boolean;
     v_name_id uuid;
     v_description_id uuid;
     v_active_flag_id uuid;
     v_args_ids uuid[];
     v_args_outputs_ids uuid[];
+    is_create boolean;
+    v_run_id uuid;
+    v_call_id uuid;
 BEGIN
-    -- Assign parameters to local variables
-    v_profile_id := profile_id;
-    v_group_id := group_id;
-    v_input_tool_id := input_tool_id;
-    v_name_id := name_id;
-    v_description_id := description_id;
-    v_active_flag_id := active_flag_id;
-    v_args_ids := COALESCE(args_ids, ARRAY[]::uuid[]);
-    v_args_outputs_ids := COALESCE(args_outputs_ids, ARRAY[]::uuid[]);
+    SELECT up.actor_name INTO v_actor_name
+    FROM view_user_profile_context up
+    WHERE up.profile_id = api_save_tool_v4.profile_id;
 
-    -- Validate required fields
-    IF v_group_id IS NULL THEN
+    v_name_id := (names).resource_id;
+    v_description_id := (descriptions).resource_id;
+    v_active_flag_id := (flags).resource_id;
+    v_args_ids := COALESCE((args).resource_ids, ARRAY[]::uuid[]);
+    v_args_outputs_ids := COALESCE((args_outputs).resource_ids, ARRAY[]::uuid[]);
+
+    IF group_id IS NULL THEN
         RAISE EXCEPTION 'group_id is required';
     END IF;
-
     IF v_name_id IS NULL THEN
         RAISE EXCEPTION 'Name resource is required';
     END IF;
 
-    -- Determine if create or update
-    is_create := (v_input_tool_id IS NULL);
-
-    -- Create or UPDATE tool_artifact first
-    IF is_create THEN
-        -- CREATE path
-        INSERT INTO tool_artifact (created_at, updated_at)
-        VALUES (NOW(), NOW())
-        RETURNING id INTO v_tool_id;
-    ELSE
-        -- UPDATE path
-        v_tool_id := v_input_tool_id;
-        UPDATE tool_artifact
-        SET updated_at = NOW()
-        WHERE id = v_tool_id;
-
-        IF NOT FOUND THEN
-            RAISE EXCEPTION 'Tool not found: %', v_input_tool_id;
-        END IF;
-
-    END IF;
-
-    -- Validate resource IDs exist
-    IF v_name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names_resource WHERE id = v_name_id) THEN
+    IF NOT EXISTS (SELECT 1 FROM names_resource WHERE id = v_name_id) THEN
         RAISE EXCEPTION 'Name resource not found: %', v_name_id;
     END IF;
-
     IF v_description_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM descriptions_resource WHERE id = v_description_id) THEN
         RAISE EXCEPTION 'Description resource not found: %', v_description_id;
     END IF;
-
     IF v_active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = v_active_flag_id) THEN
         RAISE EXCEPTION 'Flag resource not found: %', v_active_flag_id;
     END IF;
 
-    -- Validate args IDs exist
     IF COALESCE(array_length(v_args_ids, 1), 0) > 0 THEN
         IF EXISTS (
             SELECT 1 FROM UNNEST(v_args_ids) AS args_id
@@ -116,7 +102,6 @@ BEGIN
         END IF;
     END IF;
 
-    -- Validate args_outputs IDs exist
     IF COALESCE(array_length(v_args_outputs_ids, 1), 0) > 0 THEN
         IF EXISTS (
             SELECT 1 FROM UNNEST(v_args_outputs_ids) AS args_outputs_id
@@ -126,131 +111,161 @@ BEGIN
         END IF;
     END IF;
 
-    -- Conditional: For update, remove old links first
-    IF NOT is_create THEN
-        DELETE FROM tool_names_junction WHERE tool_id = v_tool_id;
-        DELETE FROM tool_descriptions_junction WHERE tool_id = v_tool_id;
+    is_create := input_tool_id IS NULL;
+
+    IF is_create THEN
+        INSERT INTO tool_artifact (created_at, updated_at)
+        VALUES (NOW(), NOW())
+        RETURNING id INTO v_tool_id;
+    ELSE
+        v_tool_id := input_tool_id;
+        UPDATE tool_artifact SET updated_at = NOW() WHERE id = v_tool_id;
+        IF NOT FOUND THEN
+            RAISE EXCEPTION 'Tool not found: %', input_tool_id;
+        END IF;
+
+        UPDATE tool_names_junction SET active = false WHERE tool_id = v_tool_id;
+        UPDATE tool_descriptions_junction SET active = false WHERE tool_id = v_tool_id;
+        UPDATE tool_flags_junction SET active = false WHERE tool_id = v_tool_id;
         DELETE FROM tool_args_junction WHERE tool_id = v_tool_id;
         DELETE FROM tool_args_outputs_junction WHERE tool_id = v_tool_id;
-        -- Update existing active flag if it exists
-        UPDATE tool_flags_junction SET
-            flag_id = COALESCE(v_active_flag_id, tool_flags_junction.flag_id),
-            value = CASE WHEN v_active_flag_id IS NOT NULL THEN true ELSE false END
-        WHERE tool_id = v_tool_id;
     END IF;
 
-    -- Continue with tool save using SQL (tool already created/updated above)
-    RETURN QUERY
-    WITH params AS (
-        SELECT
-            v_tool_id AS tool_id,
-            v_name_id AS name_id,
-            v_description_id AS description_id,
-            v_active_flag_id AS active_flag_id,
-            v_args_ids AS args_ids,
-            v_args_outputs_ids AS args_outputs_ids,
-            v_profile_id AS profile_id
-    ),
-    user_profile AS (
-        SELECT role, actor_name
-        FROM view_user_profile_context
-        WHERE profile_id = (SELECT profile_id FROM params)
-    ),
-    -- Permission validation is now handled in Python (permissions.py)
-    actor_profile AS (
-        SELECT
-            x.profile_id,
-            up.actor_name
-        FROM params x
-        CROSS JOIN user_profile up
-    ),
-    -- Link tool to name
-    link_tool_name AS (
-        INSERT INTO tool_names_junction (tool_id, name_id, created_at, generated, mcp)
-        SELECT
-            x.tool_id,
-            x.name_id,
-            NOW(),
-            false,
-            false
-        FROM params x
-        WHERE x.name_id IS NOT NULL
-        ON CONFLICT ON CONSTRAINT tool_names_pkey DO NOTHING
-    ),
-    -- Link tool to description
-    link_tool_description AS (
-        INSERT INTO tool_descriptions_junction (tool_id, description_id, created_at, generated, mcp)
-        SELECT
-            x.tool_id,
-            x.description_id,
-            NOW(),
-            false,
-            false
-        FROM params x
-        WHERE x.description_id IS NOT NULL
-        ON CONFLICT ON CONSTRAINT tool_descriptions_pkey DO NOTHING
-    ),
-    -- Insert or UPDATE tool_artifact active flag
-    insert_tool_active_flag AS (
-        INSERT INTO tool_flags_junction (tool_id, flag_id, value, created_at, generated, mcp)
-        SELECT x.tool_id,
-            COALESCE(x.active_flag_id, f.id),
-            CASE WHEN x.active_flag_id IS NOT NULL THEN true ELSE false END,
-            NOW(),
-            false,
-            false
-        FROM params x
-        CROSS JOIN flags_resource f
-        WHERE f.name = 'tool_active'
-        ON CONFLICT ON CONSTRAINT tool_flags_pkey DO UPDATE SET
-            flag_id = COALESCE(EXCLUDED.flag_id, tool_flags_junction.flag_id),
-            value = EXCLUDED.value
-    ),
-    -- Link tool to args (old ones already deleted above if update)
-    link_args AS (
-        INSERT INTO tool_args_junction (tool_id, args_id, created_at, generated, mcp)
-        SELECT
-            x.tool_id,
-            args_id,
-            NOW(),
-            false,
-            false
-        FROM params x
-        CROSS JOIN UNNEST(x.args_ids) as args_id
-        WHERE COALESCE(array_length(x.args_ids, 1), 0) > 0
-        ON CONFLICT ON CONSTRAINT tool_args_pkey DO NOTHING
-    ),
-    -- Link tool to args_outputs (old ones already deleted above if update)
-    link_args_outputs AS (
-        INSERT INTO tool_args_outputs_junction (tool_id, args_outputs_id, created_at, generated, mcp)
-        SELECT
-            x.tool_id,
-            args_outputs_id,
-            NOW(),
-            false,
-            false
-        FROM params x
-        CROSS JOIN UNNEST(x.args_outputs_ids) as args_outputs_id
-        WHERE COALESCE(array_length(x.args_outputs_ids, 1), 0) > 0
-        ON CONFLICT ON CONSTRAINT tool_args_outputs_pkey DO NOTHING
-    ),
-    -- Sync linked resources with name/description
-    sync_artifact_resources AS (
-        UPDATE tools_resource r
-        SET name = n.name,
-            description = d.description
-        FROM tool_tools_junction j
-        CROSS JOIN params p
-        LEFT JOIN names_resource n ON n.id = p.name_id
-        LEFT JOIN descriptions_resource d ON d.id = p.description_id
-        WHERE j.tools_id = r.id
-          AND j.tool_id = p.tool_id
-        RETURNING r.id
-    )
+    INSERT INTO tool_names_junction (tool_id, name_id, created_at, generated, mcp, active)
+    VALUES (v_tool_id, v_name_id, NOW(), false, false, true)
+    ON CONFLICT ON CONSTRAINT tool_names_pkey DO UPDATE
+    SET active = true;
+
+    IF v_description_id IS NOT NULL THEN
+        INSERT INTO tool_descriptions_junction (tool_id, description_id, created_at, generated, mcp, active)
+        VALUES (v_tool_id, v_description_id, NOW(), false, false, true)
+        ON CONFLICT ON CONSTRAINT tool_descriptions_pkey DO UPDATE
+        SET active = true;
+    END IF;
+
+    INSERT INTO tool_flags_junction (tool_id, flag_id, value, created_at, generated, mcp, active)
     SELECT
-        x.tool_id AS tool_id,
-        ap.actor_name AS actor_name
-    FROM params x
-    CROSS JOIN actor_profile ap;
+        v_tool_id,
+        COALESCE(v_active_flag_id, f.id),
+        CASE WHEN v_active_flag_id IS NOT NULL THEN true ELSE false END,
+        NOW(),
+        false,
+        false,
+        true
+    FROM flags_resource f
+    WHERE f.name = 'tool_active'
+    ON CONFLICT ON CONSTRAINT tool_flags_pkey DO UPDATE SET
+        flag_id = COALESCE(EXCLUDED.flag_id, tool_flags_junction.flag_id),
+        value = EXCLUDED.value,
+        active = true;
+
+    IF COALESCE(array_length(v_args_ids, 1), 0) > 0 THEN
+        INSERT INTO tool_args_junction (tool_id, args_id, created_at, generated, mcp)
+        SELECT v_tool_id, args_id, NOW(), false, false
+        FROM UNNEST(v_args_ids) AS args_id
+        ON CONFLICT ON CONSTRAINT tool_args_pkey DO NOTHING;
+    END IF;
+
+    IF COALESCE(array_length(v_args_outputs_ids, 1), 0) > 0 THEN
+        INSERT INTO tool_args_outputs_junction (tool_id, args_outputs_id, created_at, generated, mcp)
+        SELECT v_tool_id, args_outputs_id, NOW(), false, false
+        FROM UNNEST(v_args_outputs_ids) AS args_outputs_id
+        ON CONFLICT ON CONSTRAINT tool_args_outputs_pkey DO NOTHING;
+    END IF;
+
+    -- Tool call lineage for save
+    v_run_id := uuidv7();
+    INSERT INTO runs_entry (id, input_tokens, output_tokens, cached_input_tokens, group_id, created_at, updated_at)
+    VALUES (v_run_id, 0, 0, 0, group_id, NOW(), NOW());
+
+    IF (names).create_tool_id IS NOT NULL THEN
+        v_call_id := uuidv7();
+        INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+        VALUES (v_call_id, 'tool_save_create_names_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+        INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((names).create_tool_id, v_call_id);
+        INSERT INTO names_calls_connection (names_id, call_id) VALUES (v_name_id, v_call_id);
+    END IF;
+    IF (names).link_tool_id IS NOT NULL THEN
+        v_call_id := uuidv7();
+        INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+        VALUES (v_call_id, 'tool_save_link_names_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+        INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((names).link_tool_id, v_call_id);
+        INSERT INTO names_calls_connection (names_id, call_id) VALUES (v_name_id, v_call_id);
+    END IF;
+
+    IF v_description_id IS NOT NULL THEN
+        IF (descriptions).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'tool_save_create_descriptions_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((descriptions).create_tool_id, v_call_id);
+            INSERT INTO descriptions_calls_connection (descriptions_id, call_id) VALUES (v_description_id, v_call_id);
+        END IF;
+        IF (descriptions).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'tool_save_link_descriptions_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((descriptions).link_tool_id, v_call_id);
+            INSERT INTO descriptions_calls_connection (descriptions_id, call_id) VALUES (v_description_id, v_call_id);
+        END IF;
+    END IF;
+
+    IF v_active_flag_id IS NOT NULL THEN
+        IF (flags).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'tool_save_create_flags_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((flags).create_tool_id, v_call_id);
+            INSERT INTO flags_calls_connection (flags_id, call_id) VALUES (v_active_flag_id, v_call_id);
+        END IF;
+        IF (flags).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'tool_save_link_flags_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((flags).link_tool_id, v_call_id);
+            INSERT INTO flags_calls_connection (flags_id, call_id) VALUES (v_active_flag_id, v_call_id);
+        END IF;
+    END IF;
+
+    IF COALESCE(array_length(v_args_ids, 1), 0) > 0 THEN
+        IF (args).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'tool_save_create_args_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((args).create_tool_id, v_call_id);
+            INSERT INTO args_calls_connection (args_id, call_id)
+            SELECT args_id, v_call_id FROM UNNEST(v_args_ids) AS args_id;
+        END IF;
+        IF (args).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'tool_save_link_args_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((args).link_tool_id, v_call_id);
+            INSERT INTO args_calls_connection (args_id, call_id)
+            SELECT args_id, v_call_id FROM UNNEST(v_args_ids) AS args_id;
+        END IF;
+    END IF;
+
+    IF COALESCE(array_length(v_args_outputs_ids, 1), 0) > 0 THEN
+        IF (args_outputs).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'tool_save_create_args_outputs_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((args_outputs).create_tool_id, v_call_id);
+            INSERT INTO args_outputs_calls_connection (args_outputs_id, call_id)
+            SELECT args_outputs_id, v_call_id FROM UNNEST(v_args_outputs_ids) AS args_outputs_id;
+        END IF;
+        IF (args_outputs).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'tool_save_link_args_outputs_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((args_outputs).link_tool_id, v_call_id);
+            INSERT INTO args_outputs_calls_connection (args_outputs_id, call_id)
+            SELECT args_outputs_id, v_call_id FROM UNNEST(v_args_outputs_ids) AS args_outputs_id;
+        END IF;
+    END IF;
+
+    RETURN QUERY
+    SELECT v_tool_id, v_actor_name;
 END;
 $$;

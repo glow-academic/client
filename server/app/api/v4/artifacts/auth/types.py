@@ -6,16 +6,17 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.api.v4.types import DomainAgent, DomainData
+from app.api.v4.views.drafts.types import DraftAuthViewItem
 from app.sql.types import (
+    QGetAgentsV4Item,
     QGetDescriptionsV4Item,
+    QGetModelsV4Item,
     QGetNamesV4Item,
     QGetProtocolsV4Item,
+    QGetProvidersV4Item,
     QGetSlugsV4Item,
+    QGetToolsV4Item,
 )
-
-# Re-export for backwards compatibility
-__all__ = ["DomainAgent", "DomainData"]
 
 
 class AuthFlagConfig(BaseModel):
@@ -28,12 +29,11 @@ class AuthFlagConfig(BaseModel):
     flag_option_id: UUID | None = None
     show: bool = True
     required: bool = False
-    domain_id: UUID | None = None
     generated: bool | None = None
 
 
-class AuthItemData(BaseModel):
-    """Auth item data for display."""
+class AuthItemResource(BaseModel):
+    """Auth item resource shape for client/editing."""
 
     auth_item_id: UUID | None = None
     name: str | None = None
@@ -41,8 +41,50 @@ class AuthItemData(BaseModel):
     position: int | None = None
     active: bool | None = None
     value_masked: str | None = None
-    key_id: str | None = None
+    key_id: UUID | None = None
     encrypted: bool | None = None
+    generated: bool | None = None
+
+
+class BaseResourceSection(BaseModel):
+    """Common metadata fields for all auth resource sections."""
+
+    show: bool = False
+    required: bool = False
+    suggestions: list[UUID] | None = None
+    show_ai_generate: bool = False
+    create_tool_id: UUID | None = None
+    link_tool_id: UUID | None = None
+
+
+class AuthNameSection(BaseResourceSection):
+    resource: QGetNamesV4Item | None = None
+    resources: list[QGetNamesV4Item] | None = None
+
+
+class AuthDescriptionSection(BaseResourceSection):
+    resource: QGetDescriptionsV4Item | None = None
+    resources: list[QGetDescriptionsV4Item] | None = None
+
+
+class AuthFlagSection(BaseResourceSection):
+    current: list[AuthFlagConfig] | None = None
+    resources: list[AuthFlagConfig] | None = None
+
+
+class AuthProtocolSection(BaseResourceSection):
+    current: list[QGetProtocolsV4Item] | None = None
+    resources: list[QGetProtocolsV4Item] | None = None
+
+
+class AuthSlugSection(BaseResourceSection):
+    current: list[QGetSlugsV4Item] | None = None
+    resources: list[QGetSlugsV4Item] | None = None
+
+
+class AuthItemSection(BaseResourceSection):
+    current: list[AuthItemResource] | None = None
+    resources: list[AuthItemResource] | None = None
 
 
 class GetAuthApiRequest(BaseModel):
@@ -55,173 +97,63 @@ class GetAuthApiRequest(BaseModel):
 class GetAuthApiResponse(BaseModel):
     """Response model for get auth endpoint."""
 
-    # Required fields
     actor_name: str | None = None
     auth_exists: bool | None = None
     can_edit: bool | None = None
     disabled_reason: str | None = None
     draft_version: int | None = None
-
-    # Group ID
     group_id: UUID | None = None
 
-    # Per-resource group IDs (from draft MV)
-    names_group_id: UUID | None = None
-    descriptions_group_id: UUID | None = None
-    flags_group_id: UUID | None = None
-    protocols_group_id: UUID | None = None
-    slugs_group_id: UUID | None = None
-
-    # Single-select resources: name
-    show_name: bool | None = None
-    name_domain_id: UUID | None = None
-    name_required: bool | None = None
-    name_suggestions: list[UUID] | None = None
-    name_show_ai_generate: bool | None = None
-
-    # Single-select resources: description
-    show_description: bool | None = None
-    description_domain_id: UUID | None = None
-    description_required: bool | None = None
-    description_suggestions: list[UUID] | None = None
-    description_show_ai_generate: bool | None = None
-
-    # Single-select resources: flag
-    show_flag: bool | None = None
-    flag_domain_id: UUID | None = None
-    flag_required: bool | None = None
-    flag_show_ai_generate: bool | None = None
-
-    # Multi-select resources: protocols
-    show_protocols: bool | None = None
-    protocols_domain_id: UUID | None = None
-    protocols_required: bool | None = None
-    protocol_suggestions: list[UUID] | None = None
-    protocols_show_ai_generate: bool | None = None
-
-    # Multi-select resources: slugs
-    show_slugs: bool | None = None
-    slugs_domain_id: UUID | None = None
-    slugs_required: bool | None = None
-    slug_suggestions: list[UUID] | None = None
-    slugs_show_ai_generate: bool | None = None
-
-    # Step-level AI generation flags
     basic_show_ai_generate: bool | None = None
 
-    # Per-resource CREATE tool IDs
-    name_create_tool_id: UUID | None = None
-    description_create_tool_id: UUID | None = None
-    protocols_create_tool_id: UUID | None = None
-    slugs_create_tool_id: UUID | None = None
-
-    # Per-resource LINK tool IDs
-    name_link_tool_id: UUID | None = None
-    description_link_tool_id: UUID | None = None
-    flag_link_tool_id: UUID | None = None
-    protocols_link_tool_id: UUID | None = None
-    slugs_link_tool_id: UUID | None = None
-
-    # Rich domain metadata for client display in modals
-    domain_data: list[DomainData] | None = None
-
-    # Generic resources payload
-    resources: AuthResources | None = None
-
-    # Auth items (special junction)
-    auth_items: list[AuthItemData] | None = None
+    names: AuthNameSection | None = None
+    descriptions: AuthDescriptionSection | None = None
+    flags: AuthFlagSection | None = None
+    protocols: AuthProtocolSection | None = None
+    slugs: AuthSlugSection | None = None
+    items: AuthItemSection | None = None
 
 
-class GetAuthWebsocketResponse(BaseModel):
-    """Minimal response for WebSocket handlers."""
-
-    group_id: UUID | None = None
-
-    # Domain IDs for domain_to_resource mapping
-    name_domain_id: UUID | None = None
-    description_domain_id: UUID | None = None
-    flag_domain_id: UUID | None = None
-    protocols_domain_id: UUID | None = None
-    slugs_domain_id: UUID | None = None
-
-    # Domains mapping for agent lookup
-    domains: list[DomainAgent] | None = None
-
-    # Resources for Jinja template context
-    resources: AuthResources | None = None
+class AuthWebsocketViews(BaseModel):
+    draft_auth: DraftAuthViewItem | None = None
 
 
-class AuthResourceBucket(BaseModel):
-    """Generic resources bucket with full objects."""
-
+class AuthWebsocketResources(BaseModel):
     names: list[QGetNamesV4Item] | None = None
     descriptions: list[QGetDescriptionsV4Item] | None = None
     flags: list[AuthFlagConfig] | None = None
     protocols: list[QGetProtocolsV4Item] | None = None
     slugs: list[QGetSlugsV4Item] | None = None
+    items: list[AuthItemResource] | None = None
+    agents: list[QGetAgentsV4Item] | None = None
+    models: list[QGetModelsV4Item] | None = None
+    providers: list[QGetProvidersV4Item] | None = None
+    tools: list[QGetToolsV4Item] | None = None
 
 
-class AuthResources(BaseModel):
-    """Full resources + current selections."""
+class GetAuthWebsocketResponse(BaseModel):
+    """Minimal response for WebSocket handlers."""
 
-    resources: AuthResourceBucket | None = None
-    current: AuthResourceBucket | None = None
-
-
-# ========== List Endpoint Types ==========
-
-
-class ListAuthApiAuth(BaseModel):
-    """Auth type for list endpoint with computed permissions."""
-
-    auth_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    protocol_count: int | None = None
-    slug_count: int | None = None
-    item_count: int | None = None
-    is_inactive: bool | None = None
-    # Computed in Python
-    can_edit: bool | None = None
-    can_duplicate: bool | None = None
-    can_delete: bool | None = None
+    views: AuthWebsocketViews | None = None
+    resources: AuthWebsocketResources
+    resource_agent_ids: dict[str, UUID | None] | None = None
+    group_id: UUID | None = None
 
 
-class ListAuthApiResponse(BaseModel):
-    """Response model for list auth endpoint with computed permissions."""
-
-    actor_name: str | None = None
-    auths: list[ListAuthApiAuth] | None = None
-    total_count: int | None = None
+class AuthResourceAction(BaseModel):
+    resource_id: UUID | None = None
+    create_tool_id: UUID | None = None
+    link_tool_id: UUID | None = None
 
 
-# ========== Save Endpoint Types ==========
-
-
-class SaveAuthApiRequest(BaseModel):
-    """Request model for save auth endpoint - accepts form data directly."""
-
-    # Context
-    group_id: UUID
-    input_auth_id: UUID | None = None
-
-    # Required single-select resources
-    name_id: UUID
-
-    # Optional single-select resources
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-
-    # Optional multi-select resources
-    protocol_ids: list[UUID] | None = None
-    slug_ids: list[UUID] | None = None
-
-    # Auth items inline
-    auth_items: list[SaveAuthItemInput] | None = None
+class AuthMultiResourceAction(BaseModel):
+    resource_ids: list[UUID] | None = None
+    create_tool_id: UUID | None = None
+    link_tool_id: UUID | None = None
 
 
 class SaveAuthItemInput(BaseModel):
-    """Auth item input for save endpoint."""
+    """Auth item input for save/draft endpoints."""
 
     name: str
     description: str | None = None
@@ -229,6 +161,25 @@ class SaveAuthItemInput(BaseModel):
     position: int | None = None
     active: bool = True
     key_id: UUID | None = None
+
+
+class AuthItemAction(BaseModel):
+    items: list[SaveAuthItemInput] | None = None
+    create_tool_id: UUID | None = None
+    link_tool_id: UUID | None = None
+
+
+class SaveAuthApiRequest(BaseModel):
+    """Request model for save auth endpoint."""
+
+    group_id: UUID
+    input_auth_id: UUID | None = None
+    names: AuthResourceAction
+    descriptions: AuthResourceAction
+    flags: AuthResourceAction
+    protocols: AuthMultiResourceAction
+    slugs: AuthMultiResourceAction
+    items: AuthItemAction | None = None
 
 
 class SaveAuthApiResponse(BaseModel):
@@ -245,25 +196,60 @@ class SaveAuthSqlParams(BaseModel):
     profile_id: UUID
     group_id: UUID
     input_auth_id: UUID | None = None
-    name_id: UUID
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    protocol_ids: list[UUID] | None = None
-    slug_ids: list[UUID] | None = None
-    auth_items_junction: list[tuple] | None = None
+    names: AuthResourceAction
+    descriptions: AuthResourceAction
+    flags: AuthResourceAction
+    protocols: AuthMultiResourceAction
+    slugs: AuthMultiResourceAction
+    items: AuthItemAction
+
+    @classmethod
+    def from_request(
+        cls, request: SaveAuthApiRequest, profile_id: UUID
+    ) -> SaveAuthSqlParams:
+        return cls(
+            profile_id=profile_id,
+            group_id=request.group_id,
+            input_auth_id=request.input_auth_id,
+            names=request.names,
+            descriptions=request.descriptions,
+            flags=request.flags,
+            protocols=request.protocols,
+            slugs=request.slugs,
+            items=request.items or AuthItemAction(items=[]),
+        )
 
     def to_tuple(self) -> tuple:
-        """Convert to tuple for SQL execution."""
+        def single(a: AuthResourceAction) -> tuple:
+            return (a.resource_id, a.create_tool_id, a.link_tool_id)
+
+        def multi(a: AuthMultiResourceAction) -> tuple:
+            return (a.resource_ids, a.create_tool_id, a.link_tool_id)
+
+        def item_input(i: SaveAuthItemInput) -> tuple:
+            return (
+                i.name,
+                i.description,
+                i.encrypted,
+                i.position,
+                i.active,
+                i.key_id,
+            )
+
+        def items_action(a: AuthItemAction) -> tuple:
+            item_rows = [item_input(i) for i in (a.items or [])]
+            return (item_rows, a.create_tool_id, a.link_tool_id)
+
         return (
             self.profile_id,
             self.group_id,
             self.input_auth_id,
-            self.name_id,
-            self.description_id,
-            self.active_flag_id,
-            self.protocol_ids or [],
-            self.slug_ids or [],
-            self.auth_items_junction or [],
+            single(self.names),
+            single(self.descriptions),
+            single(self.flags),
+            multi(self.protocols),
+            multi(self.slugs),
+            items_action(self.items),
         )
 
 
@@ -272,9 +258,6 @@ class SaveAuthSqlRow(BaseModel):
 
     auth_id: UUID | None = None
     actor_name: str | None = None
-
-
-# ========== Delete Endpoint Types ==========
 
 
 class DeleteAuthApiRequest(BaseModel):
@@ -288,9 +271,6 @@ class DeleteAuthApiResponse(BaseModel):
 
     success: bool
     message: str
-
-
-# ========== Duplicate Endpoint Types ==========
 
 
 class DuplicateAuthApiRequest(BaseModel):
@@ -307,18 +287,16 @@ class DuplicateAuthApiResponse(BaseModel):
     message: str
 
 
-# ========== Draft Endpoint Types ==========
-
-
 class PatchAuthDraftApiRequest(BaseModel):
     """Request model for patch auth draft endpoint."""
 
     input_draft_id: UUID | None = None
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    protocol_ids: list[UUID] | None = None
-    slug_ids: list[UUID] | None = None
+    group_id: UUID | None = None
+    names: AuthResourceAction | None = None
+    descriptions: AuthResourceAction | None = None
+    flags: AuthResourceAction | None = None
+    protocols: AuthMultiResourceAction | None = None
+    slugs: AuthMultiResourceAction | None = None
     expected_version: int = 0
 
 
@@ -329,3 +307,85 @@ class PatchAuthDraftApiResponse(BaseModel):
     draft_id: UUID
     new_version: int
     message: str
+
+
+class PatchAuthDraftSqlParams(BaseModel):
+    """SQL parameters for patch auth draft."""
+
+    profile_id: UUID
+    input_draft_id: UUID | None = None
+    group_id: UUID | None = None
+    names: AuthResourceAction
+    descriptions: AuthResourceAction
+    flags: AuthResourceAction
+    protocols: AuthMultiResourceAction
+    slugs: AuthMultiResourceAction
+    expected_version: int = 0
+
+    @classmethod
+    def from_request(
+        cls, request: PatchAuthDraftApiRequest, profile_id: UUID
+    ) -> PatchAuthDraftSqlParams:
+        empty_single = AuthResourceAction()
+        empty_multi = AuthMultiResourceAction()
+        return cls(
+            profile_id=profile_id,
+            input_draft_id=request.input_draft_id,
+            group_id=request.group_id,
+            names=request.names or empty_single,
+            descriptions=request.descriptions or empty_single,
+            flags=request.flags or empty_single,
+            protocols=request.protocols or empty_multi,
+            slugs=request.slugs or empty_multi,
+            expected_version=request.expected_version,
+        )
+
+    def to_tuple(self) -> tuple:
+        def single(a: AuthResourceAction) -> tuple:
+            return (a.resource_id, a.create_tool_id, a.link_tool_id)
+
+        def multi(a: AuthMultiResourceAction) -> tuple:
+            return (a.resource_ids, a.create_tool_id, a.link_tool_id)
+
+        return (
+            self.profile_id,
+            self.input_draft_id,
+            self.group_id,
+            single(self.names),
+            single(self.descriptions),
+            single(self.flags),
+            multi(self.protocols),
+            multi(self.slugs),
+            self.expected_version,
+        )
+
+
+class PatchAuthDraftSqlRow(BaseModel):
+    """SQL row for patch auth draft."""
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+
+class ListAuthApiAuth(BaseModel):
+    """Auth type for list endpoint with computed permissions."""
+
+    auth_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    protocol_count: int | None = None
+    slug_count: int | None = None
+    item_count: int | None = None
+    is_inactive: bool | None = None
+    can_edit: bool | None = None
+    can_duplicate: bool | None = None
+    can_delete: bool | None = None
+
+
+class ListAuthApiResponse(BaseModel):
+    """Response model for list auth endpoint with computed permissions."""
+
+    actor_name: str | None = None
+    auths: list[ListAuthApiAuth] | None = None
+    total_count: int | None = None

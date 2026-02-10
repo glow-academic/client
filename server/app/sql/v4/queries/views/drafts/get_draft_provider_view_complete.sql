@@ -41,11 +41,13 @@ CREATE TYPE types.q_get_draft_provider_view_v4_item AS (
     mcp boolean,
     active boolean,
     group_id uuid,
+    regeneration_descriptions text[],
     name_ids uuid[],
     description_ids uuid[],
     flag_ids uuid[],
     value_ids uuid[],
-    regenerate_ids uuid[],
+    endpoint_ids uuid[],
+    key_ids uuid[],
     department_ids uuid[]
 );
 
@@ -78,11 +80,13 @@ AS $$
                     mcp,
                     active,
                     group_id,
+                    regeneration_descriptions,
                     name_ids,
                     description_ids,
                     flag_ids,
                     value_ids,
-                    regenerate_ids,
+                    endpoint_ids,
+                    key_ids,
                     department_ids
                 )::types.q_get_draft_provider_view_v4_item
                 ORDER BY updated_at DESC

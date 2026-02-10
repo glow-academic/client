@@ -106,10 +106,7 @@ async def save_tool(
 
         async with conn.transaction():
             # Convert API request to SQL params (add profile_id from header)
-            params = SaveToolSqlParams(
-                **request.model_dump(),
-                profile_id=profile_id,
-            )
+            params = SaveToolSqlParams.from_request(request, profile_id=profile_id)
             sql_params = params.to_tuple()
 
             # Execute SQL with typed helper

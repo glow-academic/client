@@ -49,9 +49,6 @@ export type DraftState = {
   // documentMax: number | null;
   // parameterSelectionMin: number | null;
   // parameterSelectionMax: number | null;
-  scenarioDomainId: string | null;
-  imageDomainId: string | null;
-  videoDomainId: string | null;
 };
 
 /**
@@ -81,9 +78,6 @@ export type ScenarioFormState = {
   objective_ids: string[];
   // Other fields (not resources)
   video_length: number | null;
-  scenario_domain_id: string | null;
-  image_domain_id: string | null;
-  video_domain_id: string | null;
 };
 
 /**

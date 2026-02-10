@@ -5,10 +5,16 @@ from typing import Any
 
 from fastapi import APIRouter
 
+from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.descriptions.get import get_descriptions_internal
 from app.api.v4.resources.flags.get import get_flags_internal
+from app.api.v4.resources.group_positions.get import get_group_positions_internal
+from app.api.v4.resources.group_rubrics.get import get_group_rubrics_internal
 from app.api.v4.resources.names.get import get_names_internal
+from app.api.v4.resources.rubrics.get import get_rubrics_batch_internal
+from app.api.v4.resources.run_positions.get import get_run_positions_internal
+from app.api.v4.resources.run_rubrics.get import get_run_rubrics_internal
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
@@ -118,6 +124,24 @@ async def handle_eval_artifact_complete(data: dict[str, Any]) -> None:
             elif resource_type == "departments":
                 items = await get_departments_internal(conn, [resource_id])
                 event.department_resources = items if items else None
+            elif resource_type == "agents":
+                items = await get_agents_internal(conn, [resource_id])
+                event.agent_resources = items if items else None
+            elif resource_type == "rubrics":
+                items = await get_rubrics_batch_internal(conn, [resource_id])
+                event.rubric_resources = items if items else None
+            elif resource_type == "run_positions":
+                items = await get_run_positions_internal(conn, [resource_id])
+                event.run_position_resources = items if items else None
+            elif resource_type == "group_positions":
+                items = await get_group_positions_internal(conn, [resource_id])
+                event.group_position_resources = items if items else None
+            elif resource_type == "run_rubrics":
+                items = await get_run_rubrics_internal(conn, [resource_id])
+                event.run_rubric_resources = items if items else None
+            elif resource_type == "group_rubrics":
+                items = await get_group_rubrics_internal(conn, [resource_id])
+                event.group_rubric_resources = items if items else None
     except Exception as e:
         await sio.emit(
             "eval_generation_error",

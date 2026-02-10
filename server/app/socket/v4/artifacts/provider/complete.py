@@ -7,9 +7,10 @@ from fastapi import APIRouter
 
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.descriptions.get import get_descriptions_internal
+from app.api.v4.resources.endpoints.get import get_endpoints_internal
 from app.api.v4.resources.flags.get import get_flags_internal
+from app.api.v4.resources.keys.get import get_keys_internal
 from app.api.v4.resources.names.get import get_names_internal
-from app.api.v4.resources.regenerates.get import get_regenerates_internal
 from app.api.v4.resources.values.get import get_values_internal
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
@@ -136,9 +137,12 @@ async def handle_provider_artifact_complete(data: dict[str, Any]) -> None:
             elif resource_type == "values":
                 items = await get_values_internal(conn, [resource_id])
                 event.value_resource = items[0] if items else None
-            elif resource_type == "regenerates":
-                items = await get_regenerates_internal(conn, [resource_id])
-                event.regenerates_resource = items[0] if items else None
+            elif resource_type == "endpoints":
+                items = await get_endpoints_internal(conn, [resource_id])
+                event.endpoint_resource = items[0] if items else None
+            elif resource_type == "keys":
+                items = await get_keys_internal(conn, [resource_id])
+                event.key_resource = items[0] if items else None
     except Exception as e:
         # Resource fetch failed - emit error to client
         await sio.emit(

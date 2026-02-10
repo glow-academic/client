@@ -1,9 +1,3 @@
-/**
- * Auth.tsx
- * Implementation using modular resource components
- * Used to create and manage auth - supports both creation and editing
- * Follows Persona.tsx pattern exactly but adapted for auth resources
- */
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -18,21 +12,37 @@ import {
   GenericForm,
   type StepStatus,
 } from "@/components/common/forms/GenericForm";
+import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
 import { StepCard } from "@/components/common/forms/StepCard";
+import { GenerateRegenerateModal } from "@/components/common/GenerateRegenerateModal";
 import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
 import { Descriptions } from "@/components/resources/Descriptions";
 import { Flags } from "@/components/resources/FlagsLegacy";
 import { Names } from "@/components/resources/Names";
 import { Protocols } from "@/components/resources/Protocols";
 import { Slugs } from "@/components/resources/Slugs";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
+import { useSaveContext } from "@/contexts/save-context";
+import { useAiGeneration } from "@/hooks/use-ai-generation";
+import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
+import { useFlushRegistry } from "@/hooks/use-flush-registry";
+import { useGenerationModal } from "@/hooks/use-generation-modal";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import {
+  buildResourceActions,
+  checkHasResourceIds,
+  computeEffectiveFormState,
+  type ResourceConfig,
+} from "@/lib/resources/action-builders";
 import { parseAsString, type Parser } from "nuqs";
 
-// Types defined inline using InputOf/OutputOf
 type SaveAuthIn = InputOf<"/api/v4/artifacts/auths/save", "post">;
 type SaveAuthOut = OutputOf<"/api/v4/artifacts/auths/save", "post">;
+type SaveAuthBody = NonNullable<SaveAuthIn["body"]>;
+type PatchAuthDraftIn = InputOf<"/api/v4/artifacts/auths/draft", "patch">;
+type PatchAuthDraftOut = OutputOf<"/api/v4/artifacts/auths/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
@@ -43,41 +53,89 @@ type CreateDraftDescriptionsOut = OutputOf<
   "/api/v4/resources/descriptions",
   "post"
 >;
-type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
-type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
 type CreateDraftProtocolsIn = InputOf<"/api/v4/resources/protocols", "post">;
-type CreateDraftProtocolsOut = OutputOf<"/api/v4/resources/protocols", "post">;
+type CreateDraftProtocolsOut = OutputOf<
+  "/api/v4/resources/protocols",
+  "post"
+>;
 type CreateDraftSlugsIn = InputOf<"/api/v4/resources/slugs", "post">;
 type CreateDraftSlugsOut = OutputOf<"/api/v4/resources/slugs", "post">;
-type PatchAuthDraftIn = InputOf<"/api/v4/artifacts/auths/draft", "patch">;
-type PatchAuthDraftOut = OutputOf<"/api/v4/artifacts/auths/draft", "patch">;
-
 type AuthData = OutputOf<"/api/v4/artifacts/auths/get", "post">;
+
+type AuthFormState = {
+  name_id: string | null;
+  description_id: string | null;
+  active_flag_id: string | null;
+  protocol_ids: string[];
+  slug_ids: string[];
+  items: Array<{
+    name: string;
+    description: string;
+    encrypted: boolean;
+    position: number;
+    active: boolean;
+    key_id: string | null;
+  }>;
+};
+
+type FlushResult = {
+  name_id?: string | null;
+  description_id?: string | null;
+};
+
+type AuthResourceType =
+  | "names"
+  | "descriptions"
+  | "flags"
+  | "protocols"
+  | "slugs"
+  | "items";
+
+const FLUSH_KEYS = ["names", "descriptions"] as const;
+
+const VALID_RESOURCE_TYPES: AuthResourceType[] = [
+  "names",
+  "descriptions",
+  "flags",
+  "protocols",
+  "slugs",
+  "items",
+];
+
+const AUTH_RESOURCES: ResourceConfig[] = [
+  { key: "names", formKey: "name_id", flushKey: "name_id", type: "single" },
+  {
+    key: "descriptions",
+    formKey: "description_id",
+    flushKey: "description_id",
+    type: "single",
+  },
+  { key: "flags", formKey: "active_flag_id", flushKey: null, type: "single" },
+  {
+    key: "protocols",
+    formKey: "protocol_ids",
+    flushKey: null,
+    type: "multi",
+  },
+  { key: "slugs", formKey: "slug_ids", flushKey: null, type: "multi" },
+];
 
 export interface AuthProps {
   authId?: string;
-  // Server-provided data (for server-side rendering)
   authData?: AuthData;
-  // Server actions (replaces useMutation)
   saveAuthAction?: (input: SaveAuthIn) => Promise<SaveAuthOut>;
-  patchAuthDraftAction?: (
-    input: PatchAuthDraftIn
-  ) => Promise<PatchAuthDraftOut>;
-  // Resource creation actions
+  patchAuthDraftAction?: (input: PatchAuthDraftIn) => Promise<PatchAuthDraftOut>;
   createNamesAction?: (
-    input: CreateDraftNamesIn
+    input: CreateDraftNamesIn,
   ) => Promise<CreateDraftNamesOut>;
   createDescriptionsAction?: (
-    input: CreateDraftDescriptionsIn
+    input: CreateDraftDescriptionsIn,
   ) => Promise<CreateDraftDescriptionsOut>;
-  createFlagsAction?: (
-    input: CreateDraftFlagsIn
-  ) => Promise<CreateDraftFlagsOut>;
   createProtocolsAction?: (
-    input: CreateDraftProtocolsIn
+    input: CreateDraftProtocolsIn,
   ) => Promise<CreateDraftProtocolsOut>;
   createSlugsAction?: (
-    input: CreateDraftSlugsIn
+    input: CreateDraftSlugsIn,
   ) => Promise<CreateDraftSlugsOut>;
 }
 
@@ -88,403 +146,325 @@ function AuthComponent({
   patchAuthDraftAction,
   createNamesAction,
   createDescriptionsAction,
-  createFlagsAction,
   createProtocolsAction,
   createSlugsAction,
 }: AuthProps) {
   const router = useRouter();
   const isEditMode = !!authId;
-  const { profile, selectedDraftId, setSelectedDraftId } =
-    useProfile();
+  const s = authData;
+
+  const [formState, setFormState] = useState<AuthFormState>({
+    name_id: null,
+    description_id: null,
+    active_flag_id: null,
+    protocol_ids: [],
+    slug_ids: [],
+    items: [],
+  });
+
+  const { profile, setSelectedDraftId, socket, isConnected } = useProfile();
+  const { isAutosaveEnabled } = useSaveContext();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
+  const { flushRegistryRef, registerFlushCallbacks, flushAllResources } =
+    useFlushRegistry<FlushResult>(FLUSH_KEYS);
 
-  // nuqs parsers for URL-backed state (will be passed to GenericForm)
-  // Memoize to prevent new object reference on every render
-  const authSearchParamsClient = useMemo(
-    () => ({
-      // Draft ID (URL-backed, updated when draft is created)
-      draftId: parseAsString,
-      // Search params (URL-backed, updated via debounced callback in StepCard)
-      descriptionSearch: parseAsString,
-    }),
-    []
-  );
-
-  // Local form state (not in URL) - stores only resource IDs
-  // Display values are managed inside resource components
-  // Use ref to store authData to prevent callback recreation on every render
-  const authDataRef = React.useRef(authData);
-  React.useEffect(() => {
-    authDataRef.current = authData;
-  }, [authData]);
-
-  // Memoize authData fields used in renderStep to prevent callback recreation
-  // when only object reference changes (but content is same)
-  const stableAuthDataFields = React.useMemo(() => {
-    if (!authData) return null;
-    // Map current resources to component-compatible shapes
-    const currentNames = authData.resources?.current?.names;
-    const currentDescriptions = authData.resources?.current?.descriptions;
-    const currentFlags = authData.resources?.current?.flags;
-    const currentProtocols = authData.resources?.current?.protocols;
-    const currentSlugs = authData.resources?.current?.slugs;
-
-    // Map AuthFlagConfig to FlagItem shape for FlagsLegacy component
-    const flagResource = currentFlags?.[0]
-      ? {
-          id: currentFlags[0].flag_option_id ?? null,
-          name: currentFlags[0].label ?? null,
-          description: currentFlags[0].description ?? null,
-          icon: currentFlags[0].icon_id ?? null,
-          generated: currentFlags[0].generated ?? null,
-        }
-      : null;
-
+  const onAiComplete = useCallback((data: Record<string, unknown>) => {
     return {
-      group_id: authData.group_id,
-      // Name resource
-      name_resource: currentNames?.[0] ?? null,
-      show_name: authData.show_name,
-      name_suggestions: authData.name_suggestions,
-      names: authData.resources?.resources?.names ?? [],
-      name_required: authData.name_required,
-      name_create_tool_id: authData.name_create_tool_id,
-      name_link_tool_id: authData.name_link_tool_id,
-      name_show_ai_generate: authData.name_show_ai_generate,
-      // Description resource
-      description_resource: currentDescriptions?.[0] ?? null,
-      show_description: authData.show_description,
-      description_suggestions: authData.description_suggestions,
-      description_required: authData.description_required,
-      descriptions: authData.resources?.resources?.descriptions ?? [],
-      description_create_tool_id: authData.description_create_tool_id,
-      description_link_tool_id: authData.description_link_tool_id,
-      description_show_ai_generate: authData.description_show_ai_generate,
-      // Flag resource
-      flag_resource: flagResource,
-      show_flag: authData.show_flag,
-      flag_required: authData.flag_required,
-      flag_link_tool_id: authData.flag_link_tool_id,
-      flag_show_ai_generate: authData.flag_show_ai_generate,
-      // Protocol resources
-      protocol_resources: currentProtocols ?? [],
-      show_protocols: authData.show_protocols,
-      protocol_suggestions: authData.protocol_suggestions,
-      protocols_required: authData.protocols_required,
-      protocols: authData.resources?.resources?.protocols ?? [],
-      protocols_create_tool_id: authData.protocols_create_tool_id,
-      protocols_link_tool_id: authData.protocols_link_tool_id,
-      protocols_show_ai_generate: authData.protocols_show_ai_generate,
-      // Slug resources
-      slug_resources: currentSlugs ?? [],
-      show_slugs: authData.show_slugs,
-      slug_suggestions: authData.slug_suggestions,
-      slugs_required: authData.slugs_required,
-      slugs: authData.resources?.resources?.slugs ?? [],
-      slugs_create_tool_id: authData.slugs_create_tool_id,
-      slugs_link_tool_id: authData.slugs_link_tool_id,
-      slugs_show_ai_generate: authData.slugs_show_ai_generate,
-      // Auth items
-      auth_items: authData.auth_items,
-    };
-    // Intentionally depend on individual fields, not whole authData object
-    // to prevent recreation when only object reference changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    authData?.group_id,
-    authData?.resources,
-    authData?.show_name,
-    authData?.name_suggestions,
-    authData?.name_required,
-    authData?.name_create_tool_id,
-    authData?.name_link_tool_id,
-    authData?.name_show_ai_generate,
-    authData?.show_description,
-    authData?.description_suggestions,
-    authData?.description_required,
-    authData?.description_create_tool_id,
-    authData?.description_link_tool_id,
-    authData?.description_show_ai_generate,
-    authData?.show_flag,
-    authData?.flag_required,
-    authData?.flag_link_tool_id,
-    authData?.flag_show_ai_generate,
-    authData?.show_protocols,
-    authData?.protocol_suggestions,
-    authData?.protocols_required,
-    authData?.protocols_create_tool_id,
-    authData?.protocols_link_tool_id,
-    authData?.protocols_show_ai_generate,
-    authData?.show_slugs,
-    authData?.slug_suggestions,
-    authData?.slugs_required,
-    authData?.slugs_create_tool_id,
-    authData?.slugs_link_tool_id,
-    authData?.slugs_show_ai_generate,
-    authData?.auth_items,
-  ]);
+      aiUpdates: {} as Record<string, unknown>,
+      formStateUpdater: (prev: Record<string, unknown>) => {
+        const updates: Record<string, unknown> = {};
+        const nameRes = data["name_resource"] as { id?: string | null } | null;
+        const descRes = data["description_resource"] as
+          | { id?: string | null }
+          | null;
+        const flagRes = data["flag_resource"] as
+          | { id?: string | null; flag_option_id?: string | null }
+          | null;
+        const protocolRes = data["protocol_resources"] as
+          | Array<{ id?: string | null }>
+          | null;
+        const slugRes = data["slug_resources"] as Array<{ id?: string | null }> | null;
+        const itemRes = data["item_resources"] as
+          | Array<{
+              id?: string | null;
+              name?: string | null;
+              description?: string | null;
+              encrypted?: boolean | null;
+              position?: number | null;
+            }>
+          | null;
 
-  const getInitialFormState = useCallback(() => {
-    const data = authDataRef.current;
-    if (!data) {
+        if (nameRes?.id) updates["name_id"] = nameRes.id;
+        if (descRes?.id) updates["description_id"] = descRes.id;
+        if (flagRes?.id || flagRes?.flag_option_id) {
+          updates["active_flag_id"] = flagRes.id ?? flagRes.flag_option_id;
+        }
+        if (protocolRes?.length) {
+          const nextIds = protocolRes
+            .map((x) => x.id)
+            .filter((x): x is string => !!x);
+          const prevIds = (prev["protocol_ids"] as string[]) ?? [];
+          updates["protocol_ids"] = [
+            ...prevIds,
+            ...nextIds.filter((id) => !prevIds.includes(id)),
+          ];
+        }
+        if (slugRes?.length) {
+          const nextIds = slugRes.map((x) => x.id).filter((x): x is string => !!x);
+          const prevIds = (prev["slug_ids"] as string[]) ?? [];
+          updates["slug_ids"] = [
+            ...prevIds,
+            ...nextIds.filter((id) => !prevIds.includes(id)),
+          ];
+        }
+        if (itemRes?.length) {
+          const prevItems =
+            (prev["items"] as Array<{
+              name: string;
+              description: string;
+              encrypted: boolean;
+              position: number;
+              active: boolean;
+              key_id: string | null;
+            }>) ?? [];
+          const nextItems = itemRes
+            .filter((x) => !!x.id || !!x.name)
+            .map((x, index) => ({
+              name: x.name ?? "",
+              description: x.description ?? "",
+              encrypted: x.encrypted ?? true,
+              position: x.position ?? prevItems.length + index + 1,
+              active: true,
+              key_id: null,
+            }));
+          updates["items"] = [...prevItems, ...nextItems];
+        }
+
+        return { ...prev, ...updates };
+      },
+    };
+  }, []);
+
+  const { setGeneratingResources, isGenerating } = useAiGeneration<
+    AuthResourceType,
+    Record<string, unknown>
+  >({
+    socket,
+    isConnected,
+    artifactType: "auth",
+    groupId: s?.group_id,
+    eventPrefix: "auth_generation",
+    validResourceTypes: VALID_RESOURCE_TYPES,
+    onComplete: onAiComplete,
+    setFormState: setFormState as React.Dispatch<
+      React.SetStateAction<Record<string, unknown>>
+    >,
+  });
+
+  const getInitialFormState = useCallback((): AuthFormState => {
+    if (!s) {
       return {
-        name_id: null as string | null,
-        description_id: null as string | null,
-        active_flag_id: null as string | null,
-        protocol_ids: [] as string[],
-        slug_ids: [] as string[],
-        auth_items: [] as Array<{
-          name: string;
-          description: string;
-          encrypted: boolean;
-          position: number;
-          active: boolean;
-          key_id: string | null;
-        }>,
+        name_id: null,
+        description_id: null,
+        active_flag_id: null,
+        protocol_ids: [],
+        slug_ids: [],
+        items: [],
       };
     }
-    // Extract resource IDs from current resource objects
-    const currentNames = data.resources?.current?.names;
-    const currentDescriptions = data.resources?.current?.descriptions;
-    const currentFlags = data.resources?.current?.flags;
-    const currentProtocols = data.resources?.current?.protocols;
-    const currentSlugs = data.resources?.current?.slugs;
+
     return {
-      name_id: currentNames?.[0]?.id ?? null,
-      description_id: currentDescriptions?.[0]?.id ?? null,
-      active_flag_id: currentFlags?.[0]?.flag_option_id ?? null,
-      protocol_ids: currentProtocols?.map((p) => p.id).filter((id): id is string => id != null) ?? [],
-      slug_ids: currentSlugs?.map((s) => s.id).filter((id): id is string => id != null) ?? [],
-      auth_items:
-        data.auth_items?.map((item) => ({
+      name_id: s.names?.resource?.id ?? null,
+      description_id: s.descriptions?.resource?.id ?? null,
+      active_flag_id: s.flags?.current?.[0]?.flag_option_id ?? null,
+      protocol_ids:
+        s.protocols?.current?.map((x) => x.id).filter((x): x is string => !!x) ??
+        [],
+      slug_ids: s.slugs?.current?.map((x) => x.id).filter((x): x is string => !!x) ?? [],
+      items:
+        s.items?.current?.map((item, index) => ({
           name: item.name ?? "",
           description: item.description ?? "",
-          encrypted: item.encrypted ?? false,
-          position: item.position ?? 0,
+          encrypted: item.encrypted ?? true,
+          position: item.position ?? index + 1,
           active: item.active ?? true,
           key_id: item.key_id ?? null,
         })) ?? [],
     };
-    // Remove authData from dependencies - use ref instead to prevent callback recreation
-  }, []);
+  }, [s]);
 
-  const [formState, setFormState] = useState(getInitialFormState);
-  // Use ref to access formState in renderStep without depending on it
-  const formStateRef = React.useRef(formState);
-  React.useEffect(() => {
-    formStateRef.current = formState;
+  const formStateRef = React.useRef(formState as Record<string, unknown>);
+  useEffect(() => {
+    formStateRef.current = formState as Record<string, unknown>;
   }, [formState]);
 
-  // Memoize stringified array dependencies to prevent effect from running when array references change but content is same
-  const protocolIdsStr = React.useMemo(
-    () => JSON.stringify(authData?.resources?.current?.protocols?.map((p) => p.id) ?? []),
-    [authData?.resources?.current?.protocols]
-  );
-  const slugIdsStr = React.useMemo(
-    () => JSON.stringify(authData?.resources?.current?.slugs?.map((s) => s.id) ?? []),
-    [authData?.resources?.current?.slugs]
-  );
-
-  // Memoize stringified formState arrays for draft listener effect dependencies
-  const formStateProtocolIdsStr = React.useMemo(
-    () => JSON.stringify(formState.protocol_ids),
-    [formState.protocol_ids]
-  );
-  const formStateSlugIdsStr = React.useMemo(
-    () => JSON.stringify(formState.slug_ids),
-    [formState.slug_ids]
-  );
-  const formStateAuthItemsStr = React.useMemo(
-    () => JSON.stringify(formState.auth_items),
-    [formState.auth_items]
-  );
-
-  // Update form state when server data changes
-  // Use authData directly in dependency array, not getInitialFormState
   useEffect(() => {
-    const newState = getInitialFormState();
+    const next = getInitialFormState();
     setFormState((prev) => {
-      // Only update if resource IDs actually changed
-      if (
-        prev.name_id !== newState.name_id ||
-        prev.description_id !== newState.description_id ||
-        prev.active_flag_id !== newState.active_flag_id ||
-        JSON.stringify(prev.protocol_ids) !==
-          JSON.stringify(newState.protocol_ids) ||
-        JSON.stringify(prev.slug_ids) !== JSON.stringify(newState.slug_ids) ||
-        JSON.stringify(prev.auth_items) !== JSON.stringify(newState.auth_items)
-      ) {
-        return newState;
-      }
+      if (JSON.stringify(prev) !== JSON.stringify(next)) return next;
       return prev;
     });
-    // Use stringified arrays in dependencies to prevent effect from running when array references change but content is same
-    // Intentionally exclude formState and getInitialFormState to prevent infinite loops
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    authData?.resources?.current?.names,
-    authData?.resources?.current?.descriptions,
-    authData?.resources?.current?.flags,
-    protocolIdsStr,
-    slugIdsStr,
-    authData?.auth_items,
-  ]);
+  }, [getInitialFormState]);
 
-  // Draft version tracking for optimistic concurrency control
-  // Keep version in a ref so updating it doesn't retrigger the effect
-  const [lastSavedVersion, setLastSavedVersion] = useState(0);
-  const lastSavedVersionRef = React.useRef(0);
-  React.useEffect(() => {
-    lastSavedVersionRef.current = lastSavedVersion;
-  }, [lastSavedVersion]);
-  // Sync draft_version from server to avoid unintended draft forks.
-  const draftVersion =
-    authData && "draft_version" in authData
-      ? (authData as { draft_version?: number | null }).draft_version
-      : null;
-  React.useEffect(() => {
-    if (
-      typeof draftVersion === "number" &&
-      draftVersion !== lastSavedVersionRef.current
-    ) {
-      setLastSavedVersion(draftVersion);
-      lastSavedVersionRef.current = draftVersion;
-    }
-  }, [draftVersion]);
+  const formStateKey = useMemo(() => JSON.stringify(formState), [formState]);
+  const draftVersion = s?.draft_version ?? null;
 
-  // Get draftId from GenericForm's URL state via bridge (GenericForm is single source of truth)
-  const [draftId, setDraftId] = useState<string | null>(null);
-  const setUrlFormDataRef = React.useRef<
-    null | ((updates: Record<string, unknown>) => void)
-  >(null);
-
-  // Store formData from GenericForm to access search params
-  const formDataRef = React.useRef<Record<string, unknown>>({});
-
-  // Memoized callback to sync draftId from GenericForm - only update if value changed
-  const onFormDataChange = React.useCallback((fd: Record<string, unknown>) => {
-    // Store formData for access in handleGenerateResources
-    formDataRef.current = fd;
-    const next = (fd["draftId"] as string | undefined) ?? null;
-    setDraftId((prev) => (prev === next ? prev : next));
-  }, []);
-
-  // Sync URL draftId to profile context
+  const patchActionRef = React.useRef<
+    ((payload: Record<string, unknown>) => Promise<{ draft_id?: string | null; new_version?: number | null }>) | undefined
+  >(undefined);
   useEffect(() => {
-    if (draftId !== selectedDraftId) {
-      setSelectedDraftId(draftId);
+    if (!patchAuthDraftAction) {
+      patchActionRef.current = undefined;
+      return;
     }
-  }, [draftId, selectedDraftId, setSelectedDraftId]);
-
-  // Use ref to stabilize patchAuthDraftAction to prevent effect recreation when prop reference changes
-  const patchAuthDraftActionRef = React.useRef(patchAuthDraftAction);
-  React.useEffect(() => {
-    patchAuthDraftActionRef.current = patchAuthDraftAction;
+    patchActionRef.current = async (payload: Record<string, unknown>) =>
+      patchAuthDraftAction({ body: payload } as PatchAuthDraftIn);
   }, [patchAuthDraftAction]);
 
-  // Build a stable key for "what would we patch" - only changes when form data actually changes
-  const draftPatchKey = React.useMemo(() => {
-    return JSON.stringify({
-      draftId: draftId || null,
-      name_id: formState.name_id,
-      description_id: formState.description_id,
-      active_flag_id: formState.active_flag_id,
-      protocol_ids: formState.protocol_ids,
-      slug_ids: formState.slug_ids,
-      auth_items: formState.auth_items,
+  const lastPatchedFormStateRef = React.useRef<Record<string, unknown> | null>(
+    null,
+  );
+  const hasResourceIds = checkHasResourceIds(
+    AUTH_RESOURCES,
+    formState as unknown as Record<string, unknown>,
+  );
+
+  const buildPatchPayload = useCallback(
+    (
+      inputDraftId: string | null,
+      expectedVersion: number,
+      flushResults?: Record<string, unknown>,
+    ): Record<string, unknown> => ({
+      input_draft_id: inputDraftId || null,
+      group_id: s?.group_id ?? null,
+      ...buildResourceActions(AUTH_RESOURCES, {
+        formState: formStateRef.current,
+        referenceState: lastPatchedFormStateRef.current,
+        flushResults: flushResults ?? {},
+        entityData: s as Record<string, unknown> | null,
+      }),
+      expected_version: expectedVersion,
+    }),
+    [s],
+  );
+
+  const { setUrlFormDataRef, onFormDataChange, flushAllAndSave, formDataRef } =
+    useDraftLifecycle({
+      formStateKey,
+      patchActionRef,
+      isAutosaveEnabled,
+      buildPatchPayload,
+      setSelectedDraftId,
+      serverDraftVersion: draftVersion,
+      hasResourceIds,
+      flushRegistryRef,
+      formStateRef,
+      onPatchSuccess: () => {
+        lastPatchedFormStateRef.current = { ...formStateRef.current };
+      },
     });
-    // Use stringified arrays to prevent recreation when array references change but content is same
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    draftId,
-    formState.name_id,
-    formState.description_id,
-    formState.active_flag_id,
-    formStateProtocolIdsStr,
-    formStateSlugIdsStr,
-    formStateAuthItemsStr,
-  ]);
 
-  // Track last patched payload so we don't repatch identical state
-  const lastPatchedKeyRef = React.useRef<string | null>(null);
-
-  // Draft change listener - watches resource IDs and patches draft
-  // Only triggers when the payload actually changes, not when version changes
-  useEffect(() => {
-    const hasResourceIds =
-      formState.name_id ||
-      formState.description_id ||
-      formState.active_flag_id ||
-      formState.protocol_ids.length > 0 ||
-      formState.slug_ids.length > 0 ||
-      formState.auth_items.length > 0;
-
-    if (!hasResourceIds || !patchAuthDraftActionRef.current) {
-      return;
-    }
-
-    // ✅ If nothing changed since the last successful patch, do nothing.
-    if (lastPatchedKeyRef.current === draftPatchKey) {
-      return;
-    }
-
-    const timer = setTimeout(async () => {
-      try {
-        if (!patchAuthDraftActionRef.current) return;
-        const result = await patchAuthDraftActionRef.current({
-          body: {
-            input_draft_id: draftId || null,
-            name_id: formState.name_id,
-            description_id: formState.description_id,
-            active_flag_id: formState.active_flag_id,
-            protocol_ids: formState.protocol_ids,
-            slug_ids: formState.slug_ids,
-            expected_version: lastSavedVersionRef.current, // ✅ ref, not state dep
-          },
-        });
-
-        // Mark this payload as patched so we don't loop
-        lastPatchedKeyRef.current = draftPatchKey;
-
-        if (!draftId && result.draft_id) {
-          // Update URL when draft is created via GenericForm bridge (GenericForm owns URL state)
-          setUrlFormDataRef.current?.({ draftId: result.draft_id });
-        }
-
-        // This can stay as state (for UI), but it won't re-trigger patching
-        // because the effect is gated by payload changes.
-        if ((result.new_version ?? 0) !== lastSavedVersionRef.current) {
-          setLastSavedVersion(result.new_version ?? 0);
-          lastSavedVersionRef.current = result.new_version ?? 0;
-        }
-      } catch {
-        // Failed to save draft - error already logged by API
-        // Don't update lastPatchedKeyRef on failure so we retry on next change
+  const handleGenerateResources = useCallback(
+    async (resourceTypes: AuthResourceType[], userInstructions?: string) => {
+      if (!socket || !isConnected) {
+        toast.error("WebSocket not connected");
+        return;
       }
-    }, 1000);
+      setGeneratingResources((prev) => {
+        const next = new Set(prev);
+        resourceTypes.forEach((rt) => next.add(rt));
+        return next;
+      });
+      let currentDraftId =
+        (formDataRef.current["draftId"] as string | undefined) ?? null;
+      if (!currentDraftId) currentDraftId = await flushAllAndSave();
+      if (!currentDraftId) {
+        toast.error("Please save a draft before generating with AI");
+        return;
+      }
+      socket.emit("auth_generate", {
+        resource_types: resourceTypes,
+        user_instructions: userInstructions ? [userInstructions] : null,
+        draft_id: currentDraftId,
+        auth_id: authId || null,
+      });
+    },
+    [
+      socket,
+      isConnected,
+      authId,
+      setGeneratingResources,
+      formDataRef,
+      flushAllAndSave,
+    ],
+  );
 
-    return () => clearTimeout(timer);
-    // ✅ Trigger only when payload changes, not when version changes
-    // patchAuthDraftAction and setDraftId are accessed via refs to prevent effect recreation
-    // when prop/function references change but functionality is the same
-    // We access formState fields and draftId inside the effect, but depend on draftPatchKey
-    // to prevent unnecessary effect recreation when individual fields change but payload is same
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    draftPatchKey, // ✅ trigger only when payload changes
-    // patchAuthDraftAction and setDraftId are accessed via refs
-  ]);
+  const canRegenerate = useCallback(
+    (rt: AuthResourceType): boolean => {
+      if (!s) return false;
+      switch (rt) {
+        case "names":
+          return s.names?.resource?.generated ?? false;
+        case "descriptions":
+          return s.descriptions?.resource?.generated ?? false;
+        case "flags":
+          return s.flags?.current?.some((f) => f.generated) ?? false;
+        case "protocols":
+          return s.protocols?.current?.some((x) => x.generated) ?? false;
+        case "slugs":
+          return s.slugs?.current?.some((x) => x.generated) ?? false;
+        case "items":
+          return s.items?.current?.some((x) => x.generated) ?? false;
+        default:
+          return false;
+      }
+    },
+    [s],
+  );
+  const canRegenerateForStepCard = useCallback(
+    (rt: string) => canRegenerate(rt as AuthResourceType),
+    [canRegenerate],
+  );
+  const isGeneratingForStepCard = useCallback(
+    (rt: string) => isGenerating(rt as AuthResourceType),
+    [isGenerating],
+  );
 
-  // Disabled logic based on can_edit flag - standardized for all resource components
-  // Check can_edit in both new and edit modes to show disabled_reason when agents are missing
-  const disabled = useMemo(() => {
-    if (!authData) return false;
-    return !authData.can_edit;
-  }, [authData]);
+  const stepResources: Record<string, AuthResourceType[]> = useMemo(
+    () => ({
+      basic: ["names", "descriptions", "flags"],
+      protocols: ["protocols"],
+      slugs: ["slugs"],
+      items: ["items"],
+      all: ["names", "descriptions", "flags", "protocols", "slugs", "items"],
+    }),
+    [],
+  );
+  const resourceLabels: Partial<Record<AuthResourceType, string>> = useMemo(
+    () => ({
+      names: "Names",
+      descriptions: "Descriptions",
+      flags: "Flags",
+      protocols: "Protocols",
+      slugs: "Slugs",
+      items: "Items",
+    }),
+    [],
+  );
+  const { handleOpenStepCardModal, modalProps } =
+    useGenerationModal<AuthResourceType>({
+      stepResources,
+      resourceLabels,
+      canRegenerate,
+      onGenerate: (selected, instructions) =>
+        handleGenerateResources(selected, instructions),
+      isGenerating,
+    });
 
-  // Set breadcrumb context when auth data is loaded
+  const disabled = useMemo(() => !s?.can_edit, [s?.can_edit]);
+
   useEffect(() => {
-    const authName = authData?.resources?.current?.names?.[0]?.name;
+    const authName = s?.names?.resource?.name;
     if (authName && authId && isEditMode) {
       setEntityMetadata({
         entityId: authId,
@@ -493,103 +473,102 @@ function AuthComponent({
       });
     }
     return () => clearEntityMetadata();
-  }, [authData, authId, isEditMode, setEntityMetadata, clearEntityMetadata]);
+  }, [
+    s?.names?.resource?.name,
+    authId,
+    isEditMode,
+    setEntityMetadata,
+    clearEntityMetadata,
+  ]);
 
-  // Submit handler for GenericForm (uses formState, not formData parameter)
   const handleSubmit = useCallback(
     async (_formData: Record<string, unknown>) => {
-      // Validate required resource IDs using {resource}_required flags from authData
-      if (authData?.name_required && !formState.name_id) {
-        toast.error("Auth name is required");
+      let flushResults: Record<string, unknown> = {};
+      if (!isAutosaveEnabled) {
+        flushResults = await flushAllResources();
+      }
+
+      const effectiveFormState = computeEffectiveFormState(
+        AUTH_RESOURCES,
+        formStateRef.current,
+        flushResults,
+      ) as unknown as AuthFormState;
+
+      if (s?.names?.required && !effectiveFormState.name_id) {
         throw new Error("Auth name is required");
       }
-
-      if (authData?.description_required && !formState.description_id) {
-        toast.error("Description is required");
+      if (s?.descriptions?.required && !effectiveFormState.description_id) {
         throw new Error("Description is required");
       }
-
-      if (
-        authData?.protocols_required &&
-        (!formState.protocol_ids || formState.protocol_ids.length === 0)
-      ) {
-        toast.error("Protocols are required");
+      if (s?.protocols?.required && effectiveFormState.protocol_ids.length === 0) {
         throw new Error("Protocols are required");
       }
-
-      if (
-        authData?.slugs_required &&
-        (!formState.slug_ids || formState.slug_ids.length === 0)
-      ) {
-        toast.error("Slugs are required");
+      if (s?.slugs?.required && effectiveFormState.slug_ids.length === 0) {
         throw new Error("Slugs are required");
       }
-
-      // Ensure profileId exists - required for API calls
       if (!profile?.id) {
-        toast.error("Profile not loaded. Please refresh the page.");
         throw new Error("Profile not loaded");
       }
-
+      if (!s?.group_id) {
+        throw new Error("Missing group_id");
+      }
       if (!saveAuthAction) {
-        toast.error("Save action not available");
         throw new Error("Save action not available");
       }
 
-      // Ensure required fields are present (TypeScript guard)
-      if (!formState.name_id) {
-        toast.error("Required fields are missing");
-        throw new Error("Required fields are missing");
-      }
+      const initialState = getInitialFormState() as unknown as Record<
+        string,
+        unknown
+      >;
+      const saveActions = buildResourceActions(AUTH_RESOURCES, {
+        formState: effectiveFormState as unknown as Record<string, unknown>,
+        referenceState: initialState,
+        flushResults,
+        entityData: s as Record<string, unknown> | null,
+      }) as Pick<
+        SaveAuthBody,
+        "names" | "descriptions" | "flags" | "protocols" | "slugs"
+      >;
 
-      try {
-        await saveAuthAction({
-          body: {
-            group_id: authData?.group_id || "",
-            input_auth_id: isEditMode && authId ? authId : null,
-            name_id: formState.name_id,
-            description_id: formState.description_id || null,
-            active_flag_id: formState.active_flag_id || null,
-            protocol_ids: formState.protocol_ids || [],
-            slug_ids: formState.slug_ids || [],
-            auth_items: formState.auth_items || [],
+      await saveAuthAction({
+        body: {
+          input_auth_id: isEditMode ? authId ?? null : null,
+          group_id: s.group_id,
+          ...saveActions,
+          items: {
+            items:
+              effectiveFormState.items.length > 0
+                ? effectiveFormState.items
+                : null,
+            create_tool_id: s.items?.create_tool_id ?? null,
+            link_tool_id: s.items?.link_tool_id ?? null,
           },
-        });
-        toast.success(
-          `Auth ${isEditMode ? "updated" : "created"} successfully!`
-        );
-        router.push("/system/auth");
-      } catch (error) {
-        toast.error(
-          `Failed to ${isEditMode ? "update" : "create"} auth: ${error instanceof Error ? error.message : "Unknown error"}`
-        );
-        throw error;
-      }
+        },
+      });
+
+      toast.success(`Auth ${isEditMode ? "updated" : "created"} successfully!`);
+      router.push("/system/auth");
     },
     [
-      formState,
-      isEditMode,
-      authId,
+      isAutosaveEnabled,
+      flushAllResources,
+      s,
       profile?.id,
       saveAuthAction,
+      getInitialFormState,
+      isEditMode,
+      authId,
       router,
-      authData?.group_id,
-      authData?.name_required,
-      authData?.description_required,
-      authData?.protocols_required,
-      authData?.slugs_required,
-    ]
+    ],
   );
 
-  // Step status logic (for GenericForm) - check resource IDs instead of display values
   const getStepStatus = useCallback(
     (stepId: string, _formData: Record<string, unknown>): StepStatus => {
-      // Check resource IDs from formState (components manage their own display state)
       const hasName = !!formState.name_id;
       const hasDescription = !!formState.description_id;
       const hasProtocols = formState.protocol_ids.length > 0;
       const hasSlugs = formState.slug_ids.length > 0;
-      const hasItems = formState.auth_items.length > 0;
+      const hasItems = formState.items.length > 0;
 
       switch (stepId) {
         case "basic":
@@ -607,129 +586,69 @@ function AuthComponent({
           return "pending";
       }
     },
-    [formState]
+    [formState],
   );
 
-  // Steps configuration for GenericForm
   const steps = useMemo(
     () => [
       {
         id: "basic",
         title: "Basic Information",
-        description: "Set the auth name, description, and active status.",
-        resetFields: ["name", "description", "active"],
+        description: "Set the auth name, description, and status.",
+        resetFields: ["name_id", "description_id", "active_flag_id"],
       },
       {
         id: "protocols",
         title: "Protocols",
-        description: "Select protocols for this auth.",
+        description: "Select supported protocols.",
         resetFields: ["protocol_ids"],
       },
       {
         id: "slugs",
         title: "Slugs",
-        description: "Select slugs for this auth.",
+        description: "Select auth slugs.",
         resetFields: ["slug_ids"],
       },
       {
         id: "items",
         title: "Auth Items",
-        description: "Add and configure auth items.",
-        resetFields: ["auth_items"],
+        description: "Define auth item fields.",
+        resetFields: ["items"],
       },
     ],
-    []
+    [],
   );
 
-  // Memoize formFieldKeys to prevent re-initialization loops
   const formFieldKeys = useMemo(
     () => [
-      "name",
-      "description",
-      "active",
+      "name_id",
+      "description_id",
+      "active_flag_id",
       "protocol_ids",
       "slug_ids",
-      "auth_items",
+      "items",
     ],
-    []
+    [],
   );
 
-  // Memoize resetSuccessMessage to prevent GenericForm re-renders
-  const resetSuccessMessage = useCallback((stepId: string) => {
-    switch (stepId) {
-      case "basic":
-        return "Basic information reset";
-      case "protocols":
-        return "Protocols reset";
-      case "slugs":
-        return "Slugs reset";
-      case "items":
-        return "Auth items reset";
-      default:
-        return "Reset";
-    }
-  }, []);
-
-  const handleReset = useCallback((stepId: string) => {
-    setFormState((prev) => {
-      switch (stepId) {
-        case "basic":
-          return {
-            ...prev,
-            name_id: null,
-            description_id: null,
-            active_flag_id: null,
-          };
-        case "protocols":
-          return {
-            ...prev,
-            protocol_ids: [],
-          };
-        case "slugs":
-          return {
-            ...prev,
-            slug_ids: [],
-          };
-        case "items":
-          return {
-            ...prev,
-            auth_items: [],
-          };
-        default:
-          return prev;
-      }
-    });
-  }, []);
-
-  // Memoize submitButton to prevent GenericForm re-renders
-  const submitButton = useMemo(
-    () => ({
-      backUrl: "/system/auth",
-      backLabel: "Back",
-      createLabel: "Create Auth",
-      updateLabel: "Update Auth",
-    }),
-    []
+  const authItemCards = useMemo(
+    () =>
+      formState.items.map((item, index) => ({
+        id: `item-${index}`,
+        name: item.name,
+        description: item.description,
+        encrypted: item.encrypted,
+        active: item.active,
+        position: item.position || index + 1,
+        isNew: false,
+      })),
+    [formState.items],
   );
 
-  // Convert auth_items to AuthItemCard format for AuthItemCardGrid
-  const authItemCards = useMemo(() => {
-    return formState.auth_items.map((item, index) => ({
-      id: `item-${index}`,
-      name: item.name,
-      description: item.description,
-      encrypted: item.encrypted,
-      active: item.active,
-      position: item.position || index + 1,
-      isNew: false,
-    }));
-  }, [formState.auth_items]);
-
-  // Handle auth items change from AuthItemCardGrid
   const handleItemsChange = useCallback((items: AuthItemCard[]) => {
     setFormState((prev) => ({
       ...prev,
-      auth_items: items.map((item) => ({
+      items: items.map((item) => ({
         name: item.name,
         description: item.description || "",
         encrypted: item.encrypted,
@@ -740,7 +659,6 @@ function AuthComponent({
     }));
   }, []);
 
-  // Memoize renderStep to prevent GenericForm re-renders
   const renderStep = useCallback(
     ({
       stepId,
@@ -760,16 +678,8 @@ function AuthComponent({
       isOptional: boolean;
       formData: Record<string, unknown>;
       setFormData: (updates: Partial<Record<string, unknown>>) => void;
-      filters?: Array<{
-        key: string;
-        label: string;
-        value: boolean;
-        onChange: (value: boolean) => void;
-      }>;
       onReset?: () => void;
     }) => {
-      // Use memoized fields to avoid dependency on authData object reference
-      const currentAuthData = stableAuthDataFields;
       switch (stepId) {
         case "basic":
           return (
@@ -782,55 +692,56 @@ function AuthComponent({
               isEditMode={isEditMode}
               customHeader={
                 <Names
-                  name_id={formState.name_id ?? null}
-                  name_resource={currentAuthData?.name_resource ?? null}
-                  show_name={currentAuthData?.show_name ?? true}
-                  name_suggestions={currentAuthData?.name_suggestions ?? []}
-                  names={currentAuthData?.names ?? []}
+                  name_id={formState.name_id}
+                  name_resource={s?.names?.resource ?? null}
+                  show_name={s?.names?.show ?? true}
+                  name_suggestions={s?.names?.suggestions ?? []}
+                  names={s?.names?.resources ?? []}
                   disabled={disabled}
                   onNameIdChange={(nameId) =>
                     setFormState((prev) => ({ ...prev, name_id: nameId }))
                   }
-                  placeholder="e.g., OIDC Authentication"
-                  defaultName="New Auth"
-                  required={currentAuthData?.name_required ?? false}
+                  onGenerate={() => handleGenerateResources(["names"])}
+                  isGenerating={isGenerating("names")}
+                  required={s?.names?.required ?? false}
                   hideDescription={true}
-                  group_id={currentAuthData?.group_id ?? null}
-                  create_tool_id={currentAuthData?.name_create_tool_id ?? null}
-                  link_tool_id={currentAuthData?.name_link_tool_id ?? null}
-                  showAiGenerate={currentAuthData?.name_show_ai_generate ?? false}
-                  createNamesAction={
-                    createNamesAction as
-                      | ((
-                          input: CreateDraftNamesIn
-                        ) => Promise<CreateDraftNamesOut>)
-                      | undefined
-                  }
+                  group_id={s?.group_id ?? null}
+                  showAiGenerate={s?.names?.show_ai_generate ?? false}
+                  create_tool_id={s?.names?.create_tool_id ?? null}
+                  link_tool_id={s?.names?.link_tool_id ?? null}
+                  createNamesAction={createNamesAction}
+                  isAutosaveEnabled={isAutosaveEnabled}
+                  registerFlush={registerFlushCallbacks["names"]}
                 />
               }
-              resetFields={["name", "description", "active"]}
+              resetFields={["name_id", "description_id", "active_flag_id"]}
+              actions={
+                s?.basic_show_ai_generate ? (
+                  <StepCardAiButton
+                    stepId="basic"
+                    resourceTypes={stepResources["basic"] ?? []}
+                    canRegenerate={canRegenerateForStepCard}
+                    isGenerating={isGeneratingForStepCard}
+                    onOpenModal={handleOpenStepCardModal}
+                    disabled={disabled}
+                  />
+                ) : undefined
+              }
               {...(onReset ? { onReset } : {})}
-              resetLabel="Reset"
             >
               <div className="space-y-4">
-                {/* Description field - using Descriptions resource component */}
                 <Descriptions
-                  description_id={formState.description_id ?? null}
-                  description_resource={
-                    currentAuthData?.description_resource ?? null
-                  }
-                  show_description={currentAuthData?.show_description ?? true}
-                  description_suggestions={
-                    currentAuthData?.description_suggestions ?? []
-                  }
-                  descriptions={currentAuthData?.descriptions ?? []}
+                  description_id={formState.description_id}
+                  description_resource={s?.descriptions?.resource ?? null}
+                  show_description={s?.descriptions?.show ?? true}
+                  description_suggestions={s?.descriptions?.suggestions ?? []}
+                  descriptions={s?.descriptions?.resources ?? []}
                   disabled={disabled}
                   onDescriptionIdChange={(descriptionId) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      description_id: descriptionId,
-                    }))
+                    setFormState((prev) => ({ ...prev, description_id: descriptionId }))
                   }
+                  onGenerate={() => handleGenerateResources(["descriptions"])}
+                  isGenerating={isGenerating("descriptions")}
                   searchTerm={
                     (stepFormData["descriptionSearch"] as
                       | string
@@ -840,36 +751,47 @@ function AuthComponent({
                   onSearchChange={(term: string) =>
                     setStepFormData({ descriptionSearch: term || null })
                   }
-                  label="Description"
-                  placeholder="Describe this authentication method"
-                  required={currentAuthData?.description_required ?? false}
-                  rows={4}
-                  data-testid="input-auth-description"
-                  group_id={currentAuthData?.group_id ?? null}
-                  create_tool_id={currentAuthData?.description_create_tool_id ?? null}
-                  link_tool_id={currentAuthData?.description_link_tool_id ?? null}
-                  showAiGenerate={currentAuthData?.description_show_ai_generate ?? false}
+                  required={s?.descriptions?.required ?? false}
+                  group_id={s?.group_id ?? null}
+                  showAiGenerate={s?.descriptions?.show_ai_generate ?? false}
+                  create_tool_id={s?.descriptions?.create_tool_id ?? null}
+                  link_tool_id={s?.descriptions?.link_tool_id ?? null}
                   createDescriptionsAction={createDescriptionsAction}
+                  isAutosaveEnabled={isAutosaveEnabled}
+                  registerFlush={registerFlushCallbacks["descriptions"]}
                 />
 
-                {/* Active Switch - using Flags resource component */}
                 <Flags
-                  flag_id={formState.active_flag_id ?? null}
-                  flag_resource={currentAuthData?.flag_resource ?? null}
-                  show_flag={currentAuthData?.show_flag ?? false}
+                  flag_id={formState.active_flag_id}
+                  flag_resource={
+                    s?.flags?.current?.[0]
+                      ? {
+                          id: s.flags.current[0].flag_option_id ?? null,
+                          name: s.flags.current[0].label ?? null,
+                          description: s.flags.current[0].description ?? null,
+                          icon: s.flags.current[0].icon_id ?? null,
+                          generated: s.flags.current[0].generated ?? null,
+                        }
+                      : null
+                  }
+                  flags={(s?.flags?.resources ?? []).map((f) => ({
+                    id: f.flag_option_id ?? null,
+                    name: f.label ?? null,
+                    description: f.description ?? null,
+                    icon: f.icon_id ?? null,
+                    generated: f.generated ?? null,
+                  }))}
+                  show_flag={s?.flags?.show ?? false}
                   disabled={disabled}
                   onFlagIdChange={(flagId) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      active_flag_id: flagId,
-                    }))
+                    setFormState((prev) => ({ ...prev, active_flag_id: flagId }))
                   }
-                  label="Active"
-                  helpText="Inactive auth methods will not be available"
-                  required={currentAuthData?.flag_required ?? false}
-                  group_id={currentAuthData?.group_id ?? null}
-                  link_tool_id={currentAuthData?.flag_link_tool_id ?? null}
-                  showAiGenerate={currentAuthData?.flag_show_ai_generate ?? false}
+                  onGenerate={() => handleGenerateResources(["flags"])}
+                  isGenerating={isGenerating("flags")}
+                  required={s?.flags?.required ?? false}
+                  group_id={s?.group_id ?? null}
+                  showAiGenerate={s?.flags?.show_ai_generate ?? false}
+                  link_tool_id={s?.flags?.link_tool_id ?? null}
                 />
               </div>
             </StepCard>
@@ -885,26 +807,37 @@ function AuthComponent({
               isReadonly={disabled}
               isEditMode={isEditMode}
               resetFields={["protocol_ids"]}
+              actions={
+                s?.protocols?.show_ai_generate ? (
+                  <StepCardAiButton
+                    stepId="protocols"
+                    resourceTypes={stepResources["protocols"] ?? []}
+                    canRegenerate={canRegenerateForStepCard}
+                    isGenerating={isGeneratingForStepCard}
+                    onOpenModal={handleOpenStepCardModal}
+                    disabled={disabled}
+                  />
+                ) : undefined
+              }
               {...(onReset ? { onReset } : {})}
-              resetLabel="Reset"
             >
               <Protocols
-                protocol_ids={formState.protocol_ids ?? []}
-                protocol_resources={currentAuthData?.protocol_resources ?? []}
-                show_protocols={currentAuthData?.show_protocols ?? false}
-                protocol_suggestions={
-                  currentAuthData?.protocol_suggestions ?? []
-                }
-                protocols={currentAuthData?.protocols ?? []}
+                protocol_ids={formState.protocol_ids}
+                protocol_resources={s?.protocols?.current ?? []}
+                show_protocols={s?.protocols?.show ?? false}
+                protocol_suggestions={s?.protocols?.suggestions ?? []}
+                protocols={s?.protocols?.resources ?? []}
                 disabled={disabled}
                 onChange={(ids) =>
                   setFormState((prev) => ({ ...prev, protocol_ids: ids }))
                 }
-                required={currentAuthData?.protocols_required ?? false}
-                group_id={currentAuthData?.group_id ?? null}
-                create_tool_id={currentAuthData?.protocols_create_tool_id ?? null}
-                link_tool_id={currentAuthData?.protocols_link_tool_id ?? null}
-                showAiGenerate={currentAuthData?.protocols_show_ai_generate ?? false}
+                onGenerate={() => handleGenerateResources(["protocols"])}
+                isGenerating={isGenerating("protocols")}
+                required={s?.protocols?.required ?? false}
+                group_id={s?.group_id ?? null}
+                showAiGenerate={s?.protocols?.show_ai_generate ?? false}
+                create_tool_id={s?.protocols?.create_tool_id ?? null}
+                link_tool_id={s?.protocols?.link_tool_id ?? null}
                 createProtocolsAction={createProtocolsAction}
               />
             </StepCard>
@@ -920,24 +853,37 @@ function AuthComponent({
               isReadonly={disabled}
               isEditMode={isEditMode}
               resetFields={["slug_ids"]}
+              actions={
+                s?.slugs?.show_ai_generate ? (
+                  <StepCardAiButton
+                    stepId="slugs"
+                    resourceTypes={stepResources["slugs"] ?? []}
+                    canRegenerate={canRegenerateForStepCard}
+                    isGenerating={isGeneratingForStepCard}
+                    onOpenModal={handleOpenStepCardModal}
+                    disabled={disabled}
+                  />
+                ) : undefined
+              }
               {...(onReset ? { onReset } : {})}
-              resetLabel="Reset"
             >
               <Slugs
-                slug_ids={formState.slug_ids ?? []}
-                slug_resources={currentAuthData?.slug_resources ?? []}
-                show_slugs={currentAuthData?.show_slugs ?? false}
-                slug_suggestions={currentAuthData?.slug_suggestions ?? []}
-                slugs={currentAuthData?.slugs ?? []}
+                slug_ids={formState.slug_ids}
+                slug_resources={s?.slugs?.current ?? []}
+                show_slugs={s?.slugs?.show ?? false}
+                slug_suggestions={s?.slugs?.suggestions ?? []}
+                slugs={s?.slugs?.resources ?? []}
                 disabled={disabled}
                 onChange={(ids) =>
                   setFormState((prev) => ({ ...prev, slug_ids: ids }))
                 }
-                required={currentAuthData?.slugs_required ?? false}
-                group_id={currentAuthData?.group_id ?? null}
-                create_tool_id={currentAuthData?.slugs_create_tool_id ?? null}
-                link_tool_id={currentAuthData?.slugs_link_tool_id ?? null}
-                showAiGenerate={currentAuthData?.slugs_show_ai_generate ?? false}
+                onGenerate={() => handleGenerateResources(["slugs"])}
+                isGenerating={isGenerating("slugs")}
+                required={s?.slugs?.required ?? false}
+                group_id={s?.group_id ?? null}
+                showAiGenerate={s?.slugs?.show_ai_generate ?? false}
+                create_tool_id={s?.slugs?.create_tool_id ?? null}
+                link_tool_id={s?.slugs?.link_tool_id ?? null}
                 createSlugsAction={createSlugsAction}
               />
             </StepCard>
@@ -952,9 +898,20 @@ function AuthComponent({
               stepDescription={stepDescription}
               isReadonly={disabled}
               isEditMode={isEditMode}
-              resetFields={["auth_items"]}
+              resetFields={["items"]}
+              actions={
+                s?.items?.show_ai_generate ? (
+                  <StepCardAiButton
+                    stepId="items"
+                    resourceTypes={stepResources["items"] ?? []}
+                    canRegenerate={canRegenerateForStepCard}
+                    isGenerating={isGeneratingForStepCard}
+                    onOpenModal={handleOpenStepCardModal}
+                    disabled={disabled}
+                  />
+                ) : undefined
+              }
               {...(onReset ? { onReset } : {})}
-              resetLabel="Reset"
             >
               <AuthItemCardGrid
                 items={authItemCards}
@@ -969,105 +926,105 @@ function AuthComponent({
       }
     },
     [
-      // Use stableAuthDataFields instead of authData to prevent callback recreation
-      // when only object reference changes (but content is same)
-      stableAuthDataFields,
       disabled,
       isEditMode,
-      // Depend on individual formState fields instead of whole object to prevent callback recreation
-      // when object reference changes but values are same
-      formState.name_id,
-      formState.description_id,
-      formState.active_flag_id,
-      // Include arrays - they're used in the callback, but the formState sync effect ensures
-      // they only change when content actually changes (not just reference)
-      formState.protocol_ids,
-      formState.slug_ids,
-      formState.auth_items,
-      authItemCards,
-      handleItemsChange,
+      formState,
+      s,
+      handleGenerateResources,
+      isGenerating,
       createNamesAction,
       createDescriptionsAction,
-      createFlagsAction,
       createProtocolsAction,
       createSlugsAction,
-    ]
+      isAutosaveEnabled,
+      registerFlushCallbacks,
+      stepResources,
+      canRegenerateForStepCard,
+      isGeneratingForStepCard,
+      handleOpenStepCardModal,
+      authItemCards,
+      handleItemsChange,
+    ],
+  );
+
+  const authSearchParamsClient = useMemo(
+    () => ({
+      draftId: parseAsString,
+      descriptionSearch: parseAsString,
+    }),
+    [],
   );
 
   return (
-    <div
-      className="w-full p-6 space-y-8"
-      data-page={`auth-${isEditMode ? "edit" : "new"}`}
-    >
-      <ReadOnlyBanner
-        disabled={disabled}
-        disabledReason={authData?.disabled_reason ?? null}
-        entityType="auth"
-      />
-
-      <GenericForm
-        nuqsParsers={authSearchParamsClient as Record<string, Parser<unknown>>}
-        steps={steps}
-        getStepStatus={getStepStatus}
-        serverData={authData}
-        formFieldKeys={formFieldKeys}
-        resetSuccessMessage={resetSuccessMessage}
-        onReset={(stepId) => handleReset(stepId)}
-        onSubmit={handleSubmit}
-        submitButton={submitButton}
-        isReadonly={disabled}
-        isEditMode={isEditMode}
-        renderStep={renderStep}
-        onFormDataChange={onFormDataChange}
-        registerSetFormData={(setter) => {
-          setUrlFormDataRef.current = setter;
-        }}
-      />
-    </div>
+    <TooltipProvider>
+      <div className="w-full p-6 space-y-8" data-page={`auth-${isEditMode ? "edit" : "new"}`}>
+        <ReadOnlyBanner
+          disabled={disabled}
+          disabledReason={s?.disabled_reason ?? null}
+          entityType="auth"
+        />
+        <GenericForm
+          nuqsParsers={authSearchParamsClient as Record<string, Parser<unknown>>}
+          steps={steps}
+          getStepStatus={getStepStatus}
+          serverData={s}
+          formFieldKeys={formFieldKeys}
+          resetSuccessMessage={(stepId) => {
+            switch (stepId) {
+              case "basic":
+                return "Basic information reset";
+              case "protocols":
+                return "Protocols reset";
+              case "slugs":
+                return "Slugs reset";
+              case "items":
+                return "Auth items reset";
+              default:
+                return "Reset";
+            }
+          }}
+          onReset={(stepId) => {
+            switch (stepId) {
+              case "basic":
+                setFormState((prev) => ({
+                  ...prev,
+                  name_id: null,
+                  description_id: null,
+                  active_flag_id: null,
+                }));
+                break;
+              case "protocols":
+                setFormState((prev) => ({ ...prev, protocol_ids: [] }));
+                break;
+              case "slugs":
+                setFormState((prev) => ({ ...prev, slug_ids: [] }));
+                break;
+              case "items":
+                setFormState((prev) => ({ ...prev, items: [] }));
+                break;
+              default:
+                break;
+            }
+          }}
+          onSubmit={handleSubmit}
+          submitButton={{
+            backUrl: "/system/auth",
+            backLabel: "Back",
+            createLabel: "Create Auth",
+            updateLabel: "Update Auth",
+          }}
+          isReadonly={disabled}
+          isEditMode={isEditMode}
+          renderStep={renderStep}
+          onFormDataChange={onFormDataChange}
+          registerSetFormData={(setter) => {
+            setUrlFormDataRef.current = setter;
+          }}
+        />
+        <GenerateRegenerateModal {...modalProps} />
+      </div>
+    </TooltipProvider>
   );
 }
 
-// Memoize component to prevent re-renders when only prop references change (content is same)
-export default React.memo(AuthComponent, (prevProps, nextProps) => {
-  // Compare authData by resource IDs from current resources, not object reference
-  const prevCurrent = prevProps.authData?.resources?.current;
-  const nextCurrent = nextProps.authData?.resources?.current;
-  const prevIds = {
-    name_id: prevCurrent?.names?.[0]?.id,
-    description_id: prevCurrent?.descriptions?.[0]?.id,
-    active_flag_id: prevCurrent?.flags?.[0]?.flag_option_id,
-    protocol_ids: prevCurrent?.protocols?.map((p) => p.id),
-    slug_ids: prevCurrent?.slugs?.map((s) => s.id),
-  };
-  const nextIds = {
-    name_id: nextCurrent?.names?.[0]?.id,
-    description_id: nextCurrent?.descriptions?.[0]?.id,
-    active_flag_id: nextCurrent?.flags?.[0]?.flag_option_id,
-    protocol_ids: nextCurrent?.protocols?.map((p) => p.id),
-    slug_ids: nextCurrent?.slugs?.map((s) => s.id),
-  };
-
-  // Compare primitive props
-  if (
-    prevProps.authId !== nextProps.authId ||
-    JSON.stringify(prevIds) !== JSON.stringify(nextIds)
-  ) {
-    return false; // Props changed, re-render
-  }
-
-  // Compare function props by reference (should be stable from server actions)
-  if (
-    prevProps.saveAuthAction !== nextProps.saveAuthAction ||
-    prevProps.patchAuthDraftAction !== nextProps.patchAuthDraftAction ||
-    prevProps.createNamesAction !== nextProps.createNamesAction ||
-    prevProps.createDescriptionsAction !== nextProps.createDescriptionsAction ||
-    prevProps.createFlagsAction !== nextProps.createFlagsAction ||
-    prevProps.createProtocolsAction !== nextProps.createProtocolsAction ||
-    prevProps.createSlugsAction !== nextProps.createSlugsAction
-  ) {
-    return false; // Function props changed, re-render
-  }
-
-  // All props are equivalent, skip re-render
-  return true;
-});
+export default React.memo(AuthComponent);

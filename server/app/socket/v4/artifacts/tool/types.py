@@ -5,8 +5,6 @@ Types are registered in OpenAPI via FastAPI endpoints, enabling
 automatic type extraction in the frontend via InputOf/OutputOf.
 """
 
-from uuid import UUID
-
 from app.api.v4.artifacts.tool.types import GetToolApiRequest
 from app.socket.v4.artifacts.types import (
     GenerationCompleteEvent,
@@ -30,13 +28,11 @@ class GenerateToolPayload(GetToolApiRequest):
     """Request payload for tool_generate WebSocket event.
 
     Extends GetToolApiRequest (which has tool_id, draft_id)
-    with generation-specific fields and form state.
+    with generation-specific fields.
     """
 
-    # Generation-specific fields - domain-based API
-    domain_ids: list[
-        UUID
-    ]  # Required: which domains to generate (client passes these through)
+    # Generation-specific fields - resource-type-based API
+    resource_types: list[str]
     user_instructions: list[str] | None = None  # Optional: user instructions
 
 

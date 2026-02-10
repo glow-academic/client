@@ -1,37 +1,35 @@
-"""WebSocket-specific types for eval generation.
-
-Extends base artifact types with eval-specific fields.
-Types are registered in OpenAPI via FastAPI endpoints, enabling
-automatic type extraction in the frontend via InputOf/OutputOf.
-"""
+"""WebSocket-specific types for eval generation."""
 
 from uuid import UUID
 
-from app.api.v4.artifacts.eval.types import GetEvalApiRequest
+from pydantic import BaseModel
+
 from app.socket.v4.artifacts.types import (
     GenerationCompleteEvent,
     GenerationErrorEvent,
     GenerationProgressEvent,
 )
 from app.sql.types import (
+    QGetAgentsV4Item,
     QGetDepartmentsV4Item,
     QGetDescriptionsV4Item,
     QGetFlagsV4Item,
+    QGetGroupPositionsV4Item,
+    QGetGroupRubricsV4Item,
     QGetNamesV4Item,
+    QGetRubricsBatchV4Item,
+    QGetRunPositionsV4Item,
+    QGetRunRubricsV4Item,
 )
 
-# =============================================================================
-# Client-to-Server Events (eval_generate)
-# =============================================================================
 
+class GenerateEvalPayload(BaseModel):
+    """Request payload for eval_generate WebSocket event."""
 
-class GenerateEvalPayload(GetEvalApiRequest):
-    """Request payload for eval_generate WebSocket event.
-
-    Extends GetEvalApiRequest with generation-specific fields.
-    """
-
-    domain_ids: list[UUID]
+    artifact_type: str = "eval"
+    eval_id: UUID | None = None
+    draft_id: UUID | None = None
+    resource_types: list[str]
     user_instructions: list[str] | None = None
 
 
@@ -52,6 +50,12 @@ class EvalGenerationCompleteEvent(GenerationCompleteEvent):
 
     # Multi-select resources
     department_resources: list[QGetDepartmentsV4Item] | None = None
+    agent_resources: list[QGetAgentsV4Item] | None = None
+    rubric_resources: list[QGetRubricsBatchV4Item] | None = None
+    run_position_resources: list[QGetRunPositionsV4Item] | None = None
+    group_position_resources: list[QGetGroupPositionsV4Item] | None = None
+    run_rubric_resources: list[QGetRunRubricsV4Item] | None = None
+    group_rubric_resources: list[QGetGroupRubricsV4Item] | None = None
 
 
 class EvalGenerationProgressEvent(GenerationProgressEvent):

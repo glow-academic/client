@@ -9,6 +9,7 @@ from app.api.v4.artifacts.tool.permissions import compute_can_draft
 from app.api.v4.artifacts.tool.types import (
     PatchToolDraftApiRequest,
     PatchToolDraftApiResponse,
+    PatchToolDraftSqlParams,
 )
 from app.infra.v4.activity.audit import audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
@@ -16,7 +17,6 @@ from app.main import get_db
 from app.sql.types import (
     CheckToolDuplicateAccessSqlParams,
     CheckToolDuplicateAccessSqlRow,
-    PatchToolDraftSqlParams,
     PatchToolDraftSqlRow,
     load_sql_query,
 )
@@ -85,8 +85,8 @@ async def patch_tool_draft(
             )
 
         async with conn.transaction():
-            params = PatchToolDraftSqlParams(
-                **request.model_dump(), profile_id=profile_id
+            params = PatchToolDraftSqlParams.from_request(
+                request, profile_id=profile_id
             )
             sql_params = params.to_tuple()
 

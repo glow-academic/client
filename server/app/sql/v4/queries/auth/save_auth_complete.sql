@@ -1,12 +1,58 @@
--- Unified save auth function - handles both create (auth_id = NULL) and update (auth_id provided)
--- Accepts field IDs directly (no draft reading) - persona gold standard pattern
--- 1) Drop function first (breaks dependency on types)
+-- Save auth with nested resource actions and tool-call tracking.
+
+DO $$
+BEGIN
+    DROP TYPE IF EXISTS types.auth_resource_action CASCADE;
+    CREATE TYPE types.auth_resource_action AS (
+        resource_id uuid,
+        create_tool_id uuid,
+        link_tool_id uuid
+    );
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
+DO $$
+BEGIN
+    DROP TYPE IF EXISTS types.auth_multi_resource_action CASCADE;
+    CREATE TYPE types.auth_multi_resource_action AS (
+        resource_ids uuid[],
+        create_tool_id uuid,
+        link_tool_id uuid
+    );
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
+DO $$
+BEGIN
+    DROP TYPE IF EXISTS types.auth_item_input CASCADE;
+    CREATE TYPE types.auth_item_input AS (
+        name text,
+        description text,
+        encrypted boolean,
+        position integer,
+        active boolean,
+        key_id uuid
+    );
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
+DO $$
+BEGIN
+    DROP TYPE IF EXISTS types.auth_item_action CASCADE;
+    CREATE TYPE types.auth_item_action AS (
+        items types.auth_item_input[],
+        create_tool_id uuid,
+        link_tool_id uuid
+    );
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
 DO $$
 DECLARE
     r RECORD;
 BEGIN
     FOR r IN
-        SELECT oidvectortypes(proargtypes) as sig
+        SELECT oidvectortypes(proargtypes) AS sig
         FROM pg_proc
         WHERE proname = 'api_save_auth_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
@@ -15,42 +61,16 @@ BEGIN
     END LOOP;
 END $$;
 
--- 2) Drop types WITHOUT CASCADE
-DO $$
-DECLARE
-    r RECORD;
-BEGIN
-    FOR r IN
-        SELECT typname
-        FROM pg_type
-        WHERE typname LIKE 'i_save_auth_v4_%'
-          AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
-    LOOP
-        EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
-    END LOOP;
-END $$;
-
--- 3) Recreate types
-CREATE TYPE types.i_save_auth_v4_auth_item AS (
-    name text,
-    description text,
-    encrypted boolean,
-    position integer,
-    active boolean,
-    key_id uuid
-);
-
--- 4) Recreate function - now accepts field IDs directly
 CREATE OR REPLACE FUNCTION api_save_auth_v4(
     profile_id uuid,
     group_id uuid,
     input_auth_id uuid DEFAULT NULL,
-    name_id uuid DEFAULT NULL,
-    description_id uuid DEFAULT NULL,
-    active_flag_id uuid DEFAULT NULL,
-    protocol_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    slug_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    auth_items_junction types.i_save_auth_v4_auth_item[] DEFAULT ARRAY[]::types.i_save_auth_v4_auth_item[]
+    names types.auth_resource_action DEFAULT NULL,
+    descriptions types.auth_resource_action DEFAULT NULL,
+    flags types.auth_resource_action DEFAULT NULL,
+    protocols types.auth_multi_resource_action DEFAULT NULL,
+    slugs types.auth_multi_resource_action DEFAULT NULL,
+    items types.auth_item_action DEFAULT NULL
 )
 RETURNS TABLE (
     auth_id uuid,
@@ -62,225 +82,298 @@ AS $$
 DECLARE
     v_auth_id uuid;
     v_actor_name text;
-    is_create boolean;
+    is_create boolean := (input_auth_id IS NULL);
+
+    v_name_id uuid := (names).resource_id;
+    v_description_id uuid := (descriptions).resource_id;
+    v_active_flag_id uuid := (flags).resource_id;
+    v_protocol_ids uuid[] := COALESCE((protocols).resource_ids, ARRAY[]::uuid[]);
+    v_slug_ids uuid[] := COALESCE((slugs).resource_ids, ARRAY[]::uuid[]);
+    v_items types.auth_item_input[] := COALESCE((items).items, ARRAY[]::types.auth_item_input[]);
+
+    v_run_id uuid;
+    v_call_id uuid;
+    v_default_auth_active_flag_id uuid;
 BEGIN
-    -- Validate required fields
-    IF name_id IS NULL THEN
+    IF group_id IS NULL THEN
+        RAISE EXCEPTION 'group_id is required';
+    END IF;
+
+    IF v_name_id IS NULL THEN
         RAISE EXCEPTION 'Name resource is required';
     END IF;
 
-    IF group_id IS NULL THEN
-        RAISE EXCEPTION 'Group ID is required';
+    SELECT id INTO v_default_auth_active_flag_id
+    FROM flags_resource
+    WHERE name = 'auth_active'
+    LIMIT 1;
+
+    IF v_name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names_resource WHERE id = v_name_id) THEN
+        RAISE EXCEPTION 'Name resource not found: %', v_name_id;
     END IF;
 
-    IF name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names_resource WHERE id = name_id) THEN
-        RAISE EXCEPTION 'Name resource not found: %', name_id;
+    IF v_description_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM descriptions_resource WHERE id = v_description_id) THEN
+        RAISE EXCEPTION 'Description resource not found: %', v_description_id;
     END IF;
 
-    IF description_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM descriptions_resource WHERE id = description_id) THEN
-        RAISE EXCEPTION 'Description resource not found: %', description_id;
+    IF v_active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = v_active_flag_id) THEN
+        RAISE EXCEPTION 'Flag resource not found: %', v_active_flag_id;
     END IF;
 
-    IF active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = active_flag_id) THEN
-        RAISE EXCEPTION 'Flag resource not found: %', active_flag_id;
+    IF v_protocol_ids IS NOT NULL AND EXISTS (
+        SELECT 1
+        FROM unnest(v_protocol_ids) AS protocol_id
+        WHERE NOT EXISTS (SELECT 1 FROM protocols_resource WHERE id = protocol_id)
+    ) THEN
+        RAISE EXCEPTION 'One or more protocol resources not found';
     END IF;
 
-    -- Validate protocol_ids exist
-    IF COALESCE(array_length(protocol_ids, 1), 0) > 0 THEN
-        IF NOT EXISTS (SELECT 1 FROM protocols_resource WHERE id = ANY(protocol_ids)) THEN
-            RAISE EXCEPTION 'One or more protocol resources not found';
-        END IF;
+    IF v_slug_ids IS NOT NULL AND EXISTS (
+        SELECT 1
+        FROM unnest(v_slug_ids) AS slug_id
+        WHERE NOT EXISTS (SELECT 1 FROM slugs_resource WHERE id = slug_id)
+    ) THEN
+        RAISE EXCEPTION 'One or more slug resources not found';
     END IF;
 
-    -- Validate slug_ids exist
-    IF COALESCE(array_length(slug_ids, 1), 0) > 0 THEN
-        IF NOT EXISTS (SELECT 1 FROM slugs_resource WHERE id = ANY(slug_ids)) THEN
-            RAISE EXCEPTION 'One or more slug resources not found';
-        END IF;
-    END IF;
-
-    -- Determine if create or update
-    is_create := (input_auth_id IS NULL);
-
-    -- Create or UPDATE
     IF is_create THEN
-        INSERT INTO auths_resource (id)
+        INSERT INTO auths_resource (id, group_id)
         VALUES (uuidv7(), group_id)
         RETURNING id INTO v_auth_id;
     ELSE
         v_auth_id := input_auth_id;
+
         UPDATE auths_resource
         SET group_id = api_save_auth_v4.group_id
         WHERE id = v_auth_id;
+
+        IF NOT FOUND THEN
+            RAISE EXCEPTION 'Auth not found: %', input_auth_id;
+        END IF;
     END IF;
 
-    -- For update, remove old links first
-    IF NOT is_create THEN
-        DELETE FROM auth_names_junction WHERE auth_names_junction.auth_id = v_auth_id;
-        DELETE FROM auth_descriptions_junction WHERE auth_descriptions_junction.auth_id = v_auth_id;
-        DELETE FROM auth_protocols_junction WHERE auth_protocols_junction.auth_id = v_auth_id;
-        DELETE FROM auth_slugs_junction WHERE auth_slugs_junction.auth_id = v_auth_id;
-        DELETE FROM auth_items_junction WHERE auth_items_junction.auth_id = v_auth_id;
-        -- Update existing active flag if it exists
-        UPDATE auth_flags_junction SET
-            flag_id = COALESCE(api_save_auth_v4.active_flag_id, auth_flags_junction.flag_id),
-            value = CASE WHEN api_save_auth_v4.active_flag_id IS NOT NULL THEN true ELSE false END
-        WHERE auth_flags_junction.auth_id = v_auth_id;
+    UPDATE auth_names_junction SET active = false WHERE auth_id = v_auth_id AND active = true;
+    UPDATE auth_descriptions_junction SET active = false WHERE auth_id = v_auth_id AND active = true;
+    UPDATE auth_flags_junction SET active = false WHERE auth_id = v_auth_id AND active = true;
+    UPDATE auth_protocols_junction SET active = false WHERE auth_id = v_auth_id AND active = true;
+    UPDATE auth_slugs_junction SET active = false WHERE auth_id = v_auth_id AND active = true;
+    UPDATE auth_items_junction SET active = false WHERE auth_id = v_auth_id AND active = true;
+
+    INSERT INTO auth_names_junction (auth_id, name_id, created_at, active)
+    VALUES (v_auth_id, v_name_id, NOW(), true)
+    ON CONFLICT ON CONSTRAINT auth_names_pkey DO UPDATE
+    SET active = true, created_at = NOW();
+
+    IF v_description_id IS NOT NULL THEN
+        INSERT INTO auth_descriptions_junction (auth_id, description_id, created_at, active)
+        VALUES (v_auth_id, v_description_id, NOW(), true)
+        ON CONFLICT ON CONSTRAINT auth_descriptions_pkey DO UPDATE
+        SET active = true, created_at = NOW();
     END IF;
 
-    -- Continue with auth save using SQL
-    RETURN QUERY
-    WITH params AS (
-        SELECT
-            v_auth_id AS p_auth_id,
-            api_save_auth_v4.name_id AS p_name_id,
-            api_save_auth_v4.description_id AS p_description_id,
-            api_save_auth_v4.active_flag_id AS p_active_flag_id,
-            COALESCE(api_save_auth_v4.protocol_ids, ARRAY[]::uuid[]) AS p_protocol_ids,
-            COALESCE(api_save_auth_v4.slug_ids, ARRAY[]::uuid[]) AS p_slug_ids,
-            api_save_auth_v4.auth_items_junction AS p_auth_items_junction,
-            api_save_auth_v4.profile_id AS p_profile_id
-    ),
-    user_profile AS (
-        SELECT role, view_user_profile_context.actor_name
-        FROM view_user_profile_context
-        WHERE view_user_profile_context.profile_id = (SELECT p_profile_id FROM params)
-    ),
-    actor_profile AS (
-        SELECT
-            x.p_profile_id,
-            up.actor_name
-        FROM params x
-        CROSS JOIN user_profile up
-    ),
-    -- Link auth to name
-    link_auth_name AS (
-        INSERT INTO auth_names_junction (auth_id, name_id, created_at)
-        SELECT
-            x.p_auth_id,
-            x.p_name_id,
-            NOW()
-        FROM params x
-        WHERE x.p_name_id IS NOT NULL
-        ON CONFLICT ON CONSTRAINT auth_names_pkey DO NOTHING
-    ),
-    -- Link auth to description
-    link_auth_description AS (
-        INSERT INTO auth_descriptions_junction (auth_id, description_id, created_at)
-        SELECT
-            x.p_auth_id,
-            x.p_description_id,
-            NOW()
-        FROM params x
-        WHERE x.p_description_id IS NOT NULL
-        ON CONFLICT ON CONSTRAINT auth_descriptions_pkey DO NOTHING
-    ),
-    -- Insert or UPDATE auth active flag
-    insert_auth_active_flag AS (
-        INSERT INTO auth_flags_junction (auth_id, flag_id, value, created_at)
-        SELECT x.p_auth_id,
-            COALESCE(x.p_active_flag_id, f.id),
-            CASE WHEN x.p_active_flag_id IS NOT NULL THEN true ELSE false END,
-            NOW()
-        FROM params x
-        CROSS JOIN flags_resource f
-        WHERE f.name = 'auth_active'
-        ON CONFLICT ON CONSTRAINT auth_flags_pkey DO UPDATE SET
-            flag_id = COALESCE(EXCLUDED.flag_id, auth_flags_junction.flag_id),
-            value = EXCLUDED.value
-    ),
-    -- Link protocols
-    link_protocols AS (
-        INSERT INTO auth_protocols_junction (auth_id, protocol_id, created_at)
-        SELECT
-            x.p_auth_id,
-            protocol_id,
-            NOW()
-        FROM params x
-        CROSS JOIN UNNEST(x.p_protocol_ids) as protocol_id
-        WHERE COALESCE(array_length(x.p_protocol_ids, 1), 0) > 0
-        ON CONFLICT ON CONSTRAINT auth_protocols_pkey DO NOTHING
-    ),
-    -- Link slugs
-    link_slugs AS (
-        INSERT INTO auth_slugs_junction (auth_id, slug_id, created_at)
-        SELECT
-            x.p_auth_id,
-            slug_id,
-            NOW()
-        FROM params x
-        CROSS JOIN UNNEST(x.p_slug_ids) as slug_id
-        WHERE COALESCE(array_length(x.p_slug_ids, 1), 0) > 0
-        ON CONFLICT ON CONSTRAINT auth_slugs_pkey DO NOTHING
-    ),
-    -- Handle auth_items_junction (special handling - not a standard resource)
-    items_expanded AS (
-        SELECT
-            row_number() OVER () as item_idx,
-            item.name as item_name,
-            item.description as item_description,
-            COALESCE(item.encrypted, true) as item_encrypted,
-            COALESCE(item.position, row_number() OVER ()) as item_position,
-            COALESCE(item.active, true) as item_active,
-            item.key_id as item_key_id
-        FROM params x
-        CROSS JOIN LATERAL unnest(x.p_auth_items_junction) AS item
-    ),
-    new_items AS (
-        INSERT INTO items_resource (
-            name,
-            description,
-            encrypted,
-            position,
-            active,
-            created_at
-        )
-        SELECT
-            ie.item_name,
-            ie.item_description,
-            ie.item_encrypted,
-            ie.item_position,
-            ie.item_active,
-            NOW()
-        FROM items_expanded ie
-        RETURNING id as item_id
-    ),
-    items_with_idx AS (
-        SELECT
-            ROW_NUMBER() OVER (ORDER BY ni.item_id) as item_idx,
-            ni.item_id
-        FROM new_items ni
-    ),
-    -- Link auth to items via junction table
-    link_auth_items AS (
-        INSERT INTO auth_items_junction (auth_id, item_id, created_at)
-        SELECT
-            x.p_auth_id,
-            iwi.item_id,
-            NOW()
-        FROM params x
-        CROSS JOIN items_expanded ie
-        JOIN items_with_idx iwi ON iwi.item_idx = ie.item_idx
-        WHERE COALESCE(array_length(x.p_auth_items_junction, 1), 0) > 0
-        ON CONFLICT ON CONSTRAINT auth_items_pkey DO NOTHING
-    ),
-    -- Sync linked resources with name/description
-    sync_artifact_resources AS (
-        UPDATE auths_resource r
-        SET name = n.name,
-            description = d.description
-        FROM auth_auths_junction j
-        CROSS JOIN params p
-        LEFT JOIN names_resource n ON n.id = p.p_name_id
-        LEFT JOIN descriptions_resource d ON d.id = p.p_description_id
-        WHERE j.auths_id = r.id
-          AND j.auth_id = p.p_auth_id
-        RETURNING r.id
+    INSERT INTO auth_flags_junction (auth_id, flag_id, value, created_at, active)
+    VALUES (
+        v_auth_id,
+        COALESCE(v_active_flag_id, v_default_auth_active_flag_id),
+        CASE WHEN v_active_flag_id IS NOT NULL THEN true ELSE false END,
+        NOW(),
+        true
     )
-    SELECT
-        x.p_auth_id AS auth_id,
-        ap.actor_name AS actor_name
-    FROM params x
-    CROSS JOIN actor_profile ap;
+    ON CONFLICT ON CONSTRAINT auth_flags_pkey DO UPDATE
+    SET flag_id = EXCLUDED.flag_id,
+        value = EXCLUDED.value,
+        active = true,
+        created_at = NOW();
+
+    IF COALESCE(array_length(v_protocol_ids, 1), 0) > 0 THEN
+        INSERT INTO auth_protocols_junction (auth_id, protocol_id, created_at, active)
+        SELECT v_auth_id, protocol_id, NOW(), true
+        FROM unnest(v_protocol_ids) AS protocol_id
+        ON CONFLICT ON CONSTRAINT auth_protocols_pkey DO UPDATE
+        SET active = true, created_at = NOW();
+    END IF;
+
+    IF COALESCE(array_length(v_slug_ids, 1), 0) > 0 THEN
+        INSERT INTO auth_slugs_junction (auth_id, slug_id, created_at, active)
+        SELECT v_auth_id, slug_id, NOW(), true
+        FROM unnest(v_slug_ids) AS slug_id
+        ON CONFLICT ON CONSTRAINT auth_slugs_pkey DO UPDATE
+        SET active = true, created_at = NOW();
+    END IF;
+
+    IF COALESCE(array_length(v_items, 1), 0) > 0 THEN
+        WITH items_expanded AS (
+            SELECT
+                row_number() OVER () AS item_idx,
+                item.name AS item_name,
+                item.description AS item_description,
+                COALESCE(item.encrypted, true) AS item_encrypted,
+                COALESCE(item.position, row_number() OVER ()) AS item_position,
+                COALESCE(item.active, true) AS item_active
+            FROM unnest(v_items) AS item
+        ),
+        created_items AS (
+            INSERT INTO items_resource (
+                name,
+                description,
+                encrypted,
+                position,
+                active,
+                created_at
+            )
+            SELECT
+                ie.item_name,
+                ie.item_description,
+                ie.item_encrypted,
+                ie.item_position,
+                ie.item_active,
+                NOW()
+            FROM items_expanded ie
+            RETURNING id
+        ),
+        indexed_items AS (
+            SELECT row_number() OVER (ORDER BY id) AS item_idx, id
+            FROM created_items
+        )
+        INSERT INTO auth_items_junction (auth_id, item_id, created_at, active)
+        SELECT v_auth_id, ii.id, NOW(), true
+        FROM indexed_items ii
+        ON CONFLICT ON CONSTRAINT auth_items_pkey DO UPDATE
+        SET active = true, created_at = NOW();
+    END IF;
+
+    UPDATE auths_resource r
+    SET name = n.name,
+        description = d.description
+    FROM auth_auths_junction j
+    LEFT JOIN names_resource n ON n.id = v_name_id
+    LEFT JOIN descriptions_resource d ON d.id = v_description_id
+    WHERE j.auths_id = r.id
+      AND j.auth_id = v_auth_id;
+
+    INSERT INTO runs_entry (id, input_tokens, output_tokens, cached_input_tokens, group_id, created_at, updated_at)
+    VALUES (uuidv7(), 0, 0, 0, group_id, NOW(), NOW())
+    RETURNING id INTO v_run_id;
+
+    IF v_name_id IS NOT NULL THEN
+        IF (names).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'auth_save_create_names_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((names).create_tool_id, v_call_id);
+            INSERT INTO names_calls_connection (names_id, call_id) VALUES (v_name_id, v_call_id);
+        END IF;
+        IF (names).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'auth_save_link_names_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((names).link_tool_id, v_call_id);
+            INSERT INTO names_calls_connection (names_id, call_id) VALUES (v_name_id, v_call_id);
+        END IF;
+    END IF;
+
+    IF v_description_id IS NOT NULL THEN
+        IF (descriptions).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'auth_save_create_descriptions_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((descriptions).create_tool_id, v_call_id);
+            INSERT INTO descriptions_calls_connection (descriptions_id, call_id) VALUES (v_description_id, v_call_id);
+        END IF;
+        IF (descriptions).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'auth_save_link_descriptions_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((descriptions).link_tool_id, v_call_id);
+            INSERT INTO descriptions_calls_connection (descriptions_id, call_id) VALUES (v_description_id, v_call_id);
+        END IF;
+    END IF;
+
+    IF v_active_flag_id IS NOT NULL THEN
+        IF (flags).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'auth_save_create_flags_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((flags).create_tool_id, v_call_id);
+            INSERT INTO flags_calls_connection (flags_id, call_id) VALUES (v_active_flag_id, v_call_id);
+        END IF;
+        IF (flags).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'auth_save_link_flags_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((flags).link_tool_id, v_call_id);
+            INSERT INTO flags_calls_connection (flags_id, call_id) VALUES (v_active_flag_id, v_call_id);
+        END IF;
+    END IF;
+
+    IF COALESCE(array_length(v_protocol_ids, 1), 0) > 0 THEN
+        IF (protocols).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'auth_save_create_protocols_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((protocols).create_tool_id, v_call_id);
+            INSERT INTO protocols_calls_connection (protocols_id, call_id)
+            SELECT protocol_id, v_call_id FROM unnest(v_protocol_ids) AS protocol_id;
+        END IF;
+        IF (protocols).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'auth_save_link_protocols_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((protocols).link_tool_id, v_call_id);
+            INSERT INTO protocols_calls_connection (protocols_id, call_id)
+            SELECT protocol_id, v_call_id FROM unnest(v_protocol_ids) AS protocol_id;
+        END IF;
+    END IF;
+
+    IF COALESCE(array_length(v_slug_ids, 1), 0) > 0 THEN
+        IF (slugs).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'auth_save_create_slugs_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((slugs).create_tool_id, v_call_id);
+            INSERT INTO slugs_calls_connection (slugs_id, call_id)
+            SELECT slug_id, v_call_id FROM unnest(v_slug_ids) AS slug_id;
+        END IF;
+        IF (slugs).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'auth_save_link_slugs_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((slugs).link_tool_id, v_call_id);
+            INSERT INTO slugs_calls_connection (slugs_id, call_id)
+            SELECT slug_id, v_call_id FROM unnest(v_slug_ids) AS slug_id;
+        END IF;
+    END IF;
+
+    IF COALESCE(array_length(v_items, 1), 0) > 0 THEN
+        IF (items).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'auth_save_create_items_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((items).create_tool_id, v_call_id);
+            INSERT INTO items_calls_connection (items_id, call_id)
+            SELECT aij.item_id, v_call_id
+            FROM auth_items_junction aij
+            WHERE aij.auth_id = v_auth_id AND aij.active = true;
+        END IF;
+        IF (items).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'auth_save_link_items_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((items).link_tool_id, v_call_id);
+            INSERT INTO items_calls_connection (items_id, call_id)
+            SELECT aij.item_id, v_call_id
+            FROM auth_items_junction aij
+            WHERE aij.auth_id = v_auth_id AND aij.active = true;
+        END IF;
+    END IF;
+
+    SELECT COALESCE(NULLIF(actor_name, ''), 'System')
+    INTO v_actor_name
+    FROM view_user_profile_context
+    WHERE view_user_profile_context.profile_id = api_save_auth_v4.profile_id
+    LIMIT 1;
+
+    RETURN QUERY
+    SELECT v_auth_id, v_actor_name;
 END;
 $$;

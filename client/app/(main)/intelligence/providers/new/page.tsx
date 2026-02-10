@@ -16,6 +16,18 @@ type SaveProviderIn = InputOf<"/api/v4/artifacts/providers/save", "post">;
 type SaveProviderOut = OutputOf<"/api/v4/artifacts/providers/save", "post">;
 type PatchProviderDraftIn = InputOf<"/api/v4/artifacts/providers/draft", "patch">;
 type PatchProviderDraftOut = OutputOf<"/api/v4/artifacts/providers/draft", "patch">;
+type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
+type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
+type CreateDraftDescriptionsIn = InputOf<
+  "/api/v4/resources/descriptions",
+  "post"
+>;
+type CreateDraftDescriptionsOut = OutputOf<
+  "/api/v4/resources/descriptions",
+  "post"
+>;
+type CreateDraftValuesIn = InputOf<"/api/v4/resources/values", "post">;
+type CreateDraftValuesOut = OutputOf<"/api/v4/resources/values", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -50,6 +62,27 @@ async function patchProviderDraft(
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.patch("/artifacts/providers/draft", input);
+}
+
+async function createNames(
+  input: CreateDraftNamesIn
+): Promise<CreateDraftNamesOut> {
+  "use server";
+  return api.post("/resources/names", input);
+}
+
+async function createDescriptions(
+  input: CreateDraftDescriptionsIn
+): Promise<CreateDraftDescriptionsOut> {
+  "use server";
+  return api.post("/resources/descriptions", input);
+}
+
+async function createValues(
+  input: CreateDraftValuesIn
+): Promise<CreateDraftValuesOut> {
+  "use server";
+  return api.post("/resources/values", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -107,6 +140,9 @@ export default async function NewProviderPage({
         providerData={providerDetailDefault}
         saveProviderAction={saveProvider}
         patchProviderDraftAction={patchProviderDraft}
+        createNamesAction={createNames}
+        createDescriptionsAction={createDescriptions}
+        createValuesAction={createValues}
       />
     </div>
   );
@@ -118,6 +154,12 @@ export type {
   GetProviderOut,
   PatchProviderDraftIn,
   PatchProviderDraftOut,
+  CreateDraftNamesIn,
+  CreateDraftNamesOut,
+  CreateDraftDescriptionsIn,
+  CreateDraftDescriptionsOut,
+  CreateDraftValuesIn,
+  CreateDraftValuesOut,
   SaveProviderIn,
   SaveProviderOut,
 };

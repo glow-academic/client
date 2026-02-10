@@ -137,8 +137,13 @@ def compute_show_value() -> bool:
     return True
 
 
-def compute_show_regenerates() -> bool:
-    """Determine if regenerates picker should be shown."""
+def compute_show_endpoint() -> bool:
+    """Determine if endpoint picker should be shown."""
+    return True
+
+
+def compute_show_key() -> bool:
+    """Determine if key picker should be shown."""
     return True
 
 
@@ -164,11 +169,16 @@ def compute_departments_required() -> bool:
 
 def compute_value_required() -> bool:
     """Determine if value is required."""
+    return True
+
+
+def compute_endpoint_required() -> bool:
+    """Determine if endpoint is required."""
     return False
 
 
-def compute_regenerates_required() -> bool:
-    """Determine if regenerates is required."""
+def compute_key_required() -> bool:
+    """Determine if key is required."""
     return False
 
 
@@ -286,62 +296,10 @@ PROVIDER_RESOURCES: set[str] = {
     "flags",
     "departments",
     "values",
-    "regenerates",
+    "endpoints",
+    "keys",
 }
 
 # Multi-resource agent definitions for provider
 PROVIDER_BASIC_RESOURCES: set[str] = {"names", "descriptions", "flags", "departments"}
 PROVIDER_GENERAL_RESOURCES: set[str] = PROVIDER_RESOURCES  # All resources
-
-
-# ========== Domain Metadata - for client-side display in modals ==========
-
-# Domain display metadata (business logic - rarely changes)
-PROVIDER_DOMAIN_METADATA: dict[str, dict[str, str | bool]] = {
-    "names": {
-        "name": "Name",
-        "description": "The display name for this provider",
-        "icon": "server",
-    },
-    "descriptions": {
-        "name": "Description",
-        "description": "A brief description of this provider",
-        "icon": "file-text",
-    },
-    "flags": {
-        "name": "Status",
-        "description": "Active/inactive status",
-        "icon": "flag",
-    },
-    "departments": {
-        "name": "Departments",
-        "description": "Which departments can access this provider",
-        "icon": "building",
-    },
-    "values": {
-        "name": "Value",
-        "description": "Provider value or identifier",
-        "icon": "key",
-    },
-    "regenerates": {
-        "name": "Regenerate Instructions",
-        "description": "Custom regeneration instructions",
-        "icon": "refresh-cw",
-    },
-}
-
-
-def build_domain_data(
-    domain_ids: dict[str, UUID | None],
-    show_flags: dict[str, bool],
-    required_flags: dict[str, bool],
-) -> list:
-    """Build rich domain metadata for client display.
-
-    Delegates to shared build_domain_data with provider-specific metadata.
-    """
-    from app.api.v4.types import build_domain_data as _build_domain_data
-
-    return _build_domain_data(
-        domain_ids, show_flags, required_flags, PROVIDER_DOMAIN_METADATA
-    )

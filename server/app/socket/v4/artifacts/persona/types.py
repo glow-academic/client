@@ -43,7 +43,7 @@ class GeneratePersonaPayload(GetPersonaApiRequest):
     user_instructions: list[str] | None = None  # Optional: user instructions
 
     # Note: current selections are derived from draft-backed API response.
-    # The server resolves domain_ids and agent_ids internally from the resource_types.
+    # The server resolves assigned agents internally from resource_types.
 
 
 # =============================================================================

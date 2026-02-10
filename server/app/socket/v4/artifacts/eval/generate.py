@@ -1,11 +1,4 @@
-"""Eval generation handler - domain-based generation using get_eval_websocket.
-
-Follows the persona gold standard pattern:
-1. Validates domain_ids from client
-2. Uses get_eval_websocket() to get domain-to-agent mapping
-3. Derives resource_types from domain_ids
-4. Routes through unified generation pipeline
-"""
+"""Eval generation handler - resource-type generation using get_eval_websocket."""
 
 import uuid
 from typing import Any, cast
@@ -14,7 +7,6 @@ from fastapi import APIRouter
 
 from app.api.v4.artifacts.eval.get import get_eval_websocket
 from app.api.v4.artifacts.eval.types import (
-    EvalResourceBucket,
     GetEvalWebsocketResponse,
 )
 from app.infra.v4.generation import convert_tools_to_dict, render_developer_instructions
@@ -63,6 +55,11 @@ EVAL_RESOURCE_TYPES = [
     "flags",
     "departments",
     "agents",
+    "run_positions",
+    "group_positions",
+    "run_rubrics",
+    "group_rubrics",
+    # Temporary alias during hard migration rollout.
     "rubrics",
 ]
 
@@ -71,30 +68,22 @@ def _build_eval_jinja_context(
     response: GetEvalWebsocketResponse, resource_types: list[str]
 ) -> dict[str, Any]:
     """Build Jinja context from eval websocket response."""
-    if response.resources and response.resources.resources:
-        resources = response.resources.resources.model_dump()
-        current = (
-            response.resources.current.model_dump()
-            if response.resources.current
-            else EvalResourceBucket().model_dump()
-        )
-        resources["current"] = current
-        return resources
-    return {"current": EvalResourceBucket().model_dump()}
+    if response.resources:
+        return response.resources.model_dump()
+    return {}
 
 
 async def _eval_generate_impl(
     sid: str, data: GenerateEvalPayload, profile_id: uuid.UUID
 ) -> None:
-    """Handle eval generation with domain-based architecture."""
+    """Handle eval generation with resource-type architecture."""
     try:
-        # Validate domain_ids
-        if not data.domain_ids:
+        if not data.resource_types:
             await emit_to_internal(
                 "generate_call_error",
                 GenerateErrorApiRequest(
                     sid=sid,
-                    error_message="domain_ids must be provided",
+                    error_message="resource_types must be provided",
                     artifact_type="eval",
                     group_id=None,
                     resource_type="eval",
@@ -103,50 +92,22 @@ async def _eval_generate_impl(
             )
             return
 
-        # Step 1: Fetch eval data for domain-to-agent mapping
+        # Step 1: Fetch eval data for server-side agent routing
         result = await get_eval_websocket(
             profile_id=profile_id,
             eval_id=data.eval_id,
             draft_id=data.draft_id,
         )
+        resource_types = data.resource_types
 
-        # Build domain_id -> agent_id mapping from result.domains
-        domain_to_agent: dict[uuid.UUID, uuid.UUID | None] = {}
-        if result.domains:
-            for domain in result.domains:
-                domain_to_agent[domain.domain_id] = domain.agent_id
-
-        # Build domain_id -> resource_type mapping from result
-        domain_to_resource: dict[uuid.UUID | None, str] = {
-            result.name_domain_id: "names",
-            result.description_domain_id: "descriptions",
-            result.flag_domain_id: "flags",
-            result.departments_domain_id: "departments",
-            result.agents_domain_id: "agents",
-            result.rubrics_domain_id: "rubrics",
-        }
-        # Remove None key if present
-        domain_to_resource.pop(None, None)
-
-        # Derive resource_types from domain_ids
-        resource_types: list[str] = []
-        for did in data.domain_ids:
-            if did in domain_to_resource:
-                resource_types.append(domain_to_resource[did])
-
-        if not resource_types:
-            await emit_to_internal(
-                "generate_call_error",
-                GenerateErrorApiRequest(
-                    sid=sid,
-                    error_message="No valid domain_ids provided",
-                    artifact_type="eval",
-                    group_id=None,
-                    resource_type="eval",
-                ),
-                sid=sid,
-            )
-            return
+        normalized_resource_types: list[str] = []
+        for rt in resource_types:
+            if rt == "rubrics":
+                # Legacy alias: map to both scoped rubric resource families.
+                normalized_resource_types.extend(["run_rubrics", "group_rubrics"])
+            else:
+                normalized_resource_types.append(rt)
+        resource_types = list(dict.fromkeys(normalized_resource_types))
 
         invalid_types = [rt for rt in resource_types if rt not in EVAL_RESOURCE_TYPES]
         if invalid_types:
@@ -163,11 +124,26 @@ async def _eval_generate_impl(
             )
             return
 
-        # Get agent_id from the first valid domain_id
+        # Get agent_id from the first requested resource_type
         agent_id: uuid.UUID | None = None
-        for did in data.domain_ids:
-            if did in domain_to_agent and domain_to_agent[did] is not None:
-                agent_id = domain_to_agent[did]
+        resource_agent_ids = result.resource_agent_ids or {}
+
+        def resolve_agent_for_resource(resource_type: str) -> uuid.UUID | None:
+            direct = resource_agent_ids.get(resource_type)
+            if direct is not None:
+                return direct
+            if resource_type in {"run_rubrics", "group_rubrics"}:
+                return resource_agent_ids.get("rubrics")
+            if resource_type in {"run_positions", "group_positions"}:
+                return resource_agent_ids.get("agents") or resource_agent_ids.get(
+                    "rubrics"
+                )
+            return None
+
+        for rt in resource_types:
+            aid = resolve_agent_for_resource(rt)
+            if aid is not None:
+                agent_id = aid
                 break
 
         if not agent_id:
@@ -175,7 +151,7 @@ async def _eval_generate_impl(
                 "generate_call_error",
                 GenerateErrorApiRequest(
                     sid=sid,
-                    error_message="No agent found for the requested domains",
+                    error_message="No agent found for requested resource_types",
                     artifact_type="eval",
                     group_id=None,
                     resource_type="eval",
