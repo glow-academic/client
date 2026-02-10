@@ -17,8 +17,9 @@ from app.api.v4.artifacts.test.types import (
 from app.api.v4.resources.descriptions.get import get_descriptions_internal
 from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.rubrics.get import get_rubrics_batch_internal
-from app.api.v4.views.benchmark.chats.get import get_benchmark_chats_internal
-from app.api.v4.views.benchmark.messages.get import get_benchmark_messages_internal
+from app.api.v4.views.benchmark.invocations.get import (
+    get_benchmark_invocations_internal,
+)
 from app.api.v4.views.benchmark.tests.get import get_benchmark_tests_internal
 from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
@@ -43,7 +44,7 @@ async def get_test_artifact(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetTestArtifactResponse:
-    """Get benchmark test artifact details with tests/chats/messages in parallel."""
+    """Get benchmark test artifact details with tests/invocations in parallel."""
     tags = ["artifacts", "test"]
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
@@ -63,25 +64,15 @@ async def get_test_artifact(
                 )
                 return result.items
 
-        async def fetch_chats() -> list:
+        async def fetch_invocations() -> list:
             async with pool.acquire() as c:
-                return await get_benchmark_chats_internal(
+                return await get_benchmark_invocations_internal(
                     conn=c,
                     test_id=request.test_id,
                     bypass_cache=bypass_cache,
                 )
 
-        async def fetch_messages() -> list:
-            async with pool.acquire() as c:
-                return await get_benchmark_messages_internal(
-                    conn=c,
-                    test_id=request.test_id,
-                    bypass_cache=bypass_cache,
-                )
-
-        tests, chats, messages = await asyncio.gather(
-            fetch_tests(), fetch_chats(), fetch_messages()
-        )
+        tests, invocations = await asyncio.gather(fetch_tests(), fetch_invocations())
 
         test = tests[0] if tests else None
         if not test:
@@ -101,11 +92,11 @@ async def get_test_artifact(
         if test.rubric_id:
             rubric_ids.add(test.rubric_id)
 
-        # Collect all run_ids from chats for model/agent name resolution
+        # Collect all run_ids from invocations for model/agent name resolution
         all_run_ids: list[UUID] = []
-        for chat in chats:
-            if chat.run_ids:
-                all_run_ids.extend(chat.run_ids)
+        for invocation in invocations:
+            if invocation.run_ids:
+                all_run_ids.extend(invocation.run_ids)
 
         # Resolve run_ids → model/agent name_ids
         run_name_map: dict[UUID, tuple[UUID | None, UUID | None]] = {}
@@ -170,15 +161,15 @@ async def get_test_artifact(
         )
         rubric_name = rubric_name_map.get(test.rubric_id) if test.rubric_id else None
 
-        # Build runs list from chats
+        # Build runs list from invocations
         runs: list[TestRunItem] = []
         completed_count = 0
         in_progress_count = 0
         not_started_count = 0
 
-        for chat in chats:
-            first_run_id = chat.run_ids[0] if chat.run_ids else None
-            first_group_id = chat.group_ids[0] if chat.group_ids else None
+        for invocation in invocations:
+            first_run_id = invocation.run_ids[0] if invocation.run_ids else None
+            first_group_id = invocation.group_id
 
             model_name: str | None = None
             agent_name: str | None = None
@@ -189,22 +180,25 @@ async def get_test_artifact(
                 if agent_nid:
                     agent_name = name_map.get(agent_nid)
 
-            chat_status = "completed" if chat.chat_completed else "not_started"
-            if chat_status == "completed":
+            invocation_status = (
+                "completed" if invocation.invocation_completed else "not_started"
+            )
+            if invocation_status == "completed":
                 completed_count += 1
             else:
                 not_started_count += 1
 
             runs.append(
                 TestRunItem(
-                    chat_id=str(chat.chat_id),
+                    chat_id=str(invocation.invocation_id),
+                    invocation_id=str(invocation.invocation_id),
                     run_id=str(first_run_id) if first_run_id else None,
                     group_id=str(first_group_id) if first_group_id else None,
                     model_name=model_name,
                     agent_name=agent_name,
-                    status=chat_status,
-                    grade_score=chat.grade_score,
-                    grade_passed=chat.grade_passed,
+                    status=invocation_status,
+                    grade_score=invocation.grade_score,
+                    grade_passed=invocation.grade_passed,
                 )
             )
 
@@ -218,8 +212,7 @@ async def get_test_artifact(
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return GetTestArtifactResponse(
             test=test,
-            chats=chats,
-            messages=messages,
+            invocations=invocations,
             status=status,
             eval_name=eval_name,
             eval_description=eval_description,

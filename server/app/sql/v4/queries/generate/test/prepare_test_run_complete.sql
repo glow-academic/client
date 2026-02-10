@@ -63,9 +63,9 @@ DECLARE
     v_config_id uuid;
     v_created_at timestamptz;
 BEGIN
-    -- Get group_id directly from benchmark_chats_entry
+    -- Get group_id directly from benchmark_invocations_entry
     SELECT c.group_id INTO v_group_id
-    FROM benchmark_chats_entry c
+    FROM benchmark_invocations_entry c
     WHERE c.id = p_chat_id;
 
     IF v_group_id IS NULL THEN
@@ -244,18 +244,18 @@ BEGIN
             COUNT(*)::integer as total_runs,
             (
                 SELECT COUNT(*)::integer
-                FROM benchmark_chats_runs_connection bcrc
-                WHERE bcrc.chat_id = p_chat_id
+                FROM benchmark_invocations_runs_connection bcrc
+                WHERE bcrc.invocation_id = p_chat_id
                   AND bcrc.active = true
                   AND bcrc.created_at < (
                       SELECT bcrc2.created_at
-                      FROM benchmark_chats_runs_connection bcrc2
-                      WHERE bcrc2.chat_id = p_chat_id
+                      FROM benchmark_invocations_runs_connection bcrc2
+                      WHERE bcrc2.invocation_id = p_chat_id
                         AND bcrc2.runs_id = p_run_resource_id
                   )
             ) + 1 as current_run
-        FROM benchmark_chats_runs_connection bcrc
-        WHERE bcrc.chat_id = p_chat_id AND bcrc.active = true
+        FROM benchmark_invocations_runs_connection bcrc
+        WHERE bcrc.invocation_id = p_chat_id AND bcrc.active = true
     )
     SELECT
         v_run_id,

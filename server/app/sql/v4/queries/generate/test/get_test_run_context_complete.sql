@@ -1,5 +1,6 @@
 -- Get context data for test run validation
--- Returns chat state, group config (agent, model, API key), and pending run info
+-- Returns invocation state (aliased as chat for compatibility),
+-- group config (agent, model, API key), and pending run info
 
 -- 1) Drop function first
 DO $$
@@ -73,14 +74,14 @@ WITH params AS (
         p_profile_id AS profile_id,
         p_chat_id AS chat_id
 ),
--- Chat data
+-- Invocation data (aliased as chat)
 chat_data AS (
     SELECT
         c.id as chat_id,
         TRUE as chat_exists,
         c.active as chat_is_active,
-        c.attempt_id
-    FROM benchmark_chats_entry c
+        c.test_id AS attempt_id
+    FROM benchmark_invocations_entry c
     CROSS JOIN params p
     WHERE c.id = p.chat_id
     LIMIT 1
@@ -95,12 +96,12 @@ attempt_data AS (
     WHERE t.active = true
     LIMIT 1
 ),
--- Group data (direct from benchmark_chats_entry.group_id)
+-- Group data (direct from benchmark_invocations_entry.group_id)
 group_binding AS (
     SELECT
         bce.group_id,
         (bce.group_id IS NOT NULL) as group_exists
-    FROM benchmark_chats_entry bce
+    FROM benchmark_invocations_entry bce
     JOIN chat_data cd ON bce.id = cd.chat_id
     LIMIT 1
 ),
@@ -168,13 +169,13 @@ runs_today AS (
     WHERE prj.profile_id = p.profile_id
       AND mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
 ),
--- Runs linked to this chat
+-- Runs linked to this invocation
 chat_runs AS (
     SELECT
         r.runs_id as run_resource_id,
         r.created_at
-    FROM benchmark_chats_runs_connection r
-    JOIN chat_data cd ON r.chat_id = cd.chat_id
+    FROM benchmark_invocations_runs_connection r
+    JOIN chat_data cd ON r.invocation_id = cd.chat_id
     WHERE r.active = true
     ORDER BY r.created_at ASC
 ),

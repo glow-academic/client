@@ -1,5 +1,5 @@
 -- Union View: grades_entry
--- Combines simulation_grades_entry, simulation_grades_entry, and benchmark_grades_entry
+-- Combines simulation_grades_entry and benchmark_grades_entry
 -- into a single view for backward compatibility with queries that expect a unified grades table.
 --
 -- Note: The 'type' column indicates the source table ('general', 'practice', 'benchmark').
@@ -33,7 +33,7 @@ UNION ALL
 
 SELECT
     id,
-    chat_id,
+    invocation_id AS chat_id, -- compatibility alias for legacy consumers
     run_id,
     rubric_grade_agent_id,
     created_at,

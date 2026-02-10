@@ -1,8 +1,8 @@
 -- Union View: simulation_messages_unified_view
--- Combines simulation_messages_entry and benchmark_messages_entry
--- into a single view with full message data by joining to messages_entry base table.
+-- Combines simulation_messages_entry only into a single view
+-- with full message data by joining to messages_entry base table.
 --
--- Note: The 'type' column indicates the source table ('general', 'practice', 'benchmark').
+-- Note: The 'type' column indicates the source table ('general', 'practice').
 -- Uses DROP/CREATE for idempotent execution.
 --
 -- IMPORTANT: This view is named simulation_messages_unified_view (not messages_entry)
@@ -32,20 +32,4 @@ JOIN messages_entry m ON m.id = sm.id
 LEFT JOIN simulation_chats_entry c ON c.id = sm.chat_id
 LEFT JOIN simulation_attempts_entry a ON a.id = c.attempt_id
 
-UNION ALL
-
-SELECT
-    bm.id,
-    bm.chat_id,
-    m.run_id,
-    bm.created_at,
-    bm.updated_at,
-    m.role,
-    m.completed,
-    m.audio,
-    m.generated,
-    m.mcp,
-    m.active,
-    'benchmark'::text AS type
-FROM benchmark_messages_entry bm
-JOIN messages_entry m ON m.id = bm.id;
+;

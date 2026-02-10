@@ -39,7 +39,7 @@ SELECT
     -- Simulation context
     sa.id AS simulation_attempt_id,
     -- Benchmark context (tests)
-    bc.attempt_id AS benchmark_test_id,
+    bc.test_id AS benchmark_test_id,
     -- Profile linkage (simulation or benchmark)
     COALESCE(spj.profile_id, bpj.profile_id) AS profile_id
 FROM feedbacks_entry fe
@@ -66,12 +66,12 @@ LEFT JOIN profile_profiles_junction spj
 LEFT JOIN benchmark_grades_entry bg
     ON fe.type = 'benchmark'
    AND bg.id = fe.grade_id
-LEFT JOIN benchmark_chats_entry bc
-    ON bc.id = bg.chat_id
+LEFT JOIN benchmark_invocations_entry bc
+    ON bc.id = bg.invocation_id
 LEFT JOIN LATERAL (
     SELECT btp.profiles_id AS profiles_id
     FROM benchmark_tests_profiles_connection btp
-    WHERE btp.attempt_id = bc.attempt_id
+    WHERE btp.attempt_id = bc.test_id
       AND btp.active = true
     ORDER BY btp.created_at ASC
     LIMIT 1

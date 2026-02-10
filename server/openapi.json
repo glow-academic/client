@@ -15291,7 +15291,7 @@
           "test"
         ],
         "summary": "Get Test Artifact",
-        "description": "Get benchmark test artifact details with tests/chats/messages in parallel.",
+        "description": "Get benchmark test artifact details with tests/invocations in parallel.",
         "operationId": "get_test_artifact_api_v4_artifacts_test_get_post",
         "parameters": [
           {
@@ -32860,7 +32860,7 @@
         }
       }
     },
-    "/api/v4/views/benchmark/chats/get": {
+    "/api/v4/views/benchmark/invocations/get": {
       "post": {
         "tags": [
           "v4",
@@ -32869,11 +32869,11 @@
           "benchmark",
           "views",
           "benchmark",
-          "chats"
+          "invocations"
         ],
-        "summary": "Get Benchmark Chats",
-        "description": "Get benchmark chat rows from mv_benchmark_chats.",
-        "operationId": "get_benchmark_chats_api_v4_views_benchmark_chats_get_post",
+        "summary": "Get Benchmark Invocations",
+        "description": "Get benchmark invocation rows from mv_benchmark_invocations.",
+        "operationId": "get_benchmark_invocations_api_v4_views_benchmark_invocations_get_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -32929,7 +32929,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/GetBenchmarkChatsRequest"
+                "$ref": "#/components/schemas/GetBenchmarkInvocationsRequest"
               }
             }
           }
@@ -32940,7 +32940,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GetBenchmarkChatsResponse"
+                  "$ref": "#/components/schemas/GetBenchmarkInvocationsResponse"
                 }
               }
             }
@@ -32958,7 +32958,7 @@
         }
       }
     },
-    "/api/v4/views/benchmark/chats/refresh": {
+    "/api/v4/views/benchmark/invocations/refresh": {
       "post": {
         "tags": [
           "v4",
@@ -32967,11 +32967,11 @@
           "benchmark",
           "views",
           "benchmark",
-          "chats"
+          "invocations"
         ],
-        "summary": "Refresh Benchmark Chats",
-        "description": "Refresh mv_benchmark_chats concurrently.",
-        "operationId": "refresh_benchmark_chats_api_v4_views_benchmark_chats_refresh_post",
+        "summary": "Refresh Benchmark Invocations",
+        "description": "Refresh mv_benchmark_invocations concurrently.",
+        "operationId": "refresh_benchmark_invocations_api_v4_views_benchmark_invocations_refresh_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -33032,197 +33032,7 @@
                   "additionalProperties": {
                     "type": "boolean"
                   },
-                  "title": "Response Refresh Benchmark Chats Api V4 Views Benchmark Chats Refresh Post"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v4/views/benchmark/messages/get": {
-      "post": {
-        "tags": [
-          "v4",
-          "views",
-          "views",
-          "benchmark",
-          "views",
-          "benchmark",
-          "messages"
-        ],
-        "summary": "Get Benchmark Messages",
-        "description": "Get benchmark message rows from mv_benchmark_messages.",
-        "operationId": "get_benchmark_messages_api_v4_views_benchmark_messages_get_post",
-        "parameters": [
-          {
-            "name": "X-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Profile-Id"
-            }
-          },
-          {
-            "name": "X-Session-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Session-Id"
-            }
-          },
-          {
-            "name": "X-MCP",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Mcp"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GetBenchmarkMessagesRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GetBenchmarkMessagesResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v4/views/benchmark/messages/refresh": {
-      "post": {
-        "tags": [
-          "v4",
-          "views",
-          "views",
-          "benchmark",
-          "views",
-          "benchmark",
-          "messages"
-        ],
-        "summary": "Refresh Benchmark Messages",
-        "description": "Refresh mv_benchmark_messages concurrently.",
-        "operationId": "refresh_benchmark_messages_api_v4_views_benchmark_messages_refresh_post",
-        "parameters": [
-          {
-            "name": "X-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Profile-Id"
-            }
-          },
-          {
-            "name": "X-Session-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Session-Id"
-            }
-          },
-          {
-            "name": "X-MCP",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Mcp"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": {
-                    "type": "boolean"
-                  },
-                  "title": "Response Refresh Benchmark Messages Api V4 Views Benchmark Messages Refresh Post"
+                  "title": "Response Refresh Benchmark Invocations Api V4 Views Benchmark Invocations Refresh Post"
                 }
               }
             }
@@ -46120,137 +45930,6 @@
         "title": "BenchmarkChatInfo",
         "description": "Info about a benchmark chat (test instance).\n\nEach chat represents one run or group to be tested."
       },
-      "BenchmarkChatViewItem": {
-        "properties": {
-          "chat_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Chat Id"
-          },
-          "test_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Test Id"
-          },
-          "eval_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Eval Id"
-          },
-          "run_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "title": "Run Ids"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
-          },
-          "chat_created_at": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Chat Created At"
-          },
-          "chat_updated_at": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Chat Updated At"
-          },
-          "chat_title": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Chat Title"
-          },
-          "chat_completed": {
-            "type": "boolean",
-            "title": "Chat Completed",
-            "default": false
-          },
-          "grade_score": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Grade Score"
-          },
-          "grade_passed": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Grade Passed"
-          },
-          "grade_time_taken": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Grade Time Taken"
-          },
-          "num_messages": {
-            "type": "integer",
-            "title": "Num Messages",
-            "default": 0
-          }
-        },
-        "type": "object",
-        "required": [
-          "chat_id",
-          "test_id"
-        ],
-        "title": "BenchmarkChatViewItem",
-        "description": "Single benchmark chat row from mv_benchmark_chats."
-      },
       "BenchmarkCompleteEvent": {
         "properties": {
           "artifact_type": {
@@ -46647,17 +46326,12 @@
         "title": "BenchmarkEvalSummaryItem",
         "description": "Single eval from mv_benchmark_eval_summary."
       },
-      "BenchmarkMessageViewItem": {
+      "BenchmarkInvocationViewItem": {
         "properties": {
-          "message_id": {
+          "invocation_id": {
             "type": "string",
             "format": "uuid",
-            "title": "Message Id"
-          },
-          "chat_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Chat Id"
+            "title": "Invocation Id"
           },
           "test_id": {
             "type": "string",
@@ -46676,7 +46350,15 @@
             ],
             "title": "Eval Id"
           },
-          "run_id": {
+          "run_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Run Ids"
+          },
+          "group_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -46686,9 +46368,33 @@
                 "type": "null"
               }
             ],
-            "title": "Run Id"
+            "title": "Group Id"
           },
-          "type": {
+          "invocation_created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invocation Created At"
+          },
+          "invocation_updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invocation Updated At"
+          },
+          "invocation_title": {
             "anyOf": [
               {
                 "type": "string"
@@ -46697,46 +46403,59 @@
                 "type": "null"
               }
             ],
-            "title": "Type"
+            "title": "Invocation Title"
           },
-          "created_at": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Created At"
-          },
-          "updated_at": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Updated At"
-          },
-          "completed": {
+          "invocation_completed": {
             "type": "boolean",
-            "title": "Completed",
+            "title": "Invocation Completed",
             "default": false
+          },
+          "grade_score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grade Score"
+          },
+          "grade_passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grade Passed"
+          },
+          "grade_time_taken": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grade Time Taken"
+          },
+          "num_messages": {
+            "type": "integer",
+            "title": "Num Messages",
+            "default": 0
           }
         },
         "type": "object",
         "required": [
-          "message_id",
-          "chat_id",
+          "invocation_id",
           "test_id"
         ],
-        "title": "BenchmarkMessageViewItem",
-        "description": "Single benchmark message row from mv_benchmark_messages."
+        "title": "BenchmarkInvocationViewItem",
+        "description": "Single benchmark invocation row from mv_benchmark_invocations."
       },
       "BenchmarkProgressEvent": {
         "properties": {
@@ -60532,47 +60251,6 @@
         "title": "GetBenchmarkAttemptFactsResponse",
         "description": "Response with benchmark attempt facts."
       },
-      "GetBenchmarkChatsRequest": {
-        "properties": {
-          "test_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Test Id"
-          },
-          "chat_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "title": "Chat Ids"
-          }
-        },
-        "type": "object",
-        "title": "GetBenchmarkChatsRequest",
-        "description": "Request for benchmark chats view filtering."
-      },
-      "GetBenchmarkChatsResponse": {
-        "properties": {
-          "items": {
-            "items": {
-              "$ref": "#/components/schemas/BenchmarkChatViewItem"
-            },
-            "type": "array",
-            "title": "Items"
-          }
-        },
-        "type": "object",
-        "title": "GetBenchmarkChatsResponse",
-        "description": "Response for benchmark chats view."
-      },
       "GetBenchmarkEvalSummaryRequest": {
         "properties": {
           "rubric_id": {
@@ -60646,7 +60324,7 @@
         "title": "GetBenchmarkEvalSummaryResponse",
         "description": "Response with benchmark eval summary."
       },
-      "GetBenchmarkMessagesRequest": {
+      "GetBenchmarkInvocationsRequest": {
         "properties": {
           "test_id": {
             "anyOf": [
@@ -60660,36 +60338,40 @@
             ],
             "title": "Test Id"
           },
-          "chat_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Chat Id"
+          "invocation_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Invocation Ids"
+          },
+          "chat_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Chat Ids"
           }
         },
         "type": "object",
-        "title": "GetBenchmarkMessagesRequest",
-        "description": "Request for benchmark messages view filtering."
+        "title": "GetBenchmarkInvocationsRequest",
+        "description": "Request for benchmark invocations view filtering."
       },
-      "GetBenchmarkMessagesResponse": {
+      "GetBenchmarkInvocationsResponse": {
         "properties": {
           "items": {
             "items": {
-              "$ref": "#/components/schemas/BenchmarkMessageViewItem"
+              "$ref": "#/components/schemas/BenchmarkInvocationViewItem"
             },
             "type": "array",
             "title": "Items"
           }
         },
         "type": "object",
-        "title": "GetBenchmarkMessagesResponse",
-        "description": "Response for benchmark messages view."
+        "title": "GetBenchmarkInvocationsResponse",
+        "description": "Response for benchmark invocations view."
       },
       "GetBenchmarkTestsRequest": {
         "properties": {
@@ -71870,19 +71552,12 @@
               }
             ]
           },
-          "chats": {
+          "invocations": {
             "items": {
-              "$ref": "#/components/schemas/BenchmarkChatViewItem"
+              "$ref": "#/components/schemas/BenchmarkInvocationViewItem"
             },
             "type": "array",
-            "title": "Chats"
-          },
-          "messages": {
-            "items": {
-              "$ref": "#/components/schemas/BenchmarkMessageViewItem"
-            },
-            "type": "array",
-            "title": "Messages"
+            "title": "Invocations"
           },
           "status": {
             "type": "string",
@@ -115763,6 +115438,10 @@
             "type": "string",
             "title": "Chat Id"
           },
+          "invocation_id": {
+            "type": "string",
+            "title": "Invocation Id"
+          },
           "run_id": {
             "anyOf": [
               {
@@ -115837,10 +115516,11 @@
         },
         "type": "object",
         "required": [
-          "chat_id"
+          "chat_id",
+          "invocation_id"
         ],
         "title": "TestRunItem",
-        "description": "A single run row for the UI table, derived from a benchmark chat."
+        "description": "A single run row for the UI table, derived from a benchmark invocation."
       },
       "TestRunPayload": {
         "properties": {

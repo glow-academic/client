@@ -4,8 +4,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.api.v4.views.benchmark.chats.types import BenchmarkChatViewItem
-from app.api.v4.views.benchmark.messages.types import BenchmarkMessageViewItem
+from app.api.v4.views.benchmark.invocations.types import BenchmarkInvocationViewItem
 from app.api.v4.views.benchmark.tests.types import BenchmarkTestViewItem
 
 
@@ -16,9 +15,11 @@ class GetTestArtifactRequest(BaseModel):
 
 
 class TestRunItem(BaseModel):
-    """A single run row for the UI table, derived from a benchmark chat."""
+    """A single run row for the UI table, derived from a benchmark invocation."""
 
+    # Backward-compatible alias (same value as invocation_id)
     chat_id: str
+    invocation_id: str
     run_id: str | None = None
     group_id: str | None = None
     model_name: str | None = None
@@ -39,8 +40,7 @@ class GetTestArtifactResponse(BaseModel):
     """Response for benchmark test artifact detail."""
 
     test: BenchmarkTestViewItem | None = None
-    chats: list[BenchmarkChatViewItem] = Field(default_factory=list)
-    messages: list[BenchmarkMessageViewItem] = Field(default_factory=list)
+    invocations: list[BenchmarkInvocationViewItem] = Field(default_factory=list)
     status: str = "pending"
 
     # Hydrated eval info
@@ -49,7 +49,7 @@ class GetTestArtifactResponse(BaseModel):
     rubric_name: str | None = None
     infinite_mode: bool = False
 
-    # Runs derived from chats
+    # Runs derived from invocations
     runs: list[TestRunItem] = Field(default_factory=list)
 
     # Status summary
