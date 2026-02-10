@@ -255,8 +255,6 @@ async def _generate_rubric_impl(
                     "length_seconds": None,
                 },
                 "tools": convert_tools_to_dict(run_context_row.get("tools")),
-                "metadata": {"trace_id": trace_id},
-                "eval_mode": False,
             },
         )
 

@@ -28,10 +28,7 @@ server_router = APIRouter()
 
 @internal_sio.on("generate_call_complete")  # type: ignore
 async def handle_agent_artifact_complete(data: dict[str, Any]) -> None:
-    """Handle generation completion and emit hydrated agent resource payload."""
-    if data.get("eval_mode", False):
-        return
-    if data.get("artifact_type") != "agent":
+    """Handle generation completion and emit hydrated agent resource payload."""    if data.get("artifact_type") != "agent":
         return
 
     sid = data.get("sid", "")

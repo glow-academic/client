@@ -76,8 +76,7 @@ artifact_entries AS (
     SELECT
         avr.artifact,
         ARRAY_AGG(DISTINCT ver.entry::text) FILTER (
-            WHERE b.creatable = true
-            AND EXISTS (
+            WHERE EXISTS (
                 SELECT 1 FROM tool_bindings_junction tbj
                 WHERE tbj.binding_id = b.id AND tbj.active = true
             )
@@ -150,7 +149,7 @@ agent_tool_entries AS (
         ea.agent_id,
         ea.updated_at,
         COALESCE(
-            ARRAY_AGG(DISTINCT b.entry::text) FILTER (WHERE b.entry IS NOT NULL AND b.creatable = true),
+            ARRAY_AGG(DISTINCT b.entry::text) FILTER (WHERE b.entry IS NOT NULL ),
             ARRAY[]::text[]
         ) as tool_entries
     FROM eligible_agents ea

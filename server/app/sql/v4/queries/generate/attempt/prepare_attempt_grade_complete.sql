@@ -176,7 +176,7 @@ BEGIN
         LEFT JOIN bindings_resource br ON br.id = tbj.binding_id AND br.active = true
         WHERE at.agent_id = v_agent_id
           AND (p_entry_types IS NULL OR br.entry::text = ANY(p_entry_types))
-          AND br.creatable = true
+          AND br.id IS NOT NULL
     ),
     developer_instructions AS (
         SELECT ARRAY_AGG(i.template ORDER BY i.created_at) as templates

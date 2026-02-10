@@ -506,8 +506,6 @@ async def _persona_generate_impl(
                         "tool_choice": "required",
                     },
                     "tools": convert_tools_to_dict(tools),
-                    "metadata": {"trace_id": trace_id},
-                    "eval_mode": False,
                 },
             )
 

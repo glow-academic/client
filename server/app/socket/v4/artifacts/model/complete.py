@@ -54,9 +54,6 @@ def _to_model_flag_config(flag: QGetFlagsV4Item) -> ModelFlagConfig:
 @internal_sio.on("generate_call_complete")  # type: ignore
 @internal_sio.on("generate_text_complete")  # type: ignore
 async def handle_model_artifact_complete(data: dict[str, Any]) -> None:
-    if data.get("eval_mode", False):
-        return
-
     if data.get("artifact_type") != "model":
         return
 

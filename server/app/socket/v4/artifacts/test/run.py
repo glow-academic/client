@@ -103,7 +103,7 @@ async def _test_run_impl(sid: str, data: TestRunPayload, profile_id: uuid.UUID) 
     2. Creates new run entry for replay
     3. Builds messages with auto-regressive truncation
     4. Emits test_run_start event
-    5. Emits to generate_artifact handler with eval_mode=True
+    5. Emits to generate_artifact handler
     """
     chat_id_str = str(data.chat_id)
 
@@ -210,7 +210,6 @@ async def _test_run_impl(sid: str, data: TestRunPayload, profile_id: uuid.UUID) 
 
             run_id = str(prepare_row.run_id)
             group_id = str(prepare_row.group_id) if prepare_row.group_id else None
-            trace_id = prepare_row.trace_id
             current_run = getattr(prepare_row, "current_run", 1) or 1
             total_runs = getattr(prepare_row, "total_runs", 1) or 1
 
@@ -271,7 +270,7 @@ async def _test_run_impl(sid: str, data: TestRunPayload, profile_id: uuid.UUID) 
                 room=f"test_{chat_id_str}",
             )
 
-            # Step 7: Emit to generate_artifact handler with eval_mode=True
+            # Step 7: Emit to generate_artifact handler
             await internal_sio.emit(
                 "generate_artifact",
                 {
@@ -284,16 +283,6 @@ async def _test_run_impl(sid: str, data: TestRunPayload, profile_id: uuid.UUID) 
                     "messages": messages,
                     "llm_config": model_config,
                     "tools": convert_tools_to_dict(prepare_row.tools),
-                    "metadata": {
-                        "trace_id": trace_id,
-                        "chat_id": chat_id_str,
-                        "current_run": current_run,
-                        "total_runs": total_runs,
-                        "original_run_resource_id": str(ctx.next_run_resource_id)
-                        if ctx.next_run_resource_id
-                        else None,
-                    },
-                    "eval_mode": True,
                 },
             )
 

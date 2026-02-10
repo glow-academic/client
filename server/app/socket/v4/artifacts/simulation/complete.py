@@ -64,10 +64,6 @@ def _to_simulation_flag_config(flag: QGetFlagsV4Item) -> SimulationFlagConfig:
 @internal_sio.on("generate_text_complete")  # type: ignore
 async def handle_simulation_artifact_complete(data: dict[str, Any]) -> None:
     """Handle generate_call_complete and generate_text_complete events - filter by simulation artifact_type and emit granular event."""
-    # Skip processing if in eval mode - benchmark handlers will handle evals
-    eval_mode = data.get("eval_mode", False)
-    if eval_mode:
-        return  # Don't process evals - benchmark handlers will handle them
 
     # Filter by artifact_type
     artifact_type = data.get("artifact_type")

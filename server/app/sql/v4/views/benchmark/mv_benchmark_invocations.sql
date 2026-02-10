@@ -67,12 +67,7 @@ SELECT
     i.updated_at AS invocation_updated_at,
     i.title AS invocation_title,
     (
-        EXISTS (
-            SELECT 1
-            FROM benchmark_completions_entry comp
-            WHERE comp.invocation_id = i.id
-              AND comp.active = true
-        )
+        lg.invocation_id IS NOT NULL
     ) AS invocation_completed,
     lg.grade_score,
     lg.grade_passed,

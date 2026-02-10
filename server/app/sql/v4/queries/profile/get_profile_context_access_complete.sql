@@ -301,7 +301,7 @@ artifact_agent_ids_data AS (
             ver.entry
         FROM artifact_view_relation avr
         JOIN view_entry_relation ver ON ver.view = avr.view
-        JOIN bindings_resource br ON br.entry = ver.entry AND br.creatable = true
+        JOIN bindings_resource br ON br.entry = ver.entry AND br.active = true
         WHERE EXISTS (
             SELECT 1 FROM tool_bindings_junction tbj
             WHERE tbj.binding_id = br.id AND tbj.active = true

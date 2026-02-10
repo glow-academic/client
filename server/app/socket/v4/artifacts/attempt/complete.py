@@ -42,11 +42,6 @@ SQL_PATH_GET_GRADE_CONTEXT = "app/sql/v4/queries/generate/attempt/get_attempt_gr
 @internal_sio.on("generate_text_complete")  # type: ignore
 async def handle_attempt_complete(data: dict[str, Any]) -> None:
     """Handle generate_*_complete events - filter by attempt artifact_type and emit attempt-specific event."""
-    # Skip processing if in eval mode
-    eval_mode = data.get("eval_mode", False)
-    if eval_mode:
-        return
-
     # Filter by artifact_type (early return for efficiency)
     artifact_type = data.get("artifact_type")
     if artifact_type != "attempt":

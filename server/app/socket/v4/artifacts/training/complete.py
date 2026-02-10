@@ -53,11 +53,6 @@ async def handle_training_complete(data: dict[str, Any]) -> None:
     2. Creates attempt + chat entries
     3. Emits training_started to client
     """
-    # Skip processing if in eval mode
-    eval_mode = data.get("eval_mode", False)
-    if eval_mode:
-        return
-
     # Filter by artifact_type (early return for efficiency)
     artifact_type = data.get("artifact_type")
     if artifact_type != "training":
@@ -72,19 +67,11 @@ async def handle_training_complete(data: dict[str, Any]) -> None:
     if not profile_id_str:
         return
 
-    # Extract metadata passed from start.py
-    metadata = data.get("metadata") or {}
-    stored_profile_id_str = metadata.get("profile_id")
-    simulation_id_str = metadata.get("simulation_id")
-    scenario_id_str = metadata.get("scenario_id")
+    simulation_id_str = data.get("simulation_id")
+    scenario_id_str = data.get("scenario_id")
 
-    # Validate required metadata
-    if not all([stored_profile_id_str, simulation_id_str]):
-        logger.error(
-            f"Training complete missing metadata - "
-            f"profile_id={stored_profile_id_str}, "
-            f"simulation_id={simulation_id_str}"
-        )
+    if not simulation_id_str:
+        logger.error("Training complete missing simulation_id")
         await emit_to_internal(
             "generate_call_error",
             GenerateErrorApiRequest(
@@ -99,7 +86,7 @@ async def handle_training_complete(data: dict[str, Any]) -> None:
         return
 
     try:
-        profile_id = uuid.UUID(stored_profile_id_str)
+        profile_id = uuid.UUID(profile_id_str)
         simulation_id = uuid.UUID(simulation_id_str)
         scenario_id = uuid.UUID(scenario_id_str) if scenario_id_str else None
 

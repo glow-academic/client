@@ -369,8 +369,6 @@ async def _profile_generate_impl(
                         "length_seconds": None,
                     },
                     "tools": convert_tools_to_dict(config_tools),
-                    "metadata": {"trace_id": trace_id},
-                    "eval_mode": False,
                 },
             )
 

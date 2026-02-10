@@ -37,10 +37,6 @@ server_router = APIRouter()
 @internal_sio.on("generate_text_complete")  # type: ignore
 async def handle_eval_artifact_complete(data: dict[str, Any]) -> None:
     """Handle generate_call_complete and generate_text_complete events for eval artifact."""
-    # Skip if in eval mode (benchmark handlers handle those)
-    if data.get("eval_mode", False):
-        return
-
     if data.get("artifact_type") != "eval":
         return
 

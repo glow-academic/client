@@ -34,10 +34,6 @@ server_router = APIRouter()
 @internal_sio.on("generate_call_complete")  # type: ignore
 async def handle_scenario_artifact_complete(data: dict[str, Any]) -> None:
     """Handle generate_call_complete events - filter by scenario artifact_type and emit granular event."""
-    # Skip processing if in eval mode - benchmark handlers will handle evals
-    eval_mode = data.get("eval_mode", False)
-    if eval_mode:
-        return  # Don't process evals - benchmark handlers will handle them
 
     # Filter by artifact_type (SQL will also validate, but early return for efficiency)
     artifact_type = data.get("artifact_type")

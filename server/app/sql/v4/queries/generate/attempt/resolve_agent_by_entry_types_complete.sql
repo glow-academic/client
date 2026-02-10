@@ -42,7 +42,7 @@ agent_tool_entries AS (
     SELECT
         a.id as agent_id,
         COALESCE(
-            ARRAY_AGG(DISTINCT b.entry::text) FILTER (WHERE b.entry IS NOT NULL AND b.creatable = true),
+            ARRAY_AGG(DISTINCT b.entry::text) FILTER (WHERE b.entry IS NOT NULL ),
             ARRAY[]::text[]
         ) as tool_entries
     FROM UNNEST(p_agent_ids) as aid(id)

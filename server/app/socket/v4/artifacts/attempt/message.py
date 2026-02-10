@@ -352,8 +352,6 @@ async def _attempt_message_impl(
                     "messages": messages,
                     "llm_config": model_config,
                     "tools": convert_tools_to_dict(prepare_row.tools),
-                    "metadata": {"trace_id": trace_id},
-                    "eval_mode": False,
                 },
             )
 

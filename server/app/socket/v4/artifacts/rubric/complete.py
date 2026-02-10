@@ -39,10 +39,6 @@ async def handle_rubric_complete(data: dict[str, Any]) -> None:
     if data.get("artifact_type") != "rubric":
         return
 
-    eval_mode = data.get("eval_mode", False)
-    if eval_mode:
-        return
-
     sid = data.get("sid", "")
     if not sid:
         return

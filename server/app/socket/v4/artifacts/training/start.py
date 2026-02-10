@@ -233,7 +233,7 @@ async def _training_start_impl(
                     for instruction in data.user_instructions:
                         messages.append({"role": "user", "content": instruction})
 
-                # Emit generate_artifact with metadata for complete.py
+                # Emit generate_artifact; complete handler can resolve the rest.
                 await internal_sio.emit(
                     "generate_artifact",
                     {
@@ -257,14 +257,7 @@ async def _training_start_impl(
                             "tool_choice": "required",  # Force tool calls
                         },
                         "tools": convert_tools_to_dict(gen_row.tools),
-                        "metadata": {
-                            "trace_id": gen_row.trace_id,
-                            # Pass through data needed by complete.py
-                            "profile_id": str(profile_id),
-                            "simulation_id": str(data.simulation_id),
-                            "scenario_id": str(scenario_id),
-                        },
-                        "eval_mode": False,
+                        "simulation_id": str(data.simulation_id),
                         # Training-specific field for filtering
                         "scenario_id": str(scenario_id),
                     },

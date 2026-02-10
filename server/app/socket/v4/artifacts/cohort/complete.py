@@ -27,9 +27,6 @@ server_router = APIRouter()
 @internal_sio.on("generate_call_complete")  # type: ignore
 async def handle_cohort_artifact_complete(data: dict[str, Any]) -> None:
     """Handle generate_call_complete events and emit typed cohort completion."""
-    if data.get("eval_mode", False):
-        return
-
     artifact_type = data.get("artifact_type")
     if artifact_type != "cohort":
         return

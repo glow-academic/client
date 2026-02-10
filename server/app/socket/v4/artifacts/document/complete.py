@@ -35,11 +35,6 @@ server_router = APIRouter()
 @internal_sio.on("generate_text_complete")  # type: ignore
 async def handle_document_artifact_complete(data: dict[str, Any]) -> None:
     """Handle generate_call_complete and generate_text_complete events - filter by document artifact_type and emit granular event."""
-    # Skip processing if in eval mode
-    eval_mode = data.get("eval_mode", False)
-    if eval_mode:
-        return
-
     # Filter by artifact_type
     artifact_type = data.get("artifact_type")
     if artifact_type != "document":

@@ -198,7 +198,7 @@ valid_entries AS (
     SELECT ARRAY_AGG(br.entry::text) as valid_types
     FROM params p
     JOIN bindings_resource br ON (p.entry_types IS NULL OR br.entry::text = ANY(p.entry_types))
-    WHERE br.active = true AND br.creatable = true
+    WHERE br.active = true 
 )
 SELECT
     COALESCE(ad.agent_exists, FALSE),

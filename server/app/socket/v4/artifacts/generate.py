@@ -79,8 +79,6 @@ class GenerateArtifactPayload(BaseModel):
     messages: list[dict[str, Any]]
     llm_config: ModelConfig
     tools: list[dict[str, Any]] | None = None
-    eval_mode: bool = False
-    metadata: dict[str, Any] | None = None
     tool_timeout_seconds: float = 60.0
     file_path: str | None = None
     mime_type: str | None = None
@@ -206,7 +204,6 @@ async def _call_chat_completions_api(
     base_url: str | None = None,
     temperature: float = 0.0,
     reasoning: str | None = None,
-    metadata: dict[str, Any] | None = None,
     extra_body: dict[str, Any] | None = None,
 ) -> AsyncIterator[Any]:
     """Call LLM using Chat Completions API.
@@ -241,16 +238,6 @@ async def _call_chat_completions_api(
         merged_extra_body = {**(merged_extra_body or {}), **extra_body}
     if merged_extra_body:
         base_kwargs["extra_body"] = merged_extra_body
-
-    if metadata:
-        extra_headers: dict[str, str] = {}
-        if metadata.get("trace_id"):
-            extra_headers["OpenAI-Trace-Id"] = str(metadata["trace_id"])
-        if metadata.get("run_id"):
-            extra_headers["X-Run-Id"] = str(metadata["run_id"])
-        if extra_headers:
-            base_kwargs["extra_headers"] = extra_headers
-
     debug_kwargs = {k: v for k, v in base_kwargs.items() if k != "api_key"}
     logger.info(
         f"Calling acompletion API - model: {model}, "
@@ -275,7 +262,6 @@ async def _call_llm_with_mode(
     base_url: str | None = None,
     temperature: float = 0.0,
     reasoning: str | None = None,
-    metadata: dict[str, Any] | None = None,
     extra_body: dict[str, Any] | None = None,
 ) -> AsyncIterator[Any]:
     """Call LLM using the specified mode.
@@ -315,7 +301,6 @@ async def _call_llm_with_mode(
             base_url=base_url,
             temperature=temperature,
             reasoning=reasoning,
-            metadata=metadata,
             extra_body=extra_body,
         )
 
@@ -360,14 +345,6 @@ async def _generate_artifact_impl(
             responses_tools = convert_tools_to_responses_format(data.tools)
 
         tool_choice = model_config.tool_choice or "auto"
-
-        metadata = {
-            "run_id": data.run_id,
-            "trace_id": (data.metadata or {}).get("trace_id"),
-            "group_id": data.group_id,
-            "resource_type": resource_type,
-        }
-
         await _emit_modality_event(
             data.modality,
             "start",
@@ -381,7 +358,6 @@ async def _generate_artifact_impl(
                 "group_id": data.group_id,
                 "type": "start",
                 "message": "Starting generation",
-                "eval_mode": data.eval_mode,
             },
         )
 
@@ -418,7 +394,6 @@ async def _generate_artifact_impl(
                     "mime_type": data.mime_type,
                     "file_size": data.file_size,
                     "upload_id": data.upload_id,
-                    "eval_mode": data.eval_mode,
                 },
             )
             return
@@ -484,7 +459,6 @@ async def _generate_artifact_impl(
                         base_url=model_config.base_url,
                         temperature=model_config.temperature or 0.0,
                         reasoning=model_config.reasoning,
-                        metadata=metadata,
                         extra_body=extra_body or None,
                     )
             except Exception as e:
@@ -503,7 +477,6 @@ async def _generate_artifact_impl(
                         base_url=model_config.base_url,
                         temperature=model_config.temperature or 0.0,
                         reasoning=model_config.reasoning,
-                        metadata=metadata,
                         extra_body=extra_body or None,
                     )
                 else:
@@ -534,7 +507,6 @@ async def _generate_artifact_impl(
                             "group_id": data.group_id,
                             "type": "start",
                             "event_type": "text_start",
-                            "eval_mode": data.eval_mode,
                         },
                     )
 
@@ -556,7 +528,6 @@ async def _generate_artifact_impl(
                                 "event_type": "text_delta",
                                 "delta": delta,
                                 "accumulated_content": assistant_output,
-                                "eval_mode": data.eval_mode,
                             },
                         )
 
@@ -575,7 +546,6 @@ async def _generate_artifact_impl(
                             "type": "complete",
                             "event_type": "text_complete",
                             "text": assistant_output,
-                            "eval_mode": data.eval_mode,
                         },
                     )
 
@@ -610,7 +580,6 @@ async def _generate_artifact_impl(
                             "type": "start",
                             "event_type": "tool_call_start",
                             "tool_call_id": tool_call_id,
-                            "eval_mode": data.eval_mode,
                         },
                     )
 
@@ -651,7 +620,6 @@ async def _generate_artifact_impl(
                             "delta": delta,
                             "tool_name": st.get("tool_name"),
                             "arguments_delta": delta,
-                            "eval_mode": data.eval_mode,
                         },
                     )
 
@@ -694,7 +662,6 @@ async def _generate_artifact_impl(
                             "arguments": arguments_dict,
                             "arguments_delta": arguments_str,
                             "call_id": tool_call_id,
-                            "eval_mode": data.eval_mode,
                         },
                     )
 
@@ -743,7 +710,6 @@ async def _generate_artifact_impl(
                             "tool_call_id": tool_call_id,
                             "tool_name": tool_name,
                             "result": tool_result,
-                            "eval_mode": data.eval_mode,
                         },
                     )
 
@@ -864,7 +830,6 @@ async def _generate_artifact_impl(
                 "output_text_tokens": total_output_tokens,
                 "assistant_output": final_assistant_output,
                 "tool_results": all_tool_results,
-                "eval_mode": data.eval_mode,
             },
         )
 

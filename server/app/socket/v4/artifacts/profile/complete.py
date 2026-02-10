@@ -37,9 +37,6 @@ server_router = APIRouter()
 @internal_sio.on("generate_text_complete")  # type: ignore
 async def handle_profile_artifact_complete(data: dict[str, Any]) -> None:
     """Handle generate_call_complete and generate_text_complete events - filter by profile artifact_type and emit granular event."""
-    eval_mode = data.get("eval_mode", False)
-    if eval_mode:
-        return
 
     artifact_type = data.get("artifact_type")
     if artifact_type != "profile":

@@ -29,6 +29,5 @@ AS $$
     JOIN bindings_resource br ON br.id = tbj.binding_id AND br.active = true
     WHERE tbj.tool_id = $1
       AND tbj.active = true
-      AND br.creatable = true
     LIMIT 1;
 $$;

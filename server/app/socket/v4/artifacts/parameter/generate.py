@@ -462,8 +462,6 @@ async def _parameter_generate_impl(
                         "tool_choice": "required",  # Force tool calls for parameter generation
                     },
                     "tools": convert_tools_to_dict(tools),
-                    "metadata": {"trace_id": trace_id},
-                    "eval_mode": False,
                 },
             )
 

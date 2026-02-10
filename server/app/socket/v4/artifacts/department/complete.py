@@ -22,9 +22,6 @@ server_router = APIRouter()
 
 @internal_sio.on("generate_call_complete")  # type: ignore
 async def handle_department_artifact_complete(data: dict[str, Any]) -> None:
-    if data.get("eval_mode", False):
-        return
-
     if data.get("artifact_type") != "department":
         return
 

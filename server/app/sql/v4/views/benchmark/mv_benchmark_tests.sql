@@ -52,9 +52,9 @@ invocation_counts AS (
         COUNT(*) FILTER (
             WHERE EXISTS (
                 SELECT 1
-                FROM benchmark_completions_entry comp
-                WHERE comp.invocation_id = i.id
-                  AND comp.active = true
+                FROM benchmark_grades_entry g
+                WHERE g.invocation_id = i.id
+                  AND g.active = true
             )
         )::bigint AS num_invocations_completed
     FROM benchmark_invocations_entry i

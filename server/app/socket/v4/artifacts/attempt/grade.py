@@ -179,7 +179,6 @@ async def _attempt_grade_impl(
             run_id = str(prepare_row.run_id)
             group_id = str(prepare_row.group_id) if prepare_row.group_id else None
             grade_id = str(prepare_row.grade_id) if prepare_row.grade_id else None
-            trace_id = prepare_row.trace_id
 
             # Step 3: Build model config
             model_config = {
@@ -231,11 +230,6 @@ async def _attempt_grade_impl(
                     "messages": messages,
                     "llm_config": model_config,
                     "tools": convert_tools_to_dict(prepare_row.tools),
-                    "metadata": {
-                        "trace_id": trace_id,
-                        "simulation_id": str(data.simulation_id),
-                    },
-                    "eval_mode": False,
                 },
             )
 

@@ -21,9 +21,6 @@ SQL_PATH = "app/sql/v4/queries/settings/get_setting_complete.sql"
 
 @internal_sio.on("generate_call_complete")  # type: ignore
 async def handle_setting_artifact_complete(data: dict[str, Any]) -> None:
-    if data.get("eval_mode", False):
-        return
-
     if data.get("artifact_type") != "setting":
         return
 

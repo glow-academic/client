@@ -281,7 +281,7 @@ BEGIN
         LEFT JOIN tool_schema_data tsd ON tsd.tool_id = t.id
         WHERE at.agent_id = v_agent_id
           AND (p_entry_types IS NULL OR br.entry::text = ANY(p_entry_types))
-          AND br.creatable = true
+          AND br.id IS NOT NULL
     ),
     developer_instructions AS (
         SELECT ARRAY_AGG(i.template ORDER BY i.created_at) as templates
