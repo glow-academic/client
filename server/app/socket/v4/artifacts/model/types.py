@@ -5,9 +5,7 @@ Types are registered in OpenAPI via FastAPI endpoints, enabling
 automatic type extraction in the frontend via InputOf/OutputOf.
 """
 
-from uuid import UUID
-
-from app.api.v4.artifacts.model.types import GetModelApiRequest
+from app.api.v4.artifacts.model.types import GetModelApiRequest, ModelFlagConfig
 from app.socket.v4.artifacts.types import (
     GenerationCompleteEvent,
     GenerationErrorEvent,
@@ -16,11 +14,11 @@ from app.socket.v4.artifacts.types import (
 from app.sql.types import (
     QGetDepartmentsV4Item,
     QGetDescriptionsV4Item,
-    QGetEndpointsV4Item,
     QGetFlagsV4Item,
-    QGetKeysV4Item,
+    QGetModalitiesV4Item,
     QGetNamesV4Item,
     QGetPricingV4Item,
+    QGetQualitiesV4Item,
     QGetReasoningLevelsV4Item,
     QGetTemperatureLevelsV4Item,
     QGetValuesV4Item,
@@ -35,12 +33,12 @@ from app.sql.types import (
 class GenerateModelPayload(GetModelApiRequest):
     """Request payload for model_generate WebSocket event.
 
-    Extends GetModelApiRequest (which has model_id, draft_id, search terms)
+    Extends GetModelApiRequest (which has model_id, draft_id)
     with generation-specific fields.
     """
 
-    # Generation-specific fields - domain-based API
-    domain_ids: list[UUID]  # Required: which domains to generate
+    # Generation-specific fields - resource-type-based API
+    resource_types: list[str]  # Required: which resource types to generate
     user_instructions: list[str] | None = None  # Optional: user instructions
 
 
@@ -62,15 +60,16 @@ class ModelGenerationCompleteEvent(GenerationCompleteEvent):
     name_resource: QGetNamesV4Item | None = None
     description_resource: QGetDescriptionsV4Item | None = None
     value_resource: QGetValuesV4Item | None = None
-    endpoint_resource: QGetEndpointsV4Item | None = None
-    key_resource: QGetKeysV4Item | None = None
     flag_resource: QGetFlagsV4Item | None = None
 
     # Multi-select resources (arrays of full objects)
+    flag_resources: list[ModelFlagConfig] | None = None
     department_resources: list[QGetDepartmentsV4Item] | None = None
+    modality_resources: list[QGetModalitiesV4Item] | None = None
     temperature_level_resources: list[QGetTemperatureLevelsV4Item] | None = None
     pricing_resources: list[QGetPricingV4Item] | None = None
     reasoning_level_resources: list[QGetReasoningLevelsV4Item] | None = None
+    quality_resources: list[QGetQualitiesV4Item] | None = None
     voice_resources: list[QGetVoicesV4Item] | None = None
 
 

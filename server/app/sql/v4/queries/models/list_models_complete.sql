@@ -108,7 +108,7 @@ image_model_check AS (
         CASE WHEN COUNT(*) > 0 THEN true ELSE false END as image_model
     FROM model_modalities_junction mm
     JOIN modalities_resource mr ON mr.id = mm.modality_id
-    WHERE mr.modality = 'image' AND mm.type = 'output'::direction_type AND mm.active = true
+    WHERE mr.modality = 'image' AND mr.is_input = false AND mm.active = true
     GROUP BY mm.model_id
 ),
 models_with_usage AS (

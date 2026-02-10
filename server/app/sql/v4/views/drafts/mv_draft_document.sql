@@ -25,6 +25,8 @@ WITH draft_links AS (
     UNION ALL SELECT draft_id, 'departments'::resource_type AS resource_type, departments_id::uuid AS resource_id FROM departments_drafts_connection WHERE active = true
     UNION ALL SELECT draft_id, 'parameter_fields'::resource_type AS resource_type, parameter_fields_id::uuid AS resource_id FROM parameter_fields_drafts_connection WHERE active = true
     UNION ALL SELECT draft_id, 'uploads'::resource_type AS resource_type, uploads_id::uuid AS resource_id FROM uploads_drafts_connection WHERE active = true
+    UNION ALL SELECT draft_id, 'images'::resource_type AS resource_type, images_id::uuid AS resource_id FROM images_drafts_connection WHERE active = true
+    UNION ALL SELECT draft_id, 'texts'::resource_type AS resource_type, texts_id::uuid AS resource_id FROM texts_drafts_connection WHERE active = true
 )
 SELECT
     d.id AS draft_id,
@@ -40,7 +42,9 @@ SELECT
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'flags'::resource_type), ARRAY[]::uuid[]) AS flag_ids,
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'departments'::resource_type), ARRAY[]::uuid[]) AS department_ids,
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'parameter_fields'::resource_type), ARRAY[]::uuid[]) AS parameter_field_ids,
-    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'uploads'::resource_type), ARRAY[]::uuid[]) AS upload_ids
+    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'uploads'::resource_type), ARRAY[]::uuid[]) AS upload_ids,
+    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'images'::resource_type), ARRAY[]::uuid[]) AS image_ids,
+    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'texts'::resource_type), ARRAY[]::uuid[]) AS text_ids
 FROM drafts_entry d
 LEFT JOIN draft_links l ON l.draft_id = d.id
 WHERE d.artifact = 'document'::artifact_type

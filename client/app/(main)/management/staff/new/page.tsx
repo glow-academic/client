@@ -19,16 +19,6 @@ type SaveStaffIn = InputOf<"/api/v4/artifacts/profiles/save", "post">;
 type SaveStaffOut = OutputOf<"/api/v4/artifacts/profiles/save", "post">;
 type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
-type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
-type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
-type CreateDraftDepartmentsIn = InputOf<
-  "/api/v4/resources/departments",
-  "post"
->;
-type CreateDraftDepartmentsOut = OutputOf<
-  "/api/v4/resources/departments",
-  "post"
->;
 type CreateDraftEmailsIn = InputOf<"/api/v4/resources/emails", "post">;
 type CreateDraftEmailsOut = OutputOf<"/api/v4/resources/emails", "post">;
 type CreateDraftRequestLimitsIn = InputOf<
@@ -68,22 +58,6 @@ async function createDraftNames(
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.post("/resources/names", input);
-}
-
-async function createDraftFlags(
-  input: CreateDraftFlagsIn
-): Promise<CreateDraftFlagsOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/flags", input);
-}
-
-async function createDraftDepartments(
-  input: CreateDraftDepartmentsIn
-): Promise<CreateDraftDepartmentsOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/departments", input);
 }
 
 async function createDraftEmails(
@@ -168,8 +142,6 @@ export default async function NewStaffPage({
         saveStaffAction={saveStaff}
         patchProfileDraftAction={patchProfileDraft}
         createNamesAction={createDraftNames}
-        createFlagsAction={createDraftFlags}
-        createDepartmentsAction={createDraftDepartments}
         createEmailsAction={createDraftEmails}
         createRequestLimitsAction={createDraftRequestLimits}
       />

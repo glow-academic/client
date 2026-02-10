@@ -282,11 +282,13 @@ DOCUMENT_RESOURCES: set[str] = {
     "departments",
     "fields",
     "uploads",
+    "images",
+    "texts",
 }
 
 # Multi-resource agent definitions for document
 DOCUMENT_BASIC_RESOURCES: set[str] = {"names", "descriptions", "flags", "departments"}
-DOCUMENT_CONTENT_RESOURCES: set[str] = {"fields", "uploads"}
+DOCUMENT_CONTENT_RESOURCES: set[str] = {"fields", "uploads", "images", "texts"}
 DOCUMENT_GENERAL_RESOURCES: set[str] = DOCUMENT_RESOURCES  # All resources
 
 

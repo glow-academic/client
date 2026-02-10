@@ -1,7 +1,4 @@
-"""Model generation handler.
-
-Routes model generation through unified generate pipeline.
-"""
+"""Model generation router - unified handler for all model resource types."""
 
 import uuid
 from typing import Any
@@ -9,149 +6,397 @@ from typing import Any
 from fastapi import APIRouter
 
 from app.api.v4.artifacts.model.get import get_model_websocket
+from app.api.v4.artifacts.model.types import GetModelWebsocketResponse
+from app.infra.v4.generation import convert_tools_to_dict, render_developer_instructions
+from app.infra.v4.generation.resource_utils import normalize_resources_for_sql
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
+from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
-from app.socket.v4.artifacts.generation_common import (
-    emit_generate_artifact,
-    emit_generation_error,
-)
 from app.socket.v4.artifacts.model.types import GenerateModelPayload
+from app.socket.v4.artifacts.types import GenerateErrorApiRequest
+from app.utils.sql_helper import load_sql
 
 internal_sio = get_internal_sio()
 
 client_router = APIRouter()
 server_router = APIRouter()
 
+CREATE_RUN_SQL_PATH = "app/sql/v4/queries/generate/start/get_generation_run_context_and_create_run_complete.sql"
+TEXT_RUN_CONTEXT_SQL_PATH = "app/sql/v4/queries/generate/text/get_text_run_context_for_existing_run_complete.sql"
 
-async def _generate_model_impl(
+MODEL_RESOURCE_TYPES = [
+    "names",
+    "descriptions",
+    "values",
+    "providers",
+    "flags",
+    "departments",
+    "modalities",
+    "temperature_levels",
+    "pricing",
+    "reasoning_levels",
+    "qualities",
+    "voices",
+]
+
+
+def _build_model_jinja_context(
+    response: GetModelWebsocketResponse,
+) -> dict[str, Any]:
+    """Build Jinja context from websocket resources payload."""
+    context: dict[str, Any] = (
+        response.resources.model_dump() if response.resources else {}
+    )
+    context["views"] = {
+        "draft_model": (
+            response.views.draft_model.model_dump(mode="json")
+            if response.views and response.views.draft_model
+            else {}
+        )
+    }
+    return context
+
+
+async def _emit_generation_error(
     sid: str,
-    data: GenerateModelPayload,
-    profile_id: uuid.UUID,
+    *,
+    message: str,
+    group_id: uuid.UUID | None = None,
 ) -> None:
+    await emit_to_internal(
+        "generate_call_error",
+        GenerateErrorApiRequest(
+            sid=sid,
+            error_message=message,
+            artifact_type="model",
+            group_id=str(group_id) if group_id else None,
+            resource_type="model",
+        ),
+        sid=sid,
+    )
+
+
+def _resolve_agent_id(
+    resource_types: list[str],
+    resource_agent_ids: dict[str, uuid.UUID | None],
+) -> uuid.UUID | None:
+    for resource_type in resource_types:
+        candidate = resource_agent_ids.get(resource_type)
+        if candidate is not None:
+            return candidate
+    return None
+
+
+def _select_generation_config_resources(
+    response: GetModelWebsocketResponse,
+    agent_id: uuid.UUID,
+) -> tuple[Any | None, Any | None, Any | None]:
+    resources = response.resources
+    config_agents = resources.agents or []
+    config_models = resources.models or []
+    config_providers = resources.config_providers or []
+
+    agent_resource = next(
+        (a for a in config_agents if getattr(a, "id", None) == agent_id),
+        config_agents[0] if config_agents else None,
+    )
+    model_id = getattr(agent_resource, "model_id", None)
+    model_resource = next(
+        (m for m in config_models if getattr(m, "id", None) == model_id),
+        config_models[0] if config_models else None,
+    )
+    provider_id = getattr(model_resource, "provider_id", None)
+    provider_resource = next(
+        (p for p in config_providers if getattr(p, "id", None) == provider_id),
+        config_providers[0] if config_providers else None,
+    )
+
+    return agent_resource, model_resource, provider_resource
+
+
+def _build_generation_resources(
+    response: GetModelWebsocketResponse,
+    resource_types: list[str],
+) -> list[dict[str, Any]]:
+    resources: list[dict[str, Any]] = []
+    resources_bucket = response.resources
+
+    def add_resource_ids(
+        resource_type: str, items: list[Any] | None, id_attr: str
+    ) -> None:
+        if not items or resource_type not in resource_types:
+            return
+        ids: list[str] = []
+        for item in items:
+            item_id = (
+                item.get(id_attr)
+                if isinstance(item, dict)
+                else getattr(item, id_attr, None)
+            )
+            if item_id:
+                ids.append(str(item_id))
+        if ids:
+            resources.append({"resource_type": resource_type, "resource_ids": ids})
+
+    add_resource_ids("names", resources_bucket.names, "id")
+    add_resource_ids("descriptions", resources_bucket.descriptions, "id")
+    add_resource_ids("values", resources_bucket.values, "id")
+    add_resource_ids("flags", resources_bucket.flags, "flag_option_id")
+    add_resource_ids("departments", resources_bucket.departments, "department_id")
+    add_resource_ids("modalities", resources_bucket.modalities, "id")
+    add_resource_ids(
+        "temperature_levels",
+        resources_bucket.temperature_levels,
+        "temperature_level_id",
+    )
+    add_resource_ids("pricing", resources_bucket.pricing, "pricing_id")
+    add_resource_ids(
+        "reasoning_levels", resources_bucket.reasoning_levels, "reasoning_level_id"
+    )
+    add_resource_ids("qualities", resources_bucket.qualities, "id")
+    add_resource_ids("voices", resources_bucket.voices, "id")
+
+    return resources
+
+
+async def _model_generate_impl(
+    sid: str, data: GenerateModelPayload, profile_id: uuid.UUID
+) -> None:
+    """Handle model generation with resource-type based routing."""
     try:
-        if not data.domain_ids:
-            await emit_generation_error(
-                sid=sid,
-                artifact_type="model",
-                message="domain_ids must be provided",
-                resource_id=str(data.model_id) if data.model_id else None,
-                resource_type="model",
+        if not data.resource_types:
+            await _emit_generation_error(sid, message="resource_types must be provided")
+            return
+
+        resource_types = data.resource_types
+        invalid_types = [
+            resource_type
+            for resource_type in resource_types
+            if resource_type not in MODEL_RESOURCE_TYPES
+        ]
+        if invalid_types:
+            await _emit_generation_error(
+                sid,
+                message=f"Invalid resource types: {', '.join(invalid_types)}",
             )
             return
 
-        # Fetch model data using typed internal layer
         result = await get_model_websocket(
             profile_id=profile_id,
             model_id=data.model_id,
             draft_id=data.draft_id,
         )
 
-        # Build domain_id -> agent_id mapping from result.domains
-        domain_to_agent: dict[uuid.UUID, uuid.UUID | None] = {}
-        if result.domains:
-            for domain in result.domains:
-                domain_to_agent[domain.domain_id] = domain.agent_id
-
-        # Build domain_id -> resource_type mapping from result
-        domain_to_resource: dict[uuid.UUID | None, str] = {
-            result.name_domain_id: "names",
-            result.description_domain_id: "descriptions",
-            result.value_domain_id: "values",
-            result.endpoint_domain_id: "endpoints",
-            result.provider_domain_id: "providers",
-            result.key_domain_id: "keys",
-            result.flag_domain_id: "flags",
-            result.departments_domain_id: "departments",
-            result.modalities_domain_id: "modalities",
-            result.temperature_levels_domain_id: "temperature_levels",
-            result.pricing_domain_id: "pricing",
-            result.reasoning_levels_domain_id: "reasoning_levels",
-            result.qualities_domain_id: "qualities",
-            result.voices_domain_id: "voices",
-        }
-        # Remove None key if present
-        domain_to_resource.pop(None, None)
-
-        # Derive resource_types from domain_ids
-        resource_types: list[str] = []
-        for did in data.domain_ids:
-            if did in domain_to_resource:
-                resource_types.append(domain_to_resource[did])
-
-        if not resource_types:
-            await emit_generation_error(
-                sid=sid,
-                artifact_type="model",
-                message="No valid domain_ids provided",
-                resource_id=str(data.model_id) if data.model_id else None,
-                resource_type="model",
-            )
-            return
-
-        # Get agent_id from the first valid domain_id
-        agent_id: uuid.UUID | None = None
-        for did in data.domain_ids:
-            if did in domain_to_agent and domain_to_agent[did] is not None:
-                agent_id = domain_to_agent[did]
-                break
-
+        agent_id = _resolve_agent_id(resource_types, result.resource_agent_ids or {})
         if not agent_id:
-            await emit_generation_error(
-                sid=sid,
-                artifact_type="model",
-                message="No agent configured for requested resources",
-                resource_id=str(data.model_id) if data.model_id else None,
-                group_id=str(result.group_id) if result.group_id else None,
-                resource_type=(resource_types or ["model"])[0],
-            )
-            return
-
-        async with get_db_connection() as conn:
-            await emit_generate_artifact(
-                conn=conn,
-                sid=sid,
-                artifact_type="model",
-                resource_id=str(data.model_id) if data.model_id else None,
-                resource_types=resource_types,
-                user_instructions=data.user_instructions,
-                profile_id=profile_id,
-                agent_id=agent_id,
+            await _emit_generation_error(
+                sid,
+                message="No agent found for the requested resource types",
                 group_id=result.group_id,
             )
+            return
 
-    except Exception as e:
-        await emit_generation_error(
-            sid=sid,
-            artifact_type="model",
-            message=f"Failed to generate model: {str(e)}",
-            resource_id=str(data.model_id) if data.model_id else None,
-            resource_type="model",
+        agent_resource, model_resource, provider_resource = (
+            _select_generation_config_resources(result, agent_id)
+        )
+        if not agent_resource:
+            await _emit_generation_error(
+                sid,
+                message="No agent configuration found. Check department settings.",
+                group_id=result.group_id,
+            )
+            return
+        if not model_resource:
+            await _emit_generation_error(
+                sid,
+                message=f"Agent '{getattr(agent_resource, 'name', 'unknown')}' has no model configured",
+                group_id=result.group_id,
+            )
+            return
+        if not provider_resource:
+            await _emit_generation_error(
+                sid,
+                message=f"Model '{getattr(model_resource, 'name', 'unknown')}' has no provider configured",
+                group_id=result.group_id,
+            )
+            return
+
+        preloaded_api_key = getattr(model_resource, "key", None)
+        if not preloaded_api_key:
+            provider_name = getattr(provider_resource, "value", None) or getattr(
+                provider_resource, "name", "unknown"
+            )
+            await _emit_generation_error(
+                sid,
+                message=f"No API key configured for provider '{provider_name}'",
+                group_id=result.group_id,
+            )
+            return
+
+        model_jinja_context = _build_model_jinja_context(result)
+        resources = _build_generation_resources(result, resource_types)
+        group_id = result.group_id
+        resources_sql = normalize_resources_for_sql(resources)
+
+        async with get_db_connection() as conn:
+            create_run_sql = load_sql(CREATE_RUN_SQL_PATH)
+            create_run_row = await conn.fetchrow(
+                create_run_sql,
+                agent_id,
+                profile_id,
+                None,
+                None,
+                group_id,
+                None,
+                data.user_instructions if data.user_instructions else None,
+                resources_sql,
+            )
+            if not create_run_row:
+                await _emit_generation_error(
+                    sid,
+                    message="Failed to create generation run",
+                    group_id=group_id,
+                )
+                return
+
+            run_id = str(create_run_row["run_id"])
+            group_id = (
+                create_run_row["group_id"] if create_run_row["group_id"] else group_id
+            )
+            trace_id = create_run_row.get("trace_id")
+            message_ids = create_run_row.get("message_ids")
+
+            run_context_sql = load_sql(TEXT_RUN_CONTEXT_SQL_PATH)
+            run_context_row = await conn.fetchrow(
+                run_context_sql,
+                uuid.UUID(run_id),
+                agent_id,
+                message_ids,
+                group_id,
+                resources_sql,
+            )
+            if not run_context_row:
+                await _emit_generation_error(
+                    sid,
+                    message="Failed to load generation context",
+                    group_id=group_id,
+                )
+                return
+
+            rendered_developer_messages = render_developer_instructions(
+                templates=run_context_row.get("developer_instruction_templates"),
+                jinja_context=run_context_row.get("context") or model_jinja_context,
+            )
+
+            messages: list[dict[str, Any]] = []
+            if run_context_row.get("system_prompt"):
+                messages.append(
+                    {"role": "system", "content": run_context_row["system_prompt"]}
+                )
+            for developer_message in rendered_developer_messages:
+                messages.append({"role": "developer", "content": developer_message})
+            for user_message in data.user_instructions or []:
+                messages.append({"role": "user", "content": user_message})
+
+            model_name = (
+                run_context_row.get("model_name")
+                or getattr(model_resource, "value", None)
+                or getattr(model_resource, "name", None)
+            )
+            provider_name = (
+                run_context_row.get("provider")
+                or getattr(provider_resource, "value", None)
+                or getattr(provider_resource, "name", None)
+            )
+            base_url = run_context_row.get("base_url") or getattr(
+                model_resource, "endpoint", None
+            )
+            api_key = run_context_row.get("api_key") or preloaded_api_key
+            temperature = run_context_row.get("temperature")
+            if temperature is None:
+                temperature = getattr(agent_resource, "temperature", 0.0)
+            reasoning = run_context_row.get("reasoning")
+            if reasoning is None:
+                reasoning = getattr(agent_resource, "reasoning", None)
+
+            if not api_key:
+                await _emit_generation_error(
+                    sid,
+                    message="No API key configured for selected model/provider",
+                    group_id=group_id,
+                )
+                return
+
+            await internal_sio.emit(
+                "generate_artifact",
+                {
+                    "sid": sid,
+                    "artifact_type": "model",
+                    "resource_type": resource_types[0] if resource_types else "model",
+                    "run_id": run_id,
+                    "group_id": str(group_id) if group_id else None,
+                    "message_id": None,
+                    "messages": messages,
+                    "llm_config": {
+                        "model": model_name,
+                        "api_key": api_key,
+                        "base_url": base_url,
+                        "temperature": temperature,
+                        "reasoning": reasoning,
+                        "provider": provider_name,
+                        "voice": None,
+                        "quality": None,
+                        "length_seconds": None,
+                    },
+                    "tools": convert_tools_to_dict(run_context_row.get("tools")),
+                    "metadata": {"trace_id": trace_id},
+                    "eval_mode": False,
+                },
+            )
+
+    except Exception as error:
+        await _emit_generation_error(
+            sid,
+            message=f"Failed to generate model resources: {str(error)}",
         )
 
 
 @sio.event  # type: ignore
 async def model_generate(sid: str, data: dict[str, Any]) -> None:
-    """Handle model_generate client event."""
+    """Handle model_generate event (client-to-server)."""
     try:
         payload = GenerateModelPayload(**data)
         profile_id_str = await find_profile_by_socket(sid)
         if not profile_id_str:
-            await emit_generation_error(
-                sid=sid,
-                artifact_type="model",
-                message="Profile not found. Please reconnect.",
-                resource_id=str(payload.model_id) if payload.model_id else None,
-                resource_type="model",
+            await _emit_generation_error(
+                sid, message="Profile not found. Please reconnect."
             )
             return
 
-        await _generate_model_impl(sid, payload, uuid.UUID(profile_id_str))
-    except Exception as e:
-        await emit_generation_error(
-            sid=sid,
-            artifact_type="model",
-            message=f"Invalid request: {str(e)}",
-            resource_id=str(data.get("model_id")) if data.get("model_id") else None,
-            resource_type="model",
-        )
+        profile_id = uuid.UUID(profile_id_str)
+        await _model_generate_impl(sid, payload, profile_id)
+    except Exception as error:
+        await _emit_generation_error(sid, message=f"Invalid request: {str(error)}")
+
+
+@internal_sio.on("model_generate")  # type: ignore
+async def model_generate_internal(data: dict[str, Any]) -> None:
+    """Handle model_generate event from internal bus (server-to-server)."""
+    try:
+        sid = data.get("sid", "")
+        if not sid:
+            return
+
+        profile_id_str = await find_profile_by_socket(sid)
+        if not profile_id_str:
+            await _emit_generation_error(
+                sid, message="Profile not found. Please reconnect."
+            )
+            return
+
+        profile_id = uuid.UUID(profile_id_str)
+        payload = GenerateModelPayload(**data)
+        await _model_generate_impl(sid, payload, profile_id)
+    except Exception as error:
+        await _emit_generation_error(sid, message=f"Invalid request: {str(error)}")

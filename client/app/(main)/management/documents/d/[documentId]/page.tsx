@@ -32,6 +32,10 @@ type CreateDraftDescriptionsOut = OutputOf<
 >;
 type CreateDraftUploadsIn = InputOf<"/api/v4/resources/uploads", "post">;
 type CreateDraftUploadsOut = OutputOf<"/api/v4/resources/uploads", "post">;
+type CreateDraftImagesIn = InputOf<"/api/v4/resources/images", "post">;
+type CreateDraftImagesOut = OutputOf<"/api/v4/resources/images", "post">;
+type CreateDraftTextsIn = InputOf<"/api/v4/resources/texts", "post">;
+type CreateDraftTextsOut = OutputOf<"/api/v4/resources/texts", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -111,6 +115,20 @@ async function createDraftUploads(
   return api.post("/resources/uploads", input);
 }
 
+async function createDraftImages(
+  input: CreateDraftImagesIn
+): Promise<CreateDraftImagesOut> {
+  "use server";
+  return api.post("/resources/images", input);
+}
+
+async function createDraftTexts(
+  input: CreateDraftTextsIn
+): Promise<CreateDraftTextsOut> {
+  "use server";
+  return api.post("/resources/texts", input);
+}
+
 const getDocument = async (
   documentId: string,
   draftId: string | null
@@ -171,6 +189,8 @@ export default async function DocumentEditPage({
           createNamesAction={createDraftNames}
           createDescriptionsAction={createDraftDescriptions}
           createUploadsAction={createDraftUploads}
+          createImagesAction={createDraftImages}
+          createTextsAction={createDraftTexts}
         />
       </div>
     );

@@ -103,7 +103,7 @@ agent_model_modalities AS (
     JOIN modalities_resource mr ON mr.id = mm.modality_id
     CROSS JOIN params p
     WHERE a.id = p.agent_id
-      AND mm.type = 'output'::direction_type
+      AND mr.is_input = false
       AND mm.active = true
       AND mr.active = true
 ),

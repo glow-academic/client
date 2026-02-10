@@ -47,6 +47,8 @@ CREATE OR REPLACE FUNCTION api_patch_document_draft_v4(
     departments types.document_multi_resource_action DEFAULT NULL,
     fields types.document_multi_resource_action DEFAULT NULL,
     uploads types.document_multi_resource_action DEFAULT NULL,
+    images types.document_multi_resource_action DEFAULT NULL,
+    texts types.document_multi_resource_action DEFAULT NULL,
     expected_version int DEFAULT 0
 )
 RETURNS TABLE (
@@ -73,6 +75,8 @@ DECLARE
     v_department_ids uuid[];
     v_field_ids uuid[];
     v_upload_ids uuid[];
+    v_image_ids uuid[];
+    v_text_ids uuid[];
 
     -- Tool-call logging
     v_run_id uuid;
@@ -84,6 +88,8 @@ BEGIN
     v_department_ids := COALESCE((departments).resource_ids, ARRAY[]::uuid[]);
     v_field_ids := COALESCE((fields).resource_ids, ARRAY[]::uuid[]);
     v_upload_ids := COALESCE((uploads).resource_ids, ARRAY[]::uuid[]);
+    v_image_ids := COALESCE((images).resource_ids, ARRAY[]::uuid[]);
+    v_text_ids := COALESCE((texts).resource_ids, ARRAY[]::uuid[]);
 
     SELECT ppj.profiles_id INTO v_profiles_resource_id
     FROM profile_profiles_junction ppj
@@ -126,6 +132,20 @@ BEGIN
         WHERE NOT EXISTS (SELECT 1 FROM uploads_resource WHERE id = uid)
     ) THEN
         RAISE EXCEPTION 'One or more upload_ids not found';
+    END IF;
+
+    IF EXISTS (
+        SELECT 1 FROM UNNEST(v_image_ids) AS iid
+        WHERE NOT EXISTS (SELECT 1 FROM images_resource WHERE id = iid)
+    ) THEN
+        RAISE EXCEPTION 'One or more image_ids not found';
+    END IF;
+
+    IF EXISTS (
+        SELECT 1 FROM UNNEST(v_text_ids) AS tid
+        WHERE NOT EXISTS (SELECT 1 FROM texts_resource WHERE id = tid)
+    ) THEN
+        RAISE EXCEPTION 'One or more text_ids not found';
     END IF;
 
     -- Try update path first
@@ -198,6 +218,8 @@ BEGIN
     DELETE FROM departments_drafts_connection WHERE draft_id = v_draft_id;
     DELETE FROM fields_drafts_connection WHERE draft_id = v_draft_id;
     DELETE FROM uploads_drafts_connection WHERE draft_id = v_draft_id;
+    DELETE FROM images_drafts_connection WHERE draft_id = v_draft_id;
+    DELETE FROM texts_drafts_connection WHERE draft_id = v_draft_id;
 
     IF v_name_id IS NOT NULL THEN
         INSERT INTO names_drafts_connection (draft_id, names_id, version)
@@ -231,6 +253,16 @@ BEGIN
     SELECT v_draft_id, uid, v_new_version
     FROM UNNEST(v_upload_ids) uid
     ON CONFLICT ON CONSTRAINT uploads_draft_pkey DO UPDATE SET version = v_new_version;
+
+    INSERT INTO images_drafts_connection (draft_id, images_id, version)
+    SELECT v_draft_id, iid, v_new_version
+    FROM UNNEST(v_image_ids) iid
+    ON CONFLICT ON CONSTRAINT images_draft_pkey DO UPDATE SET version = v_new_version;
+
+    INSERT INTO texts_drafts_connection (draft_id, texts_id, version)
+    SELECT v_draft_id, tid, v_new_version
+    FROM UNNEST(v_text_ids) tid
+    ON CONFLICT ON CONSTRAINT texts_draft_pkey DO UPDATE SET version = v_new_version;
 
     -- Tool-call tracking: one run per draft patch
     IF v_group_id IS NOT NULL THEN
@@ -343,6 +375,44 @@ BEGIN
                 INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((uploads).link_tool_id, v_call_id);
                 INSERT INTO uploads_calls_connection (uploads_id, call_id)
                 SELECT uid, v_call_id FROM UNNEST(v_upload_ids) uid;
+            END IF;
+        END IF;
+
+        IF COALESCE(array_length(v_image_ids, 1), 0) > 0 THEN
+            IF (images).create_tool_id IS NOT NULL THEN
+                v_call_id := uuidv7();
+                INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+                VALUES (v_call_id, 'document_draft_create_images_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+                INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((images).create_tool_id, v_call_id);
+                INSERT INTO images_calls_connection (images_id, call_id)
+                SELECT iid, v_call_id FROM UNNEST(v_image_ids) iid;
+            END IF;
+            IF (images).link_tool_id IS NOT NULL THEN
+                v_call_id := uuidv7();
+                INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+                VALUES (v_call_id, 'document_draft_link_images_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+                INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((images).link_tool_id, v_call_id);
+                INSERT INTO images_calls_connection (images_id, call_id)
+                SELECT iid, v_call_id FROM UNNEST(v_image_ids) iid;
+            END IF;
+        END IF;
+
+        IF COALESCE(array_length(v_text_ids, 1), 0) > 0 THEN
+            IF (texts).create_tool_id IS NOT NULL THEN
+                v_call_id := uuidv7();
+                INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+                VALUES (v_call_id, 'document_draft_create_texts_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+                INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((texts).create_tool_id, v_call_id);
+                INSERT INTO texts_calls_connection (texts_id, call_id)
+                SELECT tid, v_call_id FROM UNNEST(v_text_ids) tid;
+            END IF;
+            IF (texts).link_tool_id IS NOT NULL THEN
+                v_call_id := uuidv7();
+                INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+                VALUES (v_call_id, 'document_draft_link_texts_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+                INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((texts).link_tool_id, v_call_id);
+                INSERT INTO texts_calls_connection (texts_id, call_id)
+                SELECT tid, v_call_id FROM UNNEST(v_text_ids) tid;
             END IF;
         END IF;
     END IF;

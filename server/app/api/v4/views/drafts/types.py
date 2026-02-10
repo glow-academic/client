@@ -61,6 +61,8 @@ class DraftDocumentViewItem(DraftViewItemBase):
     department_ids: list[UUID] = Field(default_factory=list)
     parameter_field_ids: list[UUID] = Field(default_factory=list)
     upload_ids: list[UUID] = Field(default_factory=list)
+    image_ids: list[UUID] = Field(default_factory=list)
+    text_ids: list[UUID] = Field(default_factory=list)
 
 
 class DraftEvalViewItem(DraftViewItemBase):

@@ -8,8 +8,10 @@ from fastapi import APIRouter
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.descriptions.get import get_descriptions_internal
 from app.api.v4.resources.flags.get import get_flags_internal
+from app.api.v4.resources.images.get import get_images_internal
 from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.parameter_fields.get import get_parameter_fields_internal
+from app.api.v4.resources.texts.get import get_texts_internal
 from app.api.v4.resources.uploads.get import get_uploads_internal
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
@@ -131,6 +133,12 @@ async def handle_document_artifact_complete(data: dict[str, Any]) -> None:
             elif resource_type == "uploads":
                 items = await get_uploads_internal(conn, [resource_id])
                 event.upload_resources = items if items else None
+            elif resource_type == "images":
+                items = await get_images_internal(conn, [resource_id])
+                event.image_resources = items if items else None
+            elif resource_type == "texts":
+                items = await get_texts_internal(conn, [resource_id])
+                event.text_resources = items if items else None
     except Exception as e:
         await sio.emit(
             "document_generation_error",

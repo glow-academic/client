@@ -13,6 +13,9 @@ from app.api.v4.artifacts.profile.permissions import (
     compute_can_save,
 )
 from app.api.v4.artifacts.profile.types import (
+    PatchProfileDraftApiRequest,
+    PatchProfileDraftSqlParams,
+    PatchProfileDraftSqlRow,
     SaveProfileApiRequest,
     SaveProfileApiResponse,
     SaveProfileSqlParams,
@@ -34,6 +37,7 @@ ACCESS_CHECK_SQL_PATH = (
     "app/sql/v4/queries/profile/check_profile_save_access_complete.sql"
 )
 SQL_PATH = "app/sql/v4/queries/profile/save_profile_complete.sql"
+PATCH_SQL_PATH = "app/sql/v4/queries/profile/patch_profile_draft_complete.sql"
 
 
 router = APIRouter()
@@ -93,7 +97,7 @@ async def save_profile(
         if not request.input_profile_id:
             can_save_result = compute_can_create(
                 user_role=access_result.user_role,
-                department_ids=request.department_ids,
+                department_ids=None,
             )
         else:
             can_save_result = compute_can_save(
@@ -109,9 +113,59 @@ async def save_profile(
             )
 
         async with conn.transaction():
+            resolved_draft_id = request.draft_id
+
+            has_nested_actions = any(
+                [
+                    request.names is not None,
+                    request.flags is not None,
+                    request.request_limits is not None,
+                    request.departments is not None,
+                    request.emails is not None,
+                    request.cohorts is not None,
+                    request.role is not None,
+                ]
+            )
+
+            # Persona parity: allow direct nested-action save without requiring a pre-existing draft_id.
+            # If nested actions are present, patch/create draft first, then save from that draft.
+            if has_nested_actions:
+                patch_request = PatchProfileDraftApiRequest(
+                    input_draft_id=resolved_draft_id,
+                    group_id=request.group_id,
+                    role=request.role,
+                    names=request.names,
+                    flags=request.flags,
+                    request_limits=request.request_limits,
+                    departments=request.departments,
+                    emails=request.emails,
+                    cohorts=request.cohorts,
+                    expected_version=request.expected_version,
+                )
+                patch_params = PatchProfileDraftSqlParams.from_request(
+                    patch_request, profile_id=profile_id
+                )
+                patch_result = cast(
+                    PatchProfileDraftSqlRow,
+                    await execute_sql_typed(
+                        conn,
+                        PATCH_SQL_PATH,
+                        params=patch_params,
+                    ),
+                )
+                resolved_draft_id = (
+                    patch_result.draft_id if patch_result else resolved_draft_id
+                )
+
+            if not resolved_draft_id:
+                raise ValueError(
+                    "Either draft_id or nested resource actions are required for save."
+                )
+
             params = SaveProfileSqlParams(
-                **request.model_dump(),
-                profile_id=profile_id,
+                draft_id=resolved_draft_id,
+                actor_profile_id=profile_id,
+                input_profile_id=request.input_profile_id,
             )
             sql_params = params.to_tuple()
 

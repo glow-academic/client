@@ -2,6 +2,7 @@
  * Model.tsx
  * Implementation using modular resource components
  * Used to create and manage models - supports both creation and editing
+ * Section-first API pattern (gold standard)
  * @AshokSaravanan222 & @siladiea
  * 01/08/2026
  */
@@ -27,7 +28,6 @@ import { StepCard } from "@/components/common/forms/StepCard";
 import { ProviderCardGrid } from "@/components/common/models/ProviderCardGrid";
 import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
 import { Descriptions } from "@/components/resources/Descriptions";
-import { Endpoints } from "@/components/resources/Endpoints";
 import { Flags } from "@/components/resources/FlagsLegacy";
 import { Modalities } from "@/components/resources/Modalities";
 import { Names } from "@/components/resources/Names";
@@ -56,7 +56,7 @@ const MODEL_VALID_RESOURCE_TYPES: ResourceType[] = [
   "voices",
 ];
 
-// Helper: find current flag option ID from resources.current.flags by key
+// Helper: find current flag option ID from flags section by key
 const findCurrentFlagId = (
   flags:
     | Array<{ key?: string; flag_option_id?: string | null }>
@@ -85,8 +85,6 @@ type CreateDraftDescriptionsOut = OutputOf<
 >;
 type CreateDraftValuesIn = InputOf<"/api/v4/resources/values", "post">;
 type CreateDraftValuesOut = OutputOf<"/api/v4/resources/values", "post">;
-type CreateDraftEndpointsIn = InputOf<"/api/v4/resources/endpoints", "post">;
-type CreateDraftEndpointsOut = OutputOf<"/api/v4/resources/endpoints", "post">;
 type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
 type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
 type CreateDraftModalitiesIn = InputOf<"/api/v4/resources/modalities", "post">;
@@ -117,38 +115,9 @@ type CreateDraftVoicesOut = OutputOf<"/api/v4/resources/voices", "post">;
 type CreateDraftQualitiesIn = InputOf<"/api/v4/resources/qualities", "post">;
 type CreateDraftQualitiesOut = OutputOf<"/api/v4/resources/qualities", "post">;
 
-type PatchModelDraftActionInput = {
-  body: {
-    input_draft_id: string | null;
-    name_id: string | null;
-    description_id: string | null;
-    value_id: string | null;
-    endpoint_id: string | null;
-    provider_id: string | null;
-    active_flag_id: string | null;
-    modalities_enabled_flag_id: string | null;
-    temperature_enabled_flag_id: string | null;
-    pricing_enabled_flag_id: string | null;
-    voices_enabled_flag_id: string | null;
-    reasoning_levels_enabled_flag_id: string | null;
-    qualities_enabled_flag_id: string | null;
-    department_ids: string[];
-    input_modality_ids: string[];
-    output_modality_ids: string[];
-    temperature_level_ids: string[];
-    reasoning_level_ids: string[];
-    quality_ids: string[];
-    pricing_ids: string[];
-    voice_ids: string[];
-    expected_version: number;
-  };
-};
-
 export interface ModelProps {
   modelId?: string;
-  // For create mode: default model detail with provider mapping
   modelDetailDefault?: ModelData;
-  // For edit mode: model detail with provider mapping
   modelDetail?: ModelData;
   saveModelAction?: (input: SaveModelIn) => Promise<SaveModelOut>;
   patchModelDraftAction?: (
@@ -163,9 +132,6 @@ export interface ModelProps {
   createValuesAction?: (
     input: CreateDraftValuesIn,
   ) => Promise<CreateDraftValuesOut>;
-  createEndpointsAction?: (
-    input: CreateDraftEndpointsIn,
-  ) => Promise<CreateDraftEndpointsOut>;
   createFlagsAction?: (
     input: CreateDraftFlagsIn,
   ) => Promise<CreateDraftFlagsOut>;
@@ -198,7 +164,6 @@ function ModelComponent({
   createNamesAction,
   createDescriptionsAction,
   createValuesAction,
-  createEndpointsAction,
   createFlagsAction,
   createModalitiesAction,
   createTemperatureLevelsAction,
@@ -225,7 +190,6 @@ function ModelComponent({
         if (data["description_id"])
           updates["description_id"] = data["description_id"];
         if (data["value_id"]) updates["value_id"] = data["value_id"];
-        if (data["endpoint_id"]) updates["endpoint_id"] = data["endpoint_id"];
         if (data["active_flag_id"])
           updates["active_flag_id"] = data["active_flag_id"];
         if (data["modalities_enabled_flag_id"])
@@ -247,8 +211,7 @@ function ModelComponent({
 
         // Array fields with dedup
         const arrayFields = [
-          { key: "input_modality_ids" },
-          { key: "output_modality_ids" },
+          { key: "modality_ids" },
           { key: "temperature_level_ids" },
           { key: "reasoning_level_ids" },
           { key: "quality_ids" },
@@ -272,17 +235,13 @@ function ModelComponent({
   }, []);
 
   // nuqs parsers for URL-backed state (will be passed to GenericForm)
-  // Memoize to prevent new object reference on every render
   const modelSearchParamsClient = useMemo(
     () => ({
-      // Draft ID (URL-backed, updated when draft is created)
       draftId: parseAsString,
       descriptionSearch: parseAsString,
       valueSearch: parseAsString,
-      endpointSearch: parseAsString,
       departmentSearch: parseAsString,
-      inputModalitySearch: parseAsString,
-      outputModalitySearch: parseAsString,
+      modalitySearch: parseAsString,
       temperatureSearch: parseAsString,
       pricingSearch: parseAsString,
       reasoningSearch: parseAsString,
@@ -292,12 +251,11 @@ function ModelComponent({
     [],
   );
 
-  // Use server-provided data
+  // Use server-provided data (section-first)
   const modelData = isEditMode ? serverModelDetail : modelDetailDefault;
+  // Shorthand for section-first data access
+  const s = modelData;
 
-  // Local form state (not in URL) - stores only resource IDs
-  // Display values are managed inside resource components
-  // Use ref to store modelData to prevent callback recreation on every render
   const modelDataRef = React.useRef(modelData);
   React.useEffect(() => {
     modelDataRef.current = modelData;
@@ -320,7 +278,6 @@ function ModelComponent({
         name_id: null as string | null,
         description_id: null as string | null,
         value_id: null as string | null,
-        endpoint_id: null as string | null,
         provider_id: null as string | null,
         active_flag_id: null as string | null,
         modalities_enabled_flag_id: null as string | null,
@@ -329,8 +286,7 @@ function ModelComponent({
         voices_enabled_flag_id: null as string | null,
         reasoning_levels_enabled_flag_id: null as string | null,
         qualities_enabled_flag_id: null as string | null,
-        input_modality_ids: [] as string[],
-        output_modality_ids: [] as string[],
+        modality_ids: [] as string[],
         temperature_level_ids: [] as string[],
         reasoning_level_ids: [] as string[],
         quality_ids: [] as string[],
@@ -339,19 +295,18 @@ function ModelComponent({
         departmentIds: defaultDepartmentIds,
       };
     }
-    // Extract resource IDs from bucket pattern
-    const cur = data.resources?.current;
-    const curFlags = cur?.flags ?? [];
+
+    // Section-first: extract resource IDs from section structure
+    const curFlags = data.flags?.current ?? [];
 
     return {
-      // Single-select IDs from resources.current.*[0].id
-      name_id: (cur?.names?.[0]?.id as string) ?? null,
-      description_id: (cur?.descriptions?.[0]?.id as string) ?? null,
-      value_id: (cur?.values?.[0]?.id as string) ?? null,
-      endpoint_id: (cur?.endpoints?.[0]?.id as string) ?? null,
-      provider_id: (cur?.providers?.[0]?.id as string) ?? null,
+      // Single-select IDs from section.resource.id
+      name_id: (data.names?.resource?.id as string) ?? null,
+      description_id: (data.descriptions?.resource?.id as string) ?? null,
+      value_id: (data.values?.resource?.id as string) ?? null,
+      provider_id: (data.providers?.resource?.id as string) ?? null,
 
-      // Flag IDs from resources.current.flags by key
+      // Flag IDs from flags section by key
       active_flag_id: findCurrentFlagId(curFlags, "active"),
       modalities_enabled_flag_id: findCurrentFlagId(
         curFlags,
@@ -372,28 +327,27 @@ function ModelComponent({
         "qualities_enabled",
       ),
 
-      // Multi-select IDs from resources.current.* arrays
-      input_modality_ids: (cur?.input_modalities ?? [])
+      // Multi-select IDs from section.current arrays (unified modalities)
+      modality_ids: (data.modalities?.current ?? [])
         .map((m) => m.id as string)
         .filter(Boolean),
-      output_modality_ids: (cur?.output_modalities ?? [])
-        .map((m) => m.id as string)
-        .filter(Boolean),
-      temperature_level_ids: (cur?.temperature_levels ?? [])
+      temperature_level_ids: (data.temperature_levels?.current ?? [])
         .map((t) => t.id as string)
         .filter(Boolean),
-      reasoning_level_ids: (cur?.reasoning_levels ?? [])
+      reasoning_level_ids: (data.reasoning_levels?.current ?? [])
         .map((r) => r.id as string)
         .filter(Boolean),
-      quality_ids: (cur?.qualities ?? [])
+      quality_ids: (data.qualities?.current ?? [])
         .map((q) => q.id as string)
         .filter(Boolean),
-      pricing_ids: (cur?.pricing ?? [])
+      pricing_ids: (data.pricing?.current ?? [])
         .map((p) => p.id as string)
         .filter(Boolean),
-      voice_ids: (cur?.voices ?? []).map((v) => v.id as string).filter(Boolean),
+      voice_ids: (data.voices?.current ?? [])
+        .map((v) => v.id as string)
+        .filter(Boolean),
       departmentIds: (() => {
-        const ids = (cur?.departments ?? [])
+        const ids = (data.departments?.current ?? [])
           .map((d) => d.department_id as string)
           .filter(Boolean);
         return ids.length > 0 ? ids : defaultDepartmentIds;
@@ -403,7 +357,7 @@ function ModelComponent({
 
   const [formState, setFormState] = useState(getInitialFormState);
 
-  // AI generation via shared hook - replaces manual WebSocket useEffect
+  // AI generation via shared hook
   const {
     generatingResources: _generatingResources,
     setGeneratingResources,
@@ -412,7 +366,7 @@ function ModelComponent({
     socket,
     isConnected,
     artifactType: "model",
-    groupId: modelData?.group_id,
+    groupId: s?.group_id,
     eventPrefix: "model_generation",
     validResourceTypes: MODEL_VALID_RESOURCE_TYPES,
     onComplete: onAiComplete,
@@ -421,75 +375,74 @@ function ModelComponent({
     >,
   });
 
-  // Use ref to access formState in renderStep without depending on it
   const formStateRef = React.useRef(formState);
   React.useEffect(() => {
     formStateRef.current = formState;
   }, [formState]);
 
-  // Memoize stringified array dependencies to prevent effect from running when array references change but content is same
-  const cur = modelData?.resources?.current;
+  // Memoize stringified array dependencies
   const departmentIdsStr = React.useMemo(
     () =>
       JSON.stringify(
-        (cur?.departments ?? []).map((d) => d.department_id).filter(Boolean),
+        (s?.departments?.current ?? [])
+          .map((d) => d.department_id)
+          .filter(Boolean),
       ),
-    [cur?.departments],
+    [s?.departments?.current],
   );
-  const inputModalityIdsStr = React.useMemo(
+  const modalityIdsStr = React.useMemo(
     () =>
       JSON.stringify(
-        (cur?.input_modalities ?? []).map((m) => m.id).filter(Boolean),
+        (s?.modalities?.current ?? []).map((m) => m.id).filter(Boolean),
       ),
-    [cur?.input_modalities],
-  );
-  const outputModalityIdsStr = React.useMemo(
-    () =>
-      JSON.stringify(
-        (cur?.output_modalities ?? []).map((m) => m.id).filter(Boolean),
-      ),
-    [cur?.output_modalities],
+    [s?.modalities?.current],
   );
   const temperatureLevelIdsStr = React.useMemo(
     () =>
       JSON.stringify(
-        (cur?.temperature_levels ?? []).map((t) => t.id).filter(Boolean),
+        (s?.temperature_levels?.current ?? [])
+          .map((t) => t.id)
+          .filter(Boolean),
       ),
-    [cur?.temperature_levels],
+    [s?.temperature_levels?.current],
   );
   const reasoningLevelIdsStr = React.useMemo(
     () =>
       JSON.stringify(
-        (cur?.reasoning_levels ?? []).map((r) => r.id).filter(Boolean),
+        (s?.reasoning_levels?.current ?? []).map((r) => r.id).filter(Boolean),
       ),
-    [cur?.reasoning_levels],
+    [s?.reasoning_levels?.current],
   );
   const qualityIdsStr = React.useMemo(
     () =>
-      JSON.stringify((cur?.qualities ?? []).map((q) => q.id).filter(Boolean)),
-    [cur?.qualities],
+      JSON.stringify(
+        (s?.qualities?.current ?? []).map((q) => q.id).filter(Boolean),
+      ),
+    [s?.qualities?.current],
   );
   const pricingIdsStr = React.useMemo(
-    () => JSON.stringify((cur?.pricing ?? []).map((p) => p.id).filter(Boolean)),
-    [cur?.pricing],
+    () =>
+      JSON.stringify(
+        (s?.pricing?.current ?? []).map((p) => p.id).filter(Boolean),
+      ),
+    [s?.pricing?.current],
   );
   const voiceIdsStr = React.useMemo(
-    () => JSON.stringify((cur?.voices ?? []).map((v) => v.id).filter(Boolean)),
-    [cur?.voices],
+    () =>
+      JSON.stringify(
+        (s?.voices?.current ?? []).map((v) => v.id).filter(Boolean),
+      ),
+    [s?.voices?.current],
   );
 
-  // Memoize stringified formState arrays for draft listener effect dependencies
+  // Memoize formState array strings for draft listener
   const formStateDepartmentIdsStr = React.useMemo(
     () => JSON.stringify(formState.departmentIds),
     [formState.departmentIds],
   );
-  const formStateInputModalityIdsStr = React.useMemo(
-    () => JSON.stringify(formState.input_modality_ids),
-    [formState.input_modality_ids],
-  );
-  const formStateOutputModalityIdsStr = React.useMemo(
-    () => JSON.stringify(formState.output_modality_ids),
-    [formState.output_modality_ids],
+  const formStateModalityIdsStr = React.useMemo(
+    () => JSON.stringify(formState.modality_ids),
+    [formState.modality_ids],
   );
   const formStateTemperatureLevelIdsStr = React.useMemo(
     () => JSON.stringify(formState.temperature_level_ids),
@@ -516,12 +469,10 @@ function ModelComponent({
   useEffect(() => {
     const newState = getInitialFormState();
     setFormState((prev) => {
-      // Only update if resource IDs actually changed
       if (
         prev.name_id !== newState.name_id ||
         prev.description_id !== newState.description_id ||
         prev.value_id !== newState.value_id ||
-        prev.endpoint_id !== newState.endpoint_id ||
         prev.provider_id !== newState.provider_id ||
         prev.active_flag_id !== newState.active_flag_id ||
         prev.modalities_enabled_flag_id !==
@@ -535,10 +486,8 @@ function ModelComponent({
         prev.qualities_enabled_flag_id !== newState.qualities_enabled_flag_id ||
         JSON.stringify(prev.departmentIds) !==
           JSON.stringify(newState.departmentIds) ||
-        JSON.stringify(prev.input_modality_ids) !==
-          JSON.stringify(newState.input_modality_ids) ||
-        JSON.stringify(prev.output_modality_ids) !==
-          JSON.stringify(newState.output_modality_ids) ||
+        JSON.stringify(prev.modality_ids) !==
+          JSON.stringify(newState.modality_ids) ||
         JSON.stringify(prev.temperature_level_ids) !==
           JSON.stringify(newState.temperature_level_ids) ||
         JSON.stringify(prev.reasoning_level_ids) !==
@@ -555,16 +504,13 @@ function ModelComponent({
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    // Resources bucket triggers (single-select via current arrays, flags via curFlags)
-    cur?.names,
-    cur?.descriptions,
-    cur?.values,
-    cur?.endpoints,
-    cur?.providers,
-    cur?.flags,
+    s?.names?.resource,
+    s?.descriptions?.resource,
+    s?.values?.resource,
+    s?.providers?.resource,
+    s?.flags?.current,
     departmentIdsStr,
-    inputModalityIdsStr,
-    outputModalityIdsStr,
+    modalityIdsStr,
     temperatureLevelIdsStr,
     reasoningLevelIdsStr,
     qualityIdsStr,
@@ -572,18 +518,13 @@ function ModelComponent({
     voiceIdsStr,
   ]);
 
-  // Draft version tracking for optimistic concurrency control
-  // Keep version in a ref so updating it doesn't retrigger the effect
+  // Draft version tracking
   const [lastSavedVersion, setLastSavedVersion] = useState(0);
   const lastSavedVersionRef = React.useRef(0);
   React.useEffect(() => {
     lastSavedVersionRef.current = lastSavedVersion;
   }, [lastSavedVersion]);
-  // Sync draft_version from server to avoid unintended draft forks.
-  const draftVersion =
-    modelData && "draft_version" in modelData
-      ? (modelData as { draft_version?: number | null }).draft_version
-      : null;
+  const draftVersion = s?.draft_version;
   React.useEffect(() => {
     if (
       typeof draftVersion === "number" &&
@@ -594,16 +535,14 @@ function ModelComponent({
     }
   }, [draftVersion]);
 
-  // Get draftId from GenericForm's URL state via bridge (GenericForm is single source of truth)
+  // Get draftId from GenericForm's URL state
   const [draftId, setDraftId] = useState<string | null>(null);
   const setUrlFormDataRef = React.useRef<
     null | ((updates: Record<string, unknown>) => void)
   >(null);
 
-  // Store formData from GenericForm to access search params
   const formDataRef = React.useRef<Record<string, unknown>>({});
 
-  // Memoized callback to sync draftId from GenericForm - only update if value changed
   const onFormDataChange = React.useCallback((fd: Record<string, unknown>) => {
     formDataRef.current = fd;
     const next = (fd["draftId"] as string | undefined) ?? null;
@@ -617,20 +556,18 @@ function ModelComponent({
     }
   }, [draftId, selectedDraftId, setSelectedDraftId]);
 
-  // Use ref to stabilize patchModelDraftAction to prevent effect recreation when prop reference changes
   const patchModelDraftActionRef = React.useRef(patchModelDraftAction);
   React.useEffect(() => {
     patchModelDraftActionRef.current = patchModelDraftAction;
   }, [patchModelDraftAction]);
 
-  // Build a stable key for "what would we patch" - only changes when form data actually changes
+  // Build stable key for draft patch dedup
   const draftPatchKey = React.useMemo(() => {
     return JSON.stringify({
       draftId: draftId || null,
       name_id: formState.name_id,
       description_id: formState.description_id,
       value_id: formState.value_id,
-      endpoint_id: formState.endpoint_id,
       provider_id: formState.provider_id,
       active_flag_id: formState.active_flag_id,
       modalities_enabled_flag_id: formState.modalities_enabled_flag_id,
@@ -641,8 +578,7 @@ function ModelComponent({
         formState.reasoning_levels_enabled_flag_id,
       qualities_enabled_flag_id: formState.qualities_enabled_flag_id,
       departmentIds: formState.departmentIds,
-      input_modality_ids: formState.input_modality_ids,
-      output_modality_ids: formState.output_modality_ids,
+      modality_ids: formState.modality_ids,
       temperature_level_ids: formState.temperature_level_ids,
       reasoning_level_ids: formState.reasoning_level_ids,
       quality_ids: formState.quality_ids,
@@ -655,7 +591,6 @@ function ModelComponent({
     formState.name_id,
     formState.description_id,
     formState.value_id,
-    formState.endpoint_id,
     formState.provider_id,
     formState.active_flag_id,
     formState.modalities_enabled_flag_id,
@@ -665,8 +600,7 @@ function ModelComponent({
     formState.reasoning_levels_enabled_flag_id,
     formState.qualities_enabled_flag_id,
     formStateDepartmentIdsStr,
-    formStateInputModalityIdsStr,
-    formStateOutputModalityIdsStr,
+    formStateModalityIdsStr,
     formStateTemperatureLevelIdsStr,
     formStateReasoningLevelIdsStr,
     formStateQualityIdsStr,
@@ -674,16 +608,14 @@ function ModelComponent({
     formStateVoiceIdsStr,
   ]);
 
-  // Track last patched payload so we don't repatch identical state
   const lastPatchedKeyRef = React.useRef<string | null>(null);
 
-  // Draft change listener - watches resource IDs and patches draft
+  // Draft change listener - section-first draft patching with nested resource actions
   useEffect(() => {
     const hasResourceIds =
       formState.name_id ||
       formState.description_id ||
       formState.value_id ||
-      formState.endpoint_id ||
       formState.provider_id ||
       formState.active_flag_id ||
       formState.modalities_enabled_flag_id ||
@@ -693,8 +625,7 @@ function ModelComponent({
       formState.reasoning_levels_enabled_flag_id ||
       formState.qualities_enabled_flag_id ||
       formState.departmentIds.length > 0 ||
-      formState.input_modality_ids.length > 0 ||
-      formState.output_modality_ids.length > 0 ||
+      formState.modality_ids.length > 0 ||
       formState.temperature_level_ids.length > 0 ||
       formState.reasoning_level_ids.length > 0 ||
       formState.quality_ids.length > 0 ||
@@ -705,7 +636,6 @@ function ModelComponent({
       return;
     }
 
-    // If nothing changed since the last successful patch, do nothing.
     if (lastPatchedKeyRef.current === draftPatchKey) {
       return;
     }
@@ -713,43 +643,72 @@ function ModelComponent({
     const timer = setTimeout(async () => {
       try {
         if (!patchModelDraftActionRef.current) return;
-        const patchAction = patchModelDraftActionRef.current as
-          | ((input: PatchModelDraftActionInput) => Promise<PatchModelDraftOut>)
-          | undefined;
-        if (!patchAction) return;
-        const result = await patchAction({
+        const result = await patchModelDraftActionRef.current({
           body: {
             input_draft_id: draftId || null,
-            name_id: formState.name_id,
-            description_id: formState.description_id,
-            value_id: formState.value_id,
-            endpoint_id: formState.endpoint_id,
-            active_flag_id: formState.active_flag_id,
-            modalities_enabled_flag_id: formState.modalities_enabled_flag_id,
-            temperature_enabled_flag_id: formState.temperature_enabled_flag_id,
-            pricing_enabled_flag_id: formState.pricing_enabled_flag_id,
-            voices_enabled_flag_id: formState.voices_enabled_flag_id,
-            reasoning_levels_enabled_flag_id:
-              formState.reasoning_levels_enabled_flag_id,
-            qualities_enabled_flag_id: formState.qualities_enabled_flag_id,
-            provider_id: formState.provider_id,
-            department_ids: formState.departmentIds,
-            input_modality_ids: formState.input_modality_ids,
-            output_modality_ids: formState.output_modality_ids,
-            temperature_level_ids: formState.temperature_level_ids,
-            reasoning_level_ids: formState.reasoning_level_ids,
-            quality_ids: formState.quality_ids,
-            pricing_ids: formState.pricing_ids,
-            voice_ids: formState.voice_ids,
+            group_id: s?.group_id || "",
+            names: { resource_id: formState.name_id || null },
+            descriptions: { resource_id: formState.description_id || null },
+            values: { resource_id: formState.value_id || null },
+            providers: { resource_id: formState.provider_id || null },
+            flags: {
+              resource_ids: [
+                formState.active_flag_id,
+                formState.modalities_enabled_flag_id,
+                formState.temperature_enabled_flag_id,
+                formState.pricing_enabled_flag_id,
+                formState.voices_enabled_flag_id,
+                formState.reasoning_levels_enabled_flag_id,
+                formState.qualities_enabled_flag_id,
+              ].filter((id): id is string => id != null),
+            },
+            departments: {
+              resource_ids:
+                formState.departmentIds.length > 0
+                  ? formState.departmentIds
+                  : null,
+            },
+            modalities: {
+              resource_ids:
+                formState.modality_ids.length > 0
+                  ? formState.modality_ids
+                  : null,
+            },
+            temperature_levels: {
+              resource_ids:
+                formState.temperature_level_ids.length > 0
+                  ? formState.temperature_level_ids
+                  : null,
+            },
+            pricing: {
+              resource_ids:
+                formState.pricing_ids.length > 0
+                  ? formState.pricing_ids
+                  : null,
+            },
+            reasoning_levels: {
+              resource_ids:
+                formState.reasoning_level_ids.length > 0
+                  ? formState.reasoning_level_ids
+                  : null,
+            },
+            qualities: {
+              resource_ids:
+                formState.quality_ids.length > 0
+                  ? formState.quality_ids
+                  : null,
+            },
+            voices: {
+              resource_ids:
+                formState.voice_ids.length > 0 ? formState.voice_ids : null,
+            },
             expected_version: lastSavedVersionRef.current,
           },
         });
 
-        // Mark this payload as patched so we don't loop
         lastPatchedKeyRef.current = draftPatchKey;
 
         if (!draftId && result.draft_id) {
-          // Update URL when draft is created via GenericForm bridge (GenericForm owns URL state)
           setUrlFormDataRef.current?.({ draftId: result.draft_id });
         }
 
@@ -758,8 +717,7 @@ function ModelComponent({
           lastSavedVersionRef.current = result.new_version ?? 0;
         }
       } catch {
-        // Failed to save draft - error already logged by API
-        // Don't update lastPatchedKeyRef on failure so we retry on next change
+        // Failed to save draft
       }
     }, 1000);
 
@@ -767,27 +725,7 @@ function ModelComponent({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draftPatchKey]);
 
-  // Multi-generation handler - accepts list of resource types and optional user instructions
-  // Helper function to get domain_ids from resource types
-  const getDomainIds = useCallback(
-    (resourceTypes: ResourceType[]): string[] => {
-      if (!modelData) return [];
-      const domainIdMap: Record<string, string | null | undefined> = {
-        names: modelData.name_domain_id,
-        descriptions: modelData.description_domain_id,
-        flags: modelData.flag_domain_id,
-        departments: modelData.departments_domain_id,
-        temperature_levels: modelData.temperature_levels_domain_id,
-        reasoning_levels: modelData.reasoning_levels_domain_id,
-        voices: modelData.voices_domain_id,
-      };
-      return resourceTypes
-        .map((rt) => domainIdMap[rt])
-        .filter((id): id is string => id != null);
-    },
-    [modelData],
-  );
-
+  // Generation handler - uses resource_types directly (no domain_ids)
   const handleGenerateResources = useCallback(
     async (resourceTypes: ResourceType[], userInstructions?: string) => {
       if (!socket || !isConnected) {
@@ -795,32 +733,26 @@ function ModelComponent({
         return;
       }
 
-      // Set all resources as generating
       setGeneratingResources((prev) => {
         const next = new Set(prev);
         resourceTypes.forEach((rt) => next.add(rt));
         return next;
       });
 
-      // Read search params from formData
       const formData = formDataRef.current;
       const draftId = (formData["draftId"] as string | undefined) ?? null;
 
-      // Emit model_generate event
-      const domainIds = getDomainIds(resourceTypes);
+      // Emit model_generate with resource_types (gold standard pattern)
       socket.emit("model_generate", {
         resource_types: resourceTypes,
-        domain_ids: domainIds,
         user_instructions: userInstructions ? [userInstructions] : null,
         draft_id: draftId || null,
-        mcp: false,
         model_id: modelId || null,
       });
     },
-    [socket, isConnected, modelId, getDomainIds, setGeneratingResources],
+    [socket, isConnected, modelId, setGeneratingResources],
   );
 
-  // Individual generation handlers - generate directly without modals
   const handleGenerateName = useCallback(
     async () => handleGenerateResources(["names"]),
     [handleGenerateResources],
@@ -831,31 +763,29 @@ function ModelComponent({
     [handleGenerateResources],
   );
 
-  // Disabled logic based on can_edit flag - standardized for all resource components
-  // Check can_edit in both new and edit modes to show disabled_reason when agents are missing
   const disabled = useMemo(() => {
-    if (!modelData) return false;
-    return !modelData.can_edit;
-  }, [modelData]);
+    if (!s) return false;
+    return !s.can_edit;
+  }, [s]);
 
-  // Get department and provider arrays from resources bucket
+  // Get departments and providers from section-first structure
   const departments = useMemo(() => {
-    return modelData?.resources?.resources?.departments || [];
-  }, [modelData?.resources?.resources?.departments]);
+    return s?.departments?.resources || [];
+  }, [s?.departments?.resources]);
 
   const validDepartmentIds = useMemo(() => {
-    return (modelData?.resources?.resources?.departments ?? [])
+    return (s?.departments?.resources ?? [])
       .map((d) => d.department_id as string)
       .filter(Boolean);
-  }, [modelData?.resources?.resources?.departments]);
+  }, [s?.departments?.resources]);
 
   const providers = useMemo(() => {
-    return modelData?.resources?.resources?.providers || [];
-  }, [modelData?.resources?.resources?.providers]);
+    return s?.providers?.resources || [];
+  }, [s?.providers?.resources]);
 
-  // Set breadcrumb context when model data is loaded
+  // Set breadcrumb context
   useEffect(() => {
-    const modelName = modelData?.resources?.current?.names?.[0]?.name;
+    const modelName = s?.names?.resource?.name;
     if (modelName && modelId && isEditMode) {
       setEntityMetadata({
         entityId: modelId,
@@ -869,23 +799,19 @@ function ModelComponent({
       }
     };
   }, [
-    modelData?.resources?.current?.names,
+    s?.names?.resource?.name,
     modelId,
     isEditMode,
     setEntityMetadata,
     clearEntityMetadata,
   ]);
 
-  // Set generation capability when model data is loaded
-  // Step-to-resources mapping for multi-generation
-  // Note: Some resource types may not be in ResourceType enum - using type assertions where needed
+  // Step-to-resources mapping
   const stepResources: Record<string, ResourceType[]> = useMemo(
     () => ({
       basic: ["names", "descriptions", "flags"],
-      customUrl: [],
       provider: [],
-      inputModalities: [],
-      outputModalities: [],
+      modalities: [],
       temperature: ["temperature_levels"],
       pricing: [],
       reasoning: ["reasoning_levels"],
@@ -898,20 +824,18 @@ function ModelComponent({
         "temperature_levels",
         "reasoning_levels",
         "voices",
-      ], // All resources for full-page generation (only those in ResourceType enum)
+      ],
     }),
     [],
   );
 
-  // Listen for full-page-generate event from layout
+  // Listen for full-page-generate event
   useEffect(() => {
     const handleFullPageGenerate = (
       event: CustomEvent<{ agentId?: string }>,
     ) => {
       const agentId = event.detail?.agentId;
       if (agentId) {
-        // For now, generate basic resources directly
-        // In future, can open modal similar to Persona pattern
         handleGenerateResources(stepResources["all"] || []);
       }
     };
@@ -926,16 +850,15 @@ function ModelComponent({
       );
   }, [handleGenerateResources, stepResources]);
 
-  // Submit handler for GenericForm (uses formState, not formData parameter)
+  // Submit handler - builds nested resource actions for save
   const handleSubmit = useCallback(
     async (_formData: Record<string, unknown>) => {
-      // Validate required resource IDs using {resource}_required flags from modelData
-      if (modelData?.name_required && !formState.name_id) {
+      if (s?.names?.required && !formState.name_id) {
         toast.error("Model name is required");
         throw new Error("Model name is required");
       }
 
-      if (modelData?.value_required && !formState.value_id) {
+      if (s?.values?.required && !formState.value_id) {
         toast.error("Model value is required");
         throw new Error("Model value is required");
       }
@@ -945,7 +868,6 @@ function ModelComponent({
         throw new Error("Provider is required");
       }
 
-      // Ensure profileId exists - required for API calls
       if (!profile?.id) {
         toast.error("Profile not loaded. Please refresh the page.");
         throw new Error("Profile not loaded");
@@ -960,45 +882,62 @@ function ModelComponent({
         await saveModelAction({
           body: {
             input_model_id: isEditMode && modelId ? modelId : null,
-            provider_id: formState.provider_id!,
-            name_id: formState.name_id || null,
-            description_id: formState.description_id || null,
-            active_flag_id: formState.active_flag_id || null,
-            modalities_enabled_flag_id:
-              formState.modalities_enabled_flag_id || null,
-            temperature_enabled_flag_id:
-              formState.temperature_enabled_flag_id || null,
-            pricing_enabled_flag_id: formState.pricing_enabled_flag_id || null,
-            voices_enabled_flag_id: formState.voices_enabled_flag_id || null,
-            reasoning_levels_enabled_flag_id:
-              formState.reasoning_levels_enabled_flag_id || null,
-            qualities_enabled_flag_id:
-              formState.qualities_enabled_flag_id || null,
-            value_id: formState.value_id || null,
-            endpoint_id: formState.endpoint_id || null,
-            department_ids: formState.departmentIds || null,
-            input_modality_ids:
-              formState.input_modality_ids.length > 0
-                ? formState.input_modality_ids
-                : null,
-            output_modality_ids:
-              formState.output_modality_ids.length > 0
-                ? formState.output_modality_ids
-                : null,
-            temperature_level_ids:
-              formState.temperature_level_ids.length > 0
-                ? formState.temperature_level_ids
-                : null,
-            reasoning_level_ids:
-              formState.reasoning_level_ids.length > 0
-                ? formState.reasoning_level_ids
-                : null,
-            quality_ids:
-              formState.quality_ids.length > 0 ? formState.quality_ids : null,
-            pricing_ids:
-              formState.pricing_ids.length > 0 ? formState.pricing_ids : null,
-            voice_ids:
-              formState.voice_ids.length > 0 ? formState.voice_ids : null,
+            group_id: s?.group_id || "",
+            names: { resource_id: formState.name_id || null },
+            descriptions: { resource_id: formState.description_id || null },
+            values: { resource_id: formState.value_id || null },
+            providers: { resource_id: formState.provider_id || null },
+            flags: {
+              resource_ids: [
+                formState.active_flag_id,
+                formState.modalities_enabled_flag_id,
+                formState.temperature_enabled_flag_id,
+                formState.pricing_enabled_flag_id,
+                formState.voices_enabled_flag_id,
+                formState.reasoning_levels_enabled_flag_id,
+                formState.qualities_enabled_flag_id,
+              ].filter((id): id is string => id != null),
+            },
+            departments: {
+              resource_ids:
+                formState.departmentIds.length > 0
+                  ? formState.departmentIds
+                  : null,
+            },
+            modalities: {
+              resource_ids:
+                formState.modality_ids.length > 0
+                  ? formState.modality_ids
+                  : null,
+            },
+            temperature_levels: {
+              resource_ids:
+                formState.temperature_level_ids.length > 0
+                  ? formState.temperature_level_ids
+                  : null,
+            },
+            pricing: {
+              resource_ids:
+                formState.pricing_ids.length > 0
+                  ? formState.pricing_ids
+                  : null,
+            },
+            reasoning_levels: {
+              resource_ids:
+                formState.reasoning_level_ids.length > 0
+                  ? formState.reasoning_level_ids
+                  : null,
+            },
+            qualities: {
+              resource_ids:
+                formState.quality_ids.length > 0
+                  ? formState.quality_ids
+                  : null,
+            },
+            voices: {
+              resource_ids:
+                formState.voice_ids.length > 0 ? formState.voice_ids : null,
+            },
           },
         });
         toast.success(
@@ -1019,22 +958,20 @@ function ModelComponent({
       profile?.id,
       saveModelAction,
       router,
-      modelData?.name_required,
-      modelData?.value_required,
+      s?.names?.required,
+      s?.values?.required,
+      s?.group_id,
     ],
   );
 
-  // Step status logic (for GenericForm) - check resource IDs instead of display values
+  // Step status logic
   const getStepStatus = useCallback(
     (stepId: string, _formData: Record<string, unknown>): StepStatus => {
-      // Check resource IDs from formState (components manage their own display state)
       const hasName = !!formState.name_id;
       const hasValue = !!formState.value_id;
       const hasDescription = !!formState.description_id;
       const hasProvider = !!formState.provider_id;
-      const hasEndpoint = !!formState.endpoint_id;
-      const hasInputModalities = formState.input_modality_ids.length > 0;
-      const hasOutputModalities = formState.output_modality_ids.length > 0;
+      const hasModalities = formState.modality_ids.length > 0;
       const modalities_enabled_flag_id = formState.modalities_enabled_flag_id;
       const temperature_enabled_flag_id = formState.temperature_enabled_flag_id;
       const pricing_enabled_flag_id = formState.pricing_enabled_flag_id;
@@ -1046,32 +983,18 @@ function ModelComponent({
       switch (stepId) {
         case "basic":
           return hasName && hasValue && hasDescription ? "completed" : "active";
-        case "customUrl":
-          if (!hasName || !hasValue || !hasDescription) return "pending";
-          return hasEndpoint ? "completed" : "active";
         case "provider":
           if (!hasName || !hasValue || !hasDescription) return "pending";
           return hasProvider ? "completed" : "active";
-        case "inputModalities":
+        case "modalities":
           if (!hasName || !hasValue || !hasDescription || !hasProvider)
             return "pending";
           if (!modalities_enabled_flag_id) return "pending";
-          return hasInputModalities ? "completed" : "active";
-        case "outputModalities":
-          if (!hasName || !hasValue || !hasDescription || !hasProvider)
-            return "pending";
-          if (!modalities_enabled_flag_id || !hasInputModalities)
-            return "pending";
-          return hasOutputModalities ? "completed" : "active";
+          return hasModalities ? "completed" : "active";
         case "temperature":
           if (!hasName || !hasValue || !hasDescription || !hasProvider)
             return "pending";
-          if (
-            !modalities_enabled_flag_id ||
-            !hasInputModalities ||
-            !hasOutputModalities
-          )
-            return "pending";
+          if (!modalities_enabled_flag_id || !hasModalities) return "pending";
           return temperature_enabled_flag_id &&
             formState.temperature_level_ids.length > 0
             ? "completed"
@@ -1081,12 +1004,7 @@ function ModelComponent({
         case "pricing":
           if (!hasName || !hasValue || !hasDescription || !hasProvider)
             return "pending";
-          if (
-            !modalities_enabled_flag_id ||
-            !hasInputModalities ||
-            !hasOutputModalities
-          )
-            return "pending";
+          if (!modalities_enabled_flag_id || !hasModalities) return "pending";
           return pricing_enabled_flag_id && formState.pricing_ids.length > 0
             ? "completed"
             : pricing_enabled_flag_id
@@ -1095,12 +1013,7 @@ function ModelComponent({
         case "reasoning":
           if (!hasName || !hasValue || !hasDescription || !hasProvider)
             return "pending";
-          if (
-            !modalities_enabled_flag_id ||
-            !hasInputModalities ||
-            !hasOutputModalities
-          )
-            return "pending";
+          if (!modalities_enabled_flag_id || !hasModalities) return "pending";
           return reasoning_levels_enabled_flag_id &&
             formState.reasoning_level_ids.length > 0
             ? "completed"
@@ -1110,12 +1023,7 @@ function ModelComponent({
         case "voices":
           if (!hasName || !hasValue || !hasDescription || !hasProvider)
             return "pending";
-          if (
-            !modalities_enabled_flag_id ||
-            !hasInputModalities ||
-            !hasOutputModalities
-          )
-            return "pending";
+          if (!modalities_enabled_flag_id || !hasModalities) return "pending";
           return voices_enabled_flag_id && formState.voice_ids.length > 0
             ? "completed"
             : voices_enabled_flag_id
@@ -1124,12 +1032,7 @@ function ModelComponent({
         case "qualities":
           if (!hasName || !hasValue || !hasDescription || !hasProvider)
             return "pending";
-          if (
-            !modalities_enabled_flag_id ||
-            !hasInputModalities ||
-            !hasOutputModalities
-          )
-            return "pending";
+          if (!modalities_enabled_flag_id || !hasModalities) return "pending";
           return qualities_enabled_flag_id && formState.quality_ids.length > 0
             ? "completed"
             : qualities_enabled_flag_id
@@ -1142,7 +1045,7 @@ function ModelComponent({
     [formState],
   );
 
-  // Steps configuration for GenericForm
+  // Steps configuration
   const steps = useMemo(
     () => [
       {
@@ -1163,17 +1066,9 @@ function ModelComponent({
           "voices_enabled_flag_id",
           "reasoning_levels_enabled_flag_id",
           "qualities_enabled_flag_id",
-          "endpoint_id",
           "departmentSearch",
           "departmentIds",
         ],
-      },
-      {
-        id: "customUrl",
-        title: "Custom Model URL",
-        description: "Configure custom base URL for this model (optional).",
-        resetFields: ["endpoint_id", "endpointSearch"],
-        optional: true,
       },
       {
         id: "provider",
@@ -1182,16 +1077,10 @@ function ModelComponent({
         resetFields: ["provider_id"],
       },
       {
-        id: "inputModalities",
-        title: "Input Modalities",
-        description: "Configure input modalities.",
-        resetFields: ["input_modality_ids", "inputModalitySearch"],
-      },
-      {
-        id: "outputModalities",
-        title: "Output Modalities",
-        description: "Configure output modalities.",
-        resetFields: ["output_modality_ids", "outputModalitySearch"],
+        id: "modalities",
+        title: "Modalities",
+        description: "Configure modalities for this model.",
+        resetFields: ["modality_ids", "modalitySearch"],
       },
       {
         id: "temperature",
@@ -1232,7 +1121,7 @@ function ModelComponent({
     [],
   );
 
-  // Form field keys (for GenericForm) - using resource IDs
+  // Form field keys
   const formFieldKeys = useMemo(
     () => [
       "name_id",
@@ -1245,11 +1134,9 @@ function ModelComponent({
       "reasoning_levels_enabled_flag_id",
       "qualities_enabled_flag_id",
       "value_id",
-      "endpoint_id",
       "provider_id",
       "departmentIds",
-      "input_modality_ids",
-      "output_modality_ids",
+      "modality_ids",
       "temperature_level_ids",
       "pricing_ids",
       "reasoning_level_ids",
@@ -1257,10 +1144,8 @@ function ModelComponent({
       "quality_ids",
       "descriptionSearch",
       "valueSearch",
-      "endpointSearch",
       "departmentSearch",
-      "inputModalitySearch",
-      "outputModalitySearch",
+      "modalitySearch",
       "temperatureSearch",
       "pricingSearch",
       "reasoningSearch",
@@ -1270,19 +1155,14 @@ function ModelComponent({
     [],
   );
 
-  // Reset success message (for GenericForm)
   const resetSuccessMessage = useCallback((stepId: string) => {
     switch (stepId) {
       case "basic":
         return "Basic information reset";
-      case "customUrl":
-        return "Custom URL reset";
       case "provider":
         return "Provider reset";
-      case "inputModalities":
-        return "Input modalities reset";
-      case "outputModalities":
-        return "Output modalities reset";
+      case "modalities":
+        return "Modalities reset";
       case "temperature":
         return "Temperature reset";
       case "pricing":
@@ -1314,61 +1194,28 @@ function ModelComponent({
             voices_enabled_flag_id: null,
             reasoning_levels_enabled_flag_id: null,
             qualities_enabled_flag_id: null,
-            endpoint_id: null,
             departmentIds: [],
           };
-        case "customUrl":
-          return {
-            ...prev,
-            endpoint_id: null,
-          };
         case "provider":
-          return {
-            ...prev,
-            provider_id: null,
-          };
-        case "inputModalities":
-          return {
-            ...prev,
-            input_modality_ids: [],
-          };
-        case "outputModalities":
-          return {
-            ...prev,
-            output_modality_ids: [],
-          };
+          return { ...prev, provider_id: null };
+        case "modalities":
+          return { ...prev, modality_ids: [] };
         case "temperature":
-          return {
-            ...prev,
-            temperature_level_ids: [],
-          };
+          return { ...prev, temperature_level_ids: [] };
         case "pricing":
-          return {
-            ...prev,
-            pricing_ids: [],
-          };
+          return { ...prev, pricing_ids: [] };
         case "reasoning":
-          return {
-            ...prev,
-            reasoning_level_ids: [],
-          };
+          return { ...prev, reasoning_level_ids: [] };
         case "voices":
-          return {
-            ...prev,
-            voice_ids: [],
-          };
+          return { ...prev, voice_ids: [] };
         case "qualities":
-          return {
-            ...prev,
-            quality_ids: [],
-          };
+          return { ...prev, quality_ids: [] };
         default:
           return prev;
       }
     });
   }, []);
 
-  // Submit button config (for GenericForm)
   const submitButton = useMemo(
     () => ({
       backUrl: "/intelligence/models",
@@ -1379,7 +1226,7 @@ function ModelComponent({
     [],
   );
 
-  // Memoize renderStep to prevent GenericForm re-renders
+  // Render step - section-first data access
   const renderStep = useCallback(
     ({
       stepId,
@@ -1404,14 +1251,10 @@ function ModelComponent({
       const descriptionSearch =
         (formData["descriptionSearch"] as string | undefined) ?? "";
       const valueSearch = (formData["valueSearch"] as string | undefined) ?? "";
-      const endpointSearch =
-        (formData["endpointSearch"] as string | undefined) ?? "";
       const departmentSearch =
         (formData["departmentSearch"] as string | undefined) ?? "";
-      const inputModalitySearch =
-        (formData["inputModalitySearch"] as string | undefined) ?? "";
-      const outputModalitySearch =
-        (formData["outputModalitySearch"] as string | undefined) ?? "";
+      const modalitySearch =
+        (formData["modalitySearch"] as string | undefined) ?? "";
       const temperatureSearch =
         (formData["temperatureSearch"] as string | undefined) ?? "";
       const pricingSearch =
@@ -1422,9 +1265,8 @@ function ModelComponent({
       const qualitySearch =
         (formData["qualitySearch"] as string | undefined) ?? "";
 
-      // Use formState directly (components manage their own display state)
-      // Pre-extract flag configs from resources bucket
-      const allFlags = modelData?.resources?.resources?.flags ?? [];
+      // Section-first flag access
+      const allFlags = s?.flags?.resources ?? [];
       const flagConfig = (key: string) => allFlags.find((f) => f.key === key);
       const flagResource = (key: string) => {
         const cfg = flagConfig(key);
@@ -1452,12 +1294,10 @@ function ModelComponent({
               customHeader={
                 <Names
                   name_id={formState.name_id ?? null}
-                  name_resource={
-                    modelData?.resources?.current?.names?.[0] ?? null
-                  }
-                  show_name={modelData?.show_name ?? true}
-                  name_suggestions={modelData?.name_suggestions ?? []}
-                  names={modelData?.resources?.resources?.names ?? []}
+                  name_resource={s?.names?.resource ?? null}
+                  show_name={s?.names?.show ?? true}
+                  name_suggestions={s?.names?.suggestions ?? []}
+                  names={s?.names?.resources ?? []}
                   disabled={disabled}
                   onNameIdChange={(id) =>
                     setFormState((prev) => ({ ...prev, name_id: id }))
@@ -1466,12 +1306,12 @@ function ModelComponent({
                   isGenerating={isGenerating("names")}
                   placeholder="e.g., GPT-4"
                   defaultName="New Model"
-                  required={modelData?.name_required ?? true}
+                  required={s?.names?.required ?? true}
                   hideDescription={true}
-                  group_id={modelData?.names_group_id ?? null}
-                  create_tool_id={modelData?.name_create_tool_id ?? null}
-                  link_tool_id={modelData?.name_link_tool_id ?? null}
-                  showAiGenerate={modelData?.name_show_ai_generate ?? false}
+                  group_id={s?.group_id ?? null}
+                  create_tool_id={s?.names?.create_tool_id ?? null}
+                  link_tool_id={s?.names?.link_tool_id ?? null}
+                  showAiGenerate={s?.names?.show_ai_generate ?? false}
                   createNamesAction={createNamesAction}
                 />
               }
@@ -1486,7 +1326,6 @@ function ModelComponent({
                 "voices_enabled_flag_id",
                 "reasoning_levels_enabled_flag_id",
                 "qualities_enabled_flag_id",
-                "endpoint_id",
                 "departmentIds",
               ]}
               {...(onReset ? { onReset } : {})}
@@ -1495,16 +1334,10 @@ function ModelComponent({
               <div className="space-y-4">
                 <Descriptions
                   description_id={formState.description_id ?? null}
-                  description_resource={
-                    modelData?.resources?.current?.descriptions?.[0] ?? null
-                  }
-                  show_description={modelData?.show_description ?? true}
-                  description_suggestions={
-                    modelData?.description_suggestions ?? []
-                  }
-                  descriptions={
-                    modelData?.resources?.resources?.descriptions ?? []
-                  }
+                  description_resource={s?.descriptions?.resource ?? null}
+                  show_description={s?.descriptions?.show ?? true}
+                  description_suggestions={s?.descriptions?.suggestions ?? []}
+                  descriptions={s?.descriptions?.resources ?? []}
                   searchTerm={descriptionSearch}
                   onSearchChange={(term: string) =>
                     setFormData({ descriptionSearch: term || null })
@@ -1516,40 +1349,34 @@ function ModelComponent({
                   onGenerate={handleGenerateDescription}
                   isGenerating={isGenerating("descriptions")}
                   placeholder="Enter a brief description"
-                  required={modelData?.description_required ?? false}
-                  group_id={modelData?.descriptions_group_id ?? null}
-                  create_tool_id={modelData?.description_create_tool_id ?? null}
-                  link_tool_id={modelData?.description_link_tool_id ?? null}
-                  showAiGenerate={
-                    modelData?.description_show_ai_generate ?? false
-                  }
+                  required={s?.descriptions?.required ?? false}
+                  group_id={s?.group_id ?? null}
+                  create_tool_id={s?.descriptions?.create_tool_id ?? null}
+                  link_tool_id={s?.descriptions?.link_tool_id ?? null}
+                  showAiGenerate={s?.descriptions?.show_ai_generate ?? false}
                   createDescriptionsAction={createDescriptionsAction}
                 />
 
                 <Values
                   value_ids={formState.value_id ? [formState.value_id] : []}
                   value_resources={
-                    formState.value_id &&
-                    modelData?.resources?.current?.values?.[0]
+                    formState.value_id && s?.values?.resource
                       ? [
                           {
-                            value_id: modelData.resources.current.values[0].id,
-                            name: modelData.resources.current.values[0].value,
-                            generated:
-                              modelData.resources.current.values[0].generated,
+                            value_id: s.values.resource.id,
+                            name: s.values.resource.value,
+                            generated: s.values.resource.generated,
                           },
                         ]
                       : []
                   }
-                  show_values={modelData?.show_value ?? true}
-                  value_suggestions={modelData?.value_suggestions ?? []}
-                  values={(modelData?.resources?.resources?.values ?? []).map(
-                    (v) => ({
-                      value_id: v.id,
-                      name: v.value,
-                      generated: v.generated,
-                    }),
-                  )}
+                  show_values={s?.values?.show ?? true}
+                  value_suggestions={s?.values?.suggestions ?? []}
+                  values={(s?.values?.resources ?? []).map((v) => ({
+                    value_id: v.id,
+                    name: v.value,
+                    generated: v.generated,
+                  }))}
                   searchTerm={valueSearch}
                   onSearchChange={(term: string) =>
                     setFormData({ valueSearch: term || null })
@@ -1563,12 +1390,12 @@ function ModelComponent({
                   }
                   label="Value"
                   placeholder="Select model value identifier (e.g., gpt-4, gemini-pro)"
-                  required={modelData?.value_required ?? true}
+                  required={s?.values?.required ?? true}
                   description="Unique identifier for this model (used in API calls)"
-                  group_id={modelData?.values_group_id ?? null}
-                  create_tool_id={modelData?.value_create_tool_id ?? null}
-                  link_tool_id={modelData?.value_link_tool_id ?? null}
-                  showAiGenerate={modelData?.value_show_ai_generate ?? false}
+                  group_id={s?.group_id ?? null}
+                  create_tool_id={s?.values?.create_tool_id ?? null}
+                  link_tool_id={s?.values?.link_tool_id ?? null}
+                  showAiGenerate={s?.values?.show_ai_generate ?? false}
                   createValuesAction={createValuesAction}
                 />
 
@@ -1622,10 +1449,10 @@ function ModelComponent({
                   label="Active"
                   helpText="Inactive models will not be available for selection"
                   required={flagConfig("active")?.required ?? false}
-                  group_id={modelData?.flags_group_id ?? null}
-                  link_tool_id={modelData?.flag_link_tool_id ?? null}
-                  showAiGenerate={modelData?.flag_show_ai_generate ?? false}
-                  createFlagsAction={createFlagsAction}
+                  group_id={s?.group_id ?? null}
+                  link_tool_id={s?.flags?.link_tool_id ?? null}
+                  showAiGenerate={s?.flags?.show_ai_generate ?? false}
+
                 />
 
                 <Flags
@@ -1637,17 +1464,16 @@ function ModelComponent({
                     setFormState((prev) => ({
                       ...prev,
                       modalities_enabled_flag_id: id,
-                      input_modality_ids: id ? prev.input_modality_ids : [],
-                      output_modality_ids: id ? prev.output_modality_ids : [],
+                      modality_ids: id ? prev.modality_ids : [],
                     }));
                   }}
                   label="Modalities"
-                  helpText="Enable input/output modalities configuration"
+                  helpText="Enable modalities configuration"
                   required={flagConfig("modalities_enabled")?.required ?? false}
-                  group_id={modelData?.flags_group_id ?? null}
-                  link_tool_id={modelData?.flag_link_tool_id ?? null}
-                  showAiGenerate={modelData?.flag_show_ai_generate ?? false}
-                  createFlagsAction={createFlagsAction}
+                  group_id={s?.group_id ?? null}
+                  link_tool_id={s?.flags?.link_tool_id ?? null}
+                  showAiGenerate={s?.flags?.show_ai_generate ?? false}
+
                 />
 
                 <Flags
@@ -1669,10 +1495,10 @@ function ModelComponent({
                   required={
                     flagConfig("temperature_enabled")?.required ?? false
                   }
-                  group_id={modelData?.flags_group_id ?? null}
-                  link_tool_id={modelData?.flag_link_tool_id ?? null}
-                  showAiGenerate={modelData?.flag_show_ai_generate ?? false}
-                  createFlagsAction={createFlagsAction}
+                  group_id={s?.group_id ?? null}
+                  link_tool_id={s?.flags?.link_tool_id ?? null}
+                  showAiGenerate={s?.flags?.show_ai_generate ?? false}
+
                 />
 
                 <Flags
@@ -1690,10 +1516,10 @@ function ModelComponent({
                   label="Pricing"
                   helpText="Configure pricing for this model"
                   required={flagConfig("pricing_enabled")?.required ?? false}
-                  group_id={modelData?.flags_group_id ?? null}
-                  link_tool_id={modelData?.flag_link_tool_id ?? null}
-                  showAiGenerate={modelData?.flag_show_ai_generate ?? false}
-                  createFlagsAction={createFlagsAction}
+                  group_id={s?.group_id ?? null}
+                  link_tool_id={s?.flags?.link_tool_id ?? null}
+                  showAiGenerate={s?.flags?.show_ai_generate ?? false}
+
                 />
 
                 <Flags
@@ -1711,10 +1537,10 @@ function ModelComponent({
                   label="Voices"
                   helpText="Select voices for this model"
                   required={flagConfig("voices_enabled")?.required ?? false}
-                  group_id={modelData?.flags_group_id ?? null}
-                  link_tool_id={modelData?.flag_link_tool_id ?? null}
-                  showAiGenerate={modelData?.flag_show_ai_generate ?? false}
-                  createFlagsAction={createFlagsAction}
+                  group_id={s?.group_id ?? null}
+                  link_tool_id={s?.flags?.link_tool_id ?? null}
+                  showAiGenerate={s?.flags?.show_ai_generate ?? false}
+
                 />
 
                 <Flags
@@ -1736,10 +1562,10 @@ function ModelComponent({
                   required={
                     flagConfig("reasoning_levels_enabled")?.required ?? false
                   }
-                  group_id={modelData?.flags_group_id ?? null}
-                  link_tool_id={modelData?.flag_link_tool_id ?? null}
-                  showAiGenerate={modelData?.flag_show_ai_generate ?? false}
-                  createFlagsAction={createFlagsAction}
+                  group_id={s?.group_id ?? null}
+                  link_tool_id={s?.flags?.link_tool_id ?? null}
+                  showAiGenerate={s?.flags?.show_ai_generate ?? false}
+
                 />
 
                 <Flags
@@ -1757,84 +1583,12 @@ function ModelComponent({
                   label="Qualities"
                   helpText="Select quality levels for this model"
                   required={flagConfig("qualities_enabled")?.required ?? false}
-                  group_id={modelData?.flags_group_id ?? null}
-                  link_tool_id={modelData?.flag_link_tool_id ?? null}
-                  showAiGenerate={modelData?.flag_show_ai_generate ?? false}
-                  createFlagsAction={createFlagsAction}
+                  group_id={s?.group_id ?? null}
+                  link_tool_id={s?.flags?.link_tool_id ?? null}
+                  showAiGenerate={s?.flags?.show_ai_generate ?? false}
+
                 />
               </div>
-            </StepCard>
-          );
-
-        case "customUrl":
-          if (!formState.endpoint_id && !formState.modalities_enabled_flag_id)
-            return null;
-          return (
-            <StepCard
-              stepStatus={stepStatus}
-              stepNumber={stepNumber}
-              stepTitle={stepTitle}
-              stepDescription={stepDescription}
-              isReadonly={disabled}
-              isEditMode={isEditMode}
-              searchTerm={endpointSearch}
-              onSearchChange={(term) =>
-                setFormData({ endpointSearch: term || null })
-              }
-              searchPlaceholder="Search endpoints..."
-              resetFields={["endpoint_id"]}
-              {...(onReset ? { onReset } : {})}
-              resetLabel="Reset"
-            >
-              <Endpoints
-                endpoint_ids={
-                  formState.endpoint_id ? [formState.endpoint_id] : []
-                }
-                endpoint_resources={
-                  formState.endpoint_id &&
-                  modelData?.resources?.current?.endpoints?.[0]
-                    ? [
-                        {
-                          endpoint_id:
-                            modelData.resources.current.endpoints[0].id,
-                          name: modelData.resources.current.endpoints[0]
-                            .base_url,
-                          generated:
-                            modelData.resources.current.endpoints[0].generated,
-                        },
-                      ]
-                    : []
-                }
-                show_endpoints={modelData?.show_endpoint ?? true}
-                endpoint_suggestions={modelData?.endpoint_suggestions ?? []}
-                endpoints={(
-                  modelData?.resources?.resources?.endpoints ?? []
-                ).map((e) => ({
-                  endpoint_id: e.id,
-                  name: e.base_url,
-                  generated: e.generated,
-                }))}
-                searchTerm={endpointSearch}
-                onSearchChange={(term: string) =>
-                  setFormData({ endpointSearch: term || null })
-                }
-                disabled={disabled}
-                onChange={(ids) =>
-                  setFormState({
-                    ...formState,
-                    endpoint_id: ids.length > 0 ? ids[0] : null,
-                  })
-                }
-                label="Endpoint"
-                placeholder="Select endpoint base URL"
-                required={modelData?.endpoint_required ?? false}
-                description="Custom base URL for this model"
-                group_id={modelData?.endpoints_group_id ?? null}
-                create_tool_id={modelData?.endpoint_create_tool_id ?? null}
-                link_tool_id={modelData?.endpoint_link_tool_id ?? null}
-                showAiGenerate={modelData?.endpoint_show_ai_generate ?? false}
-                createEndpointsAction={createEndpointsAction}
-              />
             </StepCard>
           );
 
@@ -1884,7 +1638,7 @@ function ModelComponent({
             </StepCard>
           );
 
-        case "inputModalities":
+        case "modalities":
           if (!formState.modalities_enabled_flag_id) return null;
           return (
             <StepCard
@@ -1894,108 +1648,44 @@ function ModelComponent({
               stepDescription={stepDescription}
               isReadonly={disabled}
               isEditMode={isEditMode}
-              searchTerm={inputModalitySearch}
+              searchTerm={modalitySearch}
               onSearchChange={(term) =>
-                setFormData({ inputModalitySearch: term || null })
+                setFormData({ modalitySearch: term || null })
               }
-              searchPlaceholder="Search input modalities..."
-              resetFields={["input_modality_ids"]}
+              searchPlaceholder="Search modalities..."
+              resetFields={["modality_ids"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
             >
               <Modalities
-                modality_ids={formState.input_modality_ids}
-                modality_resources={(
-                  modelData?.resources?.current?.input_modalities ?? []
-                ).map((m) => ({
+                modality_ids={formState.modality_ids}
+                modality_resources={(s?.modalities?.current ?? []).map((m) => ({
                   modality_id: m.id,
                   name: m.modality,
                   generated: m.generated,
                 }))}
-                show_modalities={modelData?.show_modalities ?? true}
-                modality_suggestions={
-                  modelData?.input_modality_suggestions ?? []
-                }
-                modalities={(
-                  modelData?.resources?.resources?.input_modalities ?? []
-                ).map((m) => ({
+                show_modalities={s?.modalities?.show ?? true}
+                modality_suggestions={s?.modalities?.suggestions ?? []}
+                modalities={(s?.modalities?.resources ?? []).map((m) => ({
                   modality_id: m.id,
                   name: m.modality,
                   generated: m.generated,
                 }))}
-                searchTerm={inputModalitySearch}
+                searchTerm={modalitySearch}
                 onSearchChange={(term: string) =>
-                  setFormData({ inputModalitySearch: term || null })
+                  setFormData({ modalitySearch: term || null })
                 }
                 disabled={disabled}
                 onChange={(ids) =>
-                  setFormState({ ...formState, input_modality_ids: ids })
+                  setFormState({ ...formState, modality_ids: ids })
                 }
-                label="Input Modalities"
-                placeholder="Select input modalities"
-                required={modelData?.modalities_required ?? true}
-                group_id={modelData?.modalities_group_id ?? null}
-                link_tool_id={modelData?.modalities_link_tool_id ?? null}
-                showAiGenerate={modelData?.modalities_show_ai_generate ?? false}
-                createModalitiesAction={createModalitiesAction}
-              />
-            </StepCard>
-          );
+                label="Modalities"
+                placeholder="Select modalities"
+                required={s?.modalities?.required ?? true}
+                group_id={s?.group_id ?? null}
+                link_tool_id={s?.modalities?.link_tool_id ?? null}
+                showAiGenerate={s?.modalities?.show_ai_generate ?? false}
 
-        case "outputModalities":
-          if (!formState.modalities_enabled_flag_id) return null;
-          return (
-            <StepCard
-              stepStatus={stepStatus}
-              stepNumber={stepNumber}
-              stepTitle={stepTitle}
-              stepDescription={stepDescription}
-              isReadonly={disabled}
-              isEditMode={isEditMode}
-              searchTerm={outputModalitySearch}
-              onSearchChange={(term) =>
-                setFormData({ outputModalitySearch: term || null })
-              }
-              searchPlaceholder="Search output modalities..."
-              resetFields={["output_modality_ids"]}
-              {...(onReset ? { onReset } : {})}
-              resetLabel="Reset"
-            >
-              <Modalities
-                modality_ids={formState.output_modality_ids}
-                modality_resources={(
-                  modelData?.resources?.current?.output_modalities ?? []
-                ).map((m) => ({
-                  modality_id: m.id,
-                  name: m.modality,
-                  generated: m.generated,
-                }))}
-                show_modalities={modelData?.show_modalities ?? true}
-                modality_suggestions={
-                  modelData?.output_modality_suggestions ?? []
-                }
-                modalities={(
-                  modelData?.resources?.resources?.output_modalities ?? []
-                ).map((m) => ({
-                  modality_id: m.id,
-                  name: m.modality,
-                  generated: m.generated,
-                }))}
-                searchTerm={outputModalitySearch}
-                onSearchChange={(term: string) =>
-                  setFormData({ outputModalitySearch: term || null })
-                }
-                disabled={disabled}
-                onChange={(ids) =>
-                  setFormState({ ...formState, output_modality_ids: ids })
-                }
-                label="Output Modalities"
-                placeholder="Select output modalities"
-                required={modelData?.modalities_required ?? true}
-                group_id={modelData?.modalities_group_id ?? null}
-                link_tool_id={modelData?.modalities_link_tool_id ?? null}
-                showAiGenerate={modelData?.modalities_show_ai_generate ?? false}
-                createModalitiesAction={createModalitiesAction}
               />
             </StepCard>
           );
@@ -2027,35 +1717,27 @@ function ModelComponent({
                 }
                 temperature_level_resource={
                   formState.temperature_level_ids.length > 0 &&
-                  modelData?.resources?.current?.temperature_levels?.[0]
+                  s?.temperature_levels?.current?.[0]
                     ? {
-                        id: modelData.resources.current.temperature_levels[0]
-                          .id,
+                        id: s.temperature_levels.current[0].id,
                         temperature: String(
-                          modelData.resources.current.temperature_levels[0]
-                            .temperature,
+                          s.temperature_levels.current[0].temperature,
                         ),
-                        is_upper:
-                          modelData.resources.current.temperature_levels[0]
-                            .is_upper,
-                        generated:
-                          modelData.resources.current.temperature_levels[0]
-                            .generated,
+                        is_upper: false,
+                        generated: s.temperature_levels.current[0].generated,
                       }
                     : null
                 }
-                show_temperature_levels={
-                  modelData?.show_temperature_levels ?? true
-                }
+                show_temperature_levels={s?.temperature_levels?.show ?? true}
                 temperature_level_suggestions={
-                  modelData?.temperature_level_suggestions ?? []
+                  s?.temperature_levels?.suggestions ?? []
                 }
                 temperature_levels={(
-                  modelData?.resources?.resources?.temperature_levels ?? []
+                  s?.temperature_levels?.resources ?? []
                 ).map((t) => ({
                   id: t.id,
                   temperature: String(t.temperature),
-                  is_upper: t.is_upper,
+                  is_upper: false,
                   generated: t.generated,
                 }))}
                 searchTerm={temperatureSearch}
@@ -2066,20 +1748,17 @@ function ModelComponent({
                 onTemperatureLevelIdChange={(id) =>
                   setFormState({
                     ...formState,
-                    temperature_level_ids: (id ?? null) ? [id] : [],
+                    temperature_level_ids: id ? [id] : [],
                   })
                 }
                 label="Temperature Levels"
                 placeholder="Select temperature levels"
-                required={modelData?.temperature_levels_required ?? false}
-                group_id={modelData?.temperature_levels_group_id ?? null}
-                link_tool_id={
-                  modelData?.temperature_levels_link_tool_id ?? null
-                }
+                required={s?.temperature_levels?.required ?? false}
+                group_id={s?.group_id ?? null}
+                link_tool_id={s?.temperature_levels?.link_tool_id ?? null}
                 showAiGenerate={
-                  modelData?.temperature_levels_show_ai_generate ?? false
+                  s?.temperature_levels?.show_ai_generate ?? false
                 }
-                createTemperatureLevelsAction={createTemperatureLevelsAction}
               />
             </StepCard>
           );
@@ -2105,24 +1784,20 @@ function ModelComponent({
             >
               <Pricing
                 pricing_ids={formState.pricing_ids}
-                pricing_resources={(
-                  modelData?.resources?.current?.pricing ?? []
-                ).map((p) => ({
+                pricing_resources={(s?.pricing?.current ?? []).map((p) => ({
                   pricing_id: p.id,
                   name: `${p.pricing_type}`,
                   description: `${p.price}`,
                   generated: p.generated,
                 }))}
-                show_pricing={modelData?.show_pricing ?? true}
-                pricing_suggestions={modelData?.pricing_suggestions ?? []}
-                pricings={(modelData?.resources?.resources?.pricing ?? []).map(
-                  (p) => ({
-                    pricing_id: p.id,
-                    name: `${p.pricing_type}`,
-                    description: `${p.price}`,
-                    generated: p.generated,
-                  }),
-                )}
+                show_pricing={s?.pricing?.show ?? true}
+                pricing_suggestions={s?.pricing?.suggestions ?? []}
+                pricings={(s?.pricing?.resources ?? []).map((p) => ({
+                  pricing_id: p.id,
+                  name: `${p.pricing_type}`,
+                  description: `${p.price}`,
+                  generated: p.generated,
+                }))}
                 searchTerm={pricingSearch}
                 onSearchChange={(term: string) =>
                   setFormData({ pricingSearch: term || null })
@@ -2133,10 +1808,10 @@ function ModelComponent({
                 }
                 label="Pricing"
                 placeholder="Select pricing configurations"
-                required={modelData?.pricing_required ?? false}
-                group_id={modelData?.pricing_group_id ?? null}
-                link_tool_id={modelData?.pricing_link_tool_id ?? null}
-                showAiGenerate={modelData?.pricing_show_ai_generate ?? false}
+                required={s?.pricing?.required ?? false}
+                group_id={s?.group_id ?? null}
+                link_tool_id={s?.pricing?.link_tool_id ?? null}
+                showAiGenerate={s?.pricing?.show_ai_generate ?? false}
                 createPricingAction={createPricingAction}
               />
             </StepCard>
@@ -2169,29 +1844,26 @@ function ModelComponent({
                 }
                 reasoning_level_resource={
                   formState.reasoning_level_ids.length > 0 &&
-                  modelData?.resources?.current?.reasoning_levels?.[0]
+                  s?.reasoning_levels?.current?.[0]
                     ? {
-                        id: modelData.resources.current.reasoning_levels[0].id,
+                        id: s.reasoning_levels.current[0].id,
                         reasoning_level:
-                          modelData.resources.current.reasoning_levels[0]
-                            .reasoning_level,
-                        generated:
-                          modelData.resources.current.reasoning_levels[0]
-                            .generated,
+                          s.reasoning_levels.current[0].reasoning_level,
+                        generated: s.reasoning_levels.current[0].generated,
                       }
                     : null
                 }
-                show_reasoning_levels={modelData?.show_reasoning_levels ?? true}
+                show_reasoning_levels={s?.reasoning_levels?.show ?? true}
                 reasoning_level_suggestions={
-                  modelData?.reasoning_level_suggestions ?? []
+                  s?.reasoning_levels?.suggestions ?? []
                 }
-                reasoning_levels={(
-                  modelData?.resources?.resources?.reasoning_levels ?? []
-                ).map((r) => ({
-                  id: r.id,
-                  reasoning_level: r.reasoning_level,
-                  generated: r.generated,
-                }))}
+                reasoning_levels={(s?.reasoning_levels?.resources ?? []).map(
+                  (r) => ({
+                    id: r.id,
+                    reasoning_level: r.reasoning_level,
+                    generated: r.generated,
+                  }),
+                )}
                 searchTerm={reasoningSearch}
                 onSearchChange={(term: string) =>
                   setFormData({ reasoningSearch: term || null })
@@ -2200,18 +1872,17 @@ function ModelComponent({
                 onReasoningLevelIdChange={(id) =>
                   setFormState({
                     ...formState,
-                    reasoning_level_ids: (id ?? null) ? [id] : [],
+                    reasoning_level_ids: id ? [id] : [],
                   })
                 }
                 label="Reasoning Levels"
                 placeholder="Select reasoning levels"
-                required={modelData?.reasoning_levels_required ?? false}
-                group_id={modelData?.reasoning_levels_group_id ?? null}
-                link_tool_id={modelData?.reasoning_levels_link_tool_id ?? null}
+                required={s?.reasoning_levels?.required ?? false}
+                group_id={s?.group_id ?? null}
+                link_tool_id={s?.reasoning_levels?.link_tool_id ?? null}
                 showAiGenerate={
-                  modelData?.reasoning_levels_show_ai_generate ?? false
+                  s?.reasoning_levels?.show_ai_generate ?? false
                 }
-                createReasoningLevelsAction={createReasoningLevelsAction}
               />
             </StepCard>
           );
@@ -2237,10 +1908,10 @@ function ModelComponent({
             >
               <Voices
                 voice_ids={formState.voice_ids}
-                voice_resources={modelData?.resources?.current?.voices ?? []}
-                show_voices={modelData?.show_voices ?? true}
-                voice_suggestions={modelData?.voice_suggestions ?? []}
-                voices={modelData?.resources?.resources?.voices ?? []}
+                voice_resources={s?.voices?.current ?? []}
+                show_voices={s?.voices?.show ?? true}
+                voice_suggestions={s?.voices?.suggestions ?? []}
+                voices={s?.voices?.resources ?? []}
                 searchTerm={voiceSearch}
                 onSearchChange={(term: string) =>
                   setFormData({ voiceSearch: term || null })
@@ -2251,9 +1922,9 @@ function ModelComponent({
                 }
                 label="Voices"
                 placeholder="Select voices"
-                required={modelData?.voices_required ?? false}
-                group_id={modelData?.voices_group_id ?? null}
-                link_tool_id={modelData?.voices_link_tool_id ?? null}
+                required={s?.voices?.required ?? false}
+                group_id={s?.group_id ?? null}
+                link_tool_id={s?.voices?.link_tool_id ?? null}
                 createVoicesAction={createVoicesAction}
               />
             </StepCard>
@@ -2280,18 +1951,14 @@ function ModelComponent({
             >
               <Qualities
                 quality_ids={formState.quality_ids}
-                quality_resources={(
-                  modelData?.resources?.current?.qualities ?? []
-                ).map((q) => ({
+                quality_resources={(s?.qualities?.current ?? []).map((q) => ({
                   quality_id: q.id,
                   name: q.quality,
                   generated: q.generated,
                 }))}
-                show_qualities={modelData?.show_qualities ?? true}
-                quality_suggestions={modelData?.quality_suggestions ?? []}
-                qualities={(
-                  modelData?.resources?.resources?.qualities ?? []
-                ).map((q) => ({
+                show_qualities={s?.qualities?.show ?? true}
+                quality_suggestions={s?.qualities?.suggestions ?? []}
+                qualities={(s?.qualities?.resources ?? []).map((q) => ({
                   quality_id: q.id,
                   name: q.quality,
                   generated: q.generated,
@@ -2306,11 +1973,10 @@ function ModelComponent({
                 }
                 label="Qualities"
                 placeholder="Select quality levels"
-                required={modelData?.qualities_required ?? false}
-                group_id={modelData?.qualities_group_id ?? null}
-                link_tool_id={modelData?.qualities_link_tool_id ?? null}
-                showAiGenerate={modelData?.qualities_show_ai_generate ?? false}
-                createQualitiesAction={createQualitiesAction}
+                required={s?.qualities?.required ?? false}
+                group_id={s?.group_id ?? null}
+                link_tool_id={s?.qualities?.link_tool_id ?? null}
+                showAiGenerate={s?.qualities?.show_ai_generate ?? false}
               />
             </StepCard>
           );
@@ -2326,14 +1992,13 @@ function ModelComponent({
       validDepartmentIds,
       departments,
       providers,
-      modelData,
+      s,
       handleGenerateName,
       handleGenerateDescription,
       isGenerating,
       createNamesAction,
       createDescriptionsAction,
       createValuesAction,
-      createEndpointsAction,
       createFlagsAction,
       createModalitiesAction,
       createTemperatureLevelsAction,
@@ -2348,14 +2013,14 @@ function ModelComponent({
     <div className="w-full p-6 space-y-8">
       <ReadOnlyBanner
         disabled={disabled}
-        disabledReason={modelData?.disabled_reason ?? null}
+        disabledReason={s?.disabled_reason ?? null}
         entityType="model"
       />
       <GenericForm
         nuqsParsers={modelSearchParamsClient as Record<string, Parser<unknown>>}
         steps={steps}
         getStepStatus={getStepStatus}
-        serverData={modelData}
+        serverData={s}
         formFieldKeys={formFieldKeys}
         onReset={(stepId) => handleReset(stepId)}
         resetSuccessMessage={resetSuccessMessage}
@@ -2373,20 +2038,31 @@ function ModelComponent({
   );
 }
 
-// Memoize component to prevent re-renders when only prop references change (content is same)
 export default React.memo(ModelComponent, (prevProps, nextProps) => {
   const prevModelData = prevProps.modelDetail ?? prevProps.modelDetailDefault;
   const nextModelData = nextProps.modelDetail ?? nextProps.modelDetailDefault;
 
   if (prevProps.modelId !== nextProps.modelId) return false;
 
-  // Compare by resources reference
+  // Compare key sections
   if (
-    JSON.stringify(prevModelData?.resources) !==
-    JSON.stringify(nextModelData?.resources)
+    JSON.stringify(prevModelData?.names) !==
+    JSON.stringify(nextModelData?.names)
   ) {
-    return false; // Resources changed, re-render
+    return false;
+  }
+  if (
+    JSON.stringify(prevModelData?.descriptions) !==
+    JSON.stringify(nextModelData?.descriptions)
+  ) {
+    return false;
+  }
+  if (
+    JSON.stringify(prevModelData?.flags) !==
+    JSON.stringify(nextModelData?.flags)
+  ) {
+    return false;
   }
 
-  return true; // Props unchanged, skip re-render
+  return true;
 });

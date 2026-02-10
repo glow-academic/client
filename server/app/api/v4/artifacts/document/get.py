@@ -41,9 +41,11 @@ from app.api.v4.artifacts.document.types import (
     DocumentFieldSection,
     DocumentFlagConfig,
     DocumentFlagSection,
+    DocumentImageSection,
     DocumentNameSection,
     DocumentResourceBucket,
     DocumentResources,
+    DocumentTextSection,
     DocumentUploadSection,
     DocumentWebsocketResources,
     DocumentWebsocketViews,
@@ -60,11 +62,15 @@ from app.api.v4.resources.descriptions.search import search_descriptions_interna
 from app.api.v4.resources.fields.search import search_fields_internal
 from app.api.v4.resources.flags.get import get_flags_internal
 from app.api.v4.resources.flags.search import search_flags_internal
+from app.api.v4.resources.images.get import get_images_internal
+from app.api.v4.resources.images.search import search_images_internal
 from app.api.v4.resources.models.get import get_models_internal
 from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.names.search import search_names_internal
 from app.api.v4.resources.parameter_fields.get import get_parameter_fields_internal
 from app.api.v4.resources.providers.get import get_providers_internal
+from app.api.v4.resources.texts.get import get_texts_internal
+from app.api.v4.resources.texts.search import search_texts_internal
 from app.api.v4.resources.tools.get import get_tools_internal
 from app.api.v4.resources.uploads.get import get_uploads_internal
 from app.api.v4.resources.uploads.search import search_uploads_internal
@@ -222,6 +228,8 @@ async def get_document_internal(
     selected_department_ids = ids_result.department_ids or []
     selected_field_ids = ids_result.field_ids or []
     selected_upload_ids = ids_result.upload_ids or []
+    selected_image_ids = ids_result.image_ids or []
+    selected_text_ids = ids_result.text_ids or []
 
     # Draft values override canonical document-junction values.
     if draft_item is not None:
@@ -238,6 +246,10 @@ async def get_document_internal(
             selected_field_ids = draft_item.parameter_field_ids
         if draft_item.upload_ids:
             selected_upload_ids = draft_item.upload_ids
+        if draft_item.image_ids:
+            selected_image_ids = draft_item.image_ids
+        if draft_item.text_ids:
+            selected_text_ids = draft_item.text_ids
 
     # Get tools existence flags from Query 2 (used for show_* UI flags)
     names_has_tools = ids_result.names_has_tools or False
@@ -283,6 +295,8 @@ async def get_document_internal(
     departments_show_ai_generate = compute_show_ai_generate("departments")
     fields_show_ai_generate = compute_show_ai_generate("fields")
     uploads_show_ai_generate = compute_show_ai_generate("uploads")
+    images_show_ai_generate = compute_show_ai_generate("images")
+    texts_show_ai_generate = compute_show_ai_generate("texts")
 
     # Step-level show_ai_generate flags
     basic_show_ai_generate = any(
@@ -297,6 +311,8 @@ async def get_document_internal(
         [
             fields_show_ai_generate,
             uploads_show_ai_generate,
+            images_show_ai_generate,
+            texts_show_ai_generate,
         ]
     )
 
@@ -321,6 +337,8 @@ async def get_document_internal(
     department_ids = selected_department_ids
     field_ids = selected_field_ids
     upload_ids = selected_upload_ids
+    image_ids = selected_image_ids
+    text_ids = selected_text_ids
 
     async def fetch_names():
         async with pool.acquire() as c:
@@ -417,6 +435,32 @@ async def get_document_internal(
             )
             return (selected, suggestions)
 
+    async def fetch_images():
+        async with pool.acquire() as c:
+            selected = await get_images_internal(c, image_ids, bypass_cache)
+            suggestions = await search_images_internal(
+                c,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=image_ids,
+                bypass_cache=bypass_cache,
+            )
+            return (selected, suggestions)
+
+    async def fetch_texts():
+        async with pool.acquire() as c:
+            selected = await get_texts_internal(c, text_ids, bypass_cache)
+            suggestions = await search_texts_internal(
+                c,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=text_ids,
+                bypass_cache=bypass_cache,
+            )
+            return (selected, suggestions)
+
     # Parallel fetch all resources
     (
         (names_selected, names_suggestions),
@@ -425,6 +469,8 @@ async def get_document_internal(
         (departments_selected, departments_suggestions),
         (fields_selected, fields_suggestions),
         (uploads_selected, uploads_suggestions),
+        (images_selected, images_suggestions),
+        (texts_selected, texts_suggestions),
     ) = await asyncio.gather(
         fetch_names(),
         fetch_descriptions(),
@@ -432,6 +478,8 @@ async def get_document_internal(
         fetch_departments(),
         fetch_fields(),
         fetch_uploads(),
+        fetch_images(),
+        fetch_texts(),
     )
 
     names = _dedupe_by_id(names_selected + names_suggestions, "id")
@@ -442,6 +490,8 @@ async def get_document_internal(
     )
     fields = _dedupe_by_id(fields_selected + fields_suggestions, "field_id")
     uploads = _dedupe_by_id(uploads_selected + uploads_suggestions, "id")
+    images = _dedupe_by_id(images_selected + images_suggestions, "image_id")
+    texts = _dedupe_by_id(texts_selected + texts_suggestions, "texts_id")
 
     # Find selected resources
     name_resource = next((n for n in names if n.id == selected_name_id), None)
@@ -456,12 +506,16 @@ async def get_document_internal(
     ]
     field_resources = [f for f in fields if f.id in selected_field_ids]
     upload_resources = [u for u in uploads if u.id in selected_upload_ids]
+    image_resources = [i for i in images if i.image_id in selected_image_ids]
+    text_resources = [t for t in texts if t.texts_id in selected_text_ids]
 
     name_suggestions = [n.id for n in names_suggestions]
     description_suggestions = [d.id for d in descriptions_suggestions]
     department_suggestions = [d.department_id for d in departments_suggestions]
     field_suggestions = [f.id for f in fields_suggestions]
     upload_suggestions = [u.id for u in uploads_suggestions]
+    image_suggestions = [i.image_id for i in images_suggestions]
+    text_suggestions = [t.texts_id for t in texts_suggestions]
 
     # Compute final show flags based on actual data
     show_name = compute_show_name(names_has_tools)
@@ -470,6 +524,8 @@ async def get_document_internal(
     show_departments_flag = compute_show_departments(len(departments))
     show_fields_flag = compute_show_fields(len(fields))
     show_uploads_flag = compute_show_uploads()
+    show_images_flag = True
+    show_texts_flag = True
 
     # Build show and required flags maps
     show_flags_map = {
@@ -479,6 +535,8 @@ async def get_document_internal(
         "departments": show_departments_flag,
         "fields": show_fields_flag,
         "uploads": show_uploads_flag,
+        "images": show_images_flag,
+        "texts": show_texts_flag,
     }
 
     required_flags_map = {
@@ -488,6 +546,8 @@ async def get_document_internal(
         "departments": compute_departments_required(),
         "fields": compute_fields_required(),
         "uploads": compute_uploads_required(),
+        "images": False,
+        "texts": False,
     }
 
     # Transform flags to enriched format for client
@@ -528,6 +588,8 @@ async def get_document_internal(
             departments=departments,
             fields=fields,
             uploads=uploads,
+            images=images,
+            texts=texts,
         ),
         current=DocumentResourceBucket(
             names=[name_resource] if name_resource else [],
@@ -536,6 +598,8 @@ async def get_document_internal(
             departments=department_resources or [],
             fields=field_resources or [],
             uploads=upload_resources or [],
+            images=image_resources or [],
+            texts=text_resources or [],
         ),
     )
 
@@ -547,6 +611,8 @@ async def get_document_internal(
         "departments": departments_show_ai_generate,
         "fields": fields_show_ai_generate,
         "uploads": uploads_show_ai_generate,
+        "images": images_show_ai_generate,
+        "texts": texts_show_ai_generate,
     }
 
     # Build suggestions map
@@ -556,6 +622,8 @@ async def get_document_internal(
         "departments": department_suggestions,
         "fields": field_suggestions,
         "uploads": upload_suggestions,
+        "images": image_suggestions,
+        "texts": text_suggestions,
     }
 
     # Fetch config resources for websocket generation context
@@ -702,6 +770,8 @@ async def get_document_websocket(
             departments=current.departments if current else None,
             fields=current.fields if current else None,
             uploads=current.uploads if current else None,
+            images=current.images if current else None,
+            texts=current.texts if current else None,
             agents=data.config_agent_resources,
             models=data.config_model_resources,
             providers=data.config_provider_resources,
@@ -787,6 +857,16 @@ async def get_document_client(
             current=(current_bucket.uploads if current_bucket else None),
             resources=(resources_bucket.uploads if resources_bucket else None),
             **section_common("uploads"),
+        ),
+        images=DocumentImageSection(
+            current=(current_bucket.images if current_bucket else None),
+            resources=(resources_bucket.images if resources_bucket else None),
+            **section_common("images"),
+        ),
+        texts=DocumentTextSection(
+            current=(current_bucket.texts if current_bucket else None),
+            resources=(resources_bucket.texts if resources_bucket else None),
+            **section_common("texts"),
         ),
     )
 

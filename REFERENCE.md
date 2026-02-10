@@ -559,10 +559,19 @@ The HTTP GET response includes `create_tool_id` and `link_tool_id` per resource 
 ### Save/Draft SQL Workflow (Persona Standard)
 
 Save/draft SQL should follow Persona-style workflow semantics:
-- Scenario resource workflow: deactivate old active resource link(s), create/link the new resource, then set the new link active
+- **Save junction pattern** (deactivate-then-upsert): `SET active = false` on old junction rows, then `INSERT ... ON CONFLICT SET active = true` for new resources
+- **Draft connection pattern** (delete-then-insert): `DELETE FROM *_drafts_connection WHERE draft_id = ...`, then `INSERT INTO *_drafts_connection ...` — drafts always replace all connections
 - Draft workflow: update links with optimistic versioning (`expected_version`)
-- Tool-call tracking: create one `runs_entry` per save/draft mutation and create `calls_entry + tool_calls_junction` rows for each non-null `create_tool_id` / `link_tool_id`
+- Tool-call tracking: create one `runs_entry` per save/draft mutation and create `calls_entry + tool_calls_junction + *_calls_connection` rows for each non-null `create_tool_id` / `link_tool_id`. **Both save and draft SQL must do this.** Draft tool tracking is conditional on `v_group_id IS NOT NULL` (since a brand-new draft may not have a group yet).
 - Frontend request contract should always send nested action objects for all sections to avoid manual per-field parsing drift
+
+### SQL Gotchas
+
+**PostgreSQL reserved words**: If a resource name is a reserved word (e.g., `values`), quote it in function parameters (`"values" types.model_resource_action DEFAULT NULL`) and in all composite access expressions (`("values").resource_id`, `("values").create_tool_id`, `("values").link_tool_id`). Failure to quote causes cryptic syntax errors.
+
+**Shared composite types between save and draft SQL**: Both `save_{artifact}_complete.sql` and `patch_{artifact}_draft_complete.sql` define the same composite types (`types.{artifact}_resource_action`, `types.{artifact}_multi_resource_action`). Each file's `DROP TYPE IF EXISTS ... CASCADE` will cascade-drop functions from the other file. This is by design for JIT compilation — each SQL file is self-contained and re-creates its dependencies. However, when manually applying both files to a database for testing, apply save last (or re-apply whichever was dropped).
+
+**External call ID naming convention**: Tool tracking uses `'{artifact}_{operation}_create_{resource}_' || v_call_id::text` for `external_call_id` values, e.g., `'model_save_create_names_' || v_call_id::text` or `'model_draft_link_descriptions_' || v_call_id::text`.
 
 ### Scenario Parity Rules (Persona-Style)
 
@@ -682,3 +691,104 @@ For any artifact endpoint, check each of these against the gold standard:
 - [ ] Does not consume `*_agent_id` fields
 - [ ] Uses `*_show_ai_generate` flags for AI button visibility
 - [ ] Avoids legacy domain/group identifiers in UI contracts
+
+## Profile Migration Notes
+
+The profile artifact should follow the same contract rules as persona/scenario:
+
+- API `get` response is section-first:
+  - `names`, `emails`, `request_limits`, `flags`, `departments`, `cohorts`
+  - each section carries `show`, `required`, `suggestions`, `show_ai_generate`, `create_tool_id`, `link_tool_id`
+  - no legacy flat fields like `name_resource`, `name_domain_id`, `name_agent_id`, `resources.current`, or top-level `current`
+- Websocket `get_profile_websocket` returns only:
+  - `group_id`
+  - `views.draft_profile`
+  - flat selected `resources`
+  - config resources in `resources`: `agents`, `models`, `providers`, `tools`
+  - `resource_agent_ids`
+  - no `domain_ids`/`domains` routing payload
+- `profile_generate` websocket payload uses `resource_types` (not `domain_ids` or `agent_type`)
+- Profile step-level AI controls should use shared `StepCardAiButton` (same as persona/scenario pattern), not repeated inline tooltip/button blocks
+- Save endpoint is draft-first:
+  - request body: `draft_id`, optional `input_profile_id`
+  - server save SQL reads selected resource IDs from draft links
+- Client save action should be fully typed:
+  - `InputOf<"/api/v4/artifacts/profiles/save", "post">`
+  - `OutputOf<"/api/v4/artifacts/profiles/save", "post">`
+  - do not use temporary unsafe wrappers once schema is regenerated
+- Draft endpoint must use nested resource actions (persona-style):
+  - request body sections: `names`, `flags`, `request_limits`, `departments`, `emails`, `cohorts`
+  - each section uses `{ resource_id|resource_ids, create_tool_id, link_tool_id }`
+  - include `group_id` and `expected_version`
+- Profile draft SQL (`patch_profile_draft_complete.sql`) should:
+  - accept `types.profile_resource_action` and `types.profile_multi_resource_action`
+  - extract resource IDs from composites (no flat ID params)
+  - create `runs_entry` + `calls_entry` + `tool_calls_junction` when tool IDs are provided
+  - link each resource call in corresponding `*_calls_connection` tables
+
+Profile component ownership:
+- `client/components/staff/Profile.tsx` is the canonical staff create/edit component and should be kept section-first.
+- `client/components/staff/StaffNewEdit.tsx` is redundant and should not be reintroduced.
+- `Profile.tsx` should consume section data directly (`names.resource`, `emails.current`, etc.) without compatibility adapters or legacy flat field shims.
+- `Profile.tsx` should use the compact draft stack like persona:
+  - `useDraftLifecycle` for autosave/version/draft URL sync
+  - `useFlushRegistry` for creatable resources (`names`, `emails`, `request_limits`)
+  - `buildResourceActions` + `computeEffectiveFormState` + `checkHasResourceIds` for consistent effective state/action derivation
+
+### Document Parity Rules (Persona-Style)
+
+Document artifact has been migrated to gold standard with **8 resources**: `names`, `descriptions`, `flags`, `departments`, `fields`, `uploads`, `images`, `texts`.
+
+Architecture notes:
+- API `get` response is section-first: `names`, `descriptions`, `flags`, `departments`, `fields`, `uploads`, `images`, `texts`
+- Each section carries `show`, `required`, `suggestions`, `show_ai_generate`, `create_tool_id`, `link_tool_id`
+- Websocket `get_document_websocket()` returns `group_id`, `views.draft_document`, flat selected `resources`, `resource_agent_ids`
+- `document_generate` websocket payload uses `resource_types` (not `domain_ids` or `agent_type`)
+- Save/draft endpoints use nested resource action payloads with `resource_id(s)`, `create_tool_id`, `link_tool_id`
+- Multi-select resources: `departments`, `fields`, `uploads`, `images`, `texts` (use `MultiResourceAction`)
+- Single-select resources: `names`, `descriptions`, `flags` (use `ResourceAction`)
+
+Known deviations from gold standard (acceptable for now, migration deferred):
+- `generate.py` uses shared SQL (`get_generation_run_context_and_create_run_complete.sql` + `get_text_run_context_for_existing_run_complete.sql`) instead of artifact-specific prepare SQL
+- `generate.py` does not perform a rate limit check
+- `generate.py` does not parallel-fetch tools/prompts/instructions (uses shared SQL context instead)
+- `generate.py` does not inject `views.config` into Jinja context
+- `generate.py` does not explicitly persist messages to DB before emitting to `generate_artifact`
+- These deviations should be addressed when document generation is refactored to match the persona gold standard
+
+Frontend notes:
+- `client/components/documents/Document.tsx` is the canonical document create/edit component
+- `client/components/resources/Texts.tsx` is a textarea-based multi-select component for text content
+- `client/components/resources/Images.tsx` is used for image selection
+- Frontend `VALID_RESOURCE_TYPES` includes all 8 resource types
+- Document uses step-based wizard with AI generation per step
+- Draft autosave via `useDraftLifecycle` with `expected_version` concurrency control
+
+Resource layer notes:
+- Images: full resource layer exists (`get_images_internal`, `search_images_internal`, `QGetImagesV4Item`)
+- Texts: full resource layer exists (`get_texts_internal`, `search_texts_internal`, `QGetTextsV4Item`)
+- Both use `RETURNS TABLE (items composite[])` with `ARRAY_AGG` + `COALESCE` pattern for asyncpg compatibility
+- Both have create endpoints: `POST /api/v4/resources/images`, `POST /api/v4/resources/texts`
+
+### Model Parity Rules (Persona-Style)
+
+Model artifact has been migrated to gold standard with **12 resources**: `names`, `descriptions`, `values`, `providers`, `flags`, `departments`, `modalities`, `temperature_levels`, `pricing`, `reasoning_levels`, `qualities`, `voices`.
+
+Architecture notes:
+- API `get` response is section-first: `names`, `descriptions`, `values`, `providers`, `flags`, `departments`, `modalities`, `temperature_levels`, `pricing`, `reasoning_levels`, `qualities`, `voices`
+- Each section carries `show`, `required`, `suggestions`, `show_ai_generate`, `create_tool_id`, `link_tool_id`
+- Websocket `get_model_websocket()` returns `group_id`, `views.draft_model`, flat selected `resources`, `resource_agent_ids`
+- `model_generate` websocket payload uses `resource_types` (not `domain_ids` or `agent_type`)
+- Save/draft endpoints use nested resource action payloads with `resource_id(s)`, `create_tool_id`, `link_tool_id`
+- Single-select resources: `names`, `descriptions`, `values`, `providers` (use `ModelResourceAction`)
+- Multi-select resources: `flags`, `departments`, `modalities`, `temperature_levels`, `pricing`, `reasoning_levels`, `qualities`, `voices` (use `ModelMultiResourceAction`)
+- `values` is a PostgreSQL reserved word — quoted as `"values"` in SQL function parameters and composite access expressions
+- Step grouping: `basic` (names, descriptions, flags, departments), `provider` (values, providers), `features` (modalities, temperature_levels, pricing, reasoning_levels, qualities, voices)
+- Modalities are unified (no separate input/output arrays) — direction is tracked via `is_input` boolean on `modalities_resource`, not via junction table `type` column
+- Endpoints and keys were removed from model (moved to provider artifact per migration 406)
+- Handcrafted types in `server/app/api/v4/artifacts/model/types.py`
+- Permissions in `server/app/api/v4/artifacts/model/permissions.py`
+
+Known deviations from gold standard (acceptable for now, migration deferred):
+- `generate.py` uses shared SQL (`get_generation_run_context_and_create_run_complete.sql` + `get_text_run_context_for_existing_run_complete.sql`) instead of artifact-specific prepare SQL
+- Mutation endpoints (delete/duplicate) still use auto-generated SQL types

@@ -5,7 +5,6 @@ Types are registered in OpenAPI via FastAPI endpoints, enabling
 automatic type extraction in the frontend via InputOf/OutputOf.
 """
 
-
 from app.api.v4.artifacts.document.types import GetDocumentApiRequest
 from app.socket.v4.artifacts.types import (
     GenerationCompleteEvent,
@@ -16,8 +15,10 @@ from app.sql.types import (
     QGetDepartmentsV4Item,
     QGetDescriptionsV4Item,
     QGetFlagsV4Item,
+    QGetImagesV4Item,
     QGetNamesV4Item,
     QGetParameterFieldsV4Item,
+    QGetTextsV4Item,
     QGetUploadsV4Item,
 )
 
@@ -61,6 +62,8 @@ class DocumentGenerationCompleteEvent(GenerationCompleteEvent):
     department_resources: list[QGetDepartmentsV4Item] | None = None
     field_resources: list[QGetParameterFieldsV4Item] | None = None
     upload_resources: list[QGetUploadsV4Item] | None = None
+    image_resources: list[QGetImagesV4Item] | None = None
+    text_resources: list[QGetTextsV4Item] | None = None
 
 
 class DocumentGenerationProgressEvent(GenerationProgressEvent):

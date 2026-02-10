@@ -25,6 +25,8 @@ export type ResourceType =
   | "simulations"
   | "templates"
   | "uploads"
+  | "images"
+  | "texts"
   | "models"
   | "prompts"
   | "reasoning_levels"

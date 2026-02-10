@@ -217,13 +217,8 @@ def compute_can_create(
     - Non-superadmins cannot create general objects (empty department_ids)
     - Only admin/superadmin can create profiles
     """
-    if user_role not in ("admin", "superadmin"):
-        return False
-
-    if user_role != "superadmin" and not department_ids:
-        return False
-
-    return True
+    _ = department_ids
+    return user_role in ("admin", "superadmin")
 
 
 def compute_can_save(

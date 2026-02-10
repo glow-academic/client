@@ -19,7 +19,6 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.artifacts.profile.permissions import (
     PROFILE_RESOURCES,
-    build_domain_data,
     compute_can_edit,
     compute_cohorts_required,
     compute_departments_required,
@@ -37,16 +36,22 @@ from app.api.v4.artifacts.profile.permissions import (
     has_access,
 )
 from app.api.v4.artifacts.profile.types import (
-    DomainAgent,
     GetProfileApiRequest,
     GetProfileApiResponse,
     GetProfileWebsocketResponse,
+    ProfileCohortSection,
+    ProfileDepartmentSection,
+    ProfileEmailSection,
     ProfileFlagConfig,
-    ProfileResourceBucket,
-    ProfileResources,
+    ProfileFlagSection,
+    ProfileNameSection,
+    ProfileRequestLimitSection,
     ProfileRoleResource,
+    ProfileWebsocketResources,
+    ProfileWebsocketViews,
 )
 from app.api.v4.permissions import select_agents_for_artifact
+from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.cohorts.get import get_cohorts_internal
 from app.api.v4.resources.cohorts.search import search_cohorts_internal
 from app.api.v4.resources.departments.get import get_departments_internal
@@ -55,10 +60,13 @@ from app.api.v4.resources.emails.get import get_emails_internal
 from app.api.v4.resources.emails.search import search_emails_internal
 from app.api.v4.resources.flags.get import get_flags_internal
 from app.api.v4.resources.flags.search import search_flags_internal
+from app.api.v4.resources.models.get import get_models_internal
 from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.names.search import search_names_internal
+from app.api.v4.resources.providers.get import get_providers_internal
 from app.api.v4.resources.request_limits.get import get_request_limits_internal
 from app.api.v4.resources.request_limits.search import search_request_limits_internal
+from app.api.v4.resources.tools.get import get_tools_internal
 from app.api.v4.types import CandidateAgent
 from app.api.v4.views.drafts.get import get_draft_profile_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
@@ -103,10 +111,8 @@ class ProfileInternalData:
     role_options: list[str]
     roles: list[ProfileRoleResource]
 
-    # Domain mappings
-    domain_ids_map: dict[str, UUID | None]
+    # Agent mappings
     agent_ids: dict[str, UUID | None]
-    domains_list: list[DomainAgent]
 
     # Show/required flags
     show_flags_map: dict[str, bool]
@@ -115,19 +121,29 @@ class ProfileInternalData:
     # Suggestions (resource -> list of suggestion IDs)
     suggestions_map: dict[str, list[UUID]]
 
-    # Show AI generate flags (computed: domain_id exists AND agent exists)
+    # Show AI generate flags (computed: agent exists for resource)
     show_ai_generate_map: dict[str, bool]
     basic_show_ai_generate: bool
     general_show_ai_generate: bool
-
-    # Domain data for modals
-    domain_data_list: list[Any]  # list[DomainData]
-
-    # Resources payload
-    resources_payload: ProfileResources
-
-    # Per-resource group IDs (from draft MV)
-    resource_group_ids: dict[str, UUID | None]
+    # Selected resource objects
+    selected_name_resource: Any | None
+    selected_flag_resource: ProfileFlagConfig | None
+    selected_request_limit_resource: Any | None
+    selected_email_resources: list[Any]
+    selected_department_resources: list[Any]
+    selected_cohort_resources: list[Any]
+    # All resources (selected + suggestions)
+    all_name_resources: list[Any]
+    all_email_resources: list[Any]
+    all_request_limit_resources: list[Any]
+    all_flag_resources: list[ProfileFlagConfig]
+    all_department_resources: list[Any]
+    all_cohort_resources: list[Any]
+    # Config resources (selected agents -> models/providers/tools)
+    config_agent_resources: list[Any] | None
+    config_model_resources: list[Any] | None
+    config_provider_resources: list[Any] | None
+    config_tool_resources: list[Any] | None
 
     # Per-resource tool IDs (from selected agents)
     create_tool_ids_map: dict[str, UUID | None]
@@ -254,16 +270,6 @@ async def get_profile_internal(
         if draft_item.department_ids:
             selected_department_ids = draft_item.department_ids
 
-    # Build per-resource group_ids from draft_item
-    resource_group_ids: dict[str, UUID | None] = {
-        "names": draft_item.group_id if draft_item else None,
-        "emails": draft_item.group_id if draft_item else None,
-        "request_limits": draft_item.group_id if draft_item else None,
-        "flags": draft_item.group_id if draft_item else None,
-        "departments": draft_item.group_id if draft_item else None,
-        "cohorts": draft_item.group_id if draft_item else None,
-    }
-
     # Get tools existence flags from Query 2 (used for show_* UI flags)
     names_has_tools = ids_result.names_has_tools or False
     emails_has_tools = ids_result.emails_has_tools or False
@@ -298,21 +304,9 @@ async def get_profile_internal(
                     link_tool_ids_map[resource] = candidate.link_tool_ids.get(resource)
                     break
 
-    # === EXTRACT DOMAIN IDS FROM QUERY 2 ===
-    domain_ids_map: dict[str, UUID | None] = {
-        "names": ids_result.name_domain_id,
-        "emails": ids_result.emails_domain_id,
-        "request_limits": ids_result.request_limits_domain_id,
-        "flags": ids_result.flag_domain_id,
-        "departments": ids_result.departments_domain_id,
-        "cohorts": ids_result.cohorts_domain_id,
-    }
-
     # === COMPUTE SHOW_AI_GENERATE FLAGS ===
     def compute_show_ai_generate(resource: str) -> bool:
-        domain_id = domain_ids_map.get(resource)
-        agent_id = agent_ids.get(resource)
-        return domain_id is not None and agent_id is not None
+        return agent_ids.get(resource) is not None
 
     name_show_ai_generate = compute_show_ai_generate("names")
     emails_show_ai_generate = compute_show_ai_generate("emails")
@@ -451,6 +445,43 @@ async def get_profile_internal(
             )
             return (selected, suggestions)
 
+    async def fetch_generation_config():
+        selected_agent_ids = list(
+            {aid for aid in agent_ids.values() if aid is not None}
+        )
+        if not selected_agent_ids:
+            return (None, None, None, None)
+
+        async with pool.acquire() as c:
+            agents = await get_agents_internal(c, selected_agent_ids, bypass_cache)
+            model_ids = list(
+                {a.model_id for a in agents if getattr(a, "model_id", None) is not None}
+            )
+            models = (
+                await get_models_internal(c, model_ids, bypass_cache)
+                if model_ids
+                else []
+            )
+            provider_ids = list(
+                {
+                    m.provider_id
+                    for m in models
+                    if getattr(m, "provider_id", None) is not None
+                }
+            )
+            providers = (
+                await get_providers_internal(c, provider_ids, bypass_cache)
+                if provider_ids
+                else []
+            )
+            tool_ids = list(
+                {tid for a in agents for tid in (a.tool_ids or []) if tid is not None}
+            )
+            tools = (
+                await get_tools_internal(c, tool_ids, bypass_cache) if tool_ids else []
+            )
+            return (agents or None, models or None, providers or None, tools or None)
+
     # Parallel fetch all resources
     (
         (names_selected, names_suggestions),
@@ -459,6 +490,12 @@ async def get_profile_internal(
         (flags_selected, flags_suggestions),
         (departments_selected, departments_suggestions),
         (cohorts_selected, cohorts_suggestions),
+        (
+            config_agent_resources,
+            config_model_resources,
+            config_provider_resources,
+            config_tool_resources,
+        ),
     ) = await asyncio.gather(
         fetch_names(),
         fetch_emails(),
@@ -466,6 +503,7 @@ async def get_profile_internal(
         fetch_flags(),
         fetch_departments(),
         fetch_cohorts(),
+        fetch_generation_config(),
     )
 
     names = _dedupe_by_id(names_selected + names_suggestions, "id")
@@ -506,11 +544,6 @@ async def get_profile_internal(
         "cohorts": compute_cohorts_required(),
     }
 
-    # Build rich domain metadata for client display
-    domain_data_list = build_domain_data(
-        domain_ids_map, show_flags_map, required_flags_map
-    )
-
     # Transform flags to enriched format for client
     profile_flags = [
         ProfileFlagConfig(
@@ -521,7 +554,6 @@ async def get_profile_internal(
             flag_option_id=flag.id,
             show=show_flag,
             required=compute_flag_required(),
-            domain_id=domain_ids_map.get("flags"),
             generated=flag.generated,
         )
         for flag in flags
@@ -565,40 +597,14 @@ async def get_profile_internal(
     ]
     cohort_resources = [c for c in cohorts if c.cohort_id in selected_cohort_ids]
 
-    resources_payload = ProfileResources(
-        resources=ProfileResourceBucket(
-            names=names,
-            emails=emails,
-            request_limits=request_limits,
-            flags=profile_flags,
-            departments=departments,
-            cohorts=cohorts,
-        ),
-        current=ProfileResourceBucket(
-            names=[name_resource] if name_resource else [],
-            emails=email_resources or [],
-            request_limits=[request_limit_resource] if request_limit_resource else [],
-            flags=[
-                f for f in profile_flags if f.flag_option_id == selected_active_flag_id
-            ]
-            if selected_active_flag_id
-            else [],
-            departments=department_resources or [],
-            cohorts=cohort_resources or [],
-        ),
+    selected_flag_resource = (
+        next(
+            (f for f in profile_flags if f.flag_option_id == selected_active_flag_id),
+            None,
+        )
+        if selected_active_flag_id
+        else None
     )
-
-    # Build domains list for WebSocket handler
-    domains_list: list[DomainAgent] = []
-    for resource, domain_id in domain_ids_map.items():
-        if domain_id is not None:
-            domains_list.append(
-                DomainAgent(
-                    domain_id=domain_id,
-                    agent_id=agent_ids.get(resource),
-                    group_id=resource_group_ids.get(resource),
-                )
-            )
 
     return ProfileInternalData(
         # Access/context
@@ -613,10 +619,7 @@ async def get_profile_internal(
         role=selected_role,
         role_options=access_result.role_options or [],
         roles=roles,
-        # Domain mappings
-        domain_ids_map=domain_ids_map,
         agent_ids=agent_ids,
-        domains_list=domains_list,
         # Show/required flags
         show_flags_map=show_flags_map,
         required_flags_map=required_flags_map,
@@ -626,11 +629,23 @@ async def get_profile_internal(
         show_ai_generate_map=show_ai_generate_map,
         basic_show_ai_generate=basic_show_ai_generate,
         general_show_ai_generate=general_show_ai_generate,
-        # Domain data and resources
-        domain_data_list=domain_data_list,
-        resources_payload=resources_payload,
-        # Per-resource group IDs
-        resource_group_ids=resource_group_ids,
+        selected_name_resource=name_resource,
+        selected_flag_resource=selected_flag_resource,
+        selected_request_limit_resource=request_limit_resource,
+        selected_email_resources=email_resources,
+        selected_department_resources=department_resources,
+        selected_cohort_resources=cohort_resources,
+        all_name_resources=names,
+        all_email_resources=emails,
+        all_request_limit_resources=request_limits,
+        all_flag_resources=profile_flags,
+        all_department_resources=departments,
+        all_cohort_resources=cohorts,
+        # Config resources
+        config_agent_resources=config_agent_resources,
+        config_model_resources=config_model_resources,
+        config_provider_resources=config_provider_resources,
+        config_tool_resources=config_tool_resources,
         # Per-resource tool IDs
         create_tool_ids_map=create_tool_ids_map,
         link_tool_ids_map=link_tool_ids_map,
@@ -646,10 +661,10 @@ async def get_profile_websocket(
     """Minimal response for WebSocket handlers.
 
     Returns only what's needed for AI generation:
-    - Domain IDs (for domain_to_resource mapping)
-    - Domains list (for agent_id lookup)
-    - Group ID (for existing group context)
-    - Resources (for Jinja template context)
+    - group_id
+    - draft view for template convenience
+    - selected resources
+    - resource_type -> agent_id mapping
     """
     data = await get_profile_internal(
         profile_id=profile_id,
@@ -658,19 +673,37 @@ async def get_profile_websocket(
         bypass_cache=bypass_cache,
     )
 
+    draft_profile = None
+    if draft_id is not None:
+        pool = get_pool()
+        if pool:
+            async with pool.acquire() as conn:
+                draft_items = await get_draft_profile_internal(
+                    conn=conn,
+                    draft_ids=[draft_id],
+                    bypass_cache=bypass_cache,
+                )
+                if draft_items:
+                    draft_profile = draft_items[0]
+
     return GetProfileWebsocketResponse(
         group_id=data.group_id,
-        # Domain IDs for domain_to_resource mapping
-        name_domain_id=data.domain_ids_map.get("names"),
-        emails_domain_id=data.domain_ids_map.get("emails"),
-        request_limits_domain_id=data.domain_ids_map.get("request_limits"),
-        flag_domain_id=data.domain_ids_map.get("flags"),
-        departments_domain_id=data.domain_ids_map.get("departments"),
-        cohorts_domain_id=data.domain_ids_map.get("cohorts"),
-        # Domains mapping for agent lookup
-        domains=data.domains_list,
-        # Resources for Jinja context
-        resources=data.resources_payload,
+        views=ProfileWebsocketViews(draft_profile=draft_profile),
+        resources=ProfileWebsocketResources(
+            names=[data.selected_name_resource] if data.selected_name_resource else [],
+            emails=data.selected_email_resources,
+            request_limits=[data.selected_request_limit_resource]
+            if data.selected_request_limit_resource
+            else [],
+            flags=[data.selected_flag_resource] if data.selected_flag_resource else [],
+            departments=data.selected_department_resources,
+            cohorts=data.selected_cohort_resources,
+            agents=data.config_agent_resources,
+            models=data.config_model_resources,
+            providers=data.config_provider_resources,
+            tools=data.config_tool_resources,
+        ),
+        resource_agent_ids=data.agent_ids,
     )
 
 
@@ -693,80 +726,77 @@ async def get_profile_client(
     )
 
     return GetProfileApiResponse(
-        # Required fields
         actor_name=data.actor_name,
         profile_exists=data.profile_exists,
         can_edit=data.can_edit,
         disabled_reason=data.disabled_reason,
         draft_version=data.draft_version,
-        # Group ID
         group_id=data.group_id,
-        # Profile ID
         profile_id=data.profile_id,
-        # Role
         role=data.role,
         role_options=data.role_options,
         roles=data.roles,
-        # Per-resource group IDs (from draft MV)
-        names_group_id=data.resource_group_ids.get("names"),
-        emails_group_id=data.resource_group_ids.get("emails"),
-        request_limits_group_id=data.resource_group_ids.get("request_limits"),
-        flags_group_id=data.resource_group_ids.get("flags"),
-        departments_group_id=data.resource_group_ids.get("departments"),
-        cohorts_group_id=data.resource_group_ids.get("cohorts"),
-        # Name
-        show_name=data.show_flags_map.get("names"),
-        name_domain_id=data.domain_ids_map.get("names"),
-        name_required=data.required_flags_map.get("names"),
-        name_suggestions=data.suggestions_map.get("names"),
-        name_show_ai_generate=data.show_ai_generate_map.get("names"),
-        # Emails
-        show_emails=data.show_flags_map.get("emails"),
-        emails_domain_id=data.domain_ids_map.get("emails"),
-        emails_required=data.required_flags_map.get("emails"),
-        email_suggestions=data.suggestions_map.get("emails"),
-        emails_show_ai_generate=data.show_ai_generate_map.get("emails"),
-        # Request Limit
-        show_request_limit=data.show_flags_map.get("request_limits"),
-        request_limits_domain_id=data.domain_ids_map.get("request_limits"),
-        request_limit_required=data.required_flags_map.get("request_limits"),
-        request_limit_suggestions=data.suggestions_map.get("request_limits"),
-        request_limits_show_ai_generate=data.show_ai_generate_map.get("request_limits"),
-        # Flag
-        show_flag=data.show_flags_map.get("flags"),
-        flag_domain_id=data.domain_ids_map.get("flags"),
-        flag_required=data.required_flags_map.get("flags"),
-        flag_show_ai_generate=data.show_ai_generate_map.get("flags"),
-        # Departments
-        show_departments=data.show_flags_map.get("departments"),
-        departments_domain_id=data.domain_ids_map.get("departments"),
-        departments_required=data.required_flags_map.get("departments"),
-        department_suggestions=data.suggestions_map.get("departments"),
-        departments_show_ai_generate=data.show_ai_generate_map.get("departments"),
-        # Cohorts
-        show_cohorts=data.show_flags_map.get("cohorts"),
-        cohorts_domain_id=data.domain_ids_map.get("cohorts"),
-        cohorts_required=data.required_flags_map.get("cohorts"),
-        cohort_suggestions=data.suggestions_map.get("cohorts"),
-        cohorts_show_ai_generate=data.show_ai_generate_map.get("cohorts"),
-        # Step-level AI generation flags
         basic_show_ai_generate=data.basic_show_ai_generate,
         general_show_ai_generate=data.general_show_ai_generate,
-        # Per-resource CREATE tool IDs
-        name_create_tool_id=data.create_tool_ids_map.get("names"),
-        emails_create_tool_id=data.create_tool_ids_map.get("emails"),
-        request_limits_create_tool_id=data.create_tool_ids_map.get("request_limits"),
-        # Per-resource LINK tool IDs
-        name_link_tool_id=data.link_tool_ids_map.get("names"),
-        emails_link_tool_id=data.link_tool_ids_map.get("emails"),
-        request_limits_link_tool_id=data.link_tool_ids_map.get("request_limits"),
-        flag_link_tool_id=data.link_tool_ids_map.get("flags"),
-        departments_link_tool_id=data.link_tool_ids_map.get("departments"),
-        cohorts_link_tool_id=data.link_tool_ids_map.get("cohorts"),
-        # Domain metadata for client display in modals
-        domain_data=data.domain_data_list,
-        # Resources
-        resources=data.resources_payload,
+        names=ProfileNameSection(
+            show=data.show_flags_map.get("names", False),
+            required=data.required_flags_map.get("names", False),
+            suggestions=data.suggestions_map.get("names"),
+            show_ai_generate=data.show_ai_generate_map.get("names", False),
+            create_tool_id=data.create_tool_ids_map.get("names"),
+            link_tool_id=data.link_tool_ids_map.get("names"),
+            resource=data.selected_name_resource,
+            resources=data.all_name_resources,
+        ),
+        emails=ProfileEmailSection(
+            show=data.show_flags_map.get("emails", False),
+            required=data.required_flags_map.get("emails", False),
+            suggestions=data.suggestions_map.get("emails"),
+            show_ai_generate=data.show_ai_generate_map.get("emails", False),
+            create_tool_id=data.create_tool_ids_map.get("emails"),
+            link_tool_id=data.link_tool_ids_map.get("emails"),
+            current=data.selected_email_resources,
+            resources=data.all_email_resources,
+        ),
+        request_limits=ProfileRequestLimitSection(
+            show=data.show_flags_map.get("request_limits", False),
+            required=data.required_flags_map.get("request_limits", False),
+            suggestions=data.suggestions_map.get("request_limits"),
+            show_ai_generate=data.show_ai_generate_map.get("request_limits", False),
+            create_tool_id=data.create_tool_ids_map.get("request_limits"),
+            link_tool_id=data.link_tool_ids_map.get("request_limits"),
+            resource=data.selected_request_limit_resource,
+            resources=data.all_request_limit_resources,
+        ),
+        flags=ProfileFlagSection(
+            show=data.show_flags_map.get("flags", False),
+            required=data.required_flags_map.get("flags", False),
+            show_ai_generate=data.show_ai_generate_map.get("flags", False),
+            create_tool_id=data.create_tool_ids_map.get("flags"),
+            link_tool_id=data.link_tool_ids_map.get("flags"),
+            current=data.selected_flag_resource,
+            resources=data.all_flag_resources,
+        ),
+        departments=ProfileDepartmentSection(
+            show=data.show_flags_map.get("departments", False),
+            required=data.required_flags_map.get("departments", False),
+            suggestions=data.suggestions_map.get("departments"),
+            show_ai_generate=data.show_ai_generate_map.get("departments", False),
+            create_tool_id=data.create_tool_ids_map.get("departments"),
+            link_tool_id=data.link_tool_ids_map.get("departments"),
+            current=data.selected_department_resources,
+            resources=data.all_department_resources,
+        ),
+        cohorts=ProfileCohortSection(
+            show=data.show_flags_map.get("cohorts", False),
+            required=data.required_flags_map.get("cohorts", False),
+            suggestions=data.suggestions_map.get("cohorts"),
+            show_ai_generate=data.show_ai_generate_map.get("cohorts", False),
+            create_tool_id=data.create_tool_ids_map.get("cohorts"),
+            link_tool_id=data.link_tool_ids_map.get("cohorts"),
+            current=data.selected_cohort_resources,
+            resources=data.all_cohort_resources,
+        ),
     )
 
 
@@ -831,11 +861,8 @@ async def get_profile(
                 "actor": {"name": response_data.actor_name, "id": profile_id}
             }
             current_name = None
-            current_resources = (
-                response_data.resources.current if response_data.resources else None
-            )
-            if current_resources and current_resources.names:
-                current_name = getattr(current_resources.names[0], "name", None)
+            if response_data.names and response_data.names.resource:
+                current_name = getattr(response_data.names.resource, "name", None)
             if request.target_profile_id and current_name:
                 audit_ctx["profile"] = {
                     "name": current_name,

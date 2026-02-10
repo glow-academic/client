@@ -140,6 +140,9 @@ from app.api.v4.resources.images.get import router as images_get_router
 
 router.include_router(images_router)
 router.include_router(images_get_router)
+from app.api.v4.resources.images.search import router as images_search_router
+
+router.include_router(images_search_router)
 # NOTE: improvements removed - converted to entry table (migration 305)
 from app.api.v4.resources.instructions.create import router as instructions_router
 from app.api.v4.resources.instructions.get import router as instructions_get_router
@@ -467,6 +470,13 @@ router.include_router(voices_get_router)
 from app.api.v4.resources.voices.search import router as voices_search_router
 
 router.include_router(voices_search_router)
+from app.api.v4.resources.texts.create import router as texts_router
+from app.api.v4.resources.texts.get import router as texts_get_router
+from app.api.v4.resources.texts.search import router as texts_search_router
+
+router.include_router(texts_router)
+router.include_router(texts_get_router)
+router.include_router(texts_search_router)
 from app.api.v4.resources.uploads.create import router as uploads_router
 from app.api.v4.resources.uploads.download import router as uploads_download_router
 from app.api.v4.resources.uploads.get import router as uploads_get_router

@@ -1045,7 +1045,7 @@ model_modalities_data AS (
     SELECT 
         mm.model_id::uuid as model_id,
         mr.modality::text as modality,
-        CASE WHEN mm.type = 'input'::direction_type THEN true ELSE false END as is_input
+        mr.is_input
     FROM model_modalities_junction mm
     JOIN modalities_resource mr ON mr.id = mm.modality_id
     WHERE mm.active = true AND mr.active = true

@@ -31,8 +31,6 @@ type CreateDraftDescriptionsOut = OutputOf<
 >;
 type CreateDraftValuesIn = InputOf<"/api/v4/resources/values", "post">;
 type CreateDraftValuesOut = OutputOf<"/api/v4/resources/values", "post">;
-type CreateDraftEndpointsIn = InputOf<"/api/v4/resources/endpoints", "post">;
-type CreateDraftEndpointsOut = OutputOf<"/api/v4/resources/endpoints", "post">;
 type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
 type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
 type CreateDraftModalitiesIn = InputOf<"/api/v4/resources/modalities", "post">;
@@ -78,7 +76,6 @@ export async function generateMetadata(
   _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { modelId } = await params;
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   try {
     const input: GetModelIn = {
       body: {
@@ -87,11 +84,14 @@ export async function generateMetadata(
       },
     };
     const model = await getModel(input);
+    // Section-first API: name comes from names.resource.name
+    const name = model?.names?.resource?.name;
+    const description = model?.descriptions?.resource?.description;
     return {
-      title: `${model?.name || "Model"}`,
+      title: `${name || "Model"}`,
       description:
-        model?.description ||
-        `${model?.name ? `${model.name} - ` : ""}AI language model configuration for teaching assistant training simulations. Customize model settings to power realistic student personas and enhance simulation-based learning experiences.`,
+        description ||
+        `${name ? `${name} - ` : ""}AI language model configuration for teaching assistant training simulations. Customize model settings to power realistic student personas and enhance simulation-based learning experiences.`,
     };
   } catch {
     // Fall through to default metadata
@@ -107,9 +107,6 @@ export async function generateMetadata(
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function saveModel(input: SaveModelIn): Promise<SaveModelOut> {
   "use server";
-  // Input body already has snake_case from API schema (input_model_id, not modelId)
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/artifacts/models/save", input);
 }
 
@@ -117,8 +114,6 @@ async function patchModelDraft(
   input: PatchModelDraftIn
 ): Promise<PatchModelDraftOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // No revalidateTag needed - Redis cache handles invalidation
   return api.patch("/artifacts/models/draft", input);
 }
 
@@ -141,13 +136,6 @@ async function createDraftValues(
 ): Promise<CreateDraftValuesOut> {
   "use server";
   return api.post("/resources/values", input);
-}
-
-async function createDraftEndpoints(
-  input: CreateDraftEndpointsIn
-): Promise<CreateDraftEndpointsOut> {
-  "use server";
-  return api.post("/resources/endpoints", input);
 }
 
 async function createDraftFlags(
@@ -208,9 +196,6 @@ export default async function ModelEditPage({
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { modelId } = await params;
-  // Access control handled server-side in layout
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // Parse search params using nuqs
   const paramsObj = await searchParams;
   const searchParamsObj = new URLSearchParams();
   Object.entries(paramsObj).forEach(([key, value]) => {
@@ -223,14 +208,12 @@ export default async function ModelEditPage({
     }
   });
 
-  // Inline server-side parsers for model search params (draftId only)
   const modelSearchParams = {
     draftId: parseAsString,
   };
   const loadModelSearchParams = createLoader(modelSearchParams);
   const q = loadModelSearchParams(searchParamsObj);
 
-  // Fetch model data with draft_id (model_id provided for detail mode)
   const input: GetModelIn = {
     body: {
       model_id: modelId,
@@ -249,7 +232,6 @@ export default async function ModelEditPage({
         createNamesAction={createDraftNames}
         createDescriptionsAction={createDraftDescriptions}
         createValuesAction={createDraftValues}
-        createEndpointsAction={createDraftEndpoints}
         createFlagsAction={createDraftFlags}
         createModalitiesAction={createDraftModalities}
         createTemperatureLevelsAction={createDraftTemperatureLevels}
@@ -276,8 +258,6 @@ export type {
   CreateDraftDescriptionsOut,
   CreateDraftValuesIn,
   CreateDraftValuesOut,
-  CreateDraftEndpointsIn,
-  CreateDraftEndpointsOut,
   CreateDraftFlagsIn,
   CreateDraftFlagsOut,
   CreateDraftModalitiesIn,

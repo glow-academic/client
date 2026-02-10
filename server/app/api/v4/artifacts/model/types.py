@@ -1,36 +1,39 @@
-"""Handcrafted types for model artifact endpoints."""
+"""Handcrafted types for model artifact endpoints.
+
+Section-first API following the gold-standard pattern (REFERENCE.md).
+Resources: names, descriptions, values, providers, flags, departments,
+modalities, temperature_levels, reasoning_levels, qualities, voices.
+"""
 
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
-from app.api.v4.types import DomainAgent, DomainData
+from app.api.v4.views.drafts.types import DraftModelViewItem
 from app.sql.types import (
+    QGetAgentsV4Item,
     QGetDepartmentsV4Item,
     QGetDescriptionsV4Item,
-    QGetEndpointsV4Item,
-    QGetKeysV4Item,
     QGetModalitiesV4Item,
+    QGetModelsV4Item,
     QGetNamesV4Item,
     QGetPricingV4Item,
+    QGetProvidersV4Item,
     QGetQualitiesV4Item,
     QGetReasoningLevelsV4Item,
     QGetTemperatureLevelsV4Item,
+    QGetToolsV4Item,
     QGetValuesV4Item,
     QGetVoicesV4Item,
 )
 
-
-class QGetProvidersV4Item(BaseModel):
-    """Provider resource item (placeholder until endpoint exists)."""
-
-    id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    generated: bool | None = None
+# =============================================================================
+# Flag Config
+# =============================================================================
 
 
 class ModelFlagConfig(BaseModel):
@@ -43,8 +46,121 @@ class ModelFlagConfig(BaseModel):
     flag_option_id: UUID | None = None  # ID to use when enabling
     show: bool = True
     required: bool = False
-    domain_id: UUID | None = None  # Domain ID for generation
     generated: bool | None = None
+
+
+# =============================================================================
+# Access Check Types (Query 1) - handcrafted
+# =============================================================================
+
+
+class GetModelAccessSqlParams(BaseModel):
+    """Parameters for model access check query."""
+
+    profile_id: UUID
+    model_id: UUID | None = None
+    draft_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (self.profile_id, self.model_id, self.draft_id)
+
+
+class GetModelAccessSqlRow(BaseModel):
+    """Row returned from model access check query."""
+
+    actor_name: str | None = None
+    model_exists: bool | None = None
+    draft_version: int | None = None
+    group_id: UUID | None = None
+    user_role: str | None = None
+    user_department_ids: list[UUID] | None = None
+    model_department_ids: list[UUID] | None = None
+    active_persona_count: int | None = None
+
+
+# =============================================================================
+# ID Fetching Types (Query 2) - handcrafted
+# =============================================================================
+
+
+class GetModelIdsSqlParams(BaseModel):
+    """Parameters for model ID fetching query."""
+
+    profile_id: UUID
+    model_id: UUID | None = None
+    draft_id: UUID | None = None
+    group_id: UUID | None = None
+    user_department_ids: list[UUID] | None = Field(default_factory=list)
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.model_id,
+            self.draft_id,
+            self.group_id,
+            self.user_department_ids,
+        )
+
+
+class GetModelIdsSqlRow(BaseModel):
+    """Row returned from model ID fetching query."""
+
+    # Single-select IDs
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    value_id: UUID | None = None
+    provider_id: UUID | None = None
+
+    # Flag IDs
+    active_flag_id: UUID | None = None
+    modalities_enabled_flag_id: UUID | None = None
+    temperature_enabled_flag_id: UUID | None = None
+    pricing_enabled_flag_id: UUID | None = None
+    voices_enabled_flag_id: UUID | None = None
+    reasoning_levels_enabled_flag_id: UUID | None = None
+    qualities_enabled_flag_id: UUID | None = None
+
+    # Multi-select IDs
+    department_ids: list[UUID] | None = None
+    modality_ids: list[UUID] | None = None
+    temperature_level_ids: list[UUID] | None = None
+    pricing_ids: list[UUID] | None = None
+    reasoning_level_ids: list[UUID] | None = None
+    quality_ids: list[UUID] | None = None
+    voice_ids: list[UUID] | None = None
+
+    # Candidate agents (for Python-side agent scoring)
+    candidate_agents: list[dict] | None = None
+
+    # Tools existence flags
+    names_has_tools: bool | None = None
+    values_has_tools: bool | None = None
+    departments_has_tools: bool | None = None
+    modalities_has_tools: bool | None = None
+    temperature_levels_has_tools: bool | None = None
+    pricing_has_tools: bool | None = None
+    reasoning_levels_has_tools: bool | None = None
+    qualities_has_tools: bool | None = None
+    voices_has_tools: bool | None = None
+
+    # Domain IDs
+    name_domain_id: UUID | None = None
+    description_domain_id: UUID | None = None
+    value_domain_id: UUID | None = None
+    provider_domain_id: UUID | None = None
+    flag_domain_id: UUID | None = None
+    departments_domain_id: UUID | None = None
+    modalities_domain_id: UUID | None = None
+    temperature_levels_domain_id: UUID | None = None
+    pricing_domain_id: UUID | None = None
+    reasoning_levels_domain_id: UUID | None = None
+    qualities_domain_id: UUID | None = None
+    voices_domain_id: UUID | None = None
+
+
+# =============================================================================
+# GET Endpoint Types — Section-first API
+# =============================================================================
 
 
 class GetModelApiRequest(BaseModel):
@@ -52,241 +168,154 @@ class GetModelApiRequest(BaseModel):
 
     model_id: UUID | None = None
     draft_id: UUID | None = None
-    # Search filters for resources
-    value_search: str | None = None
-    endpoint_search: str | None = None
-    key_search: str | None = None
-    # Show selected filters
-    value_show_selected: bool | None = None
-    endpoint_show_selected: bool | None = None
-    key_show_selected: bool | None = None
+
+
+class BaseResourceSection(BaseModel):
+    """Common metadata for model resource sections."""
+
+    show: bool = False
+    required: bool = False
+    suggestions: list[UUID] | None = None
+    show_ai_generate: bool = False
+    create_tool_id: UUID | None = None
+    link_tool_id: UUID | None = None
+
+
+class ModelNameSection(BaseResourceSection):
+    resource: QGetNamesV4Item | None = None
+    resources: list[QGetNamesV4Item] | None = None
+
+
+class ModelDescriptionSection(BaseResourceSection):
+    resource: QGetDescriptionsV4Item | None = None
+    resources: list[QGetDescriptionsV4Item] | None = None
+
+
+class ModelValueSection(BaseResourceSection):
+    resource: QGetValuesV4Item | None = None
+    resources: list[QGetValuesV4Item] | None = None
+
+
+class ModelProviderSection(BaseResourceSection):
+    resource: QGetProvidersV4Item | None = None
+    resources: list[QGetProvidersV4Item] | None = None
+
+
+class ModelFlagSection(BaseResourceSection):
+    current: list[ModelFlagConfig] | None = None
+    resources: list[ModelFlagConfig] | None = None
+
+
+class ModelDepartmentSection(BaseResourceSection):
+    current: list[QGetDepartmentsV4Item] | None = None
+    resources: list[QGetDepartmentsV4Item] | None = None
+
+
+class ModelModalitySection(BaseResourceSection):
+    current: list[QGetModalitiesV4Item] | None = None
+    resources: list[QGetModalitiesV4Item] | None = None
+
+
+class ModelTemperatureLevelSection(BaseResourceSection):
+    current: list[QGetTemperatureLevelsV4Item] | None = None
+    resources: list[QGetTemperatureLevelsV4Item] | None = None
+
+
+class ModelReasoningLevelSection(BaseResourceSection):
+    current: list[QGetReasoningLevelsV4Item] | None = None
+    resources: list[QGetReasoningLevelsV4Item] | None = None
+
+
+class ModelPricingSection(BaseResourceSection):
+    current: list[QGetPricingV4Item] | None = None
+    resources: list[QGetPricingV4Item] | None = None
+
+
+class ModelQualitySection(BaseResourceSection):
+    current: list[QGetQualitiesV4Item] | None = None
+    resources: list[QGetQualitiesV4Item] | None = None
+
+
+class ModelVoiceSection(BaseResourceSection):
+    current: list[QGetVoicesV4Item] | None = None
+    resources: list[QGetVoicesV4Item] | None = None
 
 
 class GetModelApiResponse(BaseModel):
-    """Response model for get model endpoint."""
+    """Section-first response for model editor."""
 
-    # Required fields
     actor_name: str | None = None
     model_exists: bool | None = None
     can_edit: bool | None = None
     disabled_reason: str | None = None
     draft_version: int | None = None
-
-    # Group ID
     group_id: UUID | None = None
-
-    # Per-resource group IDs (from draft MV)
-    names_group_id: UUID | None = None
-    descriptions_group_id: UUID | None = None
-    values_group_id: UUID | None = None
-    endpoints_group_id: UUID | None = None
-    providers_group_id: UUID | None = None
-    keys_group_id: UUID | None = None
-    flags_group_id: UUID | None = None
-    departments_group_id: UUID | None = None
-    modalities_group_id: UUID | None = None
-    temperature_levels_group_id: UUID | None = None
-    pricing_group_id: UUID | None = None
-    reasoning_levels_group_id: UUID | None = None
-    qualities_group_id: UUID | None = None
-    voices_group_id: UUID | None = None
-
-    # Single-select resources: name
-    show_name: bool | None = None
-    name_domain_id: UUID | None = None
-    name_required: bool | None = None
-    name_suggestions: list[UUID] | None = None
-    name_show_ai_generate: bool | None = None
-
-    # Single-select resources: description
-    show_description: bool | None = None
-    description_domain_id: UUID | None = None
-    description_required: bool | None = None
-    description_suggestions: list[UUID] | None = None
-    description_show_ai_generate: bool | None = None
-
-    # Single-select resources: value
-    show_value: bool | None = None
-    value_domain_id: UUID | None = None
-    value_required: bool | None = None
-    value_suggestions: list[UUID] | None = None
-    value_show_ai_generate: bool | None = None
-
-    # Single-select resources: endpoint
-    show_endpoint: bool | None = None
-    endpoint_domain_id: UUID | None = None
-    endpoint_required: bool | None = None
-    endpoint_suggestions: list[UUID] | None = None
-    endpoint_show_ai_generate: bool | None = None
-
-    # Single-select resources: provider
-    show_provider: bool | None = None
-    provider_domain_id: UUID | None = None
-    provider_required: bool | None = None
-    provider_suggestions: list[UUID] | None = None
-    provider_show_ai_generate: bool | None = None
-
-    # Single-select resources: key
-    show_key: bool | None = None
-    key_domain_id: UUID | None = None
-    key_required: bool | None = None
-    key_suggestions: list[UUID] | None = None
-    key_show_ai_generate: bool | None = None
-
-    # Single-select resources: flag
-    show_flag: bool | None = None
-    flag_domain_id: UUID | None = None
-    flag_required: bool | None = None
-    flag_show_ai_generate: bool | None = None
-
-    # Multi-select resources: departments
-    show_departments: bool | None = None
-    departments_domain_id: UUID | None = None
-    departments_required: bool | None = None
-    department_suggestions: list[UUID] | None = None
-    departments_show_ai_generate: bool | None = None
-
-    # Multi-select resources: modalities (input + output)
-    show_modalities: bool | None = None
-    modalities_domain_id: UUID | None = None
-    modalities_required: bool | None = None
-    input_modality_suggestions: list[UUID] | None = None
-    output_modality_suggestions: list[UUID] | None = None
-    modalities_show_ai_generate: bool | None = None
-
-    # Multi-select resources: temperature_levels
-    show_temperature_levels: bool | None = None
-    temperature_levels_domain_id: UUID | None = None
-    temperature_levels_required: bool | None = None
-    temperature_level_suggestions: list[UUID] | None = None
-    temperature_levels_show_ai_generate: bool | None = None
-
-    # Multi-select resources: pricing
-    show_pricing: bool | None = None
-    pricing_domain_id: UUID | None = None
-    pricing_required: bool | None = None
-    pricing_suggestions: list[UUID] | None = None
-    pricing_show_ai_generate: bool | None = None
-
-    # Multi-select resources: reasoning_levels
-    show_reasoning_levels: bool | None = None
-    reasoning_levels_domain_id: UUID | None = None
-    reasoning_levels_required: bool | None = None
-    reasoning_level_suggestions: list[UUID] | None = None
-    reasoning_levels_show_ai_generate: bool | None = None
-
-    # Multi-select resources: qualities
-    show_qualities: bool | None = None
-    qualities_domain_id: UUID | None = None
-    qualities_required: bool | None = None
-    quality_suggestions: list[UUID] | None = None
-    qualities_show_ai_generate: bool | None = None
-
-    # Multi-select resources: voices
-    show_voices: bool | None = None
-    voices_domain_id: UUID | None = None
-    voices_required: bool | None = None
-    voice_suggestions: list[UUID] | None = None
-    voices_show_ai_generate: bool | None = None
 
     # Step-level AI generation flags
     basic_show_ai_generate: bool | None = None
     provider_show_ai_generate: bool | None = None
     features_show_ai_generate: bool | None = None
 
-    # Per-resource CREATE tool IDs (for AI generation)
-    name_create_tool_id: UUID | None = None
-    description_create_tool_id: UUID | None = None
-    value_create_tool_id: UUID | None = None
-    endpoint_create_tool_id: UUID | None = None
-    key_create_tool_id: UUID | None = None
-
-    # Per-resource LINK tool IDs (for AI suggestions)
-    name_link_tool_id: UUID | None = None
-    description_link_tool_id: UUID | None = None
-    value_link_tool_id: UUID | None = None
-    endpoint_link_tool_id: UUID | None = None
-    provider_link_tool_id: UUID | None = None
-    key_link_tool_id: UUID | None = None
-    flag_link_tool_id: UUID | None = None
-    departments_link_tool_id: UUID | None = None
-    modalities_link_tool_id: UUID | None = None
-    temperature_levels_link_tool_id: UUID | None = None
-    pricing_link_tool_id: UUID | None = None
-    reasoning_levels_link_tool_id: UUID | None = None
-    qualities_link_tool_id: UUID | None = None
-    voices_link_tool_id: UUID | None = None
-
-    # Rich domain metadata for client display in modals
-    domain_data: list[DomainData] | None = None
-
-    # Generic resources payload (full objects + current selections)
-    resources: ModelResources | None = None
+    # Section-first resources
+    names: ModelNameSection | None = None
+    descriptions: ModelDescriptionSection | None = None
+    values: ModelValueSection | None = None
+    providers: ModelProviderSection | None = None
+    flags: ModelFlagSection | None = None
+    departments: ModelDepartmentSection | None = None
+    modalities: ModelModalitySection | None = None
+    temperature_levels: ModelTemperatureLevelSection | None = None
+    pricing: ModelPricingSection | None = None
+    reasoning_levels: ModelReasoningLevelSection | None = None
+    qualities: ModelQualitySection | None = None
+    voices: ModelVoiceSection | None = None
 
 
-class GetModelWebsocketResponse(BaseModel):
-    """Minimal response for WebSocket handlers (get_model_websocket).
-
-    Contains only what's needed for AI generation:
-    - Domain IDs (for domain_to_resource mapping)
-    - Domains list (for agent_id lookup)
-    - Group ID (for existing group context)
-    - Resources (for Jinja template context)
-    """
-
-    group_id: UUID | None = None
-
-    # Domain IDs for domain_to_resource mapping
-    name_domain_id: UUID | None = None
-    description_domain_id: UUID | None = None
-    value_domain_id: UUID | None = None
-    endpoint_domain_id: UUID | None = None
-    provider_domain_id: UUID | None = None
-    key_domain_id: UUID | None = None
-    flag_domain_id: UUID | None = None
-    departments_domain_id: UUID | None = None
-    modalities_domain_id: UUID | None = None
-    temperature_levels_domain_id: UUID | None = None
-    pricing_domain_id: UUID | None = None
-    reasoning_levels_domain_id: UUID | None = None
-    qualities_domain_id: UUID | None = None
-    voices_domain_id: UUID | None = None
-
-    # Domains mapping (domain_id -> agent_id) for server-side agent lookup
-    domains: list[DomainAgent] | None = None
-
-    # Resources for Jinja template context
-    resources: ModelResources | None = None
+# =============================================================================
+# Websocket Types
+# =============================================================================
 
 
-class ModelResourceBucket(BaseModel):
-    """Generic resources bucket with full objects (always plural lists)."""
+class ModelWebsocketViews(BaseModel):
+    """Optional websocket views payload."""
+
+    draft_model: DraftModelViewItem | None = None
+
+
+class ModelWebsocketResources(BaseModel):
+    """Hydrated websocket resources: selected model + config resources."""
 
     names: list[QGetNamesV4Item] | None = None
     descriptions: list[QGetDescriptionsV4Item] | None = None
     values: list[QGetValuesV4Item] | None = None
-    endpoints: list[QGetEndpointsV4Item] | None = None
     providers: list[QGetProvidersV4Item] | None = None
-    keys: list[QGetKeysV4Item] | None = None
     flags: list[ModelFlagConfig] | None = None
     departments: list[QGetDepartmentsV4Item] | None = None
-    input_modalities: list[QGetModalitiesV4Item] | None = None
-    output_modalities: list[QGetModalitiesV4Item] | None = None
+    modalities: list[QGetModalitiesV4Item] | None = None
     temperature_levels: list[QGetTemperatureLevelsV4Item] | None = None
     pricing: list[QGetPricingV4Item] | None = None
     reasoning_levels: list[QGetReasoningLevelsV4Item] | None = None
     qualities: list[QGetQualitiesV4Item] | None = None
     voices: list[QGetVoicesV4Item] | None = None
+    # Config resources (for generation agent/model/provider chain)
+    agents: list[QGetAgentsV4Item] | None = None
+    models: list[QGetModelsV4Item] | None = None
+    config_providers: list[QGetProvidersV4Item] | None = None
+    tools: list[QGetToolsV4Item] | None = None
 
 
-class ModelResources(BaseModel):
-    """Full resources + current selections."""
+class GetModelWebsocketResponse(BaseModel):
+    """Minimal response for model websocket generation handlers."""
 
-    resources: ModelResourceBucket | None = None
-    current: ModelResourceBucket | None = None
+    group_id: UUID | None = None
+    views: ModelWebsocketViews | None = None
+    resource_agent_ids: dict[str, UUID | None] | None = None
+    resources: ModelWebsocketResources
 
 
-# ========== List Endpoint Types ==========
+# =============================================================================
+# LIST Endpoint Types (unchanged)
+# =============================================================================
 
 
 class ListModelApiModel(BaseModel):
@@ -315,114 +344,126 @@ class ListModelApiResponse(BaseModel):
     total_count: int | None = None
 
 
-# ========== Save Endpoint Types ==========
+# =============================================================================
+# Resource Action Types (for tool call tracking)
+# =============================================================================
+
+
+class ModelResourceAction(BaseModel):
+    """Single-select resource action with tool call tracking."""
+
+    resource_id: UUID | None = None
+    create_tool_id: UUID | None = None
+    link_tool_id: UUID | None = None
+
+
+class ModelMultiResourceAction(BaseModel):
+    """Multi-select resource action with tool call tracking."""
+
+    resource_ids: list[UUID] | None = None
+    create_tool_id: UUID | None = None
+    link_tool_id: UUID | None = None
+
+
+# =============================================================================
+# SAVE Endpoint Types
+# =============================================================================
 
 
 class SaveModelApiRequest(BaseModel):
-    """Request model for save model endpoint - accepts form data directly."""
+    """Request for saving a model - nested resource actions."""
 
-    # Context
-    group_id: UUID  # REQUIRED - which group to save to
-    input_model_id: UUID | None = None  # For update mode
-
-    # Required single-select resources
-    name_id: UUID  # REQUIRED
-    value_id: UUID  # REQUIRED
-    endpoint_id: UUID  # REQUIRED
-    provider_id: UUID  # REQUIRED
-
-    # Optional single-select resources
-    description_id: UUID | None = None
-    key_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    modalities_enabled_flag_id: UUID | None = None
-    temperature_enabled_flag_id: UUID | None = None
-    pricing_enabled_flag_id: UUID | None = None
-    voices_enabled_flag_id: UUID | None = None
-    reasoning_levels_enabled_flag_id: UUID | None = None
-    qualities_enabled_flag_id: UUID | None = None
-
-    # Optional multi-select resources
-    department_ids: list[UUID] | None = None
-    input_modality_ids: list[UUID] | None = None
-    output_modality_ids: list[UUID] | None = None
-    temperature_level_ids: list[UUID] | None = None
-    pricing_ids: list[UUID] | None = None
-    reasoning_level_ids: list[UUID] | None = None
-    quality_ids: list[UUID] | None = None
-    voice_ids: list[UUID] | None = None
+    group_id: UUID
+    input_model_id: UUID | None = None
+    names: ModelResourceAction
+    descriptions: ModelResourceAction
+    values: ModelResourceAction
+    providers: ModelResourceAction
+    flags: ModelMultiResourceAction
+    departments: ModelMultiResourceAction
+    modalities: ModelMultiResourceAction
+    temperature_levels: ModelMultiResourceAction
+    pricing: ModelMultiResourceAction
+    reasoning_levels: ModelMultiResourceAction
+    qualities: ModelMultiResourceAction
+    voices: ModelMultiResourceAction
 
 
 class SaveModelApiResponse(BaseModel):
     """Response model for save model endpoint."""
 
-    success: bool
-    model_id: UUID
-    message: str
+    model_id: UUID | None = None
+    actor_name: str | None = None
 
 
 class SaveModelSqlParams(BaseModel):
     """SQL parameters for save model."""
 
-    # Context
-    profile_id: UUID  # Added from header
-    group_id: UUID  # REQUIRED - which group to save to
-    input_model_id: UUID | None = None  # For update mode
+    profile_id: UUID
+    input_model_id: UUID | None = None
+    group_id: UUID
+    names: ModelResourceAction
+    descriptions: ModelResourceAction
+    values: ModelResourceAction
+    providers: ModelResourceAction
+    flags: ModelMultiResourceAction
+    departments: ModelMultiResourceAction
+    modalities: ModelMultiResourceAction
+    temperature_levels: ModelMultiResourceAction
+    pricing: ModelMultiResourceAction
+    reasoning_levels: ModelMultiResourceAction
+    qualities: ModelMultiResourceAction
+    voices: ModelMultiResourceAction
 
-    # Required single-select resources
-    name_id: UUID  # REQUIRED
-    value_id: UUID  # REQUIRED
-    endpoint_id: UUID  # REQUIRED
-    provider_id: UUID  # REQUIRED
+    @classmethod
+    def from_request(
+        cls, request: SaveModelApiRequest, profile_id: UUID
+    ) -> SaveModelSqlParams:
+        return cls(
+            profile_id=profile_id,
+            input_model_id=request.input_model_id,
+            group_id=request.group_id,
+            names=request.names,
+            descriptions=request.descriptions,
+            values=request.values,
+            providers=request.providers,
+            flags=request.flags,
+            departments=request.departments,
+            modalities=request.modalities,
+            temperature_levels=request.temperature_levels,
+            pricing=request.pricing,
+            reasoning_levels=request.reasoning_levels,
+            qualities=request.qualities,
+            voices=request.voices,
+        )
 
-    # Optional single-select resources
-    description_id: UUID | None = None
-    key_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    modalities_enabled_flag_id: UUID | None = None
-    temperature_enabled_flag_id: UUID | None = None
-    pricing_enabled_flag_id: UUID | None = None
-    voices_enabled_flag_id: UUID | None = None
-    reasoning_levels_enabled_flag_id: UUID | None = None
-    qualities_enabled_flag_id: UUID | None = None
+    def to_tuple(self) -> tuple[Any, ...]:
+        def single(
+            a: ModelResourceAction,
+        ) -> tuple[UUID | None, UUID | None, UUID | None]:
+            return (a.resource_id, a.create_tool_id, a.link_tool_id)
 
-    # Optional multi-select resources
-    department_ids: list[UUID] | None = None
-    input_modality_ids: list[UUID] | None = None
-    output_modality_ids: list[UUID] | None = None
-    temperature_level_ids: list[UUID] | None = None
-    pricing_ids: list[UUID] | None = None
-    reasoning_level_ids: list[UUID] | None = None
-    quality_ids: list[UUID] | None = None
-    voice_ids: list[UUID] | None = None
+        def multi(
+            a: ModelMultiResourceAction,
+        ) -> tuple[list[UUID] | None, UUID | None, UUID | None]:
+            return (a.resource_ids, a.create_tool_id, a.link_tool_id)
 
-    def to_tuple(self) -> tuple:
-        """Convert to tuple for SQL execution."""
         return (
             self.profile_id,
-            self.group_id,
             self.input_model_id,
-            self.name_id,
-            self.value_id,
-            self.endpoint_id,
-            self.provider_id,
-            self.description_id,
-            self.key_id,
-            self.active_flag_id,
-            self.modalities_enabled_flag_id,
-            self.temperature_enabled_flag_id,
-            self.pricing_enabled_flag_id,
-            self.voices_enabled_flag_id,
-            self.reasoning_levels_enabled_flag_id,
-            self.qualities_enabled_flag_id,
-            self.department_ids,
-            self.input_modality_ids,
-            self.output_modality_ids,
-            self.temperature_level_ids,
-            self.pricing_ids,
-            self.reasoning_level_ids,
-            self.quality_ids,
-            self.voice_ids,
+            self.group_id,
+            single(self.names),
+            single(self.descriptions),
+            single(self.values),
+            single(self.providers),
+            multi(self.flags),
+            multi(self.departments),
+            multi(self.modalities),
+            multi(self.temperature_levels),
+            multi(self.pricing),
+            multi(self.reasoning_levels),
+            multi(self.qualities),
+            multi(self.voices),
         )
 
 
@@ -433,7 +474,9 @@ class SaveModelSqlRow(BaseModel):
     actor_name: str | None = None
 
 
-# ========== Delete Endpoint Types ==========
+# =============================================================================
+# DELETE Endpoint Types (unchanged)
+# =============================================================================
 
 
 class DeleteModelApiRequest(BaseModel):
@@ -449,7 +492,9 @@ class DeleteModelApiResponse(BaseModel):
     message: str
 
 
-# ========== Duplicate Endpoint Types ==========
+# =============================================================================
+# DUPLICATE Endpoint Types (unchanged)
+# =============================================================================
 
 
 class DuplicateModelApiRequest(BaseModel):
@@ -466,35 +511,29 @@ class DuplicateModelApiResponse(BaseModel):
     message: str
 
 
-# ========== Draft Endpoint Types ==========
+# =============================================================================
+# DRAFT Endpoint Types
+# =============================================================================
 
 
 class PatchModelDraftApiRequest(BaseModel):
-    """Request model for patch model draft endpoint."""
+    """Request for patching a model draft - nested resource actions."""
 
     input_draft_id: UUID | None = None
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    value_id: UUID | None = None
-    endpoint_id: UUID | None = None
-    provider_id: UUID | None = None
-    key_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    modalities_enabled_flag_id: UUID | None = None
-    temperature_enabled_flag_id: UUID | None = None
-    pricing_enabled_flag_id: UUID | None = None
-    voices_enabled_flag_id: UUID | None = None
-    reasoning_levels_enabled_flag_id: UUID | None = None
-    qualities_enabled_flag_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    input_modality_ids: list[UUID] | None = None
-    output_modality_ids: list[UUID] | None = None
-    temperature_level_ids: list[UUID] | None = None
-    pricing_ids: list[UUID] | None = None
-    reasoning_level_ids: list[UUID] | None = None
-    quality_ids: list[UUID] | None = None
-    voice_ids: list[UUID] | None = None
-    expected_version: int = 0
+    group_id: UUID | None = None
+    names: ModelResourceAction | None = None
+    descriptions: ModelResourceAction | None = None
+    values: ModelResourceAction | None = None
+    providers: ModelResourceAction | None = None
+    flags: ModelMultiResourceAction | None = None
+    departments: ModelMultiResourceAction | None = None
+    modalities: ModelMultiResourceAction | None = None
+    temperature_levels: ModelMultiResourceAction | None = None
+    pricing: ModelMultiResourceAction | None = None
+    reasoning_levels: ModelMultiResourceAction | None = None
+    qualities: ModelMultiResourceAction | None = None
+    voices: ModelMultiResourceAction | None = None
+    expected_version: int | None = 0
 
 
 class PatchModelDraftApiResponse(BaseModel):
@@ -504,3 +543,85 @@ class PatchModelDraftApiResponse(BaseModel):
     draft_id: UUID
     new_version: int
     message: str
+
+
+class PatchModelDraftSqlParams(BaseModel):
+    """SQL parameters for patch model draft."""
+
+    profile_id: UUID
+    input_draft_id: UUID | None = None
+    group_id: UUID | None = None
+    names: ModelResourceAction | None = None
+    descriptions: ModelResourceAction | None = None
+    values: ModelResourceAction | None = None
+    providers: ModelResourceAction | None = None
+    flags: ModelMultiResourceAction | None = None
+    departments: ModelMultiResourceAction | None = None
+    modalities: ModelMultiResourceAction | None = None
+    temperature_levels: ModelMultiResourceAction | None = None
+    pricing: ModelMultiResourceAction | None = None
+    reasoning_levels: ModelMultiResourceAction | None = None
+    qualities: ModelMultiResourceAction | None = None
+    voices: ModelMultiResourceAction | None = None
+    expected_version: int | None = 0
+
+    @classmethod
+    def from_request(
+        cls, request: PatchModelDraftApiRequest, profile_id: UUID
+    ) -> PatchModelDraftSqlParams:
+        return cls(
+            profile_id=profile_id,
+            input_draft_id=request.input_draft_id,
+            group_id=request.group_id,
+            names=request.names,
+            descriptions=request.descriptions,
+            values=request.values,
+            providers=request.providers,
+            flags=request.flags,
+            departments=request.departments,
+            modalities=request.modalities,
+            temperature_levels=request.temperature_levels,
+            pricing=request.pricing,
+            reasoning_levels=request.reasoning_levels,
+            qualities=request.qualities,
+            voices=request.voices,
+            expected_version=request.expected_version,
+        )
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        def single(
+            a: ModelResourceAction | None,
+        ) -> tuple[UUID | None, UUID | None, UUID | None]:
+            return (
+                (a.resource_id, a.create_tool_id, a.link_tool_id)
+                if a
+                else (None, None, None)
+            )
+
+        def multi(
+            a: ModelMultiResourceAction | None,
+        ) -> tuple[list[UUID] | None, UUID | None, UUID | None]:
+            return (
+                (a.resource_ids, a.create_tool_id, a.link_tool_id)
+                if a
+                else (None, None, None)
+            )
+
+        return (
+            self.profile_id,
+            self.input_draft_id,
+            self.group_id,
+            single(self.names),
+            single(self.descriptions),
+            single(self.values),
+            single(self.providers),
+            multi(self.flags),
+            multi(self.departments),
+            multi(self.modalities),
+            multi(self.temperature_levels),
+            multi(self.pricing),
+            multi(self.reasoning_levels),
+            multi(self.qualities),
+            multi(self.voices),
+            self.expected_version,
+        )

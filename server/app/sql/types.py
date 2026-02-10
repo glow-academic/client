@@ -6197,22 +6197,30 @@ class GetDocumentIdsSqlRow(BaseModel):
     department_ids: list[UUID] | None = None
     field_ids: list[UUID] | None = None
     upload_ids: list[UUID] | None = None
+    image_ids: list[UUID] | None = None
+    text_ids: list[UUID] | None = None
     name_suggestions: list[UUID] | None = None
     description_suggestions: list[UUID] | None = None
     department_suggestions: list[UUID] | None = None
     field_suggestions: list[UUID] | None = None
     upload_suggestions: list[UUID] | None = None
+    image_suggestions: list[UUID] | None = None
+    text_suggestions: list[UUID] | None = None
     candidate_agents: Any | None = None
     names_has_tools: bool | None = None
     departments_has_tools: bool | None = None
     fields_has_tools: bool | None = None
     uploads_has_tools: bool | None = None
+    images_has_tools: bool | None = None
+    texts_has_tools: bool | None = None
     name_domain_id: UUID | None = None
     description_domain_id: UUID | None = None
     flag_domain_id: UUID | None = None
     departments_domain_id: UUID | None = None
     fields_domain_id: UUID | None = None
     uploads_domain_id: UUID | None = None
+    images_domain_id: UUID | None = None
+    texts_domain_id: UUID | None = None
 
 class GetDocumentIdsApiRequest(BaseModel):
 
@@ -6229,22 +6237,30 @@ class GetDocumentIdsApiResponse(BaseModel):
     department_ids: list[UUID] | None = None
     field_ids: list[UUID] | None = None
     upload_ids: list[UUID] | None = None
+    image_ids: list[UUID] | None = None
+    text_ids: list[UUID] | None = None
     name_suggestions: list[UUID] | None = None
     description_suggestions: list[UUID] | None = None
     department_suggestions: list[UUID] | None = None
     field_suggestions: list[UUID] | None = None
     upload_suggestions: list[UUID] | None = None
+    image_suggestions: list[UUID] | None = None
+    text_suggestions: list[UUID] | None = None
     candidate_agents: Any | None = None
     names_has_tools: bool | None = None
     departments_has_tools: bool | None = None
     fields_has_tools: bool | None = None
     uploads_has_tools: bool | None = None
+    images_has_tools: bool | None = None
+    texts_has_tools: bool | None = None
     name_domain_id: UUID | None = None
     description_domain_id: UUID | None = None
     flag_domain_id: UUID | None = None
     departments_domain_id: UUID | None = None
     fields_domain_id: UUID | None = None
     uploads_domain_id: UUID | None = None
+    images_domain_id: UUID | None = None
+    texts_domain_id: UUID | None = None
 
 
 
@@ -6548,6 +6564,8 @@ class PatchDocumentDraftSqlParams(BaseModel):
     departments: DocumentMultiResourceAction | None = None
     fields: DocumentMultiResourceAction | None = None
     uploads: DocumentMultiResourceAction | None = None
+    images: DocumentMultiResourceAction | None = None
+    texts: DocumentMultiResourceAction | None = None
     expected_version: int | None = 0
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -6561,6 +6579,8 @@ class PatchDocumentDraftSqlParams(BaseModel):
             self.departments,
             self.fields,
             self.uploads,
+            self.images,
+            self.texts,
             self.expected_version,
         )
 
@@ -6580,6 +6600,8 @@ class PatchDocumentDraftApiRequest(BaseModel):
     departments: DocumentMultiResourceAction | None = None
     fields: DocumentMultiResourceAction | None = None
     uploads: DocumentMultiResourceAction | None = None
+    images: DocumentMultiResourceAction | None = None
+    texts: DocumentMultiResourceAction | None = None
     expected_version: int | None = 0
 
 class PatchDocumentDraftApiResponse(BaseModel):
@@ -6666,6 +6688,8 @@ class SaveDocumentSqlParams(BaseModel):
     departments: DocumentMultiResourceAction | None = None
     fields: DocumentMultiResourceAction | None = None
     uploads: DocumentMultiResourceAction | None = None
+    images: DocumentMultiResourceAction | None = None
+    texts: DocumentMultiResourceAction | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -6678,6 +6702,8 @@ class SaveDocumentSqlParams(BaseModel):
             self.departments,
             self.fields,
             self.uploads,
+            self.images,
+            self.texts,
         )
 
 class SaveDocumentSqlRow(BaseModel):
@@ -6695,6 +6721,8 @@ class SaveDocumentApiRequest(BaseModel):
     departments: DocumentMultiResourceAction | None = None
     fields: DocumentMultiResourceAction | None = None
     uploads: DocumentMultiResourceAction | None = None
+    images: DocumentMultiResourceAction | None = None
+    texts: DocumentMultiResourceAction | None = None
 
 class SaveDocumentApiResponse(BaseModel):
 
@@ -11115,567 +11143,6 @@ class GetModelAccessApiResponse(BaseModel):
 
 
 
-# Generated from: get_model
-
-class GetModelSqlParams(BaseModel):
-
-    profile_id: UUID
-    model_id: UUID | None = None
-    draft_id: UUID | None = None
-    mcp: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.model_id,
-            self.draft_id,
-            self.mcp,
-        )
-
-class QGetModelV4Department(BaseModel):
-
-    department_id: UUID | None
-    name: str | None
-    description: str | None
-    generated: bool | None
-
-
-
-
-class QGetModelV4DescriptionOption(BaseModel):
-
-    id: UUID | None
-    description: str | None
-    generated: bool | None
-
-
-
-
-class QGetModelV4DescriptionResource(BaseModel):
-
-    id: UUID | None
-    description: str | None
-    generated: bool | None
-
-
-
-
-class QGetModelV4EndpointOption(BaseModel):
-
-    id: UUID | None
-    base_url: str | None
-    generated: bool | None
-
-
-
-
-class QGetModelV4EndpointResource(BaseModel):
-
-    id: UUID | None
-    base_url: str | None
-    generated: bool | None
-
-
-
-
-class QGetModelV4FlagOption(BaseModel):
-
-    id: UUID | None
-    name: str | None
-    description: str | None
-    icon: str | None
-    generated: bool | None
-
-
-
-
-class QGetModelV4FlagResource(BaseModel):
-
-    id: UUID | None
-    name: str | None
-    description: str | None
-    icon: str | None
-    generated: bool | None
-
-
-
-
-class QGetModelV4KeyOption(BaseModel):
-
-    id: UUID | None
-    name: str | None
-    description: str | None
-    key_masked: str | None
-    active: bool | None
-    department_ids: list[UUID] | None
-    generated: bool | None
-
-
-
-
-class QGetModelV4KeyResource(BaseModel):
-
-    id: UUID | None
-    name: str | None
-    description: str | None
-    key_masked: str | None
-    active: bool | None
-    department_ids: list[UUID] | None
-    generated: bool | None
-
-
-
-
-class QGetModelV4ModalityOption(BaseModel):
-
-    modality_id: UUID | None
-    modality: str | None
-    generated: bool | None
-
-
-
-
-class QGetModelV4ModalityResource(BaseModel):
-
-    modality_id: UUID | None
-    modality: str | None
-    generated: bool | None
-
-
-
-
-class QGetModelV4NameOption(BaseModel):
-
-    id: UUID | None
-    name: str | None
-    generated: bool | None
-
-
-
-
-class QGetModelV4NameResource(BaseModel):
-
-    id: UUID | None
-    name: str | None
-    generated: bool | None
-
-
-
-
-class QGetModelV4PricingOption(BaseModel):
-
-    pricing_id: UUID | None
-    pricing_type: str | None
-    unit_id: UUID | None
-    unit_name: str | None
-    unit_category: str | None
-    price: float | None
-    generated: bool | None
-
-
-
-
-class QGetModelV4PricingResource(BaseModel):
-
-    pricing_id: UUID | None
-    pricing_type: str | None
-    unit_id: UUID | None
-    unit_name: str | None
-    unit_category: str | None
-    price: float | None
-    generated: bool | None
-
-
-
-
-class QGetModelV4ProviderOption(BaseModel):
-
-    id: UUID | None
-    name: str | None
-    description: str | None
-    generated: bool | None
-
-
-
-
-class QGetModelV4ProviderResource(BaseModel):
-
-    id: UUID | None
-    name: str | None
-    description: str | None
-    generated: bool | None
-
-
-
-
-class QGetModelV4QualityOption(BaseModel):
-
-    quality_id: UUID | None
-    quality: str | None
-    generated: bool | None
-
-
-
-
-class QGetModelV4QualityResource(BaseModel):
-
-    quality_id: UUID | None
-    quality: str | None
-    generated: bool | None
-
-
-
-
-class QGetModelV4ReasoningLevelOption(BaseModel):
-
-    reasoning_level_id: UUID | None
-    reasoning_level: str | None
-    generated: bool | None
-
-
-
-
-class QGetModelV4ReasoningLevelResource(BaseModel):
-
-    reasoning_level_id: UUID | None
-    reasoning_level: str | None
-    generated: bool | None
-
-
-
-
-class QGetModelV4TemperatureLevelOption(BaseModel):
-
-    temperature_level_id: UUID | None
-    temperature: float | None
-    generated: bool | None
-
-
-
-
-class QGetModelV4TemperatureLevelResource(BaseModel):
-
-    temperature_level_id: UUID | None
-    temperature: float | None
-    generated: bool | None
-
-
-
-
-class QGetModelV4ValueResource(BaseModel):
-
-    id: UUID | None
-    value: str | None
-    generated: bool | None
-
-
-
-
-class QGetModelV4VoiceOption(BaseModel):
-
-    id: UUID | None
-    voice: str | None
-    generated: bool | None
-
-
-
-
-class QGetModelV4VoiceResource(BaseModel):
-
-    id: UUID | None
-    voice: str | None
-    generated: bool | None
-
-class GetModelSqlRow(BaseModel):
-
-    actor_name: str | None = None
-    model_exists: bool | None = None
-    can_edit: bool | None = None
-    disabled_reason: str | None = None
-    group_id: UUID | None = None
-    name_id: UUID | None = None
-    name_resource: QGetModelV4NameResource | None = None
-    show_name: bool | None = None
-    name_agent_id: UUID | None = None
-    name_required: bool | None = None
-    name_suggestions: list[UUID] | None = None
-    names: list[QGetModelV4NameOption] | None = None
-    description_id: UUID | None = None
-    description_resource: QGetModelV4DescriptionResource | None = None
-    show_description: bool | None = None
-    description_agent_id: UUID | None = None
-    description_required: bool | None = None
-    description_suggestions: list[UUID] | None = None
-    descriptions: list[QGetModelV4DescriptionOption] | None = None
-    active_flag_id: UUID | None = None
-    flag_resource: QGetModelV4FlagResource | None = None
-    show_flag: bool | None = None
-    flag_agent_id: UUID | None = None
-    flag_required: bool | None = None
-    flags: list[QGetModelV4FlagOption] | None = None
-    modalities_enabled_flag_id: UUID | None = None
-    modalities_enabled_flag_resource: QGetModelV4FlagResource | None = None
-    show_modalities_enabled_flag: bool | None = None
-    modalities_enabled_flag_agent_id: UUID | None = None
-    modalities_enabled_flag_required: bool | None = None
-    temperature_enabled_flag_id: UUID | None = None
-    temperature_enabled_flag_resource: QGetModelV4FlagResource | None = None
-    show_temperature_enabled_flag: bool | None = None
-    temperature_enabled_flag_agent_id: UUID | None = None
-    temperature_enabled_flag_required: bool | None = None
-    pricing_enabled_flag_id: UUID | None = None
-    pricing_enabled_flag_resource: QGetModelV4FlagResource | None = None
-    show_pricing_enabled_flag: bool | None = None
-    pricing_enabled_flag_agent_id: UUID | None = None
-    pricing_enabled_flag_required: bool | None = None
-    voices_enabled_flag_id: UUID | None = None
-    voices_enabled_flag_resource: QGetModelV4FlagResource | None = None
-    show_voices_enabled_flag: bool | None = None
-    voices_enabled_flag_agent_id: UUID | None = None
-    voices_enabled_flag_required: bool | None = None
-    reasoning_levels_enabled_flag_id: UUID | None = None
-    reasoning_levels_enabled_flag_resource: QGetModelV4FlagResource | None = None
-    show_reasoning_levels_enabled_flag: bool | None = None
-    reasoning_levels_enabled_flag_agent_id: UUID | None = None
-    reasoning_levels_enabled_flag_required: bool | None = None
-    qualities_enabled_flag_id: UUID | None = None
-    qualities_enabled_flag_resource: QGetModelV4FlagResource | None = None
-    show_qualities_enabled_flag: bool | None = None
-    qualities_enabled_flag_agent_id: UUID | None = None
-    qualities_enabled_flag_required: bool | None = None
-    value_id: UUID | None = None
-    value_resource: QGetModelV4ValueResource | None = None
-    show_value: bool | None = None
-    value_agent_id: UUID | None = None
-    value_required: bool | None = None
-    value_suggestions: list[UUID] | None = None
-    endpoint_id: UUID | None = None
-    endpoint_resource: QGetModelV4EndpointResource | None = None
-    show_endpoint: bool | None = None
-    endpoint_agent_id: UUID | None = None
-    endpoint_required: bool | None = None
-    endpoint_suggestions: list[UUID] | None = None
-    endpoints: list[QGetModelV4EndpointOption] | None = None
-    provider_id: UUID | None = None
-    provider_resource: QGetModelV4ProviderResource | None = None
-    show_provider: bool | None = None
-    provider_agent_id: UUID | None = None
-    provider_required: bool | None = None
-    provider_suggestions: list[UUID] | None = None
-    providers: list[QGetModelV4ProviderOption] | None = None
-    key_id: UUID | None = None
-    key_resource: QGetModelV4KeyResource | None = None
-    show_key: bool | None = None
-    key_agent_id: UUID | None = None
-    key_required: bool | None = None
-    key_suggestions: list[UUID] | None = None
-    keys: list[QGetModelV4KeyOption] | None = None
-    department_ids: list[UUID] | None = None
-    department_resources: list[QGetModelV4Department] | None = None
-    show_departments: bool | None = None
-    departments_agent_id: UUID | None = None
-    departments_required: bool | None = None
-    department_suggestions: list[UUID] | None = None
-    departments: list[QGetModelV4Department] | None = None
-    input_modality_ids: list[UUID] | None = None
-    input_modality_resources: list[QGetModelV4ModalityResource] | None = None
-    show_input_modalities: bool | None = None
-    input_modalities_agent_id: UUID | None = None
-    input_modalities_required: bool | None = None
-    input_modality_suggestions: list[UUID] | None = None
-    input_modalities: list[QGetModelV4ModalityOption] | None = None
-    output_modality_ids: list[UUID] | None = None
-    output_modality_resources: list[QGetModelV4ModalityResource] | None = None
-    show_output_modalities: bool | None = None
-    output_modalities_agent_id: UUID | None = None
-    output_modalities_required: bool | None = None
-    output_modality_suggestions: list[UUID] | None = None
-    output_modalities: list[QGetModelV4ModalityOption] | None = None
-    temperature_level_ids: list[UUID] | None = None
-    temperature_level_resources: list[QGetModelV4TemperatureLevelResource] | None = None
-    show_temperature_levels: bool | None = None
-    temperature_levels_agent_id: UUID | None = None
-    temperature_levels_required: bool | None = None
-    temperature_level_suggestions: list[UUID] | None = None
-    temperature_levels: list[QGetModelV4TemperatureLevelOption] | None = None
-    reasoning_level_ids: list[UUID] | None = None
-    reasoning_level_resources: list[QGetModelV4ReasoningLevelResource] | None = None
-    show_reasoning_levels: bool | None = None
-    reasoning_levels_agent_id: UUID | None = None
-    reasoning_levels_required: bool | None = None
-    reasoning_level_suggestions: list[UUID] | None = None
-    reasoning_levels: list[QGetModelV4ReasoningLevelOption] | None = None
-    quality_ids: list[UUID] | None = None
-    quality_resources: list[QGetModelV4QualityResource] | None = None
-    show_qualities: bool | None = None
-    qualities_agent_id: UUID | None = None
-    qualities_required: bool | None = None
-    quality_suggestions: list[UUID] | None = None
-    qualities: list[QGetModelV4QualityOption] | None = None
-    pricing_ids: list[UUID] | None = None
-    pricing_resources: list[QGetModelV4PricingResource] | None = None
-    show_pricing: bool | None = None
-    pricing_agent_id: UUID | None = None
-    pricing_required: bool | None = None
-    pricing_suggestions: list[UUID] | None = None
-    pricings: list[QGetModelV4PricingOption] | None = None
-    voice_ids: list[UUID] | None = None
-    voice_resources: list[QGetModelV4VoiceResource] | None = None
-    show_voices: bool | None = None
-    voices_agent_id: UUID | None = None
-    voices_required: bool | None = None
-    voice_suggestions: list[UUID] | None = None
-    voices: list[QGetModelV4VoiceOption] | None = None
-
-class GetModelApiRequest(BaseModel):
-
-    model_id: UUID | None = None
-    draft_id: UUID | None = None
-    mcp: bool | None = False
-
-class GetModelApiResponse(BaseModel):
-
-    actor_name: str | None = None
-    model_exists: bool | None = None
-    can_edit: bool | None = None
-    disabled_reason: str | None = None
-    group_id: UUID | None = None
-    name_id: UUID | None = None
-    name_resource: QGetModelV4NameResource | None = None
-    show_name: bool | None = None
-    name_agent_id: UUID | None = None
-    name_required: bool | None = None
-    name_suggestions: list[UUID] | None = None
-    names: list[QGetModelV4NameOption] | None = None
-    description_id: UUID | None = None
-    description_resource: QGetModelV4DescriptionResource | None = None
-    show_description: bool | None = None
-    description_agent_id: UUID | None = None
-    description_required: bool | None = None
-    description_suggestions: list[UUID] | None = None
-    descriptions: list[QGetModelV4DescriptionOption] | None = None
-    active_flag_id: UUID | None = None
-    flag_resource: QGetModelV4FlagResource | None = None
-    show_flag: bool | None = None
-    flag_agent_id: UUID | None = None
-    flag_required: bool | None = None
-    flags: list[QGetModelV4FlagOption] | None = None
-    modalities_enabled_flag_id: UUID | None = None
-    modalities_enabled_flag_resource: QGetModelV4FlagResource | None = None
-    show_modalities_enabled_flag: bool | None = None
-    modalities_enabled_flag_agent_id: UUID | None = None
-    modalities_enabled_flag_required: bool | None = None
-    temperature_enabled_flag_id: UUID | None = None
-    temperature_enabled_flag_resource: QGetModelV4FlagResource | None = None
-    show_temperature_enabled_flag: bool | None = None
-    temperature_enabled_flag_agent_id: UUID | None = None
-    temperature_enabled_flag_required: bool | None = None
-    pricing_enabled_flag_id: UUID | None = None
-    pricing_enabled_flag_resource: QGetModelV4FlagResource | None = None
-    show_pricing_enabled_flag: bool | None = None
-    pricing_enabled_flag_agent_id: UUID | None = None
-    pricing_enabled_flag_required: bool | None = None
-    voices_enabled_flag_id: UUID | None = None
-    voices_enabled_flag_resource: QGetModelV4FlagResource | None = None
-    show_voices_enabled_flag: bool | None = None
-    voices_enabled_flag_agent_id: UUID | None = None
-    voices_enabled_flag_required: bool | None = None
-    reasoning_levels_enabled_flag_id: UUID | None = None
-    reasoning_levels_enabled_flag_resource: QGetModelV4FlagResource | None = None
-    show_reasoning_levels_enabled_flag: bool | None = None
-    reasoning_levels_enabled_flag_agent_id: UUID | None = None
-    reasoning_levels_enabled_flag_required: bool | None = None
-    qualities_enabled_flag_id: UUID | None = None
-    qualities_enabled_flag_resource: QGetModelV4FlagResource | None = None
-    show_qualities_enabled_flag: bool | None = None
-    qualities_enabled_flag_agent_id: UUID | None = None
-    qualities_enabled_flag_required: bool | None = None
-    value_id: UUID | None = None
-    value_resource: QGetModelV4ValueResource | None = None
-    show_value: bool | None = None
-    value_agent_id: UUID | None = None
-    value_required: bool | None = None
-    value_suggestions: list[UUID] | None = None
-    endpoint_id: UUID | None = None
-    endpoint_resource: QGetModelV4EndpointResource | None = None
-    show_endpoint: bool | None = None
-    endpoint_agent_id: UUID | None = None
-    endpoint_required: bool | None = None
-    endpoint_suggestions: list[UUID] | None = None
-    endpoints: list[QGetModelV4EndpointOption] | None = None
-    provider_id: UUID | None = None
-    provider_resource: QGetModelV4ProviderResource | None = None
-    show_provider: bool | None = None
-    provider_agent_id: UUID | None = None
-    provider_required: bool | None = None
-    provider_suggestions: list[UUID] | None = None
-    providers: list[QGetModelV4ProviderOption] | None = None
-    key_id: UUID | None = None
-    key_resource: QGetModelV4KeyResource | None = None
-    show_key: bool | None = None
-    key_agent_id: UUID | None = None
-    key_required: bool | None = None
-    key_suggestions: list[UUID] | None = None
-    keys: list[QGetModelV4KeyOption] | None = None
-    department_ids: list[UUID] | None = None
-    department_resources: list[QGetModelV4Department] | None = None
-    show_departments: bool | None = None
-    departments_agent_id: UUID | None = None
-    departments_required: bool | None = None
-    department_suggestions: list[UUID] | None = None
-    departments: list[QGetModelV4Department] | None = None
-    input_modality_ids: list[UUID] | None = None
-    input_modality_resources: list[QGetModelV4ModalityResource] | None = None
-    show_input_modalities: bool | None = None
-    input_modalities_agent_id: UUID | None = None
-    input_modalities_required: bool | None = None
-    input_modality_suggestions: list[UUID] | None = None
-    input_modalities: list[QGetModelV4ModalityOption] | None = None
-    output_modality_ids: list[UUID] | None = None
-    output_modality_resources: list[QGetModelV4ModalityResource] | None = None
-    show_output_modalities: bool | None = None
-    output_modalities_agent_id: UUID | None = None
-    output_modalities_required: bool | None = None
-    output_modality_suggestions: list[UUID] | None = None
-    output_modalities: list[QGetModelV4ModalityOption] | None = None
-    temperature_level_ids: list[UUID] | None = None
-    temperature_level_resources: list[QGetModelV4TemperatureLevelResource] | None = None
-    show_temperature_levels: bool | None = None
-    temperature_levels_agent_id: UUID | None = None
-    temperature_levels_required: bool | None = None
-    temperature_level_suggestions: list[UUID] | None = None
-    temperature_levels: list[QGetModelV4TemperatureLevelOption] | None = None
-    reasoning_level_ids: list[UUID] | None = None
-    reasoning_level_resources: list[QGetModelV4ReasoningLevelResource] | None = None
-    show_reasoning_levels: bool | None = None
-    reasoning_levels_agent_id: UUID | None = None
-    reasoning_levels_required: bool | None = None
-    reasoning_level_suggestions: list[UUID] | None = None
-    reasoning_levels: list[QGetModelV4ReasoningLevelOption] | None = None
-    quality_ids: list[UUID] | None = None
-    quality_resources: list[QGetModelV4QualityResource] | None = None
-    show_qualities: bool | None = None
-    qualities_agent_id: UUID | None = None
-    qualities_required: bool | None = None
-    quality_suggestions: list[UUID] | None = None
-    qualities: list[QGetModelV4QualityOption] | None = None
-    pricing_ids: list[UUID] | None = None
-    pricing_resources: list[QGetModelV4PricingResource] | None = None
-    show_pricing: bool | None = None
-    pricing_agent_id: UUID | None = None
-    pricing_required: bool | None = None
-    pricing_suggestions: list[UUID] | None = None
-    pricings: list[QGetModelV4PricingOption] | None = None
-    voice_ids: list[UUID] | None = None
-    voice_resources: list[QGetModelV4VoiceResource] | None = None
-    show_voices: bool | None = None
-    voices_agent_id: UUID | None = None
-    voices_required: bool | None = None
-    voice_suggestions: list[UUID] | None = None
-    voices: list[QGetModelV4VoiceOption] | None = None
-
-
-
 # Generated from: get_model_ids
 
 class GetModelIdsSqlParams(BaseModel):
@@ -11700,9 +11167,7 @@ class GetModelIdsSqlRow(BaseModel):
     name_id: UUID | None = None
     description_id: UUID | None = None
     value_id: UUID | None = None
-    endpoint_id: UUID | None = None
     provider_id: UUID | None = None
-    key_id: UUID | None = None
     active_flag_id: UUID | None = None
     modalities_enabled_flag_id: UUID | None = None
     temperature_enabled_flag_id: UUID | None = None
@@ -11711,8 +11176,7 @@ class GetModelIdsSqlRow(BaseModel):
     reasoning_levels_enabled_flag_id: UUID | None = None
     qualities_enabled_flag_id: UUID | None = None
     department_ids: list[UUID] | None = None
-    input_modality_ids: list[UUID] | None = None
-    output_modality_ids: list[UUID] | None = None
+    modality_ids: list[UUID] | None = None
     temperature_level_ids: list[UUID] | None = None
     pricing_ids: list[UUID] | None = None
     reasoning_level_ids: list[UUID] | None = None
@@ -11721,7 +11185,6 @@ class GetModelIdsSqlRow(BaseModel):
     candidate_agents: Any | None = None
     names_has_tools: bool | None = None
     values_has_tools: bool | None = None
-    endpoints_has_tools: bool | None = None
     departments_has_tools: bool | None = None
     modalities_has_tools: bool | None = None
     temperature_levels_has_tools: bool | None = None
@@ -11732,9 +11195,7 @@ class GetModelIdsSqlRow(BaseModel):
     name_domain_id: UUID | None = None
     description_domain_id: UUID | None = None
     value_domain_id: UUID | None = None
-    endpoint_domain_id: UUID | None = None
     provider_domain_id: UUID | None = None
-    key_domain_id: UUID | None = None
     flag_domain_id: UUID | None = None
     departments_domain_id: UUID | None = None
     modalities_domain_id: UUID | None = None
@@ -11756,9 +11217,7 @@ class GetModelIdsApiResponse(BaseModel):
     name_id: UUID | None = None
     description_id: UUID | None = None
     value_id: UUID | None = None
-    endpoint_id: UUID | None = None
     provider_id: UUID | None = None
-    key_id: UUID | None = None
     active_flag_id: UUID | None = None
     modalities_enabled_flag_id: UUID | None = None
     temperature_enabled_flag_id: UUID | None = None
@@ -11767,8 +11226,7 @@ class GetModelIdsApiResponse(BaseModel):
     reasoning_levels_enabled_flag_id: UUID | None = None
     qualities_enabled_flag_id: UUID | None = None
     department_ids: list[UUID] | None = None
-    input_modality_ids: list[UUID] | None = None
-    output_modality_ids: list[UUID] | None = None
+    modality_ids: list[UUID] | None = None
     temperature_level_ids: list[UUID] | None = None
     pricing_ids: list[UUID] | None = None
     reasoning_level_ids: list[UUID] | None = None
@@ -11777,7 +11235,6 @@ class GetModelIdsApiResponse(BaseModel):
     candidate_agents: Any | None = None
     names_has_tools: bool | None = None
     values_has_tools: bool | None = None
-    endpoints_has_tools: bool | None = None
     departments_has_tools: bool | None = None
     modalities_has_tools: bool | None = None
     temperature_levels_has_tools: bool | None = None
@@ -11788,9 +11245,7 @@ class GetModelIdsApiResponse(BaseModel):
     name_domain_id: UUID | None = None
     description_domain_id: UUID | None = None
     value_domain_id: UUID | None = None
-    endpoint_domain_id: UUID | None = None
     provider_domain_id: UUID | None = None
-    key_domain_id: UUID | None = None
     flag_domain_id: UUID | None = None
     departments_domain_id: UUID | None = None
     modalities_domain_id: UUID | None = None
@@ -11866,56 +11321,57 @@ class ListModelsApiResponse(BaseModel):
 
 # Generated from: patch_model_draft
 
+class ModelMultiResourceAction(BaseModel):
+
+    resource_ids: list[UUID] | None
+    create_tool_id: UUID | None
+    link_tool_id: UUID | None
+
+
+
+
+class ModelResourceAction(BaseModel):
+
+    resource_id: UUID | None
+    create_tool_id: UUID | None
+    link_tool_id: UUID | None
+
 class PatchModelDraftSqlParams(BaseModel):
 
     profile_id: UUID
     input_draft_id: UUID | None = None
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    value_id: UUID | None = None
-    endpoint_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    modalities_enabled_flag_id: UUID | None = None
-    temperature_enabled_flag_id: UUID | None = None
-    pricing_enabled_flag_id: UUID | None = None
-    voices_enabled_flag_id: UUID | None = None
-    reasoning_levels_enabled_flag_id: UUID | None = None
-    qualities_enabled_flag_id: UUID | None = None
-    provider_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    input_modality_ids: list[UUID] | None = None
-    output_modality_ids: list[UUID] | None = None
-    temperature_level_ids: list[UUID] | None = None
-    reasoning_level_ids: list[UUID] | None = None
-    quality_ids: list[UUID] | None = None
-    pricing_ids: list[UUID] | None = None
-    voice_ids: list[UUID] | None = None
+    group_id: UUID | None = None
+    names: ModelResourceAction | None = None
+    descriptions: ModelResourceAction | None = None
+    values: ModelResourceAction
+    providers: ModelResourceAction | None = None
+    flags: ModelMultiResourceAction | None = None
+    departments: ModelMultiResourceAction | None = None
+    modalities: ModelMultiResourceAction | None = None
+    temperature_levels: ModelMultiResourceAction | None = None
+    pricing: ModelMultiResourceAction | None = None
+    reasoning_levels: ModelMultiResourceAction | None = None
+    qualities: ModelMultiResourceAction | None = None
+    voices: ModelMultiResourceAction | None = None
     expected_version: int | None = 0
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
             self.input_draft_id,
-            self.name_id,
-            self.description_id,
-            self.value_id,
-            self.endpoint_id,
-            self.active_flag_id,
-            self.modalities_enabled_flag_id,
-            self.temperature_enabled_flag_id,
-            self.pricing_enabled_flag_id,
-            self.voices_enabled_flag_id,
-            self.reasoning_levels_enabled_flag_id,
-            self.qualities_enabled_flag_id,
-            self.provider_id,
-            self.department_ids,
-            self.input_modality_ids,
-            self.output_modality_ids,
-            self.temperature_level_ids,
-            self.reasoning_level_ids,
-            self.quality_ids,
-            self.pricing_ids,
-            self.voice_ids,
+            self.group_id,
+            self.names,
+            self.descriptions,
+            self.values,
+            self.providers,
+            self.flags,
+            self.departments,
+            self.modalities,
+            self.temperature_levels,
+            self.pricing,
+            self.reasoning_levels,
+            self.qualities,
+            self.voices,
             self.expected_version,
         )
 
@@ -11928,26 +11384,19 @@ class PatchModelDraftSqlRow(BaseModel):
 class PatchModelDraftApiRequest(BaseModel):
 
     input_draft_id: UUID | None = None
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    value_id: UUID | None = None
-    endpoint_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    modalities_enabled_flag_id: UUID | None = None
-    temperature_enabled_flag_id: UUID | None = None
-    pricing_enabled_flag_id: UUID | None = None
-    voices_enabled_flag_id: UUID | None = None
-    reasoning_levels_enabled_flag_id: UUID | None = None
-    qualities_enabled_flag_id: UUID | None = None
-    provider_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    input_modality_ids: list[UUID] | None = None
-    output_modality_ids: list[UUID] | None = None
-    temperature_level_ids: list[UUID] | None = None
-    reasoning_level_ids: list[UUID] | None = None
-    quality_ids: list[UUID] | None = None
-    pricing_ids: list[UUID] | None = None
-    voice_ids: list[UUID] | None = None
+    group_id: UUID | None = None
+    names: ModelResourceAction | None = None
+    descriptions: ModelResourceAction | None = None
+    values: ModelResourceAction
+    providers: ModelResourceAction | None = None
+    flags: ModelMultiResourceAction | None = None
+    departments: ModelMultiResourceAction | None = None
+    modalities: ModelMultiResourceAction | None = None
+    temperature_levels: ModelMultiResourceAction | None = None
+    pricing: ModelMultiResourceAction | None = None
+    reasoning_levels: ModelMultiResourceAction | None = None
+    qualities: ModelMultiResourceAction | None = None
+    voices: ModelMultiResourceAction | None = None
     expected_version: int | None = 0
 
 class PatchModelDraftApiResponse(BaseModel):
@@ -11962,53 +11411,39 @@ class PatchModelDraftApiResponse(BaseModel):
 
 class SaveModelSqlParams(BaseModel):
 
-    provider_id: UUID
     profile_id: UUID
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    modalities_enabled_flag_id: UUID | None = None
-    temperature_enabled_flag_id: UUID | None = None
-    pricing_enabled_flag_id: UUID | None = None
-    voices_enabled_flag_id: UUID | None = None
-    reasoning_levels_enabled_flag_id: UUID | None = None
-    qualities_enabled_flag_id: UUID | None = None
-    value_id: UUID | None = None
-    endpoint_id: UUID | None = None
     input_model_id: UUID | None = None
-    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    temperature_level_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    pricing_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    input_modality_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    output_modality_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    reasoning_level_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    voice_ids: list[UUID] | None = None
-    quality_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    group_id: UUID | None = None
+    names: ModelResourceAction | None = None
+    descriptions: ModelResourceAction | None = None
+    values: ModelResourceAction
+    providers: ModelResourceAction | None = None
+    flags: ModelMultiResourceAction | None = None
+    departments: ModelMultiResourceAction | None = None
+    modalities: ModelMultiResourceAction | None = None
+    temperature_levels: ModelMultiResourceAction | None = None
+    pricing: ModelMultiResourceAction | None = None
+    reasoning_levels: ModelMultiResourceAction | None = None
+    qualities: ModelMultiResourceAction | None = None
+    voices: ModelMultiResourceAction | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.provider_id,
             self.profile_id,
-            self.name_id,
-            self.description_id,
-            self.active_flag_id,
-            self.modalities_enabled_flag_id,
-            self.temperature_enabled_flag_id,
-            self.pricing_enabled_flag_id,
-            self.voices_enabled_flag_id,
-            self.reasoning_levels_enabled_flag_id,
-            self.qualities_enabled_flag_id,
-            self.value_id,
-            self.endpoint_id,
             self.input_model_id,
-            self.department_ids,
-            self.temperature_level_ids,
-            self.pricing_ids,
-            self.input_modality_ids,
-            self.output_modality_ids,
-            self.reasoning_level_ids,
-            self.voice_ids,
-            self.quality_ids,
+            self.group_id,
+            self.names,
+            self.descriptions,
+            self.values,
+            self.providers,
+            self.flags,
+            self.departments,
+            self.modalities,
+            self.temperature_levels,
+            self.pricing,
+            self.reasoning_levels,
+            self.qualities,
+            self.voices,
         )
 
 class SaveModelSqlRow(BaseModel):
@@ -12018,27 +11453,20 @@ class SaveModelSqlRow(BaseModel):
 
 class SaveModelApiRequest(BaseModel):
 
-    provider_id: UUID
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    modalities_enabled_flag_id: UUID | None = None
-    temperature_enabled_flag_id: UUID | None = None
-    pricing_enabled_flag_id: UUID | None = None
-    voices_enabled_flag_id: UUID | None = None
-    reasoning_levels_enabled_flag_id: UUID | None = None
-    qualities_enabled_flag_id: UUID | None = None
-    value_id: UUID | None = None
-    endpoint_id: UUID | None = None
     input_model_id: UUID | None = None
-    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    temperature_level_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    pricing_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    input_modality_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    output_modality_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    reasoning_level_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    voice_ids: list[UUID] | None = None
-    quality_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    group_id: UUID | None = None
+    names: ModelResourceAction | None = None
+    descriptions: ModelResourceAction | None = None
+    values: ModelResourceAction
+    providers: ModelResourceAction | None = None
+    flags: ModelMultiResourceAction | None = None
+    departments: ModelMultiResourceAction | None = None
+    modalities: ModelMultiResourceAction | None = None
+    temperature_levels: ModelMultiResourceAction | None = None
+    pricing: ModelMultiResourceAction | None = None
+    reasoning_levels: ModelMultiResourceAction | None = None
+    qualities: ModelMultiResourceAction | None = None
+    voices: ModelMultiResourceAction | None = None
 
 class SaveModelApiResponse(BaseModel):
 
@@ -14590,16 +14018,32 @@ class GetProfileResourceIdsByGroupIdApiResponse(BaseModel):
 
 # Generated from: patch_profile_draft
 
+class ProfileMultiResourceAction(BaseModel):
+
+    resource_ids: list[UUID] | None
+    create_tool_id: UUID | None
+    link_tool_id: UUID | None
+
+
+
+
+class ProfileResourceAction(BaseModel):
+
+    resource_id: UUID | None
+    create_tool_id: UUID | None
+    link_tool_id: UUID | None
+
 class PatchProfileDraftSqlParams(BaseModel):
 
     profile_id: UUID
     input_draft_id: UUID | None = None
-    name_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    request_limit_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    email_ids: list[UUID] | None = None
-    cohort_ids: list[UUID] | None = None
+    group_id: UUID | None = None
+    names: ProfileResourceAction | None = None
+    flags: ProfileResourceAction | None = None
+    request_limits: ProfileResourceAction | None = None
+    departments: ProfileMultiResourceAction | None = None
+    emails: ProfileMultiResourceAction | None = None
+    cohorts: ProfileMultiResourceAction | None = None
     role: str | None = None
     expected_version: int | None = 0
 
@@ -14607,12 +14051,13 @@ class PatchProfileDraftSqlParams(BaseModel):
         return (
             self.profile_id,
             self.input_draft_id,
-            self.name_id,
-            self.active_flag_id,
-            self.request_limit_id,
-            self.department_ids,
-            self.email_ids,
-            self.cohort_ids,
+            self.group_id,
+            self.names,
+            self.flags,
+            self.request_limits,
+            self.departments,
+            self.emails,
+            self.cohorts,
             self.role,
             self.expected_version,
         )
@@ -14626,12 +14071,13 @@ class PatchProfileDraftSqlRow(BaseModel):
 class PatchProfileDraftApiRequest(BaseModel):
 
     input_draft_id: UUID | None = None
-    name_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    request_limit_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    email_ids: list[UUID] | None = None
-    cohort_ids: list[UUID] | None = None
+    group_id: UUID | None = None
+    names: ProfileResourceAction | None = None
+    flags: ProfileResourceAction | None = None
+    request_limits: ProfileResourceAction | None = None
+    departments: ProfileMultiResourceAction | None = None
+    emails: ProfileMultiResourceAction | None = None
+    cohorts: ProfileMultiResourceAction | None = None
     role: str | None = None
     expected_version: int | None = 0
 
@@ -17052,6 +16498,7 @@ class QGetModalitiesV4Item(BaseModel):
 
     id: UUID | None
     modality: str | None
+    is_input: bool | None
     generated: bool | None
 
 class GetModalitiesSqlRow(BaseModel):
@@ -17120,8 +16567,7 @@ class QGetModelsV4Item(BaseModel):
     description: str | None
     value: str | None
     provider_id: UUID | None
-    input_modality_ids: list[UUID] | None
-    output_modality_ids: list[UUID] | None
+    modality_ids: list[UUID] | None
     temperature_level_ids: list[UUID] | None
     reasoning_level_ids: list[UUID] | None
     quality_ids: list[UUID] | None
@@ -20360,6 +19806,105 @@ class TemplatesApiRequest(BaseModel):
 class TemplatesApiResponse(BaseModel):
 
     template_id: UUID | None = None
+
+
+
+# Generated from: get_texts
+
+class GetTextsSqlParams(BaseModel):
+
+    p_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_ids,
+        )
+
+class QGetTextsV4Item(BaseModel):
+
+    texts_id: UUID | None
+    content: str | None
+    generated: bool | None
+
+class GetTextsSqlRow(BaseModel):
+
+    items: list[QGetTextsV4Item] | None = None
+
+class GetTextsApiRequest(BaseModel):
+
+    p_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class GetTextsApiResponse(BaseModel):
+
+    items: list[QGetTextsV4Item] | None = None
+
+
+
+# Generated from: search_texts
+
+class SearchTextsSqlParams(BaseModel):
+
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.search,
+            self.limit_count,
+            self.offset_count,
+            self.exclude_ids,
+        )
+
+class SearchTextsSqlRow(BaseModel):
+
+    items: list[QGetTextsV4Item] | None = None
+
+class SearchTextsApiRequest(BaseModel):
+
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class SearchTextsApiResponse(BaseModel):
+
+    items: list[QGetTextsV4Item] | None = None
+
+
+
+# Generated from: texts
+
+class TextsSqlParams(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    content: str
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.agent_id,
+            self.group_id,
+            self.content,
+            self.mcp,
+        )
+
+class TextsSqlRow(BaseModel):
+
+    texts_id: UUID | None = None
+
+class TextsApiRequest(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    content: str
+    mcp: bool | None = False
+
+class TextsApiResponse(BaseModel):
+
+    texts_id: UUID | None = None
 
 
 
@@ -27277,6 +26822,8 @@ class QGetDraftDocumentViewV4Item(BaseModel):
     department_ids: list[UUID] | None
     parameter_field_ids: list[UUID] | None
     upload_ids: list[UUID] | None
+    image_ids: list[UUID] | None
+    text_ids: list[UUID] | None
 
 class GetDraftDocumentViewSqlRow(BaseModel):
 
@@ -29500,12 +29047,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetModelAccessApiRequest",
         "GetModelAccessApiResponse",
     ),
-    "app/sql/v4/queries/models/get_model_complete.sql": (
-        "GetModelSqlParams",
-        "GetModelSqlRow",
-        "GetModelApiRequest",
-        "GetModelApiResponse",
-    ),
     "app/sql/v4/queries/models/get_model_ids_complete.sql": (
         "GetModelIdsSqlParams",
         "GetModelIdsSqlRow",
@@ -30771,6 +30312,24 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "TemplatesSqlRow",
         "TemplatesApiRequest",
         "TemplatesApiResponse",
+    ),
+    "app/sql/v4/queries/resources/texts/get_texts_complete.sql": (
+        "GetTextsSqlParams",
+        "GetTextsSqlRow",
+        "GetTextsApiRequest",
+        "GetTextsApiResponse",
+    ),
+    "app/sql/v4/queries/resources/texts/search_texts_complete.sql": (
+        "SearchTextsSqlParams",
+        "SearchTextsSqlRow",
+        "SearchTextsApiRequest",
+        "SearchTextsApiResponse",
+    ),
+    "app/sql/v4/queries/resources/texts_complete.sql": (
+        "TextsSqlParams",
+        "TextsSqlRow",
+        "TextsApiRequest",
+        "TextsApiResponse",
     ),
     "app/sql/v4/queries/resources/tools/get_tools_complete.sql": (
         "GetToolsSqlParams",
@@ -32712,11 +32271,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/models/get_model_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/models/get_model_ids_complete.sql"]
     ) -> SqlString: ...
 
@@ -33768,6 +33322,21 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/templates_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/texts/get_texts_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/texts/search_texts_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/texts_complete.sql"]
     ) -> SqlString: ...
 
     @overload

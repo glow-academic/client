@@ -6,15 +6,17 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.artifacts.model.permissions import compute_can_draft
+from app.api.v4.artifacts.model.types import (
+    PatchModelDraftApiRequest,
+    PatchModelDraftApiResponse,
+    PatchModelDraftSqlParams,
+)
 from app.infra.v4.activity.audit import audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
     CheckModelDuplicateAccessSqlParams,
     CheckModelDuplicateAccessSqlRow,
-    PatchModelDraftApiRequest,
-    PatchModelDraftApiResponse,
-    PatchModelDraftSqlParams,
     PatchModelDraftSqlRow,
     load_sql_query,
 )
@@ -83,8 +85,8 @@ async def patch_model_draft(
             )
 
         async with conn.transaction():
-            params = PatchModelDraftSqlParams(
-                **request.model_dump(), profile_id=profile_id
+            params = PatchModelDraftSqlParams.from_request(
+                request, profile_id=profile_id
             )
             sql_params = params.to_tuple()
 
@@ -102,7 +104,15 @@ async def patch_model_draft(
                 draft={"id": str(result.draft_id)},
             )
 
-        api_response = PatchModelDraftApiResponse.model_validate(result.model_dump())
+        if not result.draft_id or result.new_version is None:
+            raise ValueError("Failed to patch model draft — missing draft_id or version")
+
+        api_response = PatchModelDraftApiResponse(
+            success=True,
+            draft_id=result.draft_id,
+            new_version=result.new_version,
+            message="Draft saved successfully",
+        )
 
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

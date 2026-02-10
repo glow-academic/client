@@ -1,38 +1,25 @@
-"""Profile generation router - unified handler for all profile resource types.
+"""Profile generation router - unified handler for profile resource types."""
 
-Uses the three-layer architecture: calls get_profile_websocket() for data,
-then uses domain-based agent lookup for generation context.
-"""
-
+import asyncio
 import uuid
-from typing import Any, cast
+from typing import Any
 
 from fastapi import APIRouter
 
 from app.api.v4.artifacts.profile.get import get_profile_websocket
-from app.api.v4.artifacts.profile.types import (
-    GetProfileWebsocketResponse,
-    ProfileResourceBucket,
-)
+from app.api.v4.artifacts.profile.types import GetProfileWebsocketResponse
+from app.api.v4.resources.instructions.get import get_instructions_internal
+from app.api.v4.resources.prompts.get import get_prompts_internal
 from app.infra.v4.generation import convert_tools_to_dict, render_developer_instructions
 from app.infra.v4.generation.resource_utils import normalize_resources_for_sql
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
-from app.main import get_internal_sio, sio
-from app.socket.v4.artifacts.profile.permissions import (
-    GenerationContext,
-    format_generation_error,
-    validate_generation_access,
-)
+from app.main import get_internal_sio, get_pool, sio
 from app.socket.v4.artifacts.profile.types import GenerateProfilePayload
 from app.socket.v4.artifacts.types import GenerateErrorApiRequest
-from app.sql.types import (
-    GetPersonaGenerationContextSqlParams,
-    GetPersonaGenerationContextSqlRow,
-)
 from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import execute_sql_typed, load_sql
+from app.utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
 
@@ -41,14 +28,9 @@ internal_sio = get_internal_sio()
 client_router = APIRouter()
 server_router = APIRouter()
 
-# SQL paths — reuse persona generation context (shared agent/model/rate-limit check)
-SQL_PATH_CONTEXT = (
-    "app/sql/v4/queries/generate/persona/get_persona_generation_context_complete.sql"
-)
 CREATE_RUN_SQL_PATH = "app/sql/v4/queries/generate/start/get_generation_run_context_and_create_run_complete.sql"
 TEXT_RUN_CONTEXT_SQL_PATH = "app/sql/v4/queries/generate/text/get_text_run_context_for_existing_run_complete.sql"
 
-# Profile resource types
 PROFILE_RESOURCE_TYPES = [
     "names",
     "flags",
@@ -60,43 +42,31 @@ PROFILE_RESOURCE_TYPES = [
 
 
 def _build_profile_jinja_context(
-    response: GetProfileWebsocketResponse, resource_types: list[str]
+    response: GetProfileWebsocketResponse,
 ) -> dict[str, Any]:
-    """Build Jinja context from profile websocket response."""
-
-    if response.resources and response.resources.resources:
-        resources = response.resources.resources.model_dump()
-        current = (
-            response.resources.current.model_dump()
-            if response.resources.current
-            else ProfileResourceBucket().model_dump()
+    context: dict[str, Any] = (
+        response.resources.model_dump() if response.resources else {}
+    )
+    context["views"] = {
+        "draft_profile": (
+            response.views.draft_profile.model_dump(mode="json")
+            if response.views and response.views.draft_profile
+            else {}
         )
-        resources["current"] = current
-        return resources
-    return {"current": ProfileResourceBucket().model_dump()}
+    }
+    return context
 
 
 async def _profile_generate_impl(
     sid: str, data: GenerateProfilePayload, profile_id: uuid.UUID
 ) -> None:
-    """Handle profile generation with domain-based agent lookup.
-
-    This function:
-    1. Validates domain_ids and derives resource_types + agent_id
-    2. Fetches profile data via get_profile_websocket() for agent lookup
-    3. Validates generation prerequisites (agent, model, rate limit)
-    4. Creates run and fetches context
-    5. Renders developer instructions with Jinja
-    6. Emits simplified payload to generate_artifact handler
-    """
     try:
-        # Validate domain_ids
-        if not data.domain_ids:
+        if not data.resource_types:
             await emit_to_internal(
                 "generate_call_error",
                 GenerateErrorApiRequest(
                     sid=sid,
-                    error_message="domain_ids must be provided",
+                    error_message="resource_types must be provided",
                     artifact_type="profile",
                     group_id=None,
                     resource_type="profile",
@@ -105,47 +75,12 @@ async def _profile_generate_impl(
             )
             return
 
-        # Step 1: Fetch profile data for domain-to-agent mapping
-        target_profile_id = data.target_profile_id
-        if not target_profile_id and data.staff_id:
-            target_profile_id = uuid.UUID(data.staff_id)
-
-        result = await get_profile_websocket(
-            profile_id=profile_id,
-            target_profile_id=target_profile_id,
-            draft_id=data.draft_id,
-        )
-
-        # Build domain_id -> agent_id mapping from result.domains
-        domain_to_agent: dict[uuid.UUID, uuid.UUID | None] = {}
-        if result.domains:
-            for domain in result.domains:
-                domain_to_agent[domain.domain_id] = domain.agent_id
-
-        # Build domain_id -> resource_type mapping
-        domain_to_resource: dict[uuid.UUID | None, str] = {
-            result.name_domain_id: "names",
-            result.emails_domain_id: "emails",
-            result.request_limits_domain_id: "request_limits",
-            result.flag_domain_id: "flags",
-            result.departments_domain_id: "departments",
-            result.cohorts_domain_id: "cohorts",
-        }
-        # Remove None key if present
-        domain_to_resource.pop(None, None)
-
-        # Derive resource_types from domain_ids
-        resource_types: list[str] = []
-        for did in data.domain_ids:
-            if did in domain_to_resource:
-                resource_types.append(domain_to_resource[did])
-
-        if not resource_types:
+        if not data.draft_id:
             await emit_to_internal(
                 "generate_call_error",
                 GenerateErrorApiRequest(
                     sid=sid,
-                    error_message="No valid domain_ids provided",
+                    error_message="Draft ID is required for profile generation",
                     artifact_type="profile",
                     group_id=None,
                     resource_type="profile",
@@ -155,7 +90,7 @@ async def _profile_generate_impl(
             return
 
         invalid_types = [
-            rt for rt in resource_types if rt not in PROFILE_RESOURCE_TYPES
+            rt for rt in data.resource_types if rt not in PROFILE_RESOURCE_TYPES
         ]
         if invalid_types:
             await emit_to_internal(
@@ -171,144 +106,149 @@ async def _profile_generate_impl(
             )
             return
 
-        # Get agent_id from the first valid domain_id
+        target_profile_id = data.target_profile_id
+        if not target_profile_id and data.staff_id:
+            target_profile_id = uuid.UUID(data.staff_id)
+
+        result = await get_profile_websocket(
+            profile_id=profile_id,
+            target_profile_id=target_profile_id,
+            draft_id=data.draft_id,
+        )
+
+        resource_agent_ids = result.resource_agent_ids or {}
         agent_id: uuid.UUID | None = None
-        for did in data.domain_ids:
-            if did in domain_to_agent and domain_to_agent[did] is not None:
-                agent_id = domain_to_agent[did]
+        for rt in data.resource_types:
+            aid = resource_agent_ids.get(rt)
+            if aid is not None:
+                agent_id = aid
                 break
 
-        if not agent_id:
+        if agent_id is None:
             await emit_to_internal(
                 "generate_call_error",
                 GenerateErrorApiRequest(
                     sid=sid,
-                    error_message="No agent found for the requested domains",
+                    error_message="No agent found for the requested resource types",
                     artifact_type="profile",
-                    group_id=None,
+                    group_id=str(result.group_id) if result.group_id else None,
                     resource_type="profile",
                 ),
                 sid=sid,
             )
             return
 
-        profile_jinja_context = _build_profile_jinja_context(result, resource_types)
+        config_agents = result.resources.agents or []
+        config_models = result.resources.models or []
+        config_providers = result.resources.providers or []
+        config_tools = result.resources.tools or []
 
-        # Build resources list from websocket response
+        agent_resource = next((a for a in config_agents if a.id == agent_id), None)
+        if not agent_resource and config_agents:
+            agent_resource = config_agents[0]
+        if not agent_resource:
+            await emit_to_internal(
+                "generate_call_error",
+                GenerateErrorApiRequest(
+                    sid=sid,
+                    error_message="No agent configuration found for generation",
+                    artifact_type="profile",
+                    group_id=str(result.group_id) if result.group_id else None,
+                    resource_type="profile",
+                ),
+                sid=sid,
+            )
+            return
+
+        model_resource = next(
+            (
+                m
+                for m in config_models
+                if m.id is not None
+                and m.id == getattr(agent_resource, "model_id", None)
+            ),
+            None,
+        )
+        if not model_resource and config_models:
+            model_resource = config_models[0]
+        if not model_resource:
+            await emit_to_internal(
+                "generate_call_error",
+                GenerateErrorApiRequest(
+                    sid=sid,
+                    error_message="No model configuration found for generation",
+                    artifact_type="profile",
+                    group_id=str(result.group_id) if result.group_id else None,
+                    resource_type="profile",
+                ),
+                sid=sid,
+            )
+            return
+
+        provider_resource = next(
+            (
+                p
+                for p in config_providers
+                if p.id is not None
+                and p.id == getattr(model_resource, "provider_id", None)
+            ),
+            None,
+        )
+        if not provider_resource and config_providers:
+            provider_resource = config_providers[0]
+        if not provider_resource:
+            await emit_to_internal(
+                "generate_call_error",
+                GenerateErrorApiRequest(
+                    sid=sid,
+                    error_message="No provider configuration found for generation",
+                    artifact_type="profile",
+                    group_id=str(result.group_id) if result.group_id else None,
+                    resource_type="profile",
+                ),
+                sid=sid,
+            )
+            return
+
+        model_name = model_resource.value or model_resource.name
+        provider_name = provider_resource.value or provider_resource.name
+        base_url = provider_resource.endpoint
+        api_key = provider_resource.key
+
+        profile_jinja_context = _build_profile_jinja_context(result)
+
+        resources_bucket = result.resources
         resources: list[dict[str, Any]] = []
-        resources_bucket = result.resources.resources if result.resources else None
 
-        if resources_bucket and resources_bucket.names:
-            resources.append(
-                {
-                    "resource_type": "names",
-                    "resource_ids": [str(n.id) for n in resources_bucket.names if n.id],
-                }
-            )
-        if resources_bucket and resources_bucket.emails:
-            resources.append(
-                {
-                    "resource_type": "emails",
-                    "resource_ids": [
-                        str(e.id) for e in resources_bucket.emails if e.id
-                    ],
-                }
-            )
-        if resources_bucket and resources_bucket.request_limits:
-            resources.append(
-                {
-                    "resource_type": "request_limits",
-                    "resource_ids": [
-                        str(r.id) for r in resources_bucket.request_limits if r.id
-                    ],
-                }
-            )
-        if resources_bucket and resources_bucket.departments:
-            resources.append(
-                {
-                    "resource_type": "departments",
-                    "resource_ids": [
-                        str(d.department_id)
-                        for d in resources_bucket.departments
-                        if d.department_id
-                    ],
-                }
-            )
-        if resources_bucket and resources_bucket.cohorts:
-            resources.append(
-                {
-                    "resource_type": "cohorts",
-                    "resource_ids": [
-                        str(c.cohort_id)
-                        for c in resources_bucket.cohorts
-                        if c.cohort_id
-                    ],
-                }
-            )
-        if resources_bucket and resources_bucket.flags:
-            flag_ids = [
-                str(f.flag_option_id)
-                for f in resources_bucket.flags
-                if f.flag_option_id
-            ]
-            if flag_ids:
-                resources.append(
-                    {
-                        "resource_type": "flags",
-                        "resource_ids": flag_ids,
-                    }
-                )
+        def add_resource_ids(
+            resource_type: str, items: list[Any] | None, id_attr: str
+        ) -> None:
+            if items and resource_type in data.resource_types:
+                ids = []
+                for item in items:
+                    item_id = (
+                        item.get(id_attr)
+                        if isinstance(item, dict)
+                        else getattr(item, id_attr, None)
+                    )
+                    if item_id:
+                        ids.append(str(item_id))
+                if ids:
+                    resources.append(
+                        {"resource_type": resource_type, "resource_ids": ids}
+                    )
+
+        add_resource_ids("names", resources_bucket.names, "id")
+        add_resource_ids("emails", resources_bucket.emails, "id")
+        add_resource_ids("request_limits", resources_bucket.request_limits, "id")
+        add_resource_ids("departments", resources_bucket.departments, "department_id")
+        add_resource_ids("cohorts", resources_bucket.cohorts, "cohort_id")
+        add_resource_ids("flags", resources_bucket.flags, "flag_option_id")
 
         group_id: uuid.UUID | None = result.group_id
+        resources_sql = normalize_resources_for_sql(resources)
 
-        # Step 2: Validate generation prerequisites
         async with get_db_connection() as conn:
-            context_params = GetPersonaGenerationContextSqlParams(
-                p_profile_id=profile_id,
-                p_agent_id=agent_id,
-            )
-            context_row = cast(
-                GetPersonaGenerationContextSqlRow,
-                await execute_sql_typed(conn, SQL_PATH_CONTEXT, params=context_params),
-            )
-
-            ctx = GenerationContext(
-                agent_exists=context_row.agent_exists or False,
-                agent_name=context_row.agent_name,
-                agent_is_active=context_row.agent_is_active or False,
-                model_id=context_row.model_id,
-                model_name=context_row.model_name,
-                provider_id=context_row.provider_id,
-                provider_name=context_row.provider_name,
-                has_api_key=context_row.has_api_key or False,
-                requests_per_day=context_row.requests_per_day,
-                runs_today=context_row.runs_today or 0,
-            )
-
-            is_valid, failures = validate_generation_access(ctx)
-
-            if not is_valid:
-                error_msg = format_generation_error(failures)
-                logger.error(
-                    f"Profile generation validation failed - "
-                    f"profile_id={profile_id}, agent_id={agent_id}, "
-                    f"reason: {error_msg}"
-                )
-                await emit_to_internal(
-                    "generate_call_error",
-                    GenerateErrorApiRequest(
-                        sid=sid,
-                        error_message=f"Failed to prepare profile generation: {error_msg}",
-                        artifact_type="profile",
-                        group_id=str(group_id) if group_id else None,
-                        resource_type="profile",
-                    ),
-                    sid=sid,
-                )
-                return
-
-            # Step 3: Create run and fetch context
-            resources_sql = normalize_resources_for_sql(resources)
             create_run_sql = load_sql(CREATE_RUN_SQL_PATH)
             create_run_row = await conn.fetchrow(
                 create_run_sql,
@@ -367,45 +307,68 @@ async def _profile_generate_impl(
                 )
                 return
 
-            # Step 4: Render developer instructions with Jinja
+            pool = get_pool()
+            if not pool:
+                raise RuntimeError("Database pool not initialized")
+
+            async def fetch_system_prompt() -> str:
+                prompt_id = getattr(agent_resource, "prompt_id", None)
+                if not prompt_id:
+                    return ""
+                async with pool.acquire() as c:
+                    prompts = await get_prompts_internal(c, [prompt_id])
+                    return prompts[0].system_prompt or "" if prompts else ""
+
+            async def fetch_developer_templates() -> list[str]:
+                instruction_ids = getattr(agent_resource, "instruction_ids", None) or []
+                if not instruction_ids:
+                    return []
+                async with pool.acquire() as c:
+                    instructions = await get_instructions_internal(c, instruction_ids)
+                    return [i.template for i in instructions if i.template]
+
+            system_prompt, developer_templates = await asyncio.gather(
+                fetch_system_prompt(),
+                fetch_developer_templates(),
+            )
+
             rendered_developer_messages = render_developer_instructions(
-                templates=run_context_row.get("developer_instruction_templates"),
-                jinja_context=profile_jinja_context,
+                templates=developer_templates,
+                jinja_context=run_context_row.get("context") or profile_jinja_context,
             )
 
             messages: list[dict[str, Any]] = []
-            if run_context_row.get("system_prompt"):
-                messages.append(
-                    {"role": "system", "content": run_context_row["system_prompt"]}
-                )
+            if system_prompt:
+                messages.append({"role": "system", "content": system_prompt})
             for dev_msg in rendered_developer_messages:
                 messages.append({"role": "developer", "content": dev_msg})
             for user_msg in data.user_instructions or []:
                 messages.append({"role": "user", "content": user_msg})
 
-            # Step 5: Emit to generate_artifact handler
+            resource_type = data.resource_types[0] if data.resource_types else "profile"
+
             await internal_sio.emit(
                 "generate_artifact",
                 {
                     "sid": sid,
                     "artifact_type": "profile",
-                    "resource_type": resource_types[0] if resource_types else "profile",
+                    "resource_type": resource_type,
                     "run_id": run_id,
                     "group_id": str(group_id) if group_id else None,
                     "message_id": None,
                     "messages": messages,
                     "llm_config": {
-                        "model": run_context_row.get("model_name"),
-                        "api_key": run_context_row.get("api_key"),
-                        "base_url": run_context_row.get("base_url"),
-                        "temperature": run_context_row.get("temperature"),
-                        "reasoning": run_context_row.get("reasoning"),
-                        "provider": run_context_row.get("provider"),
-                        "voice": None,
-                        "quality": None,
+                        "model": model_name,
+                        "api_key": api_key,
+                        "base_url": base_url,
+                        "temperature": agent_resource.temperature,
+                        "reasoning": agent_resource.reasoning,
+                        "provider": provider_name,
+                        "voice": agent_resource.voice,
+                        "quality": agent_resource.quality,
                         "length_seconds": None,
                     },
-                    "tools": convert_tools_to_dict(run_context_row.get("tools")),
+                    "tools": convert_tools_to_dict(config_tools),
                     "metadata": {"trace_id": trace_id},
                     "eval_mode": False,
                 },
@@ -428,7 +391,6 @@ async def _profile_generate_impl(
 
 @sio.event  # type: ignore
 async def profile_generate(sid: str, data: dict[str, Any]) -> None:
-    """Handle profile_generate event (client-to-server)."""
     try:
         payload = GenerateProfilePayload(**data)
         profile_id_str = await find_profile_by_socket(sid)
@@ -463,7 +425,6 @@ async def profile_generate(sid: str, data: dict[str, Any]) -> None:
 
 @internal_sio.on("profile_generate")  # type: ignore
 async def profile_generate_internal(data: dict[str, Any]) -> None:
-    """Handle profile_generate event from internal bus (server-to-server)."""
     try:
         sid = data.get("sid", "")
         if not sid:

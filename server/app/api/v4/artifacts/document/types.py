@@ -16,10 +16,12 @@ from app.sql.types import (
     QGetAgentsV4Item,
     QGetDepartmentsV4Item,
     QGetDescriptionsV4Item,
+    QGetImagesV4Item,
     QGetModelsV4Item,
     QGetNamesV4Item,
     QGetParameterFieldsV4Item,
     QGetProvidersV4Item,
+    QGetTextsV4Item,
     QGetToolsV4Item,
     QGetUploadsV4Item,
 )
@@ -87,6 +89,16 @@ class DocumentUploadSection(BaseResourceSection):
     resources: list[QGetUploadsV4Item] | None = None
 
 
+class DocumentImageSection(BaseResourceSection):
+    current: list[QGetImagesV4Item] | None = None
+    resources: list[QGetImagesV4Item] | None = None
+
+
+class DocumentTextSection(BaseResourceSection):
+    current: list[QGetTextsV4Item] | None = None
+    resources: list[QGetTextsV4Item] | None = None
+
+
 class GetDocumentApiResponse(BaseModel):
     """Section-first response for document editor."""
 
@@ -106,6 +118,8 @@ class GetDocumentApiResponse(BaseModel):
     departments: DocumentDepartmentSection | None = None
     fields: DocumentFieldSection | None = None
     uploads: DocumentUploadSection | None = None
+    images: DocumentImageSection | None = None
+    texts: DocumentTextSection | None = None
 
 
 # ========== Internal Helper Types (used by get.py intermediate layer) ==========
@@ -120,6 +134,8 @@ class DocumentResourceBucket(BaseModel):
     departments: list[Any] | None = None
     fields: list[Any] | None = None
     uploads: list[Any] | None = None
+    images: list[Any] | None = None
+    texts: list[Any] | None = None
 
 
 class DocumentResources(BaseModel):
@@ -147,6 +163,8 @@ class DocumentWebsocketResources(BaseModel):
     departments: list[QGetDepartmentsV4Item] | None = None
     fields: list[QGetParameterFieldsV4Item] | None = None
     uploads: list[QGetUploadsV4Item] | None = None
+    images: list[QGetImagesV4Item] | None = None
+    texts: list[QGetTextsV4Item] | None = None
     agents: list[QGetAgentsV4Item] | None = None
     models: list[QGetModelsV4Item] | None = None
     providers: list[QGetProvidersV4Item] | None = None
@@ -258,6 +276,8 @@ class SaveDocumentApiRequest(BaseModel):
     departments: DocumentMultiResourceAction
     fields: DocumentMultiResourceAction
     uploads: DocumentMultiResourceAction
+    images: DocumentMultiResourceAction
+    texts: DocumentMultiResourceAction
 
 
 class SaveDocumentApiResponse(BaseModel):
@@ -280,6 +300,8 @@ class SaveDocumentSqlParams(BaseModel):
     departments: DocumentMultiResourceAction
     fields: DocumentMultiResourceAction
     uploads: DocumentMultiResourceAction
+    images: DocumentMultiResourceAction
+    texts: DocumentMultiResourceAction
 
     @classmethod
     def from_request(
@@ -295,6 +317,8 @@ class SaveDocumentSqlParams(BaseModel):
             departments=request.departments,
             fields=request.fields,
             uploads=request.uploads,
+            images=request.images,
+            texts=request.texts,
         )
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -318,6 +342,8 @@ class SaveDocumentSqlParams(BaseModel):
             multi(self.departments),
             multi(self.fields),
             multi(self.uploads),
+            multi(self.images),
+            multi(self.texts),
         )
 
 
@@ -375,6 +401,8 @@ class PatchDocumentDraftApiRequest(BaseModel):
     departments: DocumentMultiResourceAction | None = None
     fields: DocumentMultiResourceAction | None = None
     uploads: DocumentMultiResourceAction | None = None
+    images: DocumentMultiResourceAction | None = None
+    texts: DocumentMultiResourceAction | None = None
     expected_version: int | None = 0
 
 
@@ -399,6 +427,8 @@ class PatchDocumentDraftSqlParams(BaseModel):
     departments: DocumentMultiResourceAction | None = None
     fields: DocumentMultiResourceAction | None = None
     uploads: DocumentMultiResourceAction | None = None
+    images: DocumentMultiResourceAction | None = None
+    texts: DocumentMultiResourceAction | None = None
     expected_version: int | None = 0
 
     @classmethod
@@ -415,6 +445,8 @@ class PatchDocumentDraftSqlParams(BaseModel):
             departments=request.departments,
             fields=request.fields,
             uploads=request.uploads,
+            images=request.images,
+            texts=request.texts,
             expected_version=request.expected_version,
         )
 
@@ -447,5 +479,7 @@ class PatchDocumentDraftSqlParams(BaseModel):
             multi(self.departments),
             multi(self.fields),
             multi(self.uploads),
+            multi(self.images),
+            multi(self.texts),
             self.expected_version,
         )

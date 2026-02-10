@@ -49,9 +49,7 @@ RETURNS TABLE (
     name_id uuid,
     description_id uuid,
     value_id uuid,
-    endpoint_id uuid,
     provider_id uuid,
-    key_id uuid,
 
     -- Flag IDs
     active_flag_id uuid,
@@ -64,8 +62,7 @@ RETURNS TABLE (
 
     -- Multi-select resource IDs
     department_ids uuid[],
-    input_modality_ids uuid[],
-    output_modality_ids uuid[],
+    modality_ids uuid[],
     temperature_level_ids uuid[],
     pricing_ids uuid[],
     reasoning_level_ids uuid[],
@@ -78,7 +75,6 @@ RETURNS TABLE (
     -- Tools existence (for Python to compute show_* flags)
     names_has_tools boolean,
     values_has_tools boolean,
-    endpoints_has_tools boolean,
     departments_has_tools boolean,
     modalities_has_tools boolean,
     temperature_levels_has_tools boolean,
@@ -91,9 +87,7 @@ RETURNS TABLE (
     name_domain_id uuid,
     description_domain_id uuid,
     value_domain_id uuid,
-    endpoint_domain_id uuid,
     provider_domain_id uuid,
-    key_domain_id uuid,
     flag_domain_id uuid,
     departments_domain_id uuid,
     modalities_domain_id uuid,
@@ -129,34 +123,12 @@ value_resource_data AS (
         (SELECT mv.value_id FROM model_values_junction mv WHERE mv.model_id = (SELECT model_id FROM params) LIMIT 1) as value_id
     FROM params
 ),
-endpoint_resource_data AS (
-    SELECT
-        (SELECT pej.endpoint_id
-         FROM model_providers_junction mpj
-         JOIN providers_resource pr ON pr.id = mpj.providers_id
-         JOIN provider_providers_junction ppj ON ppj.providers_id = pr.id
-         JOIN provider_endpoints_junction pej ON pej.provider_id = ppj.provider_id AND pej.active = true
-         WHERE mpj.model_id = (SELECT model_id FROM params) AND mpj.active = true
-         LIMIT 1) as endpoint_id
-    FROM params
-),
 provider_resource_data AS (
     SELECT
         (SELECT mpj.providers_id
          FROM model_providers_junction mpj
          WHERE mpj.model_id = (SELECT model_id FROM params) AND mpj.active = true
          LIMIT 1) as provider_id
-    FROM params
-),
-key_resource_data AS (
-    SELECT
-        (SELECT pkj.key_id
-         FROM model_providers_junction mpj
-         JOIN providers_resource pr ON pr.id = mpj.providers_id
-         JOIN provider_providers_junction ppj ON ppj.providers_id = pr.id
-         JOIN provider_keys_junction pkj ON pkj.provider_id = ppj.provider_id AND pkj.active = true
-         WHERE mpj.model_id = (SELECT model_id FROM params) AND mpj.active = true
-         LIMIT 1) as key_id
     FROM params
 ),
 -- Flag IDs
@@ -210,37 +182,19 @@ model_departments_data AS (
     FROM params
     LIMIT 1
 ),
-input_modality_ids_data AS (
+modality_ids_data AS (
     SELECT
         CASE
             WHEN (SELECT model_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
-                (SELECT ARRAY_AGG(mr.id ORDER BY mr.modality::text)
+                (SELECT ARRAY_AGG(mm.modality_id ORDER BY mr.modality::text)
                  FROM model_modalities_junction mm
                  JOIN modalities_resource mr ON mr.id = mm.modality_id
                  WHERE mm.model_id = (SELECT model_id FROM params)
-                 AND mm.type = 'input'::direction_type
                  AND mm.active = true AND mr.active = true),
                 ARRAY[]::uuid[]
             )
-        END as input_modality_ids
-    FROM params
-    LIMIT 1
-),
-output_modality_ids_data AS (
-    SELECT
-        CASE
-            WHEN (SELECT model_id FROM params) IS NULL THEN ARRAY[]::uuid[]
-            ELSE COALESCE(
-                (SELECT ARRAY_AGG(mr.id ORDER BY mr.modality::text)
-                 FROM model_modalities_junction mm
-                 JOIN modalities_resource mr ON mr.id = mm.modality_id
-                 WHERE mm.model_id = (SELECT model_id FROM params)
-                 AND mm.type = 'output'::direction_type
-                 AND mm.active = true AND mr.active = true),
-                ARRAY[]::uuid[]
-            )
-        END as output_modality_ids
+        END as modality_ids
     FROM params
     LIMIT 1
 ),
@@ -413,7 +367,6 @@ tools_existence_check AS (
     SELECT
         EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'names'::resource_type AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as names_has_tools,
         EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'values'::resource_type AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as values_has_tools,
-        EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'endpoints'::resource_type AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as endpoints_has_tools,
         EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'departments'::resource_type AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as departments_has_tools,
         EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'modalities'::resource_type AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as modalities_has_tools,
         EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'temperature_levels'::resource_type AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as temperature_levels_has_tools,
@@ -429,9 +382,7 @@ domain_ids_data AS (
         (SELECT id FROM domains_resource WHERE resource = 'names'::resource_type AND active = true LIMIT 1) as name_domain_id,
         (SELECT id FROM domains_resource WHERE resource = 'descriptions'::resource_type AND active = true LIMIT 1) as description_domain_id,
         (SELECT id FROM domains_resource WHERE resource = 'values'::resource_type AND active = true LIMIT 1) as value_domain_id,
-        (SELECT id FROM domains_resource WHERE resource = 'endpoints'::resource_type AND active = true LIMIT 1) as endpoint_domain_id,
         (SELECT id FROM domains_resource WHERE resource = 'providers'::resource_type AND active = true LIMIT 1) as provider_domain_id,
-        (SELECT id FROM domains_resource WHERE resource = 'keys'::resource_type AND active = true LIMIT 1) as key_domain_id,
         (SELECT id FROM domains_resource WHERE resource = 'flags'::resource_type AND active = true LIMIT 1) as flag_domain_id,
         (SELECT id FROM domains_resource WHERE resource = 'departments'::resource_type AND active = true LIMIT 1) as departments_domain_id,
         (SELECT id FROM domains_resource WHERE resource = 'modalities'::resource_type AND active = true LIMIT 1) as modalities_domain_id,
@@ -446,9 +397,7 @@ SELECT
     (SELECT name_id FROM name_resource_data) as name_id,
     (SELECT description_id FROM description_resource_data) as description_id,
     (SELECT value_id FROM value_resource_data) as value_id,
-    (SELECT endpoint_id FROM endpoint_resource_data) as endpoint_id,
     (SELECT provider_id FROM provider_resource_data) as provider_id,
-    (SELECT key_id FROM key_resource_data) as key_id,
 
     -- Flag IDs
     (SELECT active_flag_id FROM flag_active_data) as active_flag_id,
@@ -461,8 +410,7 @@ SELECT
 
     -- Multi-select resource IDs
     (SELECT department_ids FROM model_departments_data) as department_ids,
-    (SELECT input_modality_ids FROM input_modality_ids_data) as input_modality_ids,
-    (SELECT output_modality_ids FROM output_modality_ids_data) as output_modality_ids,
+    (SELECT modality_ids FROM modality_ids_data) as modality_ids,
     (SELECT temperature_level_ids FROM temperature_level_ids_data) as temperature_level_ids,
     (SELECT pricing_ids FROM pricing_ids_data) as pricing_ids,
     (SELECT reasoning_level_ids FROM reasoning_level_ids_data) as reasoning_level_ids,
@@ -478,7 +426,6 @@ SELECT
     -- Tools existence
     tec.names_has_tools,
     tec.values_has_tools,
-    tec.endpoints_has_tools,
     tec.departments_has_tools,
     tec.modalities_has_tools,
     tec.temperature_levels_has_tools,
@@ -491,9 +438,7 @@ SELECT
     did.name_domain_id,
     did.description_domain_id,
     did.value_domain_id,
-    did.endpoint_domain_id,
     did.provider_domain_id,
-    did.key_domain_id,
     did.flag_domain_id,
     did.departments_domain_id,
     did.modalities_domain_id,

@@ -126,7 +126,23 @@ async def handle_profile_artifact_complete(data: dict[str, Any]) -> None:
             elif resource_type == "flags":
                 items = await get_flags_internal(conn, [resource_id])
                 if items:
-                    event.active_flag_id = str(items[0].id)
+                    flag = items[0]
+                    event.flag_resource = {
+                        "key": (flag.name or "").replace("profile_", ""),
+                        "label": (
+                            (flag.name or "")
+                            .replace("profile_", "")
+                            .replace("_", " ")
+                            .title()
+                            or "Unknown"
+                        ),
+                        "description": flag.description,
+                        "icon_id": flag.icon,
+                        "flag_option_id": flag.id,
+                        "show": True,
+                        "required": False,
+                        "generated": flag.generated,
+                    }
             elif resource_type == "departments":
                 items = await get_departments_internal(conn, [resource_id])
                 event.department_resources = items if items else None

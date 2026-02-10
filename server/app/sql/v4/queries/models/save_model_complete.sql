@@ -1,13 +1,37 @@
 -- Unified save model function - handles both create (model_id = NULL) and update (model_id provided)
--- Converted to function with composite types
+-- Uses nested resource action composites with tool call tracking.
+
+-- 0) Drop and recreate composite types for resource actions
+DO $$
+BEGIN
+    DROP TYPE IF EXISTS types.model_resource_action CASCADE;
+    CREATE TYPE types.model_resource_action AS (
+        resource_id uuid,
+        create_tool_id uuid,
+        link_tool_id uuid
+    );
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
+DO $$
+BEGIN
+    DROP TYPE IF EXISTS types.model_multi_resource_action CASCADE;
+    CREATE TYPE types.model_multi_resource_action AS (
+        resource_ids uuid[],
+        create_tool_id uuid,
+        link_tool_id uuid
+    );
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
 -- 1) Drop function first (breaks dependency on types)
 DO $$
 DECLARE
     r RECORD;
 BEGIN
-    FOR r IN 
-        SELECT oidvectortypes(proargtypes) as sig 
-        FROM pg_proc 
+    FOR r IN
+        SELECT oidvectortypes(proargtypes) as sig
+        FROM pg_proc
         WHERE proname = 'api_save_model_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
@@ -15,47 +39,23 @@ BEGIN
     END LOOP;
 END $$;
 
--- 2) Drop types WITHOUT CASCADE
-DO $$
-DECLARE
-    r RECORD;
-BEGIN
-    FOR r IN 
-        SELECT typname 
-        FROM pg_type 
-        WHERE typname LIKE 'i_save_model_v4_%' OR typname LIKE 'q_save_model_v4_%'
-          AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
-    LOOP
-        EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
-    END LOOP;
-END $$;
-
--- 3) Recreate types (no longer needed - using resource IDs directly)
-
--- 4) Recreate function
+-- 2) Recreate function with composite resource action parameters
 CREATE OR REPLACE FUNCTION api_save_model_v4(
-    provider_id uuid,
     profile_id uuid,
-    name_id uuid DEFAULT NULL,
-    description_id uuid DEFAULT NULL,
-    active_flag_id uuid DEFAULT NULL,
-    modalities_enabled_flag_id uuid DEFAULT NULL,
-    temperature_enabled_flag_id uuid DEFAULT NULL,
-    pricing_enabled_flag_id uuid DEFAULT NULL,
-    voices_enabled_flag_id uuid DEFAULT NULL,
-    reasoning_levels_enabled_flag_id uuid DEFAULT NULL,
-    qualities_enabled_flag_id uuid DEFAULT NULL,
-    value_id uuid DEFAULT NULL,
-    endpoint_id uuid DEFAULT NULL,
     input_model_id uuid DEFAULT NULL,
-    department_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    temperature_level_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    pricing_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    input_modality_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    output_modality_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    reasoning_level_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    voice_ids uuid[] DEFAULT NULL,
-    quality_ids uuid[] DEFAULT ARRAY[]::uuid[]
+    group_id uuid DEFAULT NULL,
+    names types.model_resource_action DEFAULT NULL,
+    descriptions types.model_resource_action DEFAULT NULL,
+    "values" types.model_resource_action DEFAULT NULL,
+    providers types.model_resource_action DEFAULT NULL,
+    flags types.model_multi_resource_action DEFAULT NULL,
+    departments types.model_multi_resource_action DEFAULT NULL,
+    modalities types.model_multi_resource_action DEFAULT NULL,
+    temperature_levels types.model_multi_resource_action DEFAULT NULL,
+    pricing types.model_multi_resource_action DEFAULT NULL,
+    reasoning_levels types.model_multi_resource_action DEFAULT NULL,
+    qualities types.model_multi_resource_action DEFAULT NULL,
+    voices types.model_multi_resource_action DEFAULT NULL
 )
 RETURNS TABLE (
     model_id uuid,
@@ -68,362 +68,504 @@ DECLARE
     v_model_id uuid;
     v_actor_name text;
     is_create boolean;
-    v_models_resource_id uuid;
+
+    -- Extracted resource IDs
+    v_name_id uuid;
+    v_description_id uuid;
+    v_value_id uuid;
+    v_provider_id uuid;
+    v_flag_ids uuid[];
+    v_department_ids uuid[];
+    v_modality_ids uuid[];
+    v_temperature_level_ids uuid[];
+    v_pricing_ids uuid[];
+    v_reasoning_level_ids uuid[];
+    v_quality_ids uuid[];
+    v_voice_ids uuid[];
+
+    -- Call tracking
+    v_run_id uuid;
+    v_call_id uuid;
+
+    -- Defaults
     default_voice_ids uuid[];
-    v_modality_id uuid;
-    v_temperature_level_id uuid;
-    v_reasoning_level_id uuid;
-    v_quality_id uuid;
-    v_pricing_id uuid;
 BEGIN
-    -- Determine if create or update
+    -- Extract resource IDs from composites
+    v_name_id := (names).resource_id;
+    v_description_id := (descriptions).resource_id;
+    v_value_id := ("values").resource_id;
+    v_provider_id := (providers).resource_id;
+    v_flag_ids := COALESCE((flags).resource_ids, ARRAY[]::uuid[]);
+    v_department_ids := COALESCE((departments).resource_ids, ARRAY[]::uuid[]);
+    v_modality_ids := COALESCE((modalities).resource_ids, ARRAY[]::uuid[]);
+    v_temperature_level_ids := COALESCE((temperature_levels).resource_ids, ARRAY[]::uuid[]);
+    v_pricing_ids := COALESCE((pricing).resource_ids, ARRAY[]::uuid[]);
+    v_reasoning_level_ids := COALESCE((reasoning_levels).resource_ids, ARRAY[]::uuid[]);
+    v_quality_ids := COALESCE((qualities).resource_ids, ARRAY[]::uuid[]);
+    v_voice_ids := COALESCE((voices).resource_ids, ARRAY[]::uuid[]);
+
+    -- Determine create vs update
     is_create := (input_model_id IS NULL);
-    
-    -- Get default voice IDs if voice_ids not provided
-    IF voice_ids IS NULL OR array_length(voice_ids, 1) IS NULL THEN
+
+    -- Get default voice IDs if none provided
+    IF array_length(v_voice_ids, 1) IS NULL THEN
         SELECT ARRAY_AGG(id ORDER BY voice)
         INTO default_voice_ids
         FROM voices_resource
         WHERE active = true;
-        
+
         IF default_voice_ids IS NULL THEN
             default_voice_ids := ARRAY[]::uuid[];
         END IF;
-    ELSE
-        default_voice_ids := voice_ids;
+        v_voice_ids := default_voice_ids;
     END IF;
 
-    -- Validate permissions
-    IF is_create THEN
-        IF NOT validate_department_create_permissions(
-            (SELECT r.role::text FROM profile_roles_junction pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = profile_id LIMIT 1),
-            ARRAY(SELECT unnest(department_ids)::text)
-        ) THEN
-            RAISE EXCEPTION 'Insufficient permissions to create model';
-        END IF;
-    ELSE
-        IF NOT validate_department_update_permissions(
-            (SELECT r.role::text FROM profile_roles_junction pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = profile_id LIMIT 1),
-            ARRAY(SELECT department_id::text FROM model_departments_junction WHERE model_id = input_model_id AND active = true),
-            ARRAY(SELECT department_id::text FROM profile_departments_junction WHERE view_sessions_entry.profile_id = api_save_model_v4.profile_id AND view_sessions_entry.active = true)
-        ) THEN
-            RAISE EXCEPTION 'Insufficient permissions to UPDATE model_artifact';
+    -- Default to text modalities if none provided
+    IF array_length(v_modality_ids, 1) IS NULL THEN
+        SELECT ARRAY_AGG(id)
+        INTO v_modality_ids
+        FROM modalities_resource
+        WHERE modality = 'text'::modality_type AND active = true;
+
+        IF v_modality_ids IS NULL THEN
+            v_modality_ids := ARRAY[]::uuid[];
         END IF;
     END IF;
 
-    -- Create or UPDATE model_artifact (without name, description, active, value - these go in junction tables)
+    -- Create or update model artifact
     IF is_create THEN
-        -- CREATE path
         INSERT INTO model_artifact (created_at, updated_at)
         VALUES (NOW(), NOW())
         RETURNING id INTO v_model_id;
     ELSE
-        -- UPDATE path
         v_model_id := input_model_id;
-        UPDATE model_artifact SET
-            updated_at = NOW()
+        UPDATE model_artifact SET updated_at = NOW()
         WHERE id = v_model_id;
+
+        IF NOT FOUND THEN
+            RAISE EXCEPTION 'Model not found: %', input_model_id;
+        END IF;
     END IF;
 
-    -- Handle name (using name_id resource ID)
-    IF name_id IS NOT NULL THEN
-        -- Delete existing name links and insert new one
-        DELETE FROM model_names_junction WHERE model_id = v_model_id;
+    -- Link group to model
+    IF group_id IS NOT NULL THEN
+        INSERT INTO model_groups_junction (model_id, group_id, created_at, active, generated, mcp)
+        VALUES (v_model_id, group_id, NOW(), true, false, false)
+        ON CONFLICT DO NOTHING;
+    END IF;
+
+    -- Validate resource IDs exist
+    IF v_name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names_resource WHERE id = v_name_id) THEN
+        RAISE EXCEPTION 'Name resource not found: %', v_name_id;
+    END IF;
+
+    IF v_description_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM descriptions_resource WHERE id = v_description_id) THEN
+        RAISE EXCEPTION 'Description resource not found: %', v_description_id;
+    END IF;
+
+    IF v_value_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM values_resource WHERE id = v_value_id) THEN
+        RAISE EXCEPTION 'Value resource not found: %', v_value_id;
+    END IF;
+
+    IF v_provider_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM providers_resource WHERE id = v_provider_id) THEN
+        RAISE EXCEPTION 'Provider resource not found: %', v_provider_id;
+    END IF;
+
+    IF EXISTS (
+        SELECT 1 FROM UNNEST(v_flag_ids) AS fid
+        WHERE NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = fid)
+    ) THEN
+        RAISE EXCEPTION 'One or more flag_ids not found';
+    END IF;
+
+    IF EXISTS (
+        SELECT 1 FROM UNNEST(v_department_ids) AS did
+        WHERE NOT EXISTS (SELECT 1 FROM departments_resource WHERE id = did)
+    ) THEN
+        RAISE EXCEPTION 'One or more department_ids not found';
+    END IF;
+
+    IF EXISTS (
+        SELECT 1 FROM UNNEST(v_modality_ids) AS mid
+        WHERE NOT EXISTS (SELECT 1 FROM modalities_resource WHERE id = mid)
+    ) THEN
+        RAISE EXCEPTION 'One or more modality_ids not found';
+    END IF;
+
+    IF EXISTS (
+        SELECT 1 FROM UNNEST(v_temperature_level_ids) AS tid
+        WHERE NOT EXISTS (SELECT 1 FROM temperature_levels_resource WHERE id = tid)
+    ) THEN
+        RAISE EXCEPTION 'One or more temperature_level_ids not found';
+    END IF;
+
+    IF EXISTS (
+        SELECT 1 FROM UNNEST(v_pricing_ids) AS pid
+        WHERE NOT EXISTS (SELECT 1 FROM pricing_resource WHERE id = pid)
+    ) THEN
+        RAISE EXCEPTION 'One or more pricing_ids not found';
+    END IF;
+
+    IF EXISTS (
+        SELECT 1 FROM UNNEST(v_reasoning_level_ids) AS rid
+        WHERE NOT EXISTS (SELECT 1 FROM reasoning_levels_resource WHERE id = rid)
+    ) THEN
+        RAISE EXCEPTION 'One or more reasoning_level_ids not found';
+    END IF;
+
+    IF EXISTS (
+        SELECT 1 FROM UNNEST(v_quality_ids) AS qid
+        WHERE NOT EXISTS (SELECT 1 FROM qualities_resource WHERE id = qid)
+    ) THEN
+        RAISE EXCEPTION 'One or more quality_ids not found';
+    END IF;
+
+    -- Deactivate old links on update
+    IF NOT is_create THEN
+        UPDATE model_names_junction SET active = false WHERE model_id = v_model_id AND active = true;
+        UPDATE model_descriptions_junction SET active = false WHERE model_id = v_model_id AND active = true;
+        UPDATE model_values_junction SET active = false WHERE model_id = v_model_id AND active = true;
+        UPDATE model_providers_junction SET active = false WHERE model_id = v_model_id AND active = true;
+        UPDATE model_flags_junction SET active = false WHERE model_id = v_model_id AND active = true;
+        UPDATE model_departments_junction SET active = false WHERE model_id = v_model_id AND active = true;
+        UPDATE model_modalities_junction SET active = false WHERE model_id = v_model_id AND active = true;
+        UPDATE model_temperature_levels_junction SET active = false WHERE model_id = v_model_id;
+        UPDATE model_pricing_junction SET active = false WHERE model_id = v_model_id;
+        UPDATE model_reasoning_levels_junction SET active = false WHERE model_id = v_model_id;
+        UPDATE model_voices_junction SET active = false WHERE model_id = v_model_id;
+        UPDATE model_qualities_junction SET active = false WHERE model_id = v_model_id;
+    END IF;
+
+    -- Tool-call tracking: one run per save
+    v_run_id := uuidv7();
+    INSERT INTO runs_entry (id, input_tokens, output_tokens, cached_input_tokens, group_id, created_at, updated_at)
+    VALUES (v_run_id, 0, 0, 0, group_id, NOW(), NOW());
+
+    -- names
+    IF v_name_id IS NOT NULL THEN
+        IF (names).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'model_save_create_names_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((names).create_tool_id, v_call_id);
+            INSERT INTO names_calls_connection (names_id, call_id) VALUES (v_name_id, v_call_id);
+        END IF;
+        IF (names).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'model_save_link_names_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((names).link_tool_id, v_call_id);
+            INSERT INTO names_calls_connection (names_id, call_id) VALUES (v_name_id, v_call_id);
+        END IF;
+    END IF;
+
+    -- descriptions
+    IF v_description_id IS NOT NULL THEN
+        IF (descriptions).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'model_save_create_descriptions_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((descriptions).create_tool_id, v_call_id);
+            INSERT INTO descriptions_calls_connection (descriptions_id, call_id) VALUES (v_description_id, v_call_id);
+        END IF;
+        IF (descriptions).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'model_save_link_descriptions_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((descriptions).link_tool_id, v_call_id);
+            INSERT INTO descriptions_calls_connection (descriptions_id, call_id) VALUES (v_description_id, v_call_id);
+        END IF;
+    END IF;
+
+    -- values
+    IF v_value_id IS NOT NULL THEN
+        IF ("values").create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'model_save_create_values_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES (("values").create_tool_id, v_call_id);
+            INSERT INTO values_calls_connection (values_id, call_id) VALUES (v_value_id, v_call_id);
+        END IF;
+        IF ("values").link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'model_save_link_values_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES (("values").link_tool_id, v_call_id);
+            INSERT INTO values_calls_connection (values_id, call_id) VALUES (v_value_id, v_call_id);
+        END IF;
+    END IF;
+
+    -- providers
+    IF v_provider_id IS NOT NULL THEN
+        IF (providers).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'model_save_create_providers_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((providers).create_tool_id, v_call_id);
+            INSERT INTO providers_calls_connection (providers_id, call_id) VALUES (v_provider_id, v_call_id);
+        END IF;
+        IF (providers).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'model_save_link_providers_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((providers).link_tool_id, v_call_id);
+            INSERT INTO providers_calls_connection (providers_id, call_id) VALUES (v_provider_id, v_call_id);
+        END IF;
+    END IF;
+
+    -- Multi-resource tool call trackers
+    IF COALESCE(array_length(v_flag_ids, 1), 0) > 0 THEN
+        IF (flags).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'model_save_create_flags_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((flags).create_tool_id, v_call_id);
+            INSERT INTO flags_calls_connection (flags_id, call_id)
+            SELECT fid, v_call_id FROM UNNEST(v_flag_ids) fid;
+        END IF;
+        IF (flags).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'model_save_link_flags_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((flags).link_tool_id, v_call_id);
+            INSERT INTO flags_calls_connection (flags_id, call_id)
+            SELECT fid, v_call_id FROM UNNEST(v_flag_ids) fid;
+        END IF;
+    END IF;
+
+    IF COALESCE(array_length(v_department_ids, 1), 0) > 0 THEN
+        IF (departments).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'model_save_create_departments_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((departments).create_tool_id, v_call_id);
+            INSERT INTO departments_calls_connection (departments_id, call_id)
+            SELECT did, v_call_id FROM UNNEST(v_department_ids) did;
+        END IF;
+        IF (departments).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'model_save_link_departments_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((departments).link_tool_id, v_call_id);
+            INSERT INTO departments_calls_connection (departments_id, call_id)
+            SELECT did, v_call_id FROM UNNEST(v_department_ids) did;
+        END IF;
+    END IF;
+
+    IF COALESCE(array_length(v_modality_ids, 1), 0) > 0 THEN
+        IF (modalities).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'model_save_create_modalities_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((modalities).create_tool_id, v_call_id);
+            INSERT INTO modalities_calls_connection (modalities_id, call_id)
+            SELECT mid, v_call_id FROM UNNEST(v_modality_ids) mid;
+        END IF;
+        IF (modalities).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'model_save_link_modalities_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((modalities).link_tool_id, v_call_id);
+            INSERT INTO modalities_calls_connection (modalities_id, call_id)
+            SELECT mid, v_call_id FROM UNNEST(v_modality_ids) mid;
+        END IF;
+    END IF;
+
+    IF COALESCE(array_length(v_temperature_level_ids, 1), 0) > 0 THEN
+        IF (temperature_levels).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'model_save_create_temperature_levels_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((temperature_levels).create_tool_id, v_call_id);
+            INSERT INTO temperature_levels_calls_connection (temperature_levels_id, call_id)
+            SELECT tid, v_call_id FROM UNNEST(v_temperature_level_ids) tid;
+        END IF;
+        IF (temperature_levels).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'model_save_link_temperature_levels_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((temperature_levels).link_tool_id, v_call_id);
+            INSERT INTO temperature_levels_calls_connection (temperature_levels_id, call_id)
+            SELECT tid, v_call_id FROM UNNEST(v_temperature_level_ids) tid;
+        END IF;
+    END IF;
+
+    IF COALESCE(array_length(v_pricing_ids, 1), 0) > 0 THEN
+        IF (pricing).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'model_save_create_pricing_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((pricing).create_tool_id, v_call_id);
+            INSERT INTO pricing_calls_connection (pricing_id, call_id)
+            SELECT pid, v_call_id FROM UNNEST(v_pricing_ids) pid;
+        END IF;
+        IF (pricing).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'model_save_link_pricing_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((pricing).link_tool_id, v_call_id);
+            INSERT INTO pricing_calls_connection (pricing_id, call_id)
+            SELECT pid, v_call_id FROM UNNEST(v_pricing_ids) pid;
+        END IF;
+    END IF;
+
+    IF COALESCE(array_length(v_reasoning_level_ids, 1), 0) > 0 THEN
+        IF (reasoning_levels).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'model_save_create_reasoning_levels_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((reasoning_levels).create_tool_id, v_call_id);
+            INSERT INTO reasoning_levels_calls_connection (reasoning_levels_id, call_id)
+            SELECT rid, v_call_id FROM UNNEST(v_reasoning_level_ids) rid;
+        END IF;
+        IF (reasoning_levels).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'model_save_link_reasoning_levels_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((reasoning_levels).link_tool_id, v_call_id);
+            INSERT INTO reasoning_levels_calls_connection (reasoning_levels_id, call_id)
+            SELECT rid, v_call_id FROM UNNEST(v_reasoning_level_ids) rid;
+        END IF;
+    END IF;
+
+    IF COALESCE(array_length(v_quality_ids, 1), 0) > 0 THEN
+        IF (qualities).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'model_save_create_qualities_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((qualities).create_tool_id, v_call_id);
+            INSERT INTO qualities_calls_connection (qualities_id, call_id)
+            SELECT qid, v_call_id FROM UNNEST(v_quality_ids) qid;
+        END IF;
+        IF (qualities).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'model_save_link_qualities_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((qualities).link_tool_id, v_call_id);
+            INSERT INTO qualities_calls_connection (qualities_id, call_id)
+            SELECT qid, v_call_id FROM UNNEST(v_quality_ids) qid;
+        END IF;
+    END IF;
+
+    IF COALESCE(array_length(v_voice_ids, 1), 0) > 0 THEN
+        IF (voices).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'model_save_create_voices_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((voices).create_tool_id, v_call_id);
+            INSERT INTO voices_calls_connection (voices_id, call_id)
+            SELECT vid, v_call_id FROM UNNEST(v_voice_ids) vid;
+        END IF;
+        IF (voices).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'model_save_link_voices_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((voices).link_tool_id, v_call_id);
+            INSERT INTO voices_calls_connection (voices_id, call_id)
+            SELECT vid, v_call_id FROM UNNEST(v_voice_ids) vid;
+        END IF;
+    END IF;
+
+    -- Upsert active links: single-select resources
+    IF v_name_id IS NOT NULL THEN
         INSERT INTO model_names_junction (model_id, name_id, created_at, generated, mcp)
-        VALUES (v_model_id, name_id, NOW(), false, false);
-    ELSE
-        -- Remove name if name_id is NULL
-        DELETE FROM model_names_junction WHERE model_id = v_model_id;
+        VALUES (v_model_id, v_name_id, NOW(), false, false)
+        ON CONFLICT ON CONSTRAINT model_names_pkey DO UPDATE
+        SET generated = false, mcp = false;
     END IF;
 
-    -- Handle description (using description_id resource ID)
-    IF description_id IS NOT NULL THEN
-        -- Delete existing description links and insert new one
-        DELETE FROM model_descriptions_junction WHERE model_id = v_model_id;
+    IF v_description_id IS NOT NULL THEN
         INSERT INTO model_descriptions_junction (model_id, description_id, created_at, generated, mcp)
-        VALUES (v_model_id, description_id, NOW(), false, false);
-    ELSE
-        -- Remove description if description_id is NULL
-        DELETE FROM model_descriptions_junction WHERE model_id = v_model_id;
+        VALUES (v_model_id, v_description_id, NOW(), false, false)
+        ON CONFLICT ON CONSTRAINT model_descriptions_pkey DO UPDATE
+        SET generated = false, mcp = false;
     END IF;
 
-    -- Handle active flag (using active_flag_id resource ID)
-    IF active_flag_id IS NOT NULL THEN
-        -- Delete existing active flag links and insert new one
-        DELETE FROM model_flags_junction WHERE model_id = v_model_id AND flag_id = active_flag_id;
-        INSERT INTO model_flags_junction (model_id, flag_id, value, created_at, generated, mcp, call_id)
-        VALUES (v_model_id, active_flag_id, true, NOW(), false, false, NULL)
-        ON CONFLICT (model_id, flag_id) DO UPDATE SET value = EXCLUDED.value;
-    ELSE
-        -- Remove active flag if active_flag_id is NULL
-        DELETE FROM model_flags_junction mf
-        WHERE mf.model_id = v_model_id
-        AND EXISTS (SELECT 1 FROM flags_resource f WHERE f.id = mf.flag_id AND f.name = 'model_active');
-    END IF;
-
-    -- Handle modalities_enabled flag
-    IF modalities_enabled_flag_id IS NOT NULL THEN
-        -- Delete existing flag of this type first
-        DELETE FROM model_flags_junction mf
-        WHERE mf.model_id = v_model_id
-        AND EXISTS (SELECT 1 FROM flags_resource f WHERE f.id = mf.flag_id AND f.type = 'modalities_enabled'::flag_type);
-        -- Insert new flag
-        INSERT INTO model_flags_junction (model_id, flag_id, value, created_at, generated, mcp, call_id)
-        VALUES (v_model_id, modalities_enabled_flag_id, true, NOW(), false, false, NULL)
-        ON CONFLICT (model_id, flag_id) DO UPDATE SET value = EXCLUDED.value;
-    ELSE
-        -- Remove flag if flag_id is NULL
-        DELETE FROM model_flags_junction mf
-        WHERE mf.model_id = v_model_id
-        AND EXISTS (SELECT 1 FROM flags_resource f WHERE f.id = mf.flag_id AND f.type = 'modalities_enabled'::flag_type);
-    END IF;
-
-    -- Handle temperature_enabled flag
-    IF temperature_enabled_flag_id IS NOT NULL THEN
-        DELETE FROM model_flags_junction mf
-        WHERE mf.model_id = v_model_id
-        AND EXISTS (SELECT 1 FROM flags_resource f WHERE f.id = mf.flag_id AND f.type = 'temperature_enabled'::flag_type);
-        INSERT INTO model_flags_junction (model_id, flag_id, value, created_at, generated, mcp, call_id)
-        VALUES (v_model_id, temperature_enabled_flag_id, true, NOW(), false, false, NULL)
-        ON CONFLICT (model_id, flag_id) DO UPDATE SET value = EXCLUDED.value;
-    ELSE
-        DELETE FROM model_flags_junction mf
-        WHERE mf.model_id = v_model_id
-        AND EXISTS (SELECT 1 FROM flags_resource f WHERE f.id = mf.flag_id AND f.type = 'temperature_enabled'::flag_type);
-    END IF;
-
-    -- Handle pricing_enabled flag
-    IF pricing_enabled_flag_id IS NOT NULL THEN
-        DELETE FROM model_flags_junction mf
-        WHERE mf.model_id = v_model_id
-        AND EXISTS (SELECT 1 FROM flags_resource f WHERE f.id = mf.flag_id AND f.type = 'pricing_enabled'::flag_type);
-        INSERT INTO model_flags_junction (model_id, flag_id, value, created_at, generated, mcp, call_id)
-        VALUES (v_model_id, pricing_enabled_flag_id, true, NOW(), false, false, NULL)
-        ON CONFLICT (model_id, flag_id) DO UPDATE SET value = EXCLUDED.value;
-    ELSE
-        DELETE FROM model_flags_junction mf
-        WHERE mf.model_id = v_model_id
-        AND EXISTS (SELECT 1 FROM flags_resource f WHERE f.id = mf.flag_id AND f.type = 'pricing_enabled'::flag_type);
-    END IF;
-
-    -- Handle voices_enabled flag
-    IF voices_enabled_flag_id IS NOT NULL THEN
-        DELETE FROM model_flags_junction mf
-        WHERE mf.model_id = v_model_id
-        AND EXISTS (SELECT 1 FROM flags_resource f WHERE f.id = mf.flag_id AND f.type = 'voices_enabled'::flag_type);
-        INSERT INTO model_flags_junction (model_id, flag_id, value, created_at, generated, mcp, call_id)
-        VALUES (v_model_id, voices_enabled_flag_id, true, NOW(), false, false, NULL)
-        ON CONFLICT (model_id, flag_id) DO UPDATE SET value = EXCLUDED.value;
-    ELSE
-        DELETE FROM model_flags_junction mf
-        WHERE mf.model_id = v_model_id
-        AND EXISTS (SELECT 1 FROM flags_resource f WHERE f.id = mf.flag_id AND f.type = 'voices_enabled'::flag_type);
-    END IF;
-
-    -- Handle reasoning_levels_enabled flag
-    IF reasoning_levels_enabled_flag_id IS NOT NULL THEN
-        DELETE FROM model_flags_junction mf
-        WHERE mf.model_id = v_model_id
-        AND EXISTS (SELECT 1 FROM flags_resource f WHERE f.id = mf.flag_id AND f.type = 'reasoning_levels_enabled'::flag_type);
-        INSERT INTO model_flags_junction (model_id, flag_id, value, created_at, generated, mcp, call_id)
-        VALUES (v_model_id, reasoning_levels_enabled_flag_id, true, NOW(), false, false, NULL)
-        ON CONFLICT (model_id, flag_id) DO UPDATE SET value = EXCLUDED.value;
-    ELSE
-        DELETE FROM model_flags_junction mf
-        WHERE mf.model_id = v_model_id
-        AND EXISTS (SELECT 1 FROM flags_resource f WHERE f.id = mf.flag_id AND f.type = 'reasoning_levels_enabled'::flag_type);
-    END IF;
-
-    -- Handle qualities_enabled flag
-    IF qualities_enabled_flag_id IS NOT NULL THEN
-        DELETE FROM model_flags_junction mf
-        WHERE mf.model_id = v_model_id
-        AND EXISTS (SELECT 1 FROM flags_resource f WHERE f.id = mf.flag_id AND f.type = 'qualities_enabled'::flag_type);
-        INSERT INTO model_flags_junction (model_id, flag_id, value, created_at, generated, mcp, call_id)
-        VALUES (v_model_id, qualities_enabled_flag_id, true, NOW(), false, false, NULL)
-        ON CONFLICT (model_id, flag_id) DO UPDATE SET value = EXCLUDED.value;
-    ELSE
-        DELETE FROM model_flags_junction mf
-        WHERE mf.model_id = v_model_id
-        AND EXISTS (SELECT 1 FROM flags_resource f WHERE f.id = mf.flag_id AND f.type = 'qualities_enabled'::flag_type);
-    END IF;
-
-    -- Handle value (using value_id resource ID)
-    IF value_id IS NOT NULL THEN
-        -- Delete existing value links and insert new one
-        DELETE FROM model_values_junction WHERE model_id = v_model_id;
+    IF v_value_id IS NOT NULL THEN
         INSERT INTO model_values_junction (model_id, value_id, created_at, generated, mcp)
-        VALUES (v_model_id, value_id, NOW(), false, false);
-    ELSE
-        -- Remove value if value_id is NULL
-        DELETE FROM model_values_junction WHERE model_id = v_model_id;
+        VALUES (v_model_id, v_value_id, NOW(), false, false)
+        ON CONFLICT ON CONSTRAINT model_values_pkey DO UPDATE
+        SET generated = false, mcp = false;
     END IF;
 
-    -- Handle provider link (via model_providers_junction table)
-    -- model_providers_junction: model_id → model_artifact, providers_id → providers_resource
-    -- First delete existing provider links, then insert new one
-    DELETE FROM model_providers_junction WHERE model_id = v_model_id;
-    IF provider_id IS NOT NULL THEN
+    IF v_provider_id IS NOT NULL THEN
         INSERT INTO model_providers_junction (model_id, providers_id, active, created_at)
-        VALUES (v_model_id, provider_id, true, NOW())
-        ON CONFLICT (model_id, providers_id) DO UPDATE SET
-            active = true;
+        VALUES (v_model_id, v_provider_id, true, NOW())
+        ON CONFLICT ON CONSTRAINT model_providers_pkey DO UPDATE
+        SET active = true;
     END IF;
 
-    -- Handle departments
-    IF NOT is_create THEN
-        -- Deactivate all existing department links for update
-        UPDATE model_departments_junction
-        SET active = false
-        WHERE model_id = v_model_id AND active = true;
-    END IF;
+    -- Upsert active links: multi-select resources
+    INSERT INTO model_flags_junction (model_id, flag_id, value, created_at, generated, mcp)
+    SELECT v_model_id, fid, true, NOW(), false, false
+    FROM UNNEST(v_flag_ids) fid
+    ON CONFLICT ON CONSTRAINT model_flags_pkey DO UPDATE
+    SET value = true, generated = false, mcp = false;
 
-    IF array_length(department_ids, 1) > 0 THEN
-        INSERT INTO model_departments_junction (model_id, department_id, active, created_at)
-        SELECT v_model_id, dept_id, true, NOW()
-        FROM UNNEST(department_ids) as dept_id
-        ON CONFLICT (model_id, department_id) DO UPDATE SET
-            active = true;
-    END IF;
+    INSERT INTO model_departments_junction (model_id, department_id, active, created_at)
+    SELECT v_model_id, did, true, NOW()
+    FROM UNNEST(v_department_ids) did
+    ON CONFLICT ON CONSTRAINT model_departments_pkey DO UPDATE
+    SET active = true;
 
-    -- Handle endpoint (via provider_endpoints_junction on the provider)
-    -- If endpoint_id is provided, link it to the provider (not the model)
-    IF endpoint_id IS NOT NULL AND provider_id IS NOT NULL THEN
-        -- Sync denormalized endpoint on providers_resource
-        UPDATE providers_resource SET endpoint = (SELECT base_url FROM endpoints_resource WHERE id = endpoint_id)
-        WHERE id = api_save_model_v4.provider_id;
-    END IF;
+    INSERT INTO model_modalities_junction (model_id, modality_id, active, created_at, generated, mcp)
+    SELECT v_model_id, mid, true, NOW(), false, false
+    FROM UNNEST(v_modality_ids) mid
+    ON CONFLICT ON CONSTRAINT model_modalities_pkey DO UPDATE
+    SET active = true, generated = false, mcp = false;
 
-    -- Handle temperature levels (using temperature_level_ids resource IDs)
-    -- Deactivate existing temperature levels for update
-    IF NOT is_create THEN
-        UPDATE model_temperature_levels_junction SET active = false
-        WHERE model_id = v_model_id;
-    END IF;
+    INSERT INTO model_temperature_levels_junction (model_id, temperature_level_id, active, created_at, generated, mcp)
+    SELECT v_model_id, tid, true, NOW(), false, false
+    FROM UNNEST(v_temperature_level_ids) tid
+    ON CONFLICT ON CONSTRAINT model_temperature_levels_pkey DO UPDATE
+    SET active = true;
 
-    IF array_length(temperature_level_ids, 1) > 0 THEN
-        INSERT INTO model_temperature_levels_junction (model_id, temperature_level_id, active, created_at, generated, mcp)
-        SELECT v_model_id, temp_level_id, true, NOW(), false, false
-        FROM UNNEST(temperature_level_ids) as temp_level_id
-        ON CONFLICT (model_id, temperature_level_id) DO UPDATE SET active = true;
-    END IF;
+    INSERT INTO model_pricing_junction (model_id, pricing_id, active, created_at, generated, mcp)
+    SELECT v_model_id, pid, true, NOW(), false, false
+    FROM UNNEST(v_pricing_ids) pid
+    ON CONFLICT ON CONSTRAINT model_pricing_pkey DO UPDATE
+    SET active = true;
 
-    -- Handle pricing (using pricing_ids resource IDs)
-    -- Deactivate existing pricing for update
-    IF NOT is_create THEN
-        UPDATE model_pricing_junction SET active = false
-        WHERE model_id = v_model_id;
-    END IF;
+    INSERT INTO model_reasoning_levels_junction (model_id, reasoning_level_id, active, created_at, generated, mcp)
+    SELECT v_model_id, rid, true, NOW(), false, false
+    FROM UNNEST(v_reasoning_level_ids) rid
+    ON CONFLICT ON CONSTRAINT model_reasoning_levels_pkey DO UPDATE
+    SET active = true;
 
-    IF array_length(pricing_ids, 1) > 0 THEN
-        INSERT INTO model_pricing_junction (model_id, pricing_id, active, created_at, generated, mcp)
-        SELECT v_model_id, pricing_id, true, NOW(), false, false
-        FROM UNNEST(pricing_ids) as pricing_id
-        ON CONFLICT (model_id, pricing_id) DO UPDATE SET active = true;
-    END IF;
+    INSERT INTO model_qualities_junction (model_id, quality_id, active, created_at, generated, mcp)
+    SELECT v_model_id, qid, true, NOW(), false, false
+    FROM UNNEST(v_quality_ids) qid
+    ON CONFLICT ON CONSTRAINT model_qualities_pkey DO UPDATE
+    SET active = true;
 
-    -- Handle modalities (using modality_ids resource IDs)
-    -- Deactivate existing modalities for update
-    IF NOT is_create THEN
-        UPDATE model_modalities_junction SET active = false
-        WHERE model_id = v_model_id;
-    END IF;
+    INSERT INTO model_voices_junction (model_id, voice_id, active, created_at, generated, mcp)
+    SELECT v_model_id, vid, true, NOW(), false, false
+    FROM UNNEST(v_voice_ids) vid
+    ON CONFLICT ON CONSTRAINT model_voices_pkey DO UPDATE
+    SET active = true;
 
-    -- Default to text/text if no modalities provided
-    IF array_length(input_modality_ids, 1) IS NULL AND array_length(output_modality_ids, 1) IS NULL THEN
-        -- Get text modality IDs
-        SELECT ARRAY_AGG(id)
-        INTO input_modality_ids
-        FROM modalities_resource
-        WHERE modality = 'text'::modality_type AND active = true
-        LIMIT 1;
-        
-        SELECT ARRAY_AGG(id)
-        INTO output_modality_ids
-        FROM modalities_resource
-        WHERE modality = 'text'::modality_type AND active = true
-        LIMIT 1;
-    END IF;
-
-    IF array_length(input_modality_ids, 1) > 0 THEN
-        INSERT INTO model_modalities_junction (model_id, modality_id, type, active, created_at, generated, mcp)
-        SELECT v_model_id, mod_id, 'input'::direction_type, true, NOW(), false, false
-        FROM UNNEST(input_modality_ids) as mod_id
-        ON CONFLICT (model_id, modality_id, type) DO UPDATE SET active = true;
-    END IF;
-
-    IF array_length(output_modality_ids, 1) > 0 THEN
-        INSERT INTO model_modalities_junction (model_id, modality_id, type, active, created_at, generated, mcp)
-        SELECT v_model_id, mod_id, 'output'::direction_type, true, NOW(), false, false
-        FROM UNNEST(output_modality_ids) as mod_id
-        ON CONFLICT (model_id, modality_id, type) DO UPDATE SET active = true;
-    END IF;
-
-    -- Handle reasoning levels (using reasoning_level_ids resource IDs)
-    -- Deactivate existing reasoning levels for update
-    IF NOT is_create THEN
-        UPDATE model_reasoning_levels_junction SET active = false
-        WHERE model_id = v_model_id;
-    END IF;
-
-    IF array_length(reasoning_level_ids, 1) > 0 THEN
-        INSERT INTO model_reasoning_levels_junction (model_id, reasoning_level_id, active, created_at, generated, mcp)
-        SELECT v_model_id, reasoning_level_id, true, NOW(), false, false
-        FROM UNNEST(reasoning_level_ids) as reasoning_level_id
-        ON CONFLICT (model_id, reasoning_level_id) DO UPDATE SET active = true;
-    END IF;
-
-    -- Handle voices (using voice_ids resource IDs)
-    -- Always deactivate existing voices first for update
-    IF NOT is_create THEN
-        UPDATE model_voices_junction SET active = false
-        WHERE model_id = v_model_id;
-    END IF;
-
-    IF array_length(default_voice_ids, 1) > 0 THEN
-        INSERT INTO model_voices_junction (model_id, voice_id, active, created_at, generated, mcp)
-        SELECT v_model_id, voice_id, true, NOW(), false, false
-        FROM UNNEST(default_voice_ids) as voice_id
-        ON CONFLICT (model_id, voice_id) DO UPDATE SET active = true;
-    END IF;
-
-    -- Handle qualities (using quality_ids resource IDs)
-    -- Deactivate existing qualities for update
-    IF NOT is_create THEN
-        UPDATE model_qualities_junction SET active = false
-        WHERE model_id = v_model_id;
-    END IF;
-
-    IF array_length(quality_ids, 1) > 0 THEN
-        INSERT INTO model_qualities_junction (model_id, quality_id, active, created_at, generated, mcp)
-        SELECT v_model_id, quality_id, true, NOW(), false, false
-        FROM UNNEST(quality_ids) as quality_id
-        ON CONFLICT (model_id, quality_id) DO UPDATE SET active = true;
-    END IF;
-
-    -- Sync linked resources with name/description and denormalized arrays
+    -- Sync denormalized models_resource
     UPDATE models_resource r
     SET name = n.name,
         description = d.description,
-        provider_id = (SELECT mpj.providers_id FROM model_providers_junction mpj WHERE mpj.model_id = v_model_id AND mpj.active = true LIMIT 1),
-        input_modality_ids = COALESCE((SELECT ARRAY_AGG(mm.modality_id) FROM model_modalities_junction mm WHERE mm.model_id = v_model_id AND mm.type = 'input'::direction_type AND mm.active = true), ARRAY[]::uuid[]),
-        output_modality_ids = COALESCE((SELECT ARRAY_AGG(mm.modality_id) FROM model_modalities_junction mm WHERE mm.model_id = v_model_id AND mm.type = 'output'::direction_type AND mm.active = true), ARRAY[]::uuid[]),
+        provider_id = v_provider_id,
+        modality_ids = COALESCE((SELECT ARRAY_AGG(mm.modality_id) FROM model_modalities_junction mm WHERE mm.model_id = v_model_id AND mm.active = true), ARRAY[]::uuid[]),
         temperature_level_ids = COALESCE((SELECT ARRAY_AGG(mtl.temperature_level_id) FROM model_temperature_levels_junction mtl WHERE mtl.model_id = v_model_id AND mtl.active = true), ARRAY[]::uuid[]),
         reasoning_level_ids = COALESCE((SELECT ARRAY_AGG(mrl.reasoning_level_id) FROM model_reasoning_levels_junction mrl WHERE mrl.model_id = v_model_id AND mrl.active = true), ARRAY[]::uuid[]),
         quality_ids = COALESCE((SELECT ARRAY_AGG(mq.quality_id) FROM model_qualities_junction mq WHERE mq.model_id = v_model_id AND mq.active = true), ARRAY[]::uuid[]),
         voice_ids = COALESCE((SELECT ARRAY_AGG(mv.voice_id) FROM model_voices_junction mv WHERE mv.model_id = v_model_id AND mv.active = true), ARRAY[]::uuid[])
     FROM model_models_junction j
-    LEFT JOIN names_resource n ON n.id = name_id
-    LEFT JOIN descriptions_resource d ON d.id = description_id
+    LEFT JOIN names_resource n ON n.id = v_name_id
+    LEFT JOIN descriptions_resource d ON d.id = v_description_id
     WHERE j.models_id = r.id
       AND j.model_id = v_model_id;
 
-    -- Return result
-    RETURN QUERY
-    SELECT 
-        v_model_id as model_id,
-        COALESCE(COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), ''), 'System') as actor_name
-    FROM profile_artifact p
-    WHERE p.id = profile_id;
+    -- Get actor name
+    SELECT up.actor_name INTO v_actor_name
+    FROM view_user_profile_context up
+    WHERE up.profile_id = profile_id
+    LIMIT 1;
+
+    RETURN QUERY SELECT v_model_id, v_actor_name;
 END;
 $$;

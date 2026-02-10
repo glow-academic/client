@@ -46,7 +46,9 @@ CREATE TYPE types.q_get_draft_document_view_v4_item AS (
     flag_ids uuid[],
     department_ids uuid[],
     parameter_field_ids uuid[],
-    upload_ids uuid[]
+    upload_ids uuid[],
+    image_ids uuid[],
+    text_ids uuid[]
 );
 
 CREATE OR REPLACE FUNCTION api_get_draft_document_view_v4(
@@ -83,7 +85,9 @@ AS $$
                     flag_ids,
                     department_ids,
                     parameter_field_ids,
-                    upload_ids
+                    upload_ids,
+                    image_ids,
+                    text_ids
                 )::types.q_get_draft_document_view_v4_item
                 ORDER BY updated_at DESC
             ),

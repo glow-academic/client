@@ -54,6 +54,8 @@ RETURNS TABLE (
     department_ids uuid[],
     field_ids uuid[],
     upload_ids uuid[],
+    image_ids uuid[],
+    text_ids uuid[],
 
     -- Suggestion IDs (computed in resource search endpoints)
     name_suggestions uuid[],
@@ -61,6 +63,8 @@ RETURNS TABLE (
     department_suggestions uuid[],
     field_suggestions uuid[],
     upload_suggestions uuid[],
+    image_suggestions uuid[],
+    text_suggestions uuid[],
 
     -- Candidate agents (for Python-side agent scoring)
     candidate_agents document_candidate_agent[],
@@ -70,6 +74,8 @@ RETURNS TABLE (
     departments_has_tools boolean,
     fields_has_tools boolean,
     uploads_has_tools boolean,
+    images_has_tools boolean,
+    texts_has_tools boolean,
 
     -- Domain IDs (for domain-based generation)
     name_domain_id uuid,
@@ -77,7 +83,9 @@ RETURNS TABLE (
     flag_domain_id uuid,
     departments_domain_id uuid,
     fields_domain_id uuid,
-    uploads_domain_id uuid
+    uploads_domain_id uuid,
+    images_domain_id uuid,
+    texts_domain_id uuid
 )
 LANGUAGE sql
 STABLE
@@ -129,6 +137,34 @@ document_uploads_data AS (
                 ARRAY[]::uuid[]
             )
         END as upload_ids
+    FROM params
+    LIMIT 1
+),
+document_images_data AS (
+    SELECT
+        CASE
+            WHEN (SELECT document_id FROM params) IS NULL THEN ARRAY[]::uuid[]
+            ELSE COALESCE(
+                (SELECT ARRAY_AGG(di.images_id ORDER BY di.created_at)
+                 FROM document_images di
+                 WHERE di.document_id = (SELECT document_id FROM params) AND di.active = true),
+                ARRAY[]::uuid[]
+            )
+        END as image_ids
+    FROM params
+    LIMIT 1
+),
+document_texts_data AS (
+    SELECT
+        CASE
+            WHEN (SELECT document_id FROM params) IS NULL THEN ARRAY[]::uuid[]
+            ELSE COALESCE(
+                (SELECT ARRAY_AGG(dt.texts_id ORDER BY dt.created_at)
+                 FROM document_texts dt
+                 WHERE dt.document_id = (SELECT document_id FROM params) AND dt.active = true),
+                ARRAY[]::uuid[]
+            )
+        END as text_ids
     FROM params
     LIMIT 1
 ),
@@ -230,7 +266,9 @@ tools_existence_check AS (
         EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'names'::resource_type AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as names_has_tools,
         EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'departments'::resource_type AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as departments_has_tools,
         EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'fields'::resource_type AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as fields_has_tools,
-        EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'uploads'::resource_type AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as uploads_has_tools
+        EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'uploads'::resource_type AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as uploads_has_tools,
+        EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'images'::resource_type AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as images_has_tools,
+        EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'texts'::resource_type AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as texts_has_tools
     FROM params x
 ),
 -- Domain IDs from domains_resource table
@@ -241,7 +279,9 @@ domain_ids_data AS (
         (SELECT id FROM domains_resource WHERE resource = 'flags'::resource_type AND active = true LIMIT 1) as flag_domain_id,
         (SELECT id FROM domains_resource WHERE resource = 'departments'::resource_type AND active = true LIMIT 1) as departments_domain_id,
         (SELECT id FROM domains_resource WHERE resource = 'fields'::resource_type AND active = true LIMIT 1) as fields_domain_id,
-        (SELECT id FROM domains_resource WHERE resource = 'uploads'::resource_type AND active = true LIMIT 1) as uploads_domain_id
+        (SELECT id FROM domains_resource WHERE resource = 'uploads'::resource_type AND active = true LIMIT 1) as uploads_domain_id,
+        (SELECT id FROM domains_resource WHERE resource = 'images'::resource_type AND active = true LIMIT 1) as images_domain_id,
+        (SELECT id FROM domains_resource WHERE resource = 'texts'::resource_type AND active = true LIMIT 1) as texts_domain_id
 )
 SELECT
     -- Single-select resource IDs
@@ -253,6 +293,8 @@ SELECT
     (SELECT department_ids FROM document_departments_data) as department_ids,
     (SELECT field_ids FROM document_fields_data) as field_ids,
     (SELECT upload_ids FROM document_uploads_data) as upload_ids,
+    (SELECT image_ids FROM document_images_data) as image_ids,
+    (SELECT text_ids FROM document_texts_data) as text_ids,
 
     -- Suggestion IDs (computed in resource search endpoints)
     ARRAY[]::uuid[] as name_suggestions,
@@ -260,6 +302,8 @@ SELECT
     ARRAY[]::uuid[] as department_suggestions,
     ARRAY[]::uuid[] as field_suggestions,
     ARRAY[]::uuid[] as upload_suggestions,
+    ARRAY[]::uuid[] as image_suggestions,
+    ARRAY[]::uuid[] as text_suggestions,
 
     -- Candidate agents (for Python-side agent scoring)
     (SELECT COALESCE(
@@ -272,6 +316,8 @@ SELECT
     tec.departments_has_tools,
     tec.fields_has_tools,
     tec.uploads_has_tools,
+    tec.images_has_tools,
+    tec.texts_has_tools,
 
     -- Domain IDs
     did.name_domain_id,
@@ -279,7 +325,9 @@ SELECT
     did.flag_domain_id,
     did.departments_domain_id,
     did.fields_domain_id,
-    did.uploads_domain_id
+    did.uploads_domain_id,
+    did.images_domain_id,
+    did.texts_domain_id
 FROM params x
 CROSS JOIN tools_existence_check tec
 CROSS JOIN domain_ids_data did;

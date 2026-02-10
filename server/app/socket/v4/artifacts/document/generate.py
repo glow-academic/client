@@ -33,6 +33,8 @@ DOCUMENT_RESOURCE_TYPES = [
     "departments",
     "fields",
     "uploads",
+    "images",
+    "texts",
 ]
 
 
@@ -140,6 +142,8 @@ def _build_generation_resources(
     add_resource_ids("flags", resources_bucket.flags, "flag_option_id")
     add_resource_ids("fields", resources_bucket.fields, "field_id")
     add_resource_ids("uploads", resources_bucket.uploads, "id")
+    add_resource_ids("images", resources_bucket.images, "image_id")
+    add_resource_ids("texts", resources_bucket.texts, "texts_id")
 
     return resources
 

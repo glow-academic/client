@@ -19,16 +19,6 @@ type SaveStaffIn = InputOf<"/api/v4/artifacts/profiles/save", "post">;
 type SaveStaffOut = OutputOf<"/api/v4/artifacts/profiles/save", "post">;
 type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
-type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
-type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
-type CreateDraftDepartmentsIn = InputOf<
-  "/api/v4/resources/departments",
-  "post"
->;
-type CreateDraftDepartmentsOut = OutputOf<
-  "/api/v4/resources/departments",
-  "post"
->;
 type CreateDraftEmailsIn = InputOf<"/api/v4/resources/emails", "post">;
 type CreateDraftEmailsOut = OutputOf<"/api/v4/resources/emails", "post">;
 type CreateDraftRequestLimitsIn = InputOf<
@@ -69,7 +59,9 @@ export async function generateMetadata(
       } as GetStaffIn["body"],
     };
     const staffDetail = await getStaff(input);
-    const staffName = staffDetail.name;
+    const staffName =
+      (staffDetail as { names?: { resource?: { name?: string | null } | null } })
+        .names?.resource?.name ?? null;
     return {
       title: `Edit ${staffName || "Staff"}`,
       description: `${staffName ? `Edit ${staffName} - ` : ""}Manage teaching staff member profile, role assignments, and access permissions for teaching assistant training programs. Configure staff participation in learning cohorts and educational resources.`,
@@ -99,22 +91,6 @@ async function createDraftNames(
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.post("/resources/names", input);
-}
-
-async function createDraftFlags(
-  input: CreateDraftFlagsIn
-): Promise<CreateDraftFlagsOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/flags", input);
-}
-
-async function createDraftDepartments(
-  input: CreateDraftDepartmentsIn
-): Promise<CreateDraftDepartmentsOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/departments", input);
 }
 
 async function createDraftEmails(
@@ -195,8 +171,6 @@ export default async function StaffEditPage({
           saveStaffAction={saveStaff}
           patchProfileDraftAction={patchProfileDraft}
           createNamesAction={createDraftNames}
-          createFlagsAction={createDraftFlags}
-          createDepartmentsAction={createDraftDepartments}
           createEmailsAction={createDraftEmails}
           createRequestLimitsAction={createDraftRequestLimits}
         />

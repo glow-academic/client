@@ -32,13 +32,13 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (q.id, q.name, q.description, q.value, q.provider_id, q.input_modality_ids, q.output_modality_ids, q.temperature_level_ids, q.reasoning_level_ids, q.quality_ids, q.voice_ids, q.active, q.generated)::types.q_get_models_v4_item
+        (q.id, q.name, q.description, q.value, q.provider_id, q.modality_ids, q.temperature_level_ids, q.reasoning_level_ids, q.quality_ids, q.voice_ids, q.active, q.generated)::types.q_get_models_v4_item
         ORDER BY q.name
     ),
     ARRAY[]::types.q_get_models_v4_item[]
 ) as items
 FROM (
-    SELECT m.id, m.name, m.description, m.value, m.provider_id, m.input_modality_ids, m.output_modality_ids, m.temperature_level_ids, m.reasoning_level_ids, m.quality_ids, m.voice_ids, COALESCE(m.active, true) AS active, COALESCE(m.generated, false) AS generated
+    SELECT m.id, m.name, m.description, m.value, m.provider_id, m.modality_ids, m.temperature_level_ids, m.reasoning_level_ids, m.quality_ids, m.voice_ids, COALESCE(m.active, true) AS active, COALESCE(m.generated, false) AS generated
     FROM models_resource m
     WHERE m.name IS NOT NULL
       AND m.name != ''

@@ -52,6 +52,7 @@ END $$;
 CREATE TYPE types.q_get_modalities_v4_item AS (
     id uuid,
     modality text,
+    is_input boolean,
     generated boolean
 );
 
@@ -67,7 +68,7 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (m.id, m.modality, COALESCE(m.generated, false))::types.q_get_modalities_v4_item
+        (m.id, m.modality, COALESCE(m.is_input, false), COALESCE(m.generated, false))::types.q_get_modalities_v4_item
         ORDER BY array_position(ids, m.id)
     ),
     ARRAY[]::types.q_get_modalities_v4_item[]

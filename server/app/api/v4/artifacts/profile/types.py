@@ -1,4 +1,4 @@
-"""Handcrafted types for profile GET endpoint."""
+"""Handcrafted types for profile artifact endpoints."""
 
 from __future__ import annotations
 
@@ -7,158 +7,71 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from app.api.v4.resources.cohorts.get import QGetCohortsV4Item
-from app.api.v4.types import DomainAgent, DomainData
+from app.api.v4.views.drafts.types import DraftProfileViewItem
 from app.sql.types import (
+    QGetAgentsV4Item,
     QGetDepartmentsV4Item,
     QGetEmailsV4Item,
+    QGetModelsV4Item,
     QGetNamesV4Item,
+    QGetProvidersV4Item,
     QGetRequestLimitsV4Item,
+    QGetToolsV4Item,
 )
-
-# Re-export for backwards compatibility
-__all__ = ["DomainAgent", "DomainData"]
 
 
 class ProfileFlagConfig(BaseModel):
-    """Enriched flag config for direct client consumption."""
+    """Enriched profile flag config for direct client consumption."""
 
-    key: str  # e.g., "active"
-    label: str  # e.g., "Active"
+    key: str
+    label: str
     description: str | None = None
     icon_id: str | None = None
-    flag_option_id: UUID | None = None  # ID to use when enabling
+    flag_option_id: UUID | None = None
     show: bool = True
     required: bool = False
-    domain_id: UUID | None = None  # Domain ID for generation
     generated: bool | None = None
 
 
-class GetProfileApiRequest(BaseModel):
-    """Request model for get profile endpoint."""
+class BaseResourceSection(BaseModel):
+    """Common metadata fields for all profile resource sections."""
 
-    target_profile_id: UUID | None = None
-    draft_id: UUID | None = None
-
-
-class GetProfileApiResponse(BaseModel):
-    """Response model for get profile endpoint."""
-
-    # Required fields
-    actor_name: str | None = None
-    profile_exists: bool | None = None
-    can_edit: bool | None = None
-    disabled_reason: str | None = None
-    draft_version: int | None = None
-
-    # Group ID
-    group_id: UUID | None = None
-
-    # Profile ID (resolved target)
-    profile_id: UUID | None = None
-
-    # Role
-    role: str | None = None
-    role_options: list[str] | None = None
-    roles: list[ProfileRoleResource] | None = None
-
-    # Per-resource group IDs (from draft MV)
-    names_group_id: UUID | None = None
-    emails_group_id: UUID | None = None
-    request_limits_group_id: UUID | None = None
-    flags_group_id: UUID | None = None
-    departments_group_id: UUID | None = None
-    cohorts_group_id: UUID | None = None
-
-    # Single-select resources: name
-    show_name: bool | None = None
-    name_domain_id: UUID | None = None
-    name_required: bool | None = None
-    name_suggestions: list[UUID] | None = None
-    name_show_ai_generate: bool | None = None
-
-    # Multi-select resources: emails
-    show_emails: bool | None = None
-    emails_domain_id: UUID | None = None
-    emails_required: bool | None = None
-    email_suggestions: list[UUID] | None = None
-    emails_show_ai_generate: bool | None = None
-
-    # Single-select resources: request_limit
-    show_request_limit: bool | None = None
-    request_limits_domain_id: UUID | None = None
-    request_limit_required: bool | None = None
-    request_limit_suggestions: list[UUID] | None = None
-    request_limits_show_ai_generate: bool | None = None
-
-    # Single-select resources: flag
-    show_flag: bool | None = None
-    flag_domain_id: UUID | None = None
-    flag_required: bool | None = None
-    flag_show_ai_generate: bool | None = None
-
-    # Multi-select resources: departments
-    show_departments: bool | None = None
-    departments_domain_id: UUID | None = None
-    departments_required: bool | None = None
-    department_suggestions: list[UUID] | None = None
-    departments_show_ai_generate: bool | None = None
-
-    # Multi-select resources: cohorts
-    show_cohorts: bool | None = None
-    cohorts_domain_id: UUID | None = None
-    cohorts_required: bool | None = None
-    cohort_suggestions: list[UUID] | None = None
-    cohorts_show_ai_generate: bool | None = None
-
-    # Step-level AI generation flags
-    basic_show_ai_generate: bool | None = None
-    general_show_ai_generate: bool | None = None
-
-    # Per-resource CREATE tool IDs (for AI generation)
-    name_create_tool_id: UUID | None = None
-    emails_create_tool_id: UUID | None = None
-    request_limits_create_tool_id: UUID | None = None
-
-    # Per-resource LINK tool IDs (for AI suggestions)
-    name_link_tool_id: UUID | None = None
-    emails_link_tool_id: UUID | None = None
-    request_limits_link_tool_id: UUID | None = None
-    flag_link_tool_id: UUID | None = None
-    departments_link_tool_id: UUID | None = None
-    cohorts_link_tool_id: UUID | None = None
-
-    # Rich domain metadata for client display in modals
-    domain_data: list[DomainData] | None = None
-
-    # Generic resources payload (full objects + current selections)
-    resources: ProfileResources | None = None
+    show: bool = False
+    required: bool = False
+    suggestions: list[UUID] | None = None
+    show_ai_generate: bool = False
+    create_tool_id: UUID | None = None
+    link_tool_id: UUID | None = None
 
 
-class GetProfileWebsocketResponse(BaseModel):
-    """Minimal response for WebSocket handlers (get_profile_websocket).
+class ProfileNameSection(BaseResourceSection):
+    resource: QGetNamesV4Item | None = None
+    resources: list[QGetNamesV4Item] | None = None
 
-    Contains only what's needed for AI generation:
-    - Domain IDs (for domain_to_resource mapping)
-    - Domains list (for agent_id lookup)
-    - Group ID (for existing group context)
-    - Resources (for Jinja template context)
-    """
 
-    group_id: UUID | None = None
+class ProfileRequestLimitSection(BaseResourceSection):
+    resource: QGetRequestLimitsV4Item | None = None
+    resources: list[QGetRequestLimitsV4Item] | None = None
 
-    # Domain IDs for domain_to_resource mapping
-    name_domain_id: UUID | None = None
-    emails_domain_id: UUID | None = None
-    request_limits_domain_id: UUID | None = None
-    flag_domain_id: UUID | None = None
-    departments_domain_id: UUID | None = None
-    cohorts_domain_id: UUID | None = None
 
-    # Domains mapping (domain_id -> agent_id) for server-side agent lookup
-    domains: list[DomainAgent] | None = None
+class ProfileFlagSection(BaseResourceSection):
+    current: ProfileFlagConfig | None = None
+    resources: list[ProfileFlagConfig] | None = None
 
-    # Resources for Jinja template context
-    resources: ProfileResources | None = None
+
+class ProfileEmailSection(BaseResourceSection):
+    current: list[QGetEmailsV4Item] | None = None
+    resources: list[QGetEmailsV4Item] | None = None
+
+
+class ProfileDepartmentSection(BaseResourceSection):
+    current: list[QGetDepartmentsV4Item] | None = None
+    resources: list[QGetDepartmentsV4Item] | None = None
+
+
+class ProfileCohortSection(BaseResourceSection):
+    current: list[QGetCohortsV4Item] | None = None
+    resources: list[QGetCohortsV4Item] | None = None
 
 
 class ProfileRoleResource(BaseModel):
@@ -171,154 +84,213 @@ class ProfileRoleResource(BaseModel):
     color_hex: str | None = None
 
 
-class ProfileResourceBucket(BaseModel):
-    """Generic resources bucket with full objects (always plural lists)."""
+class GetProfileApiRequest(BaseModel):
+    target_profile_id: UUID | None = None
+    draft_id: UUID | None = None
 
+
+class GetProfileApiResponse(BaseModel):
+    actor_name: str | None = None
+    profile_exists: bool | None = None
+    can_edit: bool | None = None
+    disabled_reason: str | None = None
+    draft_version: int | None = None
+    group_id: UUID | None = None
+    profile_id: UUID | None = None
+
+    role: str | None = None
+    role_options: list[str] | None = None
+    roles: list[ProfileRoleResource] | None = None
+
+    basic_show_ai_generate: bool | None = None
+    general_show_ai_generate: bool | None = None
+
+    names: ProfileNameSection | None = None
+    emails: ProfileEmailSection | None = None
+    request_limits: ProfileRequestLimitSection | None = None
+    flags: ProfileFlagSection | None = None
+    departments: ProfileDepartmentSection | None = None
+    cohorts: ProfileCohortSection | None = None
+
+
+class ProfileWebsocketViews(BaseModel):
+    draft_profile: DraftProfileViewItem | None = None
+
+
+class ProfileWebsocketResources(BaseModel):
     names: list[QGetNamesV4Item] | None = None
     emails: list[QGetEmailsV4Item] | None = None
     request_limits: list[QGetRequestLimitsV4Item] | None = None
     flags: list[ProfileFlagConfig] | None = None
     departments: list[QGetDepartmentsV4Item] | None = None
     cohorts: list[QGetCohortsV4Item] | None = None
+    agents: list[QGetAgentsV4Item] | None = None
+    models: list[QGetModelsV4Item] | None = None
+    providers: list[QGetProvidersV4Item] | None = None
+    tools: list[QGetToolsV4Item] | None = None
 
 
-class ProfileResources(BaseModel):
-    """Full resources + current selections."""
-
-    resources: ProfileResourceBucket | None = None
-    current: ProfileResourceBucket | None = None
-
-
-# ========== Save Endpoint Types ==========
+class GetProfileWebsocketResponse(BaseModel):
+    views: ProfileWebsocketViews | None = None
+    resources: ProfileWebsocketResources
+    resource_agent_ids: dict[str, UUID | None] | None = None
+    group_id: UUID | None = None
 
 
 class SaveProfileApiRequest(BaseModel):
-    """Request model for save profile endpoint - accepts form data directly."""
+    """Save payload with persona-style nested resource actions.
 
-    # Context
-    group_id: UUID  # REQUIRED - which group to save to
-    input_profile_id: UUID | None = None  # For update mode
+    Supports:
+    - direct save with nested resource actions (persona parity)
+    - fallback save from existing draft_id
+    """
 
-    # Required single-select resources
-    name_id: UUID  # REQUIRED
-
-    # Optional single-select resources
+    draft_id: UUID | None = None
+    input_profile_id: UUID | None = None
+    group_id: UUID | None = None
     role: str | None = None
-    active_flag_id: UUID | None = None
-    request_limit_id: UUID | None = None
-
-    # Optional multi-select resources
-    email_ids: list[UUID] | None = None
-    department_ids: list[UUID] | None = None
-    cohort_ids: list[UUID] | None = None
+    names: ProfileResourceAction | None = None
+    flags: ProfileResourceAction | None = None
+    request_limits: ProfileResourceAction | None = None
+    emails: ProfileMultiResourceAction | None = None
+    departments: ProfileMultiResourceAction | None = None
+    cohorts: ProfileMultiResourceAction | None = None
+    expected_version: int = 0
 
 
 class SaveProfileApiResponse(BaseModel):
-    """Response model for save profile endpoint."""
-
     success: bool
     profile_id: UUID
     message: str
 
 
 class SaveProfileSqlParams(BaseModel):
-    """SQL parameters for save profile - accepts form data directly."""
-
-    # Context
-    profile_id: UUID  # Added from header (actor)
-    group_id: UUID  # REQUIRED
-    input_profile_id: UUID | None = None  # For update mode
-
-    # Required single-select resources
-    name_id: UUID  # REQUIRED
-
-    # Optional single-select resources
-    role: str | None = None
-    active_flag_id: UUID | None = None
-    request_limit_id: UUID | None = None
-
-    # Optional multi-select resources
-    email_ids: list[UUID] | None = None
-    department_ids: list[UUID] | None = None
-    cohort_ids: list[UUID] | None = None
+    draft_id: UUID
+    actor_profile_id: UUID
+    input_profile_id: UUID | None = None
 
     def to_tuple(self) -> tuple:
-        """Convert to tuple for SQL execution."""
         return (
-            self.profile_id,
-            self.group_id,
+            self.draft_id,
+            self.actor_profile_id,
             self.input_profile_id,
-            self.name_id,
-            self.role,
-            self.active_flag_id,
-            self.request_limit_id,
-            self.email_ids,
-            self.department_ids,
-            self.cohort_ids,
         )
 
 
 class SaveProfileSqlRow(BaseModel):
-    """SQL row for save profile."""
-
     profile_id: UUID | None = None
     actor_name: str | None = None
 
 
-# ========== Delete Endpoint Types ==========
-
-
 class DeleteProfileApiRequest(BaseModel):
-    """Request model for delete profile endpoint."""
-
     target_profile_id: UUID
 
 
 class DeleteProfileApiResponse(BaseModel):
-    """Response model for delete profile endpoint."""
-
     success: bool
     message: str
 
 
-# ========== Duplicate Endpoint Types ==========
-
-
 class DuplicateProfileApiRequest(BaseModel):
-    """Request model for duplicate profile endpoint."""
-
     target_profile_id: UUID
 
 
 class DuplicateProfileApiResponse(BaseModel):
-    """Response model for duplicate profile endpoint."""
-
     success: bool
     profile_id: UUID
     message: str
 
 
-# ========== Draft Endpoint Types ==========
+class ProfileResourceAction(BaseModel):
+    resource_id: UUID | None = None
+    create_tool_id: UUID | None = None
+    link_tool_id: UUID | None = None
+
+
+class ProfileMultiResourceAction(BaseModel):
+    resource_ids: list[UUID] | None = None
+    create_tool_id: UUID | None = None
+    link_tool_id: UUID | None = None
 
 
 class PatchProfileDraftApiRequest(BaseModel):
-    """Request model for patch profile draft endpoint."""
+    """Request model for patch profile draft endpoint - nested resource actions."""
 
     input_draft_id: UUID | None = None
-    name_id: UUID | None = None
+    group_id: UUID | None = None
     role: str | None = None
-    active_flag_id: UUID | None = None
-    request_limit_id: UUID | None = None
-    email_ids: list[UUID] | None = None
-    department_ids: list[UUID] | None = None
-    cohort_ids: list[UUID] | None = None
+    names: ProfileResourceAction | None = None
+    flags: ProfileResourceAction | None = None
+    request_limits: ProfileResourceAction | None = None
+    emails: ProfileMultiResourceAction | None = None
+    departments: ProfileMultiResourceAction | None = None
+    cohorts: ProfileMultiResourceAction | None = None
     expected_version: int = 0
 
 
 class PatchProfileDraftApiResponse(BaseModel):
-    """Response model for patch profile draft endpoint."""
-
     success: bool
     draft_id: UUID
     new_version: int
     message: str
+
+
+class PatchProfileDraftSqlParams(BaseModel):
+    profile_id: UUID
+    input_draft_id: UUID | None = None
+    group_id: UUID | None = None
+    role: str | None = None
+    names: ProfileResourceAction
+    flags: ProfileResourceAction
+    request_limits: ProfileResourceAction
+    emails: ProfileMultiResourceAction
+    departments: ProfileMultiResourceAction
+    cohorts: ProfileMultiResourceAction
+    expected_version: int = 0
+
+    @classmethod
+    def from_request(
+        cls, request: PatchProfileDraftApiRequest, profile_id: UUID
+    ) -> "PatchProfileDraftSqlParams":
+        empty_single = ProfileResourceAction()
+        empty_multi = ProfileMultiResourceAction()
+        return cls(
+            profile_id=profile_id,
+            input_draft_id=request.input_draft_id,
+            group_id=request.group_id,
+            role=request.role,
+            names=request.names or empty_single,
+            flags=request.flags or empty_single,
+            request_limits=request.request_limits or empty_single,
+            emails=request.emails or empty_multi,
+            departments=request.departments or empty_multi,
+            cohorts=request.cohorts or empty_multi,
+            expected_version=request.expected_version,
+        )
+
+    def to_tuple(self) -> tuple:
+        def single(a: ProfileResourceAction) -> tuple:
+            return (a.resource_id, a.create_tool_id, a.link_tool_id)
+
+        def multi(a: ProfileMultiResourceAction) -> tuple:
+            return (a.resource_ids, a.create_tool_id, a.link_tool_id)
+
+        return (
+            self.profile_id,
+            self.input_draft_id,
+            self.group_id,
+            single(self.names),
+            single(self.flags),
+            single(self.request_limits),
+            multi(self.departments),
+            multi(self.emails),
+            multi(self.cohorts),
+            self.role,
+            self.expected_version,
+        )
+
+
+class PatchProfileDraftSqlRow(BaseModel):
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None

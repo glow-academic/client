@@ -32,13 +32,13 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (q.id, q.modality, q.generated)::types.q_get_modalities_v4_item
+        (q.id, q.modality, q.is_input, q.generated)::types.q_get_modalities_v4_item
         ORDER BY q.modality ASC
     ),
     ARRAY[]::types.q_get_modalities_v4_item[]
 ) as items
 FROM (
-    SELECT m.id, m.modality::text as modality, COALESCE(m.generated, false) AS generated
+    SELECT m.id, m.modality::text as modality, COALESCE(m.is_input, false) AS is_input, COALESCE(m.generated, false) AS generated
     FROM modalities_resource m
     WHERE m.active = true
       -- Search filter

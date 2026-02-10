@@ -23,6 +23,8 @@ import { Descriptions } from "@/components/resources/Descriptions";
 import { Fields } from "@/components/resources/Fields";
 import { Flags } from "@/components/resources/FlagsLegacy";
 import { Names } from "@/components/resources/Names";
+import { Images } from "@/components/resources/Images";
+import { Texts } from "@/components/resources/Texts";
 import { Uploads } from "@/components/resources/Uploads";
 import { Button } from "@/components/ui/button";
 import {
@@ -48,6 +50,8 @@ const VALID_RESOURCE_TYPES = [
   "departments",
   "fields",
   "uploads",
+  "images",
+  "texts",
 ] as const;
 type DocumentResourceType = (typeof VALID_RESOURCE_TYPES)[number];
 
@@ -66,6 +70,10 @@ type CreateDraftDescriptionsOut = OutputOf<
 >;
 type CreateDraftUploadsIn = InputOf<"/api/v4/resources/uploads", "post">;
 type CreateDraftUploadsOut = OutputOf<"/api/v4/resources/uploads", "post">;
+type CreateDraftImagesIn = InputOf<"/api/v4/resources/images", "post">;
+type CreateDraftImagesOut = OutputOf<"/api/v4/resources/images", "post">;
+type CreateDraftTextsIn = InputOf<"/api/v4/resources/texts", "post">;
+type CreateDraftTextsOut = OutputOf<"/api/v4/resources/texts", "post">;
 type PatchDocumentDraftIn = InputOf<
   "/api/v4/artifacts/documents/draft",
   "patch"
@@ -98,6 +106,12 @@ export interface DocumentProps {
   createUploadsAction?: (
     input: CreateDraftUploadsIn,
   ) => Promise<CreateDraftUploadsOut>;
+  createImagesAction?: (
+    input: CreateDraftImagesIn,
+  ) => Promise<CreateDraftImagesOut>;
+  createTextsAction?: (
+    input: CreateDraftTextsIn,
+  ) => Promise<CreateDraftTextsOut>;
 }
 
 function DocumentComponent({
@@ -110,6 +124,8 @@ function DocumentComponent({
   createNamesAction,
   createDescriptionsAction,
   createUploadsAction,
+  createImagesAction,
+  createTextsAction,
 }: DocumentProps) {
   const router = useRouter();
   const isEditMode = mode === "edit" && !!documentId;
@@ -145,6 +161,8 @@ function DocumentComponent({
         department_ids: [] as string[],
         field_ids: [] as string[],
         upload_ids: [] as string[],
+        image_ids: [] as string[],
+        text_ids: [] as string[],
       };
     }
     // Extract resource IDs from section-first response
@@ -164,6 +182,14 @@ function DocumentComponent({
         documentDetail.uploads?.current
           ?.map((u) => u.id)
           .filter((x): x is string => x != null) ?? ([] as string[]),
+      image_ids:
+        documentDetail.images?.current
+          ?.map((i) => i.image_id)
+          .filter((x): x is string => x != null) ?? ([] as string[]),
+      text_ids:
+        documentDetail.texts?.current
+          ?.map((t) => t.texts_id)
+          .filter((x): x is string => x != null) ?? ([] as string[]),
     };
   }, [documentDetail]);
 
@@ -181,7 +207,9 @@ function DocumentComponent({
         JSON.stringify(prev.department_ids) !==
           JSON.stringify(newState.department_ids) ||
         JSON.stringify(prev.field_ids) !== JSON.stringify(newState.field_ids) ||
-        JSON.stringify(prev.upload_ids) !== JSON.stringify(newState.upload_ids)
+        JSON.stringify(prev.upload_ids) !== JSON.stringify(newState.upload_ids) ||
+        JSON.stringify(prev.image_ids) !== JSON.stringify(newState.image_ids) ||
+        JSON.stringify(prev.text_ids) !== JSON.stringify(newState.text_ids)
       ) {
         return newState;
       }
@@ -194,6 +222,8 @@ function DocumentComponent({
     documentDetail?.departments?.current,
     documentDetail?.fields?.current,
     documentDetail?.uploads?.current,
+    documentDetail?.images?.current,
+    documentDetail?.texts?.current,
     getInitialFormState,
   ]);
 
@@ -255,6 +285,8 @@ function DocumentComponent({
       department_ids: formState.department_ids,
       field_ids: formState.field_ids,
       upload_ids: formState.upload_ids,
+      image_ids: formState.image_ids,
+      text_ids: formState.text_ids,
     });
   }, [
     draftId,
@@ -264,6 +296,8 @@ function DocumentComponent({
     formState.department_ids,
     formState.field_ids,
     formState.upload_ids,
+    formState.image_ids,
+    formState.text_ids,
   ]);
 
   // Track last patched payload so we don't repatch identical state
@@ -278,7 +312,9 @@ function DocumentComponent({
       formState.active_flag_id ||
       formState.department_ids.length > 0 ||
       formState.field_ids.length > 0 ||
-      formState.upload_ids.length > 0;
+      formState.upload_ids.length > 0 ||
+      formState.image_ids.length > 0 ||
+      formState.text_ids.length > 0;
 
     if (!hasResourceIds || !patchDocumentDraftActionRef.current) {
       return;
@@ -302,6 +338,8 @@ function DocumentComponent({
             departments: formState.department_ids.length > 0 ? { resource_ids: formState.department_ids } : null,
             fields: formState.field_ids.length > 0 ? { resource_ids: formState.field_ids } : null,
             uploads: formState.upload_ids.length > 0 ? { resource_ids: formState.upload_ids } : null,
+            images: formState.image_ids.length > 0 ? { resource_ids: formState.image_ids } : null,
+            texts: formState.text_ids.length > 0 ? { resource_ids: formState.text_ids } : null,
             expected_version: lastSavedVersionRef.current,
           },
         });
@@ -362,6 +400,14 @@ function DocumentComponent({
           | Array<{ id?: string | null }>
           | null
           | undefined;
+        const imageResources = data["image_resources"] as
+          | Array<{ image_id?: string | null }>
+          | null
+          | undefined;
+        const textResources = data["text_resources"] as
+          | Array<{ texts_id?: string | null }>
+          | null
+          | undefined;
         const deptIds =
           deptResources
             ?.map((d) => d.department_id)
@@ -373,6 +419,14 @@ function DocumentComponent({
         const uploadIds =
           uploadResources
             ?.map((u) => u.id)
+            .filter((x): x is string => x != null) ?? [];
+        const imageIds =
+          imageResources
+            ?.map((i) => i.image_id)
+            .filter((x): x is string => x != null) ?? [];
+        const textIds =
+          textResources
+            ?.map((t) => t.texts_id)
             .filter((x): x is string => x != null) ?? [];
         if (nameId) updates["name_id"] = nameId;
         if (descriptionId) updates["description_id"] = descriptionId;
@@ -396,6 +450,20 @@ function DocumentComponent({
           updates["upload_ids"] = [
             ...prevUploadIds,
             ...uploadIds.filter((id: string) => !prevUploadIds.includes(id)),
+          ];
+        }
+        if (imageIds.length > 0) {
+          const prevImageIds = (prev["image_ids"] as string[]) ?? [];
+          updates["image_ids"] = [
+            ...prevImageIds,
+            ...imageIds.filter((id: string) => !prevImageIds.includes(id)),
+          ];
+        }
+        if (textIds.length > 0) {
+          const prevTextIds = (prev["text_ids"] as string[]) ?? [];
+          updates["text_ids"] = [
+            ...prevTextIds,
+            ...textIds.filter((id: string) => !prevTextIds.includes(id)),
           ];
         }
         return { ...prev, ...updates };
@@ -495,6 +563,10 @@ function DocumentComponent({
           return documentDetail.fields?.current?.some((f) => f.generated) ?? false;
         case "uploads":
           return documentDetail.uploads?.current?.some((u) => u.generated) ?? false;
+        case "images":
+          return documentDetail.images?.current?.some((i) => i.generated) ?? false;
+        case "texts":
+          return documentDetail.texts?.current?.some((t) => t.generated) ?? false;
         default:
           return false;
       }
@@ -587,6 +659,8 @@ function DocumentComponent({
             departments: { resource_ids: formState.department_ids || [] },
             fields: { resource_ids: formState.field_ids || [] },
             uploads: { resource_ids: formState.upload_ids || [] },
+            images: { resource_ids: formState.image_ids || [] },
+            texts: { resource_ids: formState.text_ids || [] },
           },
         });
         toast.success(
@@ -622,6 +696,8 @@ function DocumentComponent({
       const hasDescription = !!formState.description_id;
       const hasFields = formState.field_ids.length > 0;
       const hasUploads = formState.upload_ids.length > 0;
+      const hasImages = formState.image_ids.length > 0;
+      const hasTexts = formState.text_ids.length > 0;
 
       switch (stepId) {
         case "basic":
@@ -632,6 +708,12 @@ function DocumentComponent({
         case "uploads":
           if (!hasName || !hasDescription) return "pending";
           return hasUploads ? "completed" : "active";
+        case "images":
+          if (!hasName || !hasDescription) return "pending";
+          return hasImages ? "completed" : "active";
+        case "texts":
+          if (!hasName || !hasDescription) return "pending";
+          return hasTexts ? "completed" : "active";
         default:
           return "pending";
       }
@@ -645,6 +727,8 @@ function DocumentComponent({
       basic: ["names", "descriptions", "departments", "flags"],
       fields: ["fields"],
       uploads: ["uploads"],
+      images: ["images"],
+      texts: ["texts"],
       all: [
         "names",
         "descriptions",
@@ -652,6 +736,8 @@ function DocumentComponent({
         "departments",
         "fields",
         "uploads",
+        "images",
+        "texts",
       ], // All resources for full-page generation
     }),
     [],
@@ -666,6 +752,8 @@ function DocumentComponent({
       departments: "Departments",
       fields: "Fields",
       uploads: "Uploads",
+      images: "Images",
+      texts: "Texts",
     }),
     [],
   );
@@ -708,6 +796,18 @@ function DocumentComponent({
         description: "Upload files for this document.",
         resetFields: ["upload_ids"],
       },
+      {
+        id: "images",
+        title: "Images",
+        description: "Select images for this document.",
+        resetFields: ["image_ids"],
+      },
+      {
+        id: "texts",
+        title: "Texts",
+        description: "Select text content for this document.",
+        resetFields: ["text_ids"],
+      },
     ],
     [],
   );
@@ -721,6 +821,8 @@ function DocumentComponent({
       "department_ids",
       "field_ids",
       "upload_ids",
+      "image_ids",
+      "text_ids",
     ],
     [],
   );
@@ -734,6 +836,10 @@ function DocumentComponent({
         return "Fields reset";
       case "uploads":
         return "Uploads reset";
+      case "images":
+        return "Images reset";
+      case "texts":
+        return "Texts reset";
       default:
         return "Reset";
     }
@@ -759,6 +865,16 @@ function DocumentComponent({
           return {
             ...prev,
             upload_ids: [],
+          };
+        case "images":
+          return {
+            ...prev,
+            image_ids: [],
+          };
+        case "texts":
+          return {
+            ...prev,
+            text_ids: [],
           };
         default:
           return prev;
@@ -1205,6 +1321,176 @@ function DocumentComponent({
             </StepCard>
           );
 
+        case "images":
+          return (
+            <StepCard
+              stepStatus={stepStatus}
+              stepNumber={stepNumber}
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              isReadonly={disabled}
+              isEditMode={isEditMode}
+              resetFields={["image_ids"]}
+              {...(onReset ? { onReset } : {})}
+              resetLabel="Reset"
+              actions={
+                stepResources["images"] &&
+                stepResources["images"].length > 0 &&
+                documentDetail?.images?.show_ai_generate ? (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            const hasRegeneratable = stepResources[
+                              "images"
+                            ]!.some((rt) => canRegenerate(rt));
+                            handleOpenStepCardModal(
+                              "images",
+                              hasRegeneratable ? "regenerate" : "generate",
+                            );
+                          }}
+                          disabled={
+                            disabled ||
+                            stepResources["images"]!.some((rt) =>
+                              isGenerating(rt),
+                            )
+                          }
+                        >
+                          {stepResources["images"]!.some((rt) =>
+                            isGenerating(rt),
+                          ) ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Sparkles className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {stepResources["images"]!.some((rt) =>
+                          canRegenerate(rt),
+                        )
+                          ? "Regenerate"
+                          : "Generate"}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ) : undefined
+              }
+            >
+              <Images
+                image_ids={formState.image_ids ?? []}
+                image_resources={
+                  documentDetail?.images?.current ?? []
+                }
+                show_images={documentDetail?.images?.show ?? false}
+                image_suggestions={documentDetail?.images?.suggestions ?? []}
+                images={documentDetail?.images?.resources ?? []}
+                disabled={disabled}
+                onChange={(ids) =>
+                  setFormState((prev) => ({ ...prev, image_ids: ids }))
+                }
+                label="Images"
+                required={documentDetail?.images?.required ?? false}
+                group_id={documentDetail?.group_id ?? null}
+                showAiGenerate={
+                  documentDetail?.images?.show_ai_generate ?? false
+                }
+                create_tool_id={documentDetail?.images?.create_tool_id ?? null}
+                link_tool_id={documentDetail?.images?.link_tool_id ?? null}
+                createImagesAction={createImagesAction}
+              />
+            </StepCard>
+          );
+
+        case "texts":
+          return (
+            <StepCard
+              stepStatus={stepStatus}
+              stepNumber={stepNumber}
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              isReadonly={disabled}
+              isEditMode={isEditMode}
+              resetFields={["text_ids"]}
+              {...(onReset ? { onReset } : {})}
+              resetLabel="Reset"
+              actions={
+                stepResources["texts"] &&
+                stepResources["texts"].length > 0 &&
+                documentDetail?.texts?.show_ai_generate ? (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            const hasRegeneratable = stepResources[
+                              "texts"
+                            ]!.some((rt) => canRegenerate(rt));
+                            handleOpenStepCardModal(
+                              "texts",
+                              hasRegeneratable ? "regenerate" : "generate",
+                            );
+                          }}
+                          disabled={
+                            disabled ||
+                            stepResources["texts"]!.some((rt) =>
+                              isGenerating(rt),
+                            )
+                          }
+                        >
+                          {stepResources["texts"]!.some((rt) =>
+                            isGenerating(rt),
+                          ) ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Sparkles className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {stepResources["texts"]!.some((rt) =>
+                          canRegenerate(rt),
+                        )
+                          ? "Regenerate"
+                          : "Generate"}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ) : undefined
+              }
+            >
+              <Texts
+                text_ids={formState.text_ids ?? []}
+                text_resources={
+                  documentDetail?.texts?.current ?? []
+                }
+                show_texts={documentDetail?.texts?.show ?? false}
+                text_suggestions={documentDetail?.texts?.suggestions ?? []}
+                texts={documentDetail?.texts?.resources ?? []}
+                disabled={disabled}
+                onChange={(ids) =>
+                  setFormState((prev) => ({ ...prev, text_ids: ids }))
+                }
+                label="Texts"
+                required={documentDetail?.texts?.required ?? false}
+                group_id={documentDetail?.group_id ?? null}
+                showAiGenerate={
+                  documentDetail?.texts?.show_ai_generate ?? false
+                }
+                create_tool_id={documentDetail?.texts?.create_tool_id ?? null}
+                link_tool_id={documentDetail?.texts?.link_tool_id ?? null}
+                createTextsAction={createTextsAction}
+              />
+            </StepCard>
+          );
+
         default:
           return null;
       }
@@ -1225,9 +1511,13 @@ function DocumentComponent({
       formState.department_ids,
       formState.field_ids,
       formState.upload_ids,
+      formState.image_ids,
+      formState.text_ids,
       createNamesAction,
       createDescriptionsAction,
       createUploadsAction,
+      createImagesAction,
+      createTextsAction,
       canRegenerate,
       handleOpenStepCardModal,
     ],
@@ -1287,6 +1577,8 @@ export default React.memo(DocumentComponent, (prevProps, nextProps) => {
     department_ids: prevDetail?.departments?.current?.map((d) => d.department_id),
     field_ids: prevDetail?.fields?.current?.map((f) => f.field_id),
     upload_ids: prevDetail?.uploads?.current?.map((u) => u.id),
+    image_ids: prevDetail?.images?.current?.map((i) => i.image_id),
+    text_ids: prevDetail?.texts?.current?.map((t) => t.texts_id),
   };
   const nextIds = {
     name_id: nextDetail?.names?.resource?.id,
@@ -1295,6 +1587,8 @@ export default React.memo(DocumentComponent, (prevProps, nextProps) => {
     department_ids: nextDetail?.departments?.current?.map((d) => d.department_id),
     field_ids: nextDetail?.fields?.current?.map((f) => f.field_id),
     upload_ids: nextDetail?.uploads?.current?.map((u) => u.id),
+    image_ids: nextDetail?.images?.current?.map((i) => i.image_id),
+    text_ids: nextDetail?.texts?.current?.map((t) => t.texts_id),
   };
 
   // Compare primitive props
@@ -1312,7 +1606,9 @@ export default React.memo(DocumentComponent, (prevProps, nextProps) => {
     prevProps.patchDocumentDraftAction !== nextProps.patchDocumentDraftAction ||
     prevProps.createNamesAction !== nextProps.createNamesAction ||
     prevProps.createDescriptionsAction !== nextProps.createDescriptionsAction ||
-    prevProps.createUploadsAction !== nextProps.createUploadsAction
+    prevProps.createUploadsAction !== nextProps.createUploadsAction ||
+    prevProps.createImagesAction !== nextProps.createImagesAction ||
+    prevProps.createTextsAction !== nextProps.createTextsAction
   ) {
     return false; // Function props changed, re-render
   }
