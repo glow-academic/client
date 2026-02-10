@@ -61,10 +61,7 @@ async def save_scenario(
         async with conn.transaction():
             # Convert API request to SQL params (add profile_id from header)
             # Map input_scenario_id from API request (already correct field name)
-            params = SaveScenarioSqlParams(
-                **request.model_dump(),
-                profile_id=profile_id,
-            )
+            params = SaveScenarioSqlParams.from_request(request, profile_id=profile_id)
             sql_params = params.to_tuple()
 
             # Execute SQL with typed helper - automatically detects and calls function if present

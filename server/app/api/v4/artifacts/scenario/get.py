@@ -58,10 +58,27 @@ from app.api.v4.artifacts.scenario.types import (
     GetScenarioApiRequest,
     GetScenarioApiResponse,
     GetScenarioWebsocketResponse,
+    ScenarioWebsocketResources,
+    ScenarioWebsocketViews,
+    ScenarioDepartmentSection,
+    ScenarioDescriptionSection,
+    ScenarioDocumentSection,
     ScenarioFlagConfig,
+    ScenarioFlagSection,
+    ScenarioImageSection,
+    ScenarioNameSection,
+    ScenarioObjectiveSection,
+    ScenarioParameterFieldSection,
+    ScenarioParameterSection,
+    ScenarioPersonaSection,
+    ScenarioProblemStatementSection,
+    ScenarioQuestionSection,
     ScenarioResourceBucket,
     ScenarioResources,
+    ScenarioTemplateSection,
+    ScenarioVideoSection,
 )
+from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.permissions import select_agents_for_artifact
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.departments.search import search_departments_internal
@@ -93,11 +110,12 @@ from app.api.v4.resources.problem_statements.search import (
 )
 from app.api.v4.resources.questions.get import get_questions_internal
 from app.api.v4.resources.questions.search import search_questions_internal
+from app.api.v4.resources.tools.get import get_tools_internal
 from app.api.v4.resources.templates.get import get_templates_internal
 from app.api.v4.resources.templates.search import search_templates_internal
 from app.api.v4.resources.videos.get import get_videos_internal
 from app.api.v4.resources.videos.search import search_videos_internal
-from app.api.v4.types import CandidateAgent, DomainAgent, build_domain_data
+from app.api.v4.types import CandidateAgent, build_domain_data
 from app.api.v4.views.drafts.get import get_draft_scenario_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
@@ -178,7 +196,6 @@ class ScenarioInternalData:
     # Domain mappings
     domain_ids_map: dict[str, UUID | None]
     agent_ids: dict[str, UUID | None]
-    domains_list: list[DomainAgent]
 
     # Show/required flags
     show_flags_map: dict[str, bool]
@@ -204,6 +221,11 @@ class ScenarioInternalData:
     # Per-resource tool IDs (from selected agents)
     create_tool_ids_map: dict[str, UUID | None]
     link_tool_ids_map: dict[str, UUID | None]
+
+    # Config resources (for websocket generation context)
+    config_agent_resources: list[Any] | None
+    config_model_resources: list[Any] | None
+    config_provider_resources: list[Any] | None
 
     # IDs result (for backwards-compat fields in client response)
     ids_result: GetScenarioIdsSqlRow
@@ -918,7 +940,6 @@ async def get_scenario_internal(
             flag_option_id=flag.id,
             show=show_flag,
             required=compute_flag_required(),
-            agent_id=agent_ids.get("flags"),
             generated=flag.generated,
             video_flag=flag.name == "scenario_questions_enabled",
         )
@@ -1068,18 +1089,6 @@ async def get_scenario_internal(
         ),
     )
 
-    # Build domains list for WebSocket handler
-    domains_list: list[DomainAgent] = []
-    for resource, domain_id in domain_ids_map.items():
-        if domain_id is not None:
-            domains_list.append(
-                DomainAgent(
-                    domain_id=domain_id,
-                    agent_id=agent_ids.get(resource),
-                    group_id=resource_group_ids.get(resource),
-                )
-            )
-
     # Build suggestions map
     suggestions_map: dict[str, list[UUID]] = {
         "names": [n.id for n in names_suggestions],
@@ -1105,6 +1114,44 @@ async def get_scenario_internal(
                 status_code=400, detail="No accessible departments found for user"
             )
 
+    selected_agent_ids = [aid for aid in agent_ids.values() if aid]
+    unique_agent_ids = list(dict.fromkeys(selected_agent_ids))
+    config_agents_result: list[Any] = []
+    config_models_result: list[Any] = []
+    config_providers_result: list[Any] = []
+    if unique_agent_ids:
+        async with pool.acquire() as c:
+            config_agents_result = await get_agents_internal(
+                c, unique_agent_ids, bypass_cache
+            )
+        if config_agents_result:
+            model_ids = list(
+                {
+                    m
+                    for agent in config_agents_result
+                    for m in [getattr(agent, "model_id", None)]
+                    if m is not None
+                }
+            )
+            provider_ids = list(
+                {
+                    p
+                    for agent in config_agents_result
+                    for p in [getattr(agent, "provider_id", None)]
+                    if p is not None
+                }
+            )
+            if model_ids:
+                async with pool.acquire() as c:
+                    config_models_result = await get_models_internal(
+                        c, model_ids, bypass_cache
+                    )
+            if provider_ids:
+                async with pool.acquire() as c:
+                    config_providers_result = await get_providers_internal(
+                        c, provider_ids, bypass_cache
+                    )
+
     return ScenarioInternalData(
         # Access/context
         actor_name=access_result.actor_name,
@@ -1116,7 +1163,6 @@ async def get_scenario_internal(
         # Domain mappings
         domain_ids_map=domain_ids_map,
         agent_ids=agent_ids,
-        domains_list=domains_list,
         # Show/required flags
         show_flags_map=show_flags_map,
         required_flags_map=required_flags_map,
@@ -1134,6 +1180,10 @@ async def get_scenario_internal(
         # Per-resource tool IDs
         create_tool_ids_map=create_tool_ids_map,
         link_tool_ids_map=link_tool_ids_map,
+        # Config resources
+        config_agent_resources=config_agents_result or None,
+        config_model_resources=config_models_result or None,
+        config_provider_resources=config_providers_result or None,
         # IDs result for backwards-compat
         ids_result=ids_result,
         # Video param data
@@ -1157,11 +1207,10 @@ async def get_scenario_websocket(
 ) -> GetScenarioWebsocketResponse:
     """Minimal response for WebSocket handlers.
 
-    Returns only what's needed for AI generation:
-    - Domain IDs (for domain_to_resource mapping)
-    - Domains list (for agent_id lookup)
-    - Group ID (for existing group context)
-    - Resources (for Jinja template context)
+    Returns generation context for socket handlers:
+    - group_id
+    - resource_agent_ids mapping (resource_type -> agent_id)
+    - resources payload for Jinja context
     """
     data = await get_scenario_internal(
         profile_id=profile_id,
@@ -1170,27 +1219,69 @@ async def get_scenario_websocket(
         bypass_cache=bypass_cache,
     )
 
+    draft_view = None
+    if draft_id is not None:
+        pool = get_pool()
+        if not pool:
+            raise RuntimeError("Database pool not initialized")
+        async with pool.acquire() as conn:
+            draft_items = await get_draft_scenario_internal(
+                conn=conn,
+                draft_ids=[draft_id],
+                bypass_cache=bypass_cache,
+            )
+            draft_view = draft_items[0] if draft_items else None
+
+    current = data.resources_payload.current
+    selected_flag_ids = {
+        getattr(f, "flag_option_id", None) or getattr(f, "id", None)
+        for f in (current.flags if current and current.flags else [])
+    } - {None}
+    all_enriched_flags = (
+        data.resources_payload.resources.flags if data.resources_payload.resources else []
+    ) or []
+    selected_enriched_flags = [
+        f for f in all_enriched_flags if f.flag_option_id in selected_flag_ids
+    ]
+
+    tools_result: list[Any] = []
+    if data.config_agent_resources:
+        tool_ids: list[UUID] = []
+        for agent in data.config_agent_resources:
+            ids = getattr(agent, "tool_ids", None) or []
+            tool_ids.extend(ids)
+        deduped_tool_ids = list(dict.fromkeys(tool_ids))
+        if deduped_tool_ids:
+            pool = get_pool()
+            if not pool:
+                raise RuntimeError("Database pool not initialized")
+            async with pool.acquire() as conn:
+                tools_result = await get_tools_internal(conn, deduped_tool_ids, bypass_cache)
+
     return GetScenarioWebsocketResponse(
         group_id=data.group_id,
-        # Domain IDs for domain_to_resource mapping
-        name_domain_id=data.domain_ids_map.get("names"),
-        description_domain_id=data.domain_ids_map.get("descriptions"),
-        problem_statement_domain_id=data.domain_ids_map.get("problem_statements"),
-        flag_domain_id=data.domain_ids_map.get("flags"),
-        departments_domain_id=data.domain_ids_map.get("departments"),
-        personas_domain_id=data.domain_ids_map.get("personas"),
-        documents_domain_id=data.domain_ids_map.get("documents"),
-        parameters_domain_id=data.domain_ids_map.get("parameters"),
-        parameter_fields_domain_id=data.domain_ids_map.get("fields"),
-        objectives_domain_id=data.domain_ids_map.get("objectives"),
-        images_domain_id=data.domain_ids_map.get("images"),
-        videos_domain_id=data.domain_ids_map.get("videos"),
-        questions_domain_id=data.domain_ids_map.get("questions"),
-        templates_domain_id=data.domain_ids_map.get("templates"),
-        # Domains mapping for agent lookup
-        domains=data.domains_list,
-        # Resources for Jinja context
-        resources=data.resources_payload,
+        views=ScenarioWebsocketViews(draft_scenario=draft_view) if draft_view else None,
+        resource_agent_ids=data.agent_ids,
+        resources=ScenarioWebsocketResources(
+            names=current.names if current else None,
+            descriptions=current.descriptions if current else None,
+            problem_statements=current.problem_statements if current else None,
+            flags=selected_enriched_flags or None,
+            departments=current.departments if current else None,
+            personas=current.personas if current else None,
+            documents=current.documents if current else None,
+            templates=current.templates if current else None,
+            parameters=current.parameters if current else None,
+            parameter_fields=current.parameter_fields if current else None,
+            objectives=current.objectives if current else None,
+            images=current.images if current else None,
+            videos=current.videos if current else None,
+            questions=current.questions if current else None,
+            agents=data.config_agent_resources,
+            models=data.config_model_resources,
+            providers=data.config_provider_resources,
+            tools=tools_result or None,
+        ),
     )
 
 
@@ -1221,7 +1312,7 @@ async def get_scenario_client(
     """BFF response for HTTP endpoint/frontend.
 
     Returns the full response with all UI fields, suggestions, and
-    computed *_show_ai_generate flags.
+    computed *_show_ai_generate flags in section-based form.
     """
     data = await get_scenario_internal(
         profile_id=profile_id,
@@ -1242,288 +1333,106 @@ async def get_scenario_client(
         parameter_show_selected=parameter_show_selected,
     )
 
-    ids = data.ids_result
-
-    # Find flag resources from all available flags by name
     resources_bucket = data.resources_payload.resources
-    all_flags = resources_bucket.flags if resources_bucket else []
-
-    def find_flag_by_name(name_suffix: str):
-        target_name = f"scenario_{name_suffix}"
-        return next(
-            (
-                f
-                for f in (all_flags or [])
-                if hasattr(f, "key") and f.key == name_suffix
-            ),
-            None,
-        )
-
-    active_flag_resource = find_flag_by_name("active")
-    objectives_enabled_flag_resource = find_flag_by_name("objectives_enabled")
-    images_enabled_flag_resource = find_flag_by_name("images_enabled")
-    video_enabled_flag_resource = find_flag_by_name("video_enabled")
-    questions_enabled_flag_resource = find_flag_by_name("questions_enabled")
-    problem_statement_enabled_flag_resource = find_flag_by_name(
-        "problem_statement_enabled"
-    )
-    use_templates_flag_resource = find_flag_by_name("use_templates")
-
-    # Get current resources for backwards-compat fields
     current_bucket = data.resources_payload.current
 
+    def section_common(resource_key: str) -> dict[str, Any]:
+        return {
+            "show": data.show_flags_map.get(resource_key, False),
+            "required": data.required_flags_map.get(resource_key, False),
+            "suggestions": data.suggestions_map.get(resource_key, []),
+            "show_ai_generate": data.show_ai_generate_map.get(resource_key, False),
+            "create_tool_id": data.create_tool_ids_map.get(resource_key),
+            "link_tool_id": data.link_tool_ids_map.get(resource_key),
+        }
+
     return GetScenarioApiResponse(
-        # Required fields
         actor_name=data.actor_name,
         scenario_exists=data.scenario_exists,
         can_edit=data.can_edit,
         disabled_reason=data.disabled_reason,
-        group_id=data.group_id,
-        # Draft version
         draft_version=data.draft_version,
-        # Name
-        name_id=ids.name_id,
-        name_resource=current_bucket.names[0]
-        if current_bucket and current_bucket.names
-        else None,
-        show_name=data.show_flags_map.get("names"),
-        name_agent_id=data.agent_ids.get("names"),
-        name_required=data.required_flags_map.get("names"),
-        name_suggestions=data.suggestions_map.get("names"),
-        names=resources_bucket.names if resources_bucket else None,
-        # Description
-        description_id=ids.description_id,
-        description_resource=current_bucket.descriptions[0]
-        if current_bucket and current_bucket.descriptions
-        else None,
-        show_description=data.show_flags_map.get("descriptions"),
-        description_agent_id=data.agent_ids.get("descriptions"),
-        description_required=data.required_flags_map.get("descriptions"),
-        description_suggestions=data.suggestions_map.get("descriptions"),
-        descriptions=resources_bucket.descriptions if resources_bucket else None,
-        # Problem statement
-        problem_statement_id=ids.problem_statement_id,
-        problem_statement_resource=current_bucket.problem_statements[0]
-        if current_bucket and current_bucket.problem_statements
-        else None,
-        show_problem_statement=data.show_flags_map.get("problem_statements"),
-        problem_statement_agent_id=data.agent_ids.get("problem_statements"),
-        problem_statement_required=data.required_flags_map.get("problem_statements"),
-        problem_statement_suggestions=data.suggestions_map.get("problem_statements"),
-        problem_statements=resources_bucket.problem_statements
-        if resources_bucket
-        else None,
-        # Active flag
-        active_flag_id=ids.active_flag_id,
-        active_flag_resource=active_flag_resource,
-        show_active_flag=data.show_flags_map.get("flags"),
-        active_flag_agent_id=data.agent_ids.get("flags"),
-        active_flag_required=data.required_flags_map.get("flags"),
-        # Objectives enabled flag
-        objectives_enabled_flag_id=ids.objectives_enabled_flag_id,
-        objectives_enabled_flag_resource=objectives_enabled_flag_resource,
-        show_objectives_enabled_flag=data.show_flags_map.get("flags"),
-        objectives_enabled_flag_agent_id=data.agent_ids.get("flags"),
-        objectives_enabled_flag_required=data.required_flags_map.get("flags"),
-        # Images enabled flag
-        images_enabled_flag_id=ids.images_enabled_flag_id,
-        images_enabled_flag_resource=images_enabled_flag_resource,
-        show_images_enabled_flag=data.show_flags_map.get("flags"),
-        images_enabled_flag_agent_id=data.agent_ids.get("flags"),
-        images_enabled_flag_required=data.required_flags_map.get("flags"),
-        # Video enabled flag
-        video_enabled_flag_id=ids.video_enabled_flag_id,
-        video_enabled_flag_resource=video_enabled_flag_resource,
-        show_video_enabled_flag=data.show_flags_map.get("flags"),
-        video_enabled_flag_agent_id=data.agent_ids.get("flags"),
-        video_enabled_flag_required=data.required_flags_map.get("flags"),
-        # Questions enabled flag
-        questions_enabled_flag_id=ids.questions_enabled_flag_id,
-        questions_enabled_flag_resource=questions_enabled_flag_resource,
-        show_questions_enabled_flag=data.show_flags_map.get("flags"),
-        questions_enabled_flag_agent_id=data.agent_ids.get("flags"),
-        questions_enabled_flag_required=data.required_flags_map.get("flags"),
-        # Problem statement enabled flag
-        problem_statement_enabled_flag_id=ids.problem_statement_enabled_flag_id,
-        problem_statement_enabled_flag_resource=problem_statement_enabled_flag_resource,
-        show_problem_statement_enabled_flag=data.show_flags_map.get("flags"),
-        problem_statement_enabled_flag_agent_id=data.agent_ids.get("flags"),
-        problem_statement_enabled_flag_required=data.required_flags_map.get("flags"),
-        # Use templates flag
-        use_templates_flag_id=ids.use_templates_flag_id,
-        use_templates_flag_resource=use_templates_flag_resource,
-        show_use_templates_flag=data.show_flags_map.get("flags"),
-        use_templates_flag_agent_id=data.agent_ids.get("flags"),
-        use_templates_flag_required=data.required_flags_map.get("flags"),
-        # Server-driven flags array
-        flags=resources_bucket.flags if resources_bucket else None,
-        show_flags=data.show_flags_map.get("flags"),
-        # Departments
-        department_ids=ids.department_ids,
-        department_resources=current_bucket.departments if current_bucket else None,
-        show_departments=data.show_flags_map.get("departments"),
-        departments_agent_id=data.agent_ids.get("departments"),
-        departments_required=data.required_flags_map.get("departments"),
-        department_suggestions=data.suggestions_map.get("departments"),
-        departments=resources_bucket.departments if resources_bucket else None,
-        # Parameter fields
-        parameter_field_ids=ids.parameter_field_ids,
-        parameter_field_resources=current_bucket.parameter_fields
-        if current_bucket
-        else None,
-        show_parameter_fields=data.show_flags_map.get("fields"),
-        parameter_fields_agent_id=data.agent_ids.get("fields"),
-        parameter_fields_required=data.required_flags_map.get("fields"),
-        parameter_fields=resources_bucket.parameter_fields
-        if resources_bucket
-        else None,
-        # Objectives
-        objective_ids=ids.objective_ids,
-        objective_resources=current_bucket.objectives if current_bucket else None,
-        show_objectives=data.show_flags_map.get("objectives"),
-        objectives_agent_id=data.agent_ids.get("objectives"),
-        objectives_required=data.required_flags_map.get("objectives"),
-        objective_suggestions=data.suggestions_map.get("objectives"),
-        objectives=resources_bucket.objectives if resources_bucket else None,
-        # Images
-        image_ids=ids.image_ids,
-        image_resources=current_bucket.images if current_bucket else None,
-        show_images=data.show_flags_map.get("images"),
-        images_agent_id=data.agent_ids.get("images"),
-        images_required=data.required_flags_map.get("images"),
-        image_suggestions=data.suggestions_map.get("images"),
-        images=resources_bucket.images if resources_bucket else None,
-        # Videos
-        video_ids=ids.video_ids,
-        video_resources=current_bucket.videos if current_bucket else None,
-        show_videos=data.show_flags_map.get("videos"),
-        videos_agent_id=data.agent_ids.get("videos"),
-        videos_required=data.required_flags_map.get("videos"),
-        video_suggestions=data.suggestions_map.get("videos"),
-        videos=resources_bucket.videos if resources_bucket else None,
-        # Questions
-        question_ids=ids.question_ids,
-        question_resources=current_bucket.questions if current_bucket else None,
-        show_questions=data.show_flags_map.get("questions"),
-        questions_agent_id=data.agent_ids.get("questions"),
-        questions_required=data.required_flags_map.get("questions"),
-        question_suggestions=data.suggestions_map.get("questions"),
-        questions=resources_bucket.questions if resources_bucket else None,
-        # Templates
-        template_ids=ids.template_ids,
-        template_resources=current_bucket.templates if current_bucket else None,
-        show_templates=data.show_flags_map.get("templates"),
-        templates_agent_id=data.agent_ids.get("templates"),
-        templates_required=data.required_flags_map.get("templates"),
-        template_suggestions=data.suggestions_map.get("templates"),
-        templates=resources_bucket.templates if resources_bucket else None,
-        # Personas
-        persona_ids=ids.persona_ids,
-        persona_resources=current_bucket.personas if current_bucket else None,
-        show_personas=data.show_flags_map.get("personas"),
-        personas_agent_id=data.agent_ids.get("personas"),
-        personas_required=data.required_flags_map.get("personas"),
-        persona_suggestions=data.suggestions_map.get("personas"),
-        personas=resources_bucket.personas if resources_bucket else None,
-        # Documents
-        document_ids=ids.document_ids,
-        document_resources=current_bucket.documents if current_bucket else None,
-        show_documents=data.show_flags_map.get("documents"),
-        documents_agent_id=data.agent_ids.get("documents"),
-        documents_required=data.required_flags_map.get("documents"),
-        document_suggestions=data.suggestions_map.get("documents"),
-        documents=resources_bucket.documents if resources_bucket else None,
-        # Parameters
-        parameter_ids=ids.parameter_ids,
-        parameter_resources=current_bucket.parameters if current_bucket else None,
-        show_parameters=data.show_flags_map.get("parameters"),
-        parameters_agent_id=data.agent_ids.get("parameters"),
-        parameters_required=data.required_flags_map.get("parameters"),
-        parameter_suggestions=data.suggestions_map.get("parameters"),
-        parameters=resources_bucket.parameters if resources_bucket else None,
-        # Multi-resource agent IDs (backwards compat)
-        basic_agent_id=None,
-        content_agent_id=None,
-        # === NEW FIELDS ===
-        # Per-resource domain IDs
-        name_domain_id=data.domain_ids_map.get("names"),
-        description_domain_id=data.domain_ids_map.get("descriptions"),
-        problem_statement_domain_id=data.domain_ids_map.get("problem_statements"),
-        flag_domain_id=data.domain_ids_map.get("flags"),
-        departments_domain_id=data.domain_ids_map.get("departments"),
-        personas_domain_id=data.domain_ids_map.get("personas"),
-        documents_domain_id=data.domain_ids_map.get("documents"),
-        parameters_domain_id=data.domain_ids_map.get("parameters"),
-        parameter_fields_domain_id=data.domain_ids_map.get("fields"),
-        objectives_domain_id=data.domain_ids_map.get("objectives"),
-        images_domain_id=data.domain_ids_map.get("images"),
-        videos_domain_id=data.domain_ids_map.get("videos"),
-        questions_domain_id=data.domain_ids_map.get("questions"),
-        templates_domain_id=data.domain_ids_map.get("templates"),
-        # Per-resource group IDs
-        names_group_id=data.resource_group_ids.get("names"),
-        descriptions_group_id=data.resource_group_ids.get("descriptions"),
-        problem_statements_group_id=data.resource_group_ids.get("problem_statements"),
-        flags_group_id=data.resource_group_ids.get("flags"),
-        departments_group_id=data.resource_group_ids.get("departments"),
-        personas_group_id=data.resource_group_ids.get("personas"),
-        documents_group_id=data.resource_group_ids.get("documents"),
-        parameters_group_id=data.resource_group_ids.get("parameters"),
-        parameter_fields_group_id=data.resource_group_ids.get("fields"),
-        objectives_group_id=data.resource_group_ids.get("objectives"),
-        images_group_id=data.resource_group_ids.get("images"),
-        videos_group_id=data.resource_group_ids.get("videos"),
-        questions_group_id=data.resource_group_ids.get("questions"),
-        templates_group_id=data.resource_group_ids.get("templates"),
-        # Per-resource show_ai_generate flags
-        name_show_ai_generate=data.show_ai_generate_map.get("names"),
-        description_show_ai_generate=data.show_ai_generate_map.get("descriptions"),
-        problem_statement_show_ai_generate=data.show_ai_generate_map.get(
-            "problem_statements"
-        ),
-        flag_show_ai_generate=data.show_ai_generate_map.get("flags"),
-        departments_show_ai_generate=data.show_ai_generate_map.get("departments"),
-        personas_show_ai_generate=data.show_ai_generate_map.get("personas"),
-        documents_show_ai_generate=data.show_ai_generate_map.get("documents"),
-        parameters_show_ai_generate=data.show_ai_generate_map.get("parameters"),
-        parameter_fields_show_ai_generate=data.show_ai_generate_map.get("fields"),
-        objectives_show_ai_generate=data.show_ai_generate_map.get("objectives"),
-        images_show_ai_generate=data.show_ai_generate_map.get("images"),
-        videos_show_ai_generate=data.show_ai_generate_map.get("videos"),
-        questions_show_ai_generate=data.show_ai_generate_map.get("questions"),
-        templates_show_ai_generate=data.show_ai_generate_map.get("templates"),
-        # Step-level AI generation flags
+        group_id=data.group_id,
         basic_show_ai_generate=data.basic_show_ai_generate,
         content_show_ai_generate=data.content_show_ai_generate,
-        # Per-resource CREATE tool IDs
-        name_create_tool_id=data.create_tool_ids_map.get("names"),
-        description_create_tool_id=data.create_tool_ids_map.get("descriptions"),
-        problem_statement_create_tool_id=data.create_tool_ids_map.get(
-            "problem_statements"
+        names=ScenarioNameSection(
+            resource=(current_bucket.names[0] if current_bucket and current_bucket.names else None),
+            resources=(resources_bucket.names if resources_bucket else None),
+            **section_common("names"),
         ),
-        objectives_create_tool_id=data.create_tool_ids_map.get("objectives"),
-        images_create_tool_id=data.create_tool_ids_map.get("images"),
-        questions_create_tool_id=data.create_tool_ids_map.get("questions"),
-        templates_create_tool_id=data.create_tool_ids_map.get("templates"),
-        # Per-resource LINK tool IDs
-        name_link_tool_id=data.link_tool_ids_map.get("names"),
-        description_link_tool_id=data.link_tool_ids_map.get("descriptions"),
-        problem_statement_link_tool_id=data.link_tool_ids_map.get("problem_statements"),
-        flag_link_tool_id=data.link_tool_ids_map.get("flags"),
-        departments_link_tool_id=data.link_tool_ids_map.get("departments"),
-        personas_link_tool_id=data.link_tool_ids_map.get("personas"),
-        documents_link_tool_id=data.link_tool_ids_map.get("documents"),
-        parameters_link_tool_id=data.link_tool_ids_map.get("parameters"),
-        parameter_fields_link_tool_id=data.link_tool_ids_map.get("fields"),
-        objectives_link_tool_id=data.link_tool_ids_map.get("objectives"),
-        images_link_tool_id=data.link_tool_ids_map.get("images"),
-        videos_link_tool_id=data.link_tool_ids_map.get("videos"),
-        questions_link_tool_id=data.link_tool_ids_map.get("questions"),
-        templates_link_tool_id=data.link_tool_ids_map.get("templates"),
-        # Domain metadata for client display in modals
-        domain_data=data.domain_data_list,
-        # Resources
-        resources=data.resources_payload,
+        descriptions=ScenarioDescriptionSection(
+            resource=(
+                current_bucket.descriptions[0]
+                if current_bucket and current_bucket.descriptions
+                else None
+            ),
+            resources=(resources_bucket.descriptions if resources_bucket else None),
+            **section_common("descriptions"),
+        ),
+        problem_statements=ScenarioProblemStatementSection(
+            resource=(
+                current_bucket.problem_statements[0]
+                if current_bucket and current_bucket.problem_statements
+                else None
+            ),
+            resources=(resources_bucket.problem_statements if resources_bucket else None),
+            **section_common("problem_statements"),
+        ),
+        flags=ScenarioFlagSection(
+            current=(current_bucket.flags if current_bucket else None),
+            resources=(resources_bucket.flags if resources_bucket else None),
+            **section_common("flags"),
+        ),
+        departments=ScenarioDepartmentSection(
+            current=(current_bucket.departments if current_bucket else None),
+            resources=(resources_bucket.departments if resources_bucket else None),
+            **section_common("departments"),
+        ),
+        personas=ScenarioPersonaSection(
+            current=(current_bucket.personas if current_bucket else None),
+            resources=(resources_bucket.personas if resources_bucket else None),
+            **section_common("personas"),
+        ),
+        documents=ScenarioDocumentSection(
+            current=(current_bucket.documents if current_bucket else None),
+            resources=(resources_bucket.documents if resources_bucket else None),
+            **section_common("documents"),
+        ),
+        templates=ScenarioTemplateSection(
+            current=(current_bucket.templates if current_bucket else None),
+            resources=(resources_bucket.templates if resources_bucket else None),
+            **section_common("templates"),
+        ),
+        parameters=ScenarioParameterSection(
+            current=(current_bucket.parameters if current_bucket else None),
+            resources=(resources_bucket.parameters if resources_bucket else None),
+            **section_common("parameters"),
+        ),
+        parameter_fields=ScenarioParameterFieldSection(
+            current=(current_bucket.parameter_fields if current_bucket else None),
+            resources=(resources_bucket.parameter_fields if resources_bucket else None),
+            **section_common("fields"),
+        ),
+        objectives=ScenarioObjectiveSection(
+            current=(current_bucket.objectives if current_bucket else None),
+            resources=(resources_bucket.objectives if resources_bucket else None),
+            **section_common("objectives"),
+        ),
+        images=ScenarioImageSection(
+            current=(current_bucket.images if current_bucket else None),
+            resources=(resources_bucket.images if resources_bucket else None),
+            **section_common("images"),
+        ),
+        videos=ScenarioVideoSection(
+            current=(current_bucket.videos if current_bucket else None),
+            resources=(resources_bucket.videos if resources_bucket else None),
+            **section_common("videos"),
+        ),
+        questions=ScenarioQuestionSection(
+            current=(current_bucket.questions if current_bucket else None),
+            resources=(resources_bucket.questions if resources_bucket else None),
+            **section_common("questions"),
+        ),
     )
 
 
@@ -1593,17 +1502,11 @@ async def get_scenario(
             audit_ctx: dict[str, Any] = {
                 "actor": {"name": response_data.actor_name, "id": profile_id}
             }
-            current_name = None
-            current_resources = (
-                response_data.resources.current if response_data.resources else None
+            current_name = (
+                getattr(response_data.names.resource, "name", None)
+                if response_data.names and response_data.names.resource
+                else None
             )
-            if current_resources and current_resources.names:
-                name_item = current_resources.names[0]
-                current_name = (
-                    name_item.get("name")
-                    if isinstance(name_item, dict)
-                    else getattr(name_item, "name", None)
-                )
             if request.scenario_id and current_name:
                 audit_ctx["scenario"] = {
                     "name": current_name,
@@ -1630,3 +1533,5 @@ async def get_scenario(
             sql_params=None,
             request=http_request,
         )
+from app.api.v4.resources.models.get import get_models_internal
+from app.api.v4.resources.providers.get import get_providers_internal

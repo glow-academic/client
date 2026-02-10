@@ -48,8 +48,8 @@ async def patch_scenario_draft(
             )
 
         async with conn.transaction():
-            params = PatchScenarioDraftSqlParams(
-                **request.model_dump(), profile_id=profile_id
+            params = PatchScenarioDraftSqlParams.from_request(
+                request, profile_id=profile_id
             )
             sql_params = params.to_tuple()
 

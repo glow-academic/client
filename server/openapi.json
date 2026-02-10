@@ -46955,18 +46955,6 @@
             ],
             "title": "Models Id"
           },
-          "model_values_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Model Values Id"
-          },
           "providers_id": {
             "anyOf": [
               {
@@ -46979,55 +46967,7 @@
             ],
             "title": "Providers Id"
           },
-          "provider_values_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Provider Values Id"
-          },
-          "endpoints_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Endpoints Id"
-          },
-          "keys_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Keys Id"
-          },
-          "prompts_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Prompts Id"
-          },
-          "instructions_ids": {
+          "tool_ids": {
             "anyOf": [
               {
                 "items": {
@@ -47040,70 +46980,7 @@
                 "type": "null"
               }
             ],
-            "title": "Instructions Ids"
-          },
-          "temperature_levels_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Temperature Levels Id"
-          },
-          "reasoning_levels_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Reasoning Levels Id"
-          },
-          "qualities_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Qualities Id"
-          },
-          "voices_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Voices Id"
-          },
-          "tools_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Tools Ids"
+            "title": "Tool Ids"
           },
           "created_at": {
             "anyOf": [
@@ -68198,11 +68075,12 @@
             ],
             "title": "Settings Auths"
           },
-          "settings_provider_ids": {
+          "settings_provider_key_ids": {
             "anyOf": [
               {
                 "items": {
-                  "type": "string"
+                  "type": "string",
+                  "format": "uuid"
                 },
                 "type": "array"
               },
@@ -68210,21 +68088,7 @@
                 "type": "null"
               }
             ],
-            "title": "Settings Provider Ids"
-          },
-          "settings_providers": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetProfileContextV4Provider"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Settings Providers"
+            "title": "Settings Provider Key Ids"
           },
           "available_sections": {
             "anyOf": [
@@ -71045,1619 +70909,6 @@
             ],
             "title": "Disabled Reason"
           },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
-          },
-          "name_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name Id"
-          },
-          "name_resource": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ScenarioNameResource"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "show_name": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Name"
-          },
-          "name_agent_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name Agent Id"
-          },
-          "name_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name Required"
-          },
-          "name_suggestions": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name Suggestions"
-          },
-          "names": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ScenarioNameResource"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Names"
-          },
-          "description_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description Id"
-          },
-          "description_resource": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ScenarioDescriptionResource"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "show_description": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Description"
-          },
-          "description_agent_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description Agent Id"
-          },
-          "description_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description Required"
-          },
-          "description_suggestions": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description Suggestions"
-          },
-          "descriptions": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ScenarioDescriptionResource"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Descriptions"
-          },
-          "problem_statement_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Problem Statement Id"
-          },
-          "problem_statement_resource": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ScenarioProblemStatement"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "show_problem_statement": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Problem Statement"
-          },
-          "problem_statement_agent_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Problem Statement Agent Id"
-          },
-          "problem_statement_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Problem Statement Required"
-          },
-          "problem_statement_suggestions": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Problem Statement Suggestions"
-          },
-          "problem_statements": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ScenarioProblemStatement"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Problem Statements"
-          },
-          "active_flag_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Active Flag Id"
-          },
-          "active_flag_resource": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ScenarioFlagResource"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "show_active_flag": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Active Flag"
-          },
-          "active_flag_agent_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Active Flag Agent Id"
-          },
-          "active_flag_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Active Flag Required"
-          },
-          "objectives_enabled_flag_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Objectives Enabled Flag Id"
-          },
-          "objectives_enabled_flag_resource": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ScenarioFlagResource"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "show_objectives_enabled_flag": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Objectives Enabled Flag"
-          },
-          "objectives_enabled_flag_agent_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Objectives Enabled Flag Agent Id"
-          },
-          "objectives_enabled_flag_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Objectives Enabled Flag Required"
-          },
-          "images_enabled_flag_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Images Enabled Flag Id"
-          },
-          "images_enabled_flag_resource": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ScenarioFlagResource"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "show_images_enabled_flag": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Images Enabled Flag"
-          },
-          "images_enabled_flag_agent_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Images Enabled Flag Agent Id"
-          },
-          "images_enabled_flag_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Images Enabled Flag Required"
-          },
-          "video_enabled_flag_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Video Enabled Flag Id"
-          },
-          "video_enabled_flag_resource": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ScenarioFlagResource"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "show_video_enabled_flag": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Video Enabled Flag"
-          },
-          "video_enabled_flag_agent_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Video Enabled Flag Agent Id"
-          },
-          "video_enabled_flag_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Video Enabled Flag Required"
-          },
-          "questions_enabled_flag_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Questions Enabled Flag Id"
-          },
-          "questions_enabled_flag_resource": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ScenarioFlagResource"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "show_questions_enabled_flag": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Questions Enabled Flag"
-          },
-          "questions_enabled_flag_agent_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Questions Enabled Flag Agent Id"
-          },
-          "questions_enabled_flag_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Questions Enabled Flag Required"
-          },
-          "problem_statement_enabled_flag_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Problem Statement Enabled Flag Id"
-          },
-          "problem_statement_enabled_flag_resource": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ScenarioFlagResource"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "show_problem_statement_enabled_flag": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Problem Statement Enabled Flag"
-          },
-          "problem_statement_enabled_flag_agent_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Problem Statement Enabled Flag Agent Id"
-          },
-          "problem_statement_enabled_flag_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Problem Statement Enabled Flag Required"
-          },
-          "use_templates_flag_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Use Templates Flag Id"
-          },
-          "use_templates_flag_resource": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ScenarioFlagResource"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "show_use_templates_flag": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Use Templates Flag"
-          },
-          "use_templates_flag_agent_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Use Templates Flag Agent Id"
-          },
-          "use_templates_flag_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Use Templates Flag Required"
-          },
-          "flags": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ScenarioFlagConfig"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Flags"
-          },
-          "show_flags": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Flags"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "department_resources": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ScenarioDepartment"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Resources"
-          },
-          "show_departments": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Departments"
-          },
-          "departments_agent_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departments Agent Id"
-          },
-          "departments_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departments Required"
-          },
-          "department_suggestions": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Suggestions"
-          },
-          "departments": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ScenarioDepartment"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departments"
-          },
-          "parameter_field_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Field Ids"
-          },
-          "parameter_field_resources": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ScenarioField"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Field Resources"
-          },
-          "show_parameter_fields": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Parameter Fields"
-          },
-          "parameter_fields_agent_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Fields Agent Id"
-          },
-          "parameter_fields_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Fields Required"
-          },
-          "parameter_fields": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ScenarioField"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Fields"
-          },
-          "objective_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Objective Ids"
-          },
-          "objective_resources": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ScenarioObjective"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Objective Resources"
-          },
-          "show_objectives": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Objectives"
-          },
-          "objectives_agent_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Objectives Agent Id"
-          },
-          "objectives_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Objectives Required"
-          },
-          "objective_suggestions": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Objective Suggestions"
-          },
-          "objectives": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ScenarioObjective"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Objectives"
-          },
-          "image_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Image Ids"
-          },
-          "image_resources": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ScenarioImage"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Image Resources"
-          },
-          "show_images": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Images"
-          },
-          "images_agent_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Images Agent Id"
-          },
-          "images_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Images Required"
-          },
-          "image_suggestions": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Image Suggestions"
-          },
-          "images": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ScenarioImage"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Images"
-          },
-          "video_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Video Ids"
-          },
-          "video_resources": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ScenarioVideo"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Video Resources"
-          },
-          "show_videos": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Videos"
-          },
-          "videos_agent_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Videos Agent Id"
-          },
-          "videos_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Videos Required"
-          },
-          "video_suggestions": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Video Suggestions"
-          },
-          "videos": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ScenarioVideo"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Videos"
-          },
-          "question_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Question Ids"
-          },
-          "question_resources": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ScenarioQuestion"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Question Resources"
-          },
-          "show_questions": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Questions"
-          },
-          "questions_agent_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Questions Agent Id"
-          },
-          "questions_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Questions Required"
-          },
-          "question_suggestions": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Question Suggestions"
-          },
-          "questions": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ScenarioQuestion"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Questions"
-          },
-          "template_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Template Ids"
-          },
-          "template_resources": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ScenarioTemplate"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Template Resources"
-          },
-          "show_templates": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Templates"
-          },
-          "templates_agent_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Templates Agent Id"
-          },
-          "templates_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Templates Required"
-          },
-          "template_suggestions": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Template Suggestions"
-          },
-          "templates": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ScenarioTemplate"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Templates"
-          },
-          "persona_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Ids"
-          },
-          "persona_resources": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ScenarioPersona"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Resources"
-          },
-          "show_personas": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Personas"
-          },
-          "personas_agent_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Personas Agent Id"
-          },
-          "personas_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Personas Required"
-          },
-          "persona_suggestions": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Suggestions"
-          },
-          "personas": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ScenarioPersona"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Personas"
-          },
-          "document_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Document Ids"
-          },
-          "document_resources": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ScenarioDocument"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Document Resources"
-          },
-          "show_documents": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Documents"
-          },
-          "documents_agent_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Documents Agent Id"
-          },
-          "documents_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Documents Required"
-          },
-          "document_suggestions": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Document Suggestions"
-          },
-          "documents": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ScenarioDocument"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Documents"
-          },
-          "parameter_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Ids"
-          },
-          "parameter_resources": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ScenarioParameter"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Resources"
-          },
-          "show_parameters": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Parameters"
-          },
-          "parameters_agent_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameters Agent Id"
-          },
-          "parameters_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameters Required"
-          },
-          "parameter_suggestions": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Suggestions"
-          },
-          "parameters": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ScenarioParameter"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameters"
-          },
-          "basic_agent_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Basic Agent Id"
-          },
-          "content_agent_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Content Agent Id"
-          },
           "draft_version": {
             "anyOf": [
               {
@@ -72669,7 +70920,7 @@
             ],
             "title": "Draft Version"
           },
-          "name_domain_id": {
+          "group_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -72679,485 +70930,7 @@
                 "type": "null"
               }
             ],
-            "title": "Name Domain Id"
-          },
-          "description_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description Domain Id"
-          },
-          "problem_statement_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Problem Statement Domain Id"
-          },
-          "flag_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Flag Domain Id"
-          },
-          "departments_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departments Domain Id"
-          },
-          "personas_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Personas Domain Id"
-          },
-          "documents_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Documents Domain Id"
-          },
-          "parameters_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameters Domain Id"
-          },
-          "parameter_fields_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Fields Domain Id"
-          },
-          "objectives_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Objectives Domain Id"
-          },
-          "images_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Images Domain Id"
-          },
-          "videos_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Videos Domain Id"
-          },
-          "questions_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Questions Domain Id"
-          },
-          "templates_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Templates Domain Id"
-          },
-          "names_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Names Group Id"
-          },
-          "descriptions_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Descriptions Group Id"
-          },
-          "problem_statements_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Problem Statements Group Id"
-          },
-          "flags_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Flags Group Id"
-          },
-          "departments_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departments Group Id"
-          },
-          "personas_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Personas Group Id"
-          },
-          "documents_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Documents Group Id"
-          },
-          "parameters_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameters Group Id"
-          },
-          "parameter_fields_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Fields Group Id"
-          },
-          "objectives_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Objectives Group Id"
-          },
-          "images_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Images Group Id"
-          },
-          "videos_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Videos Group Id"
-          },
-          "questions_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Questions Group Id"
-          },
-          "templates_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Templates Group Id"
-          },
-          "name_show_ai_generate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name Show Ai Generate"
-          },
-          "description_show_ai_generate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description Show Ai Generate"
-          },
-          "problem_statement_show_ai_generate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Problem Statement Show Ai Generate"
-          },
-          "flag_show_ai_generate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Flag Show Ai Generate"
-          },
-          "departments_show_ai_generate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departments Show Ai Generate"
-          },
-          "personas_show_ai_generate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Personas Show Ai Generate"
-          },
-          "documents_show_ai_generate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Documents Show Ai Generate"
-          },
-          "parameters_show_ai_generate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameters Show Ai Generate"
-          },
-          "parameter_fields_show_ai_generate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Fields Show Ai Generate"
-          },
-          "objectives_show_ai_generate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Objectives Show Ai Generate"
-          },
-          "images_show_ai_generate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Images Show Ai Generate"
-          },
-          "videos_show_ai_generate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Videos Show Ai Generate"
-          },
-          "questions_show_ai_generate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Questions Show Ai Generate"
-          },
-          "templates_show_ai_generate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Templates Show Ai Generate"
+            "title": "Group Id"
           },
           "basic_show_ai_generate": {
             "anyOf": [
@@ -73181,276 +70954,140 @@
             ],
             "title": "Content Show Ai Generate"
           },
-          "name_create_tool_id": {
+          "names": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/ScenarioNameSection"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Name Create Tool Id"
+            ]
           },
-          "description_create_tool_id": {
+          "descriptions": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/ScenarioDescriptionSection"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Description Create Tool Id"
+            ]
           },
-          "problem_statement_create_tool_id": {
+          "problem_statements": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/ScenarioProblemStatementSection"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Problem Statement Create Tool Id"
+            ]
           },
-          "objectives_create_tool_id": {
+          "flags": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/ScenarioFlagSection"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Objectives Create Tool Id"
+            ]
           },
-          "images_create_tool_id": {
+          "departments": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/ScenarioDepartmentSection"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Images Create Tool Id"
+            ]
           },
-          "questions_create_tool_id": {
+          "personas": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/ScenarioPersonaSection"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Questions Create Tool Id"
+            ]
           },
-          "templates_create_tool_id": {
+          "documents": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/ScenarioDocumentSection"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Templates Create Tool Id"
+            ]
           },
-          "name_link_tool_id": {
+          "templates": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/ScenarioTemplateSection"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Name Link Tool Id"
+            ]
           },
-          "description_link_tool_id": {
+          "parameters": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/ScenarioParameterSection"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Description Link Tool Id"
+            ]
           },
-          "problem_statement_link_tool_id": {
+          "parameter_fields": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/ScenarioParameterFieldSection"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Problem Statement Link Tool Id"
+            ]
           },
-          "flag_link_tool_id": {
+          "objectives": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/ScenarioObjectiveSection"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Flag Link Tool Id"
+            ]
           },
-          "departments_link_tool_id": {
+          "images": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/ScenarioImageSection"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Departments Link Tool Id"
+            ]
           },
-          "personas_link_tool_id": {
+          "videos": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/ScenarioVideoSection"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Personas Link Tool Id"
+            ]
           },
-          "documents_link_tool_id": {
+          "questions": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Documents Link Tool Id"
-          },
-          "parameters_link_tool_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameters Link Tool Id"
-          },
-          "parameter_fields_link_tool_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Fields Link Tool Id"
-          },
-          "objectives_link_tool_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Objectives Link Tool Id"
-          },
-          "images_link_tool_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Images Link Tool Id"
-          },
-          "videos_link_tool_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Videos Link Tool Id"
-          },
-          "questions_link_tool_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Questions Link Tool Id"
-          },
-          "templates_link_tool_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Templates Link Tool Id"
-          },
-          "domain_data": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/DomainData"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Domain Data"
-          },
-          "resources": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ScenarioResources"
+                "$ref": "#/components/schemas/ScenarioQuestionSection"
               },
               {
                 "type": "null"
@@ -74829,7 +72466,7 @@
             ],
             "title": "Auths"
           },
-          "provider_ids": {
+          "provider_key_ids": {
             "anyOf": [
               {
                 "items": {
@@ -74842,84 +72479,7 @@
                 "type": "null"
               }
             ],
-            "title": "Provider Ids"
-          },
-          "provider_resources": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetSettingV4Provider"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Provider Resources"
-          },
-          "show_providers": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Providers"
-          },
-          "providers_agent_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Providers Agent Id"
-          },
-          "providers_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Providers Required"
-          },
-          "provider_suggestions": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Provider Suggestions"
-          },
-          "providers": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetSettingV4Provider"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Providers"
+            "title": "Provider Key Ids"
           },
           "key_ids": {
             "anyOf": [
@@ -87706,7 +85266,7 @@
             ],
             "title": "Input Draft Id"
           },
-          "name_id": {
+          "group_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -87716,282 +85276,157 @@
                 "type": "null"
               }
             ],
-            "title": "Name Id"
-          },
-          "description_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description Id"
-          },
-          "active_flag_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Active Flag Id"
-          },
-          "objectives_enabled_flag_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Objectives Enabled Flag Id"
-          },
-          "images_enabled_flag_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Images Enabled Flag Id"
-          },
-          "video_enabled_flag_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Video Enabled Flag Id"
-          },
-          "questions_enabled_flag_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Questions Enabled Flag Id"
-          },
-          "problem_statement_enabled_flag_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Problem Statement Enabled Flag Id"
-          },
-          "use_templates_flag_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Use Templates Flag Id"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "persona_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Ids"
-          },
-          "document_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Document Ids"
-          },
-          "template_document_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Template Document Ids"
-          },
-          "parameter_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Ids"
-          },
-          "parameter_field_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Field Ids"
-          },
-          "image_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Image Ids"
-          },
-          "objective_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Objective Ids"
-          },
-          "problem_statement_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Problem Statement Id"
-          },
-          "video_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Video Ids"
-          },
-          "question_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Question Ids"
+            "title": "Group Id"
           },
           "expected_version": {
+            "type": "integer",
+            "title": "Expected Version",
+            "default": 0
+          },
+          "names": {
             "anyOf": [
               {
-                "type": "integer"
+                "$ref": "#/components/schemas/ScenarioResourceAction"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Expected Version",
-            "default": 0
+            ]
+          },
+          "descriptions": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScenarioResourceAction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "problem_statements": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScenarioResourceAction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "flags": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScenarioMultiResourceAction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "departments": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScenarioMultiResourceAction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "personas": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScenarioMultiResourceAction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "documents": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScenarioMultiResourceAction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "templates": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScenarioMultiResourceAction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "parameters": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScenarioMultiResourceAction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "parameter_fields": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScenarioMultiResourceAction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "images": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScenarioMultiResourceAction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "objectives": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScenarioMultiResourceAction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "videos": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScenarioMultiResourceAction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "questions": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScenarioMultiResourceAction"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
         "title": "PatchScenarioDraftApiRequest",
-        "description": "Request for patching a scenario draft."
+        "description": "Request for patching a scenario draft - nested resource actions."
       },
       "PatchScenarioDraftApiResponse": {
         "properties": {
@@ -94792,38 +92227,107 @@
             ],
             "title": "Value"
           },
-          "endpoint": {
+          "provider_id": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "format": "uuid"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Endpoint"
+            "title": "Provider Id"
           },
-          "key": {
+          "input_modality_ids": {
             "anyOf": [
               {
-                "type": "string"
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Key"
+            "title": "Input Modality Ids"
           },
-          "modality": {
+          "output_modality_ids": {
             "anyOf": [
               {
-                "type": "string"
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Modality"
+            "title": "Output Modality Ids"
+          },
+          "temperature_level_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature Level Ids"
+          },
+          "reasoning_level_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reasoning Level Ids"
+          },
+          "quality_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quality Ids"
+          },
+          "voice_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voice Ids"
           },
           "active": {
             "anyOf": [
@@ -94854,9 +92358,13 @@
           "name",
           "description",
           "value",
-          "endpoint",
-          "key",
-          "modality",
+          "provider_id",
+          "input_modality_ids",
+          "output_modality_ids",
+          "temperature_level_ids",
+          "reasoning_level_ids",
+          "quality_ids",
+          "voice_ids",
           "active",
           "generated"
         ],
@@ -95870,62 +93378,6 @@
           "updated_at"
         ],
         "title": "QGetProfileContextV4Draft"
-      },
-      "QGetProfileContextV4Provider": {
-        "properties": {
-          "provider_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Provider Id"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "value": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Value"
-          }
-        },
-        "type": "object",
-        "required": [
-          "provider_id",
-          "name",
-          "description",
-          "value"
-        ],
-        "title": "QGetProfileContextV4Provider"
       },
       "QGetProfileContextV4RoleResource": {
         "properties": {
@@ -98921,75 +96373,6 @@
           "generated"
         ],
         "title": "QGetSettingV4Profile"
-      },
-      "QGetSettingV4Provider": {
-        "properties": {
-          "provider_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Provider Id"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "value": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Value"
-          },
-          "active": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Active"
-          }
-        },
-        "type": "object",
-        "required": [
-          "provider_id",
-          "name",
-          "description",
-          "value",
-          "active"
-        ],
-        "title": "QGetSettingV4Provider"
       },
       "QGetSettingV4RoleResource": {
         "properties": {
@@ -108152,11 +105535,6 @@
       },
       "SaveScenarioApiRequest": {
         "properties": {
-          "group_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Group Id"
-          },
           "input_scenario_id": {
             "anyOf": [
               {
@@ -108169,12 +105547,7 @@
             ],
             "title": "Input Scenario Id"
           },
-          "name_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Name Id"
-          },
-          "description_id": {
+          "group_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -108184,262 +105557,70 @@
                 "type": "null"
               }
             ],
-            "title": "Description Id"
+            "title": "Group Id"
           },
-          "problem_statement_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Problem Statement Id"
+          "names": {
+            "$ref": "#/components/schemas/ScenarioResourceAction"
           },
-          "active_flag_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Active Flag Id"
+          "descriptions": {
+            "$ref": "#/components/schemas/ScenarioResourceAction"
           },
-          "objectives_enabled_flag_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Objectives Enabled Flag Id"
+          "problem_statements": {
+            "$ref": "#/components/schemas/ScenarioResourceAction"
           },
-          "images_enabled_flag_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Images Enabled Flag Id"
+          "flags": {
+            "$ref": "#/components/schemas/ScenarioMultiResourceAction"
           },
-          "video_enabled_flag_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Video Enabled Flag Id"
+          "departments": {
+            "$ref": "#/components/schemas/ScenarioMultiResourceAction"
           },
-          "questions_enabled_flag_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Questions Enabled Flag Id"
+          "personas": {
+            "$ref": "#/components/schemas/ScenarioMultiResourceAction"
           },
-          "problem_statement_enabled_flag_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Problem Statement Enabled Flag Id"
+          "documents": {
+            "$ref": "#/components/schemas/ScenarioMultiResourceAction"
           },
-          "use_templates_flag_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Use Templates Flag Id"
+          "templates": {
+            "$ref": "#/components/schemas/ScenarioMultiResourceAction"
           },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
+          "parameters": {
+            "$ref": "#/components/schemas/ScenarioMultiResourceAction"
           },
-          "persona_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Ids"
+          "parameter_fields": {
+            "$ref": "#/components/schemas/ScenarioMultiResourceAction"
           },
-          "document_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Document Ids"
+          "images": {
+            "$ref": "#/components/schemas/ScenarioMultiResourceAction"
           },
-          "template_document_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Template Document Ids"
+          "objectives": {
+            "$ref": "#/components/schemas/ScenarioMultiResourceAction"
           },
-          "parameter_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Ids"
+          "videos": {
+            "$ref": "#/components/schemas/ScenarioMultiResourceAction"
           },
-          "parameter_field_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Field Ids"
-          },
-          "image_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Image Ids"
-          },
-          "objective_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Objective Ids"
-          },
-          "video_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Video Ids"
-          },
-          "question_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Question Ids"
+          "questions": {
+            "$ref": "#/components/schemas/ScenarioMultiResourceAction"
           }
         },
         "type": "object",
         "required": [
-          "group_id",
-          "name_id"
+          "names",
+          "descriptions",
+          "problem_statements",
+          "flags",
+          "departments",
+          "personas",
+          "documents",
+          "templates",
+          "parameters",
+          "parameter_fields",
+          "images",
+          "objectives",
+          "videos",
+          "questions"
         ],
         "title": "SaveScenarioApiRequest",
-        "description": "Request for saving a scenario - accepts form data directly (no draft_id)."
+        "description": "Request for saving a scenario - nested resource actions with tool tracking."
       },
       "SaveScenarioApiResponse": {
         "properties": {
@@ -108502,13 +105683,13 @@
             "type": "array",
             "title": "Auth Ids"
           },
-          "provider_ids": {
+          "provider_key_ids": {
             "items": {
               "type": "string",
               "format": "uuid"
             },
             "type": "array",
-            "title": "Provider Ids"
+            "title": "Provider Key Ids"
           },
           "key_ids": {
             "items": {
@@ -108606,7 +105787,7 @@
           "color_ids",
           "department_ids",
           "auth_ids",
-          "provider_ids",
+          "provider_key_ids",
           "key_ids"
         ],
         "title": "SaveSettingApiRequest"
@@ -108999,6 +106180,94 @@
         "title": "ScenarioDepartment",
         "description": "Department for scenario."
       },
+      "ScenarioDepartmentSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "current": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ScenarioDepartment"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current"
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ScenarioDepartment"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "ScenarioDepartmentSection"
+      },
       "ScenarioDescriptionResource": {
         "properties": {
           "id": {
@@ -109039,6 +106308,90 @@
         "type": "object",
         "title": "ScenarioDescriptionResource",
         "description": "Description resource for scenario."
+      },
+      "ScenarioDescriptionSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "resource": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScenarioDescriptionResource"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ScenarioDescriptionResource"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "ScenarioDescriptionSection"
       },
       "ScenarioDocument": {
         "properties": {
@@ -109178,6 +106531,94 @@
         "type": "object",
         "title": "ScenarioDocument",
         "description": "Document for scenario."
+      },
+      "ScenarioDocumentSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "current": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ScenarioDocument"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current"
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ScenarioDocument"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "ScenarioDocumentSection"
       },
       "ScenarioEntry": {
         "properties": {
@@ -109394,18 +106835,6 @@
             "title": "Required",
             "default": false
           },
-          "agent_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Agent Id"
-          },
           "generated": {
             "anyOf": [
               {
@@ -109437,9 +106866,39 @@
         "title": "ScenarioFlagConfig",
         "description": "Enriched flag config for direct client consumption."
       },
-      "ScenarioFlagResource": {
+      "ScenarioFlagSection": {
         "properties": {
-          "id": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -109449,56 +106908,51 @@
                 "type": "null"
               }
             ],
-            "title": "Id"
+            "title": "Create Tool Id"
           },
-          "name": {
+          "link_tool_id": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "format": "uuid"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Name"
+            "title": "Link Tool Id"
           },
-          "description": {
+          "current": {
             "anyOf": [
               {
-                "type": "string"
+                "items": {
+                  "$ref": "#/components/schemas/ScenarioFlagConfig"
+                },
+                "type": "array"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Description"
+            "title": "Current"
           },
-          "icon": {
+          "resources": {
             "anyOf": [
               {
-                "type": "string"
+                "items": {
+                  "$ref": "#/components/schemas/ScenarioFlagConfig"
+                },
+                "type": "array"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Icon"
-          },
-          "generated": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Generated"
+            "title": "Resources"
           }
         },
         "type": "object",
-        "title": "ScenarioFlagResource",
-        "description": "Flag resource for scenario."
+        "title": "ScenarioFlagSection"
       },
       "ScenarioGenerationCompleteEvent": {
         "properties": {
@@ -109574,6 +107028,20 @@
                 "type": "null"
               }
             ]
+          },
+          "flag_resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetFlagsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Flag Resources"
           },
           "department_resources": {
             "anyOf": [
@@ -109801,6 +107269,139 @@
         "title": "ScenarioImage",
         "description": "Image for scenario."
       },
+      "ScenarioImageSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "current": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ScenarioImage"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current"
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ScenarioImage"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "ScenarioImageSection"
+      },
+      "ScenarioMultiResourceAction": {
+        "properties": {
+          "resource_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resource Ids"
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          }
+        },
+        "type": "object",
+        "title": "ScenarioMultiResourceAction"
+      },
       "ScenarioNameResource": {
         "properties": {
           "id": {
@@ -109842,6 +107443,90 @@
         "title": "ScenarioNameResource",
         "description": "Name resource for scenario."
       },
+      "ScenarioNameSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "resource": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScenarioNameResource"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ScenarioNameResource"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "ScenarioNameSection"
+      },
       "ScenarioObjective": {
         "properties": {
           "id": {
@@ -109882,6 +107567,94 @@
         "type": "object",
         "title": "ScenarioObjective",
         "description": "Objective for scenario."
+      },
+      "ScenarioObjectiveSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "current": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ScenarioObjective"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current"
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ScenarioObjective"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "ScenarioObjectiveSection"
       },
       "ScenarioParameter": {
         "properties": {
@@ -109978,6 +107751,182 @@
         "type": "object",
         "title": "ScenarioParameter",
         "description": "Parameter for scenario."
+      },
+      "ScenarioParameterFieldSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "current": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ScenarioField"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current"
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ScenarioField"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "ScenarioParameterFieldSection"
+      },
+      "ScenarioParameterSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "current": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ScenarioParameter"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current"
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ScenarioParameter"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "ScenarioParameterSection"
       },
       "ScenarioPersona": {
         "properties": {
@@ -110115,6 +108064,94 @@
         "type": "object",
         "title": "ScenarioPersona",
         "description": "Persona for scenario."
+      },
+      "ScenarioPersonaSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "current": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ScenarioPersona"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current"
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ScenarioPersona"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "ScenarioPersonaSection"
       },
       "ScenarioPersonasApiRequest": {
         "properties": {
@@ -110303,6 +108340,90 @@
         "title": "ScenarioProblemStatement",
         "description": "Problem statement for scenario."
       },
+      "ScenarioProblemStatementSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "resource": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScenarioProblemStatement"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ScenarioProblemStatement"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "ScenarioProblemStatementSection"
+      },
       "ScenarioQuestion": {
         "properties": {
           "question_id": {
@@ -110355,13 +108476,24 @@
         "title": "ScenarioQuestion",
         "description": "Question for scenario."
       },
-      "ScenarioResourceBucket": {
+      "ScenarioQuestionSection": {
         "properties": {
-          "names": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/ScenarioNameResource"
+                  "type": "string",
+                  "format": "uuid"
                 },
                 "type": "array"
               },
@@ -110369,163 +108501,38 @@
                 "type": "null"
               }
             ],
-            "title": "Names"
+            "title": "Suggestions"
           },
-          "descriptions": {
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
             "anyOf": [
               {
-                "items": {
-                  "$ref": "#/components/schemas/ScenarioDescriptionResource"
-                },
-                "type": "array"
+                "type": "string",
+                "format": "uuid"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Descriptions"
+            "title": "Create Tool Id"
           },
-          "problem_statements": {
+          "link_tool_id": {
             "anyOf": [
               {
-                "items": {
-                  "$ref": "#/components/schemas/ScenarioProblemStatement"
-                },
-                "type": "array"
+                "type": "string",
+                "format": "uuid"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Problem Statements"
+            "title": "Link Tool Id"
           },
-          "flags": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ScenarioFlagConfig"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Flags"
-          },
-          "departments": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ScenarioDepartment"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departments"
-          },
-          "personas": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ScenarioPersona"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Personas"
-          },
-          "documents": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ScenarioDocument"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Documents"
-          },
-          "parameters": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ScenarioParameter"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameters"
-          },
-          "parameter_fields": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ScenarioField"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Fields"
-          },
-          "objectives": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ScenarioObjective"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Objectives"
-          },
-          "images": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ScenarioImage"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Images"
-          },
-          "videos": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ScenarioVideo"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Videos"
-          },
-          "questions": {
+          "current": {
             "anyOf": [
               {
                 "items": {
@@ -110537,13 +108544,13 @@
                 "type": "null"
               }
             ],
-            "title": "Questions"
+            "title": "Current"
           },
-          "templates": {
+          "resources": {
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/ScenarioTemplate"
+                  "$ref": "#/components/schemas/ScenarioQuestion"
                 },
                 "type": "array"
               },
@@ -110551,39 +108558,53 @@
                 "type": "null"
               }
             ],
-            "title": "Templates"
+            "title": "Resources"
           }
         },
         "type": "object",
-        "title": "ScenarioResourceBucket",
-        "description": "Generic resources bucket with full objects (always plural lists)."
+        "title": "ScenarioQuestionSection"
       },
-      "ScenarioResources": {
+      "ScenarioResourceAction": {
         "properties": {
-          "resources": {
+          "resource_id": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/ScenarioResourceBucket"
+                "type": "string",
+                "format": "uuid"
               },
               {
                 "type": "null"
               }
-            ]
+            ],
+            "title": "Resource Id"
           },
-          "current": {
+          "create_tool_id": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/ScenarioResourceBucket"
+                "type": "string",
+                "format": "uuid"
               },
               {
                 "type": "null"
               }
-            ]
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
           }
         },
         "type": "object",
-        "title": "ScenarioResources",
-        "description": "Full resources + current selections."
+        "title": "ScenarioResourceAction"
       },
       "ScenarioRubricsApiRequest": {
         "properties": {
@@ -110698,6 +108719,94 @@
         "type": "object",
         "title": "ScenarioTemplate",
         "description": "Template for scenario."
+      },
+      "ScenarioTemplateSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "current": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ScenarioTemplate"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current"
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ScenarioTemplate"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "ScenarioTemplateSection"
       },
       "ScenarioTimeLimitsApiRequest": {
         "properties": {
@@ -110856,6 +108965,94 @@
         "type": "object",
         "title": "ScenarioVideo",
         "description": "Video for scenario."
+      },
+      "ScenarioVideoSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "current": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ScenarioVideo"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current"
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ScenarioVideo"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "ScenarioVideoSection"
       },
       "SearchArgsApiRequest": {
         "properties": {

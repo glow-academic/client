@@ -10,7 +10,13 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.api.v4.types import DomainAgent, DomainData
+from app.api.v4.views.drafts.types import DraftScenarioViewItem
+from app.sql.types import (
+    QGetAgentsV4Item,
+    QGetModelsV4Item,
+    QGetProvidersV4Item,
+    QGetToolsV4Item,
+)
 
 # =============================================================================
 # Resource Types
@@ -53,7 +59,6 @@ class ScenarioFlagConfig(BaseModel):
     flag_option_id: UUID | None = None  # ID to use when enabling
     show: bool = True
     required: bool = False
-    agent_id: UUID | None = None
     generated: bool | None = None
     video_flag: bool | None = (
         None  # True if this flag only shows when video_enabled is true
@@ -265,309 +270,166 @@ class GetScenarioApiRequest(BaseModel):
     mcp: bool | None = False
 
 
+class BaseResourceSection(BaseModel):
+    """Common metadata fields for all resource sections."""
+
+    show: bool = False
+    required: bool = False
+    suggestions: list[UUID] | None = None
+    show_ai_generate: bool = False
+    create_tool_id: UUID | None = None
+    link_tool_id: UUID | None = None
+
+
+class ScenarioNameSection(BaseResourceSection):
+    resource: ScenarioNameResource | None = None
+    resources: list[ScenarioNameResource] | None = None
+
+
+class ScenarioDescriptionSection(BaseResourceSection):
+    resource: ScenarioDescriptionResource | None = None
+    resources: list[ScenarioDescriptionResource] | None = None
+
+
+class ScenarioProblemStatementSection(BaseResourceSection):
+    resource: ScenarioProblemStatement | None = None
+    resources: list[ScenarioProblemStatement] | None = None
+
+
+class ScenarioFlagSection(BaseResourceSection):
+    current: list[ScenarioFlagConfig] | None = None
+    resources: list[ScenarioFlagConfig] | None = None
+
+
+class ScenarioDepartmentSection(BaseResourceSection):
+    current: list[ScenarioDepartment] | None = None
+    resources: list[ScenarioDepartment] | None = None
+
+
+class ScenarioPersonaSection(BaseResourceSection):
+    current: list[ScenarioPersona] | None = None
+    resources: list[ScenarioPersona] | None = None
+
+
+class ScenarioDocumentSection(BaseResourceSection):
+    current: list[ScenarioDocument] | None = None
+    resources: list[ScenarioDocument] | None = None
+
+
+class ScenarioTemplateSection(BaseResourceSection):
+    current: list[ScenarioTemplate] | None = None
+    resources: list[ScenarioTemplate] | None = None
+
+
+class ScenarioParameterSection(BaseResourceSection):
+    current: list[ScenarioParameter] | None = None
+    resources: list[ScenarioParameter] | None = None
+
+
+class ScenarioParameterFieldSection(BaseResourceSection):
+    current: list[ScenarioField] | None = None
+    resources: list[ScenarioField] | None = None
+
+
+class ScenarioObjectiveSection(BaseResourceSection):
+    current: list[ScenarioObjective] | None = None
+    resources: list[ScenarioObjective] | None = None
+
+
+class ScenarioImageSection(BaseResourceSection):
+    current: list[ScenarioImage] | None = None
+    resources: list[ScenarioImage] | None = None
+
+
+class ScenarioVideoSection(BaseResourceSection):
+    current: list[ScenarioVideo] | None = None
+    resources: list[ScenarioVideo] | None = None
+
+
+class ScenarioQuestionSection(BaseResourceSection):
+    current: list[ScenarioQuestion] | None = None
+    resources: list[ScenarioQuestion] | None = None
+
+
 class GetScenarioApiResponse(BaseModel):
     """Response for getting a single scenario."""
 
-    # Required metadata fields
+    # Context
     actor_name: str | None = None
     scenario_exists: bool | None = None
     can_edit: bool | None = None
     disabled_reason: str | None = None
-    group_id: UUID | None = None
-
-    # Name resource
-    name_id: UUID | None = None
-    name_resource: ScenarioNameResource | None = None
-    show_name: bool | None = None
-    name_agent_id: UUID | None = None
-    name_required: bool | None = None
-    name_suggestions: list[UUID] | None = None
-    names: list[ScenarioNameResource] | None = None
-
-    # Description resource
-    description_id: UUID | None = None
-    description_resource: ScenarioDescriptionResource | None = None
-    show_description: bool | None = None
-    description_agent_id: UUID | None = None
-    description_required: bool | None = None
-    description_suggestions: list[UUID] | None = None
-    descriptions: list[ScenarioDescriptionResource] | None = None
-
-    # Problem statement resource
-    problem_statement_id: UUID | None = None
-    problem_statement_resource: ScenarioProblemStatement | None = None
-    show_problem_statement: bool | None = None
-    problem_statement_agent_id: UUID | None = None
-    problem_statement_required: bool | None = None
-    problem_statement_suggestions: list[UUID] | None = None
-    problem_statements: list[ScenarioProblemStatement] | None = None
-
-    # Active flag resource
-    active_flag_id: UUID | None = None
-    active_flag_resource: ScenarioFlagResource | None = None
-    show_active_flag: bool | None = None
-    active_flag_agent_id: UUID | None = None
-    active_flag_required: bool | None = None
-
-    # Objectives enabled flag
-    objectives_enabled_flag_id: UUID | None = None
-    objectives_enabled_flag_resource: ScenarioFlagResource | None = None
-    show_objectives_enabled_flag: bool | None = None
-    objectives_enabled_flag_agent_id: UUID | None = None
-    objectives_enabled_flag_required: bool | None = None
-
-    # Images enabled flag
-    images_enabled_flag_id: UUID | None = None
-    images_enabled_flag_resource: ScenarioFlagResource | None = None
-    show_images_enabled_flag: bool | None = None
-    images_enabled_flag_agent_id: UUID | None = None
-    images_enabled_flag_required: bool | None = None
-
-    # Video enabled flag
-    video_enabled_flag_id: UUID | None = None
-    video_enabled_flag_resource: ScenarioFlagResource | None = None
-    show_video_enabled_flag: bool | None = None
-    video_enabled_flag_agent_id: UUID | None = None
-    video_enabled_flag_required: bool | None = None
-
-    # Questions enabled flag
-    questions_enabled_flag_id: UUID | None = None
-    questions_enabled_flag_resource: ScenarioFlagResource | None = None
-    show_questions_enabled_flag: bool | None = None
-    questions_enabled_flag_agent_id: UUID | None = None
-    questions_enabled_flag_required: bool | None = None
-
-    # Problem statement enabled flag
-    problem_statement_enabled_flag_id: UUID | None = None
-    problem_statement_enabled_flag_resource: ScenarioFlagResource | None = None
-    show_problem_statement_enabled_flag: bool | None = None
-    problem_statement_enabled_flag_agent_id: UUID | None = None
-    problem_statement_enabled_flag_required: bool | None = None
-
-    # Use templates flag
-    use_templates_flag_id: UUID | None = None
-    use_templates_flag_resource: ScenarioFlagResource | None = None
-    show_use_templates_flag: bool | None = None
-    use_templates_flag_agent_id: UUID | None = None
-    use_templates_flag_required: bool | None = None
-
-    # Server-driven flags array (enriched configs for all flags)
-    flags: list[ScenarioFlagConfig] | None = None
-    show_flags: bool | None = None  # Master visibility for all flags
-
-    # Departments
-    department_ids: list[UUID] | None = None
-    department_resources: list[ScenarioDepartment] | None = None
-    show_departments: bool | None = None
-    departments_agent_id: UUID | None = None
-    departments_required: bool | None = None
-    department_suggestions: list[UUID] | None = None
-    departments: list[ScenarioDepartment] | None = None
-
-    # Parameter fields
-    parameter_field_ids: list[UUID] | None = None
-    parameter_field_resources: list[ScenarioField] | None = None
-    show_parameter_fields: bool | None = None
-    parameter_fields_agent_id: UUID | None = None
-    parameter_fields_required: bool | None = None
-    parameter_fields: list[ScenarioField] | None = None
-
-    # Objectives
-    objective_ids: list[UUID] | None = None
-    objective_resources: list[ScenarioObjective] | None = None
-    show_objectives: bool | None = None
-    objectives_agent_id: UUID | None = None
-    objectives_required: bool | None = None
-    objective_suggestions: list[UUID] | None = None
-    objectives: list[ScenarioObjective] | None = None
-
-    # Images
-    image_ids: list[UUID] | None = None
-    image_resources: list[ScenarioImage] | None = None
-    show_images: bool | None = None
-    images_agent_id: UUID | None = None
-    images_required: bool | None = None
-    image_suggestions: list[UUID] | None = None
-    images: list[ScenarioImage] | None = None
-
-    # Videos
-    video_ids: list[UUID] | None = None
-    video_resources: list[ScenarioVideo] | None = None
-    show_videos: bool | None = None
-    videos_agent_id: UUID | None = None
-    videos_required: bool | None = None
-    video_suggestions: list[UUID] | None = None
-    videos: list[ScenarioVideo] | None = None
-
-    # Questions
-    question_ids: list[UUID] | None = None
-    question_resources: list[ScenarioQuestion] | None = None
-    show_questions: bool | None = None
-    questions_agent_id: UUID | None = None
-    questions_required: bool | None = None
-    question_suggestions: list[UUID] | None = None
-    questions: list[ScenarioQuestion] | None = None
-
-    # Templates
-    template_ids: list[UUID] | None = None
-    template_resources: list[ScenarioTemplate] | None = None
-    show_templates: bool | None = None
-    templates_agent_id: UUID | None = None
-    templates_required: bool | None = None
-    template_suggestions: list[UUID] | None = None
-    templates: list[ScenarioTemplate] | None = None
-
-    # Personas
-    persona_ids: list[UUID] | None = None
-    persona_resources: list[ScenarioPersona] | None = None
-    show_personas: bool | None = None
-    personas_agent_id: UUID | None = None
-    personas_required: bool | None = None
-    persona_suggestions: list[UUID] | None = None
-    personas: list[ScenarioPersona] | None = None
-
-    # Documents
-    document_ids: list[UUID] | None = None
-    document_resources: list[ScenarioDocument] | None = None
-    show_documents: bool | None = None
-    documents_agent_id: UUID | None = None
-    documents_required: bool | None = None
-    document_suggestions: list[UUID] | None = None
-    documents: list[ScenarioDocument] | None = None
-
-    # Parameters
-    parameter_ids: list[UUID] | None = None
-    parameter_resources: list[ScenarioParameter] | None = None
-    show_parameters: bool | None = None
-    parameters_agent_id: UUID | None = None
-    parameters_required: bool | None = None
-    parameter_suggestions: list[UUID] | None = None
-    parameters: list[ScenarioParameter] | None = None
-
-    # Multi-resource combination agent IDs
-    basic_agent_id: UUID | None = None
-    content_agent_id: UUID | None = None
-
-    # Draft version
     draft_version: int | None = None
-
-    # Per-resource domain IDs (for domain-based generation)
-    name_domain_id: UUID | None = None
-    description_domain_id: UUID | None = None
-    problem_statement_domain_id: UUID | None = None
-    flag_domain_id: UUID | None = None
-    departments_domain_id: UUID | None = None
-    personas_domain_id: UUID | None = None
-    documents_domain_id: UUID | None = None
-    parameters_domain_id: UUID | None = None
-    parameter_fields_domain_id: UUID | None = None
-    objectives_domain_id: UUID | None = None
-    images_domain_id: UUID | None = None
-    videos_domain_id: UUID | None = None
-    questions_domain_id: UUID | None = None
-    templates_domain_id: UUID | None = None
-
-    # Per-resource group IDs (from draft)
-    names_group_id: UUID | None = None
-    descriptions_group_id: UUID | None = None
-    problem_statements_group_id: UUID | None = None
-    flags_group_id: UUID | None = None
-    departments_group_id: UUID | None = None
-    personas_group_id: UUID | None = None
-    documents_group_id: UUID | None = None
-    parameters_group_id: UUID | None = None
-    parameter_fields_group_id: UUID | None = None
-    objectives_group_id: UUID | None = None
-    images_group_id: UUID | None = None
-    videos_group_id: UUID | None = None
-    questions_group_id: UUID | None = None
-    templates_group_id: UUID | None = None
-
-    # Per-resource show_ai_generate flags
-    name_show_ai_generate: bool | None = None
-    description_show_ai_generate: bool | None = None
-    problem_statement_show_ai_generate: bool | None = None
-    flag_show_ai_generate: bool | None = None
-    departments_show_ai_generate: bool | None = None
-    personas_show_ai_generate: bool | None = None
-    documents_show_ai_generate: bool | None = None
-    parameters_show_ai_generate: bool | None = None
-    parameter_fields_show_ai_generate: bool | None = None
-    objectives_show_ai_generate: bool | None = None
-    images_show_ai_generate: bool | None = None
-    videos_show_ai_generate: bool | None = None
-    questions_show_ai_generate: bool | None = None
-    templates_show_ai_generate: bool | None = None
+    group_id: UUID | None = None
 
     # Step-level AI generation flags
     basic_show_ai_generate: bool | None = None
     content_show_ai_generate: bool | None = None
 
-    # Per-resource CREATE tool IDs
-    name_create_tool_id: UUID | None = None
-    description_create_tool_id: UUID | None = None
-    problem_statement_create_tool_id: UUID | None = None
-    objectives_create_tool_id: UUID | None = None
-    images_create_tool_id: UUID | None = None
-    questions_create_tool_id: UUID | None = None
-    templates_create_tool_id: UUID | None = None
-
-    # Per-resource LINK tool IDs
-    name_link_tool_id: UUID | None = None
-    description_link_tool_id: UUID | None = None
-    problem_statement_link_tool_id: UUID | None = None
-    flag_link_tool_id: UUID | None = None
-    departments_link_tool_id: UUID | None = None
-    personas_link_tool_id: UUID | None = None
-    documents_link_tool_id: UUID | None = None
-    parameters_link_tool_id: UUID | None = None
-    parameter_fields_link_tool_id: UUID | None = None
-    objectives_link_tool_id: UUID | None = None
-    images_link_tool_id: UUID | None = None
-    videos_link_tool_id: UUID | None = None
-    questions_link_tool_id: UUID | None = None
-    templates_link_tool_id: UUID | None = None
-
-    # Rich domain metadata for client display in modals
-    domain_data: list[DomainData] | None = None
-
-    # Generic resources payload (full objects + current selections)
-    resources: ScenarioResources | None = None
+    # Per-resource sections
+    names: ScenarioNameSection | None = None
+    descriptions: ScenarioDescriptionSection | None = None
+    problem_statements: ScenarioProblemStatementSection | None = None
+    flags: ScenarioFlagSection | None = None
+    departments: ScenarioDepartmentSection | None = None
+    personas: ScenarioPersonaSection | None = None
+    documents: ScenarioDocumentSection | None = None
+    templates: ScenarioTemplateSection | None = None
+    parameters: ScenarioParameterSection | None = None
+    parameter_fields: ScenarioParameterFieldSection | None = None
+    objectives: ScenarioObjectiveSection | None = None
+    images: ScenarioImageSection | None = None
+    videos: ScenarioVideoSection | None = None
+    questions: ScenarioQuestionSection | None = None
 
 
 class GetScenarioWebsocketResponse(BaseModel):
     """Minimal response for WebSocket handlers (get_scenario_websocket).
 
     Contains only what's needed for AI generation:
-    - Domain IDs (for domain_to_resource mapping)
-    - Domains list (for agent_id lookup)
     - Group ID (for existing group context)
+    - Optional draft view (for Jinja templates)
+    - resource_agent_ids mapping (resource_type -> agent_id)
     - Resources (for Jinja template context)
     """
 
     group_id: UUID | None = None
+    views: "ScenarioWebsocketViews | None" = None
+    resource_agent_ids: dict[str, UUID | None] | None = None
 
-    # Domain IDs for domain_to_resource mapping
-    name_domain_id: UUID | None = None
-    description_domain_id: UUID | None = None
-    problem_statement_domain_id: UUID | None = None
-    flag_domain_id: UUID | None = None
-    departments_domain_id: UUID | None = None
-    personas_domain_id: UUID | None = None
-    documents_domain_id: UUID | None = None
-    parameters_domain_id: UUID | None = None
-    parameter_fields_domain_id: UUID | None = None
-    objectives_domain_id: UUID | None = None
-    images_domain_id: UUID | None = None
-    videos_domain_id: UUID | None = None
-    questions_domain_id: UUID | None = None
-    templates_domain_id: UUID | None = None
+    resources: "ScenarioWebsocketResources"
 
-    # Domains mapping (domain_id -> agent_id) for server-side agent lookup
-    domains: list[DomainAgent] | None = None
 
-    # Resources for Jinja template context
-    resources: ScenarioResources | None = None
+class ScenarioWebsocketViews(BaseModel):
+    """Optional websocket views payload."""
+
+    draft_scenario: DraftScenarioViewItem | None = None
+
+
+class ScenarioWebsocketResources(BaseModel):
+    """Hydrated resources for websocket — selected only, no `current` wrapper."""
+
+    # 14 scenario resources (selected)
+    names: list[ScenarioNameResource] | None = None
+    descriptions: list[ScenarioDescriptionResource] | None = None
+    problem_statements: list[ScenarioProblemStatement] | None = None
+    flags: list[ScenarioFlagConfig] | None = None
+    departments: list[ScenarioDepartment] | None = None
+    personas: list[ScenarioPersona] | None = None
+    documents: list[ScenarioDocument] | None = None
+    templates: list[ScenarioTemplate] | None = None
+    parameters: list[ScenarioParameter] | None = None
+    parameter_fields: list[ScenarioField] | None = None
+    objectives: list[ScenarioObjective] | None = None
+    images: list[ScenarioImage] | None = None
+    videos: list[ScenarioVideo] | None = None
+    questions: list[ScenarioQuestion] | None = None
+
+    # 4 config resources for generation
+    agents: list[QGetAgentsV4Item] | None = None
+    models: list[QGetModelsV4Item] | None = None
+    providers: list[QGetProvidersV4Item] | None = None
+    tools: list[QGetToolsV4Item] | None = None
 
 
 # =============================================================================
@@ -685,37 +547,35 @@ class ListScenarioApiResponse(BaseModel):
 
 
 class SaveScenarioApiRequest(BaseModel):
-    """Request for saving a scenario - accepts form data directly (no draft_id)."""
+    """Request for saving a scenario - nested resource actions with tool tracking."""
 
-    # Context
-    group_id: UUID  # REQUIRED - which group to save to
-    input_scenario_id: UUID | None = None  # For update mode
+    input_scenario_id: UUID | None = None
+    group_id: UUID | None = None
+    names: "ScenarioResourceAction"
+    descriptions: "ScenarioResourceAction"
+    problem_statements: "ScenarioResourceAction"
+    flags: "ScenarioMultiResourceAction"
+    departments: "ScenarioMultiResourceAction"
+    personas: "ScenarioMultiResourceAction"
+    documents: "ScenarioMultiResourceAction"
+    templates: "ScenarioMultiResourceAction"
+    parameters: "ScenarioMultiResourceAction"
+    parameter_fields: "ScenarioMultiResourceAction"
+    images: "ScenarioMultiResourceAction"
+    objectives: "ScenarioMultiResourceAction"
+    videos: "ScenarioMultiResourceAction"
+    questions: "ScenarioMultiResourceAction"
 
-    # Required single-select resources
-    name_id: UUID  # REQUIRED
+class ScenarioResourceAction(BaseModel):
+    resource_id: UUID | None = None
+    create_tool_id: UUID | None = None
+    link_tool_id: UUID | None = None
 
-    # Optional single-select resources
-    description_id: UUID | None = None
-    problem_statement_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    objectives_enabled_flag_id: UUID | None = None
-    images_enabled_flag_id: UUID | None = None
-    video_enabled_flag_id: UUID | None = None
-    questions_enabled_flag_id: UUID | None = None
-    problem_statement_enabled_flag_id: UUID | None = None
-    use_templates_flag_id: UUID | None = None
 
-    # Optional multi-select resources
-    department_ids: list[UUID] | None = None
-    persona_ids: list[UUID] | None = None
-    document_ids: list[UUID] | None = None
-    template_document_ids: list[UUID] | None = None
-    parameter_ids: list[UUID] | None = None
-    parameter_field_ids: list[UUID] | None = None
-    image_ids: list[UUID] | None = None
-    objective_ids: list[UUID] | None = None
-    video_ids: list[UUID] | None = None
-    question_ids: list[UUID] | None = None
+class ScenarioMultiResourceAction(BaseModel):
+    resource_ids: list[UUID] | None = None
+    create_tool_id: UUID | None = None
+    link_tool_id: UUID | None = None
 
 
 class SaveScenarioApiResponse(BaseModel):
@@ -773,30 +633,25 @@ class DuplicateScenarioApiResponse(BaseModel):
 
 
 class PatchScenarioDraftApiRequest(BaseModel):
-    """Request for patching a scenario draft."""
+    """Request for patching a scenario draft - nested resource actions."""
 
     input_draft_id: UUID | None = None
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    objectives_enabled_flag_id: UUID | None = None
-    images_enabled_flag_id: UUID | None = None
-    video_enabled_flag_id: UUID | None = None
-    questions_enabled_flag_id: UUID | None = None
-    problem_statement_enabled_flag_id: UUID | None = None
-    use_templates_flag_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    persona_ids: list[UUID] | None = None
-    document_ids: list[UUID] | None = None
-    template_document_ids: list[UUID] | None = None
-    parameter_ids: list[UUID] | None = None
-    parameter_field_ids: list[UUID] | None = None
-    image_ids: list[UUID] | None = None
-    objective_ids: list[UUID] | None = None
-    problem_statement_id: UUID | None = None
-    video_ids: list[UUID] | None = None
-    question_ids: list[UUID] | None = None
-    expected_version: int | None = 0
+    group_id: UUID | None = None
+    expected_version: int = 0
+    names: ScenarioResourceAction | None = None
+    descriptions: ScenarioResourceAction | None = None
+    problem_statements: ScenarioResourceAction | None = None
+    flags: ScenarioMultiResourceAction | None = None
+    departments: ScenarioMultiResourceAction | None = None
+    personas: ScenarioMultiResourceAction | None = None
+    documents: ScenarioMultiResourceAction | None = None
+    templates: ScenarioMultiResourceAction | None = None
+    parameters: ScenarioMultiResourceAction | None = None
+    parameter_fields: ScenarioMultiResourceAction | None = None
+    images: ScenarioMultiResourceAction | None = None
+    objectives: ScenarioMultiResourceAction | None = None
+    videos: ScenarioMultiResourceAction | None = None
+    questions: ScenarioMultiResourceAction | None = None
 
 
 class PatchScenarioDraftApiResponse(BaseModel):
@@ -932,130 +787,108 @@ class GetScenarioSqlRow(BaseModel):
     name_id: UUID | None = None
     name_resource: ScenarioNameResource | None = None
     show_name: bool | None = None
-    name_agent_id: UUID | None = None
     name_required: bool | None = None
     name_suggestions: list[UUID] | None = None
     names: list[ScenarioNameResource] | None = None
     description_id: UUID | None = None
     description_resource: ScenarioDescriptionResource | None = None
     show_description: bool | None = None
-    description_agent_id: UUID | None = None
     description_required: bool | None = None
     description_suggestions: list[UUID] | None = None
     descriptions: list[ScenarioDescriptionResource] | None = None
     problem_statement_id: UUID | None = None
     problem_statement_resource: ScenarioProblemStatement | None = None
     show_problem_statement: bool | None = None
-    problem_statement_agent_id: UUID | None = None
     problem_statement_required: bool | None = None
     problem_statement_suggestions: list[UUID] | None = None
     problem_statements: list[ScenarioProblemStatement] | None = None
     active_flag_id: UUID | None = None
     active_flag_resource: ScenarioFlagResource | None = None
     show_active_flag: bool | None = None
-    active_flag_agent_id: UUID | None = None
     active_flag_required: bool | None = None
     objectives_enabled_flag_id: UUID | None = None
     objectives_enabled_flag_resource: ScenarioFlagResource | None = None
     show_objectives_enabled_flag: bool | None = None
-    objectives_enabled_flag_agent_id: UUID | None = None
     objectives_enabled_flag_required: bool | None = None
     images_enabled_flag_id: UUID | None = None
     images_enabled_flag_resource: ScenarioFlagResource | None = None
     show_images_enabled_flag: bool | None = None
-    images_enabled_flag_agent_id: UUID | None = None
     images_enabled_flag_required: bool | None = None
     video_enabled_flag_id: UUID | None = None
     video_enabled_flag_resource: ScenarioFlagResource | None = None
     show_video_enabled_flag: bool | None = None
-    video_enabled_flag_agent_id: UUID | None = None
     video_enabled_flag_required: bool | None = None
     questions_enabled_flag_id: UUID | None = None
     questions_enabled_flag_resource: ScenarioFlagResource | None = None
     show_questions_enabled_flag: bool | None = None
-    questions_enabled_flag_agent_id: UUID | None = None
     questions_enabled_flag_required: bool | None = None
     problem_statement_enabled_flag_id: UUID | None = None
     problem_statement_enabled_flag_resource: ScenarioFlagResource | None = None
     show_problem_statement_enabled_flag: bool | None = None
-    problem_statement_enabled_flag_agent_id: UUID | None = None
     problem_statement_enabled_flag_required: bool | None = None
     use_templates_flag_id: UUID | None = None
     use_templates_flag_resource: ScenarioFlagResource | None = None
     show_use_templates_flag: bool | None = None
-    use_templates_flag_agent_id: UUID | None = None
     use_templates_flag_required: bool | None = None
     department_ids: list[UUID] | None = None
     department_resources: list[ScenarioDepartment] | None = None
     show_departments: bool | None = None
-    departments_agent_id: UUID | None = None
     departments_required: bool | None = None
     department_suggestions: list[UUID] | None = None
     departments: list[ScenarioDepartment] | None = None
     parameter_field_ids: list[UUID] | None = None
     parameter_field_resources: list[ScenarioField] | None = None
     show_parameter_fields: bool | None = None
-    parameter_fields_agent_id: UUID | None = None
     parameter_fields_required: bool | None = None
     parameter_fields: list[ScenarioField] | None = None
     objective_ids: list[UUID] | None = None
     objective_resources: list[ScenarioObjective] | None = None
     show_objectives: bool | None = None
-    objectives_agent_id: UUID | None = None
     objectives_required: bool | None = None
     objective_suggestions: list[UUID] | None = None
     objectives: list[ScenarioObjective] | None = None
     image_ids: list[UUID] | None = None
     image_resources: list[ScenarioImage] | None = None
     show_images: bool | None = None
-    images_agent_id: UUID | None = None
     images_required: bool | None = None
     image_suggestions: list[UUID] | None = None
     images: list[ScenarioImage] | None = None
     video_ids: list[UUID] | None = None
     video_resources: list[ScenarioVideo] | None = None
     show_videos: bool | None = None
-    videos_agent_id: UUID | None = None
     videos_required: bool | None = None
     video_suggestions: list[UUID] | None = None
     videos: list[ScenarioVideo] | None = None
     question_ids: list[UUID] | None = None
     question_resources: list[ScenarioQuestion] | None = None
     show_questions: bool | None = None
-    questions_agent_id: UUID | None = None
     questions_required: bool | None = None
     question_suggestions: list[UUID] | None = None
     questions: list[ScenarioQuestion] | None = None
     template_ids: list[UUID] | None = None
     template_resources: list[ScenarioTemplate] | None = None
     show_templates: bool | None = None
-    templates_agent_id: UUID | None = None
     templates_required: bool | None = None
     template_suggestions: list[UUID] | None = None
     templates: list[ScenarioTemplate] | None = None
     persona_ids: list[UUID] | None = None
     persona_resources: list[ScenarioPersona] | None = None
     show_personas: bool | None = None
-    personas_agent_id: UUID | None = None
     personas_required: bool | None = None
     persona_suggestions: list[UUID] | None = None
     personas: list[ScenarioPersona] | None = None
     document_ids: list[UUID] | None = None
     document_resources: list[ScenarioDocument] | None = None
     show_documents: bool | None = None
-    documents_agent_id: UUID | None = None
     documents_required: bool | None = None
     document_suggestions: list[UUID] | None = None
     documents: list[ScenarioDocument] | None = None
     parameter_ids: list[UUID] | None = None
     parameter_resources: list[ScenarioParameter] | None = None
     show_parameters: bool | None = None
-    parameters_agent_id: UUID | None = None
     parameters_required: bool | None = None
     parameter_suggestions: list[UUID] | None = None
     parameters: list[ScenarioParameter] | None = None
-    basic_agent_id: UUID | None = None
-    content_agent_id: UUID | None = None
 
 
 class GetScenariosListSqlParams(BaseModel):
@@ -1103,65 +936,57 @@ class GetScenariosListApiRequest(BaseModel):
 
 
 class SaveScenarioSqlParams(BaseModel):
-    """SQL parameters for save scenario - accepts form data directly (no draft_id)."""
+    """SQL parameters for save scenario - nested resource actions."""
 
-    # Context
-    profile_id: UUID  # Added from header
-    group_id: UUID  # REQUIRED - which group to save to
-    input_scenario_id: UUID | None = None  # For update mode
+    profile_id: UUID
+    input_scenario_id: UUID | None = None
+    group_id: UUID | None = None
+    names: ScenarioResourceAction
+    descriptions: ScenarioResourceAction
+    problem_statements: ScenarioResourceAction
+    flags: ScenarioMultiResourceAction
+    departments: ScenarioMultiResourceAction
+    personas: ScenarioMultiResourceAction
+    documents: ScenarioMultiResourceAction
+    templates: ScenarioMultiResourceAction
+    parameters: ScenarioMultiResourceAction
+    parameter_fields: ScenarioMultiResourceAction
+    images: ScenarioMultiResourceAction
+    objectives: ScenarioMultiResourceAction
+    videos: ScenarioMultiResourceAction
+    questions: ScenarioMultiResourceAction
 
-    # Required single-select resources
-    name_id: UUID  # REQUIRED
-
-    # Optional single-select resources
-    description_id: UUID | None = None
-    problem_statement_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    objectives_enabled_flag_id: UUID | None = None
-    images_enabled_flag_id: UUID | None = None
-    video_enabled_flag_id: UUID | None = None
-    questions_enabled_flag_id: UUID | None = None
-    problem_statement_enabled_flag_id: UUID | None = None
-    use_templates_flag_id: UUID | None = None
-
-    # Optional multi-select resources
-    department_ids: list[UUID] | None = None
-    persona_ids: list[UUID] | None = None
-    document_ids: list[UUID] | None = None
-    template_document_ids: list[UUID] | None = None
-    parameter_ids: list[UUID] | None = None
-    parameter_field_ids: list[UUID] | None = None
-    image_ids: list[UUID] | None = None
-    objective_ids: list[UUID] | None = None
-    video_ids: list[UUID] | None = None
-    question_ids: list[UUID] | None = None
+    @classmethod
+    def from_request(
+        cls, request: SaveScenarioApiRequest, profile_id: UUID
+    ) -> "SaveScenarioSqlParams":
+        return cls(profile_id=profile_id, **request.model_dump())
 
     def to_tuple(self) -> tuple[Any, ...]:
-        """Convert to tuple for SQL execution."""
+        def single(a: ScenarioResourceAction) -> tuple[Any, Any, Any]:
+            return (a.resource_id, a.create_tool_id, a.link_tool_id)
+
+        def multi(a: ScenarioMultiResourceAction) -> tuple[Any, Any, Any]:
+            return (a.resource_ids, a.create_tool_id, a.link_tool_id)
+
         return (
             self.profile_id,
-            self.group_id,
             self.input_scenario_id,
-            self.name_id,
-            self.description_id,
-            self.problem_statement_id,
-            self.active_flag_id,
-            self.objectives_enabled_flag_id,
-            self.images_enabled_flag_id,
-            self.video_enabled_flag_id,
-            self.questions_enabled_flag_id,
-            self.problem_statement_enabled_flag_id,
-            self.use_templates_flag_id,
-            self.department_ids,
-            self.persona_ids,
-            self.document_ids,
-            self.template_document_ids,
-            self.parameter_ids,
-            self.parameter_field_ids,
-            self.image_ids,
-            self.objective_ids,
-            self.video_ids,
-            self.question_ids,
+            self.group_id,
+            single(self.names),
+            single(self.descriptions),
+            single(self.problem_statements),
+            multi(self.flags),
+            multi(self.departments),
+            multi(self.personas),
+            multi(self.documents),
+            multi(self.templates),
+            multi(self.parameters),
+            multi(self.parameter_fields),
+            multi(self.images),
+            multi(self.objectives),
+            multi(self.videos),
+            multi(self.questions),
         )
 
 
@@ -1222,57 +1047,79 @@ class DuplicateScenarioSqlRow(BaseModel):
 
 
 class PatchScenarioDraftSqlParams(BaseModel):
-    """SQL parameters for patch scenario draft."""
+    """SQL parameters for patch scenario draft - nested resource actions."""
 
     profile_id: UUID
     input_draft_id: UUID | None = None
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    objectives_enabled_flag_id: UUID | None = None
-    images_enabled_flag_id: UUID | None = None
-    video_enabled_flag_id: UUID | None = None
-    questions_enabled_flag_id: UUID | None = None
-    problem_statement_enabled_flag_id: UUID | None = None
-    use_templates_flag_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    persona_ids: list[UUID] | None = None
-    document_ids: list[UUID] | None = None
-    template_document_ids: list[UUID] | None = None
-    parameter_ids: list[UUID] | None = None
-    parameter_field_ids: list[UUID] | None = None
-    image_ids: list[UUID] | None = None
-    objective_ids: list[UUID] | None = None
-    problem_statement_id: UUID | None = None
-    video_ids: list[UUID] | None = None
-    question_ids: list[UUID] | None = None
-    expected_version: int | None = 0
+    group_id: UUID | None = None
+    names: ScenarioResourceAction
+    descriptions: ScenarioResourceAction
+    problem_statements: ScenarioResourceAction
+    flags: ScenarioMultiResourceAction
+    departments: ScenarioMultiResourceAction
+    personas: ScenarioMultiResourceAction
+    documents: ScenarioMultiResourceAction
+    templates: ScenarioMultiResourceAction
+    parameters: ScenarioMultiResourceAction
+    parameter_fields: ScenarioMultiResourceAction
+    images: ScenarioMultiResourceAction
+    objectives: ScenarioMultiResourceAction
+    videos: ScenarioMultiResourceAction
+    questions: ScenarioMultiResourceAction
+    expected_version: int = 0
+
+    @classmethod
+    def from_request(
+        cls, request: PatchScenarioDraftApiRequest, profile_id: UUID
+    ) -> "PatchScenarioDraftSqlParams":
+        empty_single = ScenarioResourceAction()
+        empty_multi = ScenarioMultiResourceAction()
+        return cls(
+            profile_id=profile_id,
+            input_draft_id=request.input_draft_id,
+            group_id=request.group_id,
+            names=request.names or empty_single,
+            descriptions=request.descriptions or empty_single,
+            problem_statements=request.problem_statements or empty_single,
+            flags=request.flags or empty_multi,
+            departments=request.departments or empty_multi,
+            personas=request.personas or empty_multi,
+            documents=request.documents or empty_multi,
+            templates=request.templates or empty_multi,
+            parameters=request.parameters or empty_multi,
+            parameter_fields=request.parameter_fields or empty_multi,
+            images=request.images or empty_multi,
+            objectives=request.objectives or empty_multi,
+            videos=request.videos or empty_multi,
+            questions=request.questions or empty_multi,
+            expected_version=request.expected_version,
+        )
 
     def to_tuple(self) -> tuple[Any, ...]:
-        """Convert to tuple for SQL execution."""
+        def single(a: ScenarioResourceAction) -> tuple[Any, Any, Any]:
+            return (a.resource_id, a.create_tool_id, a.link_tool_id)
+
+        def multi(a: ScenarioMultiResourceAction) -> tuple[Any, Any, Any]:
+            return (a.resource_ids, a.create_tool_id, a.link_tool_id)
+
         return (
             self.profile_id,
             self.input_draft_id,
-            self.name_id,
-            self.description_id,
-            self.active_flag_id,
-            self.objectives_enabled_flag_id,
-            self.images_enabled_flag_id,
-            self.video_enabled_flag_id,
-            self.questions_enabled_flag_id,
-            self.problem_statement_enabled_flag_id,
-            self.use_templates_flag_id,
-            self.department_ids,
-            self.persona_ids,
-            self.document_ids,
-            self.template_document_ids,
-            self.parameter_ids,
-            self.parameter_field_ids,
-            self.image_ids,
-            self.objective_ids,
-            self.problem_statement_id,
-            self.video_ids,
-            self.question_ids,
+            self.group_id,
+            single(self.names),
+            single(self.descriptions),
+            single(self.problem_statements),
+            multi(self.flags),
+            multi(self.departments),
+            multi(self.personas),
+            multi(self.documents),
+            multi(self.templates),
+            multi(self.parameters),
+            multi(self.parameter_fields),
+            multi(self.images),
+            multi(self.objectives),
+            multi(self.videos),
+            multi(self.questions),
             self.expected_version,
         )
 

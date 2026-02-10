@@ -12417,30 +12417,10 @@ export interface components {
             agents_id?: string | null;
             /** Models Id */
             models_id?: string | null;
-            /** Model Values Id */
-            model_values_id?: string | null;
             /** Providers Id */
             providers_id?: string | null;
-            /** Provider Values Id */
-            provider_values_id?: string | null;
-            /** Endpoints Id */
-            endpoints_id?: string | null;
-            /** Keys Id */
-            keys_id?: string | null;
-            /** Prompts Id */
-            prompts_id?: string | null;
-            /** Instructions Ids */
-            instructions_ids?: string[] | null;
-            /** Temperature Levels Id */
-            temperature_levels_id?: string | null;
-            /** Reasoning Levels Id */
-            reasoning_levels_id?: string | null;
-            /** Qualities Id */
-            qualities_id?: string | null;
-            /** Voices Id */
-            voices_id?: string | null;
-            /** Tools Ids */
-            tools_ids?: string[] | null;
+            /** Tool Ids */
+            tool_ids?: string[] | null;
             /** Created At */
             created_at?: string | null;
         };
@@ -18279,10 +18259,8 @@ export interface components {
             settings_auth_ids?: string[] | null;
             /** Settings Auths */
             settings_auths?: components["schemas"]["QGetProfileContextV4Auth"][] | null;
-            /** Settings Provider Ids */
-            settings_provider_ids?: string[] | null;
-            /** Settings Providers */
-            settings_providers?: components["schemas"]["QGetProfileContextV4Provider"][] | null;
+            /** Settings Provider Key Ids */
+            settings_provider_key_ids?: string[] | null;
             /** Available Sections */
             available_sections?: string[] | null;
             /** Available Routes */
@@ -18880,391 +18858,28 @@ export interface components {
             can_edit?: boolean | null;
             /** Disabled Reason */
             disabled_reason?: string | null;
-            /** Group Id */
-            group_id?: string | null;
-            /** Name Id */
-            name_id?: string | null;
-            name_resource?: components["schemas"]["ScenarioNameResource"] | null;
-            /** Show Name */
-            show_name?: boolean | null;
-            /** Name Agent Id */
-            name_agent_id?: string | null;
-            /** Name Required */
-            name_required?: boolean | null;
-            /** Name Suggestions */
-            name_suggestions?: string[] | null;
-            /** Names */
-            names?: components["schemas"]["ScenarioNameResource"][] | null;
-            /** Description Id */
-            description_id?: string | null;
-            description_resource?: components["schemas"]["ScenarioDescriptionResource"] | null;
-            /** Show Description */
-            show_description?: boolean | null;
-            /** Description Agent Id */
-            description_agent_id?: string | null;
-            /** Description Required */
-            description_required?: boolean | null;
-            /** Description Suggestions */
-            description_suggestions?: string[] | null;
-            /** Descriptions */
-            descriptions?: components["schemas"]["ScenarioDescriptionResource"][] | null;
-            /** Problem Statement Id */
-            problem_statement_id?: string | null;
-            problem_statement_resource?: components["schemas"]["ScenarioProblemStatement"] | null;
-            /** Show Problem Statement */
-            show_problem_statement?: boolean | null;
-            /** Problem Statement Agent Id */
-            problem_statement_agent_id?: string | null;
-            /** Problem Statement Required */
-            problem_statement_required?: boolean | null;
-            /** Problem Statement Suggestions */
-            problem_statement_suggestions?: string[] | null;
-            /** Problem Statements */
-            problem_statements?: components["schemas"]["ScenarioProblemStatement"][] | null;
-            /** Active Flag Id */
-            active_flag_id?: string | null;
-            active_flag_resource?: components["schemas"]["ScenarioFlagResource"] | null;
-            /** Show Active Flag */
-            show_active_flag?: boolean | null;
-            /** Active Flag Agent Id */
-            active_flag_agent_id?: string | null;
-            /** Active Flag Required */
-            active_flag_required?: boolean | null;
-            /** Objectives Enabled Flag Id */
-            objectives_enabled_flag_id?: string | null;
-            objectives_enabled_flag_resource?: components["schemas"]["ScenarioFlagResource"] | null;
-            /** Show Objectives Enabled Flag */
-            show_objectives_enabled_flag?: boolean | null;
-            /** Objectives Enabled Flag Agent Id */
-            objectives_enabled_flag_agent_id?: string | null;
-            /** Objectives Enabled Flag Required */
-            objectives_enabled_flag_required?: boolean | null;
-            /** Images Enabled Flag Id */
-            images_enabled_flag_id?: string | null;
-            images_enabled_flag_resource?: components["schemas"]["ScenarioFlagResource"] | null;
-            /** Show Images Enabled Flag */
-            show_images_enabled_flag?: boolean | null;
-            /** Images Enabled Flag Agent Id */
-            images_enabled_flag_agent_id?: string | null;
-            /** Images Enabled Flag Required */
-            images_enabled_flag_required?: boolean | null;
-            /** Video Enabled Flag Id */
-            video_enabled_flag_id?: string | null;
-            video_enabled_flag_resource?: components["schemas"]["ScenarioFlagResource"] | null;
-            /** Show Video Enabled Flag */
-            show_video_enabled_flag?: boolean | null;
-            /** Video Enabled Flag Agent Id */
-            video_enabled_flag_agent_id?: string | null;
-            /** Video Enabled Flag Required */
-            video_enabled_flag_required?: boolean | null;
-            /** Questions Enabled Flag Id */
-            questions_enabled_flag_id?: string | null;
-            questions_enabled_flag_resource?: components["schemas"]["ScenarioFlagResource"] | null;
-            /** Show Questions Enabled Flag */
-            show_questions_enabled_flag?: boolean | null;
-            /** Questions Enabled Flag Agent Id */
-            questions_enabled_flag_agent_id?: string | null;
-            /** Questions Enabled Flag Required */
-            questions_enabled_flag_required?: boolean | null;
-            /** Problem Statement Enabled Flag Id */
-            problem_statement_enabled_flag_id?: string | null;
-            problem_statement_enabled_flag_resource?: components["schemas"]["ScenarioFlagResource"] | null;
-            /** Show Problem Statement Enabled Flag */
-            show_problem_statement_enabled_flag?: boolean | null;
-            /** Problem Statement Enabled Flag Agent Id */
-            problem_statement_enabled_flag_agent_id?: string | null;
-            /** Problem Statement Enabled Flag Required */
-            problem_statement_enabled_flag_required?: boolean | null;
-            /** Use Templates Flag Id */
-            use_templates_flag_id?: string | null;
-            use_templates_flag_resource?: components["schemas"]["ScenarioFlagResource"] | null;
-            /** Show Use Templates Flag */
-            show_use_templates_flag?: boolean | null;
-            /** Use Templates Flag Agent Id */
-            use_templates_flag_agent_id?: string | null;
-            /** Use Templates Flag Required */
-            use_templates_flag_required?: boolean | null;
-            /** Flags */
-            flags?: components["schemas"]["ScenarioFlagConfig"][] | null;
-            /** Show Flags */
-            show_flags?: boolean | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Department Resources */
-            department_resources?: components["schemas"]["ScenarioDepartment"][] | null;
-            /** Show Departments */
-            show_departments?: boolean | null;
-            /** Departments Agent Id */
-            departments_agent_id?: string | null;
-            /** Departments Required */
-            departments_required?: boolean | null;
-            /** Department Suggestions */
-            department_suggestions?: string[] | null;
-            /** Departments */
-            departments?: components["schemas"]["ScenarioDepartment"][] | null;
-            /** Parameter Field Ids */
-            parameter_field_ids?: string[] | null;
-            /** Parameter Field Resources */
-            parameter_field_resources?: components["schemas"]["ScenarioField"][] | null;
-            /** Show Parameter Fields */
-            show_parameter_fields?: boolean | null;
-            /** Parameter Fields Agent Id */
-            parameter_fields_agent_id?: string | null;
-            /** Parameter Fields Required */
-            parameter_fields_required?: boolean | null;
-            /** Parameter Fields */
-            parameter_fields?: components["schemas"]["ScenarioField"][] | null;
-            /** Objective Ids */
-            objective_ids?: string[] | null;
-            /** Objective Resources */
-            objective_resources?: components["schemas"]["ScenarioObjective"][] | null;
-            /** Show Objectives */
-            show_objectives?: boolean | null;
-            /** Objectives Agent Id */
-            objectives_agent_id?: string | null;
-            /** Objectives Required */
-            objectives_required?: boolean | null;
-            /** Objective Suggestions */
-            objective_suggestions?: string[] | null;
-            /** Objectives */
-            objectives?: components["schemas"]["ScenarioObjective"][] | null;
-            /** Image Ids */
-            image_ids?: string[] | null;
-            /** Image Resources */
-            image_resources?: components["schemas"]["ScenarioImage"][] | null;
-            /** Show Images */
-            show_images?: boolean | null;
-            /** Images Agent Id */
-            images_agent_id?: string | null;
-            /** Images Required */
-            images_required?: boolean | null;
-            /** Image Suggestions */
-            image_suggestions?: string[] | null;
-            /** Images */
-            images?: components["schemas"]["ScenarioImage"][] | null;
-            /** Video Ids */
-            video_ids?: string[] | null;
-            /** Video Resources */
-            video_resources?: components["schemas"]["ScenarioVideo"][] | null;
-            /** Show Videos */
-            show_videos?: boolean | null;
-            /** Videos Agent Id */
-            videos_agent_id?: string | null;
-            /** Videos Required */
-            videos_required?: boolean | null;
-            /** Video Suggestions */
-            video_suggestions?: string[] | null;
-            /** Videos */
-            videos?: components["schemas"]["ScenarioVideo"][] | null;
-            /** Question Ids */
-            question_ids?: string[] | null;
-            /** Question Resources */
-            question_resources?: components["schemas"]["ScenarioQuestion"][] | null;
-            /** Show Questions */
-            show_questions?: boolean | null;
-            /** Questions Agent Id */
-            questions_agent_id?: string | null;
-            /** Questions Required */
-            questions_required?: boolean | null;
-            /** Question Suggestions */
-            question_suggestions?: string[] | null;
-            /** Questions */
-            questions?: components["schemas"]["ScenarioQuestion"][] | null;
-            /** Template Ids */
-            template_ids?: string[] | null;
-            /** Template Resources */
-            template_resources?: components["schemas"]["ScenarioTemplate"][] | null;
-            /** Show Templates */
-            show_templates?: boolean | null;
-            /** Templates Agent Id */
-            templates_agent_id?: string | null;
-            /** Templates Required */
-            templates_required?: boolean | null;
-            /** Template Suggestions */
-            template_suggestions?: string[] | null;
-            /** Templates */
-            templates?: components["schemas"]["ScenarioTemplate"][] | null;
-            /** Persona Ids */
-            persona_ids?: string[] | null;
-            /** Persona Resources */
-            persona_resources?: components["schemas"]["ScenarioPersona"][] | null;
-            /** Show Personas */
-            show_personas?: boolean | null;
-            /** Personas Agent Id */
-            personas_agent_id?: string | null;
-            /** Personas Required */
-            personas_required?: boolean | null;
-            /** Persona Suggestions */
-            persona_suggestions?: string[] | null;
-            /** Personas */
-            personas?: components["schemas"]["ScenarioPersona"][] | null;
-            /** Document Ids */
-            document_ids?: string[] | null;
-            /** Document Resources */
-            document_resources?: components["schemas"]["ScenarioDocument"][] | null;
-            /** Show Documents */
-            show_documents?: boolean | null;
-            /** Documents Agent Id */
-            documents_agent_id?: string | null;
-            /** Documents Required */
-            documents_required?: boolean | null;
-            /** Document Suggestions */
-            document_suggestions?: string[] | null;
-            /** Documents */
-            documents?: components["schemas"]["ScenarioDocument"][] | null;
-            /** Parameter Ids */
-            parameter_ids?: string[] | null;
-            /** Parameter Resources */
-            parameter_resources?: components["schemas"]["ScenarioParameter"][] | null;
-            /** Show Parameters */
-            show_parameters?: boolean | null;
-            /** Parameters Agent Id */
-            parameters_agent_id?: string | null;
-            /** Parameters Required */
-            parameters_required?: boolean | null;
-            /** Parameter Suggestions */
-            parameter_suggestions?: string[] | null;
-            /** Parameters */
-            parameters?: components["schemas"]["ScenarioParameter"][] | null;
-            /** Basic Agent Id */
-            basic_agent_id?: string | null;
-            /** Content Agent Id */
-            content_agent_id?: string | null;
             /** Draft Version */
             draft_version?: number | null;
-            /** Name Domain Id */
-            name_domain_id?: string | null;
-            /** Description Domain Id */
-            description_domain_id?: string | null;
-            /** Problem Statement Domain Id */
-            problem_statement_domain_id?: string | null;
-            /** Flag Domain Id */
-            flag_domain_id?: string | null;
-            /** Departments Domain Id */
-            departments_domain_id?: string | null;
-            /** Personas Domain Id */
-            personas_domain_id?: string | null;
-            /** Documents Domain Id */
-            documents_domain_id?: string | null;
-            /** Parameters Domain Id */
-            parameters_domain_id?: string | null;
-            /** Parameter Fields Domain Id */
-            parameter_fields_domain_id?: string | null;
-            /** Objectives Domain Id */
-            objectives_domain_id?: string | null;
-            /** Images Domain Id */
-            images_domain_id?: string | null;
-            /** Videos Domain Id */
-            videos_domain_id?: string | null;
-            /** Questions Domain Id */
-            questions_domain_id?: string | null;
-            /** Templates Domain Id */
-            templates_domain_id?: string | null;
-            /** Names Group Id */
-            names_group_id?: string | null;
-            /** Descriptions Group Id */
-            descriptions_group_id?: string | null;
-            /** Problem Statements Group Id */
-            problem_statements_group_id?: string | null;
-            /** Flags Group Id */
-            flags_group_id?: string | null;
-            /** Departments Group Id */
-            departments_group_id?: string | null;
-            /** Personas Group Id */
-            personas_group_id?: string | null;
-            /** Documents Group Id */
-            documents_group_id?: string | null;
-            /** Parameters Group Id */
-            parameters_group_id?: string | null;
-            /** Parameter Fields Group Id */
-            parameter_fields_group_id?: string | null;
-            /** Objectives Group Id */
-            objectives_group_id?: string | null;
-            /** Images Group Id */
-            images_group_id?: string | null;
-            /** Videos Group Id */
-            videos_group_id?: string | null;
-            /** Questions Group Id */
-            questions_group_id?: string | null;
-            /** Templates Group Id */
-            templates_group_id?: string | null;
-            /** Name Show Ai Generate */
-            name_show_ai_generate?: boolean | null;
-            /** Description Show Ai Generate */
-            description_show_ai_generate?: boolean | null;
-            /** Problem Statement Show Ai Generate */
-            problem_statement_show_ai_generate?: boolean | null;
-            /** Flag Show Ai Generate */
-            flag_show_ai_generate?: boolean | null;
-            /** Departments Show Ai Generate */
-            departments_show_ai_generate?: boolean | null;
-            /** Personas Show Ai Generate */
-            personas_show_ai_generate?: boolean | null;
-            /** Documents Show Ai Generate */
-            documents_show_ai_generate?: boolean | null;
-            /** Parameters Show Ai Generate */
-            parameters_show_ai_generate?: boolean | null;
-            /** Parameter Fields Show Ai Generate */
-            parameter_fields_show_ai_generate?: boolean | null;
-            /** Objectives Show Ai Generate */
-            objectives_show_ai_generate?: boolean | null;
-            /** Images Show Ai Generate */
-            images_show_ai_generate?: boolean | null;
-            /** Videos Show Ai Generate */
-            videos_show_ai_generate?: boolean | null;
-            /** Questions Show Ai Generate */
-            questions_show_ai_generate?: boolean | null;
-            /** Templates Show Ai Generate */
-            templates_show_ai_generate?: boolean | null;
+            /** Group Id */
+            group_id?: string | null;
             /** Basic Show Ai Generate */
             basic_show_ai_generate?: boolean | null;
             /** Content Show Ai Generate */
             content_show_ai_generate?: boolean | null;
-            /** Name Create Tool Id */
-            name_create_tool_id?: string | null;
-            /** Description Create Tool Id */
-            description_create_tool_id?: string | null;
-            /** Problem Statement Create Tool Id */
-            problem_statement_create_tool_id?: string | null;
-            /** Objectives Create Tool Id */
-            objectives_create_tool_id?: string | null;
-            /** Images Create Tool Id */
-            images_create_tool_id?: string | null;
-            /** Questions Create Tool Id */
-            questions_create_tool_id?: string | null;
-            /** Templates Create Tool Id */
-            templates_create_tool_id?: string | null;
-            /** Name Link Tool Id */
-            name_link_tool_id?: string | null;
-            /** Description Link Tool Id */
-            description_link_tool_id?: string | null;
-            /** Problem Statement Link Tool Id */
-            problem_statement_link_tool_id?: string | null;
-            /** Flag Link Tool Id */
-            flag_link_tool_id?: string | null;
-            /** Departments Link Tool Id */
-            departments_link_tool_id?: string | null;
-            /** Personas Link Tool Id */
-            personas_link_tool_id?: string | null;
-            /** Documents Link Tool Id */
-            documents_link_tool_id?: string | null;
-            /** Parameters Link Tool Id */
-            parameters_link_tool_id?: string | null;
-            /** Parameter Fields Link Tool Id */
-            parameter_fields_link_tool_id?: string | null;
-            /** Objectives Link Tool Id */
-            objectives_link_tool_id?: string | null;
-            /** Images Link Tool Id */
-            images_link_tool_id?: string | null;
-            /** Videos Link Tool Id */
-            videos_link_tool_id?: string | null;
-            /** Questions Link Tool Id */
-            questions_link_tool_id?: string | null;
-            /** Templates Link Tool Id */
-            templates_link_tool_id?: string | null;
-            /** Domain Data */
-            domain_data?: components["schemas"]["DomainData"][] | null;
-            resources?: components["schemas"]["ScenarioResources"] | null;
+            names?: components["schemas"]["ScenarioNameSection"] | null;
+            descriptions?: components["schemas"]["ScenarioDescriptionSection"] | null;
+            problem_statements?: components["schemas"]["ScenarioProblemStatementSection"] | null;
+            flags?: components["schemas"]["ScenarioFlagSection"] | null;
+            departments?: components["schemas"]["ScenarioDepartmentSection"] | null;
+            personas?: components["schemas"]["ScenarioPersonaSection"] | null;
+            documents?: components["schemas"]["ScenarioDocumentSection"] | null;
+            templates?: components["schemas"]["ScenarioTemplateSection"] | null;
+            parameters?: components["schemas"]["ScenarioParameterSection"] | null;
+            parameter_fields?: components["schemas"]["ScenarioParameterFieldSection"] | null;
+            objectives?: components["schemas"]["ScenarioObjectiveSection"] | null;
+            images?: components["schemas"]["ScenarioImageSection"] | null;
+            videos?: components["schemas"]["ScenarioVideoSection"] | null;
+            questions?: components["schemas"]["ScenarioQuestionSection"] | null;
         };
         /** GetScenarioFlagsApiRequest */
         GetScenarioFlagsApiRequest: {
@@ -19627,20 +19242,8 @@ export interface components {
             auth_suggestions?: string[] | null;
             /** Auths */
             auths?: components["schemas"]["QGetSettingV4Auth"][] | null;
-            /** Provider Ids */
-            provider_ids?: string[] | null;
-            /** Provider Resources */
-            provider_resources?: components["schemas"]["QGetSettingV4Provider"][] | null;
-            /** Show Providers */
-            show_providers?: boolean | null;
-            /** Providers Agent Id */
-            providers_agent_id?: string | null;
-            /** Providers Required */
-            providers_required?: boolean | null;
-            /** Provider Suggestions */
-            provider_suggestions?: string[] | null;
-            /** Providers */
-            providers?: components["schemas"]["QGetSettingV4Provider"][] | null;
+            /** Provider Key Ids */
+            provider_key_ids?: string[] | null;
             /** Key Ids */
             key_ids?: string[] | null;
             /** Key Resources */
@@ -23219,56 +22822,32 @@ export interface components {
         };
         /**
          * PatchScenarioDraftApiRequest
-         * @description Request for patching a scenario draft.
+         * @description Request for patching a scenario draft - nested resource actions.
          */
         PatchScenarioDraftApiRequest: {
             /** Input Draft Id */
             input_draft_id?: string | null;
-            /** Name Id */
-            name_id?: string | null;
-            /** Description Id */
-            description_id?: string | null;
-            /** Active Flag Id */
-            active_flag_id?: string | null;
-            /** Objectives Enabled Flag Id */
-            objectives_enabled_flag_id?: string | null;
-            /** Images Enabled Flag Id */
-            images_enabled_flag_id?: string | null;
-            /** Video Enabled Flag Id */
-            video_enabled_flag_id?: string | null;
-            /** Questions Enabled Flag Id */
-            questions_enabled_flag_id?: string | null;
-            /** Problem Statement Enabled Flag Id */
-            problem_statement_enabled_flag_id?: string | null;
-            /** Use Templates Flag Id */
-            use_templates_flag_id?: string | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Persona Ids */
-            persona_ids?: string[] | null;
-            /** Document Ids */
-            document_ids?: string[] | null;
-            /** Template Document Ids */
-            template_document_ids?: string[] | null;
-            /** Parameter Ids */
-            parameter_ids?: string[] | null;
-            /** Parameter Field Ids */
-            parameter_field_ids?: string[] | null;
-            /** Image Ids */
-            image_ids?: string[] | null;
-            /** Objective Ids */
-            objective_ids?: string[] | null;
-            /** Problem Statement Id */
-            problem_statement_id?: string | null;
-            /** Video Ids */
-            video_ids?: string[] | null;
-            /** Question Ids */
-            question_ids?: string[] | null;
+            /** Group Id */
+            group_id?: string | null;
             /**
              * Expected Version
              * @default 0
              */
-            expected_version: number | null;
+            expected_version: number;
+            names?: components["schemas"]["ScenarioResourceAction"] | null;
+            descriptions?: components["schemas"]["ScenarioResourceAction"] | null;
+            problem_statements?: components["schemas"]["ScenarioResourceAction"] | null;
+            flags?: components["schemas"]["ScenarioMultiResourceAction"] | null;
+            departments?: components["schemas"]["ScenarioMultiResourceAction"] | null;
+            personas?: components["schemas"]["ScenarioMultiResourceAction"] | null;
+            documents?: components["schemas"]["ScenarioMultiResourceAction"] | null;
+            templates?: components["schemas"]["ScenarioMultiResourceAction"] | null;
+            parameters?: components["schemas"]["ScenarioMultiResourceAction"] | null;
+            parameter_fields?: components["schemas"]["ScenarioMultiResourceAction"] | null;
+            images?: components["schemas"]["ScenarioMultiResourceAction"] | null;
+            objectives?: components["schemas"]["ScenarioMultiResourceAction"] | null;
+            videos?: components["schemas"]["ScenarioMultiResourceAction"] | null;
+            questions?: components["schemas"]["ScenarioMultiResourceAction"] | null;
         };
         /**
          * PatchScenarioDraftApiResponse
@@ -25280,12 +24859,20 @@ export interface components {
             description: string | null;
             /** Value */
             value: string | null;
-            /** Endpoint */
-            endpoint: string | null;
-            /** Key */
-            key: string | null;
-            /** Modality */
-            modality: string | null;
+            /** Provider Id */
+            provider_id: string | null;
+            /** Input Modality Ids */
+            input_modality_ids: string[] | null;
+            /** Output Modality Ids */
+            output_modality_ids: string[] | null;
+            /** Temperature Level Ids */
+            temperature_level_ids: string[] | null;
+            /** Reasoning Level Ids */
+            reasoning_level_ids: string[] | null;
+            /** Quality Ids */
+            quality_ids: string[] | null;
+            /** Voice Ids */
+            voice_ids: string[] | null;
             /** Active */
             active: boolean | null;
             /** Generated */
@@ -25475,17 +25062,6 @@ export interface components {
             version: number | null;
             /** Updated At */
             updated_at: string | null;
-        };
-        /** QGetProfileContextV4Provider */
-        QGetProfileContextV4Provider: {
-            /** Provider Id */
-            provider_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Value */
-            value: string | null;
         };
         /** QGetProfileContextV4RoleResource */
         QGetProfileContextV4RoleResource: {
@@ -26048,19 +25624,6 @@ export interface components {
             description: string | null;
             /** Generated */
             generated: boolean | null;
-        };
-        /** QGetSettingV4Provider */
-        QGetSettingV4Provider: {
-            /** Provider Id */
-            provider_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Value */
-            value: string | null;
-            /** Active */
-            active: boolean | null;
         };
         /** QGetSettingV4RoleResource */
         QGetSettingV4RoleResource: {
@@ -28478,59 +28041,27 @@ export interface components {
         };
         /**
          * SaveScenarioApiRequest
-         * @description Request for saving a scenario - accepts form data directly (no draft_id).
+         * @description Request for saving a scenario - nested resource actions with tool tracking.
          */
         SaveScenarioApiRequest: {
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
             /** Input Scenario Id */
             input_scenario_id?: string | null;
-            /**
-             * Name Id
-             * Format: uuid
-             */
-            name_id: string;
-            /** Description Id */
-            description_id?: string | null;
-            /** Problem Statement Id */
-            problem_statement_id?: string | null;
-            /** Active Flag Id */
-            active_flag_id?: string | null;
-            /** Objectives Enabled Flag Id */
-            objectives_enabled_flag_id?: string | null;
-            /** Images Enabled Flag Id */
-            images_enabled_flag_id?: string | null;
-            /** Video Enabled Flag Id */
-            video_enabled_flag_id?: string | null;
-            /** Questions Enabled Flag Id */
-            questions_enabled_flag_id?: string | null;
-            /** Problem Statement Enabled Flag Id */
-            problem_statement_enabled_flag_id?: string | null;
-            /** Use Templates Flag Id */
-            use_templates_flag_id?: string | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Persona Ids */
-            persona_ids?: string[] | null;
-            /** Document Ids */
-            document_ids?: string[] | null;
-            /** Template Document Ids */
-            template_document_ids?: string[] | null;
-            /** Parameter Ids */
-            parameter_ids?: string[] | null;
-            /** Parameter Field Ids */
-            parameter_field_ids?: string[] | null;
-            /** Image Ids */
-            image_ids?: string[] | null;
-            /** Objective Ids */
-            objective_ids?: string[] | null;
-            /** Video Ids */
-            video_ids?: string[] | null;
-            /** Question Ids */
-            question_ids?: string[] | null;
+            /** Group Id */
+            group_id?: string | null;
+            names: components["schemas"]["ScenarioResourceAction"];
+            descriptions: components["schemas"]["ScenarioResourceAction"];
+            problem_statements: components["schemas"]["ScenarioResourceAction"];
+            flags: components["schemas"]["ScenarioMultiResourceAction"];
+            departments: components["schemas"]["ScenarioMultiResourceAction"];
+            personas: components["schemas"]["ScenarioMultiResourceAction"];
+            documents: components["schemas"]["ScenarioMultiResourceAction"];
+            templates: components["schemas"]["ScenarioMultiResourceAction"];
+            parameters: components["schemas"]["ScenarioMultiResourceAction"];
+            parameter_fields: components["schemas"]["ScenarioMultiResourceAction"];
+            images: components["schemas"]["ScenarioMultiResourceAction"];
+            objectives: components["schemas"]["ScenarioMultiResourceAction"];
+            videos: components["schemas"]["ScenarioMultiResourceAction"];
+            questions: components["schemas"]["ScenarioMultiResourceAction"];
         };
         /**
          * SaveScenarioApiResponse
@@ -28555,8 +28086,8 @@ export interface components {
             department_ids: string[];
             /** Auth Ids */
             auth_ids: string[];
-            /** Provider Ids */
-            provider_ids: string[];
+            /** Provider Key Ids */
+            provider_key_ids: string[];
             /** Key Ids */
             key_ids: string[];
             /** Input Setting Id */
@@ -28680,6 +28211,34 @@ export interface components {
             /** Generated */
             generated?: boolean | null;
         };
+        /** ScenarioDepartmentSection */
+        ScenarioDepartmentSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["ScenarioDepartment"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["ScenarioDepartment"][] | null;
+        };
         /**
          * ScenarioDescriptionResource
          * @description Description resource for scenario.
@@ -28691,6 +28250,33 @@ export interface components {
             description?: string | null;
             /** Generated */
             generated?: boolean | null;
+        };
+        /** ScenarioDescriptionSection */
+        ScenarioDescriptionSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            resource?: components["schemas"]["ScenarioDescriptionResource"] | null;
+            /** Resources */
+            resources?: components["schemas"]["ScenarioDescriptionResource"][] | null;
         };
         /**
          * ScenarioDocument
@@ -28719,6 +28305,34 @@ export interface components {
             video_document?: boolean | null;
             /** Non Video Document */
             non_video_document?: boolean | null;
+        };
+        /** ScenarioDocumentSection */
+        ScenarioDocumentSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["ScenarioDocument"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["ScenarioDocument"][] | null;
         };
         /**
          * ScenarioEntry
@@ -28787,28 +28401,38 @@ export interface components {
              * @default false
              */
             required: boolean;
-            /** Agent Id */
-            agent_id?: string | null;
             /** Generated */
             generated?: boolean | null;
             /** Video Flag */
             video_flag?: boolean | null;
         };
-        /**
-         * ScenarioFlagResource
-         * @description Flag resource for scenario.
-         */
-        ScenarioFlagResource: {
-            /** Id */
-            id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Icon */
-            icon?: string | null;
-            /** Generated */
-            generated?: boolean | null;
+        /** ScenarioFlagSection */
+        ScenarioFlagSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["ScenarioFlagConfig"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["ScenarioFlagConfig"][] | null;
         };
         /**
          * ScenarioGenerationCompleteEvent
@@ -28838,6 +28462,8 @@ export interface components {
             name_resource?: components["schemas"]["QGetNamesV4Item"] | null;
             description_resource?: components["schemas"]["QGetDescriptionsV4Item"] | null;
             problem_statement_resource?: components["schemas"]["QGetProblemStatementsV4Item"] | null;
+            /** Flag Resources */
+            flag_resources?: components["schemas"]["QGetFlagsV4Item"][] | null;
             /** Department Resources */
             department_resources?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
             /** Persona Resources */
@@ -28877,6 +28503,43 @@ export interface components {
             /** Generated */
             generated?: boolean | null;
         };
+        /** ScenarioImageSection */
+        ScenarioImageSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["ScenarioImage"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["ScenarioImage"][] | null;
+        };
+        /** ScenarioMultiResourceAction */
+        ScenarioMultiResourceAction: {
+            /** Resource Ids */
+            resource_ids?: string[] | null;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+        };
         /**
          * ScenarioNameResource
          * @description Name resource for scenario.
@@ -28889,6 +28552,33 @@ export interface components {
             /** Generated */
             generated?: boolean | null;
         };
+        /** ScenarioNameSection */
+        ScenarioNameSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            resource?: components["schemas"]["ScenarioNameResource"] | null;
+            /** Resources */
+            resources?: components["schemas"]["ScenarioNameResource"][] | null;
+        };
         /**
          * ScenarioObjective
          * @description Objective for scenario.
@@ -28900,6 +28590,34 @@ export interface components {
             objective?: string | null;
             /** Generated */
             generated?: boolean | null;
+        };
+        /** ScenarioObjectiveSection */
+        ScenarioObjectiveSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["ScenarioObjective"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["ScenarioObjective"][] | null;
         };
         /**
          * ScenarioParameter
@@ -28922,6 +28640,62 @@ export interface components {
             video_parameter?: boolean | null;
             /** Non Video Parameter */
             non_video_parameter?: boolean | null;
+        };
+        /** ScenarioParameterFieldSection */
+        ScenarioParameterFieldSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["ScenarioField"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["ScenarioField"][] | null;
+        };
+        /** ScenarioParameterSection */
+        ScenarioParameterSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["ScenarioParameter"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["ScenarioParameter"][] | null;
         };
         /**
          * ScenarioPersona
@@ -28950,6 +28724,34 @@ export interface components {
             video_persona?: boolean | null;
             /** Non Video Persona */
             non_video_persona?: boolean | null;
+        };
+        /** ScenarioPersonaSection */
+        ScenarioPersonaSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["ScenarioPersona"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["ScenarioPersona"][] | null;
         };
         /** ScenarioPersonasApiRequest */
         ScenarioPersonasApiRequest: {
@@ -29038,6 +28840,33 @@ export interface components {
             /** Generated */
             generated?: boolean | null;
         };
+        /** ScenarioProblemStatementSection */
+        ScenarioProblemStatementSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            resource?: components["schemas"]["ScenarioProblemStatement"] | null;
+            /** Resources */
+            resources?: components["schemas"]["ScenarioProblemStatement"][] | null;
+        };
         /**
          * ScenarioQuestion
          * @description Question for scenario.
@@ -29052,47 +28881,42 @@ export interface components {
             /** Generated */
             generated?: boolean | null;
         };
-        /**
-         * ScenarioResourceBucket
-         * @description Generic resources bucket with full objects (always plural lists).
-         */
-        ScenarioResourceBucket: {
-            /** Names */
-            names?: components["schemas"]["ScenarioNameResource"][] | null;
-            /** Descriptions */
-            descriptions?: components["schemas"]["ScenarioDescriptionResource"][] | null;
-            /** Problem Statements */
-            problem_statements?: components["schemas"]["ScenarioProblemStatement"][] | null;
-            /** Flags */
-            flags?: components["schemas"]["ScenarioFlagConfig"][] | null;
-            /** Departments */
-            departments?: components["schemas"]["ScenarioDepartment"][] | null;
-            /** Personas */
-            personas?: components["schemas"]["ScenarioPersona"][] | null;
-            /** Documents */
-            documents?: components["schemas"]["ScenarioDocument"][] | null;
-            /** Parameters */
-            parameters?: components["schemas"]["ScenarioParameter"][] | null;
-            /** Parameter Fields */
-            parameter_fields?: components["schemas"]["ScenarioField"][] | null;
-            /** Objectives */
-            objectives?: components["schemas"]["ScenarioObjective"][] | null;
-            /** Images */
-            images?: components["schemas"]["ScenarioImage"][] | null;
-            /** Videos */
-            videos?: components["schemas"]["ScenarioVideo"][] | null;
-            /** Questions */
-            questions?: components["schemas"]["ScenarioQuestion"][] | null;
-            /** Templates */
-            templates?: components["schemas"]["ScenarioTemplate"][] | null;
+        /** ScenarioQuestionSection */
+        ScenarioQuestionSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["ScenarioQuestion"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["ScenarioQuestion"][] | null;
         };
-        /**
-         * ScenarioResources
-         * @description Full resources + current selections.
-         */
-        ScenarioResources: {
-            resources?: components["schemas"]["ScenarioResourceBucket"] | null;
-            current?: components["schemas"]["ScenarioResourceBucket"] | null;
+        /** ScenarioResourceAction */
+        ScenarioResourceAction: {
+            /** Resource Id */
+            resource_id?: string | null;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
         };
         /** ScenarioRubricsApiRequest */
         ScenarioRubricsApiRequest: {
@@ -29140,6 +28964,34 @@ export interface components {
             description?: string | null;
             /** Generated */
             generated?: boolean | null;
+        };
+        /** ScenarioTemplateSection */
+        ScenarioTemplateSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["ScenarioTemplate"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["ScenarioTemplate"][] | null;
         };
         /** ScenarioTimeLimitsApiRequest */
         ScenarioTimeLimitsApiRequest: {
@@ -29192,6 +29044,34 @@ export interface components {
             upload_id?: string | null;
             /** Generated */
             generated?: boolean | null;
+        };
+        /** ScenarioVideoSection */
+        ScenarioVideoSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["ScenarioVideo"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["ScenarioVideo"][] | null;
         };
         /** SearchArgsApiRequest */
         SearchArgsApiRequest: {

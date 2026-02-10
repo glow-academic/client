@@ -5,8 +5,6 @@ Types are registered in OpenAPI via FastAPI endpoints, enabling
 automatic type extraction in the frontend via InputOf/OutputOf.
 """
 
-from uuid import UUID
-
 from app.api.v4.artifacts.scenario.types import GetScenarioApiRequest
 from app.socket.v4.artifacts.types import (
     GenerationCompleteEvent,
@@ -17,6 +15,7 @@ from app.sql.types import (
     QGetDepartmentsV4Item,
     QGetDescriptionsV4Item,
     QGetDocumentsV4Item,
+    QGetFlagsV4Item,
     QGetImagesV4Item,
     QGetNamesV4Item,
     QGetObjectivesV4Item,
@@ -41,27 +40,9 @@ class GenerateScenarioPayload(GetScenarioApiRequest):
     with generation-specific fields and form state.
     """
 
-    # Generation-specific fields
-    agent_id: UUID  # Required: explicit agent ID from frontend
+    # Generation-specific fields - resource-type-based API
     resource_types: list[str]  # Required: which resource types to generate
     user_instructions: list[str] | None = None  # Optional: user instructions
-
-    # Form state fields for "current" variable in Jinja templates
-    # These represent the currently selected resources in the form
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    problem_statement_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    persona_ids: list[UUID] | None = None
-    document_ids: list[UUID] | None = None
-    template_ids: list[UUID] | None = None
-    objective_ids: list[UUID] | None = None
-    question_ids: list[UUID] | None = None
-    image_ids: list[UUID] | None = None
-    video_ids: list[UUID] | None = None
-    parameter_ids: list[UUID] | None = None
-    parameter_field_ids: list[UUID] | None = None
 
 
 # =============================================================================
@@ -82,6 +63,7 @@ class ScenarioGenerationCompleteEvent(GenerationCompleteEvent):
     name_resource: QGetNamesV4Item | None = None
     description_resource: QGetDescriptionsV4Item | None = None
     problem_statement_resource: QGetProblemStatementsV4Item | None = None
+    flag_resources: list[QGetFlagsV4Item] | None = None
 
     # Multi-select resources (arrays of full objects)
     department_resources: list[QGetDepartmentsV4Item] | None = None

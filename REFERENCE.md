@@ -86,8 +86,8 @@ The websocket function is a **thin wrapper** around `get_{artifact}_internal()`.
 
 1. Call `get_{artifact}_internal()` — shared Q1 + Q2 + Pass 2
 2. Fetch draft view separately (convenience for Jinja templates, NOT source of truth for IDs)
-3. Hydrate tools from config agent's `tool_ids` via `get_tools_internal()`
-4. Extract **current (selected)** resources from `data.resources_payload.current`
+3. Hydrate tools from selected config agents' `tool_ids` (dedupe across all agents) via `get_tools_internal()`
+4. Extract selected resources from `data.resources_payload.current` (internal-only source)
 5. Get enriched flags for selected flag(s) by matching `flag_option_id`
 6. Return flat response
 
@@ -124,6 +124,15 @@ Reference: `types.py:158-196`
 ### Key: `resource_agent_ids`
 
 This is a `dict[str, UUID | None]` mapping **resource type strings** (e.g., `"names"`, `"descriptions"`) to agent UUIDs. This is what the socket handler uses to look up which agent handles which resource. There are no domain_ids.
+
+### Hard Migration Rule (No Legacy Fields)
+
+Websocket response contracts must be hard-migrated to the new pattern:
+- Keep: `group_id`, `views`, `resources`, `resource_agent_ids`
+- Remove: legacy `*_domain_id` fields
+- Remove: legacy `domains` arrays
+- Remove: top-level `current` and nested `resources.current` in websocket contracts
+- Do not expose backend routing internals to clients if only socket handlers need them
 
 ---
 
@@ -491,6 +500,32 @@ socket.emit("{artifact}_generate", {
 
 The server uses `resource_agent_ids` (returned in the HTTP GET response) to resolve which agent handles each resource type. The client never deals with agent IDs or domain IDs for generation.
 
+### No `agent_id` In Frontend Contracts
+
+The frontend must not receive or depend on per-resource `agent_id` fields.
+- Step/button enablement must use server-computed `*_show_ai_generate` booleans
+- Generation routing always sends `resource_types`
+- Socket handler resolves agent IDs server-side via `resource_agent_ids`
+- Remove legacy `basic_agent_id` / `content_agent_id` UI dependencies
+
+### API Response Shape: Section-First
+
+Follow Persona-style section payloads in API responses instead of flat, manual per-field contracts:
+- Use resource section objects with common metadata (`show`, `required`, `suggestions`, `show_ai_generate`, `create_tool_id`, `link_tool_id`)
+- Keep frontend parsing minimal by consuming section objects directly
+- Avoid expanding new artifacts with flat `*_agent_id`, `*_domain_id`, or per-resource `*_group_id` fields
+- Prefer shared base section types in artifact-level types modules (or a shared artifact common module), not `app/sql/types.py`
+- Keep SQL-generated models in `app/sql/types.py` for SQL function contracts only; keep BFF presentation sections in artifact `types.py`
+- Enriched resource payloads returned to frontend must not include per-item `agent_id` fields (example: `FlagConfig` should expose `key/label/flag_option_id/show/required/show_ai_generate` context, not routing internals)
+
+### Hard Migration Rule (No Legacy Dual-Shape)
+
+When migrating an artifact to section-first contracts:
+- Do a hard cut to section objects in API + frontend consumption
+- Remove legacy flat response fields instead of supporting both shapes indefinitely
+- Update websocket routing and completion payloads to align with the same resource-type model
+- Document the migration in this reference as part of the same PR
+
 ### Step-Level AI Buttons
 
 ```tsx
@@ -521,6 +556,30 @@ const { flushRegistryRef, registerFlushCallbacks, flushAllResources } =
 
 The HTTP GET response includes `create_tool_id` and `link_tool_id` per resource section. Only creatable resources have `create_tool_id` set. The frontend passes these back on save/draft patch for tool call tracking.
 
+### Save/Draft SQL Workflow (Persona Standard)
+
+Save/draft SQL should follow Persona-style workflow semantics:
+- Scenario resource workflow: deactivate old active resource link(s), create/link the new resource, then set the new link active
+- Draft workflow: update links with optimistic versioning (`expected_version`)
+- Tool-call tracking: create one `runs_entry` per save/draft mutation and create `calls_entry + tool_calls_junction` rows for each non-null `create_tool_id` / `link_tool_id`
+- Frontend request contract should always send nested action objects for all sections to avoid manual per-field parsing drift
+
+### Scenario Parity Rules (Persona-Style)
+
+Use these as hard rules when implementing or refactoring Scenario:
+
+- API response is section-first (`names`, `descriptions`, `flags`, etc.) so frontend code reads `s.<section>.<field>` instead of flattening dozens of one-off props.
+- Frontend keeps a compact `stable{Artifact}DataFields` shape that stores section objects directly; avoid manually re-mapping every section field into new top-level aliases.
+- Frontend render code uses `const s = stable{Artifact}DataFields` and passes section data directly (`s.names.resource`, `s.parameters.current`, etc.) to reduce line count and drift.
+- Websocket `get_{artifact}_websocket()` returns only top-level `group_id`, `views`, `resources`, and `resource_agent_ids`.
+- Websocket payload never returns top-level `current` or nested `resources.current`.
+- Websocket resource payload always includes selected artifact resources plus hydrated config resources: `agents`, `models`, `providers`, `tools`.
+- Do not expose `agent_id` (or `*_agent_id`) to frontend contracts; route agent selection internally via `resource_agent_ids`.
+- Migration is hard-cut: remove legacy/dual-shape response types instead of supporting old + new formats indefinitely.
+- Save/draft endpoints accept nested section action objects with `resource_id(s)`, `create_tool_id`, and `link_tool_id` (no manual flat parameter parsing).
+- Save/draft SQL creates run/call/tool-call linkage for non-null tool IDs and applies resource workflow semantics (deactivate old active link, create/link new, set new active).
+- Generation UI must use `StepCardAiButton` and section `show_ai_generate` flags; no custom ad-hoc button logic per step.
+
 ---
 
 ## 10. Checklist: How to Audit an Artifact Endpoint
@@ -544,9 +603,10 @@ For any artifact endpoint, check each of these against the gold standard:
 - [ ] `get_{artifact}_internal()` does Q1 → Q2 → draft override → agent scoring → parallel fetch
 - [ ] `get_{artifact}_websocket()` wraps `internal()`, does NOT duplicate SQL queries
 - [ ] Websocket function fetches draft view separately (convenience for Jinja, not source of truth)
-- [ ] Websocket function hydrates tools from `config_agent_resources[0].tool_ids`
+- [ ] Websocket function hydrates tools from all selected `config_agent_resources[*].tool_ids` (deduped)
 - [ ] Websocket function extracts selected resources from `data.resources_payload.current`
 - [ ] Websocket function gets enriched flags (not raw) by matching `flag_option_id`
+- [ ] Websocket response never returns top-level `current` or nested `resources.current`
 - [ ] `get_{artifact}_client()` wraps `internal()` and builds sections with `_section_common()` helper
 
 ### Socket Handler (`socket/v4/artifacts/{artifact}/generate.py`)
@@ -583,6 +643,9 @@ For any artifact endpoint, check each of these against the gold standard:
 - [ ] Prepare SQL (`prepare_{artifact}_generation_complete.sql`) is mutations-only
 - [ ] Save SQL accepts `(resource_id, create_tool_id, link_tool_id)` composites
 - [ ] Draft SQL accepts optional `(resource_id, create_tool_id, link_tool_id)` composites
+- [ ] Save SQL applies resource workflow semantics (deactivate old, create/link new, activate new)
+- [ ] Save/draft SQL creates `runs_entry` + `calls_entry` + `tool_calls_junction` from tool IDs
+- [ ] Save/draft SQL links each resource call into `*_calls_connection` tables (not only `tool_calls_junction`)
 
 ### Frontend
 
@@ -590,6 +653,10 @@ For any artifact endpoint, check each of these against the gold standard:
 - [ ] `FLUSH_KEYS` only includes creatable resources
 - [ ] Emits `resource_types` on generation (not domain_ids/agent_type)
 - [ ] Uses `StepCardAiButton` per step
+- [ ] Uses `const s = stable{Artifact}DataFields` pattern for rendering (avoid repetitive manual mapping in JSX)
 - [ ] Uses `useDraftLifecycle` for autosave
 - [ ] Uses `useFlushRegistry` for resource creation
 - [ ] Save/draft sends nested resource actions with tool IDs
+- [ ] Does not consume `*_agent_id` fields
+- [ ] Uses `*_show_ai_generate` flags for AI button visibility
+- [ ] Avoids legacy domain/group identifiers in UI contracts

@@ -8,6 +8,7 @@ from fastapi import APIRouter
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.descriptions.get import get_descriptions_internal
 from app.api.v4.resources.documents.get import get_documents_internal
+from app.api.v4.resources.flags.get import get_flags_internal
 from app.api.v4.resources.images.get import get_images_internal
 from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.objectives.get import get_objectives_internal
@@ -119,6 +120,9 @@ async def handle_scenario_artifact_complete(data: dict[str, Any]) -> None:
             elif resource_type == "problem_statements":
                 items = await get_problem_statements_internal(conn, [resource_id])
                 event.problem_statement_resource = items[0] if items else None
+            elif resource_type == "scenario_flags" or resource_type == "flags":
+                items = await get_flags_internal(conn, [resource_id])
+                event.flag_resources = items if items else None
             elif resource_type == "departments":
                 items = await get_departments_internal(conn, [resource_id])
                 event.department_resources = items if items else None
