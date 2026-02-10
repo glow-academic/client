@@ -26,7 +26,7 @@ BEGIN
         WHERE typname LIKE 'q_get_auth_keys_v4_%'
           AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
     LOOP
-        EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
+        EXECUTE format('DROP TYPE IF EXISTS types.%I CASCADE', r.typname);
     END LOOP;
 END $$;
 

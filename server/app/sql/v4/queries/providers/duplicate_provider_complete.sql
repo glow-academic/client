@@ -1,6 +1,6 @@
 -- Duplicate provider - creates copy linking to existing resources (except name)
 -- Only name gets " Copy" suffix, active flag set to FALSE
--- All other resources (description, value, regenerates, departments) link to existing
+-- All other resources (description, value, departments) link to existing
 -- Converted to function
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
@@ -44,8 +44,7 @@ original_provider AS (
         pr.id,
         (SELECT n.name FROM provider_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.provider_id = pr.id LIMIT 1) as name,
         (SELECT pd.description_id FROM provider_descriptions_junction pd WHERE pd.provider_id = pr.id LIMIT 1) as description_id,
-        (SELECT pv.values_id FROM provider_values_junction pv WHERE pv.provider_id = pr.id AND pv.active = true LIMIT 1) as value_id,
-        (SELECT prg.regenerates_id FROM provider_regenerates_junction prg WHERE prg.provider_id = pr.id AND prg.active = true LIMIT 1) as regenerates_id
+        (SELECT pv.values_id FROM provider_values_junction pv WHERE pv.provider_id = pr.id AND pv.active = true LIMIT 1) as value_id
     FROM params x
     JOIN provider_artifact pr ON pr.id = x.provider_id
 ),
@@ -122,18 +121,6 @@ link_provider_value AS (
     CROSS JOIN original_provider op
     WHERE op.value_id IS NOT NULL
     ON CONFLICT ON CONSTRAINT provider_values_pkey DO NOTHING
-),
--- Link provider to existing regenerates
-link_provider_regenerates AS (
-    INSERT INTO provider_regenerates_junction (provider_id, regenerates_id, created_at)
-    SELECT
-        np.id,
-        op.regenerates_id,
-        NOW()
-    FROM new_provider np
-    CROSS JOIN original_provider op
-    WHERE op.regenerates_id IS NOT NULL
-    ON CONFLICT ON CONSTRAINT provider_regenerates_junction_pkey DO NOTHING
 ),
 -- Link provider to existing departments
 copy_departments AS (

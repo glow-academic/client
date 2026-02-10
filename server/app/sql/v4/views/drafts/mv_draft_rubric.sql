@@ -23,6 +23,9 @@ WITH draft_links AS (
     UNION ALL SELECT draft_id, 'descriptions'::resource_type AS resource_type, descriptions_id::uuid AS resource_id FROM descriptions_drafts_connection WHERE active = true
     UNION ALL SELECT draft_id, 'flags'::resource_type AS resource_type, flags_id::uuid AS resource_id FROM flags_drafts_connection WHERE active = true
     UNION ALL SELECT draft_id, 'departments'::resource_type AS resource_type, departments_id::uuid AS resource_id FROM departments_drafts_connection WHERE active = true
+    UNION ALL SELECT draft_id, 'points'::resource_type AS resource_type, points_id::uuid AS resource_id FROM points_drafts_connection WHERE active = true
+    UNION ALL SELECT draft_id, 'standard_groups'::resource_type AS resource_type, standard_groups_id::uuid AS resource_id FROM standard_groups_drafts_connection WHERE active = true
+    UNION ALL SELECT draft_id, 'standards'::resource_type AS resource_type, standards_id::uuid AS resource_id FROM standards_drafts_connection WHERE active = true
 )
 SELECT
     d.id AS draft_id,
@@ -37,7 +40,10 @@ SELECT
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'names'::resource_type), ARRAY[]::uuid[]) AS name_ids,
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'descriptions'::resource_type), ARRAY[]::uuid[]) AS description_ids,
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'flags'::resource_type), ARRAY[]::uuid[]) AS flag_ids,
-    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'departments'::resource_type), ARRAY[]::uuid[]) AS department_ids
+    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'departments'::resource_type), ARRAY[]::uuid[]) AS department_ids,
+    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'points'::resource_type), ARRAY[]::uuid[]) AS point_ids,
+    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'standard_groups'::resource_type), ARRAY[]::uuid[]) AS standard_group_ids,
+    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'standards'::resource_type), ARRAY[]::uuid[]) AS standard_ids
 FROM drafts_entry d
 LEFT JOIN draft_links l ON l.draft_id = d.id
 WHERE d.artifact = 'rubric'::artifact_type

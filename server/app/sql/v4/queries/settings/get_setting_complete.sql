@@ -943,15 +943,16 @@ setting_key_ids_data AS (
                         WHERE spk.setting_id = (SELECT setting_id FROM params)
                           AND spk.active = true
                         GROUP BY pkr.key_id
-                        UNION
-                        SELECT DISTINCT sak.key_id, MIN(sak.created_at) as created_at
-                        FROM setting_auth_keys_junction sak
-                        WHERE sak.settings_id = (SELECT setting_id FROM params)
-                          AND sak.active = true
-                        GROUP BY sak.key_id
-                    ) combined_keys
-                ),
-                ARRAY[]::uuid[]
+                    UNION
+                    SELECT DISTINCT akr.key_id, MIN(sak.created_at) as created_at
+                    FROM setting_auth_keys_junction sak
+                    JOIN auth_keys_resource akr ON akr.id = sak.auth_keys_id
+                    WHERE sak.setting_id = (SELECT setting_id FROM params)
+                      AND sak.active = true
+                    GROUP BY akr.key_id
+                ) combined_keys
+            ),
+            ARRAY[]::uuid[]
             )
         END as key_ids
     FROM params
@@ -972,11 +973,12 @@ key_suggestions_data AS (
                       AND spk.active = true
                     GROUP BY pkr.key_id
                     UNION
-                    SELECT DISTINCT sak.key_id, MAX(sak.created_at) as created_at
+                    SELECT DISTINCT akr.key_id, MAX(sak.created_at) as created_at
                     FROM setting_auth_keys_junction sak
-                    WHERE sak.key_id IS NOT NULL
+                    JOIN auth_keys_resource akr ON akr.id = sak.auth_keys_id
+                    WHERE akr.key_id IS NOT NULL
                       AND sak.active = true
-                    GROUP BY sak.key_id
+                    GROUP BY akr.key_id
                 ) combined_keys
                 ORDER BY MAX(created_at) DESC
                 LIMIT 20
@@ -1092,10 +1094,16 @@ setting_route_ids_data AS (
             CASE
                 WHEN (SELECT setting_id FROM params) IS NULL THEN ARRAY[]::uuid[]
                 ELSE COALESCE(
-                    (SELECT ARRAY_AGG(sr.route_id ORDER BY sr.created_at)
-                     FROM setting_routes_junction sr
-                     WHERE sr.setting_id = (SELECT setting_id FROM params)
-                       AND sr.active = true),
+                    (SELECT ARRAY_AGG(x.route_id ORDER BY x.created_at)
+                     FROM (
+                         SELECT rr.route_id, MIN(srr.created_at) AS created_at
+                         FROM setting_role_routes_junction srr
+                         JOIN role_routes_resource rr ON rr.id = srr.role_routes_id
+                         WHERE srr.setting_id = (SELECT setting_id FROM params)
+                           AND srr.active = true
+                           AND rr.active = true
+                         GROUP BY rr.route_id
+                     ) x),
                     ARRAY[]::uuid[]
                 )
             END

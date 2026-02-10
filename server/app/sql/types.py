@@ -15063,6 +15063,76 @@ class ArgsOutputsApiResponse(BaseModel):
 
 
 
+# Generated from: get_auth_keys
+
+class GetAuthKeysSqlParams(BaseModel):
+
+    ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.ids,
+        )
+
+class QGetAuthKeysV4Item(BaseModel):
+
+    id: UUID | None
+    auth_id: UUID | None
+    key_id: UUID | None
+    auth_name: str | None
+    key_name: str | None
+    key_description: str | None
+    active: bool | None
+    generated: bool | None
+
+class GetAuthKeysSqlRow(BaseModel):
+
+    items: list[QGetAuthKeysV4Item] | None = None
+
+class GetAuthKeysApiRequest(BaseModel):
+
+    ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class GetAuthKeysApiResponse(BaseModel):
+
+    items: list[QGetAuthKeysV4Item] | None = None
+
+
+
+# Generated from: search_auth_keys
+
+class SearchAuthKeysSqlParams(BaseModel):
+
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.search,
+            self.limit_count,
+            self.offset_count,
+            self.exclude_ids,
+        )
+
+class SearchAuthKeysSqlRow(BaseModel):
+
+    items: list[QGetAuthKeysV4Item] | None = None
+
+class SearchAuthKeysApiRequest(BaseModel):
+
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class SearchAuthKeysApiResponse(BaseModel):
+
+    items: list[QGetAuthKeysV4Item] | None = None
+
+
+
 # Generated from: auth_keys
 
 class AuthKeysSqlParams(BaseModel):
@@ -26857,6 +26927,751 @@ class GetConfigViewApiResponse(BaseModel):
 
 
 
+# Generated from: get_draft_agent_view
+
+class GetDraftAgentViewSqlParams(BaseModel):
+
+    draft_ids: list[UUID]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.draft_ids,
+        )
+
+class QGetDraftAgentViewV4Item(BaseModel):
+
+    draft_id: UUID | None
+    created_at: datetime | None
+    updated_at: datetime | None
+    version: int | None
+    generated: bool | None
+    mcp: bool | None
+    active: bool | None
+    group_id: UUID | None
+    regeneration_descriptions: list[str] | None
+    name_ids: list[UUID] | None
+    description_ids: list[UUID] | None
+    model_ids: list[UUID] | None
+    prompt_ids: list[UUID] | None
+    instruction_ids: list[UUID] | None
+    flag_ids: list[UUID] | None
+    department_ids: list[UUID] | None
+    tool_ids: list[UUID] | None
+    temperature_level_ids: list[UUID] | None
+    reasoning_level_ids: list[UUID] | None
+    voice_ids: list[UUID] | None
+
+class GetDraftAgentViewSqlRow(BaseModel):
+
+    items: list[QGetDraftAgentViewV4Item] | None = None
+
+class GetDraftAgentViewApiRequest(BaseModel):
+
+    draft_ids: list[UUID]
+
+class GetDraftAgentViewApiResponse(BaseModel):
+
+    items: list[QGetDraftAgentViewV4Item] | None = None
+
+
+
+# Generated from: get_draft_auth_view
+
+class GetDraftAuthViewSqlParams(BaseModel):
+
+    draft_ids: list[UUID]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.draft_ids,
+        )
+
+class QGetDraftAuthViewV4Item(BaseModel):
+
+    draft_id: UUID | None
+    created_at: datetime | None
+    updated_at: datetime | None
+    version: int | None
+    generated: bool | None
+    mcp: bool | None
+    active: bool | None
+    group_id: UUID | None
+    regeneration_descriptions: list[str] | None
+    name_ids: list[UUID] | None
+    description_ids: list[UUID] | None
+    flag_ids: list[UUID] | None
+    protocol_ids: list[UUID] | None
+    slug_ids: list[UUID] | None
+
+class GetDraftAuthViewSqlRow(BaseModel):
+
+    items: list[QGetDraftAuthViewV4Item] | None = None
+
+class GetDraftAuthViewApiRequest(BaseModel):
+
+    draft_ids: list[UUID]
+
+class GetDraftAuthViewApiResponse(BaseModel):
+
+    items: list[QGetDraftAuthViewV4Item] | None = None
+
+
+
+# Generated from: get_draft_cohort_view
+
+class GetDraftCohortViewSqlParams(BaseModel):
+
+    draft_ids: list[UUID]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.draft_ids,
+        )
+
+class QGetDraftCohortViewV4Item(BaseModel):
+
+    draft_id: UUID | None
+    created_at: datetime | None
+    updated_at: datetime | None
+    version: int | None
+    generated: bool | None
+    mcp: bool | None
+    active: bool | None
+    group_id: UUID | None
+    regeneration_descriptions: list[str] | None
+    name_ids: list[UUID] | None
+    description_ids: list[UUID] | None
+    flag_ids: list[UUID] | None
+    department_ids: list[UUID] | None
+    simulation_ids: list[UUID] | None
+    simulation_position_ids: list[UUID] | None
+
+class GetDraftCohortViewSqlRow(BaseModel):
+
+    items: list[QGetDraftCohortViewV4Item] | None = None
+
+class GetDraftCohortViewApiRequest(BaseModel):
+
+    draft_ids: list[UUID]
+
+class GetDraftCohortViewApiResponse(BaseModel):
+
+    items: list[QGetDraftCohortViewV4Item] | None = None
+
+
+
+# Generated from: get_draft_department_view
+
+class GetDraftDepartmentViewSqlParams(BaseModel):
+
+    draft_ids: list[UUID]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.draft_ids,
+        )
+
+class QGetDraftDepartmentViewV4Item(BaseModel):
+
+    draft_id: UUID | None
+    created_at: datetime | None
+    updated_at: datetime | None
+    version: int | None
+    generated: bool | None
+    mcp: bool | None
+    active: bool | None
+    group_id: UUID | None
+    regeneration_descriptions: list[str] | None
+    name_ids: list[UUID] | None
+    description_ids: list[UUID] | None
+    flag_ids: list[UUID] | None
+    settings_ids: list[UUID] | None
+
+class GetDraftDepartmentViewSqlRow(BaseModel):
+
+    items: list[QGetDraftDepartmentViewV4Item] | None = None
+
+class GetDraftDepartmentViewApiRequest(BaseModel):
+
+    draft_ids: list[UUID]
+
+class GetDraftDepartmentViewApiResponse(BaseModel):
+
+    items: list[QGetDraftDepartmentViewV4Item] | None = None
+
+
+
+# Generated from: get_draft_document_view
+
+class GetDraftDocumentViewSqlParams(BaseModel):
+
+    draft_ids: list[UUID]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.draft_ids,
+        )
+
+class QGetDraftDocumentViewV4Item(BaseModel):
+
+    draft_id: UUID | None
+    created_at: datetime | None
+    updated_at: datetime | None
+    version: int | None
+    generated: bool | None
+    mcp: bool | None
+    active: bool | None
+    group_id: UUID | None
+    regeneration_descriptions: list[str] | None
+    name_ids: list[UUID] | None
+    description_ids: list[UUID] | None
+    flag_ids: list[UUID] | None
+    department_ids: list[UUID] | None
+    parameter_field_ids: list[UUID] | None
+    upload_ids: list[UUID] | None
+    image_ids: list[UUID] | None
+    text_ids: list[UUID] | None
+
+class GetDraftDocumentViewSqlRow(BaseModel):
+
+    items: list[QGetDraftDocumentViewV4Item] | None = None
+
+class GetDraftDocumentViewApiRequest(BaseModel):
+
+    draft_ids: list[UUID]
+
+class GetDraftDocumentViewApiResponse(BaseModel):
+
+    items: list[QGetDraftDocumentViewV4Item] | None = None
+
+
+
+# Generated from: get_draft_eval_view
+
+class GetDraftEvalViewSqlParams(BaseModel):
+
+    draft_ids: list[UUID]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.draft_ids,
+        )
+
+class QGetDraftEvalViewV4Item(BaseModel):
+
+    draft_id: UUID | None
+    created_at: datetime | None
+    updated_at: datetime | None
+    version: int | None
+    generated: bool | None
+    mcp: bool | None
+    active: bool | None
+    group_id: UUID | None
+    regeneration_descriptions: list[str] | None
+    name_ids: list[UUID] | None
+    description_ids: list[UUID] | None
+    flag_ids: list[UUID] | None
+    department_ids: list[UUID] | None
+
+class GetDraftEvalViewSqlRow(BaseModel):
+
+    items: list[QGetDraftEvalViewV4Item] | None = None
+
+class GetDraftEvalViewApiRequest(BaseModel):
+
+    draft_ids: list[UUID]
+
+class GetDraftEvalViewApiResponse(BaseModel):
+
+    items: list[QGetDraftEvalViewV4Item] | None = None
+
+
+
+# Generated from: get_draft_field_view
+
+class GetDraftFieldViewSqlParams(BaseModel):
+
+    draft_ids: list[UUID]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.draft_ids,
+        )
+
+class QGetDraftFieldViewV4Item(BaseModel):
+
+    draft_id: UUID | None
+    created_at: datetime | None
+    updated_at: datetime | None
+    version: int | None
+    generated: bool | None
+    mcp: bool | None
+    active: bool | None
+    group_id: UUID | None
+    regeneration_descriptions: list[str] | None
+    name_ids: list[UUID] | None
+    description_ids: list[UUID] | None
+    flag_ids: list[UUID] | None
+    department_ids: list[UUID] | None
+    parameter_ids: list[UUID] | None
+
+class GetDraftFieldViewSqlRow(BaseModel):
+
+    items: list[QGetDraftFieldViewV4Item] | None = None
+
+class GetDraftFieldViewApiRequest(BaseModel):
+
+    draft_ids: list[UUID]
+
+class GetDraftFieldViewApiResponse(BaseModel):
+
+    items: list[QGetDraftFieldViewV4Item] | None = None
+
+
+
+# Generated from: get_draft_model_view
+
+class GetDraftModelViewSqlParams(BaseModel):
+
+    draft_ids: list[UUID]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.draft_ids,
+        )
+
+class QGetDraftModelViewV4Item(BaseModel):
+
+    draft_id: UUID | None
+    created_at: datetime | None
+    updated_at: datetime | None
+    version: int | None
+    generated: bool | None
+    mcp: bool | None
+    active: bool | None
+    group_id: UUID | None
+    regeneration_descriptions: list[str] | None
+    name_ids: list[UUID] | None
+    description_ids: list[UUID] | None
+    value_ids: list[UUID] | None
+    provider_ids: list[UUID] | None
+    flag_ids: list[UUID] | None
+    department_ids: list[UUID] | None
+    modality_ids: list[UUID] | None
+    temperature_level_ids: list[UUID] | None
+    pricing_ids: list[UUID] | None
+    reasoning_level_ids: list[UUID] | None
+    quality_ids: list[UUID] | None
+    voice_ids: list[UUID] | None
+
+class GetDraftModelViewSqlRow(BaseModel):
+
+    items: list[QGetDraftModelViewV4Item] | None = None
+
+class GetDraftModelViewApiRequest(BaseModel):
+
+    draft_ids: list[UUID]
+
+class GetDraftModelViewApiResponse(BaseModel):
+
+    items: list[QGetDraftModelViewV4Item] | None = None
+
+
+
+# Generated from: get_draft_parameter_view
+
+class GetDraftParameterViewSqlParams(BaseModel):
+
+    draft_ids: list[UUID]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.draft_ids,
+        )
+
+class QGetDraftParameterViewV4Item(BaseModel):
+
+    draft_id: UUID | None
+    created_at: datetime | None
+    updated_at: datetime | None
+    version: int | None
+    generated: bool | None
+    mcp: bool | None
+    active: bool | None
+    group_id: UUID | None
+    regeneration_descriptions: list[str] | None
+    name_ids: list[UUID] | None
+    description_ids: list[UUID] | None
+    flag_ids: list[UUID] | None
+    department_ids: list[UUID] | None
+    parameter_field_ids: list[UUID] | None
+
+class GetDraftParameterViewSqlRow(BaseModel):
+
+    items: list[QGetDraftParameterViewV4Item] | None = None
+
+class GetDraftParameterViewApiRequest(BaseModel):
+
+    draft_ids: list[UUID]
+
+class GetDraftParameterViewApiResponse(BaseModel):
+
+    items: list[QGetDraftParameterViewV4Item] | None = None
+
+
+
+# Generated from: get_draft_persona_view
+
+class GetDraftPersonaViewSqlParams(BaseModel):
+
+    draft_ids: list[UUID]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.draft_ids,
+        )
+
+class QGetDraftPersonaViewV4Item(BaseModel):
+
+    draft_id: UUID | None
+    created_at: datetime | None
+    updated_at: datetime | None
+    version: int | None
+    generated: bool | None
+    mcp: bool | None
+    active: bool | None
+    group_id: UUID | None
+    regeneration_descriptions: list[str] | None
+    name_ids: list[UUID] | None
+    description_ids: list[UUID] | None
+    color_ids: list[UUID] | None
+    icon_ids: list[UUID] | None
+    instruction_ids: list[UUID] | None
+    flag_ids: list[UUID] | None
+    department_ids: list[UUID] | None
+    parameter_field_ids: list[UUID] | None
+    example_ids: list[UUID] | None
+    parameter_ids: list[UUID] | None
+
+class GetDraftPersonaViewSqlRow(BaseModel):
+
+    items: list[QGetDraftPersonaViewV4Item] | None = None
+
+class GetDraftPersonaViewApiRequest(BaseModel):
+
+    draft_ids: list[UUID]
+
+class GetDraftPersonaViewApiResponse(BaseModel):
+
+    items: list[QGetDraftPersonaViewV4Item] | None = None
+
+
+
+# Generated from: get_draft_profile_view
+
+class GetDraftProfileViewSqlParams(BaseModel):
+
+    draft_ids: list[UUID]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.draft_ids,
+        )
+
+class QGetDraftProfileViewV4Item(BaseModel):
+
+    draft_id: UUID | None
+    created_at: datetime | None
+    updated_at: datetime | None
+    version: int | None
+    generated: bool | None
+    mcp: bool | None
+    active: bool | None
+    group_id: UUID | None
+    regeneration_descriptions: list[str] | None
+    name_ids: list[UUID] | None
+    flag_ids: list[UUID] | None
+    department_ids: list[UUID] | None
+
+class GetDraftProfileViewSqlRow(BaseModel):
+
+    items: list[QGetDraftProfileViewV4Item] | None = None
+
+class GetDraftProfileViewApiRequest(BaseModel):
+
+    draft_ids: list[UUID]
+
+class GetDraftProfileViewApiResponse(BaseModel):
+
+    items: list[QGetDraftProfileViewV4Item] | None = None
+
+
+
+# Generated from: get_draft_provider_view
+
+class GetDraftProviderViewSqlParams(BaseModel):
+
+    draft_ids: list[UUID]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.draft_ids,
+        )
+
+class QGetDraftProviderViewV4Item(BaseModel):
+
+    draft_id: UUID | None
+    created_at: datetime | None
+    updated_at: datetime | None
+    version: int | None
+    generated: bool | None
+    mcp: bool | None
+    active: bool | None
+    group_id: UUID | None
+    regeneration_descriptions: list[str] | None
+    name_ids: list[UUID] | None
+    description_ids: list[UUID] | None
+    flag_ids: list[UUID] | None
+    value_ids: list[UUID] | None
+    endpoint_ids: list[UUID] | None
+    key_ids: list[UUID] | None
+    department_ids: list[UUID] | None
+
+class GetDraftProviderViewSqlRow(BaseModel):
+
+    items: list[QGetDraftProviderViewV4Item] | None = None
+
+class GetDraftProviderViewApiRequest(BaseModel):
+
+    draft_ids: list[UUID]
+
+class GetDraftProviderViewApiResponse(BaseModel):
+
+    items: list[QGetDraftProviderViewV4Item] | None = None
+
+
+
+# Generated from: get_draft_rubric_view
+
+class GetDraftRubricViewSqlParams(BaseModel):
+
+    draft_ids: list[UUID]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.draft_ids,
+        )
+
+class QGetDraftRubricViewV4Item(BaseModel):
+
+    draft_id: UUID | None
+    created_at: datetime | None
+    updated_at: datetime | None
+    version: int | None
+    generated: bool | None
+    mcp: bool | None
+    active: bool | None
+    group_id: UUID | None
+    regeneration_descriptions: list[str] | None
+    name_ids: list[UUID] | None
+    description_ids: list[UUID] | None
+    flag_ids: list[UUID] | None
+    department_ids: list[UUID] | None
+    point_ids: list[UUID] | None
+    standard_group_ids: list[UUID] | None
+    standard_ids: list[UUID] | None
+
+class GetDraftRubricViewSqlRow(BaseModel):
+
+    items: list[QGetDraftRubricViewV4Item] | None = None
+
+class GetDraftRubricViewApiRequest(BaseModel):
+
+    draft_ids: list[UUID]
+
+class GetDraftRubricViewApiResponse(BaseModel):
+
+    items: list[QGetDraftRubricViewV4Item] | None = None
+
+
+
+# Generated from: get_draft_scenario_view
+
+class GetDraftScenarioViewSqlParams(BaseModel):
+
+    draft_ids: list[UUID]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.draft_ids,
+        )
+
+class QGetDraftScenarioViewV4Item(BaseModel):
+
+    draft_id: UUID | None
+    created_at: datetime | None
+    updated_at: datetime | None
+    version: int | None
+    generated: bool | None
+    mcp: bool | None
+    active: bool | None
+    group_id: UUID | None
+    regeneration_descriptions: list[str] | None
+    name_ids: list[UUID] | None
+    description_ids: list[UUID] | None
+    flag_ids: list[UUID] | None
+    department_ids: list[UUID] | None
+    persona_ids: list[UUID] | None
+    document_ids: list[UUID] | None
+    parameter_ids: list[UUID] | None
+    parameter_field_ids: list[UUID] | None
+    template_ids: list[UUID] | None
+    question_ids: list[UUID] | None
+
+class GetDraftScenarioViewSqlRow(BaseModel):
+
+    items: list[QGetDraftScenarioViewV4Item] | None = None
+
+class GetDraftScenarioViewApiRequest(BaseModel):
+
+    draft_ids: list[UUID]
+
+class GetDraftScenarioViewApiResponse(BaseModel):
+
+    items: list[QGetDraftScenarioViewV4Item] | None = None
+
+
+
+# Generated from: get_draft_setting_view
+
+class GetDraftSettingViewSqlParams(BaseModel):
+
+    draft_ids: list[UUID]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.draft_ids,
+        )
+
+class QGetDraftSettingViewV4Item(BaseModel):
+
+    draft_id: UUID | None
+    created_at: datetime | None
+    updated_at: datetime | None
+    version: int | None
+    generated: bool | None
+    mcp: bool | None
+    active: bool | None
+    group_id: UUID | None
+    regeneration_descriptions: list[str] | None
+    name_ids: list[UUID] | None
+    description_ids: list[UUID] | None
+    flag_ids: list[UUID] | None
+    color_ids: list[UUID] | None
+    department_ids: list[UUID] | None
+
+class GetDraftSettingViewSqlRow(BaseModel):
+
+    items: list[QGetDraftSettingViewV4Item] | None = None
+
+class GetDraftSettingViewApiRequest(BaseModel):
+
+    draft_ids: list[UUID]
+
+class GetDraftSettingViewApiResponse(BaseModel):
+
+    items: list[QGetDraftSettingViewV4Item] | None = None
+
+
+
+# Generated from: get_draft_simulation_view
+
+class GetDraftSimulationViewSqlParams(BaseModel):
+
+    draft_ids: list[UUID]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.draft_ids,
+        )
+
+class QGetDraftSimulationViewV4Item(BaseModel):
+
+    draft_id: UUID | None
+    created_at: datetime | None
+    updated_at: datetime | None
+    version: int | None
+    generated: bool | None
+    mcp: bool | None
+    active: bool | None
+    group_id: UUID | None
+    regeneration_descriptions: list[str] | None
+    name_ids: list[UUID] | None
+    description_ids: list[UUID] | None
+    flag_ids: list[UUID] | None
+    department_ids: list[UUID] | None
+    scenario_ids: list[UUID] | None
+    scenario_flag_ids: list[UUID] | None
+    scenario_position_ids: list[UUID] | None
+    scenario_rubric_ids: list[UUID] | None
+    scenario_time_limit_ids: list[UUID] | None
+
+class GetDraftSimulationViewSqlRow(BaseModel):
+
+    items: list[QGetDraftSimulationViewV4Item] | None = None
+
+class GetDraftSimulationViewApiRequest(BaseModel):
+
+    draft_ids: list[UUID]
+
+class GetDraftSimulationViewApiResponse(BaseModel):
+
+    items: list[QGetDraftSimulationViewV4Item] | None = None
+
+
+
+# Generated from: get_draft_tool_view
+
+class GetDraftToolViewSqlParams(BaseModel):
+
+    draft_ids: list[UUID]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.draft_ids,
+        )
+
+class QGetDraftToolViewV4Item(BaseModel):
+
+    draft_id: UUID | None
+    created_at: datetime | None
+    updated_at: datetime | None
+    version: int | None
+    generated: bool | None
+    mcp: bool | None
+    active: bool | None
+    group_id: UUID | None
+    regeneration_descriptions: list[str] | None
+    name_ids: list[UUID] | None
+    description_ids: list[UUID] | None
+    flag_ids: list[UUID] | None
+    args_ids: list[UUID] | None
+    args_outputs_ids: list[UUID] | None
+
+class GetDraftToolViewSqlRow(BaseModel):
+
+    items: list[QGetDraftToolViewV4Item] | None = None
+
+class GetDraftToolViewApiRequest(BaseModel):
+
+    draft_ids: list[UUID]
+
+class GetDraftToolViewApiResponse(BaseModel):
+
+    items: list[QGetDraftToolViewV4Item] | None = None
+
+
+
 # Generated from: get_simulation_attempts_view
 
 class GetSimulationAttemptsViewSqlParams(BaseModel):
@@ -29011,6 +29826,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "ArgsOutputsApiRequest",
         "ArgsOutputsApiResponse",
     ),
+    "app/sql/v4/queries/resources/auth_keys/get_auth_keys_complete.sql": (
+        "GetAuthKeysSqlParams",
+        "GetAuthKeysSqlRow",
+        "GetAuthKeysApiRequest",
+        "GetAuthKeysApiResponse",
+    ),
+    "app/sql/v4/queries/resources/auth_keys/search_auth_keys_complete.sql": (
+        "SearchAuthKeysSqlParams",
+        "SearchAuthKeysSqlRow",
+        "SearchAuthKeysApiRequest",
+        "SearchAuthKeysApiResponse",
+    ),
     "app/sql/v4/queries/resources/auth_keys_complete.sql": (
         "AuthKeysSqlParams",
         "AuthKeysSqlRow",
@@ -30559,6 +31386,108 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetConfigViewApiRequest",
         "GetConfigViewApiResponse",
     ),
+    "app/sql/v4/queries/views/drafts/get_draft_agent_view_complete.sql": (
+        "GetDraftAgentViewSqlParams",
+        "GetDraftAgentViewSqlRow",
+        "GetDraftAgentViewApiRequest",
+        "GetDraftAgentViewApiResponse",
+    ),
+    "app/sql/v4/queries/views/drafts/get_draft_auth_view_complete.sql": (
+        "GetDraftAuthViewSqlParams",
+        "GetDraftAuthViewSqlRow",
+        "GetDraftAuthViewApiRequest",
+        "GetDraftAuthViewApiResponse",
+    ),
+    "app/sql/v4/queries/views/drafts/get_draft_cohort_view_complete.sql": (
+        "GetDraftCohortViewSqlParams",
+        "GetDraftCohortViewSqlRow",
+        "GetDraftCohortViewApiRequest",
+        "GetDraftCohortViewApiResponse",
+    ),
+    "app/sql/v4/queries/views/drafts/get_draft_department_view_complete.sql": (
+        "GetDraftDepartmentViewSqlParams",
+        "GetDraftDepartmentViewSqlRow",
+        "GetDraftDepartmentViewApiRequest",
+        "GetDraftDepartmentViewApiResponse",
+    ),
+    "app/sql/v4/queries/views/drafts/get_draft_document_view_complete.sql": (
+        "GetDraftDocumentViewSqlParams",
+        "GetDraftDocumentViewSqlRow",
+        "GetDraftDocumentViewApiRequest",
+        "GetDraftDocumentViewApiResponse",
+    ),
+    "app/sql/v4/queries/views/drafts/get_draft_eval_view_complete.sql": (
+        "GetDraftEvalViewSqlParams",
+        "GetDraftEvalViewSqlRow",
+        "GetDraftEvalViewApiRequest",
+        "GetDraftEvalViewApiResponse",
+    ),
+    "app/sql/v4/queries/views/drafts/get_draft_field_view_complete.sql": (
+        "GetDraftFieldViewSqlParams",
+        "GetDraftFieldViewSqlRow",
+        "GetDraftFieldViewApiRequest",
+        "GetDraftFieldViewApiResponse",
+    ),
+    "app/sql/v4/queries/views/drafts/get_draft_model_view_complete.sql": (
+        "GetDraftModelViewSqlParams",
+        "GetDraftModelViewSqlRow",
+        "GetDraftModelViewApiRequest",
+        "GetDraftModelViewApiResponse",
+    ),
+    "app/sql/v4/queries/views/drafts/get_draft_parameter_view_complete.sql": (
+        "GetDraftParameterViewSqlParams",
+        "GetDraftParameterViewSqlRow",
+        "GetDraftParameterViewApiRequest",
+        "GetDraftParameterViewApiResponse",
+    ),
+    "app/sql/v4/queries/views/drafts/get_draft_persona_view_complete.sql": (
+        "GetDraftPersonaViewSqlParams",
+        "GetDraftPersonaViewSqlRow",
+        "GetDraftPersonaViewApiRequest",
+        "GetDraftPersonaViewApiResponse",
+    ),
+    "app/sql/v4/queries/views/drafts/get_draft_profile_view_complete.sql": (
+        "GetDraftProfileViewSqlParams",
+        "GetDraftProfileViewSqlRow",
+        "GetDraftProfileViewApiRequest",
+        "GetDraftProfileViewApiResponse",
+    ),
+    "app/sql/v4/queries/views/drafts/get_draft_provider_view_complete.sql": (
+        "GetDraftProviderViewSqlParams",
+        "GetDraftProviderViewSqlRow",
+        "GetDraftProviderViewApiRequest",
+        "GetDraftProviderViewApiResponse",
+    ),
+    "app/sql/v4/queries/views/drafts/get_draft_rubric_view_complete.sql": (
+        "GetDraftRubricViewSqlParams",
+        "GetDraftRubricViewSqlRow",
+        "GetDraftRubricViewApiRequest",
+        "GetDraftRubricViewApiResponse",
+    ),
+    "app/sql/v4/queries/views/drafts/get_draft_scenario_view_complete.sql": (
+        "GetDraftScenarioViewSqlParams",
+        "GetDraftScenarioViewSqlRow",
+        "GetDraftScenarioViewApiRequest",
+        "GetDraftScenarioViewApiResponse",
+    ),
+    "app/sql/v4/queries/views/drafts/get_draft_setting_view_complete.sql": (
+        "GetDraftSettingViewSqlParams",
+        "GetDraftSettingViewSqlRow",
+        "GetDraftSettingViewApiRequest",
+        "GetDraftSettingViewApiResponse",
+    ),
+    "app/sql/v4/queries/views/drafts/get_draft_simulation_view_complete.sql": (
+        "GetDraftSimulationViewSqlParams",
+        "GetDraftSimulationViewSqlRow",
+        "GetDraftSimulationViewApiRequest",
+        "GetDraftSimulationViewApiResponse",
+    ),
+    "app/sql/v4/queries/views/drafts/get_draft_tool_view_complete.sql": (
+        "GetDraftToolViewSqlParams",
+        "GetDraftToolViewSqlRow",
+        "GetDraftToolViewApiRequest",
+        "GetDraftToolViewApiResponse",
+    ),
     "app/sql/v4/queries/views/simulation/attempts/get_simulation_attempts_view_complete.sql": (
         "GetSimulationAttemptsViewSqlParams",
         "GetSimulationAttemptsViewSqlRow",
@@ -32083,6 +33012,16 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/auth_keys/get_auth_keys_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/auth_keys/search_auth_keys_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/auth_keys_complete.sql"]
     ) -> SqlString: ...
 
@@ -33369,6 +34308,91 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/views/config/get_config_view_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/views/drafts/get_draft_agent_view_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/views/drafts/get_draft_auth_view_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/views/drafts/get_draft_cohort_view_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/views/drafts/get_draft_department_view_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/views/drafts/get_draft_document_view_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/views/drafts/get_draft_eval_view_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/views/drafts/get_draft_field_view_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/views/drafts/get_draft_model_view_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/views/drafts/get_draft_parameter_view_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/views/drafts/get_draft_persona_view_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/views/drafts/get_draft_profile_view_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/views/drafts/get_draft_provider_view_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/views/drafts/get_draft_rubric_view_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/views/drafts/get_draft_scenario_view_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/views/drafts/get_draft_setting_view_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/views/drafts/get_draft_simulation_view_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/views/drafts/get_draft_tool_view_complete.sql"]
     ) -> SqlString: ...
 
     @overload

@@ -17,6 +17,38 @@ BEGIN
     END LOOP;
 END $$;
 
+-- Ensure persona draft composite types exist before function creation.
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_type t
+        JOIN pg_namespace n ON n.oid = t.typnamespace
+        WHERE n.nspname = 'types'
+          AND t.typname = 'persona_resource_action'
+    ) THEN
+        CREATE TYPE types.persona_resource_action AS (
+            resource_id uuid,
+            create_tool_id uuid,
+            link_tool_id uuid
+        );
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_type t
+        JOIN pg_namespace n ON n.oid = t.typnamespace
+        WHERE n.nspname = 'types'
+          AND t.typname = 'persona_multi_resource_action'
+    ) THEN
+        CREATE TYPE types.persona_multi_resource_action AS (
+            resource_ids uuid[],
+            create_tool_id uuid,
+            link_tool_id uuid
+        );
+    END IF;
+END $$;
+
 CREATE OR REPLACE FUNCTION api_patch_persona_draft_v4(
     profile_id uuid,
     input_draft_id uuid DEFAULT NULL,

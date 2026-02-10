@@ -21,8 +21,15 @@ CREATE MATERIALIZED VIEW mv_draft_agent AS
 WITH draft_links AS (
     SELECT draft_id, 'names'::resource_type AS resource_type, names_id::uuid AS resource_id FROM names_drafts_connection WHERE active = true
     UNION ALL SELECT draft_id, 'descriptions'::resource_type AS resource_type, descriptions_id::uuid AS resource_id FROM descriptions_drafts_connection WHERE active = true
+    UNION ALL SELECT draft_id, 'models'::resource_type AS resource_type, models_id::uuid AS resource_id FROM models_drafts_connection WHERE active = true
+    UNION ALL SELECT draft_id, 'prompts'::resource_type AS resource_type, prompts_id::uuid AS resource_id FROM prompts_drafts_connection WHERE active = true
+    UNION ALL SELECT draft_id, 'instructions'::resource_type AS resource_type, instructions_id::uuid AS resource_id FROM instructions_drafts_connection WHERE active = true
     UNION ALL SELECT draft_id, 'flags'::resource_type AS resource_type, flags_id::uuid AS resource_id FROM flags_drafts_connection WHERE active = true
     UNION ALL SELECT draft_id, 'departments'::resource_type AS resource_type, departments_id::uuid AS resource_id FROM departments_drafts_connection WHERE active = true
+    UNION ALL SELECT draft_id, 'tools'::resource_type AS resource_type, tools_id::uuid AS resource_id FROM tools_drafts_connection WHERE active = true
+    UNION ALL SELECT draft_id, 'temperature_levels'::resource_type AS resource_type, temperature_levels_id::uuid AS resource_id FROM temperature_levels_drafts_connection WHERE active = true
+    UNION ALL SELECT draft_id, 'reasoning_levels'::resource_type AS resource_type, reasoning_levels_id::uuid AS resource_id FROM reasoning_levels_drafts_connection WHERE active = true
+    UNION ALL SELECT draft_id, 'voices'::resource_type AS resource_type, voices_id::uuid AS resource_id FROM voices_drafts_connection WHERE active = true
 )
 SELECT
     d.id AS draft_id,
@@ -36,8 +43,15 @@ SELECT
     COALESCE((SELECT ARRAY_AGG(re.instructions ORDER BY re.created_at ASC, re.id ASC) FROM regenerates_entry re WHERE re.draft_id = d.id AND re.active = true), ARRAY[]::text[]) AS regeneration_descriptions,
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'names'::resource_type), ARRAY[]::uuid[]) AS name_ids,
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'descriptions'::resource_type), ARRAY[]::uuid[]) AS description_ids,
+    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'models'::resource_type), ARRAY[]::uuid[]) AS model_ids,
+    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'prompts'::resource_type), ARRAY[]::uuid[]) AS prompt_ids,
+    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'instructions'::resource_type), ARRAY[]::uuid[]) AS instruction_ids,
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'flags'::resource_type), ARRAY[]::uuid[]) AS flag_ids,
-    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'departments'::resource_type), ARRAY[]::uuid[]) AS department_ids
+    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'departments'::resource_type), ARRAY[]::uuid[]) AS department_ids,
+    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'tools'::resource_type), ARRAY[]::uuid[]) AS tool_ids,
+    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'temperature_levels'::resource_type), ARRAY[]::uuid[]) AS temperature_level_ids,
+    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'reasoning_levels'::resource_type), ARRAY[]::uuid[]) AS reasoning_level_ids,
+    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'voices'::resource_type), ARRAY[]::uuid[]) AS voice_ids
 FROM drafts_entry d
 LEFT JOIN draft_links l ON l.draft_id = d.id
 WHERE d.artifact = 'agent'::artifact_type
