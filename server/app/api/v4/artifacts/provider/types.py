@@ -216,15 +216,15 @@ class ListProviderApiResponse(BaseModel):
 class SaveProviderApiRequest(BaseModel):
     """Request model for save provider endpoint."""
 
-    group_id: UUID
+    group_id: UUID | None = None
     input_provider_id: UUID | None = None
-    name_id: UUID
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    value_id: UUID
-    endpoint_id: UUID | None = None
-    key_id: UUID | None = None
-    department_ids: list[UUID] | None = None
+    names: ProviderResourceAction
+    descriptions: ProviderResourceAction
+    flags: ProviderResourceAction
+    departments: ProviderMultiResourceAction
+    values: ProviderResourceAction
+    endpoints: ProviderResourceAction
+    keys: ProviderResourceAction
 
 
 class SaveProviderApiResponse(BaseModel):
@@ -237,28 +237,40 @@ class SaveProviderSqlParams(BaseModel):
     """SQL parameters for save provider."""
 
     profile_id: UUID
-    group_id: UUID
+    group_id: UUID | None = None
     input_provider_id: UUID | None = None
-    name_id: UUID
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    value_id: UUID
-    endpoint_id: UUID | None = None
-    key_id: UUID | None = None
-    department_ids: list[UUID] | None = None
+    names: ProviderResourceAction
+    descriptions: ProviderResourceAction
+    flags: ProviderResourceAction
+    departments: ProviderMultiResourceAction
+    values: ProviderResourceAction
+    endpoints: ProviderResourceAction
+    keys: ProviderResourceAction
+
+    @classmethod
+    def from_request(
+        cls, request: SaveProviderApiRequest, profile_id: UUID
+    ) -> SaveProviderSqlParams:
+        return cls(profile_id=profile_id, **request.model_dump())
 
     def to_tuple(self) -> tuple:
+        def single(a: ProviderResourceAction) -> tuple:
+            return (a.resource_id, a.create_tool_id, a.link_tool_id)
+
+        def multi(a: ProviderMultiResourceAction) -> tuple:
+            return (a.resource_ids, a.create_tool_id, a.link_tool_id)
+
         return (
             self.profile_id,
             self.group_id,
             self.input_provider_id,
-            self.name_id,
-            self.description_id,
-            self.active_flag_id,
-            self.value_id,
-            self.endpoint_id,
-            self.key_id,
-            self.department_ids,
+            single(self.names),
+            single(self.descriptions),
+            single(self.flags),
+            multi(self.departments),
+            single(self.values),
+            single(self.endpoints),
+            single(self.keys),
         )
 
 
@@ -288,13 +300,14 @@ class DuplicateProviderApiResponse(BaseModel):
 
 class PatchProviderDraftApiRequest(BaseModel):
     input_draft_id: UUID | None = None
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    value_id: UUID | None = None
-    endpoint_id: UUID | None = None
-    key_id: UUID | None = None
-    department_ids: list[UUID] | None = None
+    group_id: UUID | None = None
+    names: ProviderResourceAction | None = None
+    descriptions: ProviderResourceAction | None = None
+    flags: ProviderResourceAction | None = None
+    departments: ProviderMultiResourceAction | None = None
+    values: ProviderResourceAction | None = None
+    endpoints: ProviderResourceAction | None = None
+    keys: ProviderResourceAction | None = None
     expected_version: int = 0
 
 
@@ -303,3 +316,76 @@ class PatchProviderDraftApiResponse(BaseModel):
     draft_id: UUID
     new_version: int
     message: str
+
+
+class ProviderResourceAction(BaseModel):
+    resource_id: UUID | None = None
+    create_tool_id: UUID | None = None
+    link_tool_id: UUID | None = None
+
+
+class ProviderMultiResourceAction(BaseModel):
+    resource_ids: list[UUID] | None = None
+    create_tool_id: UUID | None = None
+    link_tool_id: UUID | None = None
+
+
+class PatchProviderDraftSqlParams(BaseModel):
+    profile_id: UUID
+    input_draft_id: UUID | None = None
+    group_id: UUID | None = None
+    names: ProviderResourceAction
+    descriptions: ProviderResourceAction
+    flags: ProviderResourceAction
+    departments: ProviderMultiResourceAction
+    values: ProviderResourceAction
+    endpoints: ProviderResourceAction
+    keys: ProviderResourceAction
+    expected_version: int = 0
+
+    @classmethod
+    def from_request(
+        cls, request: PatchProviderDraftApiRequest, profile_id: UUID
+    ) -> PatchProviderDraftSqlParams:
+        empty_single = ProviderResourceAction()
+        empty_multi = ProviderMultiResourceAction()
+        return cls(
+            profile_id=profile_id,
+            input_draft_id=request.input_draft_id,
+            group_id=request.group_id,
+            names=request.names or empty_single,
+            descriptions=request.descriptions or empty_single,
+            flags=request.flags or empty_single,
+            departments=request.departments or empty_multi,
+            values=request.values or empty_single,
+            endpoints=request.endpoints or empty_single,
+            keys=request.keys or empty_single,
+            expected_version=request.expected_version,
+        )
+
+    def to_tuple(self) -> tuple:
+        def single(a: ProviderResourceAction) -> tuple:
+            return (a.resource_id, a.create_tool_id, a.link_tool_id)
+
+        def multi(a: ProviderMultiResourceAction) -> tuple:
+            return (a.resource_ids, a.create_tool_id, a.link_tool_id)
+
+        return (
+            self.profile_id,
+            self.input_draft_id,
+            self.group_id,
+            single(self.names),
+            single(self.descriptions),
+            single(self.flags),
+            multi(self.departments),
+            single(self.values),
+            single(self.endpoints),
+            single(self.keys),
+            self.expected_version,
+        )
+
+
+class PatchProviderDraftSqlRow(BaseModel):
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None

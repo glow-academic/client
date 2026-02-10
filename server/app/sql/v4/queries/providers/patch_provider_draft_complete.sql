@@ -1,4 +1,26 @@
--- Patch provider draft - creates/updates draft resource links.
+-- Patch provider draft - section-action contract (persona parity).
+
+DO $$
+BEGIN
+    DROP TYPE IF EXISTS types.provider_resource_action CASCADE;
+    CREATE TYPE types.provider_resource_action AS (
+        resource_id uuid,
+        create_tool_id uuid,
+        link_tool_id uuid
+    );
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
+DO $$
+BEGIN
+    DROP TYPE IF EXISTS types.provider_multi_resource_action CASCADE;
+    CREATE TYPE types.provider_multi_resource_action AS (
+        resource_ids uuid[],
+        create_tool_id uuid,
+        link_tool_id uuid
+    );
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
 
 DO $$
 DECLARE
@@ -17,13 +39,14 @@ END $$;
 CREATE OR REPLACE FUNCTION api_patch_provider_draft_v4(
     profile_id uuid,
     input_draft_id uuid DEFAULT NULL,
-    name_id uuid DEFAULT NULL,
-    description_id uuid DEFAULT NULL,
-    active_flag_id uuid DEFAULT NULL,
-    value_id uuid DEFAULT NULL,
-    endpoint_id uuid DEFAULT NULL,
-    key_id uuid DEFAULT NULL,
-    department_ids uuid[] DEFAULT NULL,
+    group_id uuid DEFAULT NULL,
+    names types.provider_resource_action DEFAULT NULL,
+    descriptions types.provider_resource_action DEFAULT NULL,
+    flags types.provider_resource_action DEFAULT NULL,
+    departments types.provider_multi_resource_action DEFAULT NULL,
+    values_action types.provider_resource_action DEFAULT NULL,
+    endpoints types.provider_resource_action DEFAULT NULL,
+    keys types.provider_resource_action DEFAULT NULL,
     expected_version int DEFAULT 0
 )
 RETURNS TABLE (
@@ -40,6 +63,13 @@ DECLARE
     v_draft_exists boolean := false;
     v_profiles_resource_id uuid;
     v_group_id uuid;
+    v_name_id uuid := (names).resource_id;
+    v_description_id uuid := (descriptions).resource_id;
+    v_active_flag_id uuid := (flags).resource_id;
+    v_value_id uuid := (values_action).resource_id;
+    v_endpoint_id uuid := (endpoints).resource_id;
+    v_key_id uuid := (keys).resource_id;
+    v_department_ids uuid[] := COALESCE((departments).resource_ids, ARRAY[]::uuid[]);
 BEGIN
     SELECT ppj.profiles_id INTO v_profiles_resource_id
     FROM profile_profiles_junction ppj
@@ -50,28 +80,29 @@ BEGIN
         RAISE EXCEPTION 'No profiles_resource linked to profile_artifact: %', profile_id;
     END IF;
 
-    IF name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names_resource WHERE id = name_id) THEN
-        RAISE EXCEPTION 'Name resource not found: %', name_id;
+    IF v_name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names_resource WHERE id = v_name_id) THEN
+        RAISE EXCEPTION 'Name resource not found: %', v_name_id;
     END IF;
-    IF description_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM descriptions_resource WHERE id = description_id) THEN
-        RAISE EXCEPTION 'Description resource not found: %', description_id;
+    IF v_description_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM descriptions_resource WHERE id = v_description_id) THEN
+        RAISE EXCEPTION 'Description resource not found: %', v_description_id;
     END IF;
-    IF active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = active_flag_id) THEN
-        RAISE EXCEPTION 'Flag resource not found: %', active_flag_id;
+    IF v_active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = v_active_flag_id) THEN
+        RAISE EXCEPTION 'Flag resource not found: %', v_active_flag_id;
     END IF;
-    IF value_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM values_resource WHERE id = value_id) THEN
-        RAISE EXCEPTION 'Value resource not found: %', value_id;
+    IF v_value_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM values_resource WHERE id = v_value_id) THEN
+        RAISE EXCEPTION 'Value resource not found: %', v_value_id;
     END IF;
-    IF endpoint_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM endpoints_resource WHERE id = endpoint_id) THEN
-        RAISE EXCEPTION 'Endpoint resource not found: %', endpoint_id;
+    IF v_endpoint_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM endpoints_resource WHERE id = v_endpoint_id) THEN
+        RAISE EXCEPTION 'Endpoint resource not found: %', v_endpoint_id;
     END IF;
-    IF key_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM keys_resource WHERE id = key_id) THEN
-        RAISE EXCEPTION 'Key resource not found: %', key_id;
+    IF v_key_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM keys_resource WHERE id = v_key_id) THEN
+        RAISE EXCEPTION 'Key resource not found: %', v_key_id;
     END IF;
-    IF department_ids IS NOT NULL THEN
+
+    IF COALESCE(array_length(v_department_ids, 1), 0) > 0 THEN
         IF EXISTS (
             SELECT 1
-            FROM UNNEST(department_ids) AS dept_id
+            FROM UNNEST(v_department_ids) AS dept_id
             WHERE NOT EXISTS (SELECT 1 FROM departments_resource WHERE id = dept_id)
         ) THEN
             RAISE EXCEPTION 'One or more department IDs not found';
@@ -79,7 +110,14 @@ BEGIN
     END IF;
 
     IF input_draft_id IS NOT NULL THEN
-        SELECT group_id INTO v_group_id FROM drafts_entry WHERE id = input_draft_id;
+        SELECT d.group_id INTO v_group_id
+        FROM drafts_entry d
+        WHERE d.id = input_draft_id;
+
+        IF v_group_id IS NULL THEN
+            v_group_id := group_id;
+        END IF;
+
         IF v_group_id IS NULL THEN
             INSERT INTO groups_entry (created_at, updated_at, session_id)
             VALUES (
@@ -118,20 +156,24 @@ BEGIN
     END IF;
 
     IF v_draft_id IS NULL THEN
-        INSERT INTO groups_entry (created_at, updated_at, session_id)
-        VALUES (
-            NOW(),
-            NOW(),
-            (
-                SELECT id
-                FROM view_sessions_entry
-                WHERE profile_id = api_patch_provider_draft_v4.profile_id
-                  AND active = true
-                ORDER BY created_at DESC
-                LIMIT 1
+        v_group_id := group_id;
+
+        IF v_group_id IS NULL THEN
+            INSERT INTO groups_entry (created_at, updated_at, session_id)
+            VALUES (
+                NOW(),
+                NOW(),
+                (
+                    SELECT id
+                    FROM view_sessions_entry
+                    WHERE profile_id = api_patch_provider_draft_v4.profile_id
+                      AND active = true
+                    ORDER BY created_at DESC
+                    LIMIT 1
+                )
             )
-        )
-        RETURNING id INTO v_group_id;
+            RETURNING id INTO v_group_id;
+        END IF;
 
         INSERT INTO drafts_entry (artifact, group_id)
         VALUES ('provider'::artifact_type, v_group_id)
@@ -149,36 +191,43 @@ BEGIN
     DELETE FROM keys_drafts_connection WHERE keys_drafts_connection.draft_id = v_draft_id;
     DELETE FROM departments_drafts_connection WHERE departments_drafts_connection.draft_id = v_draft_id;
 
-    IF name_id IS NOT NULL THEN
+    IF v_name_id IS NOT NULL THEN
         INSERT INTO names_drafts_connection (draft_id, names_id, version)
-        VALUES (v_draft_id, name_id, v_new_version);
-    END IF;
-    IF description_id IS NOT NULL THEN
-        INSERT INTO descriptions_drafts_connection (draft_id, descriptions_id, version)
-        VALUES (v_draft_id, description_id, v_new_version);
-    END IF;
-    IF active_flag_id IS NOT NULL THEN
-        INSERT INTO flags_drafts_connection (draft_id, flags_id, version)
-        VALUES (v_draft_id, active_flag_id, v_new_version);
-    END IF;
-    IF value_id IS NOT NULL THEN
-        INSERT INTO values_drafts_connection (draft_id, values_id, version)
-        VALUES (v_draft_id, value_id, v_new_version);
-    END IF;
-    IF endpoint_id IS NOT NULL THEN
-        INSERT INTO endpoints_drafts_connection (draft_id, endpoints_id, version)
-        VALUES (v_draft_id, endpoint_id, v_new_version);
-    END IF;
-    IF key_id IS NOT NULL THEN
-        INSERT INTO keys_drafts_connection (draft_id, keys_id, version)
-        VALUES (v_draft_id, key_id, v_new_version);
-    END IF;
-    IF department_ids IS NOT NULL THEN
-        INSERT INTO departments_drafts_connection (draft_id, departments_id, version)
-        SELECT v_draft_id, dept_id, v_new_version
-        FROM UNNEST(department_ids) AS dept_id;
+        VALUES (v_draft_id, v_name_id, v_new_version);
     END IF;
 
-    RETURN QUERY SELECT v_draft_id, v_new_version, v_draft_exists;
+    IF v_description_id IS NOT NULL THEN
+        INSERT INTO descriptions_drafts_connection (draft_id, descriptions_id, version)
+        VALUES (v_draft_id, v_description_id, v_new_version);
+    END IF;
+
+    IF v_active_flag_id IS NOT NULL THEN
+        INSERT INTO flags_drafts_connection (draft_id, flags_id, version)
+        VALUES (v_draft_id, v_active_flag_id, v_new_version);
+    END IF;
+
+    IF v_value_id IS NOT NULL THEN
+        INSERT INTO values_drafts_connection (draft_id, values_id, version)
+        VALUES (v_draft_id, v_value_id, v_new_version);
+    END IF;
+
+    IF v_endpoint_id IS NOT NULL THEN
+        INSERT INTO endpoints_drafts_connection (draft_id, endpoints_id, version)
+        VALUES (v_draft_id, v_endpoint_id, v_new_version);
+    END IF;
+
+    IF v_key_id IS NOT NULL THEN
+        INSERT INTO keys_drafts_connection (draft_id, keys_id, version)
+        VALUES (v_draft_id, v_key_id, v_new_version);
+    END IF;
+
+    IF COALESCE(array_length(v_department_ids, 1), 0) > 0 THEN
+        INSERT INTO departments_drafts_connection (draft_id, departments_id, version)
+        SELECT v_draft_id, dept_id, v_new_version
+        FROM UNNEST(v_department_ids) AS dept_id;
+    END IF;
+
+    RETURN QUERY
+    SELECT v_draft_id, v_new_version, v_draft_exists;
 END;
 $$;

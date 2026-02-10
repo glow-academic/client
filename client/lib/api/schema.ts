@@ -3497,6 +3497,63 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/auth_keys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Auth Keys
+         * @description Create auth_keys resource from auth + key pair.
+         */
+        post: operations["create_auth_keys_api_v4_resources_auth_keys_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/auth_keys/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Auth Keys
+         * @description Get auth_keys resources by IDs.
+         */
+        post: operations["get_auth_keys_api_v4_resources_auth_keys_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/auth_keys/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Search Auth Keys */
+        post: operations["search_auth_keys_api_v4_resources_auth_keys_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/cohorts/get": {
         parameters: {
             query?: never;
@@ -4346,6 +4403,63 @@ export interface paths {
          * @description Get keys resources by IDs.
          */
         post: operations["get_keys_api_v4_resources_keys_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/provider_keys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Provider Keys
+         * @description Create provider_keys resource from provider + key pair.
+         */
+        post: operations["create_provider_keys_api_v4_resources_provider_keys_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/provider_keys/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Provider Keys
+         * @description Get provider_keys resources by IDs.
+         */
+        post: operations["get_provider_keys_api_v4_resources_provider_keys_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/provider_keys/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Search Provider Keys */
+        post: operations["search_provider_keys_api_v4_resources_provider_keys_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11774,6 +11888,29 @@ export interface components {
             /** Resources */
             resources?: components["schemas"]["AuthItemResource"][] | null;
         };
+        /** AuthKeysApiRequest */
+        AuthKeysApiRequest: {
+            /**
+             * Auth Id
+             * Format: uuid
+             */
+            auth_id: string;
+            /**
+             * Key Id
+             * Format: uuid
+             */
+            key_id: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** AuthKeysApiResponse */
+        AuthKeysApiResponse: {
+            /** Auth Keys Id */
+            auth_keys_id?: string | null;
+        };
         /** AuthMultiResourceAction */
         AuthMultiResourceAction: {
             /** Resource Ids */
@@ -14415,35 +14552,6 @@ export interface components {
             /** Resources */
             resources?: components["schemas"]["QGetUploadsV4Item"][] | null;
         };
-        /**
-         * DomainData
-         * @description Rich metadata for a domain, used in generate/regenerate modals.
-         */
-        DomainData: {
-            /**
-             * Domain Id
-             * Format: uuid
-             */
-            domain_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Resource */
-            resource: string;
-            /** Icon */
-            icon?: string | null;
-            /**
-             * Required
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Show
-             * @default true
-             */
-            show: boolean;
-        };
         /** DuplicateAgentApiRequest */
         DuplicateAgentApiRequest: {
             /**
@@ -14899,6 +15007,34 @@ export interface components {
              */
             generated: boolean;
         };
+        /** EvalAgentSection */
+        EvalAgentSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["EvalAgentItem"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["EvalAgentItem"][] | null;
+        };
         /**
          * EvalAvailableGroup
          * @description Available group for eval selection.
@@ -14949,6 +15085,61 @@ export interface components {
             /** Actor Type */
             actor_type?: string | null;
         };
+        /** EvalDepartmentSection */
+        EvalDepartmentSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
+        };
+        /** EvalDescriptionSection */
+        EvalDescriptionSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            resource?: components["schemas"]["QGetDescriptionsV4Item"] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetDescriptionsV4Item"][] | null;
+        };
         /**
          * EvalFlagConfig
          * @description Enriched flag config for direct client consumption.
@@ -14974,10 +15165,35 @@ export interface components {
              * @default false
              */
             required: boolean;
-            /** Domain Id */
-            domain_id?: string | null;
             /** Generated */
             generated?: boolean | null;
+        };
+        /** EvalFlagSection */
+        EvalFlagSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            resource?: components["schemas"]["EvalFlagConfig"] | null;
+            /** Resources */
+            resources?: components["schemas"]["EvalFlagConfig"][] | null;
         };
         /**
          * EvalGenerationCompleteEvent
@@ -15032,31 +15248,78 @@ export interface components {
             /** Rubric Ids */
             rubric_ids?: string[] | null;
         };
-        /**
-         * EvalResourceBucket
-         * @description Generic resources bucket with full objects.
-         */
-        EvalResourceBucket: {
-            /** Names */
-            names?: components["schemas"]["QGetNamesV4Item"][] | null;
-            /** Descriptions */
-            descriptions?: components["schemas"]["QGetDescriptionsV4Item"][] | null;
-            /** Flags */
-            flags?: components["schemas"]["EvalFlagConfig"][] | null;
-            /** Departments */
-            departments?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
-            /** Eval Agents */
-            eval_agents?: components["schemas"]["EvalAgentItem"][] | null;
-            /** Rubrics */
-            rubrics?: components["schemas"]["EvalRubricItem"][] | null;
+        /** EvalGroupSection */
+        EvalGroupSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["EvalAvailableGroup"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["EvalAvailableGroup"][] | null;
         };
-        /**
-         * EvalResources
-         * @description Full resources + current selections.
-         */
-        EvalResources: {
-            resources?: components["schemas"]["EvalResourceBucket"] | null;
-            current?: components["schemas"]["EvalResourceBucket"] | null;
+        /** EvalMultiResourceAction */
+        EvalMultiResourceAction: {
+            /** Resource Ids */
+            resource_ids?: string[] | null;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+        };
+        /** EvalNameSection */
+        EvalNameSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            resource?: components["schemas"]["QGetNamesV4Item"] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetNamesV4Item"][] | null;
+        };
+        /** EvalResourceAction */
+        EvalResourceAction: {
+            /** Resource Id */
+            resource_id?: string | null;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
         };
         /**
          * EvalRubricItem
@@ -15080,6 +15343,34 @@ export interface components {
              */
             generated: boolean;
         };
+        /** EvalRubricSection */
+        EvalRubricSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["EvalRubricItem"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["EvalRubricItem"][] | null;
+        };
         /**
          * EvalRunRubricMapping
          * @description Maps a model run to its assigned rubric IDs.
@@ -15092,6 +15383,34 @@ export interface components {
             run_id: string;
             /** Rubric Ids */
             rubric_ids?: string[] | null;
+        };
+        /** EvalRunSection */
+        EvalRunSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["EvalAvailableModelRun"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["EvalAvailableModelRun"][] | null;
         };
         /** ExamplesApiRequest */
         ExamplesApiRequest: {
@@ -16378,6 +16697,16 @@ export interface components {
             slugs?: components["schemas"]["AuthSlugSection"] | null;
             items?: components["schemas"]["AuthItemSection"] | null;
         };
+        /** GetAuthKeysApiRequest */
+        GetAuthKeysApiRequest: {
+            /** Ids */
+            ids?: string[] | null;
+        };
+        /** GetAuthKeysApiResponse */
+        GetAuthKeysApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetAuthKeysV4Item"][] | null;
+        };
         /** GetAuthListApiRequest */
         GetAuthListApiRequest: Record<string, never>;
         /**
@@ -17030,131 +17359,18 @@ export interface components {
             draft_version?: number | null;
             /** Group Id */
             group_id?: string | null;
-            /** Name Id */
-            name_id?: string | null;
-            /** Description Id */
-            description_id?: string | null;
-            /** Active Flag Id */
-            active_flag_id?: string | null;
-            /** Dynamic Flag Id */
-            dynamic_flag_id?: string | null;
-            /** Groups Flag Id */
-            groups_flag_id?: string | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Agent Ids */
-            agent_ids?: string[] | null;
-            /** Model Run Ids */
-            model_run_ids?: string[] | null;
-            /** Group Ids */
-            group_ids?: string[] | null;
-            /** Names Group Id */
-            names_group_id?: string | null;
-            /** Descriptions Group Id */
-            descriptions_group_id?: string | null;
-            /** Flags Group Id */
-            flags_group_id?: string | null;
-            /** Departments Group Id */
-            departments_group_id?: string | null;
-            /** Eval Agents Group Id */
-            eval_agents_group_id?: string | null;
-            /** Rubrics Group Id */
-            rubrics_group_id?: string | null;
-            /** Show Name */
-            show_name?: boolean | null;
-            /** Name Domain Id */
-            name_domain_id?: string | null;
-            /** Name Required */
-            name_required?: boolean | null;
-            /** Name Suggestions */
-            name_suggestions?: string[] | null;
-            /** Name Show Ai Generate */
-            name_show_ai_generate?: boolean | null;
-            /** Show Description */
-            show_description?: boolean | null;
-            /** Description Domain Id */
-            description_domain_id?: string | null;
-            /** Description Required */
-            description_required?: boolean | null;
-            /** Description Suggestions */
-            description_suggestions?: string[] | null;
-            /** Description Show Ai Generate */
-            description_show_ai_generate?: boolean | null;
-            /** Show Active Flag */
-            show_active_flag?: boolean | null;
-            /** Active Flag Domain Id */
-            active_flag_domain_id?: string | null;
-            /** Active Flag Required */
-            active_flag_required?: boolean | null;
-            /** Active Flag Show Ai Generate */
-            active_flag_show_ai_generate?: boolean | null;
-            /** Show Dynamic Flag */
-            show_dynamic_flag?: boolean | null;
-            /** Dynamic Flag Domain Id */
-            dynamic_flag_domain_id?: string | null;
-            /** Dynamic Flag Required */
-            dynamic_flag_required?: boolean | null;
-            /** Dynamic Flag Show Ai Generate */
-            dynamic_flag_show_ai_generate?: boolean | null;
-            /** Show Groups Flag */
-            show_groups_flag?: boolean | null;
-            /** Groups Flag Domain Id */
-            groups_flag_domain_id?: string | null;
-            /** Groups Flag Required */
-            groups_flag_required?: boolean | null;
-            /** Groups Flag Show Ai Generate */
-            groups_flag_show_ai_generate?: boolean | null;
-            /** Show Departments */
-            show_departments?: boolean | null;
-            /** Departments Domain Id */
-            departments_domain_id?: string | null;
-            /** Departments Required */
-            departments_required?: boolean | null;
-            /** Department Suggestions */
-            department_suggestions?: string[] | null;
-            /** Departments Show Ai Generate */
-            departments_show_ai_generate?: boolean | null;
-            /** Show Agents */
-            show_agents?: boolean | null;
-            /** Agents Domain Id */
-            agents_domain_id?: string | null;
-            /** Agents Required */
-            agents_required?: boolean | null;
-            /** Agent Suggestions */
-            agent_suggestions?: string[] | null;
-            /** Agents Show Ai Generate */
-            agents_show_ai_generate?: boolean | null;
-            /** Show Rubrics */
-            show_rubrics?: boolean | null;
-            /** Rubrics Domain Id */
-            rubrics_domain_id?: string | null;
-            /** Rubrics Required */
-            rubrics_required?: boolean | null;
-            /** Rubric Suggestions */
-            rubric_suggestions?: string[] | null;
-            /** Rubrics Show Ai Generate */
-            rubrics_show_ai_generate?: boolean | null;
-            /** Name Create Tool Id */
-            name_create_tool_id?: string | null;
-            /** Description Create Tool Id */
-            description_create_tool_id?: string | null;
-            /** Name Link Tool Id */
-            name_link_tool_id?: string | null;
-            /** Description Link Tool Id */
-            description_link_tool_id?: string | null;
-            /** Flag Link Tool Id */
-            flag_link_tool_id?: string | null;
-            /** Departments Link Tool Id */
-            departments_link_tool_id?: string | null;
-            /** Agents Link Tool Id */
-            agents_link_tool_id?: string | null;
-            /** Rubrics Link Tool Id */
-            rubrics_link_tool_id?: string | null;
             /** Basic Show Ai Generate */
             basic_show_ai_generate?: boolean | null;
-            /** Domain Data */
-            domain_data?: components["schemas"]["DomainData"][] | null;
-            resources?: components["schemas"]["EvalResources"] | null;
+            names?: components["schemas"]["EvalNameSection"] | null;
+            descriptions?: components["schemas"]["EvalDescriptionSection"] | null;
+            active_flags?: components["schemas"]["EvalFlagSection"] | null;
+            dynamic_flags?: components["schemas"]["EvalFlagSection"] | null;
+            groups_flags?: components["schemas"]["EvalFlagSection"] | null;
+            departments?: components["schemas"]["EvalDepartmentSection"] | null;
+            agents?: components["schemas"]["EvalAgentSection"] | null;
+            rubrics?: components["schemas"]["EvalRubricSection"] | null;
+            runs?: components["schemas"]["EvalRunSection"] | null;
+            groups?: components["schemas"]["EvalGroupSection"] | null;
             /** Run Rubrics */
             run_rubrics?: components["schemas"]["EvalRunRubricMapping"][] | null;
             /** Group Rubrics */
@@ -18529,6 +18745,16 @@ export interface components {
             endpoints?: components["schemas"]["ProviderEndpointSection"] | null;
             keys?: components["schemas"]["ProviderKeySection"] | null;
         };
+        /** GetProviderKeysApiRequest */
+        GetProviderKeysApiRequest: {
+            /** Ids */
+            ids?: string[] | null;
+        };
+        /** GetProviderKeysApiResponse */
+        GetProviderKeysApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetProviderKeysV4Item"][] | null;
+        };
         /** GetProvidersListApiRequest */
         GetProvidersListApiRequest: Record<string, never>;
         /** GetQualitiesApiRequest */
@@ -19041,8 +19267,8 @@ export interface components {
         };
         /** GetSettingApiRequest */
         GetSettingApiRequest: {
-            /** Setting Id */
-            setting_id?: string | null;
+            /** Settings Id */
+            settings_id?: string | null;
             /** Color Search */
             color_search?: string | null;
             /** Draft Id */
@@ -22587,6 +22813,7 @@ export interface components {
             flags?: components["schemas"]["AuthResourceAction"] | null;
             protocols?: components["schemas"]["AuthMultiResourceAction"] | null;
             slugs?: components["schemas"]["AuthMultiResourceAction"] | null;
+            items?: components["schemas"]["AuthItemAction"] | null;
             /**
              * Expected Version
              * @default 0
@@ -22715,27 +22942,21 @@ export interface components {
             /** Message */
             message: string;
         };
-        /**
-         * PatchEvalDraftApiRequest
-         * @description Request model for patch eval draft endpoint.
-         */
+        /** PatchEvalDraftApiRequest */
         PatchEvalDraftApiRequest: {
             /** Input Draft Id */
             input_draft_id?: string | null;
-            /** Name Id */
-            name_id?: string | null;
-            /** Description Id */
-            description_id?: string | null;
-            /** Active Flag Id */
-            active_flag_id?: string | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Agent Ids */
-            agent_ids?: string[] | null;
-            /** Model Run Ids */
-            model_run_ids?: string[] | null;
-            /** Group Ids */
-            group_ids?: string[] | null;
+            /** Group Id */
+            group_id?: string | null;
+            names?: components["schemas"]["EvalResourceAction"] | null;
+            descriptions?: components["schemas"]["EvalResourceAction"] | null;
+            flags?: components["schemas"]["EvalMultiResourceAction"] | null;
+            departments?: components["schemas"]["EvalMultiResourceAction"] | null;
+            agents?: components["schemas"]["EvalMultiResourceAction"] | null;
+            runs?: components["schemas"]["EvalMultiResourceAction"] | null;
+            groups?: components["schemas"]["EvalMultiResourceAction"] | null;
+            run_positions?: components["schemas"]["EvalMultiResourceAction"] | null;
+            group_positions?: components["schemas"]["EvalMultiResourceAction"] | null;
             /**
              * Expected Version
              * @default 0
@@ -22948,20 +23169,15 @@ export interface components {
         PatchProviderDraftApiRequest: {
             /** Input Draft Id */
             input_draft_id?: string | null;
-            /** Name Id */
-            name_id?: string | null;
-            /** Description Id */
-            description_id?: string | null;
-            /** Active Flag Id */
-            active_flag_id?: string | null;
-            /** Value Id */
-            value_id?: string | null;
-            /** Endpoint Id */
-            endpoint_id?: string | null;
-            /** Key Id */
-            key_id?: string | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
+            /** Group Id */
+            group_id?: string | null;
+            names?: components["schemas"]["ProviderResourceAction"] | null;
+            descriptions?: components["schemas"]["ProviderResourceAction"] | null;
+            flags?: components["schemas"]["ProviderResourceAction"] | null;
+            departments?: components["schemas"]["ProviderMultiResourceAction"] | null;
+            values?: components["schemas"]["ProviderResourceAction"] | null;
+            endpoints?: components["schemas"]["ProviderResourceAction"] | null;
+            keys?: components["schemas"]["ProviderResourceAction"] | null;
             /**
              * Expected Version
              * @default 0
@@ -23075,21 +23291,19 @@ export interface components {
             profile_ids?: string[] | null;
             /** Auth Ids */
             auth_ids?: string[] | null;
-            /** Provider Ids */
-            provider_ids?: string[] | null;
-            /** Key Ids */
-            key_ids?: string[] | null;
+            /** Provider Key Ids */
+            provider_key_ids?: string[] | null;
+            /** Auth Key Ids */
+            auth_key_ids?: string[] | null;
             /** Role Ids */
             role_ids?: string[] | null;
-            /** Route Ids */
-            route_ids?: string[] | null;
             /** Role Route Ids */
             role_route_ids?: string[] | null;
             /**
              * Expected Version
              * @default 0
              */
-            expected_version: number | null;
+            expected_version: number;
         };
         /** PatchSettingDraftApiResponse */
         PatchSettingDraftApiResponse: {
@@ -24987,6 +25201,38 @@ export interface components {
             /** Resources */
             resources?: components["schemas"]["QGetKeysV4Item"][] | null;
         };
+        /** ProviderKeysApiRequest */
+        ProviderKeysApiRequest: {
+            /**
+             * Provider Id
+             * Format: uuid
+             */
+            provider_id: string;
+            /**
+             * Key Id
+             * Format: uuid
+             */
+            key_id: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** ProviderKeysApiResponse */
+        ProviderKeysApiResponse: {
+            /** Provider Keys Id */
+            provider_keys_id?: string | null;
+        };
+        /** ProviderMultiResourceAction */
+        ProviderMultiResourceAction: {
+            /** Resource Ids */
+            resource_ids?: string[] | null;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+        };
         /** ProviderNameSection */
         ProviderNameSection: {
             /**
@@ -25013,6 +25259,15 @@ export interface components {
             resource?: components["schemas"]["QGetNamesV4Item"] | null;
             /** Resources */
             resources?: components["schemas"]["QGetNamesV4Item"][] | null;
+        };
+        /** ProviderResourceAction */
+        ProviderResourceAction: {
+            /** Resource Id */
+            resource_id?: string | null;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
         };
         /** ProviderValueSection */
         ProviderValueSection: {
@@ -25099,6 +25354,25 @@ export interface components {
             default_value: string | null;
             /** Position */
             position: number | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetAuthKeysV4Item */
+        QGetAuthKeysV4Item: {
+            /** Id */
+            id: string | null;
+            /** Auth Id */
+            auth_id: string | null;
+            /** Key Id */
+            key_id: string | null;
+            /** Auth Name */
+            auth_name: string | null;
+            /** Key Name */
+            key_name: string | null;
+            /** Key Description */
+            key_description: string | null;
+            /** Active */
+            active: boolean | null;
             /** Generated */
             generated: boolean | null;
         };
@@ -25698,6 +25972,25 @@ export interface components {
             id: string | null;
             /** Value */
             value: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetProviderKeysV4Item */
+        QGetProviderKeysV4Item: {
+            /** Id */
+            id: string | null;
+            /** Provider Id */
+            provider_id: string | null;
+            /** Key Id */
+            key_id: string | null;
+            /** Provider Name */
+            provider_name: string | null;
+            /** Key Name */
+            key_name: string | null;
+            /** Key Description */
+            key_description: string | null;
+            /** Active */
+            active: boolean | null;
             /** Generated */
             generated: boolean | null;
         };
@@ -28314,7 +28607,7 @@ export interface components {
         };
         /**
          * SaveEvalApiRequest
-         * @description Request model for save eval endpoint - accepts form data directly.
+         * @description Request model for save eval endpoint (nested section actions).
          */
         SaveEvalApiRequest: {
             /**
@@ -28324,29 +28617,15 @@ export interface components {
             group_id: string;
             /** Input Eval Id */
             input_eval_id?: string | null;
-            /**
-             * Name Id
-             * Format: uuid
-             */
-            name_id: string;
-            /** Description Id */
-            description_id?: string | null;
-            /** Active Flag Id */
-            active_flag_id?: string | null;
-            /** Dynamic Flag Id */
-            dynamic_flag_id?: string | null;
-            /** Groups Flag Id */
-            groups_flag_id?: string | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Agent Ids */
-            agent_ids?: string[] | null;
-            /** Rubric Ids */
-            rubric_ids?: string[] | null;
-            /** Model Run Ids */
-            model_run_ids?: string[] | null;
-            /** Group Ids */
-            group_ids?: string[] | null;
+            names: components["schemas"]["EvalResourceAction"];
+            descriptions: components["schemas"]["EvalResourceAction"];
+            flags: components["schemas"]["EvalMultiResourceAction"];
+            departments: components["schemas"]["EvalMultiResourceAction"];
+            agents: components["schemas"]["EvalMultiResourceAction"];
+            runs: components["schemas"]["EvalMultiResourceAction"];
+            groups: components["schemas"]["EvalMultiResourceAction"];
+            run_positions?: components["schemas"]["EvalMultiResourceAction"] | null;
+            group_positions?: components["schemas"]["EvalMultiResourceAction"] | null;
             /** Run Rubrics */
             run_rubrics?: components["schemas"]["EvalRunRubricMapping"][] | null;
             /** Group Rubrics */
@@ -28531,33 +28810,17 @@ export interface components {
          * @description Request model for save provider endpoint.
          */
         SaveProviderApiRequest: {
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
+            /** Group Id */
+            group_id?: string | null;
             /** Input Provider Id */
             input_provider_id?: string | null;
-            /**
-             * Name Id
-             * Format: uuid
-             */
-            name_id: string;
-            /** Description Id */
-            description_id?: string | null;
-            /** Active Flag Id */
-            active_flag_id?: string | null;
-            /**
-             * Value Id
-             * Format: uuid
-             */
-            value_id: string;
-            /** Endpoint Id */
-            endpoint_id?: string | null;
-            /** Key Id */
-            key_id?: string | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
+            names: components["schemas"]["ProviderResourceAction"];
+            descriptions: components["schemas"]["ProviderResourceAction"];
+            flags: components["schemas"]["ProviderResourceAction"];
+            departments: components["schemas"]["ProviderMultiResourceAction"];
+            values: components["schemas"]["ProviderResourceAction"];
+            endpoints: components["schemas"]["ProviderResourceAction"];
+            keys: components["schemas"]["ProviderResourceAction"];
         };
         /** SaveProviderApiResponse */
         SaveProviderApiResponse: {
@@ -28637,33 +28900,33 @@ export interface components {
         };
         /** SaveSettingApiRequest */
         SaveSettingApiRequest: {
+            /** Input Setting Id */
+            input_setting_id?: string | null;
             /**
              * Name Id
              * Format: uuid
              */
             name_id: string;
-            /** Color Ids */
-            color_ids: string[];
-            /** Department Ids */
-            department_ids: string[];
-            /** Auth Ids */
-            auth_ids: string[];
-            /** Provider Key Ids */
-            provider_key_ids: string[];
-            /** Key Ids */
-            key_ids: string[];
-            /** Input Setting Id */
-            input_setting_id?: string | null;
-            /** Profile Ids */
-            profile_ids?: string[] | null;
             /** Description Id */
             description_id?: string | null;
+            /** Color Ids */
+            color_ids: string[];
             /** Active Flag Id */
             active_flag_id?: string | null;
+            /** Department Ids */
+            department_ids: string[];
+            /** Profile Ids */
+            profile_ids?: string[] | null;
+            /** Auth Ids */
+            auth_ids?: string[] | null;
+            /** Provider Key Ids */
+            provider_key_ids?: string[] | null;
+            /** Auth Key Ids */
+            auth_key_ids?: string[] | null;
             /** Role Ids */
             role_ids?: string[] | null;
-            /** Route Ids */
-            route_ids?: string[] | null;
+            /** Role Route Ids */
+            role_route_ids?: string[] | null;
         };
         /** SaveSettingApiResponse */
         SaveSettingApiResponse: {
@@ -29660,6 +29923,28 @@ export interface components {
             /** Items */
             items?: components["schemas"]["QGetArgsOutputsV4Item"][] | null;
         };
+        /** SearchAuthKeysApiRequest */
+        SearchAuthKeysApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchAuthKeysApiResponse */
+        SearchAuthKeysApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetAuthKeysV4Item"][] | null;
+        };
         /**
          * SearchCohortsApiRequest
          * @description Request for searching cohorts.
@@ -30111,6 +30396,28 @@ export interface components {
         SearchProtocolsApiResponse: {
             /** Items */
             items?: components["schemas"]["QGetProtocolsV4Item"][] | null;
+        };
+        /** SearchProviderKeysApiRequest */
+        SearchProviderKeysApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchProviderKeysApiResponse */
+        SearchProviderKeysApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetProviderKeysV4Item"][] | null;
         };
         /** SearchQualitiesApiRequest */
         SearchQualitiesApiRequest: {
@@ -39345,6 +39652,117 @@ export interface operations {
             };
         };
     };
+    create_auth_keys_api_v4_resources_auth_keys_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AuthKeysApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthKeysApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_auth_keys_api_v4_resources_auth_keys_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetAuthKeysApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetAuthKeysApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_auth_keys_api_v4_resources_auth_keys_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchAuthKeysApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchAuthKeysApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_cohorts_api_v4_resources_cohorts_get_post: {
         parameters: {
             query?: never;
@@ -40923,6 +41341,117 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetKeysApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_provider_keys_api_v4_resources_provider_keys_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProviderKeysApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProviderKeysApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_provider_keys_api_v4_resources_provider_keys_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetProviderKeysApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetProviderKeysApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_provider_keys_api_v4_resources_provider_keys_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchProviderKeysApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchProviderKeysApiResponse"];
                 };
             };
             /** @description Validation Error */

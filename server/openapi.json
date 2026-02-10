@@ -16211,6 +16211,284 @@
         }
       }
     },
+    "/api/v4/resources/auth_keys": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Create Auth Keys",
+        "description": "Create auth_keys resource from auth + key pair.",
+        "operationId": "create_auth_keys_api_v4_resources_auth_keys_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuthKeysApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthKeysApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v4/resources/auth_keys/get": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Get Auth Keys",
+        "description": "Get auth_keys resources by IDs.",
+        "operationId": "get_auth_keys_api_v4_resources_auth_keys_get_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetAuthKeysApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetAuthKeysApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v4/resources/auth_keys/search": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Search Auth Keys",
+        "operationId": "search_auth_keys_api_v4_resources_auth_keys_search_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchAuthKeysApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchAuthKeysApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v4/resources/cohorts/get": {
       "post": {
         "tags": [
@@ -20184,6 +20462,284 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/GetKeysApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v4/resources/provider_keys": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Create Provider Keys",
+        "description": "Create provider_keys resource from provider + key pair.",
+        "operationId": "create_provider_keys_api_v4_resources_provider_keys_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProviderKeysApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProviderKeysApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v4/resources/provider_keys/get": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Get Provider Keys",
+        "description": "Get provider_keys resources by IDs.",
+        "operationId": "get_provider_keys_api_v4_resources_provider_keys_get_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetProviderKeysApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetProviderKeysApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v4/resources/provider_keys/search": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Search Provider Keys",
+        "operationId": "search_provider_keys_api_v4_resources_provider_keys_search_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchProviderKeysApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchProviderKeysApiResponse"
                 }
               }
             }
@@ -44968,6 +45524,56 @@
         "type": "object",
         "title": "AuthItemSection"
       },
+      "AuthKeysApiRequest": {
+        "properties": {
+          "auth_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Auth Id"
+          },
+          "key_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Key Id"
+          },
+          "mcp": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mcp",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "auth_id",
+          "key_id"
+        ],
+        "title": "AuthKeysApiRequest"
+      },
+      "AuthKeysApiResponse": {
+        "properties": {
+          "auth_keys_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Keys Id"
+          }
+        },
+        "type": "object",
+        "title": "AuthKeysApiResponse"
+      },
       "AuthMultiResourceAction": {
         "properties": {
           "resource_ids": {
@@ -53429,57 +54035,6 @@
         "type": "object",
         "title": "DocumentUploadSection"
       },
-      "DomainData": {
-        "properties": {
-          "domain_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Domain Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "resource": {
-            "type": "string",
-            "title": "Resource"
-          },
-          "icon": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Icon"
-          },
-          "required": {
-            "type": "boolean",
-            "title": "Required",
-            "default": false
-          },
-          "show": {
-            "type": "boolean",
-            "title": "Show",
-            "default": true
-          }
-        },
-        "type": "object",
-        "required": [
-          "domain_id",
-          "name",
-          "description",
-          "resource"
-        ],
-        "title": "DomainData",
-        "description": "Rich metadata for a domain, used in generate/regenerate modals."
-      },
       "DuplicateAgentApiRequest": {
         "properties": {
           "agent_id": {
@@ -54492,6 +55047,94 @@
         "title": "EvalAgentItem",
         "description": "Eval agent item (from eval_agents resource endpoint)."
       },
+      "EvalAgentSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "current": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/EvalAgentItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current"
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/EvalAgentItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "EvalAgentSection"
+      },
       "EvalAvailableGroup": {
         "properties": {
           "group_id": {
@@ -54682,6 +55325,178 @@
         "title": "EvalAvailableModelRun",
         "description": "Available model run for eval selection."
       },
+      "EvalDepartmentSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "current": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetDepartmentsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current"
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetDepartmentsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "EvalDepartmentSection"
+      },
+      "EvalDescriptionSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "resource": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetDescriptionsV4Item"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetDescriptionsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "EvalDescriptionSection"
+      },
       "EvalFlagConfig": {
         "properties": {
           "key": {
@@ -54736,18 +55551,6 @@
             "title": "Required",
             "default": false
           },
-          "domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Domain Id"
-          },
           "generated": {
             "anyOf": [
               {
@@ -54767,6 +55570,90 @@
         ],
         "title": "EvalFlagConfig",
         "description": "Enriched flag config for direct client consumption."
+      },
+      "EvalFlagSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "resource": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EvalFlagConfig"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/EvalFlagConfig"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "EvalFlagSection"
       },
       "EvalGenerationCompleteEvent": {
         "properties": {
@@ -54982,9 +55869,206 @@
         "title": "EvalGroupRubricMapping",
         "description": "Maps a group to its assigned rubric IDs."
       },
-      "EvalResourceBucket": {
+      "EvalGroupSection": {
         "properties": {
-          "names": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "current": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/EvalAvailableGroup"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current"
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/EvalAvailableGroup"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "EvalGroupSection"
+      },
+      "EvalMultiResourceAction": {
+        "properties": {
+          "resource_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resource Ids"
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          }
+        },
+        "type": "object",
+        "title": "EvalMultiResourceAction"
+      },
+      "EvalNameSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "resource": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetNamesV4Item"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "resources": {
             "anyOf": [
               {
                 "items": {
@@ -54996,109 +56080,53 @@
                 "type": "null"
               }
             ],
-            "title": "Names"
-          },
-          "descriptions": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetDescriptionsV4Item"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Descriptions"
-          },
-          "flags": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/EvalFlagConfig"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Flags"
-          },
-          "departments": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetDepartmentsV4Item"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departments"
-          },
-          "eval_agents": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/EvalAgentItem"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Eval Agents"
-          },
-          "rubrics": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/EvalRubricItem"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rubrics"
+            "title": "Resources"
           }
         },
         "type": "object",
-        "title": "EvalResourceBucket",
-        "description": "Generic resources bucket with full objects."
+        "title": "EvalNameSection"
       },
-      "EvalResources": {
+      "EvalResourceAction": {
         "properties": {
-          "resources": {
+          "resource_id": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/EvalResourceBucket"
+                "type": "string",
+                "format": "uuid"
               },
               {
                 "type": "null"
               }
-            ]
+            ],
+            "title": "Resource Id"
           },
-          "current": {
+          "create_tool_id": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/EvalResourceBucket"
+                "type": "string",
+                "format": "uuid"
               },
               {
                 "type": "null"
               }
-            ]
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
           }
         },
         "type": "object",
-        "title": "EvalResources",
-        "description": "Full resources + current selections."
+        "title": "EvalResourceAction"
       },
       "EvalRubricItem": {
         "properties": {
@@ -55153,6 +56181,94 @@
         "title": "EvalRubricItem",
         "description": "Eval rubric item (from rubrics resource endpoint)."
       },
+      "EvalRubricSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "current": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/EvalRubricItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current"
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/EvalRubricItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "EvalRubricSection"
+      },
       "EvalRunRubricMapping": {
         "properties": {
           "run_id": {
@@ -55182,6 +56298,94 @@
         ],
         "title": "EvalRunRubricMapping",
         "description": "Maps a model run to its assigned rubric IDs."
+      },
+      "EvalRunSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "current": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/EvalAvailableModelRun"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current"
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/EvalAvailableModelRun"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "EvalRunSection"
       },
       "ExamplesApiRequest": {
         "properties": {
@@ -59162,6 +60366,47 @@
         "title": "GetAuthApiResponse",
         "description": "Response model for get auth endpoint."
       },
+      "GetAuthKeysApiRequest": {
+        "properties": {
+          "ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ids"
+          }
+        },
+        "type": "object",
+        "title": "GetAuthKeysApiRequest"
+      },
+      "GetAuthKeysApiResponse": {
+        "properties": {
+          "items": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetAuthKeysV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "title": "GetAuthKeysApiResponse"
+      },
       "GetAuthListApiRequest": {
         "properties": {},
         "type": "object",
@@ -61284,729 +62529,6 @@
             ],
             "title": "Group Id"
           },
-          "name_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name Id"
-          },
-          "description_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description Id"
-          },
-          "active_flag_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Active Flag Id"
-          },
-          "dynamic_flag_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Dynamic Flag Id"
-          },
-          "groups_flag_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Groups Flag Id"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "agent_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Agent Ids"
-          },
-          "model_run_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Model Run Ids"
-          },
-          "group_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Ids"
-          },
-          "names_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Names Group Id"
-          },
-          "descriptions_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Descriptions Group Id"
-          },
-          "flags_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Flags Group Id"
-          },
-          "departments_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departments Group Id"
-          },
-          "eval_agents_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Eval Agents Group Id"
-          },
-          "rubrics_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rubrics Group Id"
-          },
-          "show_name": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Name"
-          },
-          "name_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name Domain Id"
-          },
-          "name_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name Required"
-          },
-          "name_suggestions": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name Suggestions"
-          },
-          "name_show_ai_generate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name Show Ai Generate"
-          },
-          "show_description": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Description"
-          },
-          "description_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description Domain Id"
-          },
-          "description_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description Required"
-          },
-          "description_suggestions": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description Suggestions"
-          },
-          "description_show_ai_generate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description Show Ai Generate"
-          },
-          "show_active_flag": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Active Flag"
-          },
-          "active_flag_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Active Flag Domain Id"
-          },
-          "active_flag_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Active Flag Required"
-          },
-          "active_flag_show_ai_generate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Active Flag Show Ai Generate"
-          },
-          "show_dynamic_flag": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Dynamic Flag"
-          },
-          "dynamic_flag_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Dynamic Flag Domain Id"
-          },
-          "dynamic_flag_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Dynamic Flag Required"
-          },
-          "dynamic_flag_show_ai_generate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Dynamic Flag Show Ai Generate"
-          },
-          "show_groups_flag": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Groups Flag"
-          },
-          "groups_flag_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Groups Flag Domain Id"
-          },
-          "groups_flag_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Groups Flag Required"
-          },
-          "groups_flag_show_ai_generate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Groups Flag Show Ai Generate"
-          },
-          "show_departments": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Departments"
-          },
-          "departments_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departments Domain Id"
-          },
-          "departments_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departments Required"
-          },
-          "department_suggestions": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Suggestions"
-          },
-          "departments_show_ai_generate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departments Show Ai Generate"
-          },
-          "show_agents": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Agents"
-          },
-          "agents_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Agents Domain Id"
-          },
-          "agents_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Agents Required"
-          },
-          "agent_suggestions": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Agent Suggestions"
-          },
-          "agents_show_ai_generate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Agents Show Ai Generate"
-          },
-          "show_rubrics": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Rubrics"
-          },
-          "rubrics_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rubrics Domain Id"
-          },
-          "rubrics_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rubrics Required"
-          },
-          "rubric_suggestions": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rubric Suggestions"
-          },
-          "rubrics_show_ai_generate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rubrics Show Ai Generate"
-          },
-          "name_create_tool_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name Create Tool Id"
-          },
-          "description_create_tool_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description Create Tool Id"
-          },
-          "name_link_tool_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name Link Tool Id"
-          },
-          "description_link_tool_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description Link Tool Id"
-          },
-          "flag_link_tool_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Flag Link Tool Id"
-          },
-          "departments_link_tool_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departments Link Tool Id"
-          },
-          "agents_link_tool_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Agents Link Tool Id"
-          },
-          "rubrics_link_tool_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rubrics Link Tool Id"
-          },
           "basic_show_ai_generate": {
             "anyOf": [
               {
@@ -62018,24 +62540,100 @@
             ],
             "title": "Basic Show Ai Generate"
           },
-          "domain_data": {
+          "names": {
             "anyOf": [
               {
-                "items": {
-                  "$ref": "#/components/schemas/DomainData"
-                },
-                "type": "array"
+                "$ref": "#/components/schemas/EvalNameSection"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Domain Data"
+            ]
           },
-          "resources": {
+          "descriptions": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/EvalResources"
+                "$ref": "#/components/schemas/EvalDescriptionSection"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "active_flags": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EvalFlagSection"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "dynamic_flags": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EvalFlagSection"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "groups_flags": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EvalFlagSection"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "departments": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EvalDepartmentSection"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "agents": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EvalAgentSection"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "rubrics": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EvalRubricSection"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "runs": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EvalRunSection"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "groups": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EvalGroupSection"
               },
               {
                 "type": "null"
@@ -67116,6 +67714,47 @@
         "title": "GetProviderApiResponse",
         "description": "Section-first response for provider editor."
       },
+      "GetProviderKeysApiRequest": {
+        "properties": {
+          "ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ids"
+          }
+        },
+        "type": "object",
+        "title": "GetProviderKeysApiRequest"
+      },
+      "GetProviderKeysApiResponse": {
+        "properties": {
+          "items": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetProviderKeysV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "title": "GetProviderKeysApiResponse"
+      },
       "GetProvidersListApiRequest": {
         "properties": {},
         "type": "object",
@@ -69029,7 +69668,7 @@
       },
       "GetSettingApiRequest": {
         "properties": {
-          "setting_id": {
+          "settings_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -69039,7 +69678,7 @@
                 "type": "null"
               }
             ],
-            "title": "Setting Id"
+            "title": "Settings Id"
           },
           "color_search": {
             "anyOf": [
@@ -81759,6 +82398,16 @@
               }
             ]
           },
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AuthItemAction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "expected_version": {
             "type": "integer",
             "title": "Expected Version",
@@ -82228,7 +82877,7 @@
             ],
             "title": "Input Draft Id"
           },
-          "name_id": {
+          "group_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -82238,91 +82887,97 @@
                 "type": "null"
               }
             ],
-            "title": "Name Id"
+            "title": "Group Id"
           },
-          "description_id": {
+          "names": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/EvalResourceAction"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Description Id"
+            ]
           },
-          "active_flag_id": {
+          "descriptions": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/EvalResourceAction"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Active Flag Id"
+            ]
           },
-          "department_ids": {
+          "flags": {
             "anyOf": [
               {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
+                "$ref": "#/components/schemas/EvalMultiResourceAction"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Department Ids"
+            ]
           },
-          "agent_ids": {
+          "departments": {
             "anyOf": [
               {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
+                "$ref": "#/components/schemas/EvalMultiResourceAction"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Agent Ids"
+            ]
           },
-          "model_run_ids": {
+          "agents": {
             "anyOf": [
               {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
+                "$ref": "#/components/schemas/EvalMultiResourceAction"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Model Run Ids"
+            ]
           },
-          "group_ids": {
+          "runs": {
             "anyOf": [
               {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
+                "$ref": "#/components/schemas/EvalMultiResourceAction"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Group Ids"
+            ]
+          },
+          "groups": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EvalMultiResourceAction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "run_positions": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EvalMultiResourceAction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "group_positions": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EvalMultiResourceAction"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "expected_version": {
             "type": "integer",
@@ -82331,8 +82986,7 @@
           }
         },
         "type": "object",
-        "title": "PatchEvalDraftApiRequest",
-        "description": "Request model for patch eval draft endpoint."
+        "title": "PatchEvalDraftApiRequest"
       },
       "PatchEvalDraftApiResponse": {
         "properties": {
@@ -83101,7 +83755,7 @@
             ],
             "title": "Input Draft Id"
           },
-          "name_id": {
+          "group_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -83111,82 +83765,77 @@
                 "type": "null"
               }
             ],
-            "title": "Name Id"
+            "title": "Group Id"
           },
-          "description_id": {
+          "names": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/ProviderResourceAction"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Description Id"
+            ]
           },
-          "active_flag_id": {
+          "descriptions": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/ProviderResourceAction"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Active Flag Id"
+            ]
           },
-          "value_id": {
+          "flags": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/ProviderResourceAction"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Value Id"
+            ]
           },
-          "endpoint_id": {
+          "departments": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/ProviderMultiResourceAction"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Endpoint Id"
+            ]
           },
-          "key_id": {
+          "values": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/ProviderResourceAction"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Key Id"
+            ]
           },
-          "department_ids": {
+          "endpoints": {
             "anyOf": [
               {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
+                "$ref": "#/components/schemas/ProviderResourceAction"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Department Ids"
+            ]
+          },
+          "keys": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProviderResourceAction"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "expected_version": {
             "type": "integer",
@@ -83697,7 +84346,7 @@
             ],
             "title": "Auth Ids"
           },
-          "provider_ids": {
+          "provider_key_ids": {
             "anyOf": [
               {
                 "items": {
@@ -83710,9 +84359,9 @@
                 "type": "null"
               }
             ],
-            "title": "Provider Ids"
+            "title": "Provider Key Ids"
           },
-          "key_ids": {
+          "auth_key_ids": {
             "anyOf": [
               {
                 "items": {
@@ -83725,7 +84374,7 @@
                 "type": "null"
               }
             ],
-            "title": "Key Ids"
+            "title": "Auth Key Ids"
           },
           "role_ids": {
             "anyOf": [
@@ -83741,21 +84390,6 @@
               }
             ],
             "title": "Role Ids"
-          },
-          "route_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Route Ids"
           },
           "role_route_ids": {
             "anyOf": [
@@ -83773,14 +84407,7 @@
             "title": "Role Route Ids"
           },
           "expected_version": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
             "title": "Expected Version",
             "default": 0
           }
@@ -89466,6 +90093,101 @@
         "type": "object",
         "title": "ProviderKeySection"
       },
+      "ProviderKeysApiRequest": {
+        "properties": {
+          "provider_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Provider Id"
+          },
+          "key_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Key Id"
+          },
+          "mcp": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mcp",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "provider_id",
+          "key_id"
+        ],
+        "title": "ProviderKeysApiRequest"
+      },
+      "ProviderKeysApiResponse": {
+        "properties": {
+          "provider_keys_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Keys Id"
+          }
+        },
+        "type": "object",
+        "title": "ProviderKeysApiResponse"
+      },
+      "ProviderMultiResourceAction": {
+        "properties": {
+          "resource_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resource Ids"
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          }
+        },
+        "type": "object",
+        "title": "ProviderMultiResourceAction"
+      },
       "ProviderNameSection": {
         "properties": {
           "show": {
@@ -89549,6 +90271,48 @@
         },
         "type": "object",
         "title": "ProviderNameSection"
+      },
+      "ProviderResourceAction": {
+        "properties": {
+          "resource_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resource Id"
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          }
+        },
+        "type": "object",
+        "title": "ProviderResourceAction"
       },
       "ProviderValueSection": {
         "properties": {
@@ -89983,6 +90747,113 @@
           "generated"
         ],
         "title": "QGetArgsV4Item"
+      },
+      "QGetAuthKeysV4Item": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "auth_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Id"
+          },
+          "key_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Id"
+          },
+          "auth_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Name"
+          },
+          "key_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Name"
+          },
+          "key_description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Description"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "auth_id",
+          "key_id",
+          "auth_name",
+          "key_name",
+          "key_description",
+          "active",
+          "generated"
+        ],
+        "title": "QGetAuthKeysV4Item"
       },
       "QGetCohortsV4Item": {
         "properties": {
@@ -93243,6 +94114,113 @@
           "generated"
         ],
         "title": "QGetProtocolsV4Item"
+      },
+      "QGetProviderKeysV4Item": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "provider_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Id"
+          },
+          "key_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Id"
+          },
+          "provider_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Name"
+          },
+          "key_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Name"
+          },
+          "key_description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Description"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "provider_id",
+          "key_id",
+          "provider_name",
+          "key_name",
+          "key_description",
+          "active",
+          "generated"
+        ],
+        "title": "QGetProviderKeysV4Item"
       },
       "QGetProvidersV4Item": {
         "properties": {
@@ -103681,133 +104659,46 @@
             ],
             "title": "Input Eval Id"
           },
-          "name_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Name Id"
+          "names": {
+            "$ref": "#/components/schemas/EvalResourceAction"
           },
-          "description_id": {
+          "descriptions": {
+            "$ref": "#/components/schemas/EvalResourceAction"
+          },
+          "flags": {
+            "$ref": "#/components/schemas/EvalMultiResourceAction"
+          },
+          "departments": {
+            "$ref": "#/components/schemas/EvalMultiResourceAction"
+          },
+          "agents": {
+            "$ref": "#/components/schemas/EvalMultiResourceAction"
+          },
+          "runs": {
+            "$ref": "#/components/schemas/EvalMultiResourceAction"
+          },
+          "groups": {
+            "$ref": "#/components/schemas/EvalMultiResourceAction"
+          },
+          "run_positions": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/EvalMultiResourceAction"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Description Id"
+            ]
           },
-          "active_flag_id": {
+          "group_positions": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/EvalMultiResourceAction"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Active Flag Id"
-          },
-          "dynamic_flag_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Dynamic Flag Id"
-          },
-          "groups_flag_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Groups Flag Id"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "agent_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Agent Ids"
-          },
-          "rubric_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rubric Ids"
-          },
-          "model_run_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Model Run Ids"
-          },
-          "group_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Ids"
+            ]
           },
           "run_rubrics": {
             "anyOf": [
@@ -103841,10 +104732,16 @@
         "type": "object",
         "required": [
           "group_id",
-          "name_id"
+          "names",
+          "descriptions",
+          "flags",
+          "departments",
+          "agents",
+          "runs",
+          "groups"
         ],
         "title": "SaveEvalApiRequest",
-        "description": "Request model for save eval endpoint - accepts form data directly."
+        "description": "Request model for save eval endpoint (nested section actions)."
       },
       "SaveEvalApiResponse": {
         "properties": {
@@ -104314,8 +105211,15 @@
       "SaveProviderApiRequest": {
         "properties": {
           "group_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Group Id"
           },
           "input_provider_id": {
@@ -104330,85 +105234,37 @@
             ],
             "title": "Input Provider Id"
           },
-          "name_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Name Id"
+          "names": {
+            "$ref": "#/components/schemas/ProviderResourceAction"
           },
-          "description_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description Id"
+          "descriptions": {
+            "$ref": "#/components/schemas/ProviderResourceAction"
           },
-          "active_flag_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Active Flag Id"
+          "flags": {
+            "$ref": "#/components/schemas/ProviderResourceAction"
           },
-          "value_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Value Id"
+          "departments": {
+            "$ref": "#/components/schemas/ProviderMultiResourceAction"
           },
-          "endpoint_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Endpoint Id"
+          "values": {
+            "$ref": "#/components/schemas/ProviderResourceAction"
           },
-          "key_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Key Id"
+          "endpoints": {
+            "$ref": "#/components/schemas/ProviderResourceAction"
           },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
+          "keys": {
+            "$ref": "#/components/schemas/ProviderResourceAction"
           }
         },
         "type": "object",
         "required": [
-          "group_id",
-          "name_id",
-          "value_id"
+          "names",
+          "descriptions",
+          "flags",
+          "departments",
+          "values",
+          "endpoints",
+          "keys"
         ],
         "title": "SaveProviderApiRequest",
         "description": "Request model for save provider endpoint."
@@ -104640,51 +105496,6 @@
       },
       "SaveSettingApiRequest": {
         "properties": {
-          "name_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Name Id"
-          },
-          "color_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "title": "Color Ids"
-          },
-          "department_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "title": "Department Ids"
-          },
-          "auth_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "title": "Auth Ids"
-          },
-          "provider_key_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "title": "Provider Key Ids"
-          },
-          "key_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "title": "Key Ids"
-          },
           "input_setting_id": {
             "anyOf": [
               {
@@ -104696,6 +105507,51 @@
               }
             ],
             "title": "Input Setting Id"
+          },
+          "name_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Name Id"
+          },
+          "description_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description Id"
+          },
+          "color_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Color Ids"
+          },
+          "active_flag_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Flag Id"
+          },
+          "department_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Department Ids"
           },
           "profile_ids": {
             "anyOf": [
@@ -104712,29 +105568,50 @@
             ],
             "title": "Profile Ids"
           },
-          "description_id": {
+          "auth_ids": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Description Id"
+            "title": "Auth Ids"
           },
-          "active_flag_id": {
+          "provider_key_ids": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Active Flag Id"
+            "title": "Provider Key Ids"
+          },
+          "auth_key_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Key Ids"
           },
           "role_ids": {
             "anyOf": [
@@ -104751,7 +105628,7 @@
             ],
             "title": "Role Ids"
           },
-          "route_ids": {
+          "role_route_ids": {
             "anyOf": [
               {
                 "items": {
@@ -104764,17 +105641,14 @@
                 "type": "null"
               }
             ],
-            "title": "Route Ids"
+            "title": "Role Route Ids"
           }
         },
         "type": "object",
         "required": [
           "name_id",
           "color_ids",
-          "department_ids",
-          "auth_ids",
-          "provider_key_ids",
-          "key_ids"
+          "department_ids"
         ],
         "title": "SaveSettingApiRequest"
       },
@@ -108098,6 +108972,82 @@
         "type": "object",
         "title": "SearchArgsOutputsApiResponse"
       },
+      "SearchAuthKeysApiRequest": {
+        "properties": {
+          "search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Search"
+          },
+          "limit_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limit Count",
+            "default": 20
+          },
+          "offset_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Offset Count",
+            "default": 0
+          },
+          "exclude_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exclude Ids"
+          }
+        },
+        "type": "object",
+        "title": "SearchAuthKeysApiRequest"
+      },
+      "SearchAuthKeysApiResponse": {
+        "properties": {
+          "items": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetAuthKeysV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "title": "SearchAuthKeysApiResponse"
+      },
       "SearchCohortsApiRequest": {
         "properties": {
           "search": {
@@ -109764,6 +110714,82 @@
         },
         "type": "object",
         "title": "SearchProtocolsApiResponse"
+      },
+      "SearchProviderKeysApiRequest": {
+        "properties": {
+          "search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Search"
+          },
+          "limit_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limit Count",
+            "default": 20
+          },
+          "offset_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Offset Count",
+            "default": 0
+          },
+          "exclude_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exclude Ids"
+          }
+        },
+        "type": "object",
+        "title": "SearchProviderKeysApiRequest"
+      },
+      "SearchProviderKeysApiResponse": {
+        "properties": {
+          "items": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetProviderKeysV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "title": "SearchProviderKeysApiResponse"
       },
       "SearchQualitiesApiRequest": {
         "properties": {

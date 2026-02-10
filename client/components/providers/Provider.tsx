@@ -27,6 +27,12 @@ import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import { useGenerationModal } from "@/hooks/use-generation-modal";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import {
+  buildResourceActions,
+  checkHasResourceIds,
+  computeEffectiveFormState,
+  type ResourceConfig,
+} from "@/lib/resources/action-builders";
 import type { ResourceType } from "@/lib/resources/types";
 import type { Parser } from "nuqs";
 import { parseAsString } from "nuqs";
@@ -38,6 +44,8 @@ type PatchProviderDraftOut = OutputOf<
   "/api/v4/artifacts/providers/draft",
   "patch"
 >;
+type SaveProviderBody = SaveProviderIn["body"];
+type PatchProviderDraftBody = PatchProviderDraftIn["body"];
 type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
@@ -57,12 +65,31 @@ type ProviderFormState = {
   description_id: string | null;
   active_flag_id: string | null;
   department_ids: string[];
-  value_ids: string[];
-  endpoint_ids: string[];
+  value_id: string | null;
+  endpoint_id: string | null;
   key_id: string | null;
 };
 
 const FLUSH_KEYS = ["names", "descriptions", "values"] as const;
+const PROVIDER_RESOURCE_CONFIG: ResourceConfig[] = [
+  { key: "names", formKey: "name_id", flushKey: "name_id", type: "single" },
+  {
+    key: "descriptions",
+    formKey: "description_id",
+    flushKey: "description_id",
+    type: "single",
+  },
+  { key: "flags", formKey: "active_flag_id", flushKey: null, type: "single" },
+  {
+    key: "departments",
+    formKey: "department_ids",
+    flushKey: null,
+    type: "multi",
+  },
+  { key: "values", formKey: "value_id", flushKey: null, type: "single" },
+  { key: "endpoints", formKey: "endpoint_id", flushKey: null, type: "single" },
+  { key: "keys", formKey: "key_id", flushKey: null, type: "single" },
+];
 const PROVIDER_RESOURCES: ResourceType[] = [
   "names",
   "descriptions",
@@ -117,8 +144,8 @@ export default function Provider({
         description_id: null,
         active_flag_id: null,
         department_ids: [],
-        value_ids: [],
-        endpoint_ids: [],
+        value_id: null,
+        endpoint_id: null,
         key_id: null,
       };
     }
@@ -129,21 +156,22 @@ export default function Provider({
       department_ids: (s.departments?.current ?? [])
         .map((d) => d.department_id as string)
         .filter(Boolean),
-      value_ids: s.values?.resource?.id ? [s.values.resource.id as string] : [],
-      endpoint_ids: s.endpoints?.resource?.id
-        ? [s.endpoints.resource.id as string]
-        : [],
+      value_id: (s.values?.resource?.id as string) ?? null,
+      endpoint_id: (s.endpoints?.resource?.id as string) ?? null,
       key_id: (s.keys?.resource?.id as string) ?? null,
     };
   }, [s]);
 
   const [formState, setFormState] = useState<ProviderFormState>(getInitialFormState);
+  const referenceStateRef = React.useRef<ProviderFormState>(getInitialFormState());
   const formStateRef = React.useRef(formState);
   useEffect(() => {
     formStateRef.current = formState;
   }, [formState]);
   useEffect(() => {
-    setFormState(getInitialFormState());
+    const initial = getInitialFormState();
+    setFormState(initial);
+    referenceStateRef.current = initial;
   }, [getInitialFormState]);
 
   const { setGeneratingResources, isGenerating } = useAiGeneration<
@@ -170,11 +198,11 @@ export default function Provider({
           const flagResource = data["flag_resource"] as { id?: string } | undefined;
           if (flagResource?.id) next["active_flag_id"] = flagResource.id;
           const valueResource = data["value_resource"] as { id?: string } | undefined;
-          if (valueResource?.id) next["value_ids"] = [valueResource.id];
+          if (valueResource?.id) next["value_id"] = valueResource.id;
           const endpointResource = data["endpoint_resource"] as
             | { id?: string }
             | undefined;
-          if (endpointResource?.id) next["endpoint_ids"] = [endpointResource.id];
+          if (endpointResource?.id) next["endpoint_id"] = endpointResource.id;
           const departmentResources = data["department_resources"] as
             | Array<{ department_id?: string }>
             | undefined;
@@ -213,14 +241,10 @@ export default function Provider({
     }
   }, [patchProviderDraftAction]);
 
-  const hasResourceIds =
-    !!formState.name_id ||
-    !!formState.description_id ||
-    !!formState.active_flag_id ||
-    formState.department_ids.length > 0 ||
-    formState.value_ids.length > 0 ||
-    formState.endpoint_ids.length > 0 ||
-    !!formState.key_id;
+  const hasResourceIds = checkHasResourceIds(
+    PROVIDER_RESOURCE_CONFIG,
+    formState as unknown as Record<string, unknown>
+  );
 
   const { setUrlFormDataRef, onFormDataChange, flushAllAndSave, formDataRef } =
     useDraftLifecycle({
@@ -231,24 +255,31 @@ export default function Provider({
         inputDraftId: string | null,
         expectedVersion: number,
         flushResults?: Record<string, unknown>
-      ) => ({
-        input_draft_id: inputDraftId,
-        name_id:
-          (flushResults?.["name_id"] as string | null | undefined) ??
-          formStateRef.current.name_id,
-        description_id:
-          (flushResults?.["description_id"] as string | null | undefined) ??
-          formStateRef.current.description_id,
-        active_flag_id: formStateRef.current.active_flag_id,
-        department_ids: formStateRef.current.department_ids,
-        value_id:
-          (flushResults?.["value_ids"] as string[] | undefined)?.[0] ??
-          formStateRef.current.value_ids[0] ??
-          null,
-        endpoint_id: formStateRef.current.endpoint_ids[0] ?? null,
-        key_id: formStateRef.current.key_id ?? null,
-        expected_version: expectedVersion,
-      }),
+      ) => {
+        const effectiveState = computeEffectiveFormState(
+          PROVIDER_RESOURCE_CONFIG,
+          formStateRef.current as unknown as Record<string, unknown>,
+          flushResults ?? {}
+        );
+        const resourceActions = buildResourceActions(PROVIDER_RESOURCE_CONFIG, {
+          formState: effectiveState,
+          referenceState: referenceStateRef.current as unknown as Record<
+            string,
+            unknown
+          >,
+          flushResults: flushResults ?? {},
+          entityData: s as unknown as Record<string, unknown> | null,
+        }) as Omit<
+          PatchProviderDraftBody,
+          "input_draft_id" | "group_id" | "expected_version"
+        >;
+        return {
+          input_draft_id: inputDraftId,
+          group_id: groupId,
+          ...resourceActions,
+          expected_version: expectedVersion,
+        } as PatchProviderDraftBody;
+      },
       setSelectedDraftId,
       serverDraftVersion: s?.draft_version ?? null,
       hasResourceIds,
@@ -337,29 +368,29 @@ export default function Provider({
     if (!saveProviderAction) return;
     let flushResults: Record<string, unknown> = {};
     if (!isAutosaveEnabled) flushResults = await flushAllResources();
-    const nameId =
-      (flushResults["name_id"] as string | null | undefined) ??
-      formStateRef.current.name_id;
-    const valueId =
-      (flushResults["value_ids"] as string[] | undefined)?.[0] ??
-      formStateRef.current.value_ids[0] ??
-      null;
+    const effectiveState = computeEffectiveFormState(
+      PROVIDER_RESOURCE_CONFIG,
+      formStateRef.current as unknown as Record<string, unknown>,
+      flushResults
+    );
+    const nameId = effectiveState["name_id"] as string | null;
+    const valueId = effectiveState["value_id"] as string | null;
     if (!nameId) throw new Error("Name is required");
     if (!valueId) throw new Error("Value is required");
+    const saveActions = buildResourceActions(PROVIDER_RESOURCE_CONFIG, {
+      formState: effectiveState,
+      referenceState: isEditMode
+        ? (referenceStateRef.current as unknown as Record<string, unknown>)
+        : null,
+      flushResults,
+      entityData: s as unknown as Record<string, unknown> | null,
+    }) as Omit<SaveProviderBody, "input_provider_id" | "group_id">;
     await saveProviderAction({
       body: {
         input_provider_id: providerId ?? null,
-        group_id: groupId || "",
-        name_id: nameId,
-        description_id:
-          (flushResults["description_id"] as string | null | undefined) ??
-          formStateRef.current.description_id,
-        active_flag_id: formStateRef.current.active_flag_id,
-        department_ids: formStateRef.current.department_ids,
-        value_id: valueId,
-        endpoint_id: formStateRef.current.endpoint_ids[0] ?? null,
-        key_id: formStateRef.current.key_id,
-      },
+        group_id: groupId,
+        ...saveActions,
+      } as SaveProviderBody,
     });
     toast.success(isEditMode ? "Provider updated" : "Provider created");
     router.push("/intelligence/providers");
@@ -415,11 +446,11 @@ export default function Provider({
     (stepId: string): StepStatus => {
       if (stepId === "basic") return formState.name_id ? "completed" : "active";
       if (stepId === "integrations") {
-        return formState.value_ids.length > 0 ? "completed" : "pending";
+        return formState.value_id ? "completed" : "pending";
       }
       return "pending";
     },
-    [formState.name_id, formState.value_ids.length]
+    [formState.name_id, formState.value_id]
   );
 
   const NamesAny = Names as any;
@@ -557,7 +588,7 @@ export default function Provider({
           }
         >
           <ValuesAny
-            value_ids={formState.value_ids}
+            value_ids={formState.value_id ? [formState.value_id] : []}
             value_resources={
               s?.values?.resource
                 ? [
@@ -592,11 +623,11 @@ export default function Provider({
               >
             )["values"]}
             onChange={(ids: string[]) =>
-              setFormState((prev) => ({ ...prev, value_ids: ids.slice(0, 1) }))
+              setFormState((prev) => ({ ...prev, value_id: ids[0] ?? null }))
             }
           />
           <EndpointsAny
-            endpoint_ids={formState.endpoint_ids}
+            endpoint_ids={formState.endpoint_id ? [formState.endpoint_id] : []}
             endpoint_resources={
               s?.endpoints?.resource
                 ? [
@@ -624,8 +655,8 @@ export default function Provider({
             link_tool_id={s?.endpoints?.link_tool_id}
             showAiGenerate={s?.endpoints?.show_ai_generate}
             onChange={(ids: string[]) =>
-                setFormState((prev) => ({ ...prev, endpoint_ids: ids.slice(0, 1) }))
-              }
+              setFormState((prev) => ({ ...prev, endpoint_id: ids[0] ?? null }))
+            }
           />
           <KeysAny
             key_id={formState.key_id}

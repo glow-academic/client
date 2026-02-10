@@ -327,7 +327,7 @@ function AuthComponent({
   const hasResourceIds = checkHasResourceIds(
     AUTH_RESOURCES,
     formState as unknown as Record<string, unknown>,
-  );
+  ) || formState.items.length > 0;
 
   const buildPatchPayload = useCallback(
     (
@@ -343,6 +343,14 @@ function AuthComponent({
         flushResults: flushResults ?? {},
         entityData: s as Record<string, unknown> | null,
       }),
+      items: {
+        items:
+          ((formStateRef.current["items"] as AuthFormState["items"]) ?? []).length > 0
+            ? ((formStateRef.current["items"] as AuthFormState["items"]) ?? [])
+            : null,
+        create_tool_id: s?.items?.create_tool_id ?? null,
+        link_tool_id: s?.items?.link_tool_id ?? null,
+      },
       expected_version: expectedVersion,
     }),
     [s],

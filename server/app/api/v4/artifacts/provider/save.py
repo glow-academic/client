@@ -93,7 +93,7 @@ async def save_provider(
         if not request.input_provider_id:
             can_save_result = compute_can_create(
                 user_role=access_result.user_role,
-                department_ids=request.department_ids,  # Validated in SQL
+                department_ids=request.departments.resource_ids,  # Validated in SQL
             )
         else:
             can_save_result = compute_can_save(
@@ -111,10 +111,7 @@ async def save_provider(
 
         async with conn.transaction():
             # Convert API request to SQL params (add profile_id from header)
-            params = SaveProviderSqlParams(
-                **request.model_dump(),
-                profile_id=profile_id,
-            )
+            params = SaveProviderSqlParams.from_request(request, profile_id=profile_id)
             sql_params = params.to_tuple()
 
             # Execute SQL with typed helper

@@ -1140,6 +1140,39 @@ Schema alignment notes:
   - Auth socket `progress`/`error` handlers are scoped to call-based generation events and filtered to valid auth resource types.
   - No auth-specific legacy text/run completion side paths in artifact socket handlers.
 
+### 17-Artifact Audit Snapshot (2026-02-10)
+
+Canonical audit output is tracked in:
+- `ARTIFACT_RESOURCE_AUDIT.md`
+
+Current highest-priority parity gaps identified:
+- `setting` still uses legacy flat save/draft payloads and mixed legacy response fields.
+- `eval` still uses mixed legacy-style response/tool-id fields and manual payload assembly.
+- `auth` has `items` in save contract but not draft contract.
+- Product-requested parity candidates still pending:
+  - rubric typed flags (e.g. simulation/benchmark rubric mode),
+  - profile route-resource scope confirmation,
+  - setting MCP consistency across get/save/draft/generation.
+
+Execution order for one-pass migration:
+1. `setting` + `eval` contract migrations.
+2. `auth.items` draft parity.
+3. rubric/profile/setting requested parity additions.
+4. cleanup simplification for remaining partial-parity artifacts.
+
+### Provider Migration Snapshot (2026-02-10)
+
+- `provider` is now hard-migrated to section-action contracts for both save and draft:
+  - `names`, `descriptions`, `flags`, `departments`, `values`, `endpoints`, `keys`
+  - action shapes:
+    - single: `{ resource_id, create_tool_id, link_tool_id }`
+    - multi: `{ resource_ids, create_tool_id, link_tool_id }`
+- Frontend `Provider.tsx` now builds save/draft payloads using:
+  - `buildResourceActions`
+  - `computeEffectiveFormState`
+  - `checkHasResourceIds`
+- Provider SQL save now records tool-call lineage (`create_tool_id` / `link_tool_id`) into `calls_entry` and `*_calls_connection` tables for all persisted resource sections.
+
 ### Settings Artifact Resource Contract (Post-Migration)
 
 Persisted settings resources:

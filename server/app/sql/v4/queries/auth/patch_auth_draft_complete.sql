@@ -23,6 +23,31 @@ EXCEPTION WHEN OTHERS THEN NULL;
 END $$;
 
 DO $$
+BEGIN
+    DROP TYPE IF EXISTS types.auth_item_input CASCADE;
+    CREATE TYPE types.auth_item_input AS (
+        name text,
+        description text,
+        encrypted boolean,
+        position integer,
+        active boolean,
+        key_id uuid
+    );
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
+DO $$
+BEGIN
+    DROP TYPE IF EXISTS types.auth_item_action CASCADE;
+    CREATE TYPE types.auth_item_action AS (
+        items types.auth_item_input[],
+        create_tool_id uuid,
+        link_tool_id uuid
+    );
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
+DO $$
 DECLARE
     r RECORD;
 BEGIN
@@ -45,6 +70,7 @@ CREATE OR REPLACE FUNCTION api_patch_auth_draft_v4(
     flags types.auth_resource_action DEFAULT NULL,
     protocols types.auth_multi_resource_action DEFAULT NULL,
     slugs types.auth_multi_resource_action DEFAULT NULL,
+    items types.auth_item_action DEFAULT NULL,
     expected_version int DEFAULT 0
 )
 RETURNS TABLE (
@@ -68,6 +94,7 @@ DECLARE
     v_active_flag_id uuid := (flags).resource_id;
     v_protocol_ids uuid[] := COALESCE((protocols).resource_ids, ARRAY[]::uuid[]);
     v_slug_ids uuid[] := COALESCE((slugs).resource_ids, ARRAY[]::uuid[]);
+    v_items types.auth_item_input[] := COALESCE((items).items, ARRAY[]::types.auth_item_input[]);
 
     v_run_id uuid;
     v_call_id uuid;
@@ -157,6 +184,7 @@ BEGIN
     DELETE FROM flags_drafts_connection WHERE draft_id = v_draft_id;
     DELETE FROM protocols_drafts_connection WHERE draft_id = v_draft_id;
     DELETE FROM slugs_drafts_connection WHERE draft_id = v_draft_id;
+    DELETE FROM items_drafts_connection WHERE draft_id = v_draft_id;
 
     IF v_name_id IS NOT NULL THEN
         INSERT INTO names_drafts_connection (draft_id, names_id, version)
@@ -193,6 +221,49 @@ BEGIN
         FROM unnest(v_slug_ids) AS slug_id
         ON CONFLICT ON CONSTRAINT slugs_draft_pkey DO UPDATE
         SET version = v_new_version;
+    END IF;
+
+    IF COALESCE(array_length(v_items, 1), 0) > 0 THEN
+        WITH items_expanded AS (
+            SELECT
+                row_number() OVER () AS item_idx,
+                item.name AS item_name,
+                item.description AS item_description,
+                COALESCE(item.encrypted, true) AS item_encrypted,
+                COALESCE(item.position, row_number() OVER ()) AS item_position,
+                COALESCE(item.active, true) AS item_active
+            FROM unnest(v_items) AS item
+        ),
+        created_items AS (
+            INSERT INTO items_resource (
+                name,
+                description,
+                encrypted,
+                position,
+                active,
+                created_at
+            )
+            SELECT
+                ie.item_name,
+                ie.item_description,
+                ie.item_encrypted,
+                ie.item_position,
+                ie.item_active,
+                NOW()
+            FROM items_expanded ie
+            RETURNING id
+        ),
+        indexed_items AS (
+            SELECT row_number() OVER (ORDER BY id) AS item_idx, id
+            FROM created_items
+        )
+        INSERT INTO items_drafts_connection (draft_id, items_id, version, created_at, active)
+        SELECT v_draft_id, ii.id, v_new_version, NOW(), true
+        FROM indexed_items ii
+        ON CONFLICT ON CONSTRAINT items_draft_pkey DO UPDATE
+        SET version = v_new_version,
+            created_at = NOW(),
+            active = true;
     END IF;
 
     INSERT INTO runs_entry (id, input_tokens, output_tokens, cached_input_tokens, group_id, created_at, updated_at)
@@ -285,6 +356,29 @@ BEGIN
             INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((slugs).link_tool_id, v_call_id);
             INSERT INTO slugs_calls_connection (slugs_id, call_id)
             SELECT slug_id, v_call_id FROM unnest(v_slug_ids) AS slug_id;
+        END IF;
+    END IF;
+
+    IF COALESCE(array_length(v_items, 1), 0) > 0 THEN
+        IF (items).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'auth_draft_create_items_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((items).create_tool_id, v_call_id);
+            INSERT INTO items_calls_connection (items_id, call_id)
+            SELECT idc.items_id, v_call_id
+            FROM items_drafts_connection idc
+            WHERE idc.draft_id = v_draft_id;
+        END IF;
+        IF (items).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'auth_draft_link_items_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((items).link_tool_id, v_call_id);
+            INSERT INTO items_calls_connection (items_id, call_id)
+            SELECT idc.items_id, v_call_id
+            FROM items_drafts_connection idc
+            WHERE idc.draft_id = v_draft_id;
         END IF;
     END IF;
 

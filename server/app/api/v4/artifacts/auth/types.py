@@ -297,6 +297,7 @@ class PatchAuthDraftApiRequest(BaseModel):
     flags: AuthResourceAction | None = None
     protocols: AuthMultiResourceAction | None = None
     slugs: AuthMultiResourceAction | None = None
+    items: AuthItemAction | None = None
     expected_version: int = 0
 
 
@@ -320,6 +321,7 @@ class PatchAuthDraftSqlParams(BaseModel):
     flags: AuthResourceAction
     protocols: AuthMultiResourceAction
     slugs: AuthMultiResourceAction
+    items: AuthItemAction
     expected_version: int = 0
 
     @classmethod
@@ -337,6 +339,7 @@ class PatchAuthDraftSqlParams(BaseModel):
             flags=request.flags or empty_single,
             protocols=request.protocols or empty_multi,
             slugs=request.slugs or empty_multi,
+            items=request.items or AuthItemAction(items=[]),
             expected_version=request.expected_version,
         )
 
@@ -347,6 +350,20 @@ class PatchAuthDraftSqlParams(BaseModel):
         def multi(a: AuthMultiResourceAction) -> tuple:
             return (a.resource_ids, a.create_tool_id, a.link_tool_id)
 
+        def item_input(i: SaveAuthItemInput) -> tuple:
+            return (
+                i.name,
+                i.description,
+                i.encrypted,
+                i.position,
+                i.active,
+                i.key_id,
+            )
+
+        def items_action(a: AuthItemAction) -> tuple:
+            item_rows = [item_input(i) for i in (a.items or [])]
+            return (item_rows, a.create_tool_id, a.link_tool_id)
+
         return (
             self.profile_id,
             self.input_draft_id,
@@ -356,6 +373,7 @@ class PatchAuthDraftSqlParams(BaseModel):
             single(self.flags),
             multi(self.protocols),
             multi(self.slugs),
+            items_action(self.items),
             self.expected_version,
         )
 

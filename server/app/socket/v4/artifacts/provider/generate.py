@@ -245,7 +245,7 @@ async def _provider_generate_impl(
             if not pool:
                 raise RuntimeError("Database pool not initialized")
 
-            async def fetch_tools():
+            async def fetch_tools() -> list[Any]:
                 async with pool.acquire() as c:
                     tools_params = GetAgentToolsSqlParams(
                         p_agent_id=agent_id,
@@ -259,7 +259,7 @@ async def _provider_generate_impl(
                     )
                     return tools_row.tools if tools_row else []
 
-            async def fetch_system_prompt():
+            async def fetch_system_prompt() -> str:
                 prompt_id = (
                     agent_resource.prompt_id
                     if hasattr(agent_resource, "prompt_id")
@@ -273,7 +273,7 @@ async def _provider_generate_impl(
                         return prompts[0].system_prompt
                     return ""
 
-            async def fetch_developer_instructions():
+            async def fetch_developer_instructions() -> list[str]:
                 instruction_ids = (
                     agent_resource.instruction_ids
                     if hasattr(agent_resource, "instruction_ids")

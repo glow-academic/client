@@ -3924,6 +3924,24 @@ class GetLoginDataApiResponse(BaseModel):
 
 # Generated from: patch_auth_draft
 
+class AuthItemInput(BaseModel):
+
+    name: str | None
+    description: str | None
+    encrypted: bool | None
+    position: int | None
+    active: bool | None
+    key_id: UUID | None
+
+class AuthItemAction(BaseModel):
+
+    items: list[AuthItemInput] | None
+    create_tool_id: UUID | None
+    link_tool_id: UUID | None
+
+
+
+
 class AuthMultiResourceAction(BaseModel):
 
     resource_ids: list[UUID] | None
@@ -3949,6 +3967,7 @@ class PatchAuthDraftSqlParams(BaseModel):
     flags: AuthResourceAction | None = None
     protocols: AuthMultiResourceAction | None = None
     slugs: AuthMultiResourceAction | None = None
+    items: AuthItemAction | None = None
     expected_version: int | None = 0
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -3961,6 +3980,7 @@ class PatchAuthDraftSqlParams(BaseModel):
             self.flags,
             self.protocols,
             self.slugs,
+            self.items,
             self.expected_version,
         )
 
@@ -3979,6 +3999,7 @@ class PatchAuthDraftApiRequest(BaseModel):
     flags: AuthResourceAction | None = None
     protocols: AuthMultiResourceAction | None = None
     slugs: AuthMultiResourceAction | None = None
+    items: AuthItemAction | None = None
     expected_version: int | None = 0
 
 class PatchAuthDraftApiResponse(BaseModel):
@@ -4052,24 +4073,6 @@ class ResolveDefaultIdpProfileApiResponse(BaseModel):
 
 
 # Generated from: save_auth
-
-class AuthItemInput(BaseModel):
-
-    name: str | None
-    description: str | None
-    encrypted: bool | None
-    position: int | None
-    active: bool | None
-    key_id: UUID | None
-
-class AuthItemAction(BaseModel):
-
-    items: list[AuthItemInput] | None
-    create_tool_id: UUID | None
-    link_tool_id: UUID | None
-
-
-
 
 class SaveAuthSqlParams(BaseModel):
 
@@ -14678,30 +14681,47 @@ class GetProvidersListApiResponse(BaseModel):
 
 # Generated from: patch_provider_draft
 
+class ProviderMultiResourceAction(BaseModel):
+
+    resource_ids: list[UUID] | None
+    create_tool_id: UUID | None
+    link_tool_id: UUID | None
+
+
+
+
+class ProviderResourceAction(BaseModel):
+
+    resource_id: UUID | None
+    create_tool_id: UUID | None
+    link_tool_id: UUID | None
+
 class PatchProviderDraftSqlParams(BaseModel):
 
     profile_id: UUID
     input_draft_id: UUID | None = None
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    value_id: UUID | None = None
-    endpoint_id: UUID | None = None
-    key_id: UUID | None = None
-    department_ids: list[UUID] | None = None
+    group_id: UUID | None = None
+    names: ProviderResourceAction | None = None
+    descriptions: ProviderResourceAction | None = None
+    flags: ProviderResourceAction | None = None
+    departments: ProviderMultiResourceAction | None = None
+    values_action: ProviderResourceAction | None = None
+    endpoints: ProviderResourceAction | None = None
+    keys: ProviderResourceAction | None = None
     expected_version: int | None = 0
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
             self.input_draft_id,
-            self.name_id,
-            self.description_id,
-            self.active_flag_id,
-            self.value_id,
-            self.endpoint_id,
-            self.key_id,
-            self.department_ids,
+            self.group_id,
+            self.names,
+            self.descriptions,
+            self.flags,
+            self.departments,
+            self.values_action,
+            self.endpoints,
+            self.keys,
             self.expected_version,
         )
 
@@ -14714,13 +14734,14 @@ class PatchProviderDraftSqlRow(BaseModel):
 class PatchProviderDraftApiRequest(BaseModel):
 
     input_draft_id: UUID | None = None
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    value_id: UUID | None = None
-    endpoint_id: UUID | None = None
-    key_id: UUID | None = None
-    department_ids: list[UUID] | None = None
+    group_id: UUID | None = None
+    names: ProviderResourceAction | None = None
+    descriptions: ProviderResourceAction | None = None
+    flags: ProviderResourceAction | None = None
+    departments: ProviderMultiResourceAction | None = None
+    values_action: ProviderResourceAction | None = None
+    endpoints: ProviderResourceAction | None = None
+    keys: ProviderResourceAction | None = None
     expected_version: int | None = 0
 
 class PatchProviderDraftApiResponse(BaseModel):
@@ -14738,26 +14759,26 @@ class SaveProviderSqlParams(BaseModel):
     profile_id: UUID
     group_id: UUID
     input_provider_id: UUID | None = None
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    value_id: UUID | None = None
-    endpoint_id: UUID | None = None
-    key_id: UUID | None = None
-    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    names: ProviderResourceAction | None = None
+    descriptions: ProviderResourceAction | None = None
+    flags: ProviderResourceAction | None = None
+    departments: ProviderMultiResourceAction | None = None
+    values_action: ProviderResourceAction | None = None
+    endpoints: ProviderResourceAction | None = None
+    keys: ProviderResourceAction | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
             self.group_id,
             self.input_provider_id,
-            self.name_id,
-            self.description_id,
-            self.active_flag_id,
-            self.value_id,
-            self.endpoint_id,
-            self.key_id,
-            self.department_ids,
+            self.names,
+            self.descriptions,
+            self.flags,
+            self.departments,
+            self.values_action,
+            self.endpoints,
+            self.keys,
         )
 
 class SaveProviderSqlRow(BaseModel):
@@ -14769,13 +14790,13 @@ class SaveProviderApiRequest(BaseModel):
 
     group_id: UUID
     input_provider_id: UUID | None = None
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    value_id: UUID | None = None
-    endpoint_id: UUID | None = None
-    key_id: UUID | None = None
-    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    names: ProviderResourceAction | None = None
+    descriptions: ProviderResourceAction | None = None
+    flags: ProviderResourceAction | None = None
+    departments: ProviderMultiResourceAction | None = None
+    values_action: ProviderResourceAction | None = None
+    endpoints: ProviderResourceAction | None = None
+    keys: ProviderResourceAction | None = None
 
 class SaveProviderApiResponse(BaseModel):
 

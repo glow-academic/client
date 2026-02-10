@@ -187,6 +187,20 @@ slug_ids_data AS (
 auth_item_ids_data AS (
     SELECT
         CASE
+            WHEN (SELECT draft_id FROM params) IS NOT NULL AND EXISTS (
+                SELECT 1
+                FROM items_drafts_connection idc
+                WHERE idc.draft_id = (SELECT draft_id FROM params)
+            )
+                THEN COALESCE(
+                    (
+                        SELECT ARRAY_AGG(idc.items_id ORDER BY i.position)
+                        FROM items_drafts_connection idc
+                        JOIN items_resource i ON i.id = idc.items_id
+                        WHERE idc.draft_id = (SELECT draft_id FROM params)
+                    ),
+                    ARRAY[]::uuid[]
+                )
             WHEN (SELECT auth_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
                 (SELECT ARRAY_AGG(aij.item_id ORDER BY i.position)
