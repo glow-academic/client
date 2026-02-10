@@ -730,38 +730,6 @@ class GetAgentsListApiResponse(BaseModel):
 
 
 
-# Generated from: get_artifact_agent_ids
-
-class GetArtifactAgentIdsSqlParams(BaseModel):
-
-    profile_id: UUID | None = None
-    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.user_department_ids,
-        )
-
-class QGetArtifactAgentIdsV4Item(BaseModel):
-
-    artifact: str | None
-    general_agent_id: UUID | None
-
-class GetArtifactAgentIdsSqlRow(BaseModel):
-
-    items: list[QGetArtifactAgentIdsV4Item] | None = None
-
-class GetArtifactAgentIdsApiRequest(BaseModel):
-
-    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-class GetArtifactAgentIdsApiResponse(BaseModel):
-
-    items: list[QGetArtifactAgentIdsV4Item] | None = None
-
-
-
 # Generated from: patch_agent_draft
 
 class PatchAgentDraftSqlParams(BaseModel):
@@ -7936,155 +7904,6 @@ class SaveFieldApiResponse(BaseModel):
 
 
 
-# Generated from: get_attempt_grade_context
-
-class GetAttemptGradeContextSqlParams(BaseModel):
-
-    p_profile_id: UUID
-    p_simulation_id: UUID
-    p_attempt_id: UUID
-    p_chat_id: UUID | None = None
-    p_entry_types: list[str] | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_profile_id,
-            self.p_simulation_id,
-            self.p_attempt_id,
-            self.p_chat_id,
-            self.p_entry_types,
-        )
-
-class GetAttemptGradeContextSqlRow(BaseModel):
-
-    agent_exists: bool | None = None
-    agent_name: str | None = None
-    agent_is_active: bool | None = None
-    model_id: UUID | None = None
-    model_name: str | None = None
-    provider_id: UUID | None = None
-    provider_name: str | None = None
-    has_api_key: bool | None = None
-    requests_per_day: int | None = None
-    runs_today: int | None = None
-    simulation_exists: bool | None = None
-    simulation_is_active: bool | None = None
-    simulation_id: UUID | None = None
-    simulation_name: str | None = None
-    profile_has_access: bool | None = None
-    attempt_exists: bool | None = None
-    attempt_id: UUID | None = None
-    valid_entry_types: list[str] | None = None
-
-class GetAttemptGradeContextApiRequest(BaseModel):
-
-    p_profile_id: UUID
-    p_simulation_id: UUID
-    p_attempt_id: UUID
-    p_chat_id: UUID | None = None
-    p_entry_types: list[str] | None = None
-
-class GetAttemptGradeContextApiResponse(BaseModel):
-
-    agent_exists: bool | None = None
-    agent_name: str | None = None
-    agent_is_active: bool | None = None
-    model_id: UUID | None = None
-    model_name: str | None = None
-    provider_id: UUID | None = None
-    provider_name: str | None = None
-    has_api_key: bool | None = None
-    requests_per_day: int | None = None
-    runs_today: int | None = None
-    simulation_exists: bool | None = None
-    simulation_is_active: bool | None = None
-    simulation_id: UUID | None = None
-    simulation_name: str | None = None
-    profile_has_access: bool | None = None
-    attempt_exists: bool | None = None
-    attempt_id: UUID | None = None
-    valid_entry_types: list[str] | None = None
-
-
-
-# Generated from: get_attempt_message_context
-
-class GetAttemptMessageContextSqlParams(BaseModel):
-
-    p_profile_id: UUID
-    p_simulation_id: UUID
-    p_chat_id: UUID
-    p_entry_types: list[str] | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_profile_id,
-            self.p_simulation_id,
-            self.p_chat_id,
-            self.p_entry_types,
-        )
-
-class GetAttemptMessageContextSqlRow(BaseModel):
-
-    agent_exists: bool | None = None
-    agent_name: str | None = None
-    agent_is_active: bool | None = None
-    model_id: UUID | None = None
-    model_name: str | None = None
-    provider_id: UUID | None = None
-    provider_name: str | None = None
-    has_api_key: bool | None = None
-    requests_per_day: int | None = None
-    runs_today: int | None = None
-    simulation_exists: bool | None = None
-    simulation_is_active: bool | None = None
-    simulation_id: UUID | None = None
-    simulation_name: str | None = None
-    profile_has_access: bool | None = None
-    attempt_exists: bool | None = None
-    attempt_is_active: bool | None = None
-    attempt_id: UUID | None = None
-    chat_exists: bool | None = None
-    chat_is_completed: bool | None = None
-    chat_id: UUID | None = None
-    hints_enabled: bool | None = None
-    valid_entry_types: list[str] | None = None
-
-class GetAttemptMessageContextApiRequest(BaseModel):
-
-    p_profile_id: UUID
-    p_simulation_id: UUID
-    p_chat_id: UUID
-    p_entry_types: list[str] | None = None
-
-class GetAttemptMessageContextApiResponse(BaseModel):
-
-    agent_exists: bool | None = None
-    agent_name: str | None = None
-    agent_is_active: bool | None = None
-    model_id: UUID | None = None
-    model_name: str | None = None
-    provider_id: UUID | None = None
-    provider_name: str | None = None
-    has_api_key: bool | None = None
-    requests_per_day: int | None = None
-    runs_today: int | None = None
-    simulation_exists: bool | None = None
-    simulation_is_active: bool | None = None
-    simulation_id: UUID | None = None
-    simulation_name: str | None = None
-    profile_has_access: bool | None = None
-    attempt_exists: bool | None = None
-    attempt_is_active: bool | None = None
-    attempt_id: UUID | None = None
-    chat_exists: bool | None = None
-    chat_is_completed: bool | None = None
-    chat_id: UUID | None = None
-    hints_enabled: bool | None = None
-    valid_entry_types: list[str] | None = None
-
-
-
 # Generated from: prepare_attempt_grade
 
 class PrepareAttemptGradeSqlParams(BaseModel):
@@ -8251,68 +8070,6 @@ class PrepareAttemptMessageApiResponse(BaseModel):
     tools: list[IAttemptMessageToolV4] | None = None
     developer_instruction_templates: list[str] | None = None
     chat_history: Any | None = None
-
-
-
-# Generated from: resolve_agent_by_entry_types
-
-class ResolveAgentByEntryTypesSqlParams(BaseModel):
-
-    p_agent_ids: list[UUID]
-    p_entry_types: list[str]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_agent_ids,
-            self.p_entry_types,
-        )
-
-class ResolveAgentByEntryTypesSqlRow(BaseModel):
-
-    resolved_agent_id: UUID | None = None
-    matching_count: int | None = None
-    error_code: str | None = None
-
-class ResolveAgentByEntryTypesApiRequest(BaseModel):
-
-    p_agent_ids: list[UUID]
-    p_entry_types: list[str]
-
-class ResolveAgentByEntryTypesApiResponse(BaseModel):
-
-    resolved_agent_id: UUID | None = None
-    matching_count: int | None = None
-    error_code: str | None = None
-
-
-
-# Generated from: resolve_attempt_entries
-
-class ResolveAttemptEntriesSqlParams(BaseModel):
-
-    p_profile_id: UUID
-    p_entry_types: list[str]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_profile_id,
-            self.p_entry_types,
-        )
-
-class ResolveAttemptEntriesSqlRow(BaseModel):
-
-    entry_type: str | None = None
-    agent_id: UUID | None = None
-
-class ResolveAttemptEntriesApiRequest(BaseModel):
-
-    p_profile_id: UUID
-    p_entry_types: list[str]
-
-class ResolveAttemptEntriesApiResponse(BaseModel):
-
-    entry_type: str | None = None
-    agent_id: UUID | None = None
 
 
 
@@ -9116,89 +8873,6 @@ class GetTrainingSimulationsApiResponse(BaseModel):
     items: list[QGetTrainingSimulationsV4Item] | None = None
     standard_groups: list[QGetTrainingSimulationsV4StandardGroup] | None = None
     standards: list[QGetTrainingSimulationsV4Standard] | None = None
-
-
-
-# Generated from: get_training_start_context
-
-class GetTrainingStartContextSqlParams(BaseModel):
-
-    p_profile_id: UUID
-    p_agent_id: UUID
-    p_simulation_id: UUID
-    p_scenario_id: UUID | None = None
-    p_entry_types: list[str] | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_profile_id,
-            self.p_agent_id,
-            self.p_simulation_id,
-            self.p_scenario_id,
-            self.p_entry_types,
-        )
-
-class GetTrainingStartContextSqlRow(BaseModel):
-
-    agent_exists: bool | None = None
-    agent_name: str | None = None
-    agent_is_active: bool | None = None
-    model_id: UUID | None = None
-    model_name: str | None = None
-    provider_id: UUID | None = None
-    provider_name: str | None = None
-    has_api_key: bool | None = None
-    requests_per_day: int | None = None
-    runs_today: int | None = None
-    simulation_exists: bool | None = None
-    simulation_is_active: bool | None = None
-    simulation_id: UUID | None = None
-    simulation_name: str | None = None
-    profile_has_access: bool | None = None
-    scenario_id: UUID | None = None
-    has_problem_statement: bool | None = None
-    has_persona: bool | None = None
-    problem_statement: str | None = None
-    objectives: Any | None = None
-    persona: Any | None = None
-    video_ids: list[UUID] | None = None
-    image_ids: list[UUID] | None = None
-    valid_entry_types: list[str] | None = None
-
-class GetTrainingStartContextApiRequest(BaseModel):
-
-    p_profile_id: UUID
-    p_agent_id: UUID
-    p_simulation_id: UUID
-    p_scenario_id: UUID | None = None
-    p_entry_types: list[str] | None = None
-
-class GetTrainingStartContextApiResponse(BaseModel):
-
-    agent_exists: bool | None = None
-    agent_name: str | None = None
-    agent_is_active: bool | None = None
-    model_id: UUID | None = None
-    model_name: str | None = None
-    provider_id: UUID | None = None
-    provider_name: str | None = None
-    has_api_key: bool | None = None
-    requests_per_day: int | None = None
-    runs_today: int | None = None
-    simulation_exists: bool | None = None
-    simulation_is_active: bool | None = None
-    simulation_id: UUID | None = None
-    simulation_name: str | None = None
-    profile_has_access: bool | None = None
-    scenario_id: UUID | None = None
-    has_problem_statement: bool | None = None
-    has_persona: bool | None = None
-    problem_statement: str | None = None
-    objectives: Any | None = None
-    persona: Any | None = None
-    video_ids: list[UUID] | None = None
-    image_ids: list[UUID] | None = None
-    valid_entry_types: list[str] | None = None
 
 
 
@@ -10310,31 +9984,6 @@ class InfraToolsCreateCallForToolApiRequest(BaseModel):
 class InfraToolsCreateCallForToolApiResponse(BaseModel):
 
     call_id: UUID | None = None
-
-
-
-# Generated from: infra_tools_get_entry_type_by_tool_id
-
-class InfraToolsGetEntryTypeByToolIdSqlParams(BaseModel):
-
-    tool_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.tool_id,
-        )
-
-class InfraToolsGetEntryTypeByToolIdSqlRow(BaseModel):
-
-    entry_type: str | None = None
-
-class InfraToolsGetEntryTypeByToolIdApiRequest(BaseModel):
-
-    tool_id: UUID
-
-class InfraToolsGetEntryTypeByToolIdApiResponse(BaseModel):
-
-    entry_type: str | None = None
 
 
 
@@ -13637,72 +13286,6 @@ class GetProfileApiResponse(BaseModel):
     cohorts: list[QGetProfileV4Cohort] | None = None
     basic_agent_id: UUID | None = None
     general_agent_id: UUID | None = None
-
-
-
-# Generated from: get_profile_context_access
-
-class GetProfileContextAccessSqlParams(BaseModel):
-
-    profile_id: UUID | None = None
-    department_id: str | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.department_id,
-        )
-
-class QGetProfileContextAccessV4ArtifactAgent(BaseModel):
-
-    artifact: str | None
-    agent_ids: list[UUID] | None
-
-class GetProfileContextAccessSqlRow(BaseModel):
-
-    is_authorized: bool | None = None
-    id: UUID | None = None
-    name: str | None = None
-    role: str | None = None
-    active: bool | None = None
-    primary_department_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    cohort_ids: list[UUID] | None = None
-    simulation_ids: list[UUID] | None = None
-    settings_id: UUID | None = None
-    draft_ids: list[UUID] | None = None
-    session_id: UUID | None = None
-    scoped_roles: list[str] | None = None
-    available_sections: list[str] | None = None
-    available_routes: list[str] | None = None
-    redirect_path: str | None = None
-    actor_name: str | None = None
-    artifact_agent_ids: list[QGetProfileContextAccessV4ArtifactAgent] | None = None
-
-class GetProfileContextAccessApiRequest(BaseModel):
-
-    department_id: str | None = None
-
-class GetProfileContextAccessApiResponse(BaseModel):
-
-    is_authorized: bool | None = None
-    id: UUID | None = None
-    name: str | None = None
-    role: str | None = None
-    active: bool | None = None
-    primary_department_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    cohort_ids: list[UUID] | None = None
-    simulation_ids: list[UUID] | None = None
-    settings_id: UUID | None = None
-    draft_ids: list[UUID] | None = None
-    session_id: UUID | None = None
-    scoped_roles: list[str] | None = None
-    available_sections: list[str] | None = None
-    available_routes: list[str] | None = None
-    redirect_path: str | None = None
-    actor_name: str | None = None
-    artifact_agent_ids: list[QGetProfileContextAccessV4ArtifactAgent] | None = None
 
 
 
@@ -28197,12 +27780,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetAgentsListApiRequest",
         "GetAgentsListApiResponse",
     ),
-    "app/sql/v4/queries/agents/get_artifact_agent_ids_complete.sql": (
-        "GetArtifactAgentIdsSqlParams",
-        "GetArtifactAgentIdsSqlRow",
-        "GetArtifactAgentIdsApiRequest",
-        "GetArtifactAgentIdsApiResponse",
-    ),
     "app/sql/v4/queries/agents/patch_agent_draft_complete.sql": (
         "PatchAgentDraftSqlParams",
         "PatchAgentDraftSqlRow",
@@ -28905,18 +28482,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SaveFieldApiRequest",
         "SaveFieldApiResponse",
     ),
-    "app/sql/v4/queries/generate/attempt/get_attempt_grade_context_complete.sql": (
-        "GetAttemptGradeContextSqlParams",
-        "GetAttemptGradeContextSqlRow",
-        "GetAttemptGradeContextApiRequest",
-        "GetAttemptGradeContextApiResponse",
-    ),
-    "app/sql/v4/queries/generate/attempt/get_attempt_message_context_complete.sql": (
-        "GetAttemptMessageContextSqlParams",
-        "GetAttemptMessageContextSqlRow",
-        "GetAttemptMessageContextApiRequest",
-        "GetAttemptMessageContextApiResponse",
-    ),
     "app/sql/v4/queries/generate/attempt/prepare_attempt_grade_complete.sql": (
         "PrepareAttemptGradeSqlParams",
         "PrepareAttemptGradeSqlRow",
@@ -28928,18 +28493,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "PrepareAttemptMessageSqlRow",
         "PrepareAttemptMessageApiRequest",
         "PrepareAttemptMessageApiResponse",
-    ),
-    "app/sql/v4/queries/generate/attempt/resolve_agent_by_entry_types_complete.sql": (
-        "ResolveAgentByEntryTypesSqlParams",
-        "ResolveAgentByEntryTypesSqlRow",
-        "ResolveAgentByEntryTypesApiRequest",
-        "ResolveAgentByEntryTypesApiResponse",
-    ),
-    "app/sql/v4/queries/generate/attempt/resolve_attempt_entries_complete.sql": (
-        "ResolveAttemptEntriesSqlParams",
-        "ResolveAttemptEntriesSqlRow",
-        "ResolveAttemptEntriesApiRequest",
-        "ResolveAttemptEntriesApiResponse",
     ),
     "app/sql/v4/queries/generate/attempt/save_attempt_message_content_complete.sql": (
         "SaveAttemptMessageContentSqlParams",
@@ -29030,12 +28583,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetTrainingSimulationsSqlRow",
         "GetTrainingSimulationsApiRequest",
         "GetTrainingSimulationsApiResponse",
-    ),
-    "app/sql/v4/queries/generate/training/get_training_start_context_complete.sql": (
-        "GetTrainingStartContextSqlParams",
-        "GetTrainingStartContextSqlRow",
-        "GetTrainingStartContextApiRequest",
-        "GetTrainingStartContextApiResponse",
     ),
     "app/sql/v4/queries/generate/training/prepare_training_generation_complete.sql": (
         "PrepareTrainingGenerationSqlParams",
@@ -29246,12 +28793,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "InfraToolsCreateCallForToolSqlRow",
         "InfraToolsCreateCallForToolApiRequest",
         "InfraToolsCreateCallForToolApiResponse",
-    ),
-    "app/sql/v4/queries/infrastructure/tools/get_entry_type_by_tool_id_complete.sql": (
-        "InfraToolsGetEntryTypeByToolIdSqlParams",
-        "InfraToolsGetEntryTypeByToolIdSqlRow",
-        "InfraToolsGetEntryTypeByToolIdApiRequest",
-        "InfraToolsGetEntryTypeByToolIdApiResponse",
     ),
     "app/sql/v4/queries/infrastructure/tools/get_resource_type_by_tool_id_complete.sql": (
         "InfraToolsGetResourceTypeByToolIdSqlParams",
@@ -29696,12 +29237,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetProfileSqlRow",
         "GetProfileApiRequest",
         "GetProfileApiResponse",
-    ),
-    "app/sql/v4/queries/profile/get_profile_context_access_complete.sql": (
-        "GetProfileContextAccessSqlParams",
-        "GetProfileContextAccessSqlRow",
-        "GetProfileContextAccessApiRequest",
-        "GetProfileContextAccessApiResponse",
     ),
     "app/sql/v4/queries/profile/get_profile_context_complete.sql": (
         "GetProfileContextSqlParams",
@@ -31661,11 +31196,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/agents/get_artifact_agent_ids_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/agents/patch_agent_draft_complete.sql"]
     ) -> SqlString: ...
 
@@ -32251,32 +31781,12 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/generate/attempt/get_attempt_grade_context_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/generate/attempt/get_attempt_message_context_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/generate/attempt/prepare_attempt_grade_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/generate/attempt/prepare_attempt_message_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/generate/attempt/resolve_agent_by_entry_types_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/generate/attempt/resolve_attempt_entries_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -32352,11 +31862,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/generate/training/get_training_simulations_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/generate/training/get_training_start_context_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -32532,11 +32037,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/infrastructure/tools/create_call_for_tool_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/infrastructure/tools/get_entry_type_by_tool_id_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -32907,11 +32407,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/profile/get_profile_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/profile/get_profile_context_access_complete.sql"]
     ) -> SqlString: ...
 
     @overload
