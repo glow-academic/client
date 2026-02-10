@@ -60,10 +60,7 @@ async def save_cohort(
 
         async with conn.transaction():
             # Convert API request to SQL params (add profile_id from header)
-            params = SaveCohortSqlParams(
-                **request.model_dump(),
-                profile_id=profile_id,
-            )
+            params = SaveCohortSqlParams.from_request(request, profile_id=profile_id)
             sql_params = params.to_tuple()
 
             # Execute SQL with typed helper - automatically detects and calls function if present

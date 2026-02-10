@@ -9,13 +9,17 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.artifacts.simulation.permissions import compute_can_draft
+from app.api.v4.artifacts.simulation.types import (
+    PatchSimulationDraftApiRequest,
+    PatchSimulationDraftApiResponse,
+    PatchSimulationDraftSqlParams,
+)
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
-    PatchSimulationDraftApiRequest,
-    PatchSimulationDraftApiResponse,
-    PatchSimulationDraftSqlParams,
+    CheckSimulationDuplicateAccessSqlParams,
+    CheckSimulationDuplicateAccessSqlRow,
     PatchSimulationDraftSqlRow,
     load_sql_query,
 )
@@ -23,6 +27,9 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = "app/sql/v4/queries/simulations/patch_simulation_draft_complete.sql"
+ACCESS_SQL_PATH = (
+    "app/sql/v4/queries/simulations/check_simulation_duplicate_access_complete.sql"
+)
 
 router = APIRouter()
 
@@ -60,28 +67,26 @@ async def patch_simulation_draft(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Get user role from profile context for permission check
-        # For drafts, we use a simpler permission check - any non-learner can use drafts
-        # The actual save operation will do the full permission check
-        user_profile_query = """
-            SELECT role::text as user_role
-            FROM view_user_profile_context
-            WHERE profile_id = $1
-            LIMIT 1
-        """
-        user_profile_row = await conn.fetchrow(user_profile_query, profile_id)
-        user_role = user_profile_row["user_role"] if user_profile_row else None
+        access_params = CheckSimulationDuplicateAccessSqlParams(profile_id=profile_id)
+        access_result = cast(
+            CheckSimulationDuplicateAccessSqlRow,
+            await execute_sql_typed(
+                conn,
+                ACCESS_SQL_PATH,
+                params=access_params,
+            ),
+        )
 
         # Check draft permission using Python
-        if not compute_can_draft(user_role):
+        if not compute_can_draft(access_result.user_role if access_result else None):
             raise HTTPException(
                 status_code=403,
                 detail="You don't have permission to create or modify drafts.",
             )
 
         async with conn.transaction():
-            params = PatchSimulationDraftSqlParams(
-                **request.model_dump(), profile_id=profile_id
+            params = PatchSimulationDraftSqlParams.from_request(
+                request, profile_id=profile_id
             )
             sql_params = params.to_tuple()
 

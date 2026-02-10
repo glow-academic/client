@@ -48,11 +48,14 @@ SCENARIO_RESOURCE_TYPES = [
     "templates",
 ]
 
+
 def _build_scenario_jinja_context(
     response: GetScenarioWebsocketResponse,
 ) -> dict[str, Any]:
     """Build Jinja context from websocket resources payload."""
-    context: dict[str, Any] = response.resources.model_dump() if response.resources else {}
+    context: dict[str, Any] = (
+        response.resources.model_dump() if response.resources else {}
+    )
     context["views"] = {
         "draft_scenario": (
             response.views.draft_scenario.model_dump(mode="json")
@@ -269,8 +272,7 @@ async def _scenario_generate_impl(
 
             rendered_developer_messages = render_developer_instructions(
                 templates=run_context_row.get("developer_instruction_templates"),
-                jinja_context=run_context_row.get("context")
-                or scenario_jinja_context,
+                jinja_context=run_context_row.get("context") or scenario_jinja_context,
             )
 
             messages: list[dict[str, Any]] = []

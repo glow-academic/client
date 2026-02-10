@@ -1,8 +1,4 @@
-"""Simulation generation router - unified handler for all simulation resource types.
-
-Uses domain-based API: client sends domain_ids, server maps them to
-resource_types and agent_id using get_simulation_websocket().
-"""
+"""Simulation generation router - unified handler for all simulation resource types."""
 
 import uuid
 from typing import Any
@@ -10,10 +6,7 @@ from typing import Any
 from fastapi import APIRouter
 
 from app.api.v4.artifacts.simulation.get import get_simulation_websocket
-from app.api.v4.artifacts.simulation.types import (
-    GetSimulationWebsocketResponse,
-    SimulationResourceBucket,
-)
+from app.api.v4.artifacts.simulation.types import GetSimulationWebsocketResponse
 from app.infra.v4.generation import convert_tools_to_dict, render_developer_instructions
 from app.infra.v4.generation.resource_utils import normalize_resources_for_sql
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
@@ -22,10 +15,7 @@ from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
 from app.socket.v4.artifacts.simulation.types import GenerateSimulationPayload
 from app.socket.v4.artifacts.types import GenerateErrorApiRequest
-from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
-
-logger = get_logger(__name__)
 
 internal_sio = get_internal_sio()
 
@@ -35,7 +25,6 @@ server_router = APIRouter()
 CREATE_RUN_SQL_PATH = "app/sql/v4/queries/generate/start/get_generation_run_context_and_create_run_complete.sql"
 TEXT_RUN_CONTEXT_SQL_PATH = "app/sql/v4/queries/generate/text/get_text_run_context_for_existing_run_complete.sql"
 
-# Simulation resource types
 SIMULATION_RESOURCE_TYPES = [
     "names",
     "descriptions",
@@ -43,277 +32,214 @@ SIMULATION_RESOURCE_TYPES = [
     "flags",
     "scenarios",
     "scenario_flags",
+    "scenario_personas",
     "scenario_positions",
     "scenario_rubrics",
     "scenario_time_limits",
 ]
 
 
-def _serialize_resource_item(item: Any) -> Any:
-    if item is None:
-        return None
-    if hasattr(item, "model_dump"):
-        return item.model_dump()
-    if hasattr(item, "_asdict"):
-        return dict(item._asdict())
-    if hasattr(item, "dict"):
-        return item.dict()
-    if isinstance(item, dict):
-        return item
-    return item
-
-
-def _serialize_resource_list(items: list[Any] | None) -> list[Any]:
-    if not items:
-        return []
-    return [
-        serialized
-        for item in items
-        if (serialized := _serialize_resource_item(item)) is not None
-    ]
-
-
 def _build_simulation_jinja_context(
-    response: GetSimulationWebsocketResponse, resource_types: list[str]
+    response: GetSimulationWebsocketResponse,
 ) -> dict[str, Any]:
-    """Build Jinja context from simulation websocket response."""
-    if response.resources and response.resources.resources:
-        resources = response.resources.resources.model_dump()
-        current = (
-            response.resources.current.model_dump()
-            if response.resources.current
-            else SimulationResourceBucket().model_dump()
+    """Build Jinja context from websocket resources payload."""
+    context: dict[str, Any] = (
+        response.resources.model_dump() if response.resources else {}
+    )
+    context["views"] = {
+        "draft_simulation": (
+            response.views.draft_simulation.model_dump(mode="json")
+            if response.views and response.views.draft_simulation
+            else {}
         )
-        resources["current"] = current
-        return resources
-    return {"current": SimulationResourceBucket().model_dump()}
+    }
+    return context
+
+
+async def _emit_generation_error(
+    sid: str,
+    *,
+    message: str,
+    group_id: uuid.UUID | None = None,
+) -> None:
+    await emit_to_internal(
+        "generate_call_error",
+        GenerateErrorApiRequest(
+            sid=sid,
+            error_message=message,
+            artifact_type="simulation",
+            group_id=str(group_id) if group_id else None,
+            resource_type="simulation",
+        ),
+        sid=sid,
+    )
+
+
+def _resolve_agent_id(
+    resource_types: list[str],
+    resource_agent_ids: dict[str, uuid.UUID | None],
+) -> uuid.UUID | None:
+    for resource_type in resource_types:
+        candidate = resource_agent_ids.get(resource_type)
+        if candidate is not None:
+            return candidate
+    return None
+
+
+def _select_generation_config_resources(
+    response: GetSimulationWebsocketResponse,
+    agent_id: uuid.UUID,
+) -> tuple[Any | None, Any | None, Any | None]:
+    resources = response.resources
+    config_agents = resources.agents or []
+    config_models = resources.models or []
+    config_providers = resources.providers or []
+
+    agent_resource = next(
+        (a for a in config_agents if getattr(a, "id", None) == agent_id),
+        config_agents[0] if config_agents else None,
+    )
+    model_id = getattr(agent_resource, "model_id", None)
+    model_resource = next(
+        (m for m in config_models if getattr(m, "id", None) == model_id),
+        config_models[0] if config_models else None,
+    )
+    provider_id = getattr(model_resource, "provider_id", None)
+    provider_resource = next(
+        (p for p in config_providers if getattr(p, "id", None) == provider_id),
+        config_providers[0] if config_providers else None,
+    )
+
+    return agent_resource, model_resource, provider_resource
+
+
+def _build_generation_resources(
+    response: GetSimulationWebsocketResponse,
+    resource_types: list[str],
+) -> list[dict[str, Any]]:
+    resources: list[dict[str, Any]] = []
+    resources_bucket = response.resources
+
+    def add_resource_ids(
+        resource_type: str, items: list[Any] | None, id_attr: str
+    ) -> None:
+        if not items or resource_type not in resource_types:
+            return
+        ids: list[str] = []
+        for item in items:
+            item_id = (
+                item.get(id_attr)
+                if isinstance(item, dict)
+                else getattr(item, id_attr, None)
+            )
+            if item_id:
+                ids.append(str(item_id))
+        if ids:
+            resources.append({"resource_type": resource_type, "resource_ids": ids})
+
+    add_resource_ids("names", resources_bucket.names, "id")
+    add_resource_ids("descriptions", resources_bucket.descriptions, "id")
+    add_resource_ids("departments", resources_bucket.departments, "department_id")
+    add_resource_ids("flags", resources_bucket.flags, "flag_option_id")
+    add_resource_ids("scenarios", resources_bucket.scenarios, "scenario_id")
+    add_resource_ids("scenario_flags", resources_bucket.scenario_flags, "id")
+    add_resource_ids("scenario_personas", resources_bucket.scenario_personas, "id")
+    add_resource_ids("scenario_positions", resources_bucket.scenario_positions, "id")
+    add_resource_ids("scenario_rubrics", resources_bucket.scenario_rubrics, "id")
+    add_resource_ids(
+        "scenario_time_limits", resources_bucket.scenario_time_limits, "id"
+    )
+
+    return resources
 
 
 async def _simulation_generate_impl(
     sid: str, data: GenerateSimulationPayload, profile_id: uuid.UUID
 ) -> None:
-    """Handle simulation generation with domain-based API.
-
-    This function:
-    1. Validates domain_ids and derives resource_types + agent_id
-    2. Fetches simulation data via get_simulation_websocket() for context
-    3. Creates generation run via generic SQL
-    4. Renders developer instructions with Jinja
-    5. Emits payload to generate_artifact handler
-    """
+    """Handle simulation generation with resource-type based routing."""
     try:
-        # Validate domain_ids
-        if not data.domain_ids:
-            await emit_to_internal(
-                "generate_call_error",
-                GenerateErrorApiRequest(
-                    sid=sid,
-                    error_message="domain_ids must be provided",
-                    artifact_type="simulation",
-                    group_id=None,
-                    resource_type="simulation",
-                ),
-                sid=sid,
+        if not data.resource_types:
+            await _emit_generation_error(sid, message="resource_types must be provided")
+            return
+
+        if not data.draft_id:
+            await _emit_generation_error(
+                sid, message="Draft ID is required for simulation generation"
             )
             return
 
-        # Step 1: Fetch simulation data for domain mapping and context
+        resource_types = data.resource_types
+        invalid_types = [
+            resource_type
+            for resource_type in resource_types
+            if resource_type not in SIMULATION_RESOURCE_TYPES
+        ]
+        if invalid_types:
+            await _emit_generation_error(
+                sid,
+                message=f"Invalid resource types: {', '.join(invalid_types)}",
+            )
+            return
+
         result = await get_simulation_websocket(
             profile_id=profile_id,
             simulation_id=data.simulation_id,
             draft_id=data.draft_id,
         )
 
-        # Build domain_id -> agent_id mapping from result.domains
-        domain_to_agent: dict[uuid.UUID, uuid.UUID | None] = {}
-        if result.domains:
-            for domain in result.domains:
-                domain_to_agent[domain.domain_id] = domain.agent_id
-
-        # Build domain_id -> resource_type mapping from result
-        domain_to_resource: dict[uuid.UUID | None, str] = {
-            result.name_domain_id: "names",
-            result.description_domain_id: "descriptions",
-            result.flag_domain_id: "flags",
-            result.departments_domain_id: "departments",
-            result.scenarios_domain_id: "scenarios",
-            result.scenario_flags_domain_id: "scenario_flags",
-            result.scenario_personas_domain_id: "scenario_personas",
-            result.scenario_positions_domain_id: "scenario_positions",
-            result.scenario_rubrics_domain_id: "scenario_rubrics",
-            result.scenario_time_limits_domain_id: "scenario_time_limits",
-        }
-        # Remove None key if present
-        domain_to_resource.pop(None, None)
-
-        # Derive resource_types from domain_ids
-        resource_types: list[str] = []
-        for did in data.domain_ids:
-            if did in domain_to_resource:
-                resource_types.append(domain_to_resource[did])
-
-        if not resource_types:
-            await emit_to_internal(
-                "generate_call_error",
-                GenerateErrorApiRequest(
-                    sid=sid,
-                    error_message="No valid domain_ids provided",
-                    artifact_type="simulation",
-                    group_id=None,
-                    resource_type="simulation",
-                ),
-                sid=sid,
-            )
-            return
-
-        invalid_types = [
-            rt for rt in resource_types if rt not in SIMULATION_RESOURCE_TYPES
-        ]
-        if invalid_types:
-            await emit_to_internal(
-                "generate_call_error",
-                GenerateErrorApiRequest(
-                    sid=sid,
-                    error_message=f"Invalid resource types: {', '.join(invalid_types)}",
-                    artifact_type="simulation",
-                    group_id=None,
-                    resource_type="simulation",
-                ),
-                sid=sid,
-            )
-            return
-
-        # Get agent_id from the first valid domain_id
-        agent_id: uuid.UUID | None = None
-        for did in data.domain_ids:
-            if did in domain_to_agent and domain_to_agent[did] is not None:
-                agent_id = domain_to_agent[did]
-                break
-
+        agent_id = _resolve_agent_id(resource_types, result.resource_agent_ids or {})
         if not agent_id:
-            await emit_to_internal(
-                "generate_call_error",
-                GenerateErrorApiRequest(
-                    sid=sid,
-                    error_message="No agent found for the requested domains",
-                    artifact_type="simulation",
-                    group_id=None,
-                    resource_type="simulation",
-                ),
-                sid=sid,
+            await _emit_generation_error(
+                sid,
+                message="No agent found for the requested resource types",
+                group_id=result.group_id,
             )
             return
 
-        # Build Jinja context from resources
-        simulation_jinja_context = _build_simulation_jinja_context(
-            result, resource_types
+        agent_resource, model_resource, provider_resource = (
+            _select_generation_config_resources(result, agent_id)
         )
+        if not agent_resource:
+            await _emit_generation_error(
+                sid,
+                message="No agent configuration found. Check department settings.",
+                group_id=result.group_id,
+            )
+            return
+        if not model_resource:
+            await _emit_generation_error(
+                sid,
+                message=f"Agent '{getattr(agent_resource, 'name', 'unknown')}' has no model configured",
+                group_id=result.group_id,
+            )
+            return
+        if not provider_resource:
+            await _emit_generation_error(
+                sid,
+                message=f"Model '{getattr(model_resource, 'name', 'unknown')}' has no provider configured",
+                group_id=result.group_id,
+            )
+            return
 
-        # Step 2: Build resources array from websocket response
-        resources: list[dict[str, Any]] = []
-        resources_bucket = result.resources.resources if result.resources else None
+        # Shared text context SQL should provide model+provider+keys,
+        # but we fail fast here using pre-fetched websocket resources.
+        preloaded_api_key = getattr(model_resource, "key", None)
+        if not preloaded_api_key:
+            provider_name = getattr(provider_resource, "value", None) or getattr(
+                provider_resource, "name", "unknown"
+            )
+            await _emit_generation_error(
+                sid,
+                message=f"No API key configured for provider '{provider_name}'",
+                group_id=result.group_id,
+            )
+            return
 
-        if resources_bucket:
-            if resources_bucket.names:
-                resources.append(
-                    {
-                        "resource_type": "names",
-                        "resource_ids": [
-                            str(n.id) for n in resources_bucket.names if n.id
-                        ],
-                    }
-                )
-            if resources_bucket.descriptions:
-                resources.append(
-                    {
-                        "resource_type": "descriptions",
-                        "resource_ids": [
-                            str(d.id) for d in resources_bucket.descriptions if d.id
-                        ],
-                    }
-                )
-            if resources_bucket.departments:
-                dept_ids = []
-                for d in resources_bucket.departments:
-                    did = getattr(d, "department_id", None)
-                    if did:
-                        dept_ids.append(str(did))
-                if dept_ids:
-                    resources.append(
-                        {
-                            "resource_type": "departments",
-                            "resource_ids": dept_ids,
-                        }
-                    )
-            if resources_bucket.flags:
-                resources.append(
-                    {
-                        "resource_type": "flags",
-                        "resource_ids": [
-                            str(f.flag_option_id)
-                            for f in resources_bucket.flags
-                            if f.flag_option_id
-                        ],
-                    }
-                )
-            if resources_bucket.scenarios:
-                resources.append(
-                    {
-                        "resource_type": "scenarios",
-                        "resource_ids": [
-                            str(s.scenario_id)
-                            for s in resources_bucket.scenarios
-                            if s.scenario_id
-                        ],
-                    }
-                )
-            if resources_bucket.scenario_flags:
-                ids = [
-                    str(getattr(sf, "id", None) or "")
-                    for sf in resources_bucket.scenario_flags
-                    if getattr(sf, "id", None)
-                ]
-                if ids:
-                    resources.append(
-                        {"resource_type": "scenario_flags", "resource_ids": ids}
-                    )
-            if resources_bucket.scenario_positions:
-                ids = [
-                    str(getattr(sp, "id", None) or "")
-                    for sp in resources_bucket.scenario_positions
-                    if getattr(sp, "id", None)
-                ]
-                if ids:
-                    resources.append(
-                        {"resource_type": "scenario_positions", "resource_ids": ids}
-                    )
-            if resources_bucket.scenario_rubrics:
-                ids = [
-                    str(getattr(sr, "id", None) or "")
-                    for sr in resources_bucket.scenario_rubrics
-                    if getattr(sr, "id", None)
-                ]
-                if ids:
-                    resources.append(
-                        {"resource_type": "scenario_rubrics", "resource_ids": ids}
-                    )
-            if resources_bucket.scenario_time_limits:
-                ids = [
-                    str(getattr(stl, "id", None) or "")
-                    for stl in resources_bucket.scenario_time_limits
-                    if getattr(stl, "id", None)
-                ]
-                if ids:
-                    resources.append(
-                        {"resource_type": "scenario_time_limits", "resource_ids": ids}
-                    )
-
-        # Get group_id from response
-        group_id: uuid.UUID | None = result.group_id
-
+        simulation_jinja_context = _build_simulation_jinja_context(result)
+        resources = _build_generation_resources(result, resource_types)
+        group_id = result.group_id
         resources_sql = normalize_resources_for_sql(resources)
 
-        # Step 3: Create generation run
         async with get_db_connection() as conn:
             create_run_sql = load_sql(CREATE_RUN_SQL_PATH)
             create_run_row = await conn.fetchrow(
@@ -327,18 +253,11 @@ async def _simulation_generate_impl(
                 data.user_instructions if data.user_instructions else None,
                 resources_sql,
             )
-
             if not create_run_row:
-                await emit_to_internal(
-                    "generate_call_error",
-                    GenerateErrorApiRequest(
-                        sid=sid,
-                        error_message="Failed to create generation run",
-                        artifact_type="simulation",
-                        group_id=str(group_id) if group_id else None,
-                        resource_type="simulation",
-                    ),
-                    sid=sid,
+                await _emit_generation_error(
+                    sid,
+                    message="Failed to create generation run",
+                    group_id=group_id,
                 )
                 return
 
@@ -358,25 +277,18 @@ async def _simulation_generate_impl(
                 group_id,
                 resources_sql,
             )
-
             if not run_context_row:
-                await emit_to_internal(
-                    "generate_call_error",
-                    GenerateErrorApiRequest(
-                        sid=sid,
-                        error_message="Failed to load generation context",
-                        artifact_type="simulation",
-                        group_id=str(group_id) if group_id else None,
-                        resource_type="simulation",
-                    ),
-                    sid=sid,
+                await _emit_generation_error(
+                    sid,
+                    message="Failed to load generation context",
+                    group_id=group_id,
                 )
                 return
 
-            # Step 4: Render developer instructions with Jinja context
             rendered_developer_messages = render_developer_instructions(
                 templates=run_context_row.get("developer_instruction_templates"),
-                jinja_context=simulation_jinja_context,
+                jinja_context=run_context_row.get("context")
+                or simulation_jinja_context,
             )
 
             messages: list[dict[str, Any]] = []
@@ -384,12 +296,40 @@ async def _simulation_generate_impl(
                 messages.append(
                     {"role": "system", "content": run_context_row["system_prompt"]}
                 )
-            for dev_msg in rendered_developer_messages:
-                messages.append({"role": "developer", "content": dev_msg})
-            for user_msg in data.user_instructions or []:
-                messages.append({"role": "user", "content": user_msg})
+            for developer_message in rendered_developer_messages:
+                messages.append({"role": "developer", "content": developer_message})
+            for user_message in data.user_instructions or []:
+                messages.append({"role": "user", "content": user_message})
 
-            # Step 5: Emit to generate_artifact handler
+            model_name = (
+                run_context_row.get("model_name")
+                or getattr(model_resource, "value", None)
+                or getattr(model_resource, "name", None)
+            )
+            provider_name = (
+                run_context_row.get("provider")
+                or getattr(provider_resource, "value", None)
+                or getattr(provider_resource, "name", None)
+            )
+            base_url = run_context_row.get("base_url") or getattr(
+                model_resource, "endpoint", None
+            )
+            api_key = run_context_row.get("api_key") or preloaded_api_key
+            temperature = run_context_row.get("temperature")
+            if temperature is None:
+                temperature = getattr(agent_resource, "temperature", 0.0)
+            reasoning = run_context_row.get("reasoning")
+            if reasoning is None:
+                reasoning = getattr(agent_resource, "reasoning", None)
+
+            if not api_key:
+                await _emit_generation_error(
+                    sid,
+                    message="No API key configured for selected model/provider",
+                    group_id=group_id,
+                )
+                return
+
             await internal_sio.emit(
                 "generate_artifact",
                 {
@@ -403,12 +343,12 @@ async def _simulation_generate_impl(
                     "message_id": None,
                     "messages": messages,
                     "llm_config": {
-                        "model": run_context_row.get("model_name"),
-                        "api_key": run_context_row.get("api_key"),
-                        "base_url": run_context_row.get("base_url"),
-                        "temperature": run_context_row.get("temperature"),
-                        "reasoning": run_context_row.get("reasoning"),
-                        "provider": run_context_row.get("provider"),
+                        "model": model_name,
+                        "api_key": api_key,
+                        "base_url": base_url,
+                        "temperature": temperature,
+                        "reasoning": reasoning,
+                        "provider": provider_name,
                         "voice": None,
                         "quality": None,
                         "length_seconds": None,
@@ -419,18 +359,10 @@ async def _simulation_generate_impl(
                 },
             )
 
-    except Exception as e:
-        logger.exception(f"Failed to generate simulation resources: {str(e)}")
-        await emit_to_internal(
-            "generate_call_error",
-            GenerateErrorApiRequest(
-                sid=sid,
-                error_message=f"Failed to generate simulation resources: {str(e)}",
-                artifact_type="simulation",
-                group_id=None,
-                resource_type="simulation",
-            ),
-            sid=sid,
+    except Exception as error:
+        await _emit_generation_error(
+            sid,
+            message=f"Failed to generate simulation resources: {str(error)}",
         )
 
 
@@ -441,32 +373,14 @@ async def simulation_generate(sid: str, data: dict[str, Any]) -> None:
         payload = GenerateSimulationPayload(**data)
         profile_id_str = await find_profile_by_socket(sid)
         if not profile_id_str:
-            await emit_to_internal(
-                "generate_call_error",
-                GenerateErrorApiRequest(
-                    sid=sid,
-                    error_message="Profile not found. Please reconnect.",
-                    artifact_type="simulation",
-                    group_id=None,
-                    resource_type="simulation",
-                ),
-                sid=sid,
+            await _emit_generation_error(
+                sid, message="Profile not found. Please reconnect."
             )
             return
         profile_id = uuid.UUID(profile_id_str)
         await _simulation_generate_impl(sid, payload, profile_id)
-    except Exception as e:
-        await emit_to_internal(
-            "generate_call_error",
-            GenerateErrorApiRequest(
-                sid=sid,
-                error_message=f"Invalid request: {str(e)}",
-                artifact_type="simulation",
-                group_id=None,
-                resource_type="simulation",
-            ),
-            sid=sid,
-        )
+    except Exception as error:
+        await _emit_generation_error(sid, message=f"Invalid request: {str(error)}")
 
 
 @internal_sio.on("simulation_generate")  # type: ignore
@@ -479,31 +393,13 @@ async def simulation_generate_internal(data: dict[str, Any]) -> None:
 
         profile_id_str = await find_profile_by_socket(sid)
         if not profile_id_str:
-            await emit_to_internal(
-                "generate_call_error",
-                GenerateErrorApiRequest(
-                    sid=sid,
-                    error_message="Profile not found. Please reconnect.",
-                    artifact_type="simulation",
-                    group_id=None,
-                    resource_type="simulation",
-                ),
-                sid=sid,
+            await _emit_generation_error(
+                sid, message="Profile not found. Please reconnect."
             )
             return
 
         profile_id = uuid.UUID(profile_id_str)
         payload = GenerateSimulationPayload(**data)
         await _simulation_generate_impl(sid, payload, profile_id)
-    except Exception as e:
-        await emit_to_internal(
-            "generate_call_error",
-            GenerateErrorApiRequest(
-                sid=sid,
-                error_message=f"Invalid request: {str(e)}",
-                artifact_type="simulation",
-                group_id=None,
-                resource_type="simulation",
-            ),
-            sid=sid,
-        )
+    except Exception as error:
+        await _emit_generation_error(sid, message=f"Invalid request: {str(error)}")

@@ -16,6 +16,7 @@ import {
   GenericForm,
   type StepStatus,
 } from "@/components/common/forms/GenericForm";
+import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
 import { StepCard } from "@/components/common/forms/StepCard";
 import { GenerateRegenerateModal } from "@/components/common/GenerateRegenerateModal";
 import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
@@ -25,16 +26,12 @@ import { Flags } from "@/components/resources/FlagsLegacy";
 import { Names } from "@/components/resources/Names";
 import {
   SimulationPositions,
+  type SimulationPositionsProps,
   type SimulationPositionItem,
 } from "@/components/resources/SimulationPositions";
 import { Simulations } from "@/components/resources/Simulations";
-import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import type { FlagItem } from "@/components/resources/FlagsLegacy";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useSaveContext } from "@/contexts/save-context";
@@ -43,9 +40,14 @@ import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import { useGenerationModal } from "@/hooks/use-generation-modal";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import {
+  buildResourceActions,
+  checkHasResourceIds,
+  computeEffectiveFormState,
+  type ResourceConfig,
+} from "@/lib/resources/action-builders";
 import type { ResourceType } from "@/lib/resources/types";
 import type { ServerToClientEvents } from "@/lib/ws/types";
-import { Loader2, Sparkles } from "lucide-react";
 import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
 // Socket event types (auto-generated from server)
@@ -95,6 +97,15 @@ type CohortAiFormData = {
   simulation_positions?: CohortGenerationCompletePayload["simulation_positions"];
 };
 
+type CohortFormState = {
+  name_id: string | null;
+  description_id: string | null;
+  active_flag_id: string | null;
+  department_ids: string[];
+  simulation_ids: string[];
+  simulation_positions: SimulationPositionItem[];
+};
+
 export interface CohortProps {
   cohortId?: string;
   // Server-provided data (for server-side rendering)
@@ -130,6 +141,35 @@ const VALID_RESOURCE_TYPES: ResourceType[] = [
   "simulation_positions",
 ];
 
+const COHORT_RESOURCES: ResourceConfig[] = [
+  { key: "names", formKey: "name_id", flushKey: "name_id", type: "single" },
+  {
+    key: "descriptions",
+    formKey: "description_id",
+    flushKey: "description_id",
+    type: "single",
+  },
+  { key: "flags", formKey: "active_flag_id", flushKey: null, type: "single" },
+  {
+    key: "departments",
+    formKey: "department_ids",
+    flushKey: null,
+    type: "multi",
+  },
+  {
+    key: "simulations",
+    formKey: "simulation_ids",
+    flushKey: null,
+    type: "multi",
+  },
+  {
+    key: "simulation_positions",
+    formKey: "simulation_ids",
+    flushKey: null,
+    type: "multi",
+  },
+];
+
 function CohortComponent({
   cohortId,
   cohortData,
@@ -159,14 +199,18 @@ function CohortComponent({
     (data: Record<string, unknown>) => {
       const aiUpdates: Partial<CohortAiFormData> = {};
 
+      const resourceType = data["resource_type"] as string | undefined;
+
       // Handle simulation_positions specially - merge directly into formState
-      if (data["resource_type"] === "simulation_positions") {
-        const positions = data["simulation_positions"] as Array<{
-          simulation_id?: string | null;
-          value?: number | null;
-          generated?: boolean | null;
-          mcp?: boolean | null;
-        }> | undefined;
+      if (resourceType === "simulation_positions") {
+        const positions = data["simulation_positions"] as
+          | Array<{
+              simulation_id?: string | null;
+              value?: number | null;
+              generated?: boolean | null;
+              mcp?: boolean | null;
+            }>
+          | undefined;
 
         if (positions && positions.length > 0) {
           setFormState((prev) => {
@@ -199,19 +243,38 @@ function CohortComponent({
         return { aiUpdates };
       }
 
-      // For other resource types, build formState updates for auto-accepted resources
+      // For other resource types, build formState updates from hydrated resources.
       const formStateUpdates: Record<string, unknown> = {};
 
-      if (data["name_id"]) formStateUpdates["name_id"] = data["name_id"];
-      if (data["description_id"]) formStateUpdates["description_id"] = data["description_id"];
-      if (data["active_flag_id"]) formStateUpdates["active_flag_id"] = data["active_flag_id"];
+      const nameResource = data["name_resource"] as { id?: string | null } | undefined;
+      if (nameResource?.id) formStateUpdates["name_id"] = nameResource.id;
 
-      const departmentIds = data["department_ids"] as string[] | undefined;
+      const descriptionResource = data["description_resource"] as
+        | { id?: string | null }
+        | undefined;
+      if (descriptionResource?.id) {
+        formStateUpdates["description_id"] = descriptionResource.id;
+      }
+
+      const flagResource = data["flag_resource"] as { id?: string | null } | undefined;
+      if (flagResource?.id) formStateUpdates["active_flag_id"] = flagResource.id;
+
+      const departmentResources = data["department_resources"] as
+        | Array<{ department_id?: string | null }>
+        | undefined;
+      const departmentIds = (departmentResources ?? [])
+        .map((d) => d.department_id)
+        .filter((id): id is string => !!id);
       if (departmentIds && departmentIds.length > 0) {
         formStateUpdates["_append_department_ids"] = departmentIds;
       }
 
-      const simulationIds = data["simulation_ids"] as string[] | undefined;
+      const simulationResources = data["simulation_resources"] as
+        | Array<{ simulation_id?: string | null }>
+        | undefined;
+      const simulationIds = (simulationResources ?? [])
+        .map((s) => s.simulation_id)
+        .filter((id): id is string => !!id);
       if (simulationIds && simulationIds.length > 0) {
         formStateUpdates["_append_simulation_ids"] = simulationIds;
       }
@@ -297,44 +360,12 @@ function CohortComponent({
     if (!cohortData) return null;
     return {
       group_id: cohortData.group_id,
-      name_resource: cohortData.name_resource,
-      show_name: cohortData.show_name,
-      name_suggestions: cohortData.name_suggestions,
       names: cohortData.names,
-      name_required: cohortData.name_required,
-      name_show_ai_generate: cohortData.name_show_ai_generate,
-      name_domain_id: cohortData.name_domain_id,
-      description_resource: cohortData.description_resource,
-      show_description: cohortData.show_description,
-      description_suggestions: cohortData.description_suggestions,
-      description_required: cohortData.description_required,
-      description_show_ai_generate: cohortData.description_show_ai_generate,
-      description_domain_id: cohortData.description_domain_id,
       descriptions: cohortData.descriptions,
-      department_resources: cohortData.department_resources,
-      show_departments: cohortData.show_departments,
-      department_suggestions: cohortData.department_suggestions,
-      departments_required: cohortData.departments_required,
-      departments_show_ai_generate: cohortData.departments_show_ai_generate,
-      departments_domain_id: cohortData.departments_domain_id,
+      flags: cohortData.flags,
       departments: cohortData.departments,
-      flag_resource: cohortData.flag_resource,
-      show_flag: cohortData.show_flag,
-      flag_required: cohortData.flag_required,
-      flag_show_ai_generate: cohortData.flag_show_ai_generate,
-      flag_domain_id: cohortData.flag_domain_id,
-      simulation_resources: cohortData.simulation_resources,
-      show_simulations: cohortData.show_simulations,
-      simulation_suggestions: cohortData.simulation_suggestions,
-      simulations_required: cohortData.simulations_required,
-      simulations_show_ai_generate: cohortData.simulations_show_ai_generate,
-      simulations_domain_id: cohortData.simulations_domain_id,
       simulations: cohortData.simulations,
       simulation_positions: cohortData.simulation_positions,
-      show_simulation_positions: cohortData.show_simulation_positions,
-      simulation_positions_required: cohortData.simulation_positions_required,
-      simulation_positions_show_ai_generate: cohortData.simulation_positions_show_ai_generate,
-      simulation_positions_domain_id: cohortData.simulation_positions_domain_id,
       basic_show_ai_generate: cohortData.basic_show_ai_generate,
       simulations_step_show_ai_generate: cohortData.simulations_step_show_ai_generate,
     };
@@ -343,44 +374,12 @@ function CohortComponent({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     cohortData?.group_id,
-    cohortData?.name_resource,
-    cohortData?.show_name,
-    cohortData?.name_suggestions,
     cohortData?.names,
-    cohortData?.name_required,
-    cohortData?.name_show_ai_generate,
-    cohortData?.name_domain_id,
-    cohortData?.description_resource,
-    cohortData?.show_description,
-    cohortData?.description_suggestions,
-    cohortData?.description_required,
-    cohortData?.description_show_ai_generate,
-    cohortData?.description_domain_id,
     cohortData?.descriptions,
-    cohortData?.department_resources,
-    cohortData?.show_departments,
-    cohortData?.department_suggestions,
-    cohortData?.departments_required,
-    cohortData?.departments_show_ai_generate,
-    cohortData?.departments_domain_id,
     cohortData?.departments,
-    cohortData?.flag_resource,
-    cohortData?.show_flag,
-    cohortData?.flag_required,
-    cohortData?.flag_show_ai_generate,
-    cohortData?.flag_domain_id,
-    cohortData?.simulation_resources,
-    cohortData?.show_simulations,
-    cohortData?.simulation_suggestions,
-    cohortData?.simulations_required,
-    cohortData?.simulations_show_ai_generate,
-    cohortData?.simulations_domain_id,
+    cohortData?.flags,
     cohortData?.simulations,
     cohortData?.simulation_positions,
-    cohortData?.show_simulation_positions,
-    cohortData?.simulation_positions_required,
-    cohortData?.simulation_positions_show_ai_generate,
-    cohortData?.simulation_positions_domain_id,
     cohortData?.basic_show_ai_generate,
     cohortData?.simulations_step_show_ai_generate,
   ]);
@@ -392,31 +391,17 @@ function CohortComponent({
       if (!stableCohortDataFields) return false;
       switch (resourceType) {
         case "names":
-          return stableCohortDataFields.name_resource?.generated ?? false;
+          return stableCohortDataFields.names?.resource?.generated ?? false;
         case "descriptions":
-          return (
-            stableCohortDataFields.description_resource?.generated ?? false
-          );
+          return stableCohortDataFields.descriptions?.resource?.generated ?? false;
         case "flags":
-          return stableCohortDataFields.flag_resource?.generated ?? false;
+          return stableCohortDataFields.flags?.resource?.generated ?? false;
         case "departments":
-          return (
-            stableCohortDataFields.department_resources?.some(
-              (d) => d.generated
-            ) ?? false
-          );
+          return stableCohortDataFields.departments?.current?.some((d) => d.generated) ?? false;
         case "simulations":
-          return (
-            stableCohortDataFields.simulation_resources?.some(
-              (s) => s.generated
-            ) ?? false
-          );
+          return stableCohortDataFields.simulations?.current?.some((s) => s.generated) ?? false;
         case "simulation_positions":
-          return (
-            stableCohortDataFields.simulation_positions?.some(
-              (p) => p.generated
-            ) ?? false
-          );
+          return stableCohortDataFields.simulation_positions?.current?.some((p) => p.generated) ?? false;
         default:
           return false;
       }
@@ -439,17 +424,29 @@ function CohortComponent({
     // Extract resource IDs from server data
     // Note: Server data may have display values, but we only store IDs here
     return {
-      name_id: data.name_id ?? null,
-      description_id: data.description_id ?? null,
-      active_flag_id: data.active_flag_id ?? null,
-      department_ids: data.department_ids ?? [],
-      simulation_ids: data.simulation_ids ?? [],
-      simulation_positions: data.simulation_positions ?? [],
+      name_id: data.names?.resource?.id ?? null,
+      description_id: data.descriptions?.resource?.id ?? null,
+      active_flag_id: data.flags?.resource?.id ?? null,
+      department_ids: (data.departments?.current ?? [])
+        .map((d) => d.department_id)
+        .filter((id): id is string => !!id),
+      simulation_ids: (data.simulations?.current ?? [])
+        .map((s) => s.simulation_id)
+        .filter((id): id is string => !!id),
+      simulation_positions: (data.simulation_positions?.current ?? []).map(
+        (p) => ({
+          simulation_id: p.simulation_id ?? "",
+          value: p.value ?? 0,
+          generated: p.generated ?? false,
+          mcp: p.mcp ?? false,
+        })
+      ),
     };
     // Remove cohortData from dependencies - use ref instead to prevent callback recreation
   }, []);
 
-  const [formState, setFormState] = useState(getInitialFormState);
+  const [formState, setFormState] = useState<CohortFormState>(getInitialFormState);
+  const lastPatchedFormStateRef = React.useRef<CohortFormState>(getInitialFormState());
   // Use ref to access formState in renderStep without depending on it
   const formStateRef = React.useRef<Record<string, unknown>>(formState as unknown as Record<string, unknown>);
   React.useEffect(() => {
@@ -458,15 +455,25 @@ function CohortComponent({
 
   // Memoize stringified array dependencies to prevent effect from running when array references change but content is same
   const departmentIdsStr = React.useMemo(
-    () => JSON.stringify(cohortData?.department_ids ?? []),
-    [cohortData?.department_ids]
+    () =>
+      JSON.stringify(
+        (cohortData?.departments?.current ?? [])
+          .map((d) => d.department_id)
+          .filter(Boolean)
+      ),
+    [cohortData?.departments]
   );
   const simulationIdsStr = React.useMemo(
-    () => JSON.stringify(cohortData?.simulation_ids ?? []),
-    [cohortData?.simulation_ids]
+    () =>
+      JSON.stringify(
+        (cohortData?.simulations?.current ?? [])
+          .map((s) => s.simulation_id)
+          .filter(Boolean)
+      ),
+    [cohortData?.simulations]
   );
   const simulationPositionsStr = React.useMemo(
-    () => JSON.stringify(cohortData?.simulation_positions ?? []),
+    () => JSON.stringify(cohortData?.simulation_positions?.current ?? []),
     [cohortData?.simulation_positions]
   );
 
@@ -492,13 +499,14 @@ function CohortComponent({
       }
       return prev;
     });
+    lastPatchedFormStateRef.current = newState;
     // Use stringified arrays in dependencies to prevent effect from running when array references change but content is same
     // Intentionally exclude formState and getInitialFormState to prevent infinite loops
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    cohortData?.name_id,
-    cohortData?.description_id,
-    cohortData?.active_flag_id,
+    cohortData?.names,
+    cohortData?.descriptions,
+    cohortData?.flags,
     departmentIdsStr,
     simulationIdsStr,
     simulationPositionsStr,
@@ -560,13 +568,7 @@ function CohortComponent({
     ]
   );
 
-  const hasResourceIds = !!(
-    formState.name_id ||
-    formState.description_id ||
-    formState.active_flag_id ||
-    formState.department_ids.length > 0 ||
-    formState.simulation_ids.length > 0
-  );
+  const hasResourceIds = checkHasResourceIds(COHORT_RESOURCES, formState);
 
   const buildPatchPayload = useCallback(
     (
@@ -574,15 +576,17 @@ function CohortComponent({
       expectedVersion: number,
       flushResults?: Record<string, unknown>
     ): Record<string, unknown> => {
-      const currentFormState = formStateRef.current as unknown as typeof formState;
-      const fr = (flushResults ?? {}) as Partial<FlushResult>;
+      const currentFormState = formStateRef.current as unknown as CohortFormState;
       return {
         input_draft_id: draftId || null,
-        name_id: fr.name_id !== undefined ? fr.name_id : currentFormState.name_id,
-        description_id: fr.description_id !== undefined ? fr.description_id : currentFormState.description_id,
-        active_flag_id: currentFormState.active_flag_id,
-        department_ids: currentFormState.department_ids,
-        simulation_ids: currentFormState.simulation_ids,
+        group_id: stableCohortDataFields?.group_id ?? null,
+        ...buildResourceActions(COHORT_RESOURCES, {
+          formState: currentFormState as unknown as Record<string, unknown>,
+          referenceState:
+            lastPatchedFormStateRef.current as unknown as Record<string, unknown>,
+          flushResults: (flushResults ?? {}) as Record<string, unknown>,
+          entityData: stableCohortDataFields as Record<string, unknown> | null,
+        }),
         simulation_position_values:
           currentFormState.simulation_positions.length > 0
             ? currentFormState.simulation_ids.map(
@@ -595,13 +599,19 @@ function CohortComponent({
         expected_version: expectedVersion,
       };
     },
-    []
+    [stableCohortDataFields]
   );
 
   const draftVersion =
     cohortData && "draft_version" in cohortData
       ? (cohortData as { draft_version?: number | null }).draft_version
       : null;
+
+  const onPatchSuccess = useCallback(() => {
+    lastPatchedFormStateRef.current = {
+      ...(formStateRef.current as unknown as CohortFormState),
+    };
+  }, []);
 
   const {
     setUrlFormDataRef,
@@ -619,26 +629,8 @@ function CohortComponent({
     hasResourceIds,
     flushRegistryRef,
     formStateRef,
+    onPatchSuccess,
   });
-
-  // Domain-based generation: map resource types to domain_ids
-  const getDomainIds = useCallback(
-    (resourceTypes: ResourceType[]): string[] => {
-      if (!cohortData) return [];
-      const domainIdMap: Partial<Record<ResourceType, string | null | undefined>> = {
-        names: cohortData.name_domain_id,
-        descriptions: cohortData.description_domain_id,
-        flags: cohortData.flag_domain_id,
-        departments: cohortData.departments_domain_id,
-        simulations: cohortData.simulations_domain_id,
-        simulation_positions: cohortData.simulation_positions_domain_id,
-      };
-      return resourceTypes
-        .map((rt) => domainIdMap[rt])
-        .filter((id): id is string => id != null);
-    },
-    [cohortData]
-  );
 
   const handleGenerateResources = useCallback(
     async (
@@ -681,9 +673,9 @@ function CohortComponent({
       const simulationShowSelected =
         (formData["simulationShowSelected"] as boolean | undefined) ?? false;
 
-      // Emit cohort_generate with domain_ids (new pattern)
+      // Emit cohort_generate with resource_types
       socket.emit("cohort_generate", {
-        domain_ids: getDomainIds(resourceTypes),
+        resource_types: resourceTypes,
         user_instructions: userInstructions ? [userInstructions] : null,
         // GetCohortApiRequest fields from formData
         draft_id: draftIdToUse,
@@ -693,7 +685,7 @@ function CohortComponent({
         cohort_id: cohortId || null,
       });
     },
-    [socket, isConnected, cohortId, getDomainIds, flushAllAndSave, formDataRef, setGeneratingResources]
+    [socket, isConnected, cohortId, flushAllAndSave, formDataRef, setGeneratingResources]
   );
 
   // Individual generation handlers - generate directly without modals
@@ -782,7 +774,7 @@ function CohortComponent({
 
   // Set breadcrumb context when cohort data is loaded
   useEffect(() => {
-    const cohortName = cohortData?.name_resource?.name;
+    const cohortName = cohortData?.names?.resource?.name;
     if (cohortName && cohortId && isEditMode) {
       setEntityMetadata({
         entityId: cohortId,
@@ -807,24 +799,21 @@ function CohortComponent({
         flushResults = await flushAllResources();
       }
 
-      const baseFormState = formStateRef.current as unknown as typeof formState;
-      const effectiveFormState = {
-        name_id: flushResults.name_id !== undefined ? flushResults.name_id : baseFormState.name_id,
-        description_id: flushResults.description_id !== undefined ? flushResults.description_id : baseFormState.description_id,
-        active_flag_id: baseFormState.active_flag_id,
-        department_ids: baseFormState.department_ids,
-        simulation_ids: baseFormState.simulation_ids,
-        simulation_positions: baseFormState.simulation_positions,
-      };
+      const baseFormState = formStateRef.current as unknown as CohortFormState;
+      const effectiveFormState = computeEffectiveFormState(
+        COHORT_RESOURCES,
+        baseFormState as unknown as Record<string, unknown>,
+        flushResults as Record<string, unknown>
+      ) as unknown as CohortFormState;
 
       // Validate required resource IDs using {resource}_required flags from cohortData
-      if (cohortData?.name_required && !effectiveFormState.name_id) {
+      if (cohortData?.names?.required && !effectiveFormState.name_id) {
         toast.error("Cohort name is required");
         throw new Error("Cohort name is required");
       }
 
       if (
-        cohortData?.departments_required &&
+        cohortData?.departments?.required &&
         (!effectiveFormState.department_ids || effectiveFormState.department_ids.length === 0)
       ) {
         toast.error("Departments are required");
@@ -856,37 +845,35 @@ function CohortComponent({
       }
 
       try {
+        const initialState = getInitialFormState();
+
         await saveCohortAction({
           body: {
             // Context
             group_id: cohortData.group_id,
             input_cohort_id: isEditMode && cohortId ? cohortId : null,
-
-            // Required single-select
-            name_id: effectiveFormState.name_id,
-
-            // Optional single-select
-            description_id: effectiveFormState.description_id ?? undefined,
-            active_flag_id: effectiveFormState.active_flag_id ?? undefined,
-
-            // Optional multi-select
-            department_ids:
-              effectiveFormState.department_ids.length > 0
-                ? effectiveFormState.department_ids
-                : undefined,
-            simulation_ids:
-              effectiveFormState.simulation_ids.length > 0
-                ? effectiveFormState.simulation_ids
-                : undefined,
+            ...buildResourceActions(COHORT_RESOURCES, {
+              formState: formStateRef.current as unknown as Record<
+                string,
+                unknown
+              >,
+              referenceState: initialState as unknown as Record<string, unknown>,
+              flushResults: flushResults as Record<string, unknown>,
+              entityData: cohortData as Record<string, unknown> | null,
+            }),
 
             // Special: simulation position values
             simulation_position_values:
-              formState.simulation_position_values &&
-              formState.simulation_position_values.length > 0
-                ? formState.simulation_position_values
+              effectiveFormState.simulation_positions.length > 0
+                ? effectiveFormState.simulation_ids.map(
+                    (simulationId, index) =>
+                      effectiveFormState.simulation_positions.find(
+                        (position) => position.simulation_id === simulationId
+                      )?.value ?? index + 1
+                  )
                 : undefined,
-          },
-        });
+          } as SaveCohortIn["body"],
+        } as SaveCohortIn);
         toast.success(
           `Cohort ${isEditMode ? "updated" : "created"} successfully!`
         );
@@ -901,15 +888,13 @@ function CohortComponent({
     [
       isAutosaveEnabled,
       flushAllResources,
+      getInitialFormState,
       isEditMode,
       cohortId,
-      cohortData?.group_id,
+      cohortData,
       profile?.id,
       saveCohortAction,
       router,
-      cohortData?.name_required,
-      cohortData?.departments_required,
-      formState.simulation_position_values,
     ]
   );
 
@@ -1042,9 +1027,18 @@ function CohortComponent({
       onReset?: () => void;
     }) => {
       // Use memoized fields to avoid dependency on cohortData object reference
-      const currentCohortData = stableCohortDataFields;
+      const s = stableCohortDataFields;
       switch (stepId) {
         case "basic":
+          const flagResource: FlagItem | null = s?.flags?.resource
+            ? {
+                id: s.flags.resource.id ?? null,
+                name: s.flags.resource.name ?? null,
+                description: s.flags.resource.description ?? null,
+                icon: s.flags.resource.icon ?? null,
+                generated: s.flags.resource.generated ?? false,
+              }
+            : null;
           return (
             <StepCard
               stepStatus={stepStatus}
@@ -1056,10 +1050,10 @@ function CohortComponent({
               customHeader={
                 <Names
                   name_id={formState.name_id ?? null}
-                  name_resource={currentCohortData?.name_resource ?? null}
-                  show_name={currentCohortData?.show_name ?? true}
-                  name_suggestions={currentCohortData?.name_suggestions ?? []}
-                  names={currentCohortData?.names ?? []}
+                  name_resource={s?.names?.resource ?? null}
+                  show_name={s?.names?.show ?? true}
+                  name_suggestions={s?.names?.suggestions ?? []}
+                  names={s?.names?.resources ?? []}
                   disabled={disabled}
                   onNameIdChange={(nameId) =>
                     setFormState((prev) => ({ ...prev, name_id: nameId }))
@@ -1068,10 +1062,10 @@ function CohortComponent({
                   isGenerating={isGenerating("names")}
                   placeholder="e.g., Spring 2024 Cohort"
                   defaultName="New Cohort"
-                  required={currentCohortData?.name_required ?? false}
+                  required={s?.names?.required ?? false}
                   hideDescription={true}
-                  group_id={currentCohortData?.group_id ?? null}
-                  showAiGenerate={currentCohortData?.name_show_ai_generate ?? false}
+                  group_id={s?.group_id ?? null}
+                  showAiGenerate={s?.names?.show_ai_generate ?? false}
                   createNamesAction={
                     createNamesAction as
                       | ((
@@ -1087,46 +1081,15 @@ function CohortComponent({
               actions={
                 stepResources["basic"] &&
                 stepResources["basic"].length > 0 &&
-                (currentCohortData?.basic_show_ai_generate ?? false) ? (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            const hasRegeneratable = stepResources[
-                              "basic"
-                            ]!.some((rt) => canRegenerate(rt));
-                            handleOpenStepCardModal(
-                              "basic",
-                              hasRegeneratable ? "regenerate" : "generate"
-                            );
-                          }}
-                          disabled={
-                            disabled ||
-                            stepResources["basic"]!.some((rt) =>
-                              isGenerating(rt)
-                            )
-                          }
-                        >
-                          {stepResources["basic"]!.some((rt) =>
-                            isGenerating(rt)
-                          ) ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Sparkles className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {stepResources["basic"]!.some((rt) => canRegenerate(rt))
-                          ? "Regenerate"
-                          : "Generate"}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                (s?.basic_show_ai_generate ?? false) ? (
+                  <StepCardAiButton
+                    stepId="basic"
+                    resourceTypes={stepResources["basic"] ?? []}
+                    canRegenerate={(rt) => canRegenerate(rt as ResourceType)}
+                    isGenerating={(rt) => isGenerating(rt as ResourceType)}
+                    disabled={disabled}
+                    onOpenModal={handleOpenStepCardModal}
+                  />
                 ) : undefined
               }
               {...(onReset ? { onReset } : {})}
@@ -1136,14 +1099,10 @@ function CohortComponent({
                 {/* Description field - using Descriptions resource component */}
                 <Descriptions
                   description_id={formState.description_id ?? null}
-                  description_resource={
-                    currentCohortData?.description_resource ?? null
-                  }
-                  show_description={currentCohortData?.show_description ?? true}
-                  description_suggestions={
-                    currentCohortData?.description_suggestions ?? []
-                  }
-                  descriptions={currentCohortData?.descriptions ?? []}
+                  description_resource={s?.descriptions?.resource ?? null}
+                  show_description={s?.descriptions?.show ?? true}
+                  description_suggestions={s?.descriptions?.suggestions ?? []}
+                  descriptions={s?.descriptions?.resources ?? []}
                   disabled={disabled}
                   onDescriptionIdChange={(descriptionId) =>
                     setFormState((prev) => ({
@@ -1164,11 +1123,11 @@ function CohortComponent({
                   isGenerating={isGenerating("descriptions")}
                   label="Description"
                   placeholder="Detailed description of the cohort"
-                  required={currentCohortData?.description_required ?? false}
+                  required={s?.descriptions?.required ?? false}
                   rows={4}
                   data-testid="input-cohort-description"
-                  group_id={currentCohortData?.group_id ?? null}
-                  showAiGenerate={currentCohortData?.description_show_ai_generate ?? false}
+                  group_id={s?.group_id ?? null}
+                  showAiGenerate={s?.descriptions?.show_ai_generate ?? false}
                   createDescriptionsAction={createDescriptionsAction}
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["descriptions"]}
@@ -1177,32 +1136,26 @@ function CohortComponent({
                 {/* Department Selection */}
                 <Departments
                   department_ids={formState.department_ids ?? []}
-                  department_resources={
-                    currentCohortData?.department_resources ?? []
-                  }
-                  show_departments={
-                    currentCohortData?.show_departments ?? false
-                  }
-                  department_suggestions={
-                    currentCohortData?.department_suggestions ?? []
-                  }
-                  departments={currentCohortData?.departments ?? []}
+                  department_resources={s?.departments?.current ?? []}
+                  show_departments={s?.departments?.show ?? false}
+                  department_suggestions={s?.departments?.suggestions ?? []}
+                  departments={s?.departments?.resources ?? []}
                   disabled={disabled}
                   onChange={(ids) =>
                     setFormState((prev) => ({ ...prev, department_ids: ids }))
                   }
                   onGenerate={handleGenerateDepartments}
                   isGenerating={isGenerating("departments")}
-                  required={currentCohortData?.departments_required ?? false}
-                  group_id={currentCohortData?.group_id ?? null}
-                  showAiGenerate={currentCohortData?.departments_show_ai_generate ?? false}
+                  required={s?.departments?.required ?? false}
+                  group_id={s?.group_id ?? null}
+                  showAiGenerate={s?.departments?.show_ai_generate ?? false}
                 />
 
                 {/* Active Switch - using Flags resource component */}
                 <Flags
                   flag_id={formState.active_flag_id ?? null}
-                  flag_resource={currentCohortData?.flag_resource ?? null}
-                  show_flag={currentCohortData?.show_flag ?? false}
+                  flag_resource={flagResource}
+                  show_flag={s?.flags?.show ?? false}
                   disabled={disabled}
                   onFlagIdChange={(flagId) =>
                     setFormState((prev) => ({
@@ -1214,9 +1167,9 @@ function CohortComponent({
                   isGenerating={isGenerating("flags")}
                   label="Active"
                   helpText="Inactive cohorts will not be available for selection"
-                  required={currentCohortData?.flag_required ?? false}
-                  group_id={currentCohortData?.group_id ?? null}
-                  showAiGenerate={currentCohortData?.flag_show_ai_generate ?? false}
+                  required={s?.flags?.required ?? false}
+                  group_id={s?.group_id ?? null}
+                  showAiGenerate={s?.flags?.show_ai_generate ?? false}
                 />
               </div>
             </StepCard>
@@ -1231,6 +1184,28 @@ function CohortComponent({
               | boolean
               | null
               | undefined) ?? false;
+          const simulationResourcesForUi = (s?.simulations?.resources ?? []).map(
+            (sim) => ({
+              simulation_id: sim.simulation_id ?? null,
+              name: sim.name ?? null,
+              description: sim.description ?? null,
+              time_limit: sim.time_limit ?? null,
+              generated: sim.generated ?? false,
+            })
+          );
+          const simulationCurrentForUi = (s?.simulations?.current ?? []).map(
+            (sim) => ({
+              simulation_id: sim.simulation_id ?? null,
+              name: sim.name ?? null,
+              description: sim.description ?? null,
+              time_limit: sim.time_limit ?? null,
+              generated: sim.generated ?? false,
+            })
+          );
+          const simulationPositionsAction =
+            createSimulationPositionsAction as
+              | SimulationPositionsProps["createSimulationPositionsAction"]
+              | undefined;
           return (
             <StepCard
               stepStatus={stepStatus}
@@ -1266,61 +1241,24 @@ function CohortComponent({
               actions={
                 stepResources["simulations"] &&
                 stepResources["simulations"].length > 0 &&
-                (currentCohortData?.simulations_step_show_ai_generate ?? false) ? (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            const hasRegeneratable = stepResources[
-                              "simulations"
-                            ]!.some((rt) => canRegenerate(rt));
-                            handleOpenStepCardModal(
-                              "simulations",
-                              hasRegeneratable ? "regenerate" : "generate"
-                            );
-                          }}
-                          disabled={
-                            disabled ||
-                            stepResources["simulations"]!.some((rt) =>
-                              isGenerating(rt)
-                            )
-                          }
-                        >
-                          {stepResources["simulations"]!.some((rt) =>
-                            isGenerating(rt)
-                          ) ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Sparkles className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {stepResources["simulations"]!.some((rt) =>
-                          canRegenerate(rt)
-                        )
-                          ? "Regenerate"
-                          : "Generate"}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                (s?.simulations_step_show_ai_generate ?? false) ? (
+                  <StepCardAiButton
+                    stepId="simulations"
+                    resourceTypes={stepResources["simulations"] ?? []}
+                    canRegenerate={(rt) => canRegenerate(rt as ResourceType)}
+                    isGenerating={(rt) => isGenerating(rt as ResourceType)}
+                    disabled={disabled}
+                    onOpenModal={handleOpenStepCardModal}
+                  />
                 ) : undefined
               }
             >
               <Simulations
                 simulation_ids={formState.simulation_ids ?? []}
-                simulation_resources={
-                  currentCohortData?.simulation_resources ?? []
-                }
-                show_simulations={currentCohortData?.show_simulations ?? false}
-                simulation_suggestions={
-                  currentCohortData?.simulation_suggestions ?? []
-                }
-                simulations={currentCohortData?.simulations ?? []}
+                simulation_resources={simulationCurrentForUi}
+                show_simulations={s?.simulations?.show ?? false}
+                simulation_suggestions={s?.simulations?.suggestions ?? []}
+                simulations={simulationResourcesForUi}
                 disabled={disabled}
                 onChange={(ids) =>
                   setFormState((prev) => ({
@@ -1331,20 +1269,18 @@ function CohortComponent({
                 onGenerate={handleGenerateSimulations}
                 isGenerating={isGenerating("simulations")}
                 label="Simulations"
-                required={currentCohortData?.simulations_required ?? false}
-                group_id={currentCohortData?.group_id ?? null}
-                showAiGenerate={currentCohortData?.simulations_show_ai_generate ?? false}
+                required={s?.simulations?.required ?? false}
+                group_id={s?.group_id ?? null}
+                showAiGenerate={s?.simulations?.show_ai_generate ?? false}
                 searchTerm={simulationSearchTerm}
                 showSelectedFilter={simulationShowSelected}
               />
               <SimulationPositions
                 simulation_ids={formState.simulation_ids ?? []}
-                simulation_resources={
-                  currentCohortData?.simulation_resources ?? []
-                }
-                simulations={currentCohortData?.simulations ?? []}
+                simulation_resources={simulationCurrentForUi}
+                simulations={simulationResourcesForUi}
                 show_simulation_positions={
-                  currentCohortData?.show_simulation_positions ?? false
+                  s?.simulation_positions?.show ?? false
                 }
                 simulation_positions={formState.simulation_positions ?? []}
                 disabled={disabled}
@@ -1363,15 +1299,15 @@ function CohortComponent({
                 }}
                 label="Simulation Positions"
                 required={
-                  currentCohortData?.simulation_positions_required ?? false
+                  s?.simulation_positions?.required ?? false
                 }
-                group_id={currentCohortData?.group_id ?? null}
-                showAiGenerate={currentCohortData?.simulation_positions_show_ai_generate ?? false}
+                group_id={s?.group_id ?? null}
+                showAiGenerate={s?.simulation_positions?.show_ai_generate ?? false}
                 onGenerate={
                   isEditMode ? handleGenerateSimulationPositions : undefined
                 }
                 isGenerating={isGenerating("simulation_positions")}
-                createSimulationPositionsAction={createSimulationPositionsAction}
+                createSimulationPositionsAction={simulationPositionsAction}
               />
             </StepCard>
           );
@@ -1404,6 +1340,7 @@ function CohortComponent({
       // they only change when content actually changes (not just reference)
       formState.department_ids,
       formState.simulation_ids,
+      formState.simulation_positions,
       createNamesAction,
       createDescriptionsAction,
       createSimulationPositionsAction,
@@ -1459,18 +1396,26 @@ function CohortComponent({
 export default React.memo(CohortComponent, (prevProps, nextProps) => {
   // Compare cohortData by resource IDs, not object reference
   const prevIds = {
-    name_id: prevProps.cohortData?.name_id,
-    description_id: prevProps.cohortData?.description_id,
-    active_flag_id: prevProps.cohortData?.active_flag_id,
-    department_ids: prevProps.cohortData?.department_ids,
-    simulation_ids: prevProps.cohortData?.simulation_ids,
+    name_id: prevProps.cohortData?.names?.resource?.id,
+    description_id: prevProps.cohortData?.descriptions?.resource?.id,
+    active_flag_id: prevProps.cohortData?.flags?.resource?.id,
+    department_ids: prevProps.cohortData?.departments?.current?.map(
+      (d) => d.department_id
+    ),
+    simulation_ids: prevProps.cohortData?.simulations?.current?.map(
+      (s) => s.simulation_id
+    ),
   };
   const nextIds = {
-    name_id: nextProps.cohortData?.name_id,
-    description_id: nextProps.cohortData?.description_id,
-    active_flag_id: nextProps.cohortData?.active_flag_id,
-    department_ids: nextProps.cohortData?.department_ids,
-    simulation_ids: nextProps.cohortData?.simulation_ids,
+    name_id: nextProps.cohortData?.names?.resource?.id,
+    description_id: nextProps.cohortData?.descriptions?.resource?.id,
+    active_flag_id: nextProps.cohortData?.flags?.resource?.id,
+    department_ids: nextProps.cohortData?.departments?.current?.map(
+      (d) => d.department_id
+    ),
+    simulation_ids: nextProps.cohortData?.simulations?.current?.map(
+      (s) => s.simulation_id
+    ),
   };
 
   // Compare primitive props

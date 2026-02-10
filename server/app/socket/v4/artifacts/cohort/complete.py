@@ -1,55 +1,51 @@
-"""Cohort completion handler - listens to generate_call_complete events and emits granular cohort events."""
+"""Cohort completion handler - emits typed cohort completion events."""
 
 import uuid
-from typing import Any, cast
+from typing import Any
 
 from fastapi import APIRouter
 
+from app.api.v4.resources.departments.get import get_departments_internal
+from app.api.v4.resources.descriptions.get import get_descriptions_internal
+from app.api.v4.resources.flags.get import get_flags_internal
+from app.api.v4.resources.names.get import get_names_internal
+from app.api.v4.resources.simulation_positions.get import (
+    get_simulation_positions_internal,
+)
+from app.api.v4.resources.simulations.get import get_simulation_internal
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
-from app.sql.types import (
-    GetCohortResourceIdsByGroupIdSqlParams,
-    GetCohortResourceIdsByGroupIdSqlRow,
-)
-from app.utils.sql_helper import execute_sql_typed
+from app.socket.v4.artifacts.cohort.types import CohortGenerationCompleteEvent
 
 internal_sio = get_internal_sio()
 
 client_router = APIRouter()
 server_router = APIRouter()
 
-SQL_PATH = "app/sql/v4/queries/cohorts/get_cohort_resource_ids_by_group_id_complete.sql"
-
 
 @internal_sio.on("generate_call_complete")  # type: ignore
 async def handle_cohort_artifact_complete(data: dict[str, Any]) -> None:
-    """Handle generate_call_complete events - filter by cohort artifact_type and emit granular event."""
-    # Skip processing if in eval mode - benchmark handlers will handle evals
-    eval_mode = data.get("eval_mode", False)
-    if eval_mode:
-        return  # Don't process evals - benchmark handlers will handle them
+    """Handle generate_call_complete events and emit typed cohort completion."""
+    if data.get("eval_mode", False):
+        return
 
-    # Filter by artifact_type (SQL will also validate, but early return for efficiency)
     artifact_type = data.get("artifact_type")
     if artifact_type != "cohort":
-        return  # Not for us
+        return
 
     sid = data.get("sid", "")
     if not sid:
-        return  # No socket ID, can't emit to client
+        return
 
-    # Get profile_id from sid
     profile_id_str = await find_profile_by_socket(sid)
     if not profile_id_str:
         return
-    profile_id = uuid.UUID(profile_id_str)
 
-    # Extract all data from event (no Python filtering for resource_type - SQL handles it)
     group_id_str = data.get("group_id")
     event_type = data.get("event_type")
+    resource_type = data.get("resource_type")
 
-    # Only process actual tool completion events, not summary events
     if event_type not in ("tool_call_complete", "tool_result"):
         return
 
@@ -59,20 +55,15 @@ async def handle_cohort_artifact_complete(data: dict[str, Any]) -> None:
         tool_result = tool_results[0]
     if event_type == "tool_call_complete" and not tool_result and not tool_results:
         return
+
     resource_id_str = tool_result.get("resource_id")
-    resource_type = data.get("resource_type")
 
     if not group_id_str or not resource_type:
         return
 
     if not resource_id_str:
-        # Check if this was a tool failure (e.g., duplicate key error)
-        # In that case, the error was already returned to the model for retry
-        # and we don't need to emit an error event to the client
         tool_success = tool_result.get("success", True)
         if not tool_success:
-            # Tool execution failed - this is expected and model can retry
-            # Don't emit error since other successful calls may have completed
             return
         await sio.emit(
             "cohort_generation_error",
@@ -87,27 +78,88 @@ async def handle_cohort_artifact_complete(data: dict[str, Any]) -> None:
         )
         return
 
-    group_id = uuid.UUID(group_id_str)
     resource_id = uuid.UUID(resource_id_str)
 
-    # Query SQL function - SQL handles validation and mapping (no-op, no queries)
+    event = CohortGenerationCompleteEvent(
+        artifact_type="cohort",
+        group_id=group_id_str,
+        resource_type=resource_type,
+        run_id=data.get("run_id"),
+        success=True,
+        message=f"{resource_type} generation completed successfully",
+        type=data.get("type", "complete"),
+    )
+
     try:
         async with get_db_connection() as conn:
-            params = GetCohortResourceIdsByGroupIdSqlParams(
-                profile_id=profile_id,
-                group_id=group_id,
-                resource_id=resource_id,
-                resource_type=resource_type,
-                artifact_type="cohort",  # Always "cohort" for this handler
-            )
-            result = cast(
-                GetCohortResourceIdsByGroupIdSqlRow,
-                await execute_sql_typed(conn, SQL_PATH, params=params),
-            )
+            if resource_type == "names":
+                items = await get_names_internal(conn, [resource_id])
+                if items:
+                    item = items[0]
+                    event.name_resource = {
+                        "id": item.id,
+                        "name": item.name,
+                        "generated": item.generated,
+                    }
+            elif resource_type == "descriptions":
+                items = await get_descriptions_internal(conn, [resource_id])
+                if items:
+                    item = items[0]
+                    event.description_resource = {
+                        "id": item.id,
+                        "description": item.description,
+                        "generated": item.generated,
+                    }
+            elif resource_type == "flags":
+                items = await get_flags_internal(conn, [resource_id])
+                if items:
+                    item = items[0]
+                    event.flag_resource = {
+                        "id": item.id,
+                        "name": item.name,
+                        "description": item.description,
+                        "icon": item.icon,
+                        "generated": item.generated,
+                    }
+            elif resource_type == "departments":
+                items = await get_departments_internal(conn, [resource_id])
+                if items:
+                    event.department_resources = [
+                        {
+                            "department_id": d.department_id,
+                            "name": d.name,
+                            "description": d.description,
+                            "generated": d.generated,
+                        }
+                        for d in items
+                    ]
+            elif resource_type == "simulations":
+                item = await get_simulation_internal(conn, resource_id)
+                if item:
+                    event.simulation_resources = [
+                        {
+                            "simulation_id": item.simulation_id,
+                            "name": item.name,
+                            "description": item.description,
+                            "time_limit": item.time_limit,
+                            "generated": item.generated,
+                        }
+                    ]
+            elif resource_type == "simulation_positions":
+                items = await get_simulation_positions_internal(conn, [resource_id])
+                if items:
+                    event.simulation_positions = [
+                        {
+                            "simulation_id": pos.simulation_id,
+                            "value": pos.value,
+                            "generated": pos.generated,
+                            "mcp": pos.mcp,
+                        }
+                        for pos in items
+                    ]
     except Exception as e:
-        # SQL function raised error (validation failed) - emit error to client
         await sio.emit(
-            "artifact_generation_error",
+            "cohort_generation_error",
             {
                 "artifact_type": "cohort",
                 "resource_type": resource_type,
@@ -119,45 +171,16 @@ async def handle_cohort_artifact_complete(data: dict[str, Any]) -> None:
         )
         return
 
-    # Emit granular event with mapped resource ID (one field set, others NULL)
     await sio.emit(
         "cohort_generation_complete",
-        {
-            "artifact_type": "cohort",
-            "group_id": group_id_str,
-            "resource_type": resource_type,
-            "name_id": str(result.name_id) if result.name_id else None,
-            "description_id": str(result.description_id)
-            if result.description_id
-            else None,
-            "active_flag_id": str(result.active_flag_id)
-            if result.active_flag_id
-            else None,
-            "department_ids": [str(did) for did in (result.department_ids or [])],
-            "simulation_ids": [str(sid) for sid in (result.simulation_ids or [])],
-            "simulation_positions": [
-                {
-                    "simulation_id": str(pos.simulation_id)
-                    if pos.simulation_id
-                    else None,
-                    "value": pos.value,
-                    "generated": pos.generated,
-                    "mcp": pos.mcp,
-                }
-                for pos in (result.simulation_positions or [])
-            ],
-            "success": True,
-            "message": f"{resource_type} generation completed successfully",
-            "run_id": data.get("run_id"),
-            "type": data.get("type", "complete"),
-        },
+        event.model_dump(mode="json"),
         room=sid,
     )
 
 
 @server_router.post("/cohort_generation_complete")
 async def cohort_generation_complete_api(
-    request: dict[str, Any],
+    request: CohortGenerationCompleteEvent,
 ) -> dict[str, bool]:
     """Server-to-client event: cohort generation complete."""
     _ = request

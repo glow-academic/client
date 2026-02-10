@@ -571,14 +571,33 @@ Use these as hard rules when implementing or refactoring Scenario:
 - API response is section-first (`names`, `descriptions`, `flags`, etc.) so frontend code reads `s.<section>.<field>` instead of flattening dozens of one-off props.
 - Frontend keeps a compact `stable{Artifact}DataFields` shape that stores section objects directly; avoid manually re-mapping every section field into new top-level aliases.
 - Frontend render code uses `const s = stable{Artifact}DataFields` and passes section data directly (`s.names.resource`, `s.parameters.current`, etc.) to reduce line count and drift.
+- Frontend should not rely on transitional `adapt{Artifact}Data()` compatibility shims after migration; consume section fields directly.
+- Avoid `// @ts-nocheck` in migrated artifact components; if types drift, fix the contract rather than suppressing type checks.
 - Websocket `get_{artifact}_websocket()` returns only top-level `group_id`, `views`, `resources`, and `resource_agent_ids`.
 - Websocket payload never returns top-level `current` or nested `resources.current`.
 - Websocket resource payload always includes selected artifact resources plus hydrated config resources: `agents`, `models`, `providers`, `tools`.
+- Websocket/API section models should use concrete generated resource types (`QGet*V4Item`) instead of `Any`/`dict` placeholders so frontend contracts stay strict.
+- Generation handlers should follow Persona-style step helpers even when using shared start/text SQL (`get_generation_run_context_and_create_run` + `get_text_run_context_for_existing_run`) instead of artifact-specific prepare SQL.
+- Generation handlers should fail fast on missing config resources (`agents/models/providers`) using websocket-hydrated resources before emitting `generate_artifact`.
 - Do not expose `agent_id` (or `*_agent_id`) to frontend contracts; route agent selection internally via `resource_agent_ids`.
 - Migration is hard-cut: remove legacy/dual-shape response types instead of supporting old + new formats indefinitely.
 - Save/draft endpoints accept nested section action objects with `resource_id(s)`, `create_tool_id`, and `link_tool_id` (no manual flat parameter parsing).
 - Save/draft SQL creates run/call/tool-call linkage for non-null tool IDs and applies resource workflow semantics (deactivate old active link, create/link new, set new active).
 - Generation UI must use `StepCardAiButton` and section `show_ai_generate` flags; no custom ad-hoc button logic per step.
+- If SQL signature is still legacy flat IDs during transition, flatten nested actions in server `from_request()` (single compatibility point) and keep the external API contract section-action based.
+- For simulation `scenario_personas` call-linking, use `personas_calls_connection` by resolving `scenario_personas_resource.persona_id` (there is no dedicated `scenario_personas_calls_connection` table).
+
+### Cohort Parity Rules (Persona-Style)
+
+- Cohort API is section-first: `names`, `descriptions`, `flags`, `departments`, `simulations`, `simulation_positions`.
+- Frontend reads section data directly (`s.names.resource`, `s.departments.current`, `s.simulations.resources`) and avoids flat legacy field parsing.
+- Cohort websocket `get_cohort_websocket()` returns only `group_id`, `views`, `resource_agent_ids`, and flat selected `resources` (+ `agents/models/providers/tools`).
+- Cohort generation emits `resource_types` only; no `domain_ids`, `agent_type`, or other client-side routing internals.
+- Cohort step AI buttons should use `StepCardAiButton` wired to section `show_ai_generate` flags.
+- Cohort contracts should not expose top-level `current` or `*_domain_id` / `*_agent_id` response fields.
+- Cohort save/draft endpoints use nested resource action payloads (`names`, `descriptions`, `flags`, `departments`, `simulations`, `simulation_positions`) with `resource_id(s)`, `create_tool_id`, and `link_tool_id`.
+- Cohort save SQL must apply workflow semantics on update (deactivate previous active junction links, insert/link new resources, set new links active).
+- Cohort save/draft SQL must create `runs_entry` + `calls_entry` + `tool_calls_junction` records for non-null tool IDs and link calls into resource call tables (`names_calls_connection`, `descriptions_calls_connection`, `flags_calls_connection`, `departments_calls_connection`, `simulations_calls_connection`, `simulation_positions_calls_connection`).
 
 ---
 
@@ -615,6 +634,7 @@ For any artifact endpoint, check each of these against the gold standard:
 - [ ] Calls `get_{artifact}_websocket()` to get pre-fetched resources
 - [ ] Resolves `agent_id` from `result.resource_agent_ids[resource_type]`
 - [ ] Extracts LLM config from `result.resources.agents/models/providers` — no SQL hops
+- [ ] If shared text-context SQL is used, still validate websocket config resources first and use SQL context only as runtime payload source/fallback
 - [ ] Uses lean prepare SQL (mutations only: create group/run/config) — NOT multi-step context SQL
 - [ ] Fetches tools/prompts/instructions from agent resource fields in parallel
 - [ ] Injects `views.config` (from `get_config_internal`) and `views.draft_{artifact}` into Jinja context
@@ -628,6 +648,7 @@ For any artifact endpoint, check each of these against the gold standard:
 - [ ] Dispatches by `event_type` (text_complete, run_complete, tool_call_complete)
 - [ ] Hydrates resources via `get_*_internal()` — not raw SQL
 - [ ] Emits `{artifact}_generation_complete` with full resource objects
+- [ ] Completion payloads validate scenario/tool-result objects into typed `QGet*V4Item` models before emitting (no raw dict passthrough)
 
 ### Permissions (`artifacts/{artifact}/permissions.py`)
 
@@ -654,6 +675,7 @@ For any artifact endpoint, check each of these against the gold standard:
 - [ ] Emits `resource_types` on generation (not domain_ids/agent_type)
 - [ ] Uses `StepCardAiButton` per step
 - [ ] Uses `const s = stable{Artifact}DataFields` pattern for rendering (avoid repetitive manual mapping in JSX)
+- [ ] No `adapt{Artifact}Data()` compatibility shim in migrated components; form state derives directly from `s.<section>.current/resource`
 - [ ] Uses `useDraftLifecycle` for autosave
 - [ ] Uses `useFlushRegistry` for resource creation
 - [ ] Save/draft sends nested resource actions with tool IDs

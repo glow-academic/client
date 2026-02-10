@@ -6,11 +6,12 @@
  */
 
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
+import type { ScenarioFlagsProps } from "@/components/resources/ScenarioFlags";
 import Simulation from "@/components/simulations/Simulation";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
-import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
+import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
 type GetSimulationIn = InputOf<"/api/v4/artifacts/simulations/get", "post">;
@@ -29,13 +30,8 @@ type CreateDraftDescriptionsOut = OutputOf<
   "/api/v4/resources/descriptions",
   "post"
 >;
-type CreateDraftScenarioFlagsIn = InputOf<
-  "/api/v4/resources/scenario_flags",
-  "post"
->;
-type CreateDraftScenarioFlagsOut = OutputOf<
-  "/api/v4/resources/scenario_flags",
-  "post"
+type CreateDraftScenarioFlagsAction = NonNullable<
+  ScenarioFlagsProps["createScenarioFlagsAction"]
 >;
 type CreateDraftScenarioPositionsIn = InputOf<
   "/api/v4/resources/scenario_positions",
@@ -124,8 +120,8 @@ export async function generateMetadata(
     };
     const simulation = await getSimulation(input);
     return {
-      title: `${simulation?.name_resource?.name || "Simulation"}`,
-      description: `${simulation?.name_resource?.name ? `${simulation.name_resource.name} - ` : ""}Teaching practice simulation for graduate teaching assistant training. Practice pedagogical techniques and student interaction strategies through realistic educational scenarios and simulation-based learning.`,
+      title: `${simulation?.names?.resource?.name || "Simulation"}`,
+      description: `${simulation?.names?.resource?.name ? `${simulation.names?.resource?.name} - ` : ""}Teaching practice simulation for graduate teaching assistant training. Practice pedagogical techniques and student interaction strategies through realistic educational scenarios and simulation-based learning.`,
     };
   } catch {
     // Fall through to default metadata
@@ -172,13 +168,19 @@ async function createDraftDescriptions(
   return api.post("/resources/descriptions", input);
 }
 
-async function createDraftScenarioFlags(
-  input: CreateDraftScenarioFlagsIn
-): Promise<CreateDraftScenarioFlagsOut> {
+const createDraftScenarioFlags: CreateDraftScenarioFlagsAction = async (
+  input
+) => {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/scenario_flags", input);
-}
+  return (api.post as unknown as (
+    path: string,
+    payload: Parameters<CreateDraftScenarioFlagsAction>[0]
+  ) => ReturnType<CreateDraftScenarioFlagsAction>)(
+    "/resources/scenario_flags",
+    input
+  );
+};
 
 async function createDraftScenarioPositions(
   input: CreateDraftScenarioPositionsIn
@@ -241,7 +243,6 @@ export default async function EditSimulationPage({
   const simulationSearchParams = {
     draftId: parseAsString,
     scenarioSearch: parseAsString,
-    scenarioShowSelected: parseAsBoolean,
   };
   const loadSimulationSearchParams = createLoader(simulationSearchParams);
   const q = loadSimulationSearchParams(searchParamsObj);
@@ -254,7 +255,6 @@ export default async function EditSimulationPage({
         simulation_id: simulationId,
         draft_id: q.draftId ?? null,
         scenario_search: q.scenarioSearch ?? null,
-        scenario_show_selected: q.scenarioShowSelected ?? null,
         // filter_scenario_ids comes from draft payload, not URL params
         filter_scenario_ids: null,
       } as GetSimulationIn["body"],

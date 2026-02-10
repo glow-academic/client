@@ -1,24 +1,28 @@
-"""Handcrafted types for document endpoints."""
+"""Handcrafted types for document endpoints.
+
+Section-first API responses following the gold standard pattern (REFERENCE.md).
+"""
 
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
-from app.api.v4.types import DomainAgent, DomainData
+from app.api.v4.views.drafts.types import DraftDocumentViewItem
 from app.sql.types import (
+    QGetAgentsV4Item,
     QGetDepartmentsV4Item,
     QGetDescriptionsV4Item,
+    QGetModelsV4Item,
     QGetNamesV4Item,
     QGetParameterFieldsV4Item,
+    QGetProvidersV4Item,
+    QGetToolsV4Item,
     QGetUploadsV4Item,
 )
-
-# Re-export for backwards compatibility
-__all__ = ["DomainAgent", "DomainData"]
-
 
 # ========== GET Endpoint Types ==========
 
@@ -32,7 +36,6 @@ class DocumentFlagConfig(BaseModel):
     flag_option_id: UUID | None = None  # ID to use when enabling
     show: bool = True
     required: bool = False
-    domain_id: UUID | None = None  # Domain ID for generation
     generated: bool | None = None
 
 
@@ -43,121 +46,100 @@ class GetDocumentApiRequest(BaseModel):
     draft_id: UUID | None = None
 
 
-class GetDocumentApiResponse(BaseModel):
-    """Response model for get document endpoint."""
+class BaseResourceSection(BaseModel):
+    """Common metadata for document resource sections."""
 
-    # Required fields
+    show: bool = False
+    required: bool = False
+    suggestions: list[UUID] | None = None
+    show_ai_generate: bool = False
+    create_tool_id: UUID | None = None
+    link_tool_id: UUID | None = None
+
+
+class DocumentNameSection(BaseResourceSection):
+    resource: QGetNamesV4Item | None = None
+    resources: list[QGetNamesV4Item] | None = None
+
+
+class DocumentDescriptionSection(BaseResourceSection):
+    resource: QGetDescriptionsV4Item | None = None
+    resources: list[QGetDescriptionsV4Item] | None = None
+
+
+class DocumentFlagSection(BaseResourceSection):
+    current: list[DocumentFlagConfig] | None = None
+    resources: list[DocumentFlagConfig] | None = None
+
+
+class DocumentDepartmentSection(BaseResourceSection):
+    current: list[QGetDepartmentsV4Item] | None = None
+    resources: list[QGetDepartmentsV4Item] | None = None
+
+
+class DocumentFieldSection(BaseResourceSection):
+    current: list[QGetParameterFieldsV4Item] | None = None
+    resources: list[QGetParameterFieldsV4Item] | None = None
+
+
+class DocumentUploadSection(BaseResourceSection):
+    current: list[QGetUploadsV4Item] | None = None
+    resources: list[QGetUploadsV4Item] | None = None
+
+
+class GetDocumentApiResponse(BaseModel):
+    """Section-first response for document editor."""
+
     actor_name: str | None = None
     document_exists: bool | None = None
     can_edit: bool | None = None
     disabled_reason: str | None = None
     draft_version: int | None = None
-
-    # Group ID
     group_id: UUID | None = None
 
-    # Per-resource group IDs (from draft MV)
-    names_group_id: UUID | None = None
-    descriptions_group_id: UUID | None = None
-    flags_group_id: UUID | None = None
-    departments_group_id: UUID | None = None
-    fields_group_id: UUID | None = None
-    uploads_group_id: UUID | None = None
-
-    # Single-select resources: name
-    show_name: bool | None = None
-    name_domain_id: UUID | None = None
-    name_required: bool | None = None
-    name_suggestions: list[UUID] | None = None
-    name_show_ai_generate: bool | None = None
-
-    # Single-select resources: description
-    show_description: bool | None = None
-    description_domain_id: UUID | None = None
-    description_required: bool | None = None
-    description_suggestions: list[UUID] | None = None
-    description_show_ai_generate: bool | None = None
-
-    # Single-select resources: flag
-    show_flag: bool | None = None
-    flag_domain_id: UUID | None = None
-    flag_required: bool | None = None
-    flag_show_ai_generate: bool | None = None
-
-    # Multi-select resources: departments
-    show_departments: bool | None = None
-    departments_domain_id: UUID | None = None
-    departments_required: bool | None = None
-    department_suggestions: list[UUID] | None = None
-    departments_show_ai_generate: bool | None = None
-
-    # Multi-select resources: fields
-    show_fields: bool | None = None
-    fields_domain_id: UUID | None = None
-    fields_required: bool | None = None
-    field_suggestions: list[UUID] | None = None
-    fields_show_ai_generate: bool | None = None
-
-    # Multi-select resources: uploads
-    show_uploads: bool | None = None
-    uploads_domain_id: UUID | None = None
-    uploads_required: bool | None = None
-    upload_suggestions: list[UUID] | None = None
-    uploads_show_ai_generate: bool | None = None
-
-    # Step-level AI generation flags (for "Generate All Basic", etc.)
     basic_show_ai_generate: bool | None = None
     content_show_ai_generate: bool | None = None
 
-    # Per-resource CREATE tool IDs (for AI generation)
-    name_create_tool_id: UUID | None = None
-    description_create_tool_id: UUID | None = None
-    fields_create_tool_id: UUID | None = None
-
-    # Per-resource LINK tool IDs (for AI suggestions)
-    name_link_tool_id: UUID | None = None
-    description_link_tool_id: UUID | None = None
-    flag_link_tool_id: UUID | None = None
-    departments_link_tool_id: UUID | None = None
-    fields_link_tool_id: UUID | None = None
-    uploads_link_tool_id: UUID | None = None
-
-    # Rich domain metadata for client display in modals
-    domain_data: list[DomainData] | None = None
-
-    # Generic resources payload (full objects + current selections)
-    resources: DocumentResources | None = None
+    names: DocumentNameSection | None = None
+    descriptions: DocumentDescriptionSection | None = None
+    flags: DocumentFlagSection | None = None
+    departments: DocumentDepartmentSection | None = None
+    fields: DocumentFieldSection | None = None
+    uploads: DocumentUploadSection | None = None
 
 
-class GetDocumentWebsocketResponse(BaseModel):
-    """Minimal response for WebSocket handlers (get_document_websocket).
-
-    Contains only what's needed for AI generation:
-    - Domain IDs (for domain_to_resource mapping)
-    - Domains list (for agent_id lookup)
-    - Group ID (for existing group context)
-    - Resources (for Jinja template context)
-    """
-
-    group_id: UUID | None = None
-
-    # Domain IDs for domain_to_resource mapping
-    name_domain_id: UUID | None = None
-    description_domain_id: UUID | None = None
-    flag_domain_id: UUID | None = None
-    departments_domain_id: UUID | None = None
-    fields_domain_id: UUID | None = None
-    uploads_domain_id: UUID | None = None
-
-    # Domains mapping (domain_id -> agent_id) for server-side agent lookup
-    domains: list[DomainAgent] | None = None
-
-    # Resources for Jinja template context
-    resources: DocumentResources | None = None
+# ========== Internal Helper Types (used by get.py intermediate layer) ==========
 
 
 class DocumentResourceBucket(BaseModel):
-    """Generic resources bucket with full objects (always plural lists)."""
+    """Internal bucket for holding resource lists during get_document_internal processing."""
+
+    names: list[Any] | None = None
+    descriptions: list[Any] | None = None
+    flags: list[Any] | None = None
+    departments: list[Any] | None = None
+    fields: list[Any] | None = None
+    uploads: list[Any] | None = None
+
+
+class DocumentResources(BaseModel):
+    """Internal resources container with 'resources' (all) and 'current' (selected) buckets."""
+
+    resources: DocumentResourceBucket | None = None
+    current: DocumentResourceBucket | None = None
+
+
+# ========== Websocket Types ==========
+
+
+class DocumentWebsocketViews(BaseModel):
+    """Optional websocket views payload."""
+
+    draft_document: DraftDocumentViewItem | None = None
+
+
+class DocumentWebsocketResources(BaseModel):
+    """Hydrated websocket resources: selected document + config resources."""
 
     names: list[QGetNamesV4Item] | None = None
     descriptions: list[QGetDescriptionsV4Item] | None = None
@@ -165,13 +147,19 @@ class DocumentResourceBucket(BaseModel):
     departments: list[QGetDepartmentsV4Item] | None = None
     fields: list[QGetParameterFieldsV4Item] | None = None
     uploads: list[QGetUploadsV4Item] | None = None
+    agents: list[QGetAgentsV4Item] | None = None
+    models: list[QGetModelsV4Item] | None = None
+    providers: list[QGetProvidersV4Item] | None = None
+    tools: list[QGetToolsV4Item] | None = None
 
 
-class DocumentResources(BaseModel):
-    """Full resources + current selections."""
+class GetDocumentWebsocketResponse(BaseModel):
+    """Minimal response for document websocket generation handlers."""
 
-    resources: DocumentResourceBucket | None = None
-    current: DocumentResourceBucket | None = None
+    group_id: UUID | None = None
+    views: DocumentWebsocketViews | None = None
+    resource_agent_ids: dict[str, UUID | None] | None = None
+    resources: DocumentWebsocketResources
 
 
 # ========== List Endpoint Types ==========
@@ -237,27 +225,39 @@ class ListDocumentApiResponse(BaseModel):
     total_count: int | None = None
 
 
+# ========== Resource Action Types (for tool call tracking) ==========
+
+
+class DocumentResourceAction(BaseModel):
+    """Single-select resource action with tool call tracking."""
+
+    resource_id: UUID | None = None
+    create_tool_id: UUID | None = None
+    link_tool_id: UUID | None = None
+
+
+class DocumentMultiResourceAction(BaseModel):
+    """Multi-select resource action with tool call tracking."""
+
+    resource_ids: list[UUID] | None = None
+    create_tool_id: UUID | None = None
+    link_tool_id: UUID | None = None
+
+
 # ========== Save Endpoint Types ==========
 
 
 class SaveDocumentApiRequest(BaseModel):
-    """Request model for save document endpoint - accepts form data directly."""
+    """Request model for save document endpoint - nested resource actions."""
 
-    # Context
-    group_id: UUID  # REQUIRED - which group to save to
-    input_document_id: UUID | None = None  # For update mode
-
-    # Required single-select resources
-    name_id: UUID  # REQUIRED
-
-    # Optional single-select resources
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-
-    # Optional multi-select resources
-    department_ids: list[UUID] = Field(default_factory=list)
-    field_ids: list[UUID] = Field(default_factory=list)
-    upload_ids: list[UUID] = Field(default_factory=list)
+    group_id: UUID
+    input_document_id: UUID | None = None
+    names: DocumentResourceAction
+    descriptions: DocumentResourceAction
+    flags: DocumentResourceAction
+    departments: DocumentMultiResourceAction
+    fields: DocumentMultiResourceAction
+    uploads: DocumentMultiResourceAction
 
 
 class SaveDocumentApiResponse(BaseModel):
@@ -269,37 +269,55 @@ class SaveDocumentApiResponse(BaseModel):
 
 
 class SaveDocumentSqlParams(BaseModel):
-    """SQL parameters for save document - accepts form data directly."""
+    """SQL parameters for save document."""
 
-    # Context
-    profile_id: UUID  # Added from header
-    group_id: UUID  # REQUIRED - which group to save to
-    input_document_id: UUID | None = None  # For update mode
+    profile_id: UUID
+    input_document_id: UUID | None = None
+    group_id: UUID
+    names: DocumentResourceAction
+    descriptions: DocumentResourceAction
+    flags: DocumentResourceAction
+    departments: DocumentMultiResourceAction
+    fields: DocumentMultiResourceAction
+    uploads: DocumentMultiResourceAction
 
-    # Required single-select resources
-    name_id: UUID  # REQUIRED
+    @classmethod
+    def from_request(
+        cls, request: SaveDocumentApiRequest, profile_id: UUID
+    ) -> SaveDocumentSqlParams:
+        return cls(
+            profile_id=profile_id,
+            input_document_id=request.input_document_id,
+            group_id=request.group_id,
+            names=request.names,
+            descriptions=request.descriptions,
+            flags=request.flags,
+            departments=request.departments,
+            fields=request.fields,
+            uploads=request.uploads,
+        )
 
-    # Optional single-select resources
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
+    def to_tuple(self) -> tuple[Any, ...]:
+        def single(
+            a: DocumentResourceAction,
+        ) -> tuple[UUID | None, UUID | None, UUID | None]:
+            return (a.resource_id, a.create_tool_id, a.link_tool_id)
 
-    # Optional multi-select resources
-    department_ids: list[UUID] = Field(default_factory=list)
-    field_ids: list[UUID] = Field(default_factory=list)
-    upload_ids: list[UUID] = Field(default_factory=list)
+        def multi(
+            a: DocumentMultiResourceAction,
+        ) -> tuple[list[UUID] | None, UUID | None, UUID | None]:
+            return (a.resource_ids, a.create_tool_id, a.link_tool_id)
 
-    def to_tuple(self) -> tuple:
-        """Convert to tuple for SQL execution."""
         return (
             self.profile_id,
-            self.group_id,
             self.input_document_id,
-            self.name_id,
-            self.description_id,
-            self.active_flag_id,
-            self.department_ids,
-            self.field_ids,
-            self.upload_ids,
+            self.group_id,
+            single(self.names),
+            single(self.descriptions),
+            single(self.flags),
+            multi(self.departments),
+            multi(self.fields),
+            multi(self.uploads),
         )
 
 
@@ -347,16 +365,17 @@ class DuplicateDocumentApiResponse(BaseModel):
 
 
 class PatchDocumentDraftApiRequest(BaseModel):
-    """Request model for patch document draft endpoint."""
+    """Request model for patch document draft endpoint - nested resource actions."""
 
     input_draft_id: UUID | None = None
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    field_ids: list[UUID] | None = None
-    upload_ids: list[UUID] | None = None
-    expected_version: int = 0
+    group_id: UUID | None = None
+    names: DocumentResourceAction | None = None
+    descriptions: DocumentResourceAction | None = None
+    flags: DocumentResourceAction | None = None
+    departments: DocumentMultiResourceAction | None = None
+    fields: DocumentMultiResourceAction | None = None
+    uploads: DocumentMultiResourceAction | None = None
+    expected_version: int | None = 0
 
 
 class PatchDocumentDraftApiResponse(BaseModel):
@@ -366,3 +385,67 @@ class PatchDocumentDraftApiResponse(BaseModel):
     draft_id: UUID
     new_version: int
     message: str
+
+
+class PatchDocumentDraftSqlParams(BaseModel):
+    """SQL parameters for patch document draft."""
+
+    profile_id: UUID
+    input_draft_id: UUID | None = None
+    group_id: UUID | None = None
+    names: DocumentResourceAction | None = None
+    descriptions: DocumentResourceAction | None = None
+    flags: DocumentResourceAction | None = None
+    departments: DocumentMultiResourceAction | None = None
+    fields: DocumentMultiResourceAction | None = None
+    uploads: DocumentMultiResourceAction | None = None
+    expected_version: int | None = 0
+
+    @classmethod
+    def from_request(
+        cls, request: PatchDocumentDraftApiRequest, profile_id: UUID
+    ) -> PatchDocumentDraftSqlParams:
+        return cls(
+            profile_id=profile_id,
+            input_draft_id=request.input_draft_id,
+            group_id=request.group_id,
+            names=request.names,
+            descriptions=request.descriptions,
+            flags=request.flags,
+            departments=request.departments,
+            fields=request.fields,
+            uploads=request.uploads,
+            expected_version=request.expected_version,
+        )
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        def single(
+            a: DocumentResourceAction | None,
+        ) -> tuple[UUID | None, UUID | None, UUID | None]:
+            return (
+                (a.resource_id, a.create_tool_id, a.link_tool_id)
+                if a
+                else (None, None, None)
+            )
+
+        def multi(
+            a: DocumentMultiResourceAction | None,
+        ) -> tuple[list[UUID] | None, UUID | None, UUID | None]:
+            return (
+                (a.resource_ids, a.create_tool_id, a.link_tool_id)
+                if a
+                else (None, None, None)
+            )
+
+        return (
+            self.profile_id,
+            self.input_draft_id,
+            self.group_id,
+            single(self.names),
+            single(self.descriptions),
+            single(self.flags),
+            multi(self.departments),
+            multi(self.fields),
+            multi(self.uploads),
+            self.expected_version,
+        )

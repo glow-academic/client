@@ -10,7 +10,13 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.api.v4.types import DomainAgent, DomainData
+from app.api.v4.views.drafts.types import DraftCohortViewItem
+from app.sql.types import (
+    QGetAgentsV4Item,
+    QGetModelsV4Item,
+    QGetProvidersV4Item,
+    QGetToolsV4Item,
+)
 
 # =============================================================================
 # Resource Types (imported from SQL types for reuse)
@@ -106,14 +112,54 @@ class GetCohortApiRequest(BaseModel):
     descriptions_search: str | None = None
     simulation_search: str | None = None
     simulation_show_selected: bool | None = None
-    current_simulation_ids: list[UUID] | None = None
     draft_id: UUID | None = None
+
+
+class BaseResourceSection(BaseModel):
+    """Common metadata fields for all cohort resource sections."""
+
+    show: bool = False
+    required: bool = False
+    suggestions: list[UUID] | None = None
+    show_ai_generate: bool = False
+    create_tool_id: UUID | None = None
+    link_tool_id: UUID | None = None
+
+
+class CohortNameSection(BaseResourceSection):
+    resource: CohortNameResource | None = None
+    resources: list[CohortNameResource] | None = None
+
+
+class CohortDescriptionSection(BaseResourceSection):
+    resource: CohortDescriptionResource | None = None
+    resources: list[CohortDescriptionResource] | None = None
+
+
+class CohortFlagSection(BaseResourceSection):
+    resource: CohortFlagResource | None = None
+    resources: list[CohortFlagResource] | None = None
+
+
+class CohortDepartmentSection(BaseResourceSection):
+    current: list[CohortDepartment] | None = None
+    resources: list[CohortDepartment] | None = None
+
+
+class CohortSimulationSection(BaseResourceSection):
+    current: list[CohortSimulation] | None = None
+    resources: list[CohortSimulation] | None = None
+
+
+class CohortSimulationPositionSection(BaseResourceSection):
+    current: list[CohortSimulationPosition] | None = None
+    resources: list[CohortSimulationPosition] | None = None
 
 
 class GetCohortApiResponse(BaseModel):
     """Response for getting a single cohort."""
 
-    # Required fields
+    # Context
     actor_name: str | None = None
     cohort_exists: bool | None = None
     can_edit: bool | None = None
@@ -121,129 +167,52 @@ class GetCohortApiResponse(BaseModel):
     draft_version: int | None = None
     group_id: UUID | None = None
 
-    # Per-resource group IDs (from draft MV)
-    names_group_id: UUID | None = None
-    descriptions_group_id: UUID | None = None
-    flags_group_id: UUID | None = None
-    departments_group_id: UUID | None = None
-    simulations_group_id: UUID | None = None
-    simulation_positions_group_id: UUID | None = None
-
-    # Name resource
-    name_id: UUID | None = None
-    name_resource: CohortNameResource | None = None
-    show_name: bool | None = None
-    name_domain_id: UUID | None = None
-    name_agent_id: UUID | None = None
-    name_required: bool | None = None
-    name_suggestions: list[UUID] | None = None
-    name_show_ai_generate: bool | None = None
-    names: list[CohortNameResource] | None = None
-
-    # Description resource
-    description_id: UUID | None = None
-    description_resource: CohortDescriptionResource | None = None
-    show_description: bool | None = None
-    description_domain_id: UUID | None = None
-    description_agent_id: UUID | None = None
-    description_required: bool | None = None
-    description_suggestions: list[UUID] | None = None
-    description_show_ai_generate: bool | None = None
-    descriptions: list[CohortDescriptionResource] | None = None
-
-    # Flag resource
-    active_flag_id: UUID | None = None
-    flag_resource: CohortFlagResource | None = None
-    show_flag: bool | None = None
-    flag_domain_id: UUID | None = None
-    flag_agent_id: UUID | None = None
-    flag_required: bool | None = None
-    flag_show_ai_generate: bool | None = None
-    flags: list[CohortFlagResource] | None = None
-
-    # Departments
-    department_ids: list[UUID] | None = None
-    department_resources: list[CohortDepartment] | None = None
-    show_departments: bool | None = None
-    departments_domain_id: UUID | None = None
-    departments_agent_id: UUID | None = None
-    departments_required: bool | None = None
-    department_suggestions: list[UUID] | None = None
-    departments_show_ai_generate: bool | None = None
-    departments: list[CohortDepartment] | None = None
-
-    # Simulations
-    simulation_ids: list[UUID] | None = None
-    simulation_resources: list[CohortSimulation] | None = None
-    show_simulations: bool | None = None
-    simulations_domain_id: UUID | None = None
-    simulations_agent_id: UUID | None = None
-    simulations_required: bool | None = None
-    simulation_suggestions: list[UUID] | None = None
-    simulations_show_ai_generate: bool | None = None
-    simulations: list[CohortSimulation] | None = None
-
-    # Simulation positions
-    simulation_positions: list[CohortSimulationPosition] | None = None
-    show_simulation_positions: bool | None = None
-    simulation_positions_domain_id: UUID | None = None
-    simulation_positions_agent_id: UUID | None = None
-    simulation_positions_required: bool | None = None
-    simulation_positions_show_ai_generate: bool | None = None
-
     # Step-level AI generation flags
     basic_show_ai_generate: bool | None = None
     simulations_step_show_ai_generate: bool | None = None
 
-    # Multi-resource combination agent IDs (legacy, kept for backward compat)
-    basic_agent_id: UUID | None = None
-    general_agent_id: UUID | None = None
-
-    # Per-resource CREATE tool IDs
-    name_create_tool_id: UUID | None = None
-    description_create_tool_id: UUID | None = None
-    simulations_create_tool_id: UUID | None = None
-
-    # Per-resource LINK tool IDs
-    name_link_tool_id: UUID | None = None
-    description_link_tool_id: UUID | None = None
-    flag_link_tool_id: UUID | None = None
-    departments_link_tool_id: UUID | None = None
-    simulations_link_tool_id: UUID | None = None
-    simulation_positions_link_tool_id: UUID | None = None
-
-    # Rich domain metadata for client display in modals
-    domain_data: list[DomainData] | None = None
-
-    # Generic resources payload (full objects + current selections)
-    resources: CohortResources | None = None
+    names: CohortNameSection | None = None
+    descriptions: CohortDescriptionSection | None = None
+    flags: CohortFlagSection | None = None
+    departments: CohortDepartmentSection | None = None
+    simulations: CohortSimulationSection | None = None
+    simulation_positions: CohortSimulationPositionSection | None = None
 
 
 class GetCohortWebsocketResponse(BaseModel):
     """Minimal response for WebSocket handlers (get_cohort_websocket).
 
     Contains only what's needed for AI generation:
-    - Domain IDs (for domain_to_resource mapping)
-    - Domains list (for agent_id lookup)
     - Group ID (for existing group context)
-    - Resources (for Jinja template context)
+    - Optional draft view
+    - resource_agent_ids mapping
+    - selected resources plus config resources for Jinja context
     """
 
     group_id: UUID | None = None
+    views: "CohortWebsocketViews | None" = None
+    resource_agent_ids: dict[str, UUID | None] | None = None
+    resources: "CohortWebsocketResources"
 
-    # Domain IDs for domain_to_resource mapping
-    names_domain_id: UUID | None = None
-    descriptions_domain_id: UUID | None = None
-    flags_domain_id: UUID | None = None
-    departments_domain_id: UUID | None = None
-    simulations_domain_id: UUID | None = None
-    simulation_positions_domain_id: UUID | None = None
 
-    # Domains mapping (domain_id -> agent_id) for server-side agent lookup
-    domains: list[DomainAgent] | None = None
+class CohortWebsocketViews(BaseModel):
+    draft_cohort: DraftCohortViewItem | None = None
 
-    # Resources for Jinja template context
-    resources: CohortResources | None = None
+
+class CohortWebsocketResources(BaseModel):
+    """Hydrated websocket resources — selected resources only plus config chain."""
+
+    names: list[CohortNameResource] | None = None
+    descriptions: list[CohortDescriptionResource] | None = None
+    flags: list[CohortFlagResource] | None = None
+    departments: list[CohortDepartment] | None = None
+    simulations: list[CohortSimulation] | None = None
+    simulation_positions: list[CohortSimulationPosition] | None = None
+
+    agents: list[QGetAgentsV4Item] | None = None
+    models: list[QGetModelsV4Item] | None = None
+    providers: list[QGetProvidersV4Item] | None = None
+    tools: list[QGetToolsV4Item] | None = None
 
 
 # =============================================================================
@@ -335,25 +304,35 @@ class ListCohortApiResponse(BaseModel):
 # =============================================================================
 
 
+class CohortResourceAction(BaseModel):
+    """Single resource action payload with tool-call metadata."""
+
+    resource_id: UUID | None = None
+    create_tool_id: UUID | None = None
+    link_tool_id: UUID | None = None
+
+
+class CohortMultiResourceAction(BaseModel):
+    """Multi-resource action payload with tool-call metadata."""
+
+    resource_ids: list[UUID] | None = None
+    create_tool_id: UUID | None = None
+    link_tool_id: UUID | None = None
+
+
 class SaveCohortApiRequest(BaseModel):
-    """Request for saving a cohort - accepts form data directly (no draft_id)."""
+    """Request for saving a cohort - nested resource actions."""
 
     # Context
     group_id: UUID  # REQUIRED - which group to save to
     input_cohort_id: UUID | None = None  # For update mode
 
-    # Required single-select resources
-    name_id: UUID  # REQUIRED
-
-    # Optional single-select resources
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-
-    # Optional multi-select resources
-    department_ids: list[UUID] | None = None
-    simulation_ids: list[UUID] | None = None
-
-    # Special: simulation position values for ordering
+    names: "CohortResourceAction"
+    descriptions: "CohortResourceAction"
+    flags: "CohortResourceAction"
+    departments: "CohortMultiResourceAction"
+    simulations: "CohortMultiResourceAction"
+    simulation_positions: "CohortMultiResourceAction"
     simulation_position_values: list[int] | None = None
 
 
@@ -365,38 +344,61 @@ class SaveCohortApiResponse(BaseModel):
 
 
 class SaveCohortSqlParams(BaseModel):
-    """SQL parameters for save cohort - accepts form data directly (no draft_id)."""
+    """SQL parameters for save cohort."""
 
     # Context
     profile_id: UUID  # Added from header
     group_id: UUID  # REQUIRED - which group to save to
     input_cohort_id: UUID | None = None  # For update mode
 
-    # Required single-select resources
-    name_id: UUID  # REQUIRED
-
-    # Optional single-select resources
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-
-    # Optional multi-select resources
-    department_ids: list[UUID] | None = None
-    simulation_ids: list[UUID] | None = None
-
-    # Special: simulation position values for ordering
+    names: "CohortResourceAction"
+    descriptions: "CohortResourceAction"
+    flags: "CohortResourceAction"
+    departments: "CohortMultiResourceAction"
+    simulations: "CohortMultiResourceAction"
+    simulation_positions: "CohortMultiResourceAction"
     simulation_position_values: list[int] | None = None
+
+    @classmethod
+    def from_request(
+        cls, request: SaveCohortApiRequest, profile_id: UUID
+    ) -> "SaveCohortSqlParams":
+        return cls(
+            profile_id=profile_id,
+            group_id=request.group_id,
+            input_cohort_id=request.input_cohort_id,
+            names=request.names,
+            descriptions=request.descriptions,
+            flags=request.flags,
+            departments=request.departments,
+            simulations=request.simulations,
+            simulation_positions=request.simulation_positions,
+            simulation_position_values=request.simulation_position_values,
+        )
 
     def to_tuple(self) -> tuple[Any, ...]:
         """Convert to tuple for SQL execution."""
+
+        def single(
+            a: CohortResourceAction,
+        ) -> tuple[UUID | None, UUID | None, UUID | None]:
+            return (a.resource_id, a.create_tool_id, a.link_tool_id)
+
+        def multi(
+            a: CohortMultiResourceAction,
+        ) -> tuple[list[UUID] | None, UUID | None, UUID | None]:
+            return (a.resource_ids, a.create_tool_id, a.link_tool_id)
+
         return (
             self.profile_id,
             self.group_id,
             self.input_cohort_id,
-            self.name_id,
-            self.description_id,
-            self.active_flag_id,
-            self.department_ids,
-            self.simulation_ids,
+            single(self.names),
+            single(self.descriptions),
+            single(self.flags),
+            multi(self.departments),
+            multi(self.simulations),
+            multi(self.simulation_positions),
             self.simulation_position_values,
         )
 
@@ -456,11 +458,13 @@ class PatchCohortDraftApiRequest(BaseModel):
     """Request for patching a cohort draft."""
 
     input_draft_id: UUID | None = None
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    simulation_ids: list[UUID] | None = None
+    group_id: UUID | None = None
+    names: "CohortResourceAction | None" = None
+    descriptions: "CohortResourceAction | None" = None
+    flags: "CohortResourceAction | None" = None
+    departments: "CohortMultiResourceAction | None" = None
+    simulations: "CohortMultiResourceAction | None" = None
+    simulation_positions: "CohortMultiResourceAction | None" = None
     simulation_position_values: list[int] | None = None
     expected_version: int | None = 0
 
@@ -468,6 +472,79 @@ class PatchCohortDraftApiRequest(BaseModel):
 class PatchCohortDraftApiResponse(BaseModel):
     """Response for patching a cohort draft."""
 
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+
+class PatchCohortDraftSqlParams(BaseModel):
+    """SQL params for patch cohort draft."""
+
+    profile_id: UUID
+    input_draft_id: UUID | None = None
+    group_id: UUID | None = None
+    names: "CohortResourceAction | None" = None
+    descriptions: "CohortResourceAction | None" = None
+    flags: "CohortResourceAction | None" = None
+    departments: "CohortMultiResourceAction | None" = None
+    simulations: "CohortMultiResourceAction | None" = None
+    simulation_positions: "CohortMultiResourceAction | None" = None
+    simulation_position_values: list[int] | None = None
+    expected_version: int | None = 0
+
+    @classmethod
+    def from_request(
+        cls, request: PatchCohortDraftApiRequest, profile_id: UUID
+    ) -> "PatchCohortDraftSqlParams":
+        return cls(
+            profile_id=profile_id,
+            input_draft_id=request.input_draft_id,
+            group_id=request.group_id,
+            names=request.names,
+            descriptions=request.descriptions,
+            flags=request.flags,
+            departments=request.departments,
+            simulations=request.simulations,
+            simulation_positions=request.simulation_positions,
+            simulation_position_values=request.simulation_position_values,
+            expected_version=request.expected_version,
+        )
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        def single(
+            a: CohortResourceAction | None,
+        ) -> tuple[UUID | None, UUID | None, UUID | None]:
+            return (
+                (a.resource_id, a.create_tool_id, a.link_tool_id)
+                if a
+                else (None, None, None)
+            )
+
+        def multi(
+            a: CohortMultiResourceAction | None,
+        ) -> tuple[list[UUID] | None, UUID | None, UUID | None]:
+            return (
+                (a.resource_ids, a.create_tool_id, a.link_tool_id)
+                if a
+                else (None, None, None)
+            )
+
+        return (
+            self.profile_id,
+            self.input_draft_id,
+            self.group_id,
+            single(self.names),
+            single(self.descriptions),
+            single(self.flags),
+            multi(self.departments),
+            multi(self.simulations),
+            multi(self.simulation_positions),
+            self.simulation_position_values,
+            self.expected_version,
+        )
+
+
+class PatchCohortDraftSqlRow(BaseModel):
     draft_id: UUID | None = None
     new_version: int | None = None
     draft_exists: bool | None = None

@@ -5,7 +5,6 @@ Types are registered in OpenAPI via FastAPI endpoints, enabling
 automatic type extraction in the frontend via InputOf/OutputOf.
 """
 
-from uuid import UUID
 
 from app.api.v4.artifacts.document.types import GetDocumentApiRequest
 from app.socket.v4.artifacts.types import (
@@ -34,10 +33,8 @@ class GenerateDocumentPayload(GetDocumentApiRequest):
     with generation-specific fields.
     """
 
-    # Generation-specific fields - domain-based API
-    domain_ids: list[
-        UUID
-    ]  # Required: which domains to generate (client passes these through)
+    # Generation-specific fields - resource_types API (gold standard pattern)
+    resource_types: list[str]  # Required: which resource types to generate
     user_instructions: list[str] | None = None  # Optional: user instructions
 
 

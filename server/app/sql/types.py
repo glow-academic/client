@@ -4673,15 +4673,32 @@ class GetCohortsListApiResponse(BaseModel):
 
 # Generated from: patch_cohort_draft
 
+class CohortMultiResourceAction(BaseModel):
+
+    resource_ids: list[UUID] | None
+    create_tool_id: UUID | None
+    link_tool_id: UUID | None
+
+
+
+
+class CohortResourceAction(BaseModel):
+
+    resource_id: UUID | None
+    create_tool_id: UUID | None
+    link_tool_id: UUID | None
+
 class PatchCohortDraftSqlParams(BaseModel):
 
     profile_id: UUID
     input_draft_id: UUID | None = None
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    simulation_ids: list[UUID] | None = None
+    group_id: UUID | None = None
+    names: CohortResourceAction | None = None
+    descriptions: CohortResourceAction | None = None
+    flags: CohortResourceAction | None = None
+    departments: CohortMultiResourceAction | None = None
+    simulations: CohortMultiResourceAction | None = None
+    simulation_positions: CohortMultiResourceAction | None = None
     simulation_position_values: list[int] | None = None
     expected_version: int | None = 0
 
@@ -4689,11 +4706,13 @@ class PatchCohortDraftSqlParams(BaseModel):
         return (
             self.profile_id,
             self.input_draft_id,
-            self.name_id,
-            self.description_id,
-            self.active_flag_id,
-            self.department_ids,
-            self.simulation_ids,
+            self.group_id,
+            self.names,
+            self.descriptions,
+            self.flags,
+            self.departments,
+            self.simulations,
+            self.simulation_positions,
             self.simulation_position_values,
             self.expected_version,
         )
@@ -4707,11 +4726,13 @@ class PatchCohortDraftSqlRow(BaseModel):
 class PatchCohortDraftApiRequest(BaseModel):
 
     input_draft_id: UUID | None = None
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    simulation_ids: list[UUID] | None = None
+    group_id: UUID | None = None
+    names: CohortResourceAction | None = None
+    descriptions: CohortResourceAction | None = None
+    flags: CohortResourceAction | None = None
+    departments: CohortMultiResourceAction | None = None
+    simulations: CohortMultiResourceAction | None = None
+    simulation_positions: CohortMultiResourceAction | None = None
     simulation_position_values: list[int] | None = None
     expected_version: int | None = 0
 
@@ -4730,11 +4751,12 @@ class SaveCohortSqlParams(BaseModel):
     profile_id: UUID
     group_id: UUID
     input_cohort_id: UUID | None = None
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    simulation_ids: list[UUID] | None = None
+    names: CohortResourceAction | None = None
+    descriptions: CohortResourceAction | None = None
+    flags: CohortResourceAction | None = None
+    departments: CohortMultiResourceAction | None = None
+    simulations: CohortMultiResourceAction | None = None
+    simulation_positions: CohortMultiResourceAction | None = None
     simulation_position_values: list[int] | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -4742,11 +4764,12 @@ class SaveCohortSqlParams(BaseModel):
             self.profile_id,
             self.group_id,
             self.input_cohort_id,
-            self.name_id,
-            self.description_id,
-            self.active_flag_id,
-            self.department_ids,
-            self.simulation_ids,
+            self.names,
+            self.descriptions,
+            self.flags,
+            self.departments,
+            self.simulations,
+            self.simulation_positions,
             self.simulation_position_values,
         )
 
@@ -4759,11 +4782,12 @@ class SaveCohortApiRequest(BaseModel):
 
     group_id: UUID
     input_cohort_id: UUID | None = None
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    simulation_ids: list[UUID] | None = None
+    names: CohortResourceAction | None = None
+    descriptions: CohortResourceAction | None = None
+    flags: CohortResourceAction | None = None
+    departments: CohortMultiResourceAction | None = None
+    simulations: CohortMultiResourceAction | None = None
+    simulation_positions: CohortMultiResourceAction | None = None
     simulation_position_values: list[int] | None = None
 
 class SaveCohortApiResponse(BaseModel):
@@ -6498,26 +6522,45 @@ class InsertDocumentApiResponse(BaseModel):
 
 # Generated from: patch_document_draft
 
+class DocumentMultiResourceAction(BaseModel):
+
+    resource_ids: list[UUID] | None
+    create_tool_id: UUID | None
+    link_tool_id: UUID | None
+
+
+
+
+class DocumentResourceAction(BaseModel):
+
+    resource_id: UUID | None
+    create_tool_id: UUID | None
+    link_tool_id: UUID | None
+
 class PatchDocumentDraftSqlParams(BaseModel):
 
     profile_id: UUID
     input_draft_id: UUID | None = None
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    field_ids: list[UUID] | None = None
-    department_ids: list[UUID] | None = None
+    group_id: UUID | None = None
+    names: DocumentResourceAction | None = None
+    descriptions: DocumentResourceAction | None = None
+    flags: DocumentResourceAction | None = None
+    departments: DocumentMultiResourceAction | None = None
+    fields: DocumentMultiResourceAction | None = None
+    uploads: DocumentMultiResourceAction | None = None
     expected_version: int | None = 0
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
             self.input_draft_id,
-            self.name_id,
-            self.description_id,
-            self.active_flag_id,
-            self.field_ids,
-            self.department_ids,
+            self.group_id,
+            self.names,
+            self.descriptions,
+            self.flags,
+            self.departments,
+            self.fields,
+            self.uploads,
             self.expected_version,
         )
 
@@ -6530,11 +6573,13 @@ class PatchDocumentDraftSqlRow(BaseModel):
 class PatchDocumentDraftApiRequest(BaseModel):
 
     input_draft_id: UUID | None = None
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    field_ids: list[UUID] | None = None
-    department_ids: list[UUID] | None = None
+    group_id: UUID | None = None
+    names: DocumentResourceAction | None = None
+    descriptions: DocumentResourceAction | None = None
+    flags: DocumentResourceAction | None = None
+    departments: DocumentMultiResourceAction | None = None
+    fields: DocumentMultiResourceAction | None = None
+    uploads: DocumentMultiResourceAction | None = None
     expected_version: int | None = 0
 
 class PatchDocumentDraftApiResponse(BaseModel):
@@ -6612,29 +6657,27 @@ class ProcessDocumentCsvApiResponse(BaseModel):
 
 class SaveDocumentSqlParams(BaseModel):
 
-    name_id: UUID
-    department_ids: list[UUID]
     profile_id: UUID
-    field_ids: list[UUID]
     input_document_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    upload_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    html_id: UUID | None = None
-    schema_id: UUID | None = None
+    group_id: UUID | None = None
+    names: DocumentResourceAction | None = None
+    descriptions: DocumentResourceAction | None = None
+    flags: DocumentResourceAction | None = None
+    departments: DocumentMultiResourceAction | None = None
+    fields: DocumentMultiResourceAction | None = None
+    uploads: DocumentMultiResourceAction | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.name_id,
-            self.department_ids,
             self.profile_id,
-            self.field_ids,
             self.input_document_id,
-            self.description_id,
-            self.active_flag_id,
-            self.upload_ids,
-            self.html_id,
-            self.schema_id,
+            self.group_id,
+            self.names,
+            self.descriptions,
+            self.flags,
+            self.departments,
+            self.fields,
+            self.uploads,
         )
 
 class SaveDocumentSqlRow(BaseModel):
@@ -6644,15 +6687,14 @@ class SaveDocumentSqlRow(BaseModel):
 
 class SaveDocumentApiRequest(BaseModel):
 
-    name_id: UUID
-    department_ids: list[UUID]
-    field_ids: list[UUID]
     input_document_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    upload_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    html_id: UUID | None = None
-    schema_id: UUID | None = None
+    group_id: UUID | None = None
+    names: DocumentResourceAction | None = None
+    descriptions: DocumentResourceAction | None = None
+    flags: DocumentResourceAction | None = None
+    departments: DocumentMultiResourceAction | None = None
+    fields: DocumentMultiResourceAction | None = None
+    uploads: DocumentMultiResourceAction | None = None
 
 class SaveDocumentApiResponse(BaseModel):
 
@@ -24429,36 +24471,53 @@ class GetSimulationsListApiResponse(BaseModel):
 
 # Generated from: patch_simulation_draft
 
+class SimulationMultiResourceAction(BaseModel):
+
+    resource_ids: list[UUID] | None
+    create_tool_id: UUID | None
+    link_tool_id: UUID | None
+
+
+
+
+class SimulationResourceAction(BaseModel):
+
+    resource_id: UUID | None
+    create_tool_id: UUID | None
+    link_tool_id: UUID | None
+
 class PatchSimulationDraftSqlParams(BaseModel):
 
     profile_id: UUID
     input_draft_id: UUID | None = None
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    flag_ids: list[UUID] | None = None
-    department_ids: list[UUID] | None = None
-    scenario_ids: list[UUID] | None = None
-    scenario_flag_ids: list[UUID] | None = None
-    scenario_position_ids: list[UUID] | None = None
-    scenario_rubric_ids: list[UUID] | None = None
-    scenario_time_limit_ids: list[UUID] | None = None
-    scenario_persona_ids: list[UUID] | None = None
+    group_id: UUID | None = None
+    names: SimulationResourceAction | None = None
+    descriptions: SimulationResourceAction | None = None
+    flags: SimulationMultiResourceAction | None = None
+    departments: SimulationMultiResourceAction | None = None
+    scenarios: SimulationMultiResourceAction | None = None
+    scenario_flags: SimulationMultiResourceAction | None = None
+    scenario_positions: SimulationMultiResourceAction | None = None
+    scenario_rubrics: SimulationMultiResourceAction | None = None
+    scenario_time_limits: SimulationMultiResourceAction | None = None
+    scenario_personas: SimulationMultiResourceAction | None = None
     expected_version: int | None = 0
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
             self.input_draft_id,
-            self.name_id,
-            self.description_id,
-            self.flag_ids,
-            self.department_ids,
-            self.scenario_ids,
-            self.scenario_flag_ids,
-            self.scenario_position_ids,
-            self.scenario_rubric_ids,
-            self.scenario_time_limit_ids,
-            self.scenario_persona_ids,
+            self.group_id,
+            self.names,
+            self.descriptions,
+            self.flags,
+            self.departments,
+            self.scenarios,
+            self.scenario_flags,
+            self.scenario_positions,
+            self.scenario_rubrics,
+            self.scenario_time_limits,
+            self.scenario_personas,
             self.expected_version,
         )
 
@@ -24471,16 +24530,17 @@ class PatchSimulationDraftSqlRow(BaseModel):
 class PatchSimulationDraftApiRequest(BaseModel):
 
     input_draft_id: UUID | None = None
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    flag_ids: list[UUID] | None = None
-    department_ids: list[UUID] | None = None
-    scenario_ids: list[UUID] | None = None
-    scenario_flag_ids: list[UUID] | None = None
-    scenario_position_ids: list[UUID] | None = None
-    scenario_rubric_ids: list[UUID] | None = None
-    scenario_time_limit_ids: list[UUID] | None = None
-    scenario_persona_ids: list[UUID] | None = None
+    group_id: UUID | None = None
+    names: SimulationResourceAction | None = None
+    descriptions: SimulationResourceAction | None = None
+    flags: SimulationMultiResourceAction | None = None
+    departments: SimulationMultiResourceAction | None = None
+    scenarios: SimulationMultiResourceAction | None = None
+    scenario_flags: SimulationMultiResourceAction | None = None
+    scenario_positions: SimulationMultiResourceAction | None = None
+    scenario_rubrics: SimulationMultiResourceAction | None = None
+    scenario_time_limits: SimulationMultiResourceAction | None = None
+    scenario_personas: SimulationMultiResourceAction | None = None
     expected_version: int | None = 0
 
 class PatchSimulationDraftApiResponse(BaseModel):
@@ -24496,34 +24556,34 @@ class PatchSimulationDraftApiResponse(BaseModel):
 class SaveSimulationSqlParams(BaseModel):
 
     profile_id: UUID
-    group_id: UUID
     input_simulation_id: UUID | None = None
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    flag_ids: list[UUID] | None = None
-    department_ids: list[UUID] | None = None
-    scenario_ids: list[UUID] | None = None
-    scenario_flag_ids: list[UUID] | None = None
-    scenario_position_ids: list[UUID] | None = None
-    scenario_rubric_ids: list[UUID] | None = None
-    scenario_time_limit_ids: list[UUID] | None = None
-    scenario_persona_ids: list[UUID] | None = None
+    group_id: UUID | None = None
+    names: SimulationResourceAction | None = None
+    descriptions: SimulationResourceAction | None = None
+    flags: SimulationMultiResourceAction | None = None
+    departments: SimulationMultiResourceAction | None = None
+    scenarios: SimulationMultiResourceAction | None = None
+    scenario_flags: SimulationMultiResourceAction | None = None
+    scenario_positions: SimulationMultiResourceAction | None = None
+    scenario_rubrics: SimulationMultiResourceAction | None = None
+    scenario_time_limits: SimulationMultiResourceAction | None = None
+    scenario_personas: SimulationMultiResourceAction | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
-            self.group_id,
             self.input_simulation_id,
-            self.name_id,
-            self.description_id,
-            self.flag_ids,
-            self.department_ids,
-            self.scenario_ids,
-            self.scenario_flag_ids,
-            self.scenario_position_ids,
-            self.scenario_rubric_ids,
-            self.scenario_time_limit_ids,
-            self.scenario_persona_ids,
+            self.group_id,
+            self.names,
+            self.descriptions,
+            self.flags,
+            self.departments,
+            self.scenarios,
+            self.scenario_flags,
+            self.scenario_positions,
+            self.scenario_rubrics,
+            self.scenario_time_limits,
+            self.scenario_personas,
         )
 
 class SaveSimulationSqlRow(BaseModel):
@@ -24533,18 +24593,18 @@ class SaveSimulationSqlRow(BaseModel):
 
 class SaveSimulationApiRequest(BaseModel):
 
-    group_id: UUID
     input_simulation_id: UUID | None = None
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    flag_ids: list[UUID] | None = None
-    department_ids: list[UUID] | None = None
-    scenario_ids: list[UUID] | None = None
-    scenario_flag_ids: list[UUID] | None = None
-    scenario_position_ids: list[UUID] | None = None
-    scenario_rubric_ids: list[UUID] | None = None
-    scenario_time_limit_ids: list[UUID] | None = None
-    scenario_persona_ids: list[UUID] | None = None
+    group_id: UUID | None = None
+    names: SimulationResourceAction | None = None
+    descriptions: SimulationResourceAction | None = None
+    flags: SimulationMultiResourceAction | None = None
+    departments: SimulationMultiResourceAction | None = None
+    scenarios: SimulationMultiResourceAction | None = None
+    scenario_flags: SimulationMultiResourceAction | None = None
+    scenario_positions: SimulationMultiResourceAction | None = None
+    scenario_rubrics: SimulationMultiResourceAction | None = None
+    scenario_time_limits: SimulationMultiResourceAction | None = None
+    scenario_personas: SimulationMultiResourceAction | None = None
 
 class SaveSimulationApiResponse(BaseModel):
 

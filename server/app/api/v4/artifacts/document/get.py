@@ -19,7 +19,6 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.artifacts.document.permissions import (
     DOCUMENT_RESOURCES,
-    build_domain_data,
     compute_can_edit,
     compute_departments_required,
     compute_description_required,
@@ -37,15 +36,23 @@ from app.api.v4.artifacts.document.permissions import (
     has_access,
 )
 from app.api.v4.artifacts.document.types import (
+    DocumentDepartmentSection,
+    DocumentDescriptionSection,
+    DocumentFieldSection,
     DocumentFlagConfig,
+    DocumentFlagSection,
+    DocumentNameSection,
     DocumentResourceBucket,
     DocumentResources,
-    DomainAgent,
+    DocumentUploadSection,
+    DocumentWebsocketResources,
+    DocumentWebsocketViews,
     GetDocumentApiRequest,
     GetDocumentApiResponse,
     GetDocumentWebsocketResponse,
 )
 from app.api.v4.permissions import select_agents_for_artifact
+from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.departments.search import search_departments_internal
 from app.api.v4.resources.descriptions.get import get_descriptions_internal
@@ -53,9 +60,12 @@ from app.api.v4.resources.descriptions.search import search_descriptions_interna
 from app.api.v4.resources.fields.search import search_fields_internal
 from app.api.v4.resources.flags.get import get_flags_internal
 from app.api.v4.resources.flags.search import search_flags_internal
+from app.api.v4.resources.models.get import get_models_internal
 from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.names.search import search_names_internal
 from app.api.v4.resources.parameter_fields.get import get_parameter_fields_internal
+from app.api.v4.resources.providers.get import get_providers_internal
+from app.api.v4.resources.tools.get import get_tools_internal
 from app.api.v4.resources.uploads.get import get_uploads_internal
 from app.api.v4.resources.uploads.search import search_uploads_internal
 from app.api.v4.types import CandidateAgent
@@ -81,12 +91,7 @@ router = APIRouter()
 
 @dataclass
 class DocumentInternalData:
-    """Internal data from core document fetching (cacheable layer).
-
-    This dataclass contains all computed data needed by both:
-    - get_document_websocket() - minimal data for WebSocket handlers
-    - get_document_client() - full BFF response for HTTP/frontend
-    """
+    """Internal data from core document fetching (cacheable layer)."""
 
     # Access/context
     actor_name: str | None
@@ -96,10 +101,8 @@ class DocumentInternalData:
     draft_version: int | None
     group_id: UUID | None
 
-    # Domain mappings
-    domain_ids_map: dict[str, UUID | None]
+    # Agent IDs (resource_type -> agent_id)
     agent_ids: dict[str, UUID | None]
-    domains_list: list[DomainAgent]
 
     # Show/required flags
     show_flags_map: dict[str, bool]
@@ -108,23 +111,22 @@ class DocumentInternalData:
     # Suggestions (resource -> list of suggestion IDs)
     suggestions_map: dict[str, list[UUID]]
 
-    # Show AI generate flags (computed: domain_id exists AND agent exists)
+    # Show AI generate flags (computed: agent exists for that resource)
     show_ai_generate_map: dict[str, bool]
     basic_show_ai_generate: bool
     content_show_ai_generate: bool
 
-    # Domain data for modals
-    domain_data_list: list[Any]  # list[DomainData]
-
     # Resources payload
     resources_payload: DocumentResources
-
-    # Per-resource group IDs (from draft MV)
-    resource_group_ids: dict[str, UUID | None]
 
     # Per-resource tool IDs (from selected agents)
     create_tool_ids_map: dict[str, UUID | None]
     link_tool_ids_map: dict[str, UUID | None]
+
+    # Config resources (for websocket generation)
+    config_agent_resources: list[Any] | None
+    config_model_resources: list[Any] | None
+    config_provider_resources: list[Any] | None
 
 
 async def get_document_internal(
@@ -136,9 +138,7 @@ async def get_document_internal(
     """Core data fetching layer (cacheable).
 
     Fetches all document data using two-pass architecture and returns
-    a dataclass with all computed values. This is the shared layer used by:
-    - get_document_websocket() - minimal data for WebSocket handlers
-    - get_document_client() - full BFF response for HTTP/frontend
+    a dataclass with all computed values.
     """
 
     # === QUERY 1: Access Check (always fresh, no cache) ===
@@ -239,16 +239,6 @@ async def get_document_internal(
         if draft_item.upload_ids:
             selected_upload_ids = draft_item.upload_ids
 
-    # Build per-resource group_ids from draft_item
-    resource_group_ids: dict[str, UUID | None] = {
-        "names": draft_item.group_id if draft_item else None,
-        "descriptions": draft_item.group_id if draft_item else None,
-        "flags": draft_item.group_id if draft_item else None,
-        "departments": draft_item.group_id if draft_item else None,
-        "fields": draft_item.group_id if draft_item else None,
-        "uploads": draft_item.group_id if draft_item else None,
-    }
-
     # Get tools existence flags from Query 2 (used for show_* UI flags)
     names_has_tools = ids_result.names_has_tools or False
 
@@ -281,22 +271,11 @@ async def get_document_internal(
                     link_tool_ids_map[resource] = candidate.link_tool_ids.get(resource)
                     break
 
-    # === EXTRACT DOMAIN IDS FROM QUERY 2 ===
-    domain_ids_map: dict[str, UUID | None] = {
-        "names": ids_result.name_domain_id,
-        "descriptions": ids_result.description_domain_id,
-        "flags": ids_result.flag_domain_id,
-        "departments": ids_result.departments_domain_id,
-        "fields": ids_result.fields_domain_id,
-        "uploads": ids_result.uploads_domain_id,
-    }
-
     # === COMPUTE SHOW_AI_GENERATE FLAGS ===
     def compute_show_ai_generate(resource: str) -> bool:
-        """Returns True if domain_id exists AND agent exists for that resource."""
-        domain_id = domain_ids_map.get(resource)
+        """Returns True if agent exists for that resource."""
         agent_id = agent_ids.get(resource)
-        return domain_id is not None and agent_id is not None
+        return agent_id is not None
 
     name_show_ai_generate = compute_show_ai_generate("names")
     description_show_ai_generate = compute_show_ai_generate("descriptions")
@@ -511,11 +490,6 @@ async def get_document_internal(
         "uploads": compute_uploads_required(),
     }
 
-    # Build rich domain metadata for client display
-    domain_data_list = build_domain_data(
-        domain_ids_map, show_flags_map, required_flags_map
-    )
-
     # Transform flags to enriched format for client
     document_flags = [
         DocumentFlagConfig(
@@ -525,7 +499,6 @@ async def get_document_internal(
             flag_option_id=flag.id,
             show=show_flag,
             required=compute_flag_required(),
-            domain_id=domain_ids_map.get("flags"),
             generated=flag.generated,
         )
         for flag in flags
@@ -566,18 +539,6 @@ async def get_document_internal(
         ),
     )
 
-    # Build domains list for WebSocket handler
-    domains_list: list[DomainAgent] = []
-    for resource, domain_id in domain_ids_map.items():
-        if domain_id is not None:
-            domains_list.append(
-                DomainAgent(
-                    domain_id=domain_id,
-                    agent_id=agent_ids.get(resource),
-                    group_id=resource_group_ids.get(resource),
-                )
-            )
-
     # Build show_ai_generate map
     show_ai_generate_map = {
         "names": name_show_ai_generate,
@@ -597,6 +558,45 @@ async def get_document_internal(
         "uploads": upload_suggestions,
     }
 
+    # Fetch config resources for websocket generation context
+    selected_agent_ids_list = [aid for aid in agent_ids.values() if aid]
+    unique_agent_ids = list(dict.fromkeys(selected_agent_ids_list))
+
+    config_agents_result: list[Any] = []
+    config_models_result: list[Any] = []
+    config_providers_result: list[Any] = []
+    if unique_agent_ids:
+        async with pool.acquire() as c:
+            config_agents_result = await get_agents_internal(
+                c, unique_agent_ids, bypass_cache
+            )
+    model_ids = list(
+        dict.fromkeys(
+            [
+                getattr(agent, "model_id", None)
+                for agent in config_agents_result
+                if getattr(agent, "model_id", None) is not None
+            ]
+        )
+    )
+    if model_ids:
+        async with pool.acquire() as c:
+            config_models_result = await get_models_internal(c, model_ids, bypass_cache)
+    provider_ids = list(
+        dict.fromkeys(
+            [
+                getattr(model, "provider_id", None)
+                for model in config_models_result
+                if getattr(model, "provider_id", None) is not None
+            ]
+        )
+    )
+    if provider_ids:
+        async with pool.acquire() as c:
+            config_providers_result = await get_providers_internal(
+                c, provider_ids, bypass_cache
+            )
+
     return DocumentInternalData(
         # Access/context
         actor_name=access_result.actor_name,
@@ -605,10 +605,8 @@ async def get_document_internal(
         disabled_reason=disabled_reason,
         draft_version=effective_draft_version,
         group_id=effective_group_id,
-        # Domain mappings
-        domain_ids_map=domain_ids_map,
+        # Agent IDs
         agent_ids=agent_ids,
-        domains_list=domains_list,
         # Show/required flags
         show_flags_map=show_flags_map,
         required_flags_map=required_flags_map,
@@ -618,14 +616,15 @@ async def get_document_internal(
         show_ai_generate_map=show_ai_generate_map,
         basic_show_ai_generate=basic_show_ai_generate,
         content_show_ai_generate=content_show_ai_generate,
-        # Domain data and resources
-        domain_data_list=domain_data_list,
+        # Resources
         resources_payload=resources_payload,
-        # Per-resource group IDs
-        resource_group_ids=resource_group_ids,
         # Per-resource tool IDs
         create_tool_ids_map=create_tool_ids_map,
         link_tool_ids_map=link_tool_ids_map,
+        # Config resources
+        config_agent_resources=config_agents_result or None,
+        config_model_resources=config_models_result or None,
+        config_provider_resources=config_providers_result or None,
     )
 
 
@@ -637,11 +636,7 @@ async def get_document_websocket(
 ) -> GetDocumentWebsocketResponse:
     """Minimal response for WebSocket handlers.
 
-    Returns only what's needed for AI generation:
-    - Domain IDs (for domain_to_resource mapping)
-    - Domains list (for agent_id lookup)
-    - Group ID (for existing group context)
-    - Resources (for Jinja template context)
+    Returns resource_agent_ids, views, and flat resources for generation.
     """
     data = await get_document_internal(
         profile_id=profile_id,
@@ -650,19 +645,68 @@ async def get_document_websocket(
         bypass_cache=bypass_cache,
     )
 
+    draft_view = None
+    if draft_id is not None:
+        pool = get_pool()
+        if not pool:
+            raise RuntimeError("Database pool not initialized")
+        async with pool.acquire() as conn:
+            draft_items = await get_draft_document_internal(
+                conn=conn,
+                draft_ids=[draft_id],
+                bypass_cache=bypass_cache,
+            )
+            draft_view = draft_items[0] if draft_items else None
+
+    current = data.resources_payload.current
+
+    # Get enriched flag configs for selected flags
+    selected_flag_ids = {
+        getattr(f, "flag_option_id", None) or getattr(f, "id", None)
+        for f in (current.flags if current and current.flags else [])
+    } - {None}
+    all_enriched_flags = (
+        data.resources_payload.resources.flags
+        if data.resources_payload.resources
+        else []
+    ) or []
+    selected_enriched_flags = [
+        f for f in all_enriched_flags if f.flag_option_id in selected_flag_ids
+    ]
+
+    # Fetch tools from selected agents
+    tools_result: list[Any] = []
+    if data.config_agent_resources:
+        tool_ids: list[UUID] = []
+        for agent in data.config_agent_resources:
+            ids = getattr(agent, "tool_ids", None) or []
+            tool_ids.extend(ids)
+        deduped_tool_ids = list(dict.fromkeys(tool_ids))
+        if deduped_tool_ids:
+            pool = get_pool()
+            if not pool:
+                raise RuntimeError("Database pool not initialized")
+            async with pool.acquire() as conn:
+                tools_result = await get_tools_internal(
+                    conn, deduped_tool_ids, bypass_cache
+                )
+
     return GetDocumentWebsocketResponse(
         group_id=data.group_id,
-        # Domain IDs for domain_to_resource mapping
-        name_domain_id=data.domain_ids_map.get("names"),
-        description_domain_id=data.domain_ids_map.get("descriptions"),
-        flag_domain_id=data.domain_ids_map.get("flags"),
-        departments_domain_id=data.domain_ids_map.get("departments"),
-        fields_domain_id=data.domain_ids_map.get("fields"),
-        uploads_domain_id=data.domain_ids_map.get("uploads"),
-        # Domains mapping for agent lookup
-        domains=data.domains_list,
-        # Resources for Jinja context
-        resources=data.resources_payload,
+        views=DocumentWebsocketViews(draft_document=draft_view) if draft_view else None,
+        resource_agent_ids=data.agent_ids,
+        resources=DocumentWebsocketResources(
+            names=current.names if current else None,
+            descriptions=current.descriptions if current else None,
+            flags=selected_enriched_flags or None,
+            departments=current.departments if current else None,
+            fields=current.fields if current else None,
+            uploads=current.uploads if current else None,
+            agents=data.config_agent_resources,
+            models=data.config_model_resources,
+            providers=data.config_provider_resources,
+            tools=tools_result or None,
+        ),
     )
 
 
@@ -674,7 +718,7 @@ async def get_document_client(
 ) -> GetDocumentApiResponse:
     """BFF response for HTTP endpoint/frontend.
 
-    Returns the full response with all UI fields, suggestions, and
+    Returns the full section-first response with all UI fields, suggestions, and
     computed *_show_ai_generate flags.
     """
     data = await get_document_internal(
@@ -684,74 +728,66 @@ async def get_document_client(
         bypass_cache=bypass_cache,
     )
 
+    resources_bucket = data.resources_payload.resources
+    current_bucket = data.resources_payload.current
+
+    def section_common(resource_key: str) -> dict[str, Any]:
+        return {
+            "show": data.show_flags_map.get(resource_key, False),
+            "required": data.required_flags_map.get(resource_key, False),
+            "suggestions": data.suggestions_map.get(resource_key, []),
+            "show_ai_generate": data.show_ai_generate_map.get(resource_key, False),
+            "create_tool_id": data.create_tool_ids_map.get(resource_key),
+            "link_tool_id": data.link_tool_ids_map.get(resource_key),
+        }
+
     return GetDocumentApiResponse(
-        # Required fields
         actor_name=data.actor_name,
         document_exists=data.document_exists,
         can_edit=data.can_edit,
         disabled_reason=data.disabled_reason,
         draft_version=data.draft_version,
         group_id=data.group_id,
-        # Per-resource group IDs (from draft MV)
-        names_group_id=data.resource_group_ids.get("names"),
-        descriptions_group_id=data.resource_group_ids.get("descriptions"),
-        flags_group_id=data.resource_group_ids.get("flags"),
-        departments_group_id=data.resource_group_ids.get("departments"),
-        fields_group_id=data.resource_group_ids.get("fields"),
-        uploads_group_id=data.resource_group_ids.get("uploads"),
-        # Name
-        show_name=data.show_flags_map.get("names"),
-        name_domain_id=data.domain_ids_map.get("names"),
-        name_required=data.required_flags_map.get("names"),
-        name_suggestions=data.suggestions_map.get("names"),
-        name_show_ai_generate=data.show_ai_generate_map.get("names"),
-        # Description
-        show_description=data.show_flags_map.get("descriptions"),
-        description_domain_id=data.domain_ids_map.get("descriptions"),
-        description_required=data.required_flags_map.get("descriptions"),
-        description_suggestions=data.suggestions_map.get("descriptions"),
-        description_show_ai_generate=data.show_ai_generate_map.get("descriptions"),
-        # Flag
-        show_flag=data.show_flags_map.get("flags"),
-        flag_domain_id=data.domain_ids_map.get("flags"),
-        flag_required=data.required_flags_map.get("flags"),
-        flag_show_ai_generate=data.show_ai_generate_map.get("flags"),
-        # Departments
-        show_departments=data.show_flags_map.get("departments"),
-        departments_domain_id=data.domain_ids_map.get("departments"),
-        departments_required=data.required_flags_map.get("departments"),
-        department_suggestions=data.suggestions_map.get("departments"),
-        departments_show_ai_generate=data.show_ai_generate_map.get("departments"),
-        # Fields
-        show_fields=data.show_flags_map.get("fields"),
-        fields_domain_id=data.domain_ids_map.get("fields"),
-        fields_required=data.required_flags_map.get("fields"),
-        field_suggestions=data.suggestions_map.get("fields"),
-        fields_show_ai_generate=data.show_ai_generate_map.get("fields"),
-        # Uploads
-        show_uploads=data.show_flags_map.get("uploads"),
-        uploads_domain_id=data.domain_ids_map.get("uploads"),
-        uploads_required=data.required_flags_map.get("uploads"),
-        upload_suggestions=data.suggestions_map.get("uploads"),
-        uploads_show_ai_generate=data.show_ai_generate_map.get("uploads"),
-        # Step-level AI generation flags
         basic_show_ai_generate=data.basic_show_ai_generate,
         content_show_ai_generate=data.content_show_ai_generate,
-        # Domain metadata for client display in modals
-        domain_data=data.domain_data_list,
-        # Resources
-        resources=data.resources_payload,
-        # Per-resource CREATE tool IDs
-        name_create_tool_id=data.create_tool_ids_map.get("names"),
-        description_create_tool_id=data.create_tool_ids_map.get("descriptions"),
-        fields_create_tool_id=data.create_tool_ids_map.get("fields"),
-        # Per-resource LINK tool IDs
-        name_link_tool_id=data.link_tool_ids_map.get("names"),
-        description_link_tool_id=data.link_tool_ids_map.get("descriptions"),
-        flag_link_tool_id=data.link_tool_ids_map.get("flags"),
-        departments_link_tool_id=data.link_tool_ids_map.get("departments"),
-        fields_link_tool_id=data.link_tool_ids_map.get("fields"),
-        uploads_link_tool_id=data.link_tool_ids_map.get("uploads"),
+        names=DocumentNameSection(
+            resource=(
+                current_bucket.names[0]
+                if current_bucket and current_bucket.names
+                else None
+            ),
+            resources=(resources_bucket.names if resources_bucket else None),
+            **section_common("names"),
+        ),
+        descriptions=DocumentDescriptionSection(
+            resource=(
+                current_bucket.descriptions[0]
+                if current_bucket and current_bucket.descriptions
+                else None
+            ),
+            resources=(resources_bucket.descriptions if resources_bucket else None),
+            **section_common("descriptions"),
+        ),
+        flags=DocumentFlagSection(
+            current=(current_bucket.flags if current_bucket else None),
+            resources=(resources_bucket.flags if resources_bucket else None),
+            **section_common("flags"),
+        ),
+        departments=DocumentDepartmentSection(
+            current=(current_bucket.departments if current_bucket else None),
+            resources=(resources_bucket.departments if resources_bucket else None),
+            **section_common("departments"),
+        ),
+        fields=DocumentFieldSection(
+            current=(current_bucket.fields if current_bucket else None),
+            resources=(resources_bucket.fields if resources_bucket else None),
+            **section_common("fields"),
+        ),
+        uploads=DocumentUploadSection(
+            current=(current_bucket.uploads if current_bucket else None),
+            resources=(resources_bucket.uploads if resources_bucket else None),
+            **section_common("uploads"),
+        ),
     )
 
 
@@ -794,14 +830,7 @@ async def get_document(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetDocumentApiResponse:
-    """Get document information using two-pass architecture.
-
-    This is a thin HTTP wrapper around get_document_internal().
-
-    Query 1: Access check (user role, departments, document state)
-    Query 2: ID fetching (resource IDs, suggestions, agents)
-    Pass 2: Parallel resource fetching (each resource type has own cache)
-    """
+    """Get document information using two-pass architecture."""
     # Check for cache bypass header
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
@@ -828,11 +857,8 @@ async def get_document(
                 "actor": {"name": response_data.actor_name, "id": profile_id}
             }
             current_name = None
-            current_resources = (
-                response_data.resources.current if response_data.resources else None
-            )
-            if current_resources and current_resources.names:
-                current_name = getattr(current_resources.names[0], "name", None)
+            if response_data.names and response_data.names.resource:
+                current_name = getattr(response_data.names.resource, "name", None)
             if request.document_id and current_name:
                 audit_ctx["document"] = {
                     "name": current_name,

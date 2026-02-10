@@ -19,7 +19,6 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.artifacts.simulation.permissions import (
     SIMULATION_RESOURCES,
-    build_domain_data,
     compute_can_edit,
     compute_departments_required,
     compute_description_required,
@@ -46,7 +45,6 @@ from app.api.v4.artifacts.simulation.permissions import (
     has_access,
 )
 from app.api.v4.artifacts.simulation.types import (
-    DomainAgent,
     GetSimulationAccessSqlParams,
     GetSimulationAccessSqlRow,
     GetSimulationApiRequest,
@@ -55,20 +53,35 @@ from app.api.v4.artifacts.simulation.types import (
     GetSimulationIdsSqlRow,
     GetSimulationWebsocketResponse,
     SimulationDepartment,
+    SimulationDepartmentSection,
+    SimulationDescriptionSection,
     SimulationFlagConfig,
+    SimulationFlagSection,
+    SimulationNameSection,
     SimulationResourceBucket,
     SimulationResources,
     SimulationScenario,
+    SimulationScenarioFlagSection,
+    SimulationScenarioPersonaSection,
+    SimulationScenarioPositionSection,
+    SimulationScenarioRubricSection,
+    SimulationScenarioSection,
+    SimulationScenarioTimeLimitSection,
+    SimulationWebsocketResources,
+    SimulationWebsocketViews,
 )
 from app.api.v4.permissions import select_agents_for_artifact
+from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.departments.search import search_departments_internal
 from app.api.v4.resources.descriptions.get import get_descriptions_internal
 from app.api.v4.resources.descriptions.search import search_descriptions_internal
 from app.api.v4.resources.flags.get import get_flags_internal
 from app.api.v4.resources.flags.search import search_flags_internal
+from app.api.v4.resources.models.get import get_models_internal
 from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.names.search import search_names_internal
+from app.api.v4.resources.providers.get import get_providers_internal
 from app.api.v4.resources.rubrics.get import get_rubrics_internal
 from app.api.v4.resources.scenario_flags.get import get_scenario_flags_internal
 from app.api.v4.resources.scenario_flags.search import search_scenario_flags_internal
@@ -91,6 +104,7 @@ from app.api.v4.resources.scenario_time_limits.search import (
     search_scenario_time_limits_internal,
 )
 from app.api.v4.resources.scenarios.search import search_scenarios_internal
+from app.api.v4.resources.tools.get import get_tools_internal
 from app.api.v4.types import CandidateAgent
 from app.api.v4.views.drafts.get import get_draft_simulation_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
@@ -139,10 +153,7 @@ class SimulationInternalData:
     draft_version: int | None
     group_id: UUID | None
 
-    # Domain mappings
-    domain_ids_map: dict[str, UUID | None]
     agent_ids: dict[str, UUID | None]
-    domains_list: list[DomainAgent]
 
     # Show/required flags
     show_flags_map: dict[str, bool]
@@ -151,22 +162,21 @@ class SimulationInternalData:
     # Suggestions (resource -> list of suggestion IDs)
     suggestions_map: dict[str, list[UUID]]
 
-    # Show AI generate flags (computed: domain_id exists AND agent exists)
+    # Show AI generate flags (computed: agent exists for resource)
     show_ai_generate_map: dict[str, bool]
     basic_show_ai_generate: bool
-
-    # Domain data for modals
-    domain_data_list: list[Any]
 
     # Resources payload
     resources_payload: SimulationResources
 
-    # Per-resource group IDs (from draft MV)
-    resource_group_ids: dict[str, UUID | None]
-
     # Per-resource tool IDs (from selected agents)
     create_tool_ids_map: dict[str, UUID | None]
     link_tool_ids_map: dict[str, UUID | None]
+
+    # Config resources for websocket generation
+    config_agent_resources: list[Any] | None
+    config_model_resources: list[Any] | None
+    config_provider_resources: list[Any] | None
 
 
 async def get_simulation_internal(
@@ -283,25 +293,10 @@ async def get_simulation_internal(
                     link_tool_ids_map[resource] = candidate.link_tool_ids.get(resource)
                     break
 
-    # === EXTRACT DOMAIN IDS FROM QUERY 2 ===
-    domain_ids_map: dict[str, UUID | None] = {
-        "names": ids_result.name_domain_id,
-        "descriptions": ids_result.description_domain_id,
-        "flags": ids_result.flag_domain_id,
-        "departments": ids_result.departments_domain_id,
-        "scenarios": ids_result.scenarios_domain_id,
-        "scenario_flags": ids_result.scenario_flags_domain_id,
-        "scenario_personas": ids_result.scenario_personas_domain_id,
-        "scenario_positions": ids_result.scenario_positions_domain_id,
-        "scenario_rubrics": ids_result.scenario_rubrics_domain_id,
-        "scenario_time_limits": ids_result.scenario_time_limits_domain_id,
-    }
-
     # === COMPUTE SHOW_AI_GENERATE FLAGS ===
     def compute_show_ai_generate(resource: str) -> bool:
-        domain_id = domain_ids_map.get(resource)
         agent_id = agent_ids.get(resource)
-        return domain_id is not None and agent_id is not None
+        return agent_id is not None
 
     show_ai_generate_map = {
         resource: compute_show_ai_generate(resource)
@@ -572,7 +567,6 @@ async def get_simulation_internal(
             flag_option_id=flag.id,
             show=show_flag,
             required=compute_flag_required(),
-            domain_id=domain_ids_map.get("flags"),
             generated=flag.generated,
         )
         for flag in flags_available
@@ -661,25 +655,6 @@ async def get_simulation_internal(
         "scenario_time_limits": compute_scenario_time_limits_required(),
     }
 
-    # Build domain data for client
-    domain_data_list = build_domain_data(
-        domain_ids_map, show_flags_map, required_flags_map
-    )
-
-    # Build per-resource group_ids from draft_item
-    resource_group_ids: dict[str, UUID | None] = {
-        "names": draft_item.group_id if draft_item else None,
-        "descriptions": draft_item.group_id if draft_item else None,
-        "flags": draft_item.group_id if draft_item else None,
-        "departments": draft_item.group_id if draft_item else None,
-        "scenarios": draft_item.group_id if draft_item else None,
-        "scenario_flags": draft_item.group_id if draft_item else None,
-        "scenario_personas": draft_item.group_id if draft_item else None,
-        "scenario_positions": draft_item.group_id if draft_item else None,
-        "scenario_rubrics": draft_item.group_id if draft_item else None,
-        "scenario_time_limits": draft_item.group_id if draft_item else None,
-    }
-
     # Validation for new mode
     if simulation_id is None:
         if not departments:
@@ -716,16 +691,43 @@ async def get_simulation_internal(
         ),
     )
 
-    # Build domains list for WebSocket handler
-    domains_list: list[DomainAgent] = []
-    for resource, domain_id in domain_ids_map.items():
-        if domain_id is not None:
-            domains_list.append(
-                DomainAgent(
-                    domain_id=domain_id,
-                    agent_id=agent_ids.get(resource),
-                    group_id=resource_group_ids.get(resource),
-                )
+    # Fetch config resources for websocket generation context
+    selected_agent_ids = [aid for aid in agent_ids.values() if aid]
+    unique_agent_ids = list(dict.fromkeys(selected_agent_ids))
+
+    config_agents_result: list[Any] = []
+    config_models_result: list[Any] = []
+    config_providers_result: list[Any] = []
+    if unique_agent_ids:
+        async with pool.acquire() as c:
+            config_agents_result = await get_agents_internal(
+                c, unique_agent_ids, bypass_cache
+            )
+    model_ids = list(
+        dict.fromkeys(
+            [
+                getattr(agent, "model_id", None)
+                for agent in config_agents_result
+                if getattr(agent, "model_id", None) is not None
+            ]
+        )
+    )
+    if model_ids:
+        async with pool.acquire() as c:
+            config_models_result = await get_models_internal(c, model_ids, bypass_cache)
+    provider_ids = list(
+        dict.fromkeys(
+            [
+                getattr(model, "provider_id", None)
+                for model in config_models_result
+                if getattr(model, "provider_id", None) is not None
+            ]
+        )
+    )
+    if provider_ids:
+        async with pool.acquire() as c:
+            config_providers_result = await get_providers_internal(
+                c, provider_ids, bypass_cache
             )
 
     return SimulationInternalData(
@@ -735,19 +737,18 @@ async def get_simulation_internal(
         disabled_reason=disabled_reason,
         draft_version=effective_draft_version,
         group_id=effective_group_id,
-        domain_ids_map=domain_ids_map,
         agent_ids=agent_ids,
-        domains_list=domains_list,
         show_flags_map=show_flags_map,
         required_flags_map=required_flags_map,
         suggestions_map=suggestions_map,
         show_ai_generate_map=show_ai_generate_map,
         basic_show_ai_generate=basic_show_ai_generate,
-        domain_data_list=domain_data_list,
         resources_payload=resources_payload,
-        resource_group_ids=resource_group_ids,
         create_tool_ids_map=create_tool_ids_map,
         link_tool_ids_map=link_tool_ids_map,
+        config_agent_resources=config_agents_result or None,
+        config_model_resources=config_models_result or None,
+        config_provider_resources=config_providers_result or None,
     )
 
 
@@ -757,14 +758,7 @@ async def get_simulation_websocket(
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
 ) -> GetSimulationWebsocketResponse:
-    """Minimal response for WebSocket handlers.
-
-    Returns only what's needed for AI generation:
-    - Domain IDs (for domain_to_resource mapping)
-    - Domains list (for agent_id lookup)
-    - Group ID (for existing group context)
-    - Resources (for Jinja template context)
-    """
+    """Minimal response for simulation websocket handlers."""
     data = await get_simulation_internal(
         profile_id=profile_id,
         simulation_id=simulation_id,
@@ -772,20 +766,76 @@ async def get_simulation_websocket(
         bypass_cache=bypass_cache,
     )
 
+    draft_view = None
+    if draft_id is not None:
+        pool = get_pool()
+        if not pool:
+            raise RuntimeError("Database pool not initialized")
+        async with pool.acquire() as conn:
+            draft_items = await get_draft_simulation_internal(
+                conn=conn,
+                draft_ids=[draft_id],
+                bypass_cache=bypass_cache,
+            )
+            draft_view = draft_items[0] if draft_items else None
+
+    current = data.resources_payload.current
+    selected_flag_ids = {
+        getattr(f, "flag_option_id", None) or getattr(f, "id", None)
+        for f in (current.flags if current and current.flags else [])
+    } - {None}
+    all_enriched_flags = (
+        data.resources_payload.resources.flags
+        if data.resources_payload.resources
+        else []
+    ) or []
+    selected_enriched_flags = [
+        f for f in all_enriched_flags if f.flag_option_id in selected_flag_ids
+    ]
+
+    tools_result: list[Any] = []
+    if data.config_agent_resources:
+        tool_ids: list[UUID] = []
+        for agent in data.config_agent_resources:
+            ids = getattr(agent, "tool_ids", None) or []
+            tool_ids.extend(ids)
+        deduped_tool_ids = list(dict.fromkeys(tool_ids))
+        if deduped_tool_ids:
+            pool = get_pool()
+            if not pool:
+                raise RuntimeError("Database pool not initialized")
+            async with pool.acquire() as conn:
+                tools_result = await get_tools_internal(
+                    conn, deduped_tool_ids, bypass_cache
+                )
+
     return GetSimulationWebsocketResponse(
         group_id=data.group_id,
-        name_domain_id=data.domain_ids_map.get("names"),
-        description_domain_id=data.domain_ids_map.get("descriptions"),
-        flag_domain_id=data.domain_ids_map.get("flags"),
-        departments_domain_id=data.domain_ids_map.get("departments"),
-        scenarios_domain_id=data.domain_ids_map.get("scenarios"),
-        scenario_flags_domain_id=data.domain_ids_map.get("scenario_flags"),
-        scenario_personas_domain_id=data.domain_ids_map.get("scenario_personas"),
-        scenario_positions_domain_id=data.domain_ids_map.get("scenario_positions"),
-        scenario_rubrics_domain_id=data.domain_ids_map.get("scenario_rubrics"),
-        scenario_time_limits_domain_id=data.domain_ids_map.get("scenario_time_limits"),
-        domains=data.domains_list,
-        resources=data.resources_payload,
+        views=SimulationWebsocketViews(draft_simulation=draft_view)
+        if draft_view
+        else None,
+        resource_agent_ids=data.agent_ids,
+        resources=SimulationWebsocketResources(
+            names=current.names if current else None,
+            descriptions=current.descriptions if current else None,
+            flags=selected_enriched_flags or None,
+            departments=current.departments if current else None,
+            scenarios=current.scenarios if current else None,
+            scenario_flags=current.scenario_flags if current else None,
+            scenario_personas=current.scenario_personas if current else None,
+            scenario_positions=current.scenario_positions if current else None,
+            scenario_rubrics=current.scenario_rubrics if current else None,
+            scenario_time_limits=current.scenario_time_limits if current else None,
+            rubrics=(
+                data.resources_payload.resources.rubrics
+                if data.resources_payload.resources
+                else None
+            ),
+            agents=data.config_agent_resources,
+            models=data.config_model_resources,
+            providers=data.config_provider_resources,
+            tools=tools_result or None,
+        ),
     )
 
 
@@ -807,116 +857,92 @@ async def get_simulation_client(
         filter_scenario_ids=filter_scenario_ids,
     )
 
+    resources_bucket = data.resources_payload.resources
+    current_bucket = data.resources_payload.current
+
+    def section_common(resource_key: str) -> dict[str, Any]:
+        return {
+            "show": data.show_flags_map.get(resource_key, False),
+            "required": data.required_flags_map.get(resource_key, False),
+            "suggestions": data.suggestions_map.get(resource_key, []),
+            "show_ai_generate": data.show_ai_generate_map.get(resource_key, False),
+            "create_tool_id": data.create_tool_ids_map.get(resource_key),
+            "link_tool_id": data.link_tool_ids_map.get(resource_key),
+        }
+
     return GetSimulationApiResponse(
-        # Required fields
         actor_name=data.actor_name,
         simulation_exists=data.simulation_exists,
         can_edit=data.can_edit,
         disabled_reason=data.disabled_reason,
         draft_version=data.draft_version,
         group_id=data.group_id,
-        # Per-resource group IDs
-        names_group_id=data.resource_group_ids.get("names"),
-        descriptions_group_id=data.resource_group_ids.get("descriptions"),
-        flags_group_id=data.resource_group_ids.get("flags"),
-        departments_group_id=data.resource_group_ids.get("departments"),
-        scenarios_group_id=data.resource_group_ids.get("scenarios"),
-        scenario_flags_group_id=data.resource_group_ids.get("scenario_flags"),
-        scenario_personas_group_id=data.resource_group_ids.get("scenario_personas"),
-        scenario_positions_group_id=data.resource_group_ids.get("scenario_positions"),
-        scenario_rubrics_group_id=data.resource_group_ids.get("scenario_rubrics"),
-        scenario_time_limits_group_id=data.resource_group_ids.get(
-            "scenario_time_limits"
-        ),
-        # Name
-        show_name=data.show_flags_map.get("names"),
-        name_domain_id=data.domain_ids_map.get("names"),
-        name_required=data.required_flags_map.get("names"),
-        name_suggestions=data.suggestions_map.get("names"),
-        name_show_ai_generate=data.show_ai_generate_map.get("names"),
-        # Description
-        show_description=data.show_flags_map.get("descriptions"),
-        description_domain_id=data.domain_ids_map.get("descriptions"),
-        description_required=data.required_flags_map.get("descriptions"),
-        description_suggestions=data.suggestions_map.get("descriptions"),
-        description_show_ai_generate=data.show_ai_generate_map.get("descriptions"),
-        # Flag
-        show_flag=data.show_flags_map.get("flags"),
-        flag_domain_id=data.domain_ids_map.get("flags"),
-        flag_required=data.required_flags_map.get("flags"),
-        flag_show_ai_generate=data.show_ai_generate_map.get("flags"),
-        # Departments
-        show_departments=data.show_flags_map.get("departments"),
-        departments_domain_id=data.domain_ids_map.get("departments"),
-        departments_required=data.required_flags_map.get("departments"),
-        department_suggestions=data.suggestions_map.get("departments"),
-        departments_show_ai_generate=data.show_ai_generate_map.get("departments"),
-        # Scenarios
-        show_scenarios=data.show_flags_map.get("scenarios"),
-        scenarios_domain_id=data.domain_ids_map.get("scenarios"),
-        scenarios_required=data.required_flags_map.get("scenarios"),
-        scenario_suggestions=data.suggestions_map.get("scenarios"),
-        scenarios_show_ai_generate=data.show_ai_generate_map.get("scenarios"),
-        # Scenario flags
-        show_scenario_flags=data.show_flags_map.get("scenario_flags"),
-        scenario_flags_domain_id=data.domain_ids_map.get("scenario_flags"),
-        scenario_flags_required=data.required_flags_map.get("scenario_flags"),
-        scenario_flags_show_ai_generate=data.show_ai_generate_map.get("scenario_flags"),
-        # Scenario personas
-        show_scenario_personas=data.show_flags_map.get("scenario_personas"),
-        scenario_personas_domain_id=data.domain_ids_map.get("scenario_personas"),
-        scenario_personas_required=data.required_flags_map.get("scenario_personas"),
-        scenario_personas_show_ai_generate=data.show_ai_generate_map.get(
-            "scenario_personas"
-        ),
-        # Scenario positions
-        show_scenario_positions=data.show_flags_map.get("scenario_positions"),
-        scenario_positions_domain_id=data.domain_ids_map.get("scenario_positions"),
-        scenario_positions_required=data.required_flags_map.get("scenario_positions"),
-        scenario_positions_show_ai_generate=data.show_ai_generate_map.get(
-            "scenario_positions"
-        ),
-        # Scenario rubrics
-        show_scenario_rubrics=data.show_flags_map.get("scenario_rubrics"),
-        scenario_rubrics_domain_id=data.domain_ids_map.get("scenario_rubrics"),
-        scenario_rubrics_required=data.required_flags_map.get("scenario_rubrics"),
-        scenario_rubrics_show_ai_generate=data.show_ai_generate_map.get(
-            "scenario_rubrics"
-        ),
-        # Scenario time limits
-        show_scenario_time_limits=data.show_flags_map.get("scenario_time_limits"),
-        scenario_time_limits_domain_id=data.domain_ids_map.get("scenario_time_limits"),
-        scenario_time_limits_required=data.required_flags_map.get(
-            "scenario_time_limits"
-        ),
-        scenario_time_limits_show_ai_generate=data.show_ai_generate_map.get(
-            "scenario_time_limits"
-        ),
-        # Step-level AI generation flags
         basic_show_ai_generate=data.basic_show_ai_generate,
-        # Per-resource CREATE tool IDs
-        name_create_tool_id=data.create_tool_ids_map.get("names"),
-        description_create_tool_id=data.create_tool_ids_map.get("descriptions"),
-        scenarios_create_tool_id=data.create_tool_ids_map.get("scenarios"),
-        # Per-resource LINK tool IDs
-        name_link_tool_id=data.link_tool_ids_map.get("names"),
-        description_link_tool_id=data.link_tool_ids_map.get("descriptions"),
-        flag_link_tool_id=data.link_tool_ids_map.get("flags"),
-        departments_link_tool_id=data.link_tool_ids_map.get("departments"),
-        scenarios_link_tool_id=data.link_tool_ids_map.get("scenarios"),
-        scenario_flags_link_tool_id=data.link_tool_ids_map.get("scenario_flags"),
-        scenario_personas_link_tool_id=data.link_tool_ids_map.get("scenario_personas"),
-        scenario_positions_link_tool_id=data.link_tool_ids_map.get(
-            "scenario_positions"
+        names=SimulationNameSection(
+            resource=(
+                current_bucket.names[0]
+                if current_bucket and current_bucket.names
+                else None
+            ),
+            resources=(resources_bucket.names if resources_bucket else None),
+            **section_common("names"),
         ),
-        scenario_rubrics_link_tool_id=data.link_tool_ids_map.get("scenario_rubrics"),
-        scenario_time_limits_link_tool_id=data.link_tool_ids_map.get(
-            "scenario_time_limits"
+        descriptions=SimulationDescriptionSection(
+            resource=(
+                current_bucket.descriptions[0]
+                if current_bucket and current_bucket.descriptions
+                else None
+            ),
+            resources=(resources_bucket.descriptions if resources_bucket else None),
+            **section_common("descriptions"),
         ),
-        # Domain metadata
-        domain_data=data.domain_data_list,
-        # Resources
-        resources=data.resources_payload,
+        flags=SimulationFlagSection(
+            current=(current_bucket.flags if current_bucket else None),
+            resources=(resources_bucket.flags if resources_bucket else None),
+            **section_common("flags"),
+        ),
+        departments=SimulationDepartmentSection(
+            current=(current_bucket.departments if current_bucket else None),
+            resources=(resources_bucket.departments if resources_bucket else None),
+            **section_common("departments"),
+        ),
+        scenarios=SimulationScenarioSection(
+            current=(current_bucket.scenarios if current_bucket else None),
+            resources=(resources_bucket.scenarios if resources_bucket else None),
+            **section_common("scenarios"),
+        ),
+        scenario_flags=SimulationScenarioFlagSection(
+            current=(current_bucket.scenario_flags if current_bucket else None),
+            resources=(resources_bucket.scenario_flags if resources_bucket else None),
+            **section_common("scenario_flags"),
+        ),
+        scenario_personas=SimulationScenarioPersonaSection(
+            current=(current_bucket.scenario_personas if current_bucket else None),
+            resources=(
+                resources_bucket.scenario_personas if resources_bucket else None
+            ),
+            **section_common("scenario_personas"),
+        ),
+        scenario_positions=SimulationScenarioPositionSection(
+            current=(current_bucket.scenario_positions if current_bucket else None),
+            resources=(
+                resources_bucket.scenario_positions if resources_bucket else None
+            ),
+            **section_common("scenario_positions"),
+        ),
+        scenario_rubrics=SimulationScenarioRubricSection(
+            current=(current_bucket.scenario_rubrics if current_bucket else None),
+            resources=(resources_bucket.scenario_rubrics if resources_bucket else None),
+            **section_common("scenario_rubrics"),
+        ),
+        scenario_time_limits=SimulationScenarioTimeLimitSection(
+            current=(current_bucket.scenario_time_limits if current_bucket else None),
+            resources=(
+                resources_bucket.scenario_time_limits if resources_bucket else None
+            ),
+            **section_common("scenario_time_limits"),
+        ),
+        rubrics=(resources_bucket.rubrics if resources_bucket else None),
     )
 
 
@@ -964,17 +990,11 @@ async def get_simulation(
             audit_ctx: dict[str, Any] = {
                 "actor": {"name": response_data.actor_name, "id": profile_id}
             }
-            current_name = None
-            current_resources = (
-                response_data.resources.current if response_data.resources else None
+            current_name = (
+                getattr(response_data.names.resource, "name", None)
+                if response_data.names and response_data.names.resource
+                else None
             )
-            if current_resources and current_resources.names:
-                name_item = current_resources.names[0]
-                current_name = (
-                    name_item.get("name")
-                    if isinstance(name_item, dict)
-                    else getattr(name_item, "name", None)
-                )
             if request.simulation_id and current_name:
                 audit_ctx["simulation"] = {
                     "name": current_name,

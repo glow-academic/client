@@ -58,8 +58,6 @@ from app.api.v4.artifacts.scenario.types import (
     GetScenarioApiRequest,
     GetScenarioApiResponse,
     GetScenarioWebsocketResponse,
-    ScenarioWebsocketResources,
-    ScenarioWebsocketViews,
     ScenarioDepartmentSection,
     ScenarioDescriptionSection,
     ScenarioDocumentSection,
@@ -77,9 +75,11 @@ from app.api.v4.artifacts.scenario.types import (
     ScenarioResources,
     ScenarioTemplateSection,
     ScenarioVideoSection,
+    ScenarioWebsocketResources,
+    ScenarioWebsocketViews,
 )
-from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.permissions import select_agents_for_artifact
+from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.departments.search import search_departments_internal
 from app.api.v4.resources.descriptions.get import get_descriptions_internal
@@ -110,9 +110,9 @@ from app.api.v4.resources.problem_statements.search import (
 )
 from app.api.v4.resources.questions.get import get_questions_internal
 from app.api.v4.resources.questions.search import search_questions_internal
-from app.api.v4.resources.tools.get import get_tools_internal
 from app.api.v4.resources.templates.get import get_templates_internal
 from app.api.v4.resources.templates.search import search_templates_internal
+from app.api.v4.resources.tools.get import get_tools_internal
 from app.api.v4.resources.videos.get import get_videos_internal
 from app.api.v4.resources.videos.search import search_videos_internal
 from app.api.v4.types import CandidateAgent, build_domain_data
@@ -1238,7 +1238,9 @@ async def get_scenario_websocket(
         for f in (current.flags if current and current.flags else [])
     } - {None}
     all_enriched_flags = (
-        data.resources_payload.resources.flags if data.resources_payload.resources else []
+        data.resources_payload.resources.flags
+        if data.resources_payload.resources
+        else []
     ) or []
     selected_enriched_flags = [
         f for f in all_enriched_flags if f.flag_option_id in selected_flag_ids
@@ -1256,7 +1258,9 @@ async def get_scenario_websocket(
             if not pool:
                 raise RuntimeError("Database pool not initialized")
             async with pool.acquire() as conn:
-                tools_result = await get_tools_internal(conn, deduped_tool_ids, bypass_cache)
+                tools_result = await get_tools_internal(
+                    conn, deduped_tool_ids, bypass_cache
+                )
 
     return GetScenarioWebsocketResponse(
         group_id=data.group_id,
@@ -1356,7 +1360,11 @@ async def get_scenario_client(
         basic_show_ai_generate=data.basic_show_ai_generate,
         content_show_ai_generate=data.content_show_ai_generate,
         names=ScenarioNameSection(
-            resource=(current_bucket.names[0] if current_bucket and current_bucket.names else None),
+            resource=(
+                current_bucket.names[0]
+                if current_bucket and current_bucket.names
+                else None
+            ),
             resources=(resources_bucket.names if resources_bucket else None),
             **section_common("names"),
         ),
@@ -1375,7 +1383,9 @@ async def get_scenario_client(
                 if current_bucket and current_bucket.problem_statements
                 else None
             ),
-            resources=(resources_bucket.problem_statements if resources_bucket else None),
+            resources=(
+                resources_bucket.problem_statements if resources_bucket else None
+            ),
             **section_common("problem_statements"),
         ),
         flags=ScenarioFlagSection(
@@ -1533,5 +1543,7 @@ async def get_scenario(
             sql_params=None,
             request=http_request,
         )
+
+
 from app.api.v4.resources.models.get import get_models_internal
 from app.api.v4.resources.providers.get import get_providers_internal

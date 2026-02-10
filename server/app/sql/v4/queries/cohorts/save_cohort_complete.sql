@@ -1,13 +1,34 @@
--- Unified save cohort function - handles both create (input_cohort_id = NULL) and update (input_cohort_id provided)
--- Accepts form fields directly (no draft_id dependency)
+-- Unified save cohort function - handles create/update with nested resource actions.
+-- Includes tool-call tracking for create/link operations.
 
--- 1) Drop function first (breaks dependency on types)
+DO $$
+BEGIN
+    DROP TYPE IF EXISTS types.cohort_resource_action CASCADE;
+    CREATE TYPE types.cohort_resource_action AS (
+        resource_id uuid,
+        create_tool_id uuid,
+        link_tool_id uuid
+    );
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
+DO $$
+BEGIN
+    DROP TYPE IF EXISTS types.cohort_multi_resource_action CASCADE;
+    CREATE TYPE types.cohort_multi_resource_action AS (
+        resource_ids uuid[],
+        create_tool_id uuid,
+        link_tool_id uuid
+    );
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
 DO $$
 DECLARE
     r RECORD;
 BEGIN
     FOR r IN
-        SELECT oidvectortypes(proargtypes) as sig
+        SELECT oidvectortypes(proargtypes) AS sig
         FROM pg_proc
         WHERE proname = 'api_save_cohort_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
@@ -16,20 +37,16 @@ BEGIN
     END LOOP;
 END $$;
 
--- 2) Recreate function with direct form data parameters (no draft_id)
 CREATE OR REPLACE FUNCTION api_save_cohort_v4(
     profile_id uuid,
     group_id uuid,
     input_cohort_id uuid DEFAULT NULL,
-    -- Required form data
-    name_id uuid DEFAULT NULL,
-    -- Optional single-select form data
-    description_id uuid DEFAULT NULL,
-    active_flag_id uuid DEFAULT NULL,
-    -- Optional multi-select form data
-    department_ids uuid[] DEFAULT NULL,
-    simulation_ids uuid[] DEFAULT NULL,
-    -- Special: simulation position values for ordering
+    names types.cohort_resource_action DEFAULT NULL,
+    descriptions types.cohort_resource_action DEFAULT NULL,
+    flags types.cohort_resource_action DEFAULT NULL,
+    departments types.cohort_multi_resource_action DEFAULT NULL,
+    simulations types.cohort_multi_resource_action DEFAULT NULL,
+    simulation_positions types.cohort_multi_resource_action DEFAULT NULL,
     simulation_position_values int[] DEFAULT NULL
 )
 RETURNS TABLE (
@@ -39,39 +56,46 @@ RETURNS TABLE (
 LANGUAGE plpgsql
 VOLATILE
 AS $$
-#variable_conflict use_column
 DECLARE
-    v_cohort_id uuid;
-    v_default_call_id uuid;
-    v_group_id uuid;
-    v_profile_id uuid;
-    v_input_cohort_id uuid;
-    v_name_id uuid;
-    v_description_id uuid;
-    v_active_flag_id uuid;
-    v_department_ids uuid[];
-    v_simulation_ids uuid[];
-    v_simulation_position_values int[];
-    is_create boolean;
-BEGIN
-    -- Assign parameters to local variables
-    v_profile_id := profile_id;
-    v_group_id := group_id;
-    v_input_cohort_id := input_cohort_id;
-    v_name_id := name_id;
-    v_description_id := description_id;
-    v_active_flag_id := active_flag_id;
-    v_department_ids := COALESCE(department_ids, ARRAY[]::uuid[]);
-    v_simulation_ids := COALESCE(simulation_ids, ARRAY[]::uuid[]);
-    v_simulation_position_values := COALESCE(simulation_position_values, ARRAY[]::int[]);
+    v_profile_id uuid := profile_id;
+    v_group_id uuid := group_id;
+    v_input_cohort_id uuid := input_cohort_id;
 
-    -- Validate required fields
+    v_name_id uuid := (names).resource_id;
+    v_description_id uuid := (descriptions).resource_id;
+    v_active_flag_id uuid := (flags).resource_id;
+    v_department_ids uuid[] := COALESCE((departments).resource_ids, ARRAY[]::uuid[]);
+    v_simulation_ids uuid[] := COALESCE((simulations).resource_ids, ARRAY[]::uuid[]);
+    v_simulation_position_simulation_ids uuid[] := COALESCE((simulation_positions).resource_ids, COALESCE((simulations).resource_ids, ARRAY[]::uuid[]));
+    v_simulation_position_values int[] := COALESCE(simulation_position_values, ARRAY[]::int[]);
+
+    v_cohort_id uuid;
+    v_user_role text;
+    v_actor_name text;
+    v_object_department_ids text[];
+    v_user_department_ids text[];
+    is_create boolean;
+
+    v_run_id uuid;
+    v_call_id uuid;
+    v_simulation_position_ids uuid[] := ARRAY[]::uuid[];
+BEGIN
     IF v_group_id IS NULL THEN
         RAISE EXCEPTION 'group_id is required';
     END IF;
 
     IF v_name_id IS NULL THEN
         RAISE EXCEPTION 'Name resource is required';
+    END IF;
+
+    SELECT role, actor_name
+    INTO v_user_role, v_actor_name
+    FROM view_user_profile_context
+    WHERE view_user_profile_context.profile_id = v_profile_id
+    LIMIT 1;
+
+    IF v_user_role IS NULL THEN
+        RAISE EXCEPTION 'User context not found for profile: %', v_profile_id;
     END IF;
 
     IF v_name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names_resource WHERE id = v_name_id) THEN
@@ -86,7 +110,7 @@ BEGIN
         RAISE EXCEPTION 'Flag resource not found: %', v_active_flag_id;
     END IF;
 
-    IF v_department_ids IS NOT NULL AND EXISTS (
+    IF EXISTS (
         SELECT 1
         FROM unnest(v_department_ids) AS dept_id
         WHERE NOT EXISTS (
@@ -95,203 +119,121 @@ BEGIN
             WHERE dr.id = dept_id OR dr.department_id = dept_id
         )
     ) THEN
-        RAISE EXCEPTION 'Department resource not found for provided IDs';
+        RAISE EXCEPTION 'Department resource not found for one or more IDs';
     END IF;
 
-    SELECT id INTO v_default_call_id FROM view_calls_entry LIMIT 1;
-    IF v_default_call_id IS NULL THEN
-        RAISE EXCEPTION 'No call_id found for simulation_positions_resource inserts';
+    IF EXISTS (
+        SELECT 1
+        FROM unnest(v_simulation_ids) AS sim_id
+        WHERE NOT EXISTS (SELECT 1 FROM simulation_artifact sa WHERE sa.id = sim_id)
+    ) THEN
+        RAISE EXCEPTION 'Simulation artifact not found for one or more IDs';
     END IF;
 
-    -- Determine if create or update
     is_create := (v_input_cohort_id IS NULL);
 
-    -- Create or UPDATE cohort_artifact first (outside CTE)
     IF is_create THEN
+        PERFORM validate_department_create_permissions(
+            v_user_role,
+            ARRAY(SELECT unnest(v_department_ids)::text)
+        );
+
         INSERT INTO cohort_artifact (created_at, updated_at)
         VALUES (NOW(), NOW())
         RETURNING id INTO v_cohort_id;
     ELSE
         v_cohort_id := v_input_cohort_id;
+
+        IF NOT EXISTS (SELECT 1 FROM cohort_artifact WHERE id = v_cohort_id) THEN
+            RAISE EXCEPTION 'Cohort not found: %', v_cohort_id;
+        END IF;
+
+        SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[])
+        INTO v_object_department_ids
+        FROM cohort_departments_junction
+        WHERE cohort_departments_junction.cohort_id = v_cohort_id
+          AND cohort_departments_junction.active = true;
+
+        SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[])
+        INTO v_user_department_ids
+        FROM profile_departments_junction
+        WHERE profile_departments_junction.profile_id = v_profile_id
+          AND profile_departments_junction.active = true;
+
+        IF NOT validate_department_update_permissions(
+            v_user_role,
+            COALESCE(v_object_department_ids, ARRAY[]::text[]),
+            COALESCE(v_user_department_ids, ARRAY[]::text[])
+        ) THEN
+            RAISE EXCEPTION 'DEPARTMENT_PERMISSION_DENIED';
+        END IF;
+
         UPDATE cohort_artifact
         SET updated_at = NOW()
         WHERE id = v_cohort_id;
+
+        UPDATE cohort_names_junction
+        SET active = false
+        WHERE cohort_id = v_cohort_id AND active = true;
+
+        UPDATE cohort_descriptions_junction
+        SET active = false
+        WHERE cohort_id = v_cohort_id AND active = true;
+
+        UPDATE cohort_flags_junction
+        SET active = false
+        WHERE cohort_id = v_cohort_id AND active = true;
+
+        UPDATE cohort_departments_junction
+        SET active = false
+        WHERE cohort_id = v_cohort_id AND active = true;
+
+        UPDATE cohort_simulations_junction
+        SET active = false
+        WHERE cohort_id = v_cohort_id AND active = true;
+
+        UPDATE cohort_simulation_positions_junction
+        SET active = false
+        WHERE cohort_id = v_cohort_id AND active = true;
     END IF;
 
-    -- Conditional: For update, remove old links first (outside CTE since we need PL/pgSQL variable)
-    IF NOT is_create THEN
-        DELETE FROM cohort_names_junction WHERE cohort_names_junction.cohort_id = v_cohort_id;
-        DELETE FROM cohort_descriptions_junction WHERE cohort_descriptions_junction.cohort_id = v_cohort_id;
-        DELETE FROM cohort_departments_junction WHERE cohort_departments_junction.cohort_id = v_cohort_id;
-        DELETE FROM cohort_simulations_junction WHERE cohort_simulations_junction.cohort_id = v_cohort_id;
-        DELETE FROM cohort_simulation_positions_junction WHERE cohort_simulation_positions_junction.cohort_id = v_cohort_id;
-        -- Update existing active flag if it exists
-        UPDATE cohort_flags_junction SET
-            flag_id = COALESCE(v_active_flag_id, cohort_flags_junction.flag_id),
-            value = CASE WHEN v_active_flag_id IS NOT NULL THEN true ELSE false END
-        WHERE cohort_flags_junction.cohort_id = v_cohort_id;
+    INSERT INTO cohort_groups_junction (cohort_id, group_id, created_at, active)
+    VALUES (v_cohort_id, v_group_id, NOW(), true)
+    ON CONFLICT DO NOTHING;
+
+    IF v_name_id IS NOT NULL THEN
+        INSERT INTO cohort_names_junction (cohort_id, name_id, created_at, active)
+        VALUES (v_cohort_id, v_name_id, NOW(), true)
+        ON CONFLICT ON CONSTRAINT cohort_names_pkey DO UPDATE SET active = true;
     END IF;
 
-    -- Continue with cohort save using SQL (cohort already created/updated above)
-    RETURN QUERY
-    WITH params AS (
-        SELECT
-            v_cohort_id AS cohort_id,
-            v_name_id AS name_id,
-            v_description_id AS description_id,
-            v_active_flag_id AS active_flag_id,
-            v_department_ids AS department_ids,
-            v_simulation_ids AS simulation_ids,
-            v_simulation_position_values AS simulation_position_values,
-            v_profile_id AS profile_id,
-            v_default_call_id AS default_call_id
-    ),
-    department_resource_ids AS (
-        SELECT
-            dept_id,
-            COALESCE(dr_by_id.id, dr_by_artifact.id) AS department_resource_id
-        FROM params x
-        CROSS JOIN UNNEST(x.department_ids) AS dept_id
-        LEFT JOIN departments_resource dr_by_id ON dr_by_id.id = dept_id
-        LEFT JOIN department_departments_junction ddj ON ddj.department_id = dept_id
-        LEFT JOIN departments_resource dr_by_artifact ON dr_by_artifact.id = ddj.departments_id
-        WHERE COALESCE(array_length(x.department_ids, 1), 0) > 0
-    ),
-    department_resource_ids_agg AS (
-        SELECT COALESCE(ARRAY_AGG(DISTINCT department_resource_id), ARRAY[]::uuid[]) AS department_ids
-        FROM department_resource_ids
-        WHERE department_resource_id IS NOT NULL
-    ),
-    params_with_departments AS (
-        SELECT
-            p.cohort_id,
-            p.name_id,
-            p.description_id,
-            p.active_flag_id,
-            COALESCE(dra.department_ids, ARRAY[]::uuid[]) AS department_ids,
-            p.simulation_ids,
-            p.simulation_position_values,
-            p.profile_id,
-            p.default_call_id
-        FROM params p
-        CROSS JOIN department_resource_ids_agg dra
-    ),
-    user_profile AS (
-        SELECT role, actor_name
-        FROM view_user_profile_context
-        WHERE profile_id = (SELECT profile_id FROM params)
-    ),
-    -- Conditional: Validate permissions based on operation
-    object_current_departments AS (
-        SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
-        FROM cohort_departments_junction
-        WHERE cohort_departments_junction.cohort_id = (SELECT p.cohort_id FROM params_with_departments p LIMIT 1) AND active = true
-    ),
-    user_departments AS (
-        SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
-        FROM profile_departments_junction
-        WHERE profile_departments_junction.profile_id = (SELECT p.profile_id FROM params_with_departments p LIMIT 1) AND active = true
-    ),
-    validate_permissions AS (
-        SELECT
-            CASE
-                WHEN (SELECT p.cohort_id FROM params_with_departments p) IS NULL THEN
-                    -- Validate create permissions
-                    (SELECT validate_department_create_permissions(
-                        up.role::text,
-                        x.department_ids::text[]
-                    ) FROM params_with_departments x CROSS JOIN user_profile up)
-                ELSE
-                    -- Validate update permissions
-                    (SELECT validate_department_update_permissions(
-                        up.role::text,
-                        ocd.department_ids,
-                        ud.department_ids
-                    ) FROM user_profile up
-                    CROSS JOIN object_current_departments ocd
-                    CROSS JOIN user_departments ud)
-            END as validation_passed
-    ),
-    actor_profile AS (
-        SELECT
-            x.profile_id,
-            up.actor_name
-        FROM params_with_departments x
-        CROSS JOIN user_profile up
-    ),
-    -- Link cohort to name
-    link_cohort_name AS (
-        INSERT INTO cohort_names_junction (cohort_id, name_id, created_at)
-        SELECT
-            x.cohort_id,
-            x.name_id,
-            NOW()
-        FROM params_with_departments x
-        WHERE x.name_id IS NOT NULL
-        ON CONFLICT ON CONSTRAINT cohort_names_pkey DO NOTHING
-    ),
-    -- Link cohort to description
-    link_cohort_description AS (
-        INSERT INTO cohort_descriptions_junction (cohort_id, description_id, created_at)
-        SELECT
-            x.cohort_id,
-            x.description_id,
-            NOW()
-        FROM params_with_departments x
-        WHERE x.description_id IS NOT NULL
-        ON CONFLICT ON CONSTRAINT cohort_descriptions_pkey DO NOTHING
-    ),
-    -- Insert or UPDATE cohort_artifact active flag (UPDATE handled above for update case, INSERT here handles both via ON CONFLICT)
-    insert_cohort_active_flag AS (
-        INSERT INTO cohort_flags_junction (cohort_id, flag_id, value, created_at) SELECT x.cohort_id,
-            COALESCE(x.active_flag_id, f.id),
-            CASE WHEN x.active_flag_id IS NOT NULL THEN true ELSE false END,
-            NOW()
-        FROM params_with_departments x
-        CROSS JOIN flags_resource f
-        WHERE f.name = 'cohort_active'
-        ON CONFLICT ON CONSTRAINT cohort_flags_pkey DO UPDATE SET
-            flag_id = COALESCE(EXCLUDED.flag_id, cohort_flags_junction.flag_id),
-            value = EXCLUDED.value
-    ),
-    -- Link departments (old ones already deleted above if update)
-    link_departments AS (
-        INSERT INTO cohort_departments_junction (cohort_id, department_id, active, created_at)
-        SELECT
-            x.cohort_id,
-            dri.department_resource_id,
-            true,
-            NOW()
-        FROM params_with_departments x
-        JOIN department_resource_ids dri ON dri.department_resource_id IS NOT NULL
-        WHERE COALESCE(array_length(x.department_ids, 1), 0) > 0
-        ON CONFLICT ON CONSTRAINT cohort_departments_pkey DO UPDATE SET
-            active = true
-    ),
-    -- Simulations with positions from form data
-    simulations_with_order AS (
-        SELECT
-            sim_id,
-            COALESCE(
-                v_simulation_position_values[sim_list.ordinality::int],
-                sim_list.ordinality::int
-            ) as position
-        FROM params_with_departments x
-        CROSS JOIN UNNEST(x.simulation_ids) WITH ORDINALITY AS sim_list(sim_id, ordinality)
-        WHERE COALESCE(array_length(x.simulation_ids, 1), 0) > 0
-    ),
-    link_simulations AS (
-        INSERT INTO cohort_simulations_junction (cohort_id, simulation_id, active)
-        SELECT
-            x.cohort_id,
-            swo.sim_id,
-            true
-        FROM params_with_departments x
-        CROSS JOIN simulations_with_order swo
-        ON CONFLICT ON CONSTRAINT cohort_simulations_pkey DO UPDATE SET
-            active = true
-    ),
-    upsert_simulation_positions AS (
+    IF v_description_id IS NOT NULL THEN
+        INSERT INTO cohort_descriptions_junction (cohort_id, description_id, created_at, active)
+        VALUES (v_cohort_id, v_description_id, NOW(), true)
+        ON CONFLICT ON CONSTRAINT cohort_descriptions_pkey DO UPDATE SET active = true;
+    END IF;
+
+    IF v_active_flag_id IS NOT NULL THEN
+        INSERT INTO cohort_flags_junction (cohort_id, flag_id, value, created_at, active)
+        VALUES (v_cohort_id, v_active_flag_id, true, NOW(), true)
+        ON CONFLICT ON CONSTRAINT cohort_flags_pkey DO UPDATE
+        SET value = EXCLUDED.value,
+            active = true;
+    END IF;
+
+    INSERT INTO cohort_departments_junction (cohort_id, department_id, active, created_at)
+    SELECT v_cohort_id, dept_id, true, NOW()
+    FROM UNNEST(v_department_ids) AS dept_id
+    ON CONFLICT ON CONSTRAINT cohort_departments_pkey DO UPDATE
+    SET active = true;
+
+    INSERT INTO cohort_simulations_junction (cohort_id, simulation_id, active, created_at)
+    SELECT v_cohort_id, sim_id, true, NOW()
+    FROM UNNEST(v_simulation_ids) AS sim_id
+    ON CONFLICT ON CONSTRAINT cohort_simulations_pkey DO UPDATE
+    SET active = true;
+
+    WITH simulation_positions_upsert AS (
         INSERT INTO simulation_positions_resource (
             simulation_id,
             value,
@@ -301,55 +243,158 @@ BEGIN
             call_id
         )
         SELECT
-            swo.sim_id,
-            swo.position,
+            sim.simulation_id,
+            COALESCE(v_simulation_position_values[sim.ordinality], sim.ordinality),
             NOW(),
             false,
             false,
-            x.default_call_id
-        FROM params_with_departments x
-        CROSS JOIN simulations_with_order swo
+            (SELECT id FROM view_calls_entry LIMIT 1)
+        FROM UNNEST(v_simulation_position_simulation_ids) WITH ORDINALITY AS sim(simulation_id, ordinality)
         ON CONFLICT (simulation_id, value) DO UPDATE SET created_at = EXCLUDED.created_at
-        RETURNING id, simulation_id, value
-    ),
-    link_simulation_positions AS (
-        INSERT INTO cohort_simulation_positions_junction (
-            cohort_id,
-            simulation_position_id,
-            active,
-            created_at,
-            generated,
-            mcp
-        )
-        SELECT
-            x.cohort_id,
-            usp.id,
-            true,
-            NOW(),
-            false,
-            false
-        FROM params_with_departments x
-        CROSS JOIN upsert_simulation_positions usp
-        ON CONFLICT ON CONSTRAINT cohort_simulation_positions_pkey DO UPDATE SET
-            active = true
-    ),
-    -- Sync linked resources with name/description
-    sync_artifact_resources AS (
-        UPDATE cohorts_resource r
-        SET name = n.name,
-            description = d.description
-        FROM cohort_cohorts_junction j
-        CROSS JOIN params_with_departments p
-        LEFT JOIN names_resource n ON n.id = p.name_id
-        LEFT JOIN descriptions_resource d ON d.id = p.description_id
-        WHERE j.cohorts_id = r.id
-          AND j.cohort_id = p.cohort_id
-        RETURNING r.id
+        RETURNING id
     )
-    SELECT
-        x.cohort_id AS cohort_id,
-        ap.actor_name AS actor_name
-    FROM params_with_departments x
-    CROSS JOIN actor_profile ap;
+    SELECT COALESCE(ARRAY_AGG(id), ARRAY[]::uuid[])
+    INTO v_simulation_position_ids
+    FROM simulation_positions_upsert;
+
+    INSERT INTO cohort_simulation_positions_junction (
+        cohort_id,
+        simulation_position_id,
+        active,
+        created_at,
+        generated,
+        mcp
+    )
+    SELECT v_cohort_id, sp_id, true, NOW(), false, false
+    FROM UNNEST(v_simulation_position_ids) AS sp_id
+    ON CONFLICT ON CONSTRAINT cohort_simulation_positions_pkey DO UPDATE
+    SET active = true;
+
+    UPDATE cohorts_resource r
+    SET name = n.name,
+        description = d.description
+    FROM cohort_cohorts_junction j
+    LEFT JOIN names_resource n ON n.id = v_name_id
+    LEFT JOIN descriptions_resource d ON d.id = v_description_id
+    WHERE j.cohorts_id = r.id
+      AND j.cohort_id = v_cohort_id;
+
+    IF (
+        (names).create_tool_id IS NOT NULL OR (names).link_tool_id IS NOT NULL OR
+        (descriptions).create_tool_id IS NOT NULL OR (descriptions).link_tool_id IS NOT NULL OR
+        (flags).create_tool_id IS NOT NULL OR (flags).link_tool_id IS NOT NULL OR
+        (departments).create_tool_id IS NOT NULL OR (departments).link_tool_id IS NOT NULL OR
+        (simulations).create_tool_id IS NOT NULL OR (simulations).link_tool_id IS NOT NULL OR
+        (simulation_positions).create_tool_id IS NOT NULL OR (simulation_positions).link_tool_id IS NOT NULL
+    ) THEN
+        v_run_id := uuidv7();
+        INSERT INTO runs_entry (id, input_tokens, output_tokens, cached_input_tokens, group_id, created_at, updated_at)
+        VALUES (v_run_id, 0, 0, 0, v_group_id, NOW(), NOW());
+
+        IF v_name_id IS NOT NULL AND (names).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'cohort_save_create_names_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((names).create_tool_id, v_call_id);
+            INSERT INTO names_calls_connection (names_id, call_id) VALUES (v_name_id, v_call_id);
+        END IF;
+
+        IF v_name_id IS NOT NULL AND (names).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'cohort_save_link_names_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((names).link_tool_id, v_call_id);
+            INSERT INTO names_calls_connection (names_id, call_id) VALUES (v_name_id, v_call_id);
+        END IF;
+
+        IF v_description_id IS NOT NULL AND (descriptions).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'cohort_save_create_descriptions_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((descriptions).create_tool_id, v_call_id);
+            INSERT INTO descriptions_calls_connection (descriptions_id, call_id) VALUES (v_description_id, v_call_id);
+        END IF;
+
+        IF v_description_id IS NOT NULL AND (descriptions).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'cohort_save_link_descriptions_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((descriptions).link_tool_id, v_call_id);
+            INSERT INTO descriptions_calls_connection (descriptions_id, call_id) VALUES (v_description_id, v_call_id);
+        END IF;
+
+        IF v_active_flag_id IS NOT NULL AND (flags).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'cohort_save_create_flags_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((flags).create_tool_id, v_call_id);
+            INSERT INTO flags_calls_connection (flags_id, call_id) VALUES (v_active_flag_id, v_call_id);
+        END IF;
+
+        IF v_active_flag_id IS NOT NULL AND (flags).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'cohort_save_link_flags_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((flags).link_tool_id, v_call_id);
+            INSERT INTO flags_calls_connection (flags_id, call_id) VALUES (v_active_flag_id, v_call_id);
+        END IF;
+
+        IF COALESCE(array_length(v_department_ids, 1), 0) > 0 AND (departments).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'cohort_save_create_departments_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((departments).create_tool_id, v_call_id);
+            INSERT INTO departments_calls_connection (departments_id, call_id)
+            SELECT did, v_call_id FROM UNNEST(v_department_ids) did;
+        END IF;
+
+        IF COALESCE(array_length(v_department_ids, 1), 0) > 0 AND (departments).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'cohort_save_link_departments_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((departments).link_tool_id, v_call_id);
+            INSERT INTO departments_calls_connection (departments_id, call_id)
+            SELECT did, v_call_id FROM UNNEST(v_department_ids) did;
+        END IF;
+
+        IF COALESCE(array_length(v_simulation_ids, 1), 0) > 0 AND (simulations).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'cohort_save_create_simulations_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((simulations).create_tool_id, v_call_id);
+            INSERT INTO simulations_calls_connection (simulations_id, call_id)
+            SELECT sid, v_call_id FROM UNNEST(v_simulation_ids) sid;
+        END IF;
+
+        IF COALESCE(array_length(v_simulation_ids, 1), 0) > 0 AND (simulations).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'cohort_save_link_simulations_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((simulations).link_tool_id, v_call_id);
+            INSERT INTO simulations_calls_connection (simulations_id, call_id)
+            SELECT sid, v_call_id FROM UNNEST(v_simulation_ids) sid;
+        END IF;
+
+        IF COALESCE(array_length(v_simulation_position_ids, 1), 0) > 0 AND (simulation_positions).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'cohort_save_create_simulation_positions_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((simulation_positions).create_tool_id, v_call_id);
+            INSERT INTO simulation_positions_calls_connection (simulation_positions_id, call_id)
+            SELECT spid, v_call_id FROM UNNEST(v_simulation_position_ids) spid;
+        END IF;
+
+        IF COALESCE(array_length(v_simulation_position_ids, 1), 0) > 0 AND (simulation_positions).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'cohort_save_link_simulation_positions_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((simulation_positions).link_tool_id, v_call_id);
+            INSERT INTO simulation_positions_calls_connection (simulation_positions_id, call_id)
+            SELECT spid, v_call_id FROM UNNEST(v_simulation_position_ids) spid;
+        END IF;
+    END IF;
+
+    RETURN QUERY
+    SELECT v_cohort_id, v_actor_name;
 END;
 $$;

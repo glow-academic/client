@@ -566,6 +566,7 @@ class SaveScenarioApiRequest(BaseModel):
     videos: "ScenarioMultiResourceAction"
     questions: "ScenarioMultiResourceAction"
 
+
 class ScenarioResourceAction(BaseModel):
     resource_id: UUID | None = None
     create_tool_id: UUID | None = None

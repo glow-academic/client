@@ -112,11 +112,8 @@ async def save_document(
             )
 
         async with conn.transaction():
-            # Convert API request to SQL params (add profile_id from header)
-            params = SaveDocumentSqlParams(
-                **request.model_dump(),
-                profile_id=profile_id,
-            )
+            # Convert API request to SQL params using from_request()
+            params = SaveDocumentSqlParams.from_request(request, profile_id)
             sql_params = params.to_tuple()
 
             # Execute SQL with typed helper

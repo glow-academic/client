@@ -8,12 +8,12 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from app.api.v4.artifacts.document.types import (
     PatchDocumentDraftApiRequest,
     PatchDocumentDraftApiResponse,
+    PatchDocumentDraftSqlParams,
 )
 from app.infra.v4.activity.audit import audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
-    PatchDocumentDraftSqlParams,
     PatchDocumentDraftSqlRow,
     load_sql_query,
 )
@@ -35,7 +35,7 @@ async def patch_document_draft(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> PatchDocumentDraftApiResponse:
-    """Patch document draft - accepts resource IDs and creates/updates draft."""
+    """Patch document draft - accepts resource actions and creates/updates draft."""
     tags = ["documents", "drafts"]
 
     sql_query = load_sql_query(SQL_PATH)
@@ -50,9 +50,7 @@ async def patch_document_draft(
             )
 
         async with conn.transaction():
-            params = PatchDocumentDraftSqlParams(
-                **request.model_dump(), profile_id=profile_id
-            )
+            params = PatchDocumentDraftSqlParams.from_request(request, profile_id)
             sql_params = params.to_tuple()
 
             result = cast(
@@ -69,7 +67,12 @@ async def patch_document_draft(
                 draft={"id": str(result.draft_id)},
             )
 
-        api_response = PatchDocumentDraftApiResponse.model_validate(result.model_dump())
+        api_response = PatchDocumentDraftApiResponse(
+            success=True,
+            draft_id=result.draft_id,
+            new_version=result.new_version,
+            message="Draft updated successfully",
+        )
 
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

@@ -2,7 +2,7 @@
 
 This implements the refactored approach matching the persona gold standard:
 1. Query 1: Access check (user context, cohort state)
-2. Query 2: ID fetching (resource IDs, suggestions, agents, domain IDs, tool IDs)
+2. Query 2: ID fetching (resource IDs, suggestions, agents, tool IDs)
 3. Pass 2: Parallel resource fetching (per-resource caching)
 
 Three output layers:
@@ -20,9 +20,7 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.artifacts.cohort.permissions import (
-    COHORT_BASIC_RESOURCES,
     COHORT_RESOURCES,
-    build_domain_data,
     compute_can_edit,
     compute_departments_required,
     compute_description_required,
@@ -41,35 +39,45 @@ from app.api.v4.artifacts.cohort.permissions import (
 )
 from app.api.v4.artifacts.cohort.types import (
     CohortDepartment,
+    CohortDepartmentSection,
     CohortDescriptionResource,
+    CohortDescriptionSection,
     CohortFlagResource,
+    CohortFlagSection,
     CohortNameResource,
+    CohortNameSection,
     CohortResourceBucket,
     CohortResources,
     CohortSimulation,
     CohortSimulationPosition,
+    CohortSimulationPositionSection,
+    CohortSimulationSection,
+    CohortWebsocketResources,
+    CohortWebsocketViews,
     GetCohortApiRequest,
     GetCohortApiResponse,
     GetCohortWebsocketResponse,
 )
-from app.api.v4.permissions import (
-    select_agents_for_artifact,
-    select_multi_resource_agent,
-)
+from app.api.v4.permissions import select_agents_for_artifact
+from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.departments.search import search_departments_internal
 from app.api.v4.resources.descriptions.get import get_descriptions_internal
 from app.api.v4.resources.descriptions.search import search_descriptions_internal
 from app.api.v4.resources.flags.get import get_flags_internal
 from app.api.v4.resources.flags.search import search_flags_internal
+from app.api.v4.resources.models.get import get_models_internal
 from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.names.search import search_names_internal
+from app.api.v4.resources.providers.get import get_providers_internal
 from app.api.v4.resources.simulation_positions.get import (
     get_simulation_positions_internal,
 )
 from app.api.v4.resources.simulations.get import get_simulation_internal
 from app.api.v4.resources.simulations.search import search_simulations_internal
-from app.api.v4.types import CandidateAgent, DomainAgent
+from app.api.v4.resources.tools.get import get_tools_internal
+from app.api.v4.types import CandidateAgent
+from app.api.v4.views.drafts.get import get_draft_cohort_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -119,10 +127,8 @@ class CohortInternalData:
     draft_version: int | None
     group_id: UUID | None
 
-    # Domain mappings
-    domain_ids_map: dict[str, UUID | None]
+    # Generation mappings
     agent_ids: dict[str, UUID | None]
-    domains_list: list[DomainAgent]
 
     # Show/required flags
     show_flags_map: dict[str, bool]
@@ -131,13 +137,10 @@ class CohortInternalData:
     # Suggestions (resource -> list of suggestion IDs)
     suggestions_map: dict[str, list[UUID]]
 
-    # Show AI generate flags (computed: domain_id exists AND agent exists)
+    # Show AI generate flags (computed: agent exists)
     show_ai_generate_map: dict[str, bool]
     basic_show_ai_generate: bool
     simulations_step_show_ai_generate: bool
-
-    # Domain data for modals
-    domain_data_list: list[Any]
 
     # Resources payload
     resources_payload: CohortResources
@@ -164,9 +167,10 @@ class CohortInternalData:
     simulation_resources: list[CohortSimulation]
     simulation_positions: list[CohortSimulationPosition]
 
-    # Multi-resource agent IDs (legacy)
-    basic_agent_id: UUID | None
-    general_agent_id: UUID | None
+    # Config resources (for websocket generation context)
+    config_agent_resources: list[Any] | None
+    config_model_resources: list[Any] | None
+    config_provider_resources: list[Any] | None
 
 
 async def get_cohort_internal(
@@ -275,22 +279,10 @@ async def get_cohort_internal(
                     link_tool_ids_map[resource] = candidate.link_tool_ids.get(resource)
                     break
 
-    # === EXTRACT DOMAIN IDS FROM QUERY 2 ===
-    domain_ids_map: dict[str, UUID | None] = {
-        "names": ids_result.names_domain_id,
-        "descriptions": ids_result.descriptions_domain_id,
-        "flags": ids_result.flags_domain_id,
-        "departments": ids_result.departments_domain_id,
-        "simulations": ids_result.simulations_domain_id,
-        "simulation_positions": ids_result.simulation_positions_domain_id,
-    }
-
     # === COMPUTE SHOW_AI_GENERATE FLAGS ===
     def compute_show_ai_generate(resource: str) -> bool:
-        """Returns True if domain_id exists AND agent exists for that resource."""
-        domain_id = domain_ids_map.get(resource)
-        agent_id = agent_ids.get(resource)
-        return domain_id is not None and agent_id is not None
+        """Returns True when an agent is configured for the resource."""
+        return agent_ids.get(resource) is not None
 
     name_show_ai_generate = compute_show_ai_generate("names")
     description_show_ai_generate = compute_show_ai_generate("descriptions")
@@ -323,14 +315,6 @@ async def get_cohort_internal(
     can_edit = compute_can_edit(user_role, cohort_department_ids)
     disabled_reason = compute_disabled_reason(user_role, cohort_department_ids)
 
-    # Multi-resource agent IDs (legacy)
-    basic_agent_id = select_multi_resource_agent(
-        candidate_agents, COHORT_BASIC_RESOURCES, COHORT_RESOURCES, user_dept_set
-    )
-    general_agent_id = select_multi_resource_agent(
-        candidate_agents, COHORT_RESOURCES, COHORT_RESOURCES, user_dept_set
-    )
-
     # === PASS 2: Parallel Resource Fetching (each endpoint handles own cache) ===
 
     # Selected IDs for fetching
@@ -344,7 +328,7 @@ async def get_cohort_internal(
     # NOTE: Each query needs its own connection from the pool because
     # asyncpg connections cannot handle concurrent operations.
 
-    async def fetch_names():
+    async def fetch_names() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
             selected = await get_names_internal(c, name_ids, bypass_cache)
             suggestions = await search_names_internal(
@@ -359,7 +343,7 @@ async def get_cohort_internal(
             )
             return (selected, suggestions)
 
-    async def fetch_descriptions():
+    async def fetch_descriptions() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
             selected = await get_descriptions_internal(c, description_ids, bypass_cache)
             suggestions = await search_descriptions_internal(
@@ -377,7 +361,7 @@ async def get_cohort_internal(
     # Cohort-specific flag names (business logic)
     COHORT_FLAG_NAMES = {"cohort_active"}
 
-    async def fetch_flags():
+    async def fetch_flags() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
             selected = await get_flags_internal(c, flag_ids, bypass_cache)
             all_flags = await search_flags_internal(
@@ -393,7 +377,7 @@ async def get_cohort_internal(
             suggestions = [f for f in all_flags if f.name in COHORT_FLAG_NAMES]
             return (selected, suggestions)
 
-    async def fetch_departments():
+    async def fetch_departments() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
             selected = await get_departments_internal(c, department_ids, bypass_cache)
             # Use "all" to show all available departments the user has access to
@@ -409,7 +393,7 @@ async def get_cohort_internal(
             )
             return (selected, suggestions)
 
-    async def fetch_simulations():
+    async def fetch_simulations() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
             # Fetch each selected simulation
             selected = []
@@ -432,7 +416,7 @@ async def get_cohort_internal(
             )
             return (selected, suggestions)
 
-    async def fetch_simulation_positions():
+    async def fetch_simulation_positions() -> list[CohortSimulationPosition]:
         async with pool.acquire() as c:
             return await get_simulation_positions_internal(
                 c, simulation_ids, bypass_cache=bypass_cache
@@ -583,11 +567,6 @@ async def get_cohort_internal(
         "simulations": simulation_suggestions_ids,
     }
 
-    # Build domain data for modals
-    domain_data_list = build_domain_data(
-        domain_ids_map, show_flags_map, required_flags_map
-    )
-
     # Build resources payload
     resources_payload = CohortResources(
         resources=CohortResourceBucket(
@@ -619,17 +598,43 @@ async def get_cohort_internal(
         "simulation_positions": effective_group_id,
     }
 
-    # Build domains list for WebSocket handler
-    domains_list: list[DomainAgent] = []
-    for resource, domain_id in domain_ids_map.items():
-        if domain_id is not None:
-            domains_list.append(
-                DomainAgent(
-                    domain_id=domain_id,
-                    agent_id=agent_ids.get(resource),
-                    group_id=resource_group_ids.get(resource),
-                )
+    selected_agent_ids = [aid for aid in agent_ids.values() if aid]
+    unique_agent_ids = list(dict.fromkeys(selected_agent_ids))
+    config_agents_result: list[Any] = []
+    config_models_result: list[Any] = []
+    config_providers_result: list[Any] = []
+    if unique_agent_ids:
+        async with pool.acquire() as c:
+            config_agents_result = await get_agents_internal(
+                c, unique_agent_ids, bypass_cache
             )
+        if config_agents_result:
+            model_ids = list(
+                {
+                    m
+                    for agent in config_agents_result
+                    for m in [getattr(agent, "model_id", None)]
+                    if m is not None
+                }
+            )
+            provider_ids = list(
+                {
+                    p
+                    for agent in config_agents_result
+                    for p in [getattr(agent, "provider_id", None)]
+                    if p is not None
+                }
+            )
+            if model_ids:
+                async with pool.acquire() as c:
+                    config_models_result = await get_models_internal(
+                        c, model_ids, bypass_cache
+                    )
+            if provider_ids:
+                async with pool.acquire() as c:
+                    config_providers_result = await get_providers_internal(
+                        c, provider_ids, bypass_cache
+                    )
 
     return CohortInternalData(
         # Access/context
@@ -639,10 +644,8 @@ async def get_cohort_internal(
         disabled_reason=disabled_reason,
         draft_version=access_result.draft_version,
         group_id=effective_group_id,
-        # Domain mappings
-        domain_ids_map=domain_ids_map,
+        # Generation mapping
         agent_ids=agent_ids,
-        domains_list=domains_list,
         # Show/required flags
         show_flags_map=show_flags_map,
         required_flags_map=required_flags_map,
@@ -652,8 +655,7 @@ async def get_cohort_internal(
         show_ai_generate_map=show_ai_generate_map,
         basic_show_ai_generate=basic_show_ai_generate,
         simulations_step_show_ai_generate=simulations_step_show_ai_generate,
-        # Domain data and resources
-        domain_data_list=domain_data_list,
+        # Resources
         resources_payload=resources_payload,
         # Per-resource group IDs
         resource_group_ids=resource_group_ids,
@@ -673,9 +675,9 @@ async def get_cohort_internal(
         department_resources=department_resources,
         simulation_resources=simulation_resources,
         simulation_positions=simulation_positions or [],
-        # Multi-resource agent IDs (legacy)
-        basic_agent_id=basic_agent_id,
-        general_agent_id=general_agent_id,
+        config_agent_resources=config_agents_result or None,
+        config_model_resources=config_models_result or None,
+        config_provider_resources=config_providers_result or None,
     )
 
 
@@ -687,11 +689,10 @@ async def get_cohort_websocket(
 ) -> GetCohortWebsocketResponse:
     """Minimal response for WebSocket handlers.
 
-    Returns only what's needed for AI generation:
-    - Domain IDs (for domain_to_resource mapping)
-    - Domains list (for agent_id lookup)
-    - Group ID (for existing group context)
-    - Resources (for Jinja template context)
+    Returns generation context for socket handlers:
+    - group_id
+    - resource_agent_ids mapping (resource_type -> agent_id)
+    - selected resources + config resources for Jinja context
     """
     data = await get_cohort_internal(
         profile_id=profile_id,
@@ -700,19 +701,53 @@ async def get_cohort_websocket(
         bypass_cache=bypass_cache,
     )
 
+    draft_view = None
+    if draft_id is not None:
+        pool = get_pool()
+        if not pool:
+            raise RuntimeError("Database pool not initialized")
+        async with pool.acquire() as conn:
+            draft_items = await get_draft_cohort_internal(
+                conn=conn,
+                draft_ids=[draft_id],
+                bypass_cache=bypass_cache,
+            )
+            draft_view = draft_items[0] if draft_items else None
+
+    current = data.resources_payload.current
+
+    tools_result: list[Any] = []
+    if data.config_agent_resources:
+        tool_ids: list[UUID] = []
+        for agent in data.config_agent_resources:
+            ids = getattr(agent, "tool_ids", None) or []
+            tool_ids.extend(ids)
+        deduped_tool_ids = list(dict.fromkeys(tool_ids))
+        if deduped_tool_ids:
+            pool = get_pool()
+            if not pool:
+                raise RuntimeError("Database pool not initialized")
+            async with pool.acquire() as conn:
+                tools_result = await get_tools_internal(
+                    conn, deduped_tool_ids, bypass_cache
+                )
+
     return GetCohortWebsocketResponse(
         group_id=data.group_id,
-        # Domain IDs for domain_to_resource mapping
-        names_domain_id=data.domain_ids_map.get("names"),
-        descriptions_domain_id=data.domain_ids_map.get("descriptions"),
-        flags_domain_id=data.domain_ids_map.get("flags"),
-        departments_domain_id=data.domain_ids_map.get("departments"),
-        simulations_domain_id=data.domain_ids_map.get("simulations"),
-        simulation_positions_domain_id=data.domain_ids_map.get("simulation_positions"),
-        # Domains mapping for agent lookup
-        domains=data.domains_list,
-        # Resources for Jinja context
-        resources=data.resources_payload,
+        views=CohortWebsocketViews(draft_cohort=draft_view) if draft_view else None,
+        resource_agent_ids=data.agent_ids,
+        resources=CohortWebsocketResources(
+            names=current.names if current else None,
+            descriptions=current.descriptions if current else None,
+            flags=current.flags if current else None,
+            departments=current.departments if current else None,
+            simulations=current.simulations if current else None,
+            simulation_positions=current.simulation_positions if current else None,
+            agents=data.config_agent_resources,
+            models=data.config_model_resources,
+            providers=data.config_provider_resources,
+            tools=tools_result or None,
+        ),
     )
 
 
@@ -724,9 +759,8 @@ async def get_cohort_client(
 ) -> GetCohortApiResponse:
     """BFF response for HTTP endpoint/frontend.
 
-    Returns the full response with all UI fields, suggestions, and
-    computed *_show_ai_generate flags. Does NOT include domains
-    (agent lookup is server-side only).
+    Returns the full response with all UI sections and
+    computed *_show_ai_generate flags.
     """
     data = await get_cohort_internal(
         profile_id=profile_id,
@@ -735,116 +769,73 @@ async def get_cohort_client(
         bypass_cache=bypass_cache,
     )
 
+    resources_bucket = data.resources_payload.resources
+    current_bucket = data.resources_payload.current
+
+    def section_common(resource_key: str) -> dict[str, Any]:
+        return {
+            "show": data.show_flags_map.get(resource_key, False),
+            "required": data.required_flags_map.get(resource_key, False),
+            "suggestions": data.suggestions_map.get(resource_key, []),
+            "show_ai_generate": data.show_ai_generate_map.get(resource_key, False),
+            "create_tool_id": data.create_tool_ids_map.get(resource_key),
+            "link_tool_id": data.link_tool_ids_map.get(resource_key),
+        }
+
     return GetCohortApiResponse(
-        # Required fields
+        # Context
         actor_name=data.actor_name,
         cohort_exists=data.cohort_exists,
         can_edit=data.can_edit,
         disabled_reason=data.disabled_reason,
         draft_version=data.draft_version,
         group_id=data.group_id,
-        # Per-resource group IDs
-        names_group_id=data.resource_group_ids.get("names"),
-        descriptions_group_id=data.resource_group_ids.get("descriptions"),
-        flags_group_id=data.resource_group_ids.get("flags"),
-        departments_group_id=data.resource_group_ids.get("departments"),
-        simulations_group_id=data.resource_group_ids.get("simulations"),
-        simulation_positions_group_id=data.resource_group_ids.get(
-            "simulation_positions"
-        ),
-        # Name
-        name_id=data.name_id,
-        name_resource=data.name_resource,
-        show_name=data.show_flags_map.get("names"),
-        name_domain_id=data.domain_ids_map.get("names"),
-        name_agent_id=data.agent_ids.get("names"),
-        name_required=data.required_flags_map.get("names"),
-        name_suggestions=data.suggestions_map.get("names"),
-        name_show_ai_generate=data.show_ai_generate_map.get("names"),
-        names=data.resources_payload.resources.names
-        if data.resources_payload.resources
-        else None,
-        # Description
-        description_id=data.description_id,
-        description_resource=data.description_resource,
-        show_description=data.show_flags_map.get("descriptions"),
-        description_domain_id=data.domain_ids_map.get("descriptions"),
-        description_agent_id=data.agent_ids.get("descriptions"),
-        description_required=data.required_flags_map.get("descriptions"),
-        description_suggestions=data.suggestions_map.get("descriptions"),
-        description_show_ai_generate=data.show_ai_generate_map.get("descriptions"),
-        descriptions=data.resources_payload.resources.descriptions
-        if data.resources_payload.resources
-        else None,
-        # Flag
-        active_flag_id=data.active_flag_id,
-        flag_resource=data.flag_resource,
-        show_flag=data.show_flags_map.get("flags"),
-        flag_domain_id=data.domain_ids_map.get("flags"),
-        flag_agent_id=data.agent_ids.get("flags"),
-        flag_required=data.required_flags_map.get("flags"),
-        flag_show_ai_generate=data.show_ai_generate_map.get("flags"),
-        flags=data.resources_payload.resources.flags
-        if data.resources_payload.resources
-        else None,
-        # Departments
-        department_ids=data.department_ids,
-        department_resources=data.department_resources,
-        show_departments=data.show_flags_map.get("departments"),
-        departments_domain_id=data.domain_ids_map.get("departments"),
-        departments_agent_id=data.agent_ids.get("departments"),
-        departments_required=data.required_flags_map.get("departments"),
-        department_suggestions=data.suggestions_map.get("departments"),
-        departments_show_ai_generate=data.show_ai_generate_map.get("departments"),
-        departments=data.resources_payload.resources.departments
-        if data.resources_payload.resources
-        else None,
-        # Simulations
-        simulation_ids=data.simulation_ids,
-        simulation_resources=data.simulation_resources,
-        show_simulations=data.show_flags_map.get("simulations"),
-        simulations_domain_id=data.domain_ids_map.get("simulations"),
-        simulations_agent_id=data.agent_ids.get("simulations"),
-        simulations_required=data.required_flags_map.get("simulations"),
-        simulation_suggestions=data.suggestions_map.get("simulations"),
-        simulations_show_ai_generate=data.show_ai_generate_map.get("simulations"),
-        simulations=data.resources_payload.resources.simulations
-        if data.resources_payload.resources
-        else None,
-        # Simulation positions
-        simulation_positions=data.simulation_positions,
-        show_simulation_positions=data.show_flags_map.get("simulation_positions"),
-        simulation_positions_domain_id=data.domain_ids_map.get("simulation_positions"),
-        simulation_positions_agent_id=None,
-        simulation_positions_required=data.required_flags_map.get(
-            "simulation_positions"
-        ),
-        simulation_positions_show_ai_generate=data.show_ai_generate_map.get(
-            "simulation_positions"
-        ),
-        # Step-level AI generation flags
         basic_show_ai_generate=data.basic_show_ai_generate,
         simulations_step_show_ai_generate=data.simulations_step_show_ai_generate,
-        # Multi-resource agent IDs (legacy)
-        basic_agent_id=data.basic_agent_id,
-        general_agent_id=data.general_agent_id,
-        # Per-resource CREATE tool IDs
-        name_create_tool_id=data.create_tool_ids_map.get("names"),
-        description_create_tool_id=data.create_tool_ids_map.get("descriptions"),
-        simulations_create_tool_id=data.create_tool_ids_map.get("simulations"),
-        # Per-resource LINK tool IDs
-        name_link_tool_id=data.link_tool_ids_map.get("names"),
-        description_link_tool_id=data.link_tool_ids_map.get("descriptions"),
-        flag_link_tool_id=data.link_tool_ids_map.get("flags"),
-        departments_link_tool_id=data.link_tool_ids_map.get("departments"),
-        simulations_link_tool_id=data.link_tool_ids_map.get("simulations"),
-        simulation_positions_link_tool_id=data.link_tool_ids_map.get(
-            "simulation_positions"
+        names=CohortNameSection(
+            resource=(
+                current_bucket.names[0]
+                if current_bucket and current_bucket.names
+                else None
+            ),
+            resources=(resources_bucket.names if resources_bucket else None),
+            **section_common("names"),
         ),
-        # Domain metadata for client display in modals
-        domain_data=data.domain_data_list,
-        # Resources
-        resources=data.resources_payload,
+        descriptions=CohortDescriptionSection(
+            resource=(
+                current_bucket.descriptions[0]
+                if current_bucket and current_bucket.descriptions
+                else None
+            ),
+            resources=(resources_bucket.descriptions if resources_bucket else None),
+            **section_common("descriptions"),
+        ),
+        flags=CohortFlagSection(
+            resource=(
+                current_bucket.flags[0]
+                if current_bucket and current_bucket.flags
+                else None
+            ),
+            resources=(resources_bucket.flags if resources_bucket else None),
+            **section_common("flags"),
+        ),
+        departments=CohortDepartmentSection(
+            current=(current_bucket.departments if current_bucket else None),
+            resources=(resources_bucket.departments if resources_bucket else None),
+            **section_common("departments"),
+        ),
+        simulations=CohortSimulationSection(
+            current=(current_bucket.simulations if current_bucket else None),
+            resources=(resources_bucket.simulations if resources_bucket else None),
+            **section_common("simulations"),
+        ),
+        simulation_positions=CohortSimulationPositionSection(
+            current=(current_bucket.simulation_positions if current_bucket else None),
+            resources=(
+                resources_bucket.simulation_positions if resources_bucket else None
+            ),
+            **section_common("simulation_positions"),
+        ),
     )
 
 
@@ -899,11 +890,11 @@ async def get_cohort(
             }
             if (
                 request.cohort_id
-                and response_data.name_resource
-                and response_data.name_resource.name
+                and response_data.names
+                and response_data.names.resource
             ):
                 audit_ctx["cohort"] = {
-                    "name": response_data.name_resource.name,
+                    "name": response_data.names.resource.name,
                     "id": str(request.cohort_id),
                 }
             audit_set(http_request, **audit_ctx)

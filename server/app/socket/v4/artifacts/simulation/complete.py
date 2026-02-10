@@ -5,6 +5,7 @@ from typing import Any
 
 from fastapi import APIRouter
 
+from app.api.v4.artifacts.simulation.types import SimulationFlagConfig
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.descriptions.get import get_descriptions_internal
 from app.api.v4.resources.flags.get import get_flags_internal
@@ -15,6 +16,14 @@ from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
 from app.socket.v4.artifacts.simulation.types import (
     SimulationGenerationCompleteEvent,
+)
+from app.sql.types import (
+    QGetFlagsV4Item,
+    QGetScenarioFlagsV4Item,
+    QGetScenarioPersonasV4Item,
+    QGetScenarioPositionsV4Item,
+    QGetScenarioRubricsV4Item,
+    QGetScenarioTimeLimitsV4Item,
 )
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
@@ -28,6 +37,27 @@ SQL_PATH_CREATE_MESSAGE_WITH_TEXT = (
 
 client_router = APIRouter()
 server_router = APIRouter()
+
+
+def _derive_simulation_flag_key_and_label(name: str | None) -> tuple[str, str]:
+    if not name:
+        return ("unknown", "Unknown")
+    key = name.replace("simulation_", "")
+    return (key, key.replace("_", " ").title())
+
+
+def _to_simulation_flag_config(flag: QGetFlagsV4Item) -> SimulationFlagConfig:
+    key, label = _derive_simulation_flag_key_and_label(getattr(flag, "name", None))
+    return SimulationFlagConfig(
+        key=key,
+        label=label,
+        description=getattr(flag, "description", None),
+        icon_id=getattr(flag, "icon", None),
+        flag_option_id=getattr(flag, "id", None),
+        show=True,
+        required=False,
+        generated=getattr(flag, "generated", None),
+    )
 
 
 @internal_sio.on("generate_call_complete")  # type: ignore
@@ -126,7 +156,11 @@ async def handle_simulation_artifact_complete(data: dict[str, Any]) -> None:
                 event.description_resource = items[0] if items else None
             elif resource_type == "flags":
                 items = await get_flags_internal(conn, [resource_id])
-                event.flag_resources = items if items else None
+                event.flag_resources = (
+                    [_to_simulation_flag_config(item) for item in items]
+                    if items
+                    else None
+                )
             elif resource_type == "departments":
                 items = await get_departments_internal(conn, [resource_id])
                 event.department_resources = items if items else None
@@ -137,15 +171,25 @@ async def handle_simulation_artifact_complete(data: dict[str, Any]) -> None:
                 event.scenario_resources = items if items else None
             elif resource_type == "scenario_flags":
                 # Scenario-dependent resources: pass tool_result data directly
-                event.scenario_flag_resources = [tool_result]
+                event.scenario_flag_resources = [
+                    QGetScenarioFlagsV4Item.model_validate(tool_result)
+                ]
             elif resource_type == "scenario_personas":
-                event.scenario_persona_resources = [tool_result]
+                event.scenario_persona_resources = [
+                    QGetScenarioPersonasV4Item.model_validate(tool_result)
+                ]
             elif resource_type == "scenario_positions":
-                event.scenario_position_resources = [tool_result]
+                event.scenario_position_resources = [
+                    QGetScenarioPositionsV4Item.model_validate(tool_result)
+                ]
             elif resource_type == "scenario_rubrics":
-                event.scenario_rubric_resources = [tool_result]
+                event.scenario_rubric_resources = [
+                    QGetScenarioRubricsV4Item.model_validate(tool_result)
+                ]
             elif resource_type == "scenario_time_limits":
-                event.scenario_time_limit_resources = [tool_result]
+                event.scenario_time_limit_resources = [
+                    QGetScenarioTimeLimitsV4Item.model_validate(tool_result)
+                ]
     except Exception as e:
         # Resource fetch failed - emit error to client
         await sio.emit(

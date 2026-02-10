@@ -65,12 +65,11 @@ export async function generateMetadata(
         descriptions_search: null,
         simulation_search: null,
         simulation_show_selected: null,
-        current_simulation_ids: null,
         mcp: false,
       } as GetCohortIn["body"],
     };
     const cohort = await getCohort(input);
-    const cohortName = cohort?.name_resource?.name || "Cohort";
+    const cohortName = cohort?.names?.resource?.name || "Cohort";
     return {
       title: `${cohortName} Edit`,
       description: `${cohortName} - Edit learning cohort for teaching assistant training programs. Manage group settings and coordinate group-based learning activities for effective L&D program administration.`,
@@ -170,7 +169,6 @@ export default async function CohortEditPage({
         descriptions_search: q.descriptionSearch ?? null,
         simulation_search: q.simulationSearch ?? null,
         simulation_show_selected: q.simulationShowSelected ?? null,
-        current_simulation_ids: null, // Will be extracted from draft payload or cohort in SQL
         mcp: false,
       } as GetCohortIn["body"],
     };

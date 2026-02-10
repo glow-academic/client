@@ -10,15 +10,22 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.api.v4.types import DomainAgent, DomainData
+from app.api.v4.views.drafts.types import DraftSimulationViewItem
 from app.sql.types import (
+    QGetAgentsV4Item,
     QGetDepartmentsV4Item,
     QGetDescriptionsV4Item,
+    QGetModelsV4Item,
     QGetNamesV4Item,
+    QGetProvidersV4Item,
+    QGetRubricsV4Item,
+    QGetScenarioFlagsV4Item,
+    QGetScenarioPersonasV4Item,
+    QGetScenarioPositionsV4Item,
+    QGetScenarioRubricsV4Item,
+    QGetScenarioTimeLimitsV4Item,
+    QGetToolsV4Item,
 )
-
-# Re-export for backwards compatibility
-__all__ = ["DomainAgent", "DomainData"]
 
 # =============================================================================
 # Resource Types (imported from SQL types for reuse)
@@ -35,7 +42,6 @@ class SimulationFlagConfig(BaseModel):
     flag_option_id: UUID | None = None
     show: bool = True
     required: bool = False
-    domain_id: UUID | None = None  # Domain ID for generation
     generated: bool | None = None
 
 
@@ -80,12 +86,12 @@ class SimulationResourceBucket(BaseModel):
     flags: list[SimulationFlagConfig] | None = None
     departments: list[QGetDepartmentsV4Item] | None = None
     scenarios: list[SimulationScenario] | None = None
-    scenario_flags: list[Any] | None = None
-    scenario_personas: list[Any] | None = None
-    scenario_positions: list[Any] | None = None
-    scenario_rubrics: list[Any] | None = None
-    scenario_time_limits: list[Any] | None = None
-    rubrics: list[Any] | None = None
+    scenario_flags: list[QGetScenarioFlagsV4Item] | None = None
+    scenario_personas: list[QGetScenarioPersonasV4Item] | None = None
+    scenario_positions: list[QGetScenarioPositionsV4Item] | None = None
+    scenario_rubrics: list[QGetScenarioRubricsV4Item] | None = None
+    scenario_time_limits: list[QGetScenarioTimeLimitsV4Item] | None = None
+    rubrics: list[QGetRubricsV4Item] | None = None
 
 
 class SimulationResources(BaseModel):
@@ -179,18 +185,6 @@ class GetSimulationIdsSqlRow(BaseModel):
     scenario_positions_has_tools: bool | None = None
     scenario_rubrics_has_tools: bool | None = None
     scenario_time_limits_has_tools: bool | None = None
-
-    # Domain IDs
-    name_domain_id: UUID | None = None
-    description_domain_id: UUID | None = None
-    flag_domain_id: UUID | None = None
-    departments_domain_id: UUID | None = None
-    scenarios_domain_id: UUID | None = None
-    scenario_flags_domain_id: UUID | None = None
-    scenario_personas_domain_id: UUID | None = None
-    scenario_positions_domain_id: UUID | None = None
-    scenario_rubrics_domain_id: UUID | None = None
-    scenario_time_limits_domain_id: UUID | None = None
 
 
 # =============================================================================
@@ -297,155 +291,128 @@ class GetSimulationApiRequest(BaseModel):
     simulation_id: UUID | None = None
     draft_id: UUID | None = None
     scenario_search: str | None = None
-    scenario_show_selected: bool | None = None
     filter_scenario_ids: list[UUID] | None = None
 
 
-class GetSimulationApiResponse(BaseModel):
-    """Response for getting a single simulation (persona-style)."""
+class BaseResourceSection(BaseModel):
+    """Common metadata for simulation resource sections."""
 
-    # Required metadata fields
+    show: bool = False
+    required: bool = False
+    suggestions: list[UUID] | None = None
+    show_ai_generate: bool = False
+    create_tool_id: UUID | None = None
+    link_tool_id: UUID | None = None
+
+
+class SimulationNameSection(BaseResourceSection):
+    resource: QGetNamesV4Item | None = None
+    resources: list[QGetNamesV4Item] | None = None
+
+
+class SimulationDescriptionSection(BaseResourceSection):
+    resource: QGetDescriptionsV4Item | None = None
+    resources: list[QGetDescriptionsV4Item] | None = None
+
+
+class SimulationFlagSection(BaseResourceSection):
+    current: list[SimulationFlagConfig] | None = None
+    resources: list[SimulationFlagConfig] | None = None
+
+
+class SimulationDepartmentSection(BaseResourceSection):
+    current: list[SimulationDepartment] | None = None
+    resources: list[SimulationDepartment] | None = None
+
+
+class SimulationScenarioSection(BaseResourceSection):
+    current: list[SimulationScenario] | None = None
+    resources: list[SimulationScenario] | None = None
+
+
+class SimulationScenarioFlagSection(BaseResourceSection):
+    current: list[QGetScenarioFlagsV4Item] | None = None
+    resources: list[QGetScenarioFlagsV4Item] | None = None
+
+
+class SimulationScenarioPersonaSection(BaseResourceSection):
+    current: list[QGetScenarioPersonasV4Item] | None = None
+    resources: list[QGetScenarioPersonasV4Item] | None = None
+
+
+class SimulationScenarioPositionSection(BaseResourceSection):
+    current: list[QGetScenarioPositionsV4Item] | None = None
+    resources: list[QGetScenarioPositionsV4Item] | None = None
+
+
+class SimulationScenarioRubricSection(BaseResourceSection):
+    current: list[QGetScenarioRubricsV4Item] | None = None
+    resources: list[QGetScenarioRubricsV4Item] | None = None
+
+
+class SimulationScenarioTimeLimitSection(BaseResourceSection):
+    current: list[QGetScenarioTimeLimitsV4Item] | None = None
+    resources: list[QGetScenarioTimeLimitsV4Item] | None = None
+
+
+class GetSimulationApiResponse(BaseModel):
+    """Section-first response for simulation editor."""
+
     actor_name: str | None = None
     simulation_exists: bool | None = None
     can_edit: bool | None = None
     disabled_reason: str | None = None
     draft_version: int | None = None
-
-    # Group ID
     group_id: UUID | None = None
 
-    # Per-resource group IDs (from draft MV)
-    names_group_id: UUID | None = None
-    descriptions_group_id: UUID | None = None
-    flags_group_id: UUID | None = None
-    departments_group_id: UUID | None = None
-    scenarios_group_id: UUID | None = None
-    scenario_flags_group_id: UUID | None = None
-    scenario_personas_group_id: UUID | None = None
-    scenario_positions_group_id: UUID | None = None
-    scenario_rubrics_group_id: UUID | None = None
-    scenario_time_limits_group_id: UUID | None = None
-
-    # Name
-    show_name: bool | None = None
-    name_domain_id: UUID | None = None
-    name_required: bool | None = None
-    name_suggestions: list[UUID] | None = None
-    name_show_ai_generate: bool | None = None
-
-    # Description
-    show_description: bool | None = None
-    description_domain_id: UUID | None = None
-    description_required: bool | None = None
-    description_suggestions: list[UUID] | None = None
-    description_show_ai_generate: bool | None = None
-
-    # Flag
-    show_flag: bool | None = None
-    flag_domain_id: UUID | None = None
-    flag_required: bool | None = None
-    flag_show_ai_generate: bool | None = None
-
-    # Departments
-    show_departments: bool | None = None
-    departments_domain_id: UUID | None = None
-    departments_required: bool | None = None
-    department_suggestions: list[UUID] | None = None
-    departments_show_ai_generate: bool | None = None
-
-    # Scenarios
-    show_scenarios: bool | None = None
-    scenarios_domain_id: UUID | None = None
-    scenarios_required: bool | None = None
-    scenario_suggestions: list[UUID] | None = None
-    scenarios_show_ai_generate: bool | None = None
-
-    # Scenario flags
-    show_scenario_flags: bool | None = None
-    scenario_flags_domain_id: UUID | None = None
-    scenario_flags_required: bool | None = None
-    scenario_flags_show_ai_generate: bool | None = None
-
-    # Scenario personas
-    show_scenario_personas: bool | None = None
-    scenario_personas_domain_id: UUID | None = None
-    scenario_personas_required: bool | None = None
-    scenario_personas_show_ai_generate: bool | None = None
-
-    # Scenario positions
-    show_scenario_positions: bool | None = None
-    scenario_positions_domain_id: UUID | None = None
-    scenario_positions_required: bool | None = None
-    scenario_positions_show_ai_generate: bool | None = None
-
-    # Scenario rubrics
-    show_scenario_rubrics: bool | None = None
-    scenario_rubrics_domain_id: UUID | None = None
-    scenario_rubrics_required: bool | None = None
-    scenario_rubrics_show_ai_generate: bool | None = None
-
-    # Scenario time limits
-    show_scenario_time_limits: bool | None = None
-    scenario_time_limits_domain_id: UUID | None = None
-    scenario_time_limits_required: bool | None = None
-    scenario_time_limits_show_ai_generate: bool | None = None
-
-    # Step-level AI generation flags
     basic_show_ai_generate: bool | None = None
 
-    # Per-resource CREATE tool IDs
-    name_create_tool_id: UUID | None = None
-    description_create_tool_id: UUID | None = None
-    scenarios_create_tool_id: UUID | None = None
+    names: SimulationNameSection | None = None
+    descriptions: SimulationDescriptionSection | None = None
+    flags: SimulationFlagSection | None = None
+    departments: SimulationDepartmentSection | None = None
+    scenarios: SimulationScenarioSection | None = None
+    scenario_flags: SimulationScenarioFlagSection | None = None
+    scenario_personas: SimulationScenarioPersonaSection | None = None
+    scenario_positions: SimulationScenarioPositionSection | None = None
+    scenario_rubrics: SimulationScenarioRubricSection | None = None
+    scenario_time_limits: SimulationScenarioTimeLimitSection | None = None
+    rubrics: list[QGetRubricsV4Item] | None = None
 
-    # Per-resource LINK tool IDs
-    name_link_tool_id: UUID | None = None
-    description_link_tool_id: UUID | None = None
-    flag_link_tool_id: UUID | None = None
-    departments_link_tool_id: UUID | None = None
-    scenarios_link_tool_id: UUID | None = None
-    scenario_flags_link_tool_id: UUID | None = None
-    scenario_personas_link_tool_id: UUID | None = None
-    scenario_positions_link_tool_id: UUID | None = None
-    scenario_rubrics_link_tool_id: UUID | None = None
-    scenario_time_limits_link_tool_id: UUID | None = None
 
-    # Rich domain metadata for client display in modals
-    domain_data: list[DomainData] | None = None
+class SimulationWebsocketViews(BaseModel):
+    """Optional websocket views payload."""
 
-    # Generic resources payload (full objects + current selections)
-    resources: SimulationResources | None = None
+    draft_simulation: DraftSimulationViewItem | None = None
+
+
+class SimulationWebsocketResources(BaseModel):
+    """Hydrated websocket resources: selected simulation + config resources."""
+
+    names: list[QGetNamesV4Item] | None = None
+    descriptions: list[QGetDescriptionsV4Item] | None = None
+    flags: list[SimulationFlagConfig] | None = None
+    departments: list[SimulationDepartment] | None = None
+    scenarios: list[SimulationScenario] | None = None
+    scenario_flags: list[QGetScenarioFlagsV4Item] | None = None
+    scenario_personas: list[QGetScenarioPersonasV4Item] | None = None
+    scenario_positions: list[QGetScenarioPositionsV4Item] | None = None
+    scenario_rubrics: list[QGetScenarioRubricsV4Item] | None = None
+    scenario_time_limits: list[QGetScenarioTimeLimitsV4Item] | None = None
+    rubrics: list[QGetRubricsV4Item] | None = None
+    agents: list[QGetAgentsV4Item] | None = None
+    models: list[QGetModelsV4Item] | None = None
+    providers: list[QGetProvidersV4Item] | None = None
+    tools: list[QGetToolsV4Item] | None = None
 
 
 class GetSimulationWebsocketResponse(BaseModel):
-    """Minimal response for WebSocket handlers (get_simulation_websocket).
-
-    Contains only what's needed for AI generation:
-    - Domain IDs (for domain_to_resource mapping)
-    - Domains list (for agent_id lookup)
-    - Group ID (for existing group context)
-    - Resources (for Jinja template context)
-    """
+    """Minimal response for simulation websocket generation handlers."""
 
     group_id: UUID | None = None
-
-    # Domain IDs for domain_to_resource mapping
-    name_domain_id: UUID | None = None
-    description_domain_id: UUID | None = None
-    flag_domain_id: UUID | None = None
-    departments_domain_id: UUID | None = None
-    scenarios_domain_id: UUID | None = None
-    scenario_flags_domain_id: UUID | None = None
-    scenario_personas_domain_id: UUID | None = None
-    scenario_positions_domain_id: UUID | None = None
-    scenario_rubrics_domain_id: UUID | None = None
-    scenario_time_limits_domain_id: UUID | None = None
-
-    # Domains mapping (domain_id -> agent_id) for server-side agent lookup
-    domains: list[DomainAgent] | None = None
-
-    # Resources for Jinja template context
-    resources: SimulationResources | None = None
+    views: SimulationWebsocketViews | None = None
+    resource_agent_ids: dict[str, UUID | None] | None = None
+    resources: SimulationWebsocketResources
 
 
 # =============================================================================
@@ -500,32 +467,46 @@ class ListSimulationApiResponse(BaseModel):
 
 
 # =============================================================================
+# Resource Action Types (for tool call tracking)
+# =============================================================================
+
+
+class SimulationResourceAction(BaseModel):
+    """Single-select resource action with tool call tracking."""
+
+    resource_id: UUID | None = None
+    create_tool_id: UUID | None = None
+    link_tool_id: UUID | None = None
+
+
+class SimulationMultiResourceAction(BaseModel):
+    """Multi-select resource action with tool call tracking."""
+
+    resource_ids: list[UUID] | None = None
+    create_tool_id: UUID | None = None
+    link_tool_id: UUID | None = None
+
+
+# =============================================================================
 # SAVE Endpoint Types
 # =============================================================================
 
 
 class SaveSimulationApiRequest(BaseModel):
-    """Request for saving a simulation - accepts form data directly (no draft_id)."""
+    """Request for saving a simulation - nested resource actions."""
 
-    # Context
-    group_id: UUID  # REQUIRED - which group to save to
-    input_simulation_id: UUID | None = None  # For update mode
-
-    # Required single-select resources
-    name_id: UUID  # REQUIRED
-
-    # Optional single-select resources
-    description_id: UUID | None = None
-
-    # Optional multi-select resources
-    flag_ids: list[UUID] | None = None
-    department_ids: list[UUID] | None = None
-    scenario_ids: list[UUID] | None = None
-    scenario_flag_ids: list[UUID] | None = None
-    scenario_position_ids: list[UUID] | None = None
-    scenario_rubric_ids: list[UUID] | None = None
-    scenario_time_limit_ids: list[UUID] | None = None
-    scenario_persona_ids: list[UUID] | None = None
+    group_id: UUID
+    input_simulation_id: UUID | None = None
+    names: SimulationResourceAction
+    descriptions: SimulationResourceAction
+    flags: SimulationMultiResourceAction
+    departments: SimulationMultiResourceAction
+    scenarios: SimulationMultiResourceAction
+    scenario_flags: SimulationMultiResourceAction
+    scenario_positions: SimulationMultiResourceAction
+    scenario_rubrics: SimulationMultiResourceAction
+    scenario_time_limits: SimulationMultiResourceAction
+    scenario_personas: SimulationMultiResourceAction
 
 
 class SaveSimulationApiResponse(BaseModel):
@@ -536,45 +517,67 @@ class SaveSimulationApiResponse(BaseModel):
 
 
 class SaveSimulationSqlParams(BaseModel):
-    """SQL parameters for save simulation - accepts form data directly (no draft_id)."""
+    """SQL parameters for save simulation."""
 
-    # Context
-    profile_id: UUID  # Added from header
-    group_id: UUID  # REQUIRED - which group to save to
-    input_simulation_id: UUID | None = None  # For update mode
+    profile_id: UUID
+    input_simulation_id: UUID | None = None
+    group_id: UUID
+    names: SimulationResourceAction
+    descriptions: SimulationResourceAction
+    flags: SimulationMultiResourceAction
+    departments: SimulationMultiResourceAction
+    scenarios: SimulationMultiResourceAction
+    scenario_flags: SimulationMultiResourceAction
+    scenario_positions: SimulationMultiResourceAction
+    scenario_rubrics: SimulationMultiResourceAction
+    scenario_time_limits: SimulationMultiResourceAction
+    scenario_personas: SimulationMultiResourceAction
 
-    # Required single-select resources
-    name_id: UUID  # REQUIRED
-
-    # Optional single-select resources
-    description_id: UUID | None = None
-
-    # Optional multi-select resources
-    flag_ids: list[UUID] | None = None
-    department_ids: list[UUID] | None = None
-    scenario_ids: list[UUID] | None = None
-    scenario_flag_ids: list[UUID] | None = None
-    scenario_position_ids: list[UUID] | None = None
-    scenario_rubric_ids: list[UUID] | None = None
-    scenario_time_limit_ids: list[UUID] | None = None
-    scenario_persona_ids: list[UUID] | None = None
+    @classmethod
+    def from_request(
+        cls, request: SaveSimulationApiRequest, profile_id: UUID
+    ) -> "SaveSimulationSqlParams":
+        return cls(
+            profile_id=profile_id,
+            input_simulation_id=request.input_simulation_id,
+            group_id=request.group_id,
+            names=request.names,
+            descriptions=request.descriptions,
+            flags=request.flags,
+            departments=request.departments,
+            scenarios=request.scenarios,
+            scenario_flags=request.scenario_flags,
+            scenario_positions=request.scenario_positions,
+            scenario_rubrics=request.scenario_rubrics,
+            scenario_time_limits=request.scenario_time_limits,
+            scenario_personas=request.scenario_personas,
+        )
 
     def to_tuple(self) -> tuple[Any, ...]:
-        """Convert to tuple for SQL execution."""
+        def single(
+            a: SimulationResourceAction,
+        ) -> tuple[UUID | None, UUID | None, UUID | None]:
+            return (a.resource_id, a.create_tool_id, a.link_tool_id)
+
+        def multi(
+            a: SimulationMultiResourceAction,
+        ) -> tuple[list[UUID] | None, UUID | None, UUID | None]:
+            return (a.resource_ids, a.create_tool_id, a.link_tool_id)
+
         return (
             self.profile_id,
-            self.group_id,
             self.input_simulation_id,
-            self.name_id,
-            self.description_id,
-            self.flag_ids,
-            self.department_ids,
-            self.scenario_ids,
-            self.scenario_flag_ids,
-            self.scenario_position_ids,
-            self.scenario_rubric_ids,
-            self.scenario_time_limit_ids,
-            self.scenario_persona_ids,
+            self.group_id,
+            single(self.names),
+            single(self.descriptions),
+            multi(self.flags),
+            multi(self.departments),
+            multi(self.scenarios),
+            multi(self.scenario_flags),
+            multi(self.scenario_positions),
+            multi(self.scenario_rubrics),
+            multi(self.scenario_time_limits),
+            multi(self.scenario_personas),
         )
 
 
@@ -630,19 +633,20 @@ class DuplicateSimulationApiResponse(BaseModel):
 
 
 class PatchSimulationDraftApiRequest(BaseModel):
-    """Request for patching a simulation draft."""
+    """Request for patching a simulation draft - nested resource actions."""
 
     input_draft_id: UUID | None = None
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    flag_ids: list[UUID] | None = None
-    department_ids: list[UUID] | None = None
-    scenario_ids: list[UUID] | None = None
-    scenario_flag_ids: list[UUID] | None = None
-    scenario_position_ids: list[UUID] | None = None
-    scenario_rubric_ids: list[UUID] | None = None
-    scenario_time_limit_ids: list[UUID] | None = None
-    scenario_persona_ids: list[UUID] | None = None
+    group_id: UUID | None = None
+    names: SimulationResourceAction | None = None
+    descriptions: SimulationResourceAction | None = None
+    flags: SimulationMultiResourceAction | None = None
+    departments: SimulationMultiResourceAction | None = None
+    scenarios: SimulationMultiResourceAction | None = None
+    scenario_flags: SimulationMultiResourceAction | None = None
+    scenario_positions: SimulationMultiResourceAction | None = None
+    scenario_rubrics: SimulationMultiResourceAction | None = None
+    scenario_time_limits: SimulationMultiResourceAction | None = None
+    scenario_personas: SimulationMultiResourceAction | None = None
     expected_version: int | None = 0
 
 
@@ -652,6 +656,82 @@ class PatchSimulationDraftApiResponse(BaseModel):
     draft_id: UUID | None = None
     new_version: int | None = None
     draft_exists: bool | None = None
+
+
+class PatchSimulationDraftSqlParams(BaseModel):
+    """SQL parameters for patch simulation draft."""
+
+    profile_id: UUID
+    input_draft_id: UUID | None = None
+    group_id: UUID | None = None
+    names: SimulationResourceAction | None = None
+    descriptions: SimulationResourceAction | None = None
+    flags: SimulationMultiResourceAction | None = None
+    departments: SimulationMultiResourceAction | None = None
+    scenarios: SimulationMultiResourceAction | None = None
+    scenario_flags: SimulationMultiResourceAction | None = None
+    scenario_positions: SimulationMultiResourceAction | None = None
+    scenario_rubrics: SimulationMultiResourceAction | None = None
+    scenario_time_limits: SimulationMultiResourceAction | None = None
+    scenario_personas: SimulationMultiResourceAction | None = None
+    expected_version: int | None = 0
+
+    @classmethod
+    def from_request(
+        cls, request: PatchSimulationDraftApiRequest, profile_id: UUID
+    ) -> "PatchSimulationDraftSqlParams":
+        return cls(
+            profile_id=profile_id,
+            input_draft_id=request.input_draft_id,
+            group_id=request.group_id,
+            names=request.names,
+            descriptions=request.descriptions,
+            flags=request.flags,
+            departments=request.departments,
+            scenarios=request.scenarios,
+            scenario_flags=request.scenario_flags,
+            scenario_positions=request.scenario_positions,
+            scenario_rubrics=request.scenario_rubrics,
+            scenario_time_limits=request.scenario_time_limits,
+            scenario_personas=request.scenario_personas,
+            expected_version=request.expected_version,
+        )
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        def single(
+            a: SimulationResourceAction | None,
+        ) -> tuple[UUID | None, UUID | None, UUID | None]:
+            return (
+                (a.resource_id, a.create_tool_id, a.link_tool_id)
+                if a
+                else (None, None, None)
+            )
+
+        def multi(
+            a: SimulationMultiResourceAction | None,
+        ) -> tuple[list[UUID] | None, UUID | None, UUID | None]:
+            return (
+                (a.resource_ids, a.create_tool_id, a.link_tool_id)
+                if a
+                else (None, None, None)
+            )
+
+        return (
+            self.profile_id,
+            self.input_draft_id,
+            self.group_id,
+            single(self.names),
+            single(self.descriptions),
+            multi(self.flags),
+            multi(self.departments),
+            multi(self.scenarios),
+            multi(self.scenario_flags),
+            multi(self.scenario_positions),
+            multi(self.scenario_rubrics),
+            multi(self.scenario_time_limits),
+            multi(self.scenario_personas),
+            self.expected_version,
+        )
 
 
 # =============================================================================

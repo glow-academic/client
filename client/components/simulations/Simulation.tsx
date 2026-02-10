@@ -15,6 +15,7 @@ import {
   type StepStatus,
 } from "@/components/common/forms/GenericForm";
 import { StepCard } from "@/components/common/forms/StepCard";
+import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
 import { GenerateRegenerateModal } from "@/components/common/GenerateRegenerateModal";
 import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
 import { Departments } from "@/components/resources/Departments";
@@ -27,14 +28,7 @@ import { ScenarioPositions } from "@/components/resources/ScenarioPositions";
 import { ScenarioRubrics } from "@/components/resources/ScenarioRubrics";
 import { ScenarioTimeLimits } from "@/components/resources/ScenarioTimeLimits";
 import { Scenarios } from "@/components/resources/Scenarios";
-import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { Loader2, Sparkles } from "lucide-react";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
@@ -44,6 +38,12 @@ import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import { useGenerationModal } from "@/hooks/use-generation-modal";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import {
+  buildResourceActions,
+  checkHasResourceIds,
+  computeEffectiveFormState,
+  type ResourceConfig,
+} from "@/lib/resources/action-builders";
 import type { ResourceType } from "@/lib/resources/types";
 import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
@@ -58,14 +58,6 @@ type CreateDraftDescriptionsIn = InputOf<
 >;
 type CreateDraftDescriptionsOut = OutputOf<
   "/api/v4/resources/descriptions",
-  "post"
->;
-type CreateDraftScenarioFlagsIn = InputOf<
-  "/api/v4/resources/scenario_flags",
-  "post"
->;
-type CreateDraftScenarioFlagsOut = OutputOf<
-  "/api/v4/resources/scenario_flags",
   "post"
 >;
 type CreateDraftScenarioPersonasIn = InputOf<
@@ -105,6 +97,20 @@ type PatchSimulationDraftOut = OutputOf<"/api/v4/artifacts/simulations/draft", "
 
 type SimulationData = OutputOf<"/api/v4/artifacts/simulations/get", "post">;
 type SimulationResourceType = ResourceType | "scenario_personas" | "scenario_time_limits";
+type GeneratedResource = { generated?: boolean | null };
+
+const EMPTY_FORM_STATE: SimulationFormState = {
+  name_id: null,
+  description_id: null,
+  flag_ids: [],
+  department_ids: [],
+  scenario_ids: [],
+  scenario_flag_ids: [],
+  scenario_persona_ids: [],
+  scenario_position_ids: [],
+  scenario_rubric_ids: [],
+  scenario_time_limit_ids: [],
+};
 
 // Type for flush results - each resource returns its created ID(s)
 type FlushResult = {
@@ -123,7 +129,7 @@ type SimulationAiFormData = {
     scenario_id?: string | null;
     name?: string | null;
     title?: string | null;
-  }>;
+  }> | undefined;
 };
 
 type SimulationFormState = {
@@ -157,9 +163,9 @@ export interface SimulationProps {
   createDescriptionsAction?: (
     input: CreateDraftDescriptionsIn
   ) => Promise<CreateDraftDescriptionsOut>;
-  createScenarioFlagsAction?: (
-    input: CreateDraftScenarioFlagsIn
-  ) => Promise<CreateDraftScenarioFlagsOut>;
+  createScenarioFlagsAction?: React.ComponentProps<
+    typeof ScenarioFlags
+  >["createScenarioFlagsAction"];
   createScenarioPersonasAction?: (
     input: CreateDraftScenarioPersonasIn
   ) => Promise<CreateDraftScenarioPersonasOut>;
@@ -195,6 +201,54 @@ const VALID_RESOURCE_TYPES: SimulationResourceType[] = [
   "scenario_positions",
   "scenario_rubrics",
   "scenario_time_limits",
+];
+
+const SIMULATION_RESOURCES: ResourceConfig[] = [
+  { key: "names", formKey: "name_id", flushKey: "name_id", type: "single" },
+  {
+    key: "descriptions",
+    formKey: "description_id",
+    flushKey: "description_id",
+    type: "single",
+  },
+  { key: "flags", formKey: "flag_ids", flushKey: null, type: "multi" },
+  {
+    key: "departments",
+    formKey: "department_ids",
+    flushKey: null,
+    type: "multi",
+  },
+  { key: "scenarios", formKey: "scenario_ids", flushKey: null, type: "multi" },
+  {
+    key: "scenario_flags",
+    formKey: "scenario_flag_ids",
+    flushKey: "scenario_flag_ids",
+    type: "multi",
+  },
+  {
+    key: "scenario_personas",
+    formKey: "scenario_persona_ids",
+    flushKey: "scenario_persona_ids",
+    type: "multi",
+  },
+  {
+    key: "scenario_positions",
+    formKey: "scenario_position_ids",
+    flushKey: "scenario_position_ids",
+    type: "multi",
+  },
+  {
+    key: "scenario_rubrics",
+    formKey: "scenario_rubric_ids",
+    flushKey: "scenario_rubric_ids",
+    type: "multi",
+  },
+  {
+    key: "scenario_time_limits",
+    formKey: "scenario_time_limit_ids",
+    flushKey: "scenario_time_limit_ids",
+    type: "multi",
+  },
 ];
 
 function SimulationComponent({
@@ -248,33 +302,58 @@ function SimulationComponent({
     simulationDataRef.current = simulationData;
   }, [simulationData]);
 
+  const stableSimulationDataFields = React.useMemo(() => {
+    if (!simulationData) return null;
+    return {
+      names: simulationData.names,
+      descriptions: simulationData.descriptions,
+      flags: simulationData.flags,
+      departments: simulationData.departments,
+      scenarios: simulationData.scenarios,
+      scenario_flags: simulationData.scenario_flags,
+      scenario_personas: simulationData.scenario_personas,
+      scenario_positions: simulationData.scenario_positions,
+      scenario_rubrics: simulationData.scenario_rubrics,
+      scenario_time_limits: simulationData.scenario_time_limits,
+      rubrics: simulationData.rubrics,
+      group_id: simulationData.group_id,
+      draft_version: simulationData.draft_version,
+      can_edit: simulationData.can_edit,
+      disabled_reason: simulationData.disabled_reason,
+      basic_show_ai_generate: simulationData.basic_show_ai_generate,
+    };
+  }, [simulationData]);
+
   const getInitialFormState = useCallback((): SimulationFormState => {
     const data = simulationDataRef.current;
-    if (!data) {
-      return {
-        name_id: null,
-        description_id: null,
-        flag_ids: [],
-        department_ids: [],
-        scenario_ids: [],
-        scenario_flag_ids: [],
-        scenario_persona_ids: [],
-        scenario_position_ids: [],
-        scenario_rubric_ids: [],
-        scenario_time_limit_ids: [],
-      };
-    }
+    if (!data) return EMPTY_FORM_STATE;
     return {
-      name_id: data.name_id ?? null,
-      description_id: data.description_id ?? null,
-      flag_ids: data.flag_ids ?? [],
-      department_ids: data.department_ids ?? [],
-      scenario_ids: data.scenario_ids ?? [],
-      scenario_flag_ids: data.scenario_flag_ids ?? [],
-      scenario_persona_ids: data.scenario_persona_ids ?? [],
-      scenario_position_ids: data.scenario_position_ids ?? [],
-      scenario_rubric_ids: data.scenario_rubric_ids ?? [],
-      scenario_time_limit_ids: data.scenario_time_limit_ids ?? [],
+      name_id: data.names?.resource?.id ?? null,
+      description_id: data.descriptions?.resource?.id ?? null,
+      flag_ids: (data.flags?.current ?? [])
+        .map((x) => x.flag_option_id)
+        .filter(Boolean) as string[],
+      department_ids: (data.departments?.current ?? [])
+        .map((x) => x.department_id)
+        .filter(Boolean) as string[],
+      scenario_ids: (data.scenarios?.current ?? [])
+        .map((x) => x.scenario_id)
+        .filter(Boolean) as string[],
+      scenario_flag_ids: (data.scenario_flags?.current ?? [])
+        .map((x) => x.id)
+        .filter(Boolean) as string[],
+      scenario_persona_ids: (data.scenario_personas?.current ?? [])
+        .map((x) => x.id)
+        .filter(Boolean) as string[],
+      scenario_position_ids: (data.scenario_positions?.current ?? [])
+        .map((x) => x.id)
+        .filter(Boolean) as string[],
+      scenario_rubric_ids: (data.scenario_rubrics?.current ?? [])
+        .map((x) => x.id)
+        .filter(Boolean) as string[],
+      scenario_time_limit_ids: (data.scenario_time_limits?.current ?? [])
+        .map((x) => x.id)
+        .filter(Boolean) as string[],
     };
   }, []);
 
@@ -294,25 +373,40 @@ function SimulationComponent({
       const aiUpdates: Partial<SimulationAiFormData> = {};
       const formStateUpdates: Record<string, unknown> = {};
 
-      // Auto-apply name_id and description_id
-      if (data["name_id"]) formStateUpdates["name_id"] = data["name_id"];
-      if (data["description_id"]) formStateUpdates["description_id"] = data["description_id"];
+      const nameResource = data["name_resource"] as
+        | { id?: string | null }
+        | undefined;
+      if (nameResource?.id) formStateUpdates["name_id"] = nameResource.id;
 
-      // For array IDs, append and deduplicate using current formState
-      const flagIds = data["flag_ids"] as string[] | undefined;
-      if (flagIds && flagIds.length > 0 && currentFormState) {
-        const newFlagIds = flagIds.filter(
-          (id) => !currentFormState.flag_ids.includes(id)
-        );
-        formStateUpdates["flag_ids"] = [...currentFormState.flag_ids, ...newFlagIds];
+      const descriptionResource = data["description_resource"] as
+        | { id?: string | null }
+        | undefined;
+      if (descriptionResource?.id) {
+        formStateUpdates["description_id"] = descriptionResource.id;
       }
 
-      const departmentIds = data["department_ids"] as string[] | undefined;
-      if (departmentIds && departmentIds.length > 0 && currentFormState) {
-        const newDeptIds = departmentIds.filter(
-          (id) => !currentFormState.department_ids.includes(id)
+      const appendUnique = (existing: string[], incoming: string[]) => {
+        const newIds = incoming.filter((id) => !existing.includes(id));
+        return [...existing, ...newIds];
+      };
+
+      const flagIds =
+        ((data["flag_resources"] as Array<{ flag_option_id?: string | null }>) ?? [])
+          .map((x) => x.flag_option_id)
+          .filter((x): x is string => !!x);
+      if (flagIds.length > 0) {
+        formStateUpdates["flag_ids"] = appendUnique(currentFormState.flag_ids, flagIds);
+      }
+
+      const departmentIds =
+        ((data["department_resources"] as Array<{ department_id?: string | null }>) ?? [])
+          .map((x) => x.department_id)
+          .filter((x): x is string => !!x);
+      if (departmentIds.length > 0) {
+        formStateUpdates["department_ids"] = appendUnique(
+          currentFormState.department_ids,
+          departmentIds
         );
-        formStateUpdates["department_ids"] = [...currentFormState.department_ids, ...newDeptIds];
       }
 
       // Scenarios go to aiFormData for diff view (not auto-applied)
@@ -324,44 +418,59 @@ function SimulationComponent({
         aiUpdates.scenario_resources = data["scenario_resources"] as SimulationAiFormData["scenario_resources"];
       }
 
-      const scenarioFlagIds = data["scenario_flag_ids"] as string[] | undefined;
-      if (scenarioFlagIds && scenarioFlagIds.length > 0 && currentFormState) {
-        const newIds = scenarioFlagIds.filter(
-          (id) => !currentFormState.scenario_flag_ids.includes(id)
+      const scenarioFlagIds =
+        ((data["scenario_flag_resources"] as Array<{ id?: string | null }>) ?? [])
+          .map((x) => x.id)
+          .filter((x): x is string => !!x);
+      if (scenarioFlagIds.length > 0) {
+        formStateUpdates["scenario_flag_ids"] = appendUnique(
+          currentFormState.scenario_flag_ids,
+          scenarioFlagIds
         );
-        formStateUpdates["scenario_flag_ids"] = [...currentFormState.scenario_flag_ids, ...newIds];
       }
 
-      const scenarioPersonaIds = data["scenario_persona_ids"] as string[] | undefined;
-      if (scenarioPersonaIds && scenarioPersonaIds.length > 0 && currentFormState) {
-        const newIds = scenarioPersonaIds.filter(
-          (id) => !currentFormState.scenario_persona_ids.includes(id)
+      const scenarioPersonaIds =
+        ((data["scenario_persona_resources"] as Array<{ id?: string | null }>) ?? [])
+          .map((x) => x.id)
+          .filter((x): x is string => !!x);
+      if (scenarioPersonaIds.length > 0) {
+        formStateUpdates["scenario_persona_ids"] = appendUnique(
+          currentFormState.scenario_persona_ids,
+          scenarioPersonaIds
         );
-        formStateUpdates["scenario_persona_ids"] = [...currentFormState.scenario_persona_ids, ...newIds];
       }
 
-      const scenarioPositionIds = data["scenario_position_ids"] as string[] | undefined;
-      if (scenarioPositionIds && scenarioPositionIds.length > 0 && currentFormState) {
-        const newIds = scenarioPositionIds.filter(
-          (id) => !currentFormState.scenario_position_ids.includes(id)
+      const scenarioPositionIds =
+        ((data["scenario_position_resources"] as Array<{ id?: string | null }>) ?? [])
+          .map((x) => x.id)
+          .filter((x): x is string => !!x);
+      if (scenarioPositionIds.length > 0) {
+        formStateUpdates["scenario_position_ids"] = appendUnique(
+          currentFormState.scenario_position_ids,
+          scenarioPositionIds
         );
-        formStateUpdates["scenario_position_ids"] = [...currentFormState.scenario_position_ids, ...newIds];
       }
 
-      const scenarioRubricIds = data["scenario_rubric_ids"] as string[] | undefined;
-      if (scenarioRubricIds && scenarioRubricIds.length > 0 && currentFormState) {
-        const newIds = scenarioRubricIds.filter(
-          (id) => !currentFormState.scenario_rubric_ids.includes(id)
+      const scenarioRubricIds =
+        ((data["scenario_rubric_resources"] as Array<{ id?: string | null }>) ?? [])
+          .map((x) => x.id)
+          .filter((x): x is string => !!x);
+      if (scenarioRubricIds.length > 0) {
+        formStateUpdates["scenario_rubric_ids"] = appendUnique(
+          currentFormState.scenario_rubric_ids,
+          scenarioRubricIds
         );
-        formStateUpdates["scenario_rubric_ids"] = [...currentFormState.scenario_rubric_ids, ...newIds];
       }
 
-      const scenarioTimeLimitIds = data["scenario_time_limit_ids"] as string[] | undefined;
-      if (scenarioTimeLimitIds && scenarioTimeLimitIds.length > 0 && currentFormState) {
-        const newIds = scenarioTimeLimitIds.filter(
-          (id) => !currentFormState.scenario_time_limit_ids.includes(id)
+      const scenarioTimeLimitIds =
+        ((data["scenario_time_limit_resources"] as Array<{ id?: string | null }>) ?? [])
+          .map((x) => x.id)
+          .filter((x): x is string => !!x);
+      if (scenarioTimeLimitIds.length > 0) {
+        formStateUpdates["scenario_time_limit_ids"] = appendUnique(
+          currentFormState.scenario_time_limit_ids,
+          scenarioTimeLimitIds
         );
-        formStateUpdates["scenario_time_limit_ids"] = [...currentFormState.scenario_time_limit_ids, ...newIds];
       }
 
       return { aiUpdates, formStateUpdates };
@@ -369,7 +478,7 @@ function SimulationComponent({
     []
   );
 
-  const groupId = simulationData?.group_id;
+  const groupId = stableSimulationDataFields?.group_id ?? null;
 
   const {
     setGeneratingResources,
@@ -387,223 +496,64 @@ function SimulationComponent({
     setFormState: setFormState as unknown as React.Dispatch<React.SetStateAction<Record<string, unknown>>>,
   });
 
-  // Memoize simulationData fields used in renderStep to prevent callback recreation
-  // when only object reference changes (but content is same)
-  const stableSimulationDataFields = React.useMemo(() => {
-    if (!simulationData) return null;
-    return {
-      group_id: simulationData.group_id,
-      name_resource: simulationData.name_resource,
-      show_name: simulationData.show_name,
-      name_suggestions: simulationData.name_suggestions,
-      names: simulationData.names,
-      name_required: simulationData.name_required,
-      name_agent_id: simulationData.name_agent_id,
-      description_resource: simulationData.description_resource,
-      show_description: simulationData.show_description,
-      description_suggestions: simulationData.description_suggestions,
-      description_required: simulationData.description_required,
-      description_agent_id: simulationData.description_agent_id,
-      descriptions: simulationData.descriptions,
-      department_resources: simulationData.department_resources,
-      show_departments: simulationData.show_departments,
-      department_suggestions: simulationData.department_suggestions,
-      departments_required: simulationData.departments_required,
-      departments_agent_id: simulationData.departments_agent_id,
-      departments: simulationData.departments,
-      flag_resources: simulationData.flag_resources,
-      show_flags: simulationData.show_flags,
-      flag_required: simulationData.flag_required,
-      flag_agent_id: simulationData.flag_agent_id,
-      flags: simulationData.flags,
-      scenario_ids: simulationData.scenario_ids,
-      scenario_resources: simulationData.scenario_resources,
-      show_scenarios: simulationData.show_scenarios,
-      scenarios_agent_id: simulationData.scenarios_agent_id,
-      scenarios_required: simulationData.scenarios_required,
-      scenario_suggestions: simulationData.scenario_suggestions,
-      scenarios: simulationData.scenarios,
-      scenario_flag_ids: simulationData.scenario_flag_ids,
-      scenario_flag_resources: simulationData.scenario_flag_resources,
-      show_scenario_flags: simulationData.show_scenario_flags,
-      scenario_flags_agent_id: simulationData.scenario_flags_agent_id,
-      scenario_flags_required: simulationData.scenario_flags_required,
-      scenario_flag_suggestions: simulationData.scenario_flag_suggestions,
-      scenario_flags: simulationData.scenario_flags,
-      scenario_persona_ids: simulationData.scenario_persona_ids,
-      scenario_persona_resources: simulationData.scenario_persona_resources,
-      show_scenario_personas: simulationData.show_scenario_personas,
-      scenario_personas_agent_id: simulationData.scenario_personas_agent_id,
-      scenario_personas_required: simulationData.scenario_personas_required,
-      scenario_persona_suggestions:
-        simulationData.scenario_persona_suggestions,
-      scenario_personas: simulationData.scenario_personas,
-      scenario_position_ids: simulationData.scenario_position_ids,
-      scenario_position_resources: simulationData.scenario_position_resources,
-      show_scenario_positions: simulationData.show_scenario_positions,
-      scenario_positions_agent_id: simulationData.scenario_positions_agent_id,
-      scenario_positions_required: simulationData.scenario_positions_required,
-      scenario_position_suggestions:
-        simulationData.scenario_position_suggestions,
-      scenario_positions: simulationData.scenario_positions,
-      scenario_rubric_ids:
-        simulationData.scenario_rubric_ids,
-      scenario_rubric_resources:
-        simulationData.scenario_rubric_resources,
-      show_scenario_rubrics:
-        simulationData.show_scenario_rubrics,
-      scenario_rubrics_agent_id:
-        simulationData.scenario_rubrics_agent_id,
-      scenario_rubrics_required:
-        simulationData.scenario_rubrics_required,
-      scenario_rubric_suggestions:
-        simulationData.scenario_rubric_suggestions,
-      scenario_rubrics:
-        simulationData.scenario_rubrics,
-      rubrics: simulationData.rubrics,
-      scenario_time_limit_ids: simulationData.scenario_time_limit_ids,
-      scenario_time_limit_resources:
-        simulationData.scenario_time_limit_resources,
-      show_scenario_time_limits: simulationData.show_scenario_time_limits,
-      scenario_time_limits_agent_id: simulationData.scenario_time_limits_agent_id,
-      scenario_time_limits_required: simulationData.scenario_time_limits_required,
-      scenario_time_limit_suggestions:
-        simulationData.scenario_time_limit_suggestions,
-      scenario_time_limits: simulationData.scenario_time_limits,
-      general_agent_id: simulationData.general_agent_id,
-    };
-    // Intentionally depend on individual fields, not whole simulationData object
-    // to prevent recreation when only object reference changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    simulationData?.group_id,
-    simulationData?.name_resource,
-    simulationData?.show_name,
-    simulationData?.name_suggestions,
-    simulationData?.names,
-    simulationData?.name_required,
-    simulationData?.name_agent_id,
-    simulationData?.description_resource,
-    simulationData?.show_description,
-    simulationData?.description_suggestions,
-    simulationData?.description_required,
-    simulationData?.description_agent_id,
-    simulationData?.descriptions,
-    simulationData?.department_resources,
-    simulationData?.show_departments,
-    simulationData?.department_suggestions,
-    simulationData?.departments_required,
-    simulationData?.departments_agent_id,
-    simulationData?.departments,
-    simulationData?.flag_resources,
-    simulationData?.show_flags,
-    simulationData?.flag_required,
-    simulationData?.flag_agent_id,
-    simulationData?.flags,
-    simulationData?.scenario_ids,
-    simulationData?.scenario_resources,
-    simulationData?.show_scenarios,
-    simulationData?.scenarios_agent_id,
-    simulationData?.scenarios_required,
-    simulationData?.scenario_suggestions,
-    simulationData?.scenarios,
-    simulationData?.scenario_flag_ids,
-    simulationData?.scenario_flag_resources,
-    simulationData?.show_scenario_flags,
-    simulationData?.scenario_flags_agent_id,
-    simulationData?.scenario_flags_required,
-    simulationData?.scenario_flag_suggestions,
-    simulationData?.scenario_flags,
-    simulationData?.scenario_persona_ids,
-    simulationData?.scenario_persona_resources,
-    simulationData?.show_scenario_personas,
-    simulationData?.scenario_personas_agent_id,
-    simulationData?.scenario_personas_required,
-    simulationData?.scenario_persona_suggestions,
-    simulationData?.scenario_personas,
-    simulationData?.scenario_position_ids,
-    simulationData?.scenario_position_resources,
-    simulationData?.show_scenario_positions,
-    simulationData?.scenario_positions_agent_id,
-    simulationData?.scenario_positions_required,
-    simulationData?.scenario_position_suggestions,
-    simulationData?.scenario_positions,
-    simulationData?.scenario_rubric_ids,
-    simulationData?.scenario_rubric_resources,
-    simulationData?.show_scenario_rubrics,
-    simulationData?.scenario_rubrics_agent_id,
-    simulationData?.scenario_rubrics_required,
-    simulationData?.scenario_rubric_suggestions,
-    simulationData?.scenario_rubrics,
-    simulationData?.rubrics,
-    simulationData?.scenario_time_limit_ids,
-    simulationData?.scenario_time_limit_resources,
-    simulationData?.show_scenario_time_limits,
-    simulationData?.scenario_time_limits_agent_id,
-    simulationData?.scenario_time_limits_required,
-    simulationData?.scenario_time_limit_suggestions,
-    simulationData?.scenario_time_limits,
-    simulationData?.general_agent_id,
-  ]);
-
   // Helper to check if a resource type can be regenerated
   // Use stableSimulationDataFields to prevent callback recreation when simulationData object reference changes
-  const canRegenerate = useCallback(
-    (resourceType: SimulationResourceType): boolean => {
+  const canRegenerate: (resourceType: string) => boolean = useCallback(
+    (resourceType: string): boolean => {
       if (!stableSimulationDataFields) return false;
       switch (resourceType) {
         case "names":
-          return stableSimulationDataFields.name_resource?.generated ?? false;
+          return stableSimulationDataFields.names?.resource?.generated ?? false;
         case "descriptions":
           return (
-            stableSimulationDataFields.description_resource?.generated ?? false
+            stableSimulationDataFields.descriptions?.resource?.generated ?? false
           );
         case "flags":
           return (
-            stableSimulationDataFields.flag_resources?.some(
-              (f) => f.generated
+            stableSimulationDataFields.flags?.current?.some(
+              (f: GeneratedResource) => f.generated
             ) ?? false
           );
         case "departments":
           return (
-            stableSimulationDataFields.department_resources?.some(
-              (d) => d.generated
+            stableSimulationDataFields.departments?.current?.some(
+              (d: GeneratedResource) => d.generated
             ) ?? false
           );
         case "scenarios":
           return (
-            stableSimulationDataFields.scenario_resources?.some(
-              (s) => s.generated
+            stableSimulationDataFields.scenarios?.current?.some(
+              (s: GeneratedResource) => s.generated
             ) ?? false
           );
         case "scenario_flags":
           return (
-            stableSimulationDataFields.scenario_flag_resources?.some(
-              (f) => f.generated
+            stableSimulationDataFields.scenario_flags?.current?.some(
+              (f: GeneratedResource) => f.generated
             ) ?? false
           );
         case "scenario_personas":
           return (
-            stableSimulationDataFields.scenario_persona_resources?.some(
-              (p) => p.generated
+            stableSimulationDataFields.scenario_personas?.current?.some(
+              (p: GeneratedResource) => p.generated
             ) ?? false
           );
         case "scenario_positions":
           return (
-            stableSimulationDataFields.scenario_position_resources?.some(
-              (p) => p.generated
+            stableSimulationDataFields.scenario_positions?.current?.some(
+              (p: GeneratedResource) => p.generated
             ) ?? false
           );
         case "scenario_rubrics":
           return (
-            stableSimulationDataFields.scenario_rubric_resources?.some(
-              (r) => r.generated
+            stableSimulationDataFields.scenario_rubrics?.current?.some(
+              (r: GeneratedResource) => r.generated
             ) ?? false
           );
         case "scenario_time_limits":
           return (
-            stableSimulationDataFields.scenario_time_limit_resources?.some(
-              (t) => t.generated
+            stableSimulationDataFields.scenario_time_limits?.current?.some(
+              (t: GeneratedResource) => t.generated
             ) ?? false
           );
         default:
@@ -618,12 +568,6 @@ function SimulationComponent({
   React.useEffect(() => {
     formStateRef.current = formState as unknown as Record<string, unknown>;
   }, [formState]);
-
-  // Memoize stringified array dependencies to prevent effect from running when array references change but content is same
-  const departmentIdsStr = React.useMemo(
-    () => JSON.stringify(simulationData?.department_ids ?? []),
-    [simulationData?.department_ids]
-  );
 
   // Memoize stringified formState arrays for draft listener effect dependencies
   const formStateFlagIdsStr = React.useMemo(
@@ -658,53 +602,6 @@ function SimulationComponent({
     () => JSON.stringify(formState.scenario_time_limit_ids),
     [formState.scenario_time_limit_ids]
   );
-
-  // Update form state when server data changes
-  // Use simulationData directly in dependency array, not getInitialFormState
-  useEffect(() => {
-    const newState = getInitialFormState();
-    setFormState((prev) => {
-      // Only update if resource IDs actually changed
-      if (
-        prev.name_id !== newState.name_id ||
-        prev.description_id !== newState.description_id ||
-        JSON.stringify(prev.flag_ids) !==
-          JSON.stringify(newState.flag_ids) ||
-        JSON.stringify(prev.department_ids) !==
-          JSON.stringify(newState.department_ids) ||
-        JSON.stringify(prev.scenario_ids) !==
-          JSON.stringify(newState.scenario_ids) ||
-        JSON.stringify(prev.scenario_flag_ids) !==
-          JSON.stringify(newState.scenario_flag_ids) ||
-        JSON.stringify(prev.scenario_persona_ids) !==
-          JSON.stringify(newState.scenario_persona_ids) ||
-        JSON.stringify(prev.scenario_position_ids) !==
-          JSON.stringify(newState.scenario_position_ids) ||
-        JSON.stringify(prev.scenario_rubric_ids) !==
-          JSON.stringify(newState.scenario_rubric_ids) ||
-        JSON.stringify(prev.scenario_time_limit_ids) !==
-          JSON.stringify(newState.scenario_time_limit_ids)
-      ) {
-        serverSyncPendingRef.current = true;
-        return newState;
-      }
-      return prev;
-    });
-    // Use stringified arrays in dependencies to prevent effect from running when array references change but content is same
-    // Intentionally exclude formState and getInitialFormState to prevent infinite loops
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    simulationData?.name_id,
-    simulationData?.description_id,
-    JSON.stringify(simulationData?.flag_ids ?? []),
-    departmentIdsStr,
-    JSON.stringify(simulationData?.scenario_ids ?? []),
-    JSON.stringify(simulationData?.scenario_flag_ids ?? []),
-    JSON.stringify(simulationData?.scenario_persona_ids ?? []),
-    JSON.stringify(simulationData?.scenario_position_ids ?? []),
-    JSON.stringify(simulationData?.scenario_rubric_ids ?? []),
-    JSON.stringify(simulationData?.scenario_time_limit_ids ?? []),
-  ]);
 
   // --- Draft Lifecycle ---
   const patchSimulationDraftActionRef = React.useRef(
@@ -759,17 +656,9 @@ function SimulationComponent({
     ]
   );
 
-  const hasResourceIds = !!(
-    formState.name_id ||
-    formState.description_id ||
-    formState.flag_ids.length > 0 ||
-    formState.department_ids.length > 0 ||
-    formState.scenario_ids.length > 0 ||
-    formState.scenario_flag_ids.length > 0 ||
-    formState.scenario_persona_ids.length > 0 ||
-    formState.scenario_position_ids.length > 0 ||
-    formState.scenario_rubric_ids.length > 0 ||
-    formState.scenario_time_limit_ids.length > 0
+  const hasResourceIds = checkHasResourceIds(
+    SIMULATION_RESOURCES,
+    formState as unknown as Record<string, unknown>
   );
 
   const buildPatchPayload = useCallback(
@@ -779,28 +668,25 @@ function SimulationComponent({
       flushResults?: Record<string, unknown>
     ): Record<string, unknown> => {
       const currentFormState = formStateRef.current as unknown as SimulationFormState;
-      const fr = (flushResults ?? {}) as Partial<FlushResult>;
+      const fr = (flushResults ?? {}) as Record<string, unknown>;
+      const resourceActions = buildResourceActions(SIMULATION_RESOURCES, {
+        formState: currentFormState as unknown as Record<string, unknown>,
+        referenceState: null,
+        flushResults: fr,
+        entityData: stableSimulationDataFields ?? null,
+      });
       return {
         input_draft_id: draftId || null,
-        name_id: fr.name_id !== undefined ? fr.name_id : currentFormState.name_id,
-        description_id: fr.description_id !== undefined ? fr.description_id : currentFormState.description_id,
-        flag_ids: currentFormState.flag_ids,
-        department_ids: currentFormState.department_ids,
-        scenario_ids: currentFormState.scenario_ids,
-        scenario_flag_ids: fr.scenario_flag_ids !== undefined ? fr.scenario_flag_ids : currentFormState.scenario_flag_ids,
-        scenario_persona_ids: fr.scenario_persona_ids !== undefined ? fr.scenario_persona_ids : currentFormState.scenario_persona_ids,
-        scenario_position_ids: fr.scenario_position_ids !== undefined ? fr.scenario_position_ids : currentFormState.scenario_position_ids,
-        scenario_rubric_ids: fr.scenario_rubric_ids !== undefined ? fr.scenario_rubric_ids : currentFormState.scenario_rubric_ids,
-        scenario_time_limit_ids: fr.scenario_time_limit_ids !== undefined ? fr.scenario_time_limit_ids : currentFormState.scenario_time_limit_ids,
+        ...resourceActions,
         expected_version: expectedVersion,
       };
     },
-    []
+    [stableSimulationDataFields]
   );
 
   const draftVersion =
-    simulationData && "draft_version" in simulationData
-      ? (simulationData as { draft_version?: number | null }).draft_version
+    stableSimulationDataFields && "draft_version" in stableSimulationDataFields
+      ? (stableSimulationDataFields as { draft_version?: number | null }).draft_version
       : null;
 
   const {
@@ -820,63 +706,39 @@ function SimulationComponent({
     formStateRef,
   });
 
-  // --- Generation Handlers ---
-  // Determine agent type for generation (simplified for simulations)
-  const determineAgentType = useCallback(
-    (resourceTypes: SimulationResourceType[]): string | null => {
-      const allResourceTypes: SimulationResourceType[] = [
-        "names",
-        "descriptions",
-        "departments",
-        "flags",
-        "scenarios",
-        "scenario_flags",
-        "scenario_personas",
-        "scenario_positions",
-        "scenario_rubrics",
-        "scenario_time_limits",
-      ];
-
-      const isAllResources =
-        resourceTypes.length === allResourceTypes.length &&
-        resourceTypes.every((rt) => allResourceTypes.includes(rt));
-
-      if (isAllResources) {
-        return "general";
-      } else if (resourceTypes.length === 1) {
-        // Single resource type - map to agent_type
-        const agentTypeMap: Record<SimulationResourceType, string> = {
-          names: "name",
-          descriptions: "description",
-          departments: "departments",
-          flags: "flags",
-          scenarios: "scenarios",
-          scenario_flags: "scenario_flags",
-          scenario_personas: "scenario_personas",
-          scenario_positions: "scenario_positions",
-          scenario_rubrics: "scenario_rubrics",
-          scenario_time_limits: "scenario_time_limits",
-          // Not used for simulations but needed for type safety
-          colors: "color",
-          icons: "icon",
-          instructions: "instructions",
-          fields: "fields",
-          examples: "examples",
-        };
-        const firstType = resourceTypes[0];
-        if (firstType && firstType in agentTypeMap) {
-          return agentTypeMap[firstType];
-        }
+  // Update form state when server data changes.
+  useEffect(() => {
+    const newState = getInitialFormState();
+    setFormState((prev) => {
+      if (
+        prev.name_id !== newState.name_id ||
+        prev.description_id !== newState.description_id ||
+        JSON.stringify(prev.flag_ids) !== JSON.stringify(newState.flag_ids) ||
+        JSON.stringify(prev.department_ids) !==
+          JSON.stringify(newState.department_ids) ||
+        JSON.stringify(prev.scenario_ids) !== JSON.stringify(newState.scenario_ids) ||
+        JSON.stringify(prev.scenario_flag_ids) !==
+          JSON.stringify(newState.scenario_flag_ids) ||
+        JSON.stringify(prev.scenario_persona_ids) !==
+          JSON.stringify(newState.scenario_persona_ids) ||
+        JSON.stringify(prev.scenario_position_ids) !==
+          JSON.stringify(newState.scenario_position_ids) ||
+        JSON.stringify(prev.scenario_rubric_ids) !==
+          JSON.stringify(newState.scenario_rubric_ids) ||
+        JSON.stringify(prev.scenario_time_limit_ids) !==
+          JSON.stringify(newState.scenario_time_limit_ids)
+      ) {
+        serverSyncPendingRef.current = true;
+        return newState;
       }
-      return null;
-    },
-    []
-  );
+      return prev;
+    });
+  }, [stableSimulationDataFields, getInitialFormState, serverSyncPendingRef]);
 
+  // --- Generation Handlers ---
   const handleGenerateResources = useCallback(
     async (
       resourceTypes: SimulationResourceType[],
-      agentType: string | null,
       userInstructions?: string
     ) => {
       if (!socket || !isConnected) {
@@ -896,23 +758,16 @@ function SimulationComponent({
       const draftId = (formData["draftId"] as string | undefined) ?? null;
       const scenarioSearch =
         (formData["scenarioSearch"] as string | undefined) ?? null;
-      const scenarioShowSelected =
-        (formData["scenarioShowSelected"] as boolean | undefined) ?? false;
       const filterScenarioIds =
         (formData["filterScenarioIds"] as string[] | undefined) ?? null;
 
-      // Emit simulation_generate event with GetSimulationApiRequest fields
       socket.emit("simulation_generate", {
-        resource_types: resourceTypes, // Simple array of strings
-        agent_type: agentType,
+        resource_types: resourceTypes,
         user_instructions: userInstructions ? [userInstructions] : null,
-        // GetSimulationApiRequest fields from formData
         draft_id: draftId || null,
         scenario_search: scenarioSearch || null,
-        scenario_show_selected: scenarioShowSelected || false,
         filter_scenario_ids: filterScenarioIds || null,
         simulation_id: simulationId || null,
-        mcp: false,
       });
     },
     [socket, isConnected, simulationId, setGeneratingResources, formDataRef]
@@ -920,96 +775,65 @@ function SimulationComponent({
 
   // Individual generation handlers - generate directly without modals
   const handleGenerateName = useCallback(
-    async () =>
-      handleGenerateResources(["names"], determineAgentType(["names"])),
-    [handleGenerateResources, determineAgentType]
+    async () => handleGenerateResources(["names"]),
+    [handleGenerateResources]
   );
 
   const handleGenerateDescription = useCallback(
-    async () =>
-      handleGenerateResources(
-        ["descriptions"],
-        determineAgentType(["descriptions"])
-      ),
-    [handleGenerateResources, determineAgentType]
+    async () => handleGenerateResources(["descriptions"]),
+    [handleGenerateResources]
   );
 
   const handleGenerateDepartments = useCallback(
-    async () =>
-      handleGenerateResources(
-        ["departments"],
-        determineAgentType(["departments"])
-      ),
-    [handleGenerateResources, determineAgentType]
+    async () => handleGenerateResources(["departments"]),
+    [handleGenerateResources]
   );
 
   const handleGenerateFlags = useCallback(
-    async () =>
-      handleGenerateResources(["flags"], determineAgentType(["flags"])),
-    [handleGenerateResources, determineAgentType]
+    async () => handleGenerateResources(["flags"]),
+    [handleGenerateResources]
   );
 
   const handleGenerateScenarios = useCallback(
-    async () =>
-      handleGenerateResources(["scenarios"], determineAgentType(["scenarios"])),
-    [handleGenerateResources, determineAgentType]
+    async () => handleGenerateResources(["scenarios"]),
+    [handleGenerateResources]
   );
 
   const handleGenerateScenarioFlags = useCallback(
-    async () =>
-      handleGenerateResources(
-        ["scenario_flags"],
-        determineAgentType(["scenario_flags"])
-      ),
-    [handleGenerateResources, determineAgentType]
+    async () => handleGenerateResources(["scenario_flags"]),
+    [handleGenerateResources]
   );
 
   const handleGenerateScenarioPersonas = useCallback(
-    async () =>
-      handleGenerateResources(
-        ["scenario_personas"],
-        determineAgentType(["scenario_personas"])
-      ),
-    [handleGenerateResources, determineAgentType]
+    async () => handleGenerateResources(["scenario_personas"]),
+    [handleGenerateResources]
   );
 
   const handleGenerateScenarioPositions = useCallback(
-    async () =>
-      handleGenerateResources(
-        ["scenario_positions"],
-        determineAgentType(["scenario_positions"])
-      ),
-    [handleGenerateResources, determineAgentType]
+    async () => handleGenerateResources(["scenario_positions"]),
+    [handleGenerateResources]
   );
 
   const handleGenerateScenarioRubrics = useCallback(
-    async () =>
-      handleGenerateResources(
-        ["scenario_rubrics"],
-        determineAgentType(["scenario_rubrics"])
-      ),
-    [handleGenerateResources, determineAgentType]
+    async () => handleGenerateResources(["scenario_rubrics"]),
+    [handleGenerateResources]
   );
 
   const handleGenerateScenarioTimeLimits = useCallback(
-    async () =>
-      handleGenerateResources(
-        ["scenario_time_limits"],
-        determineAgentType(["scenario_time_limits"])
-      ),
-    [handleGenerateResources, determineAgentType]
+    async () => handleGenerateResources(["scenario_time_limits"]),
+    [handleGenerateResources]
   );
 
   // Disabled logic based on can_edit flag - standardized for all resource components
   // Check can_edit in both new and edit modes to show disabled_reason when agents are missing
   const disabled = useMemo(() => {
-    if (!simulationData) return false;
-    return !simulationData.can_edit;
-  }, [simulationData]);
+    if (!stableSimulationDataFields) return false;
+    return !(stableSimulationDataFields.can_edit as boolean | undefined);
+  }, [stableSimulationDataFields]);
 
   // Set breadcrumb context when simulation data is loaded
   useEffect(() => {
-    const simulationName = simulationData?.name_resource?.name;
+    const simulationName = stableSimulationDataFields?.names?.resource?.name;
     if (simulationName && simulationId && isEditMode) {
       setEntityMetadata({
         entityId: simulationId,
@@ -1019,7 +843,7 @@ function SimulationComponent({
     }
     return () => clearEntityMetadata();
   }, [
-    simulationData,
+    stableSimulationDataFields,
     simulationId,
     isEditMode,
     setEntityMetadata,
@@ -1036,36 +860,21 @@ function SimulationComponent({
         flushResults = await flushAllResources();
       }
 
-      // Get the current form state and merge with flush results
-      // Flush results take precedence (they're freshly created)
       const baseFormState = formStateRef.current as unknown as SimulationFormState;
-      const effectiveFormState = {
-        name_id:
-          flushResults.name_id !== undefined
-            ? flushResults.name_id
-            : baseFormState.name_id,
-        description_id:
-          flushResults.description_id !== undefined
-            ? flushResults.description_id
-            : baseFormState.description_id,
-        flag_ids: baseFormState.flag_ids,
-        department_ids: baseFormState.department_ids,
-        scenario_ids: baseFormState.scenario_ids,
-        scenario_flag_ids: baseFormState.scenario_flag_ids,
-        scenario_persona_ids: baseFormState.scenario_persona_ids,
-        scenario_position_ids: baseFormState.scenario_position_ids,
-        scenario_rubric_ids: baseFormState.scenario_rubric_ids,
-        scenario_time_limit_ids: baseFormState.scenario_time_limit_ids,
-      };
+      const effectiveFormState = computeEffectiveFormState(
+        SIMULATION_RESOURCES,
+        baseFormState as unknown as Record<string, unknown>,
+        flushResults as Record<string, unknown>
+      ) as unknown as SimulationFormState;
 
       // Validate required resource IDs using {resource}_required flags from simulationData
-      if (simulationData?.name_required && !effectiveFormState.name_id) {
+      if (stableSimulationDataFields?.names?.required && !effectiveFormState.name_id) {
         toast.error("Simulation name is required");
         throw new Error("Simulation name is required");
       }
 
       if (
-        simulationData?.departments_required &&
+        stableSimulationDataFields?.departments?.required &&
         (!effectiveFormState.department_ids || effectiveFormState.department_ids.length === 0)
       ) {
         toast.error("Departments are required");
@@ -1073,20 +882,20 @@ function SimulationComponent({
       }
 
       if (
-        simulationData?.flag_required &&
+        stableSimulationDataFields?.flags?.required &&
         (!effectiveFormState.flag_ids || effectiveFormState.flag_ids.length === 0)
       ) {
         toast.error("At least one flag is required");
         throw new Error("At least one flag is required");
       }
 
-      if (simulationData?.description_required && !effectiveFormState.description_id) {
+      if (stableSimulationDataFields?.descriptions?.required && !effectiveFormState.description_id) {
         toast.error("Description is required");
         throw new Error("Description is required");
       }
 
       if (
-        simulationData?.scenarios_required &&
+        stableSimulationDataFields?.scenarios?.required &&
         (!effectiveFormState.scenario_ids || effectiveFormState.scenario_ids.length === 0)
       ) {
         toast.error("Scenarios are required");
@@ -1094,7 +903,7 @@ function SimulationComponent({
       }
 
       if (
-        simulationData?.scenario_flags_required &&
+        stableSimulationDataFields?.scenario_flags?.required &&
         (!effectiveFormState.scenario_flag_ids ||
           effectiveFormState.scenario_flag_ids.length === 0)
       ) {
@@ -1103,7 +912,7 @@ function SimulationComponent({
       }
 
       if (
-        simulationData?.scenario_personas_required &&
+        stableSimulationDataFields?.scenario_personas?.required &&
         (!effectiveFormState.scenario_persona_ids ||
           effectiveFormState.scenario_persona_ids.length === 0)
       ) {
@@ -1112,7 +921,7 @@ function SimulationComponent({
       }
 
       if (
-        simulationData?.scenario_positions_required &&
+        stableSimulationDataFields?.scenario_positions?.required &&
         (!effectiveFormState.scenario_position_ids ||
           effectiveFormState.scenario_position_ids.length === 0)
       ) {
@@ -1121,7 +930,7 @@ function SimulationComponent({
       }
 
       if (
-        simulationData?.scenario_rubrics_required &&
+        stableSimulationDataFields?.scenario_rubrics?.required &&
         (!effectiveFormState.scenario_rubric_ids ||
           effectiveFormState.scenario_rubric_ids.length === 0)
       ) {
@@ -1130,7 +939,7 @@ function SimulationComponent({
       }
 
       if (
-        simulationData?.scenario_time_limits_required &&
+        stableSimulationDataFields?.scenario_time_limits?.required &&
         (!effectiveFormState.scenario_time_limit_ids ||
           effectiveFormState.scenario_time_limit_ids.length === 0)
       ) {
@@ -1151,7 +960,7 @@ function SimulationComponent({
         throw new Error("Save action not available");
       }
 
-      if (!simulationData?.group_id) {
+      if (!stableSimulationDataFields?.group_id) {
         toast.error("Group not found. Please try again.");
         throw new Error("Group ID is required for save");
       }
@@ -1163,53 +972,20 @@ function SimulationComponent({
       }
 
       try {
+        const resourceActions = buildResourceActions(SIMULATION_RESOURCES, {
+          formState: effectiveFormState as unknown as Record<string, unknown>,
+          referenceState: null,
+          flushResults: flushResults as Record<string, unknown>,
+          entityData: stableSimulationDataFields ?? null,
+        });
+
         await saveSimulationAction({
           body: {
-            // Context
-            group_id: simulationData.group_id,
+            group_id: stableSimulationDataFields.group_id as string,
             input_simulation_id:
               isEditMode && simulationId ? simulationId : null,
-
-            // Required single-select
-            name_id: effectiveFormState.name_id,
-
-            // Optional single-select
-            description_id: effectiveFormState.description_id ?? undefined,
-
-            // Optional multi-select
-            flag_ids:
-              effectiveFormState.flag_ids.length > 0
-                ? effectiveFormState.flag_ids
-                : undefined,
-            department_ids:
-              effectiveFormState.department_ids.length > 0
-                ? effectiveFormState.department_ids
-                : undefined,
-            scenario_ids:
-              effectiveFormState.scenario_ids.length > 0
-                ? effectiveFormState.scenario_ids
-                : undefined,
-            scenario_flag_ids:
-              effectiveFormState.scenario_flag_ids.length > 0
-                ? effectiveFormState.scenario_flag_ids
-                : undefined,
-            scenario_persona_ids:
-              effectiveFormState.scenario_persona_ids.length > 0
-                ? effectiveFormState.scenario_persona_ids
-                : undefined,
-            scenario_position_ids:
-              effectiveFormState.scenario_position_ids.length > 0
-                ? effectiveFormState.scenario_position_ids
-                : undefined,
-            scenario_rubric_ids:
-              effectiveFormState.scenario_rubric_ids.length > 0
-                ? effectiveFormState.scenario_rubric_ids
-                : undefined,
-            scenario_time_limit_ids:
-              effectiveFormState.scenario_time_limit_ids.length > 0
-                ? effectiveFormState.scenario_time_limit_ids
-                : undefined,
-          },
+            ...resourceActions,
+          } as SaveSimulationIn["body"],
         });
         toast.success(
           `Simulation ${isEditMode ? "updated" : "created"} successfully!`
@@ -1229,18 +1005,8 @@ function SimulationComponent({
       simulationId,
       profile?.id,
       saveSimulationAction,
-      simulationData?.group_id,
+      stableSimulationDataFields,
       router,
-      simulationData?.name_required,
-      simulationData?.description_required,
-      simulationData?.flag_required,
-      simulationData?.departments_required,
-      simulationData?.scenarios_required,
-      simulationData?.scenario_flags_required,
-      simulationData?.scenario_personas_required,
-      simulationData?.scenario_positions_required,
-      simulationData?.scenario_rubrics_required,
-      simulationData?.scenario_time_limits_required,
     ]
   );
 
@@ -1249,33 +1015,33 @@ function SimulationComponent({
     (stepId: string, _formData: Record<string, unknown>): StepStatus => {
       // Check resource IDs from formState (components manage their own display state)
       const hasName =
-        !(simulationData?.name_required ?? false) || !!formState.name_id;
+        !(stableSimulationDataFields?.names?.required ?? false) || !!formState.name_id;
       const hasDescription =
-        !(simulationData?.description_required ?? false) ||
+        !(stableSimulationDataFields?.descriptions?.required ?? false) ||
         !!formState.description_id;
       const hasDepartments =
-        !(simulationData?.departments_required ?? false) ||
+        !(stableSimulationDataFields?.departments?.required ?? false) ||
         formState.department_ids.length > 0;
       const hasFlags =
-        !(simulationData?.flag_required ?? false) ||
+        !(stableSimulationDataFields?.flags?.required ?? false) ||
         formState.flag_ids.length > 0;
       const hasScenarios =
-        !(simulationData?.scenarios_required ?? false) ||
+        !(stableSimulationDataFields?.scenarios?.required ?? false) ||
         formState.scenario_ids.length > 0;
       const hasScenarioFlags =
-        !(simulationData?.scenario_flags_required ?? false) ||
+        !(stableSimulationDataFields?.scenario_flags?.required ?? false) ||
         formState.scenario_flag_ids.length > 0;
       const hasScenarioPersonas =
-        !(simulationData?.scenario_personas_required ?? false) ||
+        !(stableSimulationDataFields?.scenario_personas?.required ?? false) ||
         formState.scenario_persona_ids.length > 0;
       const hasScenarioPositions =
-        !(simulationData?.scenario_positions_required ?? false) ||
+        !(stableSimulationDataFields?.scenario_positions?.required ?? false) ||
         formState.scenario_position_ids.length > 0;
       const hasScenarioRubrics =
-        !(simulationData?.scenario_rubrics_required ?? false) ||
+        !(stableSimulationDataFields?.scenario_rubrics?.required ?? false) ||
         formState.scenario_rubric_ids.length > 0;
       const hasScenarioTimeLimits =
-        !(simulationData?.scenario_time_limits_required ?? false) ||
+        !(stableSimulationDataFields?.scenario_time_limits?.required ?? false) ||
         formState.scenario_time_limit_ids.length > 0;
 
       switch (stepId) {
@@ -1298,7 +1064,7 @@ function SimulationComponent({
           return "pending";
       }
     },
-    [formState, simulationData]
+    [formState, stableSimulationDataFields]
   );
 
   // Step-to-resources mapping for multi-generation
@@ -1349,14 +1115,9 @@ function SimulationComponent({
   // --- Generation Modal ---
   const onModalGenerate = useCallback(
     (selectedResources: SimulationResourceType[], instructions?: string) => {
-      const agentType = determineAgentType(selectedResources);
-      handleGenerateResources(
-        selectedResources,
-        agentType,
-        instructions
-      );
+      handleGenerateResources(selectedResources, instructions);
     },
-    [handleGenerateResources, determineAgentType]
+    [handleGenerateResources]
   );
 
   const { handleOpenStepCardModal, modalProps } = useGenerationModal<SimulationResourceType>({
@@ -1468,15 +1229,15 @@ function SimulationComponent({
   // show_hints is based on practice_simulation mode - when practice mode is on, hints are hidden
   // For now, default to true (show hints) since practice_simulation isn't exposed in the form yet
   const scenarioResourcesWithShowHints = useMemo(() => {
-    const resources = stableSimulationDataFields?.scenario_resources ?? [];
+    const resources = stableSimulationDataFields?.scenarios?.current ?? [];
     // TODO: When practice_simulation is exposed in the API response, use it here:
-    // const isPractice = simulationData?.practice_simulation ?? false;
+    // const isPractice = stableSimulationDataFields?.practice_simulation ?? false;
     // For now, always show hints (show_hints = true)
-    return resources.map((sr) => ({
+    return resources.map((sr: { [key: string]: unknown }) => ({
       ...sr,
       show_hints: true, // Will be set to !isPractice when practice mode is exposed
     }));
-  }, [stableSimulationDataFields?.scenario_resources]);
+  }, [stableSimulationDataFields?.scenarios]);
 
   // Render step content - memoized to prevent unnecessary re-renders
   // Updated to match Persona.tsx signature
@@ -1508,8 +1269,8 @@ function SimulationComponent({
       onReset?: () => void;
     }) => {
       // Use memoized fields to avoid dependency on simulationData object reference
-      const currentSimulationData = stableSimulationDataFields;
-      if (!currentSimulationData) {
+      const s = stableSimulationDataFields;
+      if (!s) {
         return <div>Loading...</div>;
       }
 
@@ -1529,12 +1290,12 @@ function SimulationComponent({
               customHeader={
                 <Names
                   name_id={formState.name_id ?? null}
-                  name_resource={currentSimulationData.name_resource ?? null}
-                  show_name={currentSimulationData.show_name ?? true}
+                  name_resource={s.names?.resource ?? null}
+                  show_name={s.names?.show ?? true}
                   name_suggestions={
-                    currentSimulationData.name_suggestions ?? []
+                    s.names?.suggestions ?? []
                   }
-                  names={currentSimulationData.names ?? []}
+                  names={s.names?.resources ?? []}
                   disabled={disabled}
                   onNameIdChange={(id) =>
                     setFormState((prev) => ({ ...prev, name_id: id }))
@@ -1542,9 +1303,8 @@ function SimulationComponent({
                   onGenerate={handleGenerateName}
                   isGenerating={isGenerating("names")}
                   createNamesAction={createNamesAction}
-                  group_id={currentSimulationData.group_id ?? null}
-                  agent_id={currentSimulationData.name_agent_id ?? null}
-                  required={currentSimulationData.name_required ?? false}
+                  group_id={s.group_id ?? null}
+                  required={s.names?.required ?? false}
                   placeholder="Simulation name"
                   defaultName="New Simulation"
                   hideDescription={true}
@@ -1556,48 +1316,18 @@ function SimulationComponent({
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
               actions={
-                stepResources["basic"] &&
-                stepResources["basic"].length > 0 &&
-                currentSimulationData?.general_agent_id ? (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            const hasRegeneratable = stepResources[
-                              "basic"
-                            ]!.some((rt) => canRegenerate(rt));
-                            handleOpenStepCardModal(
-                              "basic",
-                              hasRegeneratable ? "regenerate" : "generate"
-                            );
-                          }}
-                          disabled={
-                            disabled ||
-                            stepResources["basic"]!.some((rt) =>
-                              isGenerating(rt)
-                            )
-                          }
-                        >
-                          {stepResources["basic"]!.some((rt) =>
-                            isGenerating(rt)
-                          ) ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Sparkles className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {stepResources["basic"]!.some((rt) => canRegenerate(rt))
-                          ? "Regenerate"
-                          : "Generate"}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                stepResources["basic"]?.length &&
+                s?.basic_show_ai_generate ? (
+                  <StepCardAiButton
+                    stepId="basic"
+                    resourceTypes={stepResources["basic"]}
+                    canRegenerate={(rt: string) => canRegenerate(rt)}
+                    isGenerating={(rt: string) =>
+                      isGenerating(rt as SimulationResourceType)
+                    }
+                    onOpenModal={handleOpenStepCardModal}
+                    disabled={disabled}
+                  />
                 ) : undefined
               }
             >
@@ -1605,73 +1335,76 @@ function SimulationComponent({
                 <Descriptions
                   description_id={formState.description_id ?? null}
                   description_resource={
-                    currentSimulationData.description_resource ?? null
+                    s.descriptions?.resource ?? null
                   }
                   show_description={
-                    currentSimulationData.show_description ?? true
+                    s.descriptions?.show ?? true
                   }
                   description_suggestions={
-                    currentSimulationData.description_suggestions ?? []
+                    s.descriptions?.suggestions ?? []
                   }
-                  descriptions={currentSimulationData.descriptions ?? []}
+                  descriptions={s.descriptions?.resources ?? []}
                   disabled={disabled}
                   onDescriptionIdChange={(id) =>
                     setFormState((prev) => ({ ...prev, description_id: id }))
                   }
-                  searchTerm={descriptionSearch || undefined}
+                  searchTerm={descriptionSearch ?? ""}
                   onSearchChange={(term: string) =>
                     setStepFormData({ descriptionSearch: term || null })
                   }
                   onGenerate={handleGenerateDescription}
                   isGenerating={isGenerating("descriptions")}
                   createDescriptionsAction={createDescriptionsAction}
-                  group_id={currentSimulationData.group_id ?? null}
-                  agent_id={currentSimulationData.description_agent_id ?? null}
-                  required={currentSimulationData.description_required ?? false}
+                  group_id={s.group_id ?? null}
+                  required={s.descriptions?.required ?? false}
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["descriptions"]}
                 />
                 <Departments
                   department_ids={formState.department_ids ?? []}
                   department_resources={
-                    currentSimulationData.department_resources ?? []
+                    s.departments?.current ?? []
                   }
                   show_departments={
-                    currentSimulationData.show_departments ?? false
+                    s.departments?.show ?? false
                   }
                   department_suggestions={
-                    currentSimulationData.department_suggestions ?? []
+                    s.departments?.suggestions ?? []
                   }
-                  departments={currentSimulationData.departments ?? []}
+                  departments={s.departments?.resources ?? []}
                   disabled={disabled}
                   onChange={(ids) =>
                     setFormState((prev) => ({ ...prev, department_ids: ids }))
                   }
                   onGenerate={handleGenerateDepartments}
                   isGenerating={isGenerating("departments")}
-                  group_id={currentSimulationData.group_id ?? null}
-                  agent_id={currentSimulationData.departments_agent_id ?? null}
-                  required={currentSimulationData.departments_required ?? false}
+                  group_id={s.group_id ?? null}
+                  required={s.departments?.required ?? false}
                 />
                 <Flags
                   mode="multi"
-                  flags={currentSimulationData.flags ?? []}
+                  flags={s.flags?.resources ?? []}
                   flag_ids={
                     // Convert flag_ids array to Record for Flags component
-                    (currentSimulationData.flags ?? []).reduce(
-                      (acc, flag) => {
+                    (s.flags?.resources ?? []).reduce(
+                      (
+                        acc: Record<string, string | null>,
+                        flag: { key?: string | null; flag_option_id?: string | null }
+                      ) => {
                         const isEnabled = formState.flag_ids.includes(
                           flag.flag_option_id ?? ""
                         );
-                        acc[flag.key] = isEnabled
-                          ? flag.flag_option_id ?? null
-                          : null;
+                        if (flag.key) {
+                          acc[flag.key] = isEnabled
+                            ? flag.flag_option_id ?? null
+                            : null;
+                        }
                         return acc;
                       },
                       {} as Record<string, string | null>
                     )
                   }
-                  show_flags={currentSimulationData.show_flags ?? false}
+                  show_flags={s.flags?.show ?? false}
                   columns={1}
                   label="Flags"
                   disabled={disabled}
@@ -1687,8 +1420,8 @@ function SimulationComponent({
                         }
                       } else {
                         // Remove flag by finding the flag_option_id for this key
-                        const flag = (currentSimulationData.flags ?? []).find(
-                          (f) => f.key === key
+                        const flag = (s.flags?.resources ?? []).find(
+                          (f: { key?: string | null }) => f.key === key
                         );
                         if (flag?.flag_option_id) {
                           return {
@@ -1716,19 +1449,19 @@ function SimulationComponent({
           const hasSelectedScenarios =
             (formState.scenario_ids ?? []).length > 0;
           const showScenarioFlags =
-            (currentSimulationData.show_scenario_flags ?? false) ||
+            (s.scenario_flags?.show ?? false) ||
             hasSelectedScenarios;
           const showScenarioPersonas =
-            (currentSimulationData.show_scenario_personas ?? false) ||
+            (s.scenario_personas?.show ?? false) ||
             hasSelectedScenarios;
           const showScenarioPositions =
-            (currentSimulationData.show_scenario_positions ?? false) ||
+            (s.scenario_positions?.show ?? false) ||
             hasSelectedScenarios;
           const showScenarioRubrics =
-            (currentSimulationData.show_scenario_rubrics ?? false) ||
+            (s.scenario_rubrics?.show ?? false) ||
             hasSelectedScenarios;
           const showScenarioTimeLimits =
-            (currentSimulationData.show_scenario_time_limits ?? false) ||
+            (s.scenario_time_limits?.show ?? false) ||
             hasSelectedScenarios;
 
           return (
@@ -1766,50 +1499,18 @@ function SimulationComponent({
               }
               searchPlaceholder="Search scenarios..."
               actions={
-                stepResources["scenarios"] &&
-                stepResources["scenarios"].length > 0 &&
-                currentSimulationData?.general_agent_id ? (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            const hasRegeneratable = stepResources[
-                              "scenarios"
-                            ]!.some((rt) => canRegenerate(rt));
-                            handleOpenStepCardModal(
-                              "scenarios",
-                              hasRegeneratable ? "regenerate" : "generate"
-                            );
-                          }}
-                          disabled={
-                            disabled ||
-                            stepResources["scenarios"]!.some((rt) =>
-                              isGenerating(rt)
-                            )
-                          }
-                        >
-                          {stepResources["scenarios"]!.some((rt) =>
-                            isGenerating(rt)
-                          ) ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Sparkles className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {stepResources["scenarios"]!.some((rt) =>
-                          canRegenerate(rt)
-                        )
-                          ? "Regenerate"
-                          : "Generate"}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                stepResources["scenarios"]?.length &&
+                s?.basic_show_ai_generate ? (
+                  <StepCardAiButton
+                    stepId="scenarios"
+                    resourceTypes={stepResources["scenarios"]}
+                    canRegenerate={(rt: string) => canRegenerate(rt)}
+                    isGenerating={(rt: string) =>
+                      isGenerating(rt as SimulationResourceType)
+                    }
+                    onOpenModal={handleOpenStepCardModal}
+                    disabled={disabled}
+                  />
                 ) : undefined
               }
             >
@@ -1817,24 +1518,23 @@ function SimulationComponent({
                 <Scenarios
                   scenario_ids={formState.scenario_ids ?? []}
                   scenario_resources={
-                    currentSimulationData.scenario_resources ?? []
+                    s.scenarios?.current ?? []
                   }
                   show_scenarios={
-                    currentSimulationData.show_scenarios ?? false
+                    s.scenarios?.show ?? false
                   }
                   scenario_suggestions={
-                    currentSimulationData.scenario_suggestions ?? []
+                    s.scenarios?.suggestions ?? []
                   }
-                  scenarios={currentSimulationData.scenarios ?? []}
+                  scenarios={s.scenarios?.resources ?? []}
                   disabled={disabled}
                   onChange={(ids) =>
                     setFormState((prev) => ({ ...prev, scenario_ids: ids }))
                   }
                   onGenerate={handleGenerateScenarios}
                   isGenerating={isGenerating("scenarios")}
-                  group_id={currentSimulationData.group_id ?? null}
-                  agent_id={currentSimulationData.scenarios_agent_id ?? null}
-                  required={currentSimulationData.scenarios_required ?? false}
+                  group_id={s.group_id ?? null}
+                  required={s.scenarios?.required ?? false}
                   searchTerm={scenarioSearch ?? ""}
                   showSelectedOnly={scenarioShowSelected}
                   aiScenarioResources={aiFormData.scenario_resources ?? null}
@@ -1844,17 +1544,14 @@ function SimulationComponent({
                 <ScenarioFlags
                   scenario_flag_ids={formState.scenario_flag_ids ?? []}
                   scenario_flag_resources={
-                    currentSimulationData.scenario_flag_resources ?? []
+                    s.scenario_flags?.current ?? []
                   }
                   show_scenario_flags={
                     showScenarioFlags
                   }
-                  scenario_flag_suggestions={
-                    currentSimulationData.scenario_flag_suggestions ?? []
-                  }
-                  scenario_flags={currentSimulationData.scenario_flags ?? []}
+                  scenario_flags={s.scenario_flags?.resources ?? []}
                   scenario_ids={formState.scenario_ids ?? []}
-                  scenarios={currentSimulationData.scenarios ?? []}
+                  scenarios={s.scenarios?.resources ?? []}
                   scenario_resources={scenarioResourcesWithShowHints}
                   disabled={disabled}
                   onChange={(ids) =>
@@ -1866,12 +1563,9 @@ function SimulationComponent({
                   createScenarioFlagsAction={createScenarioFlagsAction}
                   onGenerate={handleGenerateScenarioFlags}
                   isGenerating={isGenerating("scenario_flags")}
-                  group_id={currentSimulationData.group_id ?? null}
-                  agent_id={
-                    currentSimulationData.scenario_flags_agent_id ?? null
-                  }
+                  group_id={s.group_id ?? null}
                   required={
-                    currentSimulationData.scenario_flags_required ?? false
+                    s.scenario_flags?.required ?? false
                   }
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["scenario_flags"]}
@@ -1879,20 +1573,20 @@ function SimulationComponent({
                 <ScenarioPersonas
                   scenario_persona_ids={formState.scenario_persona_ids ?? []}
                   scenario_persona_resources={
-                    currentSimulationData.scenario_persona_resources ?? []
+                    s.scenario_personas?.current ?? []
                   }
                   show_scenario_personas={
                     showScenarioPersonas
                   }
                   scenario_persona_suggestions={
-                    currentSimulationData.scenario_persona_suggestions ?? []
+                    s.scenario_personas?.suggestions ?? []
                   }
                   scenario_personas={
-                    currentSimulationData.scenario_personas ?? []
+                    s.scenario_personas?.resources ?? []
                   }
-                  scenarios={currentSimulationData.scenarios ?? []}
+                  scenarios={s.scenarios?.resources ?? []}
                   scenario_resources={
-                    currentSimulationData.scenario_resources ?? []
+                    s.scenarios?.current ?? []
                   }
                   disabled={disabled}
                   onChange={() => {}}
@@ -1907,12 +1601,9 @@ function SimulationComponent({
                   createScenarioPersonasAction={createScenarioPersonasAction}
                   onGenerate={handleGenerateScenarioPersonas}
                   isGenerating={isGenerating("scenario_personas")}
-                  group_id={currentSimulationData.group_id ?? null}
-                  agent_id={
-                    currentSimulationData.scenario_personas_agent_id ?? null
-                  }
+                  group_id={s.group_id ?? null}
                   required={
-                    currentSimulationData.scenario_personas_required ?? false
+                    s.scenario_personas?.required ?? false
                   }
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["scenario_personas"]}
@@ -1920,20 +1611,20 @@ function SimulationComponent({
                 <ScenarioPositions
                   scenario_position_ids={formState.scenario_position_ids ?? []}
                   scenario_position_resources={
-                    currentSimulationData.scenario_position_resources ?? []
+                    s.scenario_positions?.current ?? []
                   }
                   show_scenario_positions={
                     showScenarioPositions
                   }
                   scenario_position_suggestions={
-                    currentSimulationData.scenario_position_suggestions ?? []
+                    s.scenario_positions?.suggestions ?? []
                   }
                   scenario_positions={
-                    currentSimulationData.scenario_positions ?? []
+                    s.scenario_positions?.resources ?? []
                   }
-                  scenarios={currentSimulationData.scenarios ?? []}
+                  scenarios={s.scenarios?.resources ?? []}
                   scenario_resources={
-                    currentSimulationData.scenario_resources ?? []
+                    s.scenarios?.current ?? []
                   }
                   disabled={disabled}
                   onChange={() => {}}
@@ -1948,12 +1639,9 @@ function SimulationComponent({
                   createScenarioPositionsAction={createScenarioPositionsAction}
                   onGenerate={handleGenerateScenarioPositions}
                   isGenerating={isGenerating("scenario_positions")}
-                  group_id={currentSimulationData.group_id ?? null}
-                  agent_id={
-                    currentSimulationData.scenario_positions_agent_id ?? null
-                  }
+                  group_id={s.group_id ?? null}
                   required={
-                    currentSimulationData.scenario_positions_required ?? false
+                    s.scenario_positions?.required ?? false
                   }
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["scenario_positions"]}
@@ -1963,24 +1651,24 @@ function SimulationComponent({
                     formState.scenario_rubric_ids ?? []
                   }
                   scenario_rubric_resources={
-                    currentSimulationData.scenario_rubric_resources ??
+                    s.scenario_rubrics?.current ??
                     []
                   }
                   show_scenario_rubrics={
                     showScenarioRubrics
                   }
                   scenario_rubric_suggestions={
-                    currentSimulationData.scenario_rubric_suggestions ??
+                    s.scenario_rubrics?.suggestions ??
                     []
                   }
                   scenario_rubrics={
-                    currentSimulationData.scenario_rubrics ?? []
+                    s.scenario_rubrics?.resources ?? []
                   }
-                  rubrics={currentSimulationData.rubrics ?? []}
+                  rubrics={s.rubrics ?? []}
                   scenario_ids={formState.scenario_ids ?? []}
-                  scenarios={currentSimulationData.scenarios ?? []}
+                  scenarios={s.scenarios?.resources ?? []}
                   scenario_resources={
-                    currentSimulationData.scenario_resources ?? []
+                    s.scenarios?.current ?? []
                   }
                   disabled={disabled}
                   onChange={(ids) =>
@@ -1994,13 +1682,9 @@ function SimulationComponent({
                   }
                   onGenerate={handleGenerateScenarioRubrics}
                   isGenerating={isGenerating("scenario_rubrics")}
-                  group_id={currentSimulationData.group_id ?? null}
-                  agent_id={
-                    currentSimulationData.scenario_rubrics_agent_id ??
-                    null
-                  }
+                  group_id={s.group_id ?? null}
                   required={
-                    currentSimulationData.scenario_rubrics_required ??
+                    s.scenario_rubrics?.required ??
                     false
                   }
                   isAutosaveEnabled={isAutosaveEnabled}
@@ -2011,12 +1695,12 @@ function SimulationComponent({
                     formState.scenario_time_limit_ids ?? []
                   }
                   scenario_time_limit_resources={
-                    currentSimulationData.scenario_time_limit_resources ?? []
+                    s.scenario_time_limits?.current ?? []
                   }
                   show_scenario_time_limits={showScenarioTimeLimits}
                   scenario_ids={formState.scenario_ids ?? []}
-                  scenarios={currentSimulationData.scenarios ?? []}
-                  scenario_resources={currentSimulationData.scenario_resources ?? []}
+                  scenarios={s.scenarios?.resources ?? []}
+                  scenario_resources={s.scenarios?.current ?? []}
                   disabled={disabled}
                   onTimeLimitIdsChange={(ids) =>
                     setFormState((prev) => ({
@@ -2024,17 +1708,14 @@ function SimulationComponent({
                       scenario_time_limit_ids: ids,
                     }))
                   }
-                  group_id={currentSimulationData.group_id ?? null}
-                  agent_id={
-                    currentSimulationData.scenario_time_limits_agent_id ?? null
-                  }
+                  group_id={s.group_id ?? null}
                   createScenarioTimeLimitsAction={
                     createScenarioTimeLimitsAction
                   }
                   onGenerate={handleGenerateScenarioTimeLimits}
                   isGenerating={isGenerating("scenario_time_limits")}
                   required={
-                    currentSimulationData.scenario_time_limits_required ?? false
+                    s.scenario_time_limits?.required ?? false
                   }
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["scenario_time_limits"]}
@@ -2082,7 +1763,7 @@ function SimulationComponent({
     ]
   );
 
-  if (!simulationData) {
+  if (!stableSimulationDataFields) {
     return <div>Loading simulation data...</div>;
   }
 
@@ -2094,7 +1775,7 @@ function SimulationComponent({
       >
         <ReadOnlyBanner
           disabled={disabled}
-          disabledReason={simulationData?.disabled_reason ?? null}
+          disabledReason={stableSimulationDataFields?.disabled_reason ?? null}
           entityType="simulation"
         />
 
@@ -2102,15 +1783,15 @@ function SimulationComponent({
           nuqsParsers={
             simulationSearchParamsClient as Record<string, Parser<unknown>>
           }
-        steps={steps}
-        getStepStatus={getStepStatus}
-        serverData={simulationData}
-        formFieldKeys={formFieldKeys}
-        onReset={(stepId) => handleReset(stepId)}
-        resetSuccessMessage={resetSuccessMessage}
-        onSubmit={handleSubmit}
-        submitButton={submitButton}
-        isReadonly={disabled}
+          steps={steps}
+          getStepStatus={getStepStatus}
+          serverData={simulationData as SimulationData}
+          formFieldKeys={formFieldKeys}
+          onReset={(stepId) => handleReset(stepId)}
+          resetSuccessMessage={resetSuccessMessage}
+          onSubmit={handleSubmit}
+          submitButton={submitButton}
+          isReadonly={disabled}
           isEditMode={isEditMode}
           renderStep={renderStep}
           onFormDataChange={onFormDataChange}
@@ -2127,65 +1808,4 @@ function SimulationComponent({
   );
 }
 
-// Memoize component to prevent re-renders when only prop references change (content is same)
-export default React.memo(SimulationComponent, (prevProps, nextProps) => {
-  // Compare simulationData by resource IDs, not object reference
-  const prevIds = {
-    name_id: prevProps.simulationData?.name_id,
-    description_id: prevProps.simulationData?.description_id,
-    flag_ids: prevProps.simulationData?.flag_ids,
-    department_ids: prevProps.simulationData?.department_ids,
-    scenario_ids: prevProps.simulationData?.scenario_ids,
-    scenario_flag_ids: prevProps.simulationData?.scenario_flag_ids,
-    scenario_persona_ids: prevProps.simulationData?.scenario_persona_ids,
-    scenario_position_ids: prevProps.simulationData?.scenario_position_ids,
-    scenario_rubric_ids: prevProps.simulationData?.scenario_rubric_ids,
-    scenario_time_limit_ids:
-      prevProps.simulationData?.scenario_time_limit_ids,
-  };
-  const nextIds = {
-    name_id: nextProps.simulationData?.name_id,
-    description_id: nextProps.simulationData?.description_id,
-    flag_ids: nextProps.simulationData?.flag_ids,
-    department_ids: nextProps.simulationData?.department_ids,
-    scenario_ids: nextProps.simulationData?.scenario_ids,
-    scenario_flag_ids: nextProps.simulationData?.scenario_flag_ids,
-    scenario_persona_ids: nextProps.simulationData?.scenario_persona_ids,
-    scenario_position_ids: nextProps.simulationData?.scenario_position_ids,
-    scenario_rubric_ids: nextProps.simulationData?.scenario_rubric_ids,
-    scenario_time_limit_ids:
-      nextProps.simulationData?.scenario_time_limit_ids,
-  };
-
-  // Compare primitive props
-  if (
-    prevProps.simulationId !== nextProps.simulationId ||
-    JSON.stringify(prevIds) !== JSON.stringify(nextIds)
-  ) {
-    return false; // Props changed, re-render
-  }
-
-  // Compare function props by reference (should be stable from server actions)
-  if (
-    prevProps.saveSimulationAction !== nextProps.saveSimulationAction ||
-    prevProps.patchSimulationDraftAction !==
-      nextProps.patchSimulationDraftAction ||
-    prevProps.createNamesAction !== nextProps.createNamesAction ||
-    prevProps.createDescriptionsAction !== nextProps.createDescriptionsAction ||
-    prevProps.createScenarioFlagsAction !==
-      nextProps.createScenarioFlagsAction ||
-    prevProps.createScenarioPersonasAction !==
-      nextProps.createScenarioPersonasAction ||
-    prevProps.createScenarioPositionsAction !==
-      nextProps.createScenarioPositionsAction ||
-    prevProps.createScenarioRubricsAction !==
-      nextProps.createScenarioRubricsAction ||
-    prevProps.createScenarioTimeLimitsAction !==
-      nextProps.createScenarioTimeLimitsAction
-  ) {
-    return false; // Function props changed, re-render
-  }
-
-  // All props are equivalent, skip re-render
-  return true;
-});
+export default React.memo(SimulationComponent);

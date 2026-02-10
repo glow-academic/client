@@ -5,7 +5,6 @@ Uses two-pass architecture with Python-computed permissions.
 """
 
 from typing import Annotated, Any, cast
-from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -25,6 +24,8 @@ from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
+    CheckSimulationSaveAccessSqlParams,
+    CheckSimulationSaveAccessSqlRow,
     GetNameByIdSqlParams,
     GetNameByIdSqlRow,
     load_sql_query,
@@ -79,25 +80,20 @@ async def save_simulation(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Pass 1: Check access using access query
-        from pydantic import BaseModel
-
-        class CheckSaveAccessSqlParams(BaseModel):
-            profile_id: UUID
-            simulation_id: UUID | None
-            draft_id: UUID | None
-
-            def to_tuple(self) -> tuple[Any, ...]:
-                return (self.profile_id, self.simulation_id, self.draft_id)
-
-        access_params = CheckSaveAccessSqlParams(
+        # Pass 1: Check access using typed access query
+        access_params = CheckSimulationSaveAccessSqlParams(
             profile_id=profile_id,
             simulation_id=request.input_simulation_id,
             draft_id=None,  # Not using draft_id - passing explicit values directly
         )
 
-        access_result = await execute_sql_typed(
-            conn, ACCESS_SQL_PATH, params=access_params
+        access_result = cast(
+            CheckSimulationSaveAccessSqlRow,
+            await execute_sql_typed(
+                conn,
+                ACCESS_SQL_PATH,
+                params=access_params,
+            ),
         )
 
         if access_result:
@@ -149,10 +145,10 @@ async def save_simulation(
                         )
             else:
                 # Create mode
-                # Use department_ids from request (explicit values, not from draft)
+                # Use department_ids from request resource actions
                 request_department_ids = (
-                    [str(d) for d in request.department_ids]
-                    if request.department_ids
+                    [str(d) for d in (request.departments.resource_ids or [])]
+                    if request.departments.resource_ids
                     else []
                 )
                 if not compute_can_create(user_role, request_department_ids):
@@ -163,11 +159,9 @@ async def save_simulation(
 
         # Pass 2: Execute save
         async with conn.transaction():
-            # Convert API request to SQL params (add profile_id from header)
-            # Map input_simulation_id from API request (already correct field name)
-            params = SaveSimulationSqlParams(
-                **request.model_dump(),
-                profile_id=profile_id,
+            # Convert nested resource actions to SQL params
+            params = SaveSimulationSqlParams.from_request(
+                request, profile_id=profile_id
             )
             sql_params = params.to_tuple()
 
@@ -197,8 +191,10 @@ async def save_simulation(
                 if request.input_simulation_id:
                     # Update mode: look up name from name_id if available
                     simulation_name = "Simulation"
-                    if hasattr(request, "name_id") and request.name_id:
-                        name_params = GetNameByIdSqlParams(name_id=request.name_id)
+                    if request.names and request.names.resource_id:
+                        name_params = GetNameByIdSqlParams(
+                            name_id=request.names.resource_id
+                        )
                         name_result = cast(
                             GetNameByIdSqlRow,
                             await execute_sql_typed(

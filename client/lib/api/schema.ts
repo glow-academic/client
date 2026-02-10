@@ -475,12 +475,6 @@ export interface paths {
         /**
          * Get Document
          * @description Get document information using two-pass architecture.
-         *
-         *     This is a thin HTTP wrapper around get_document_internal().
-         *
-         *     Query 1: Access check (user role, departments, document state)
-         *     Query 2: ID fetching (resource IDs, suggestions, agents)
-         *     Pass 2: Parallel resource fetching (each resource type has own cache)
          */
         post: operations["get_document_api_v4_artifacts_documents_get_post"];
         delete?: never;
@@ -564,7 +558,7 @@ export interface paths {
         head?: never;
         /**
          * Patch Document Draft
-         * @description Patch document draft - accepts resource IDs and creates/updates draft.
+         * @description Patch document draft - accepts resource actions and creates/updates draft.
          */
         patch: operations["patch_document_draft_api_v4_artifacts_documents_draft_patch"];
         trace?: never;
@@ -12284,6 +12278,34 @@ export interface components {
             /** Generated */
             generated?: boolean | null;
         };
+        /** CohortDepartmentSection */
+        CohortDepartmentSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["CohortDepartment"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["CohortDepartment"][] | null;
+        };
         /**
          * CohortDescriptionResource
          * @description Description resource for cohort.
@@ -12295,6 +12317,33 @@ export interface components {
             description?: string | null;
             /** Generated */
             generated?: boolean | null;
+        };
+        /** CohortDescriptionSection */
+        CohortDescriptionSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            resource?: components["schemas"]["CohortDescriptionResource"] | null;
+            /** Resources */
+            resources?: components["schemas"]["CohortDescriptionResource"][] | null;
         };
         /**
          * CohortFlagResource
@@ -12312,6 +12361,144 @@ export interface components {
             /** Generated */
             generated?: boolean | null;
         };
+        /** CohortFlagSection */
+        CohortFlagSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            resource?: components["schemas"]["CohortFlagResource"] | null;
+            /** Resources */
+            resources?: components["schemas"]["CohortFlagResource"][] | null;
+        };
+        /**
+         * CohortGenerationCompleteEvent
+         * @description Server-to-client cohort_generation_complete event.
+         */
+        CohortGenerationCompleteEvent: {
+            /**
+             * Artifact Type
+             * @default cohort
+             */
+            artifact_type: string;
+            /** Group Id */
+            group_id: string;
+            /** Resource Type */
+            resource_type: string;
+            /** Run Id */
+            run_id?: string | null;
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Type */
+            type?: string | null;
+            name_resource?: components["schemas"]["CohortNameResource"] | null;
+            description_resource?: components["schemas"]["CohortDescriptionResource"] | null;
+            flag_resource?: components["schemas"]["CohortFlagResource"] | null;
+            /** Department Resources */
+            department_resources?: components["schemas"]["CohortDepartment"][] | null;
+            /** Simulation Resources */
+            simulation_resources?: components["schemas"]["CohortSimulation"][] | null;
+            /** Simulation Positions */
+            simulation_positions?: components["schemas"]["CohortSimulationPosition"][] | null;
+        };
+        /**
+         * CohortGenerationErrorEvent
+         * @description Server-to-client cohort_generation_error event.
+         */
+        CohortGenerationErrorEvent: {
+            /**
+             * Artifact Type
+             * @default cohort
+             */
+            artifact_type: string;
+            /** Group Id */
+            group_id?: string | null;
+            /** Resource Type */
+            resource_type?: string | null;
+            /** Resource Types */
+            resource_types?: string[] | null;
+            /** Resource Id */
+            resource_id?: string | null;
+            /** Run Id */
+            run_id?: string | null;
+            /**
+             * Success
+             * @default false
+             */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Trace Id */
+            trace_id?: string | null;
+        };
+        /**
+         * CohortGenerationProgressEvent
+         * @description Server-to-client cohort_generation_progress event.
+         */
+        CohortGenerationProgressEvent: {
+            /**
+             * Artifact Type
+             * @default cohort
+             */
+            artifact_type: string;
+            /** Group Id */
+            group_id?: string | null;
+            /** Resource Type */
+            resource_type?: string | null;
+            /** Resource Id */
+            resource_id?: string | null;
+            /** Run Id */
+            run_id?: string | null;
+            /** Modality */
+            modality?: string | null;
+            /** Type */
+            type?: string | null;
+            /** Event Type */
+            event_type?: string | null;
+            /** Tool Call Id */
+            tool_call_id?: string | null;
+            /** Tool Name */
+            tool_name?: string | null;
+            /** Arguments */
+            arguments?: {
+                [key: string]: unknown;
+            } | null;
+            /** Arguments Delta */
+            arguments_delta?: string | null;
+            /** Trace Id */
+            trace_id?: string | null;
+        };
+        /**
+         * CohortMultiResourceAction
+         * @description Multi-resource action payload with tool-call metadata.
+         */
+        CohortMultiResourceAction: {
+            /** Resource Ids */
+            resource_ids?: string[] | null;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+        };
         /**
          * CohortNameResource
          * @description Name resource for cohort.
@@ -12324,31 +12511,44 @@ export interface components {
             /** Generated */
             generated?: boolean | null;
         };
-        /**
-         * CohortResourceBucket
-         * @description Generic resources bucket with full objects (always plural lists).
-         */
-        CohortResourceBucket: {
-            /** Names */
-            names?: components["schemas"]["CohortNameResource"][] | null;
-            /** Descriptions */
-            descriptions?: components["schemas"]["CohortDescriptionResource"][] | null;
-            /** Flags */
-            flags?: components["schemas"]["CohortFlagResource"][] | null;
-            /** Departments */
-            departments?: components["schemas"]["CohortDepartment"][] | null;
-            /** Simulations */
-            simulations?: components["schemas"]["CohortSimulation"][] | null;
-            /** Simulation Positions */
-            simulation_positions?: components["schemas"]["CohortSimulationPosition"][] | null;
+        /** CohortNameSection */
+        CohortNameSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            resource?: components["schemas"]["CohortNameResource"] | null;
+            /** Resources */
+            resources?: components["schemas"]["CohortNameResource"][] | null;
         };
         /**
-         * CohortResources
-         * @description Full resources + current selections.
+         * CohortResourceAction
+         * @description Single resource action payload with tool-call metadata.
          */
-        CohortResources: {
-            resources?: components["schemas"]["CohortResourceBucket"] | null;
-            current?: components["schemas"]["CohortResourceBucket"] | null;
+        CohortResourceAction: {
+            /** Resource Id */
+            resource_id?: string | null;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
         };
         /**
          * CohortSimulation
@@ -12379,6 +12579,62 @@ export interface components {
             generated?: boolean | null;
             /** Mcp */
             mcp?: boolean | null;
+        };
+        /** CohortSimulationPositionSection */
+        CohortSimulationPositionSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["CohortSimulationPosition"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["CohortSimulationPosition"][] | null;
+        };
+        /** CohortSimulationSection */
+        CohortSimulationSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["CohortSimulation"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["CohortSimulation"][] | null;
         };
         /** ColorsApiRequest */
         ColorsApiRequest: {
@@ -13302,6 +13558,61 @@ export interface components {
             /** Description Id */
             description_id?: string | null;
         };
+        /** DocumentDepartmentSection */
+        DocumentDepartmentSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
+        };
+        /** DocumentDescriptionSection */
+        DocumentDescriptionSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            resource?: components["schemas"]["QGetDescriptionsV4Item"] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetDescriptionsV4Item"][] | null;
+        };
         /**
          * DocumentEntry
          * @description Document entry with resource metadata.
@@ -13315,6 +13626,34 @@ export interface components {
             name?: string | null;
             /** Description */
             description?: string | null;
+        };
+        /** DocumentFieldSection */
+        DocumentFieldSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["QGetParameterFieldsV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetParameterFieldsV4Item"][] | null;
         };
         /**
          * DocumentFlagConfig
@@ -13339,10 +13678,36 @@ export interface components {
              * @default false
              */
             required: boolean;
-            /** Domain Id */
-            domain_id?: string | null;
             /** Generated */
             generated?: boolean | null;
+        };
+        /** DocumentFlagSection */
+        DocumentFlagSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["DocumentFlagConfig"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["DocumentFlagConfig"][] | null;
         };
         /**
          * DocumentGenerationCompleteEvent
@@ -13379,31 +13744,60 @@ export interface components {
             /** Upload Resources */
             upload_resources?: components["schemas"]["QGetUploadsV4Item"][] | null;
         };
-        /**
-         * DocumentResourceBucket
-         * @description Generic resources bucket with full objects (always plural lists).
-         */
-        DocumentResourceBucket: {
-            /** Names */
-            names?: components["schemas"]["QGetNamesV4Item"][] | null;
-            /** Descriptions */
-            descriptions?: components["schemas"]["QGetDescriptionsV4Item"][] | null;
-            /** Flags */
-            flags?: components["schemas"]["DocumentFlagConfig"][] | null;
-            /** Departments */
-            departments?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
-            /** Fields */
-            fields?: components["schemas"]["QGetParameterFieldsV4Item"][] | null;
-            /** Uploads */
-            uploads?: components["schemas"]["QGetUploadsV4Item"][] | null;
+        /** DocumentNameSection */
+        DocumentNameSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            resource?: components["schemas"]["QGetNamesV4Item"] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetNamesV4Item"][] | null;
         };
-        /**
-         * DocumentResources
-         * @description Full resources + current selections.
-         */
-        DocumentResources: {
-            resources?: components["schemas"]["DocumentResourceBucket"] | null;
-            current?: components["schemas"]["DocumentResourceBucket"] | null;
+        /** DocumentUploadSection */
+        DocumentUploadSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["QGetUploadsV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetUploadsV4Item"][] | null;
         };
         /**
          * DomainData
@@ -15831,8 +16225,6 @@ export interface components {
             simulation_search?: string | null;
             /** Simulation Show Selected */
             simulation_show_selected?: boolean | null;
-            /** Current Simulation Ids */
-            current_simulation_ids?: string[] | null;
             /** Draft Id */
             draft_id?: string | null;
         };
@@ -15853,144 +16245,16 @@ export interface components {
             draft_version?: number | null;
             /** Group Id */
             group_id?: string | null;
-            /** Names Group Id */
-            names_group_id?: string | null;
-            /** Descriptions Group Id */
-            descriptions_group_id?: string | null;
-            /** Flags Group Id */
-            flags_group_id?: string | null;
-            /** Departments Group Id */
-            departments_group_id?: string | null;
-            /** Simulations Group Id */
-            simulations_group_id?: string | null;
-            /** Simulation Positions Group Id */
-            simulation_positions_group_id?: string | null;
-            /** Name Id */
-            name_id?: string | null;
-            name_resource?: components["schemas"]["CohortNameResource"] | null;
-            /** Show Name */
-            show_name?: boolean | null;
-            /** Name Domain Id */
-            name_domain_id?: string | null;
-            /** Name Agent Id */
-            name_agent_id?: string | null;
-            /** Name Required */
-            name_required?: boolean | null;
-            /** Name Suggestions */
-            name_suggestions?: string[] | null;
-            /** Name Show Ai Generate */
-            name_show_ai_generate?: boolean | null;
-            /** Names */
-            names?: components["schemas"]["CohortNameResource"][] | null;
-            /** Description Id */
-            description_id?: string | null;
-            description_resource?: components["schemas"]["CohortDescriptionResource"] | null;
-            /** Show Description */
-            show_description?: boolean | null;
-            /** Description Domain Id */
-            description_domain_id?: string | null;
-            /** Description Agent Id */
-            description_agent_id?: string | null;
-            /** Description Required */
-            description_required?: boolean | null;
-            /** Description Suggestions */
-            description_suggestions?: string[] | null;
-            /** Description Show Ai Generate */
-            description_show_ai_generate?: boolean | null;
-            /** Descriptions */
-            descriptions?: components["schemas"]["CohortDescriptionResource"][] | null;
-            /** Active Flag Id */
-            active_flag_id?: string | null;
-            flag_resource?: components["schemas"]["CohortFlagResource"] | null;
-            /** Show Flag */
-            show_flag?: boolean | null;
-            /** Flag Domain Id */
-            flag_domain_id?: string | null;
-            /** Flag Agent Id */
-            flag_agent_id?: string | null;
-            /** Flag Required */
-            flag_required?: boolean | null;
-            /** Flag Show Ai Generate */
-            flag_show_ai_generate?: boolean | null;
-            /** Flags */
-            flags?: components["schemas"]["CohortFlagResource"][] | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Department Resources */
-            department_resources?: components["schemas"]["CohortDepartment"][] | null;
-            /** Show Departments */
-            show_departments?: boolean | null;
-            /** Departments Domain Id */
-            departments_domain_id?: string | null;
-            /** Departments Agent Id */
-            departments_agent_id?: string | null;
-            /** Departments Required */
-            departments_required?: boolean | null;
-            /** Department Suggestions */
-            department_suggestions?: string[] | null;
-            /** Departments Show Ai Generate */
-            departments_show_ai_generate?: boolean | null;
-            /** Departments */
-            departments?: components["schemas"]["CohortDepartment"][] | null;
-            /** Simulation Ids */
-            simulation_ids?: string[] | null;
-            /** Simulation Resources */
-            simulation_resources?: components["schemas"]["CohortSimulation"][] | null;
-            /** Show Simulations */
-            show_simulations?: boolean | null;
-            /** Simulations Domain Id */
-            simulations_domain_id?: string | null;
-            /** Simulations Agent Id */
-            simulations_agent_id?: string | null;
-            /** Simulations Required */
-            simulations_required?: boolean | null;
-            /** Simulation Suggestions */
-            simulation_suggestions?: string[] | null;
-            /** Simulations Show Ai Generate */
-            simulations_show_ai_generate?: boolean | null;
-            /** Simulations */
-            simulations?: components["schemas"]["CohortSimulation"][] | null;
-            /** Simulation Positions */
-            simulation_positions?: components["schemas"]["CohortSimulationPosition"][] | null;
-            /** Show Simulation Positions */
-            show_simulation_positions?: boolean | null;
-            /** Simulation Positions Domain Id */
-            simulation_positions_domain_id?: string | null;
-            /** Simulation Positions Agent Id */
-            simulation_positions_agent_id?: string | null;
-            /** Simulation Positions Required */
-            simulation_positions_required?: boolean | null;
-            /** Simulation Positions Show Ai Generate */
-            simulation_positions_show_ai_generate?: boolean | null;
             /** Basic Show Ai Generate */
             basic_show_ai_generate?: boolean | null;
             /** Simulations Step Show Ai Generate */
             simulations_step_show_ai_generate?: boolean | null;
-            /** Basic Agent Id */
-            basic_agent_id?: string | null;
-            /** General Agent Id */
-            general_agent_id?: string | null;
-            /** Name Create Tool Id */
-            name_create_tool_id?: string | null;
-            /** Description Create Tool Id */
-            description_create_tool_id?: string | null;
-            /** Simulations Create Tool Id */
-            simulations_create_tool_id?: string | null;
-            /** Name Link Tool Id */
-            name_link_tool_id?: string | null;
-            /** Description Link Tool Id */
-            description_link_tool_id?: string | null;
-            /** Flag Link Tool Id */
-            flag_link_tool_id?: string | null;
-            /** Departments Link Tool Id */
-            departments_link_tool_id?: string | null;
-            /** Simulations Link Tool Id */
-            simulations_link_tool_id?: string | null;
-            /** Simulation Positions Link Tool Id */
-            simulation_positions_link_tool_id?: string | null;
-            /** Domain Data */
-            domain_data?: components["schemas"]["DomainData"][] | null;
-            resources?: components["schemas"]["CohortResources"] | null;
+            names?: components["schemas"]["CohortNameSection"] | null;
+            descriptions?: components["schemas"]["CohortDescriptionSection"] | null;
+            flags?: components["schemas"]["CohortFlagSection"] | null;
+            departments?: components["schemas"]["CohortDepartmentSection"] | null;
+            simulations?: components["schemas"]["CohortSimulationSection"] | null;
+            simulation_positions?: components["schemas"]["CohortSimulationPositionSection"] | null;
         };
         /**
          * GetCohortsApiRequest
@@ -16251,7 +16515,7 @@ export interface components {
         };
         /**
          * GetDocumentApiResponse
-         * @description Response model for get document endpoint.
+         * @description Section-first response for document editor.
          */
         GetDocumentApiResponse: {
             /** Actor Name */
@@ -16266,101 +16530,16 @@ export interface components {
             draft_version?: number | null;
             /** Group Id */
             group_id?: string | null;
-            /** Names Group Id */
-            names_group_id?: string | null;
-            /** Descriptions Group Id */
-            descriptions_group_id?: string | null;
-            /** Flags Group Id */
-            flags_group_id?: string | null;
-            /** Departments Group Id */
-            departments_group_id?: string | null;
-            /** Fields Group Id */
-            fields_group_id?: string | null;
-            /** Uploads Group Id */
-            uploads_group_id?: string | null;
-            /** Show Name */
-            show_name?: boolean | null;
-            /** Name Domain Id */
-            name_domain_id?: string | null;
-            /** Name Required */
-            name_required?: boolean | null;
-            /** Name Suggestions */
-            name_suggestions?: string[] | null;
-            /** Name Show Ai Generate */
-            name_show_ai_generate?: boolean | null;
-            /** Show Description */
-            show_description?: boolean | null;
-            /** Description Domain Id */
-            description_domain_id?: string | null;
-            /** Description Required */
-            description_required?: boolean | null;
-            /** Description Suggestions */
-            description_suggestions?: string[] | null;
-            /** Description Show Ai Generate */
-            description_show_ai_generate?: boolean | null;
-            /** Show Flag */
-            show_flag?: boolean | null;
-            /** Flag Domain Id */
-            flag_domain_id?: string | null;
-            /** Flag Required */
-            flag_required?: boolean | null;
-            /** Flag Show Ai Generate */
-            flag_show_ai_generate?: boolean | null;
-            /** Show Departments */
-            show_departments?: boolean | null;
-            /** Departments Domain Id */
-            departments_domain_id?: string | null;
-            /** Departments Required */
-            departments_required?: boolean | null;
-            /** Department Suggestions */
-            department_suggestions?: string[] | null;
-            /** Departments Show Ai Generate */
-            departments_show_ai_generate?: boolean | null;
-            /** Show Fields */
-            show_fields?: boolean | null;
-            /** Fields Domain Id */
-            fields_domain_id?: string | null;
-            /** Fields Required */
-            fields_required?: boolean | null;
-            /** Field Suggestions */
-            field_suggestions?: string[] | null;
-            /** Fields Show Ai Generate */
-            fields_show_ai_generate?: boolean | null;
-            /** Show Uploads */
-            show_uploads?: boolean | null;
-            /** Uploads Domain Id */
-            uploads_domain_id?: string | null;
-            /** Uploads Required */
-            uploads_required?: boolean | null;
-            /** Upload Suggestions */
-            upload_suggestions?: string[] | null;
-            /** Uploads Show Ai Generate */
-            uploads_show_ai_generate?: boolean | null;
             /** Basic Show Ai Generate */
             basic_show_ai_generate?: boolean | null;
             /** Content Show Ai Generate */
             content_show_ai_generate?: boolean | null;
-            /** Name Create Tool Id */
-            name_create_tool_id?: string | null;
-            /** Description Create Tool Id */
-            description_create_tool_id?: string | null;
-            /** Fields Create Tool Id */
-            fields_create_tool_id?: string | null;
-            /** Name Link Tool Id */
-            name_link_tool_id?: string | null;
-            /** Description Link Tool Id */
-            description_link_tool_id?: string | null;
-            /** Flag Link Tool Id */
-            flag_link_tool_id?: string | null;
-            /** Departments Link Tool Id */
-            departments_link_tool_id?: string | null;
-            /** Fields Link Tool Id */
-            fields_link_tool_id?: string | null;
-            /** Uploads Link Tool Id */
-            uploads_link_tool_id?: string | null;
-            /** Domain Data */
-            domain_data?: components["schemas"]["DomainData"][] | null;
-            resources?: components["schemas"]["DocumentResources"] | null;
+            names?: components["schemas"]["DocumentNameSection"] | null;
+            descriptions?: components["schemas"]["DocumentDescriptionSection"] | null;
+            flags?: components["schemas"]["DocumentFlagSection"] | null;
+            departments?: components["schemas"]["DocumentDepartmentSection"] | null;
+            fields?: components["schemas"]["DocumentFieldSection"] | null;
+            uploads?: components["schemas"]["DocumentUploadSection"] | null;
         };
         /** GetDocumentResourceApiRequest */
         GetDocumentResourceApiRequest: {
@@ -22350,20 +22529,21 @@ export interface components {
             /** Message */
             message: string;
         };
-        /** PatchCohortDraftApiRequest */
+        /**
+         * PatchCohortDraftApiRequest
+         * @description Request for patching a cohort draft.
+         */
         PatchCohortDraftApiRequest: {
             /** Input Draft Id */
             input_draft_id?: string | null;
-            /** Name Id */
-            name_id?: string | null;
-            /** Description Id */
-            description_id?: string | null;
-            /** Active Flag Id */
-            active_flag_id?: string | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Simulation Ids */
-            simulation_ids?: string[] | null;
+            /** Group Id */
+            group_id?: string | null;
+            names?: components["schemas"]["CohortResourceAction"] | null;
+            descriptions?: components["schemas"]["CohortResourceAction"] | null;
+            flags?: components["schemas"]["CohortResourceAction"] | null;
+            departments?: components["schemas"]["CohortMultiResourceAction"] | null;
+            simulations?: components["schemas"]["CohortMultiResourceAction"] | null;
+            simulation_positions?: components["schemas"]["CohortMultiResourceAction"] | null;
             /** Simulation Position Values */
             simulation_position_values?: number[] | null;
             /**
@@ -22372,7 +22552,10 @@ export interface components {
              */
             expected_version: number | null;
         };
-        /** PatchCohortDraftApiResponse */
+        /**
+         * PatchCohortDraftApiResponse
+         * @description Response for patching a cohort draft.
+         */
         PatchCohortDraftApiResponse: {
             /** Draft Id */
             draft_id?: string | null;
@@ -22421,28 +22604,24 @@ export interface components {
         };
         /**
          * PatchDocumentDraftApiRequest
-         * @description Request model for patch document draft endpoint.
+         * @description Request model for patch document draft endpoint - nested resource actions.
          */
         PatchDocumentDraftApiRequest: {
             /** Input Draft Id */
             input_draft_id?: string | null;
-            /** Name Id */
-            name_id?: string | null;
-            /** Description Id */
-            description_id?: string | null;
-            /** Active Flag Id */
-            active_flag_id?: string | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Field Ids */
-            field_ids?: string[] | null;
-            /** Upload Ids */
-            upload_ids?: string[] | null;
+            /** Group Id */
+            group_id?: string | null;
+            names?: components["schemas"]["app__api__v4__artifacts__document__types__DocumentResourceAction"] | null;
+            descriptions?: components["schemas"]["app__api__v4__artifacts__document__types__DocumentResourceAction"] | null;
+            flags?: components["schemas"]["app__api__v4__artifacts__document__types__DocumentResourceAction"] | null;
+            departments?: components["schemas"]["app__api__v4__artifacts__document__types__DocumentMultiResourceAction"] | null;
+            fields?: components["schemas"]["app__api__v4__artifacts__document__types__DocumentMultiResourceAction"] | null;
+            uploads?: components["schemas"]["app__api__v4__artifacts__document__types__DocumentMultiResourceAction"] | null;
             /**
              * Expected Version
              * @default 0
              */
-            expected_version: number;
+            expected_version: number | null;
         };
         /**
          * PatchDocumentDraftApiResponse
@@ -22904,37 +23083,35 @@ export interface components {
             /** Draft Exists */
             draft_exists?: boolean | null;
         };
-        /** PatchSimulationDraftApiRequest */
+        /**
+         * PatchSimulationDraftApiRequest
+         * @description Request for patching a simulation draft - nested resource actions.
+         */
         PatchSimulationDraftApiRequest: {
             /** Input Draft Id */
             input_draft_id?: string | null;
-            /** Name Id */
-            name_id?: string | null;
-            /** Description Id */
-            description_id?: string | null;
-            /** Flag Ids */
-            flag_ids?: string[] | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Scenario Ids */
-            scenario_ids?: string[] | null;
-            /** Scenario Flag Ids */
-            scenario_flag_ids?: string[] | null;
-            /** Scenario Position Ids */
-            scenario_position_ids?: string[] | null;
-            /** Scenario Rubric Ids */
-            scenario_rubric_ids?: string[] | null;
-            /** Scenario Time Limit Ids */
-            scenario_time_limit_ids?: string[] | null;
-            /** Scenario Persona Ids */
-            scenario_persona_ids?: string[] | null;
+            /** Group Id */
+            group_id?: string | null;
+            names?: components["schemas"]["SimulationResourceAction"] | null;
+            descriptions?: components["schemas"]["SimulationResourceAction"] | null;
+            flags?: components["schemas"]["SimulationMultiResourceAction"] | null;
+            departments?: components["schemas"]["SimulationMultiResourceAction"] | null;
+            scenarios?: components["schemas"]["SimulationMultiResourceAction"] | null;
+            scenario_flags?: components["schemas"]["SimulationMultiResourceAction"] | null;
+            scenario_positions?: components["schemas"]["SimulationMultiResourceAction"] | null;
+            scenario_rubrics?: components["schemas"]["SimulationMultiResourceAction"] | null;
+            scenario_time_limits?: components["schemas"]["SimulationMultiResourceAction"] | null;
+            scenario_personas?: components["schemas"]["SimulationMultiResourceAction"] | null;
             /**
              * Expected Version
              * @default 0
              */
             expected_version: number | null;
         };
-        /** PatchSimulationDraftApiResponse */
+        /**
+         * PatchSimulationDraftApiResponse
+         * @description Response for patching a simulation draft.
+         */
         PatchSimulationDraftApiResponse: {
             /** Draft Id */
             draft_id?: string | null;
@@ -27600,7 +27777,7 @@ export interface components {
         };
         /**
          * SaveCohortApiRequest
-         * @description Request for saving a cohort - accepts form data directly (no draft_id).
+         * @description Request for saving a cohort - nested resource actions.
          */
         SaveCohortApiRequest: {
             /**
@@ -27610,19 +27787,12 @@ export interface components {
             group_id: string;
             /** Input Cohort Id */
             input_cohort_id?: string | null;
-            /**
-             * Name Id
-             * Format: uuid
-             */
-            name_id: string;
-            /** Description Id */
-            description_id?: string | null;
-            /** Active Flag Id */
-            active_flag_id?: string | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Simulation Ids */
-            simulation_ids?: string[] | null;
+            names: components["schemas"]["CohortResourceAction"];
+            descriptions: components["schemas"]["CohortResourceAction"];
+            flags: components["schemas"]["CohortResourceAction"];
+            departments: components["schemas"]["CohortMultiResourceAction"];
+            simulations: components["schemas"]["CohortMultiResourceAction"];
+            simulation_positions: components["schemas"]["CohortMultiResourceAction"];
             /** Simulation Position Values */
             simulation_position_values?: number[] | null;
         };
@@ -28112,7 +28282,7 @@ export interface components {
         };
         /**
          * SaveSimulationApiRequest
-         * @description Request for saving a simulation - accepts form data directly (no draft_id).
+         * @description Request for saving a simulation - nested resource actions.
          */
         SaveSimulationApiRequest: {
             /**
@@ -28122,29 +28292,16 @@ export interface components {
             group_id: string;
             /** Input Simulation Id */
             input_simulation_id?: string | null;
-            /**
-             * Name Id
-             * Format: uuid
-             */
-            name_id: string;
-            /** Description Id */
-            description_id?: string | null;
-            /** Flag Ids */
-            flag_ids?: string[] | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Scenario Ids */
-            scenario_ids?: string[] | null;
-            /** Scenario Flag Ids */
-            scenario_flag_ids?: string[] | null;
-            /** Scenario Position Ids */
-            scenario_position_ids?: string[] | null;
-            /** Scenario Rubric Ids */
-            scenario_rubric_ids?: string[] | null;
-            /** Scenario Time Limit Ids */
-            scenario_time_limit_ids?: string[] | null;
-            /** Scenario Persona Ids */
-            scenario_persona_ids?: string[] | null;
+            names: components["schemas"]["SimulationResourceAction"];
+            descriptions: components["schemas"]["SimulationResourceAction"];
+            flags: components["schemas"]["SimulationMultiResourceAction"];
+            departments: components["schemas"]["SimulationMultiResourceAction"];
+            scenarios: components["schemas"]["SimulationMultiResourceAction"];
+            scenario_flags: components["schemas"]["SimulationMultiResourceAction"];
+            scenario_positions: components["schemas"]["SimulationMultiResourceAction"];
+            scenario_rubrics: components["schemas"]["SimulationMultiResourceAction"];
+            scenario_time_limits: components["schemas"]["SimulationMultiResourceAction"];
+            scenario_personas: components["schemas"]["SimulationMultiResourceAction"];
         };
         /**
          * SaveSimulationApiResponse
@@ -30246,6 +30403,75 @@ export interface components {
             rubric_id?: string | null;
         };
         /**
+         * SimulationDepartment
+         * @description Department for simulation.
+         */
+        SimulationDepartment: {
+            /** Department Id */
+            department_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Generated */
+            generated?: boolean | null;
+        };
+        /** SimulationDepartmentSection */
+        SimulationDepartmentSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["SimulationDepartment"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["SimulationDepartment"][] | null;
+        };
+        /** SimulationDescriptionSection */
+        SimulationDescriptionSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            resource?: components["schemas"]["QGetDescriptionsV4Item"] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetDescriptionsV4Item"][] | null;
+        };
+        /**
          * SimulationFlagConfig
          * @description Enriched flag config for direct client consumption.
          */
@@ -30270,10 +30496,36 @@ export interface components {
              * @default false
              */
             required: boolean;
-            /** Domain Id */
-            domain_id?: string | null;
             /** Generated */
             generated?: boolean | null;
+        };
+        /** SimulationFlagSection */
+        SimulationFlagSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["SimulationFlagConfig"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["SimulationFlagConfig"][] | null;
         };
         /**
          * SimulationGenerationCompleteEvent
@@ -30303,33 +30555,60 @@ export interface components {
             name_resource?: components["schemas"]["QGetNamesV4Item"] | null;
             description_resource?: components["schemas"]["QGetDescriptionsV4Item"] | null;
             /** Flag Resources */
-            flag_resources?: {
-                [key: string]: unknown;
-            }[] | null;
+            flag_resources?: components["schemas"]["SimulationFlagConfig"][] | null;
             /** Department Resources */
             department_resources?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
             /** Scenario Resources */
             scenario_resources?: components["schemas"]["QGetScenariosV4Item-Input"][] | null;
             /** Scenario Flag Resources */
-            scenario_flag_resources?: {
-                [key: string]: unknown;
-            }[] | null;
+            scenario_flag_resources?: components["schemas"]["QGetScenarioFlagsV4Item"][] | null;
             /** Scenario Persona Resources */
-            scenario_persona_resources?: {
-                [key: string]: unknown;
-            }[] | null;
+            scenario_persona_resources?: components["schemas"]["QGetScenarioPersonasV4Item"][] | null;
             /** Scenario Position Resources */
-            scenario_position_resources?: {
-                [key: string]: unknown;
-            }[] | null;
+            scenario_position_resources?: components["schemas"]["QGetScenarioPositionsV4Item"][] | null;
             /** Scenario Rubric Resources */
-            scenario_rubric_resources?: {
-                [key: string]: unknown;
-            }[] | null;
+            scenario_rubric_resources?: components["schemas"]["QGetScenarioRubricsV4Item"][] | null;
             /** Scenario Time Limit Resources */
-            scenario_time_limit_resources?: {
-                [key: string]: unknown;
-            }[] | null;
+            scenario_time_limit_resources?: components["schemas"]["QGetScenarioTimeLimitsV4Item"][] | null;
+        };
+        /**
+         * SimulationMultiResourceAction
+         * @description Multi-select resource action with tool call tracking.
+         */
+        SimulationMultiResourceAction: {
+            /** Resource Ids */
+            resource_ids?: string[] | null;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+        };
+        /** SimulationNameSection */
+        SimulationNameSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            resource?: components["schemas"]["QGetNamesV4Item"] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetNamesV4Item"][] | null;
         };
         /** SimulationPositionsApiRequest */
         SimulationPositionsApiRequest: {
@@ -30362,40 +30641,16 @@ export interface components {
             id?: string | null;
         };
         /**
-         * SimulationResourceBucket
-         * @description Generic resources bucket with full objects (always plural lists).
+         * SimulationResourceAction
+         * @description Single-select resource action with tool call tracking.
          */
-        SimulationResourceBucket: {
-            /** Names */
-            names?: components["schemas"]["QGetNamesV4Item"][] | null;
-            /** Descriptions */
-            descriptions?: components["schemas"]["QGetDescriptionsV4Item"][] | null;
-            /** Flags */
-            flags?: components["schemas"]["SimulationFlagConfig"][] | null;
-            /** Departments */
-            departments?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
-            /** Scenarios */
-            scenarios?: components["schemas"]["SimulationScenario"][] | null;
-            /** Scenario Flags */
-            scenario_flags?: unknown[] | null;
-            /** Scenario Personas */
-            scenario_personas?: unknown[] | null;
-            /** Scenario Positions */
-            scenario_positions?: unknown[] | null;
-            /** Scenario Rubrics */
-            scenario_rubrics?: unknown[] | null;
-            /** Scenario Time Limits */
-            scenario_time_limits?: unknown[] | null;
-            /** Rubrics */
-            rubrics?: unknown[] | null;
-        };
-        /**
-         * SimulationResources
-         * @description Full resources + current selections.
-         */
-        SimulationResources: {
-            resources?: components["schemas"]["SimulationResourceBucket"] | null;
-            current?: components["schemas"]["SimulationResourceBucket"] | null;
+        SimulationResourceAction: {
+            /** Resource Id */
+            resource_id?: string | null;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
         };
         /**
          * SimulationScenario
@@ -30428,6 +30683,174 @@ export interface components {
             show_questions?: boolean | null;
             /** Show Templates */
             show_templates?: boolean | null;
+        };
+        /** SimulationScenarioFlagSection */
+        SimulationScenarioFlagSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["QGetScenarioFlagsV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetScenarioFlagsV4Item"][] | null;
+        };
+        /** SimulationScenarioPersonaSection */
+        SimulationScenarioPersonaSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["QGetScenarioPersonasV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetScenarioPersonasV4Item"][] | null;
+        };
+        /** SimulationScenarioPositionSection */
+        SimulationScenarioPositionSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["QGetScenarioPositionsV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetScenarioPositionsV4Item"][] | null;
+        };
+        /** SimulationScenarioRubricSection */
+        SimulationScenarioRubricSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["QGetScenarioRubricsV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetScenarioRubricsV4Item"][] | null;
+        };
+        /** SimulationScenarioSection */
+        SimulationScenarioSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["SimulationScenario"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["SimulationScenario"][] | null;
+        };
+        /** SimulationScenarioTimeLimitSection */
+        SimulationScenarioTimeLimitSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["QGetScenarioTimeLimitsV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetScenarioTimeLimitsV4Item"][] | null;
         };
         /**
          * SkillFeedback
@@ -31495,8 +31918,32 @@ export interface components {
             message: string;
         };
         /**
+         * DocumentMultiResourceAction
+         * @description Multi-select resource action with tool call tracking.
+         */
+        app__api__v4__artifacts__document__types__DocumentMultiResourceAction: {
+            /** Resource Ids */
+            resource_ids?: string[] | null;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+        };
+        /**
+         * DocumentResourceAction
+         * @description Single-select resource action with tool call tracking.
+         */
+        app__api__v4__artifacts__document__types__DocumentResourceAction: {
+            /** Resource Id */
+            resource_id?: string | null;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+        };
+        /**
          * SaveDocumentApiRequest
-         * @description Request model for save document endpoint - accepts form data directly.
+         * @description Request model for save document endpoint - nested resource actions.
          */
         app__api__v4__artifacts__document__types__SaveDocumentApiRequest: {
             /**
@@ -31506,21 +31953,12 @@ export interface components {
             group_id: string;
             /** Input Document Id */
             input_document_id?: string | null;
-            /**
-             * Name Id
-             * Format: uuid
-             */
-            name_id: string;
-            /** Description Id */
-            description_id?: string | null;
-            /** Active Flag Id */
-            active_flag_id?: string | null;
-            /** Department Ids */
-            department_ids?: string[];
-            /** Field Ids */
-            field_ids?: string[];
-            /** Upload Ids */
-            upload_ids?: string[];
+            names: components["schemas"]["app__api__v4__artifacts__document__types__DocumentResourceAction"];
+            descriptions: components["schemas"]["app__api__v4__artifacts__document__types__DocumentResourceAction"];
+            flags: components["schemas"]["app__api__v4__artifacts__document__types__DocumentResourceAction"];
+            departments: components["schemas"]["app__api__v4__artifacts__document__types__DocumentMultiResourceAction"];
+            fields: components["schemas"]["app__api__v4__artifacts__document__types__DocumentMultiResourceAction"];
+            uploads: components["schemas"]["app__api__v4__artifacts__document__types__DocumentMultiResourceAction"];
         };
         /**
          * SaveDocumentApiResponse
@@ -31591,14 +32029,12 @@ export interface components {
             draft_id?: string | null;
             /** Scenario Search */
             scenario_search?: string | null;
-            /** Scenario Show Selected */
-            scenario_show_selected?: boolean | null;
             /** Filter Scenario Ids */
             filter_scenario_ids?: string[] | null;
         };
         /**
          * GetSimulationApiResponse
-         * @description Response for getting a single simulation (persona-style).
+         * @description Section-first response for simulation editor.
          */
         app__api__v4__artifacts__simulation__types__GetSimulationApiResponse: {
             /** Actor Name */
@@ -31613,145 +32049,20 @@ export interface components {
             draft_version?: number | null;
             /** Group Id */
             group_id?: string | null;
-            /** Names Group Id */
-            names_group_id?: string | null;
-            /** Descriptions Group Id */
-            descriptions_group_id?: string | null;
-            /** Flags Group Id */
-            flags_group_id?: string | null;
-            /** Departments Group Id */
-            departments_group_id?: string | null;
-            /** Scenarios Group Id */
-            scenarios_group_id?: string | null;
-            /** Scenario Flags Group Id */
-            scenario_flags_group_id?: string | null;
-            /** Scenario Personas Group Id */
-            scenario_personas_group_id?: string | null;
-            /** Scenario Positions Group Id */
-            scenario_positions_group_id?: string | null;
-            /** Scenario Rubrics Group Id */
-            scenario_rubrics_group_id?: string | null;
-            /** Scenario Time Limits Group Id */
-            scenario_time_limits_group_id?: string | null;
-            /** Show Name */
-            show_name?: boolean | null;
-            /** Name Domain Id */
-            name_domain_id?: string | null;
-            /** Name Required */
-            name_required?: boolean | null;
-            /** Name Suggestions */
-            name_suggestions?: string[] | null;
-            /** Name Show Ai Generate */
-            name_show_ai_generate?: boolean | null;
-            /** Show Description */
-            show_description?: boolean | null;
-            /** Description Domain Id */
-            description_domain_id?: string | null;
-            /** Description Required */
-            description_required?: boolean | null;
-            /** Description Suggestions */
-            description_suggestions?: string[] | null;
-            /** Description Show Ai Generate */
-            description_show_ai_generate?: boolean | null;
-            /** Show Flag */
-            show_flag?: boolean | null;
-            /** Flag Domain Id */
-            flag_domain_id?: string | null;
-            /** Flag Required */
-            flag_required?: boolean | null;
-            /** Flag Show Ai Generate */
-            flag_show_ai_generate?: boolean | null;
-            /** Show Departments */
-            show_departments?: boolean | null;
-            /** Departments Domain Id */
-            departments_domain_id?: string | null;
-            /** Departments Required */
-            departments_required?: boolean | null;
-            /** Department Suggestions */
-            department_suggestions?: string[] | null;
-            /** Departments Show Ai Generate */
-            departments_show_ai_generate?: boolean | null;
-            /** Show Scenarios */
-            show_scenarios?: boolean | null;
-            /** Scenarios Domain Id */
-            scenarios_domain_id?: string | null;
-            /** Scenarios Required */
-            scenarios_required?: boolean | null;
-            /** Scenario Suggestions */
-            scenario_suggestions?: string[] | null;
-            /** Scenarios Show Ai Generate */
-            scenarios_show_ai_generate?: boolean | null;
-            /** Show Scenario Flags */
-            show_scenario_flags?: boolean | null;
-            /** Scenario Flags Domain Id */
-            scenario_flags_domain_id?: string | null;
-            /** Scenario Flags Required */
-            scenario_flags_required?: boolean | null;
-            /** Scenario Flags Show Ai Generate */
-            scenario_flags_show_ai_generate?: boolean | null;
-            /** Show Scenario Personas */
-            show_scenario_personas?: boolean | null;
-            /** Scenario Personas Domain Id */
-            scenario_personas_domain_id?: string | null;
-            /** Scenario Personas Required */
-            scenario_personas_required?: boolean | null;
-            /** Scenario Personas Show Ai Generate */
-            scenario_personas_show_ai_generate?: boolean | null;
-            /** Show Scenario Positions */
-            show_scenario_positions?: boolean | null;
-            /** Scenario Positions Domain Id */
-            scenario_positions_domain_id?: string | null;
-            /** Scenario Positions Required */
-            scenario_positions_required?: boolean | null;
-            /** Scenario Positions Show Ai Generate */
-            scenario_positions_show_ai_generate?: boolean | null;
-            /** Show Scenario Rubrics */
-            show_scenario_rubrics?: boolean | null;
-            /** Scenario Rubrics Domain Id */
-            scenario_rubrics_domain_id?: string | null;
-            /** Scenario Rubrics Required */
-            scenario_rubrics_required?: boolean | null;
-            /** Scenario Rubrics Show Ai Generate */
-            scenario_rubrics_show_ai_generate?: boolean | null;
-            /** Show Scenario Time Limits */
-            show_scenario_time_limits?: boolean | null;
-            /** Scenario Time Limits Domain Id */
-            scenario_time_limits_domain_id?: string | null;
-            /** Scenario Time Limits Required */
-            scenario_time_limits_required?: boolean | null;
-            /** Scenario Time Limits Show Ai Generate */
-            scenario_time_limits_show_ai_generate?: boolean | null;
             /** Basic Show Ai Generate */
             basic_show_ai_generate?: boolean | null;
-            /** Name Create Tool Id */
-            name_create_tool_id?: string | null;
-            /** Description Create Tool Id */
-            description_create_tool_id?: string | null;
-            /** Scenarios Create Tool Id */
-            scenarios_create_tool_id?: string | null;
-            /** Name Link Tool Id */
-            name_link_tool_id?: string | null;
-            /** Description Link Tool Id */
-            description_link_tool_id?: string | null;
-            /** Flag Link Tool Id */
-            flag_link_tool_id?: string | null;
-            /** Departments Link Tool Id */
-            departments_link_tool_id?: string | null;
-            /** Scenarios Link Tool Id */
-            scenarios_link_tool_id?: string | null;
-            /** Scenario Flags Link Tool Id */
-            scenario_flags_link_tool_id?: string | null;
-            /** Scenario Personas Link Tool Id */
-            scenario_personas_link_tool_id?: string | null;
-            /** Scenario Positions Link Tool Id */
-            scenario_positions_link_tool_id?: string | null;
-            /** Scenario Rubrics Link Tool Id */
-            scenario_rubrics_link_tool_id?: string | null;
-            /** Scenario Time Limits Link Tool Id */
-            scenario_time_limits_link_tool_id?: string | null;
-            /** Domain Data */
-            domain_data?: components["schemas"]["DomainData"][] | null;
-            resources?: components["schemas"]["SimulationResources"] | null;
+            names?: components["schemas"]["SimulationNameSection"] | null;
+            descriptions?: components["schemas"]["SimulationDescriptionSection"] | null;
+            flags?: components["schemas"]["SimulationFlagSection"] | null;
+            departments?: components["schemas"]["SimulationDepartmentSection"] | null;
+            scenarios?: components["schemas"]["SimulationScenarioSection"] | null;
+            scenario_flags?: components["schemas"]["SimulationScenarioFlagSection"] | null;
+            scenario_personas?: components["schemas"]["SimulationScenarioPersonaSection"] | null;
+            scenario_positions?: components["schemas"]["SimulationScenarioPositionSection"] | null;
+            scenario_rubrics?: components["schemas"]["SimulationScenarioRubricSection"] | null;
+            scenario_time_limits?: components["schemas"]["SimulationScenarioTimeLimitSection"] | null;
+            /** Rubrics */
+            rubrics?: components["schemas"]["QGetRubricsV4Item"][] | null;
         };
         /**
          * FilterOption
@@ -31854,29 +32165,36 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
+        /** DocumentMultiResourceAction */
+        app__sql__types__DocumentMultiResourceAction: {
+            /** Resource Ids */
+            resource_ids: string[] | null;
+            /** Create Tool Id */
+            create_tool_id: string | null;
+            /** Link Tool Id */
+            link_tool_id: string | null;
+        };
+        /** DocumentResourceAction */
+        app__sql__types__DocumentResourceAction: {
+            /** Resource Id */
+            resource_id: string | null;
+            /** Create Tool Id */
+            create_tool_id: string | null;
+            /** Link Tool Id */
+            link_tool_id: string | null;
+        };
         /** SaveDocumentApiRequest */
         app__sql__types__SaveDocumentApiRequest: {
-            /**
-             * Name Id
-             * Format: uuid
-             */
-            name_id: string;
-            /** Department Ids */
-            department_ids: string[];
-            /** Field Ids */
-            field_ids: string[];
             /** Input Document Id */
             input_document_id?: string | null;
-            /** Description Id */
-            description_id?: string | null;
-            /** Active Flag Id */
-            active_flag_id?: string | null;
-            /** Upload Ids */
-            upload_ids?: string[] | null;
-            /** Html Id */
-            html_id?: string | null;
-            /** Schema Id */
-            schema_id?: string | null;
+            /** Group Id */
+            group_id?: string | null;
+            names?: components["schemas"]["app__sql__types__DocumentResourceAction"] | null;
+            descriptions?: components["schemas"]["app__sql__types__DocumentResourceAction"] | null;
+            flags?: components["schemas"]["app__sql__types__DocumentResourceAction"] | null;
+            departments?: components["schemas"]["app__sql__types__DocumentMultiResourceAction"] | null;
+            fields?: components["schemas"]["app__sql__types__DocumentMultiResourceAction"] | null;
+            uploads?: components["schemas"]["app__sql__types__DocumentMultiResourceAction"] | null;
         };
         /** SaveDocumentApiResponse */
         app__sql__types__SaveDocumentApiResponse: {
@@ -47906,9 +48224,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": {
-                    [key: string]: unknown;
-                };
+                "application/json": components["schemas"]["CohortGenerationProgressEvent"];
             };
         };
         responses: {
@@ -47943,9 +48259,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": {
-                    [key: string]: unknown;
-                };
+                "application/json": components["schemas"]["CohortGenerationCompleteEvent"];
             };
         };
         responses: {
@@ -47980,9 +48294,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": {
-                    [key: string]: unknown;
-                };
+                "application/json": components["schemas"]["CohortGenerationErrorEvent"];
             };
         };
         responses: {

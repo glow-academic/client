@@ -1,15 +1,35 @@
--- Patch simulation draft - accepts resource IDs and creates/updates draft
--- Creates draft if input_draft_id is NULL, updates if exists
--- Links resources via junction tables
+-- Patch simulation draft - accepts nested resource action composites.
+-- Creates draft if input_draft_id is NULL, updates if exists.
 
--- Drop function if exists (handles signature variations)
+DO $$
+BEGIN
+    DROP TYPE IF EXISTS types.simulation_resource_action CASCADE;
+    CREATE TYPE types.simulation_resource_action AS (
+        resource_id uuid,
+        create_tool_id uuid,
+        link_tool_id uuid
+    );
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
+DO $$
+BEGIN
+    DROP TYPE IF EXISTS types.simulation_multi_resource_action CASCADE;
+    CREATE TYPE types.simulation_multi_resource_action AS (
+        resource_ids uuid[],
+        create_tool_id uuid,
+        link_tool_id uuid
+    );
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
 DO $$
 DECLARE
     r RECORD;
 BEGIN
-    FOR r IN 
-        SELECT oidvectortypes(proargtypes) as sig 
-        FROM pg_proc 
+    FOR r IN
+        SELECT oidvectortypes(proargtypes) as sig
+        FROM pg_proc
         WHERE proname = 'api_patch_simulation_draft_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
@@ -20,16 +40,17 @@ END $$;
 CREATE OR REPLACE FUNCTION api_patch_simulation_draft_v4(
     profile_id uuid,
     input_draft_id uuid DEFAULT NULL,
-    name_id uuid DEFAULT NULL,
-    description_id uuid DEFAULT NULL,
-    flag_ids uuid[] DEFAULT NULL,
-    department_ids uuid[] DEFAULT NULL,
-    scenario_ids uuid[] DEFAULT NULL,
-    scenario_flag_ids uuid[] DEFAULT NULL,
-    scenario_position_ids uuid[] DEFAULT NULL,
-    scenario_rubric_ids uuid[] DEFAULT NULL,
-    scenario_time_limit_ids uuid[] DEFAULT NULL,
-    scenario_persona_ids uuid[] DEFAULT NULL,
+    group_id uuid DEFAULT NULL,
+    names types.simulation_resource_action DEFAULT NULL,
+    descriptions types.simulation_resource_action DEFAULT NULL,
+    flags types.simulation_multi_resource_action DEFAULT NULL,
+    departments types.simulation_multi_resource_action DEFAULT NULL,
+    scenarios types.simulation_multi_resource_action DEFAULT NULL,
+    scenario_flags types.simulation_multi_resource_action DEFAULT NULL,
+    scenario_positions types.simulation_multi_resource_action DEFAULT NULL,
+    scenario_rubrics types.simulation_multi_resource_action DEFAULT NULL,
+    scenario_time_limits types.simulation_multi_resource_action DEFAULT NULL,
+    scenario_personas types.simulation_multi_resource_action DEFAULT NULL,
     expected_version int DEFAULT 0
 )
 RETURNS TABLE (
@@ -44,12 +65,38 @@ DECLARE
     v_draft_id uuid;
     v_new_version int;
     v_draft_exists boolean := false;
-    v_profile_id uuid := profile_id;  -- This is profile_artifact.id
-    v_profiles_resource_id uuid;      -- This is profiles_resource.id (for FK)
-    v_group_id uuid;
+
+    v_profile_id uuid := profile_id;
+    v_profiles_resource_id uuid;
+    v_group_id uuid := group_id;
+
+    -- Extracted resource IDs
+    v_name_id uuid;
+    v_description_id uuid;
+    v_flag_ids uuid[];
+    v_department_ids uuid[];
+    v_scenario_ids uuid[];
+    v_scenario_flag_ids uuid[];
+    v_scenario_position_ids uuid[];
+    v_scenario_rubric_ids uuid[];
+    v_scenario_time_limit_ids uuid[];
+    v_scenario_persona_ids uuid[];
+
+    -- Tool-call logging
+    v_run_id uuid;
+    v_call_id uuid;
 BEGIN
-    -- Resolve profile_artifact.id to profiles_resource.id via junction table
-    -- profiles_drafts_connection has FK to profiles_resource, not profile_artifact
+    v_name_id := (names).resource_id;
+    v_description_id := (descriptions).resource_id;
+    v_flag_ids := COALESCE((flags).resource_ids, ARRAY[]::uuid[]);
+    v_department_ids := COALESCE((departments).resource_ids, ARRAY[]::uuid[]);
+    v_scenario_ids := COALESCE((scenarios).resource_ids, ARRAY[]::uuid[]);
+    v_scenario_flag_ids := COALESCE((scenario_flags).resource_ids, ARRAY[]::uuid[]);
+    v_scenario_position_ids := COALESCE((scenario_positions).resource_ids, ARRAY[]::uuid[]);
+    v_scenario_rubric_ids := COALESCE((scenario_rubrics).resource_ids, ARRAY[]::uuid[]);
+    v_scenario_time_limit_ids := COALESCE((scenario_time_limits).resource_ids, ARRAY[]::uuid[]);
+    v_scenario_persona_ids := COALESCE((scenario_personas).resource_ids, ARRAY[]::uuid[]);
+
     SELECT ppj.profiles_id INTO v_profiles_resource_id
     FROM profile_profiles_junction ppj
     WHERE ppj.profile_id = v_profile_id
@@ -59,286 +106,395 @@ BEGIN
         RAISE EXCEPTION 'No profiles_resource linked to profile_artifact: %', v_profile_id;
     END IF;
 
-    -- Validate resource IDs exist (error if missing and provided)
-    IF name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names_resource WHERE id = name_id) THEN
-        RAISE EXCEPTION 'Name resource not found: %', name_id;
-    END IF;
-    
-    IF description_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM descriptions_resource WHERE id = description_id) THEN
-        RAISE EXCEPTION 'Description resource not found: %', description_id;
+    -- Validate IDs
+    IF v_name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names_resource WHERE id = v_name_id) THEN
+        RAISE EXCEPTION 'Name resource not found: %', v_name_id;
     END IF;
 
-    IF flag_ids IS NOT NULL AND EXISTS (
-        SELECT 1
-        FROM unnest(flag_ids) AS fid
+    IF v_description_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM descriptions_resource WHERE id = v_description_id) THEN
+        RAISE EXCEPTION 'Description resource not found: %', v_description_id;
+    END IF;
+
+    IF EXISTS (
+        SELECT 1 FROM UNNEST(v_flag_ids) AS fid
         WHERE NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = fid)
     ) THEN
-        RAISE EXCEPTION 'Flag resource not found';
+        RAISE EXCEPTION 'One or more flag_ids not found';
     END IF;
 
-    IF scenario_flag_ids IS NOT NULL AND EXISTS (
-        SELECT 1
-        FROM unnest(scenario_flag_ids) AS scenario_flag_id
-        WHERE NOT EXISTS (SELECT 1 FROM scenario_flags_resource WHERE id = scenario_flag_id)
+    IF EXISTS (
+        SELECT 1 FROM UNNEST(v_department_ids) AS did
+        WHERE NOT EXISTS (SELECT 1 FROM departments_resource WHERE id = did)
     ) THEN
-        RAISE EXCEPTION 'Scenario flag resource not found';
+        RAISE EXCEPTION 'One or more department_ids not found';
     END IF;
 
-    IF scenario_position_ids IS NOT NULL AND EXISTS (
-        SELECT 1
-        FROM unnest(scenario_position_ids) AS scenario_position_id
-        WHERE NOT EXISTS (SELECT 1 FROM scenario_positions_resource WHERE id = scenario_position_id)
+    IF EXISTS (
+        SELECT 1 FROM UNNEST(v_scenario_ids) AS sid
+        WHERE NOT EXISTS (SELECT 1 FROM scenarios_resource WHERE id = sid)
     ) THEN
-        RAISE EXCEPTION 'Scenario position resource not found';
+        RAISE EXCEPTION 'One or more scenario_ids not found';
     END IF;
 
-    IF scenario_rubric_ids IS NOT NULL AND EXISTS (
-        SELECT 1
-        FROM unnest(scenario_rubric_ids) AS scenario_rubric_id
-        WHERE NOT EXISTS (SELECT 1 FROM scenario_rubrics_resource WHERE id = scenario_rubric_id)
+    IF EXISTS (
+        SELECT 1 FROM UNNEST(v_scenario_flag_ids) AS sid
+        WHERE NOT EXISTS (SELECT 1 FROM scenario_flags_resource WHERE id = sid)
     ) THEN
-        RAISE EXCEPTION 'Scenario rubric resource not found';
+        RAISE EXCEPTION 'One or more scenario_flag_ids not found';
     END IF;
 
-    IF scenario_time_limit_ids IS NOT NULL AND EXISTS (
-        SELECT 1
-        FROM unnest(scenario_time_limit_ids) AS scenario_time_limit_id
-        WHERE NOT EXISTS (SELECT 1 FROM scenario_time_limits_resource WHERE id = scenario_time_limit_id)
+    IF EXISTS (
+        SELECT 1 FROM UNNEST(v_scenario_position_ids) AS sid
+        WHERE NOT EXISTS (SELECT 1 FROM scenario_positions_resource WHERE id = sid)
     ) THEN
-        RAISE EXCEPTION 'Scenario time limit resource not found';
+        RAISE EXCEPTION 'One or more scenario_position_ids not found';
     END IF;
 
-    IF scenario_persona_ids IS NOT NULL AND EXISTS (
-        SELECT 1
-        FROM unnest(scenario_persona_ids) AS scenario_persona_id
-        WHERE NOT EXISTS (SELECT 1 FROM scenario_personas_resource WHERE id = scenario_persona_id)
+    IF EXISTS (
+        SELECT 1 FROM UNNEST(v_scenario_rubric_ids) AS sid
+        WHERE NOT EXISTS (SELECT 1 FROM scenario_rubrics_resource WHERE id = sid)
     ) THEN
-        RAISE EXCEPTION 'Scenario persona resource not found';
+        RAISE EXCEPTION 'One or more scenario_rubric_ids not found';
     END IF;
 
-    -- Try to update existing draft
+    IF EXISTS (
+        SELECT 1 FROM UNNEST(v_scenario_time_limit_ids) AS sid
+        WHERE NOT EXISTS (SELECT 1 FROM scenario_time_limits_resource WHERE id = sid)
+    ) THEN
+        RAISE EXCEPTION 'One or more scenario_time_limit_ids not found';
+    END IF;
+
+    IF EXISTS (
+        SELECT 1 FROM UNNEST(v_scenario_persona_ids) AS sid
+        WHERE NOT EXISTS (SELECT 1 FROM scenario_personas_resource WHERE id = sid)
+    ) THEN
+        RAISE EXCEPTION 'One or more scenario_persona_ids not found';
+    END IF;
+
+    -- Try update path first
     IF input_draft_id IS NOT NULL THEN
-        -- Get existing draft's group_id
-        SELECT group_id INTO v_group_id FROM view_drafts_entry WHERE id = input_draft_id;
-        
-        -- Create group if draft doesn't have one (shouldn't happen after migration, but safety check)
+        SELECT vde.group_id INTO v_group_id
+        FROM view_drafts_entry vde
+        WHERE vde.id = input_draft_id;
+
         IF v_group_id IS NULL THEN
             INSERT INTO groups_entry (created_at, updated_at, session_id)
-            VALUES (NOW(), NOW(), (SELECT id FROM view_sessions_entry WHERE view_sessions_entry.profile_id = v_profile_id AND view_sessions_entry.active = true ORDER BY created_at DESC LIMIT 1))
+            VALUES (
+                NOW(),
+                NOW(),
+                (SELECT id FROM view_sessions_entry
+                 WHERE view_sessions_entry.profile_id = v_profile_id
+                   AND view_sessions_entry.active = true
+                 ORDER BY created_at DESC
+                 LIMIT 1)
+            )
             RETURNING id INTO v_group_id;
         END IF;
-        
+
         UPDATE drafts_entry
         SET version = drafts_entry.version + 1,
-            updated_at = now(),
+            updated_at = NOW(),
             group_id = COALESCE(drafts_entry.group_id, v_group_id)
         WHERE id = input_draft_id
-          AND EXISTS (SELECT 1 FROM profiles_drafts_connection pdj WHERE pdj.draft_id = drafts_entry.id AND pdj.profiles_id = v_profiles_resource_id)
+          AND EXISTS (
+              SELECT 1
+              FROM profiles_drafts_connection pdc
+              WHERE pdc.draft_id = drafts_entry.id
+                AND pdc.profiles_id = v_profiles_resource_id
+          )
           AND drafts_entry.version = expected_version
         RETURNING id, version INTO v_draft_id, v_new_version;
-        
+
         IF v_draft_id IS NOT NULL THEN
             v_draft_exists := true;
-            
-            -- Delete old resource links
-            DELETE FROM names_drafts_connection WHERE names_drafts_connection.draft_id = v_draft_id;
-            DELETE FROM descriptions_drafts_connection WHERE descriptions_drafts_connection.draft_id = v_draft_id;
-            DELETE FROM flags_drafts_connection WHERE flags_drafts_connection.draft_id = v_draft_id;
-            DELETE FROM departments_drafts_connection WHERE departments_drafts_connection.draft_id = v_draft_id;
-            DELETE FROM scenarios_drafts_connection WHERE scenarios_drafts_connection.draft_id = v_draft_id;
-            DELETE FROM scenario_flags_drafts_connection WHERE scenario_flags_drafts_connection.draft_id = v_draft_id;
-            DELETE FROM scenario_positions_drafts_connection WHERE scenario_positions_drafts_connection.draft_id = v_draft_id;
-            DELETE FROM scenario_rubrics_drafts_connection WHERE scenario_rubrics_drafts_connection.draft_id = v_draft_id;
-            DELETE FROM scenario_time_limits_drafts_connection WHERE scenario_time_limits_drafts_connection.draft_id = v_draft_id;
-            DELETE FROM scenario_personas_drafts_connection WHERE scenario_personas_drafts_connection.draft_id = v_draft_id;
-
-            -- Insert new resource links
-            IF name_id IS NOT NULL THEN
-                INSERT INTO names_drafts_connection (draft_id, names_id, version)
-                VALUES (v_draft_id, name_id, v_new_version)
-                ON CONFLICT ON CONSTRAINT names_draft_pkey DO UPDATE SET version = v_new_version;
-            END IF;
-            
-            IF description_id IS NOT NULL THEN
-                INSERT INTO descriptions_drafts_connection (draft_id, descriptions_id, version)
-                VALUES (v_draft_id, description_id, v_new_version)
-                ON CONFLICT ON CONSTRAINT descriptions_draft_pkey DO UPDATE
-                SET version = v_new_version;
-            END IF;
-            
-            IF flag_ids IS NOT NULL THEN
-                DELETE FROM flags_drafts_connection WHERE flags_drafts_connection.draft_id = v_draft_id;
-                INSERT INTO flags_drafts_connection (draft_id, flags_id, version)
-                SELECT v_draft_id, fid, v_new_version
-                FROM UNNEST(flag_ids) AS fid
-                ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE
-                SET version = v_new_version;
-            END IF;
-
-            -- Handle array resources
-            IF department_ids IS NOT NULL THEN
-                DELETE FROM departments_drafts_connection WHERE departments_drafts_connection.draft_id = v_draft_id;
-                INSERT INTO departments_drafts_connection (draft_id, departments_id, version)
-                SELECT v_draft_id, dept_id, v_new_version
-                FROM UNNEST(department_ids) as dept_id
-                ON CONFLICT ON CONSTRAINT departments_draft_pkey DO UPDATE
-                SET version = v_new_version;
-            END IF;
-            
-            IF scenario_ids IS NOT NULL THEN
-                DELETE FROM scenarios_drafts_connection WHERE scenarios_drafts_connection.draft_id = v_draft_id;
-                INSERT INTO scenarios_drafts_connection (draft_id, scenarios_id, version)
-                SELECT v_draft_id, scenario_id, v_new_version
-                FROM UNNEST(scenario_ids) as scenario_id
-                ON CONFLICT ON CONSTRAINT scenarios_draft_pkey DO UPDATE
-                SET version = v_new_version;
-            END IF;
-
-            IF scenario_flag_ids IS NOT NULL THEN
-                DELETE FROM scenario_flags_drafts_connection WHERE scenario_flags_drafts_connection.draft_id = v_draft_id;
-                INSERT INTO scenario_flags_drafts_connection (draft_id, scenario_flags_id, version)
-                SELECT v_draft_id, scenario_flag_id, v_new_version
-                FROM UNNEST(scenario_flag_ids) as scenario_flag_id
-                ON CONFLICT ON CONSTRAINT scenario_flags_draft_pkey DO UPDATE
-                SET version = v_new_version;
-            END IF;
-
-            IF scenario_position_ids IS NOT NULL THEN
-                DELETE FROM scenario_positions_drafts_connection WHERE scenario_positions_drafts_connection.draft_id = v_draft_id;
-                INSERT INTO scenario_positions_drafts_connection (draft_id, scenario_positions_id, version)
-                SELECT v_draft_id, scenario_position_id, v_new_version
-                FROM UNNEST(scenario_position_ids) as scenario_position_id
-                ON CONFLICT ON CONSTRAINT scenario_positions_draft_pkey DO UPDATE
-                SET version = v_new_version;
-            END IF;
-
-            IF scenario_rubric_ids IS NOT NULL THEN
-                DELETE FROM scenario_rubrics_drafts_connection WHERE scenario_rubrics_drafts_connection.draft_id = v_draft_id;
-                INSERT INTO scenario_rubrics_drafts_connection (draft_id, scenario_rubrics_id, version)
-                SELECT v_draft_id, scenario_rubric_id, v_new_version
-                FROM UNNEST(scenario_rubric_ids) as scenario_rubric_id
-                ON CONFLICT ON CONSTRAINT scenario_rubrics_draft_pkey DO UPDATE
-                SET version = v_new_version;
-            END IF;
-
-            IF scenario_time_limit_ids IS NOT NULL THEN
-                DELETE FROM scenario_time_limits_drafts_connection WHERE scenario_time_limits_drafts_connection.draft_id = v_draft_id;
-                INSERT INTO scenario_time_limits_drafts_connection (draft_id, scenario_time_limits_id, version)
-                SELECT v_draft_id, scenario_time_limit_id, v_new_version
-                FROM UNNEST(scenario_time_limit_ids) as scenario_time_limit_id
-                ON CONFLICT ON CONSTRAINT scenario_time_limits_draft_pkey DO UPDATE
-                SET version = v_new_version;
-            END IF;
-
-            IF scenario_persona_ids IS NOT NULL THEN
-                DELETE FROM scenario_personas_drafts_connection WHERE scenario_personas_drafts_connection.draft_id = v_draft_id;
-                INSERT INTO scenario_personas_drafts_connection (draft_id, scenario_personas_id, version)
-                SELECT v_draft_id, scenario_persona_id, v_new_version
-                FROM UNNEST(scenario_persona_ids) as scenario_persona_id
-                ON CONFLICT ON CONSTRAINT scenario_personas_draft_pkey DO UPDATE
-                SET version = v_new_version;
-            END IF;
-
-            RETURN QUERY SELECT v_draft_id, v_new_version, v_draft_exists;
-            RETURN;
         END IF;
     END IF;
-    
-    -- Create new draft with group
-    -- First create a group for this draft
-    INSERT INTO groups_entry (created_at, updated_at, session_id)
-    VALUES (NOW(), NOW(), (SELECT id FROM view_sessions_entry WHERE view_sessions_entry.profile_id = v_profile_id AND view_sessions_entry.active = true ORDER BY created_at DESC LIMIT 1))
-    RETURNING id INTO v_group_id;
-    
-    -- Create new draft with group_id
-    INSERT INTO drafts_entry (artifact, group_id)
-    VALUES ('simulation'::artifact_type, v_group_id)
-    RETURNING id, version INTO v_draft_id, v_new_version;
 
-    -- Link profile to draft (using profiles_resource.id, not profile_artifact.id)
-    INSERT INTO profiles_drafts_connection (draft_id, profiles_id, version)
-    VALUES (v_draft_id, v_profiles_resource_id, v_new_version);
-    
-    -- Link resources to draft
-    IF name_id IS NOT NULL THEN
+    -- Create path (new draft or failed optimistic update)
+    IF v_draft_id IS NULL THEN
+        IF v_group_id IS NULL THEN
+            INSERT INTO groups_entry (created_at, updated_at, session_id)
+            VALUES (
+                NOW(),
+                NOW(),
+                (SELECT id FROM view_sessions_entry
+                 WHERE view_sessions_entry.profile_id = v_profile_id
+                   AND view_sessions_entry.active = true
+                 ORDER BY created_at DESC
+                 LIMIT 1)
+            )
+            RETURNING id INTO v_group_id;
+        END IF;
+
+        INSERT INTO drafts_entry (artifact, group_id)
+        VALUES ('simulation'::artifact_type, v_group_id)
+        RETURNING id, version INTO v_draft_id, v_new_version;
+
+        INSERT INTO profiles_drafts_connection (draft_id, profiles_id, version)
+        VALUES (v_draft_id, v_profiles_resource_id, v_new_version);
+    END IF;
+
+    -- Replace draft links
+    DELETE FROM names_drafts_connection WHERE draft_id = v_draft_id;
+    DELETE FROM descriptions_drafts_connection WHERE draft_id = v_draft_id;
+    DELETE FROM flags_drafts_connection WHERE draft_id = v_draft_id;
+    DELETE FROM departments_drafts_connection WHERE draft_id = v_draft_id;
+    DELETE FROM scenarios_drafts_connection WHERE draft_id = v_draft_id;
+    DELETE FROM scenario_flags_drafts_connection WHERE draft_id = v_draft_id;
+    DELETE FROM scenario_positions_drafts_connection WHERE draft_id = v_draft_id;
+    DELETE FROM scenario_rubrics_drafts_connection WHERE draft_id = v_draft_id;
+    DELETE FROM scenario_time_limits_drafts_connection WHERE draft_id = v_draft_id;
+    DELETE FROM scenario_personas_drafts_connection WHERE draft_id = v_draft_id;
+
+    IF v_name_id IS NOT NULL THEN
         INSERT INTO names_drafts_connection (draft_id, names_id, version)
-        VALUES (v_draft_id, name_id, v_new_version)
-        ON CONFLICT ON CONSTRAINT names_draft_pkey DO UPDATE
-        SET version = v_new_version;
+        VALUES (v_draft_id, v_name_id, v_new_version)
+        ON CONFLICT ON CONSTRAINT names_draft_pkey DO UPDATE SET version = v_new_version;
     END IF;
-    
-    IF description_id IS NOT NULL THEN
+
+    IF v_description_id IS NOT NULL THEN
         INSERT INTO descriptions_drafts_connection (draft_id, descriptions_id, version)
-        VALUES (v_draft_id, description_id, v_new_version)
-        ON CONFLICT ON CONSTRAINT descriptions_draft_pkey DO UPDATE
-        SET version = v_new_version;
-    END IF;
-    
-    IF flag_ids IS NOT NULL THEN
-        INSERT INTO flags_drafts_connection (draft_id, flags_id, version)
-        SELECT v_draft_id, fid, v_new_version
-        FROM UNNEST(flag_ids) AS fid
-        ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE
-        SET version = v_new_version;
+        VALUES (v_draft_id, v_description_id, v_new_version)
+        ON CONFLICT ON CONSTRAINT descriptions_draft_pkey DO UPDATE SET version = v_new_version;
     END IF;
 
-    -- Handle array resources
-    IF department_ids IS NOT NULL THEN
-        INSERT INTO departments_drafts_connection (draft_id, departments_id, version)
-        SELECT v_draft_id, dept_id, v_new_version
-        FROM UNNEST(department_ids) as dept_id
-        ON CONFLICT ON CONSTRAINT departments_draft_pkey DO UPDATE
-        SET version = v_new_version;
-    END IF;
-    
-    IF scenario_ids IS NOT NULL THEN
-        INSERT INTO scenarios_drafts_connection (draft_id, scenarios_id, version)
-        SELECT v_draft_id, scenario_id, v_new_version
-        FROM UNNEST(scenario_ids) as scenario_id
-        ON CONFLICT ON CONSTRAINT scenarios_draft_pkey DO UPDATE
-        SET version = v_new_version;
+    INSERT INTO flags_drafts_connection (draft_id, flags_id, version)
+    SELECT v_draft_id, fid, v_new_version
+    FROM UNNEST(v_flag_ids) fid
+    ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE SET version = v_new_version;
+
+    INSERT INTO departments_drafts_connection (draft_id, departments_id, version)
+    SELECT v_draft_id, did, v_new_version
+    FROM UNNEST(v_department_ids) did
+    ON CONFLICT ON CONSTRAINT departments_draft_pkey DO UPDATE SET version = v_new_version;
+
+    INSERT INTO scenarios_drafts_connection (draft_id, scenarios_id, version)
+    SELECT v_draft_id, sid, v_new_version
+    FROM UNNEST(v_scenario_ids) sid
+    ON CONFLICT ON CONSTRAINT scenarios_draft_pkey DO UPDATE SET version = v_new_version;
+
+    INSERT INTO scenario_flags_drafts_connection (draft_id, scenario_flags_id, version)
+    SELECT v_draft_id, sid, v_new_version
+    FROM UNNEST(v_scenario_flag_ids) sid
+    ON CONFLICT ON CONSTRAINT scenario_flags_draft_pkey DO UPDATE SET version = v_new_version;
+
+    INSERT INTO scenario_positions_drafts_connection (draft_id, scenario_positions_id, version)
+    SELECT v_draft_id, sid, v_new_version
+    FROM UNNEST(v_scenario_position_ids) sid
+    ON CONFLICT ON CONSTRAINT scenario_positions_draft_pkey DO UPDATE SET version = v_new_version;
+
+    INSERT INTO scenario_rubrics_drafts_connection (draft_id, scenario_rubrics_id, version)
+    SELECT v_draft_id, sid, v_new_version
+    FROM UNNEST(v_scenario_rubric_ids) sid
+    ON CONFLICT ON CONSTRAINT scenario_rubrics_draft_pkey DO UPDATE SET version = v_new_version;
+
+    INSERT INTO scenario_time_limits_drafts_connection (draft_id, scenario_time_limits_id, version)
+    SELECT v_draft_id, sid, v_new_version
+    FROM UNNEST(v_scenario_time_limit_ids) sid
+    ON CONFLICT ON CONSTRAINT scenario_time_limits_draft_pkey DO UPDATE SET version = v_new_version;
+
+    INSERT INTO scenario_personas_drafts_connection (draft_id, scenario_personas_id, version)
+    SELECT v_draft_id, sid, v_new_version
+    FROM UNNEST(v_scenario_persona_ids) sid
+    ON CONFLICT ON CONSTRAINT scenario_personas_draft_pkey DO UPDATE SET version = v_new_version;
+
+    -- Tool-call tracking: one run per draft patch
+    IF v_group_id IS NOT NULL THEN
+        v_run_id := uuidv7();
+        INSERT INTO runs_entry (id, input_tokens, output_tokens, cached_input_tokens, group_id, created_at, updated_at)
+        VALUES (v_run_id, 0, 0, 0, v_group_id, NOW(), NOW());
+
+        IF v_name_id IS NOT NULL THEN
+            IF (names).create_tool_id IS NOT NULL THEN
+                v_call_id := uuidv7();
+                INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+                VALUES (v_call_id, 'simulation_draft_create_names_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+                INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((names).create_tool_id, v_call_id);
+                INSERT INTO names_calls_connection (names_id, call_id) VALUES (v_name_id, v_call_id);
+            END IF;
+            IF (names).link_tool_id IS NOT NULL THEN
+                v_call_id := uuidv7();
+                INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+                VALUES (v_call_id, 'simulation_draft_link_names_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+                INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((names).link_tool_id, v_call_id);
+                INSERT INTO names_calls_connection (names_id, call_id) VALUES (v_name_id, v_call_id);
+            END IF;
+        END IF;
+
+        IF v_description_id IS NOT NULL THEN
+            IF (descriptions).create_tool_id IS NOT NULL THEN
+                v_call_id := uuidv7();
+                INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+                VALUES (v_call_id, 'simulation_draft_create_descriptions_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+                INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((descriptions).create_tool_id, v_call_id);
+                INSERT INTO descriptions_calls_connection (descriptions_id, call_id) VALUES (v_description_id, v_call_id);
+            END IF;
+            IF (descriptions).link_tool_id IS NOT NULL THEN
+                v_call_id := uuidv7();
+                INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+                VALUES (v_call_id, 'simulation_draft_link_descriptions_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+                INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((descriptions).link_tool_id, v_call_id);
+                INSERT INTO descriptions_calls_connection (descriptions_id, call_id) VALUES (v_description_id, v_call_id);
+            END IF;
+        END IF;
+
+        IF COALESCE(array_length(v_flag_ids, 1), 0) > 0 THEN
+            IF (flags).create_tool_id IS NOT NULL THEN
+                v_call_id := uuidv7();
+                INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+                VALUES (v_call_id, 'simulation_draft_create_flags_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+                INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((flags).create_tool_id, v_call_id);
+                INSERT INTO flags_calls_connection (flags_id, call_id)
+                SELECT fid, v_call_id FROM UNNEST(v_flag_ids) fid;
+            END IF;
+            IF (flags).link_tool_id IS NOT NULL THEN
+                v_call_id := uuidv7();
+                INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+                VALUES (v_call_id, 'simulation_draft_link_flags_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+                INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((flags).link_tool_id, v_call_id);
+                INSERT INTO flags_calls_connection (flags_id, call_id)
+                SELECT fid, v_call_id FROM UNNEST(v_flag_ids) fid;
+            END IF;
+        END IF;
+
+        IF COALESCE(array_length(v_department_ids, 1), 0) > 0 THEN
+            IF (departments).create_tool_id IS NOT NULL THEN
+                v_call_id := uuidv7();
+                INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+                VALUES (v_call_id, 'simulation_draft_create_departments_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+                INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((departments).create_tool_id, v_call_id);
+                INSERT INTO departments_calls_connection (departments_id, call_id)
+                SELECT did, v_call_id FROM UNNEST(v_department_ids) did;
+            END IF;
+            IF (departments).link_tool_id IS NOT NULL THEN
+                v_call_id := uuidv7();
+                INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+                VALUES (v_call_id, 'simulation_draft_link_departments_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+                INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((departments).link_tool_id, v_call_id);
+                INSERT INTO departments_calls_connection (departments_id, call_id)
+                SELECT did, v_call_id FROM UNNEST(v_department_ids) did;
+            END IF;
+        END IF;
+
+        IF COALESCE(array_length(v_scenario_ids, 1), 0) > 0 THEN
+            IF (scenarios).create_tool_id IS NOT NULL THEN
+                v_call_id := uuidv7();
+                INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+                VALUES (v_call_id, 'simulation_draft_create_scenarios_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+                INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((scenarios).create_tool_id, v_call_id);
+                INSERT INTO scenarios_calls_connection (scenarios_id, call_id)
+                SELECT sid, v_call_id FROM UNNEST(v_scenario_ids) sid;
+            END IF;
+            IF (scenarios).link_tool_id IS NOT NULL THEN
+                v_call_id := uuidv7();
+                INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+                VALUES (v_call_id, 'simulation_draft_link_scenarios_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+                INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((scenarios).link_tool_id, v_call_id);
+                INSERT INTO scenarios_calls_connection (scenarios_id, call_id)
+                SELECT sid, v_call_id FROM UNNEST(v_scenario_ids) sid;
+            END IF;
+        END IF;
+
+        IF COALESCE(array_length(v_scenario_flag_ids, 1), 0) > 0 THEN
+            IF (scenario_flags).create_tool_id IS NOT NULL THEN
+                v_call_id := uuidv7();
+                INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+                VALUES (v_call_id, 'simulation_draft_create_scenario_flags_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+                INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((scenario_flags).create_tool_id, v_call_id);
+                INSERT INTO scenario_flags_calls_connection (scenario_flags_id, call_id)
+                SELECT sid, v_call_id FROM UNNEST(v_scenario_flag_ids) sid;
+            END IF;
+            IF (scenario_flags).link_tool_id IS NOT NULL THEN
+                v_call_id := uuidv7();
+                INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+                VALUES (v_call_id, 'simulation_draft_link_scenario_flags_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+                INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((scenario_flags).link_tool_id, v_call_id);
+                INSERT INTO scenario_flags_calls_connection (scenario_flags_id, call_id)
+                SELECT sid, v_call_id FROM UNNEST(v_scenario_flag_ids) sid;
+            END IF;
+        END IF;
+
+        IF COALESCE(array_length(v_scenario_position_ids, 1), 0) > 0 THEN
+            IF (scenario_positions).create_tool_id IS NOT NULL THEN
+                v_call_id := uuidv7();
+                INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+                VALUES (v_call_id, 'simulation_draft_create_scenario_positions_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+                INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((scenario_positions).create_tool_id, v_call_id);
+                INSERT INTO scenario_positions_calls_connection (scenario_positions_id, call_id)
+                SELECT sid, v_call_id FROM UNNEST(v_scenario_position_ids) sid;
+            END IF;
+            IF (scenario_positions).link_tool_id IS NOT NULL THEN
+                v_call_id := uuidv7();
+                INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+                VALUES (v_call_id, 'simulation_draft_link_scenario_positions_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+                INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((scenario_positions).link_tool_id, v_call_id);
+                INSERT INTO scenario_positions_calls_connection (scenario_positions_id, call_id)
+                SELECT sid, v_call_id FROM UNNEST(v_scenario_position_ids) sid;
+            END IF;
+        END IF;
+
+        IF COALESCE(array_length(v_scenario_rubric_ids, 1), 0) > 0 THEN
+            IF (scenario_rubrics).create_tool_id IS NOT NULL THEN
+                v_call_id := uuidv7();
+                INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+                VALUES (v_call_id, 'simulation_draft_create_scenario_rubrics_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+                INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((scenario_rubrics).create_tool_id, v_call_id);
+                INSERT INTO scenario_rubrics_calls_connection (scenario_rubrics_id, call_id)
+                SELECT sid, v_call_id FROM UNNEST(v_scenario_rubric_ids) sid;
+            END IF;
+            IF (scenario_rubrics).link_tool_id IS NOT NULL THEN
+                v_call_id := uuidv7();
+                INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+                VALUES (v_call_id, 'simulation_draft_link_scenario_rubrics_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+                INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((scenario_rubrics).link_tool_id, v_call_id);
+                INSERT INTO scenario_rubrics_calls_connection (scenario_rubrics_id, call_id)
+                SELECT sid, v_call_id FROM UNNEST(v_scenario_rubric_ids) sid;
+            END IF;
+        END IF;
+
+        IF COALESCE(array_length(v_scenario_time_limit_ids, 1), 0) > 0 THEN
+            IF (scenario_time_limits).create_tool_id IS NOT NULL THEN
+                v_call_id := uuidv7();
+                INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+                VALUES (v_call_id, 'simulation_draft_create_scenario_time_limits_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+                INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((scenario_time_limits).create_tool_id, v_call_id);
+                INSERT INTO scenario_time_limits_calls_connection (scenario_time_limits_id, call_id)
+                SELECT sid, v_call_id FROM UNNEST(v_scenario_time_limit_ids) sid;
+            END IF;
+            IF (scenario_time_limits).link_tool_id IS NOT NULL THEN
+                v_call_id := uuidv7();
+                INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+                VALUES (v_call_id, 'simulation_draft_link_scenario_time_limits_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+                INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((scenario_time_limits).link_tool_id, v_call_id);
+                INSERT INTO scenario_time_limits_calls_connection (scenario_time_limits_id, call_id)
+                SELECT sid, v_call_id FROM UNNEST(v_scenario_time_limit_ids) sid;
+            END IF;
+        END IF;
+
+        IF COALESCE(array_length(v_scenario_persona_ids, 1), 0) > 0 THEN
+            IF (scenario_personas).create_tool_id IS NOT NULL THEN
+                v_call_id := uuidv7();
+                INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+                VALUES (v_call_id, 'simulation_draft_create_scenario_personas_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+                INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((scenario_personas).create_tool_id, v_call_id);
+                INSERT INTO personas_calls_connection (personas_id, call_id)
+                SELECT DISTINCT spr.persona_id, v_call_id
+                FROM scenario_personas_resource spr
+                WHERE spr.id = ANY(v_scenario_persona_ids);
+            END IF;
+            IF (scenario_personas).link_tool_id IS NOT NULL THEN
+                v_call_id := uuidv7();
+                INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+                VALUES (v_call_id, 'simulation_draft_link_scenario_personas_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+                INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((scenario_personas).link_tool_id, v_call_id);
+                INSERT INTO personas_calls_connection (personas_id, call_id)
+                SELECT DISTINCT spr.persona_id, v_call_id
+                FROM scenario_personas_resource spr
+                WHERE spr.id = ANY(v_scenario_persona_ids);
+            END IF;
+        END IF;
     END IF;
 
-    IF scenario_flag_ids IS NOT NULL THEN
-        INSERT INTO scenario_flags_drafts_connection (draft_id, scenario_flags_id, version)
-        SELECT v_draft_id, scenario_flag_id, v_new_version
-        FROM UNNEST(scenario_flag_ids) as scenario_flag_id
-        ON CONFLICT ON CONSTRAINT scenario_flags_draft_pkey DO UPDATE
-        SET version = v_new_version;
-    END IF;
-
-    IF scenario_position_ids IS NOT NULL THEN
-        INSERT INTO scenario_positions_drafts_connection (draft_id, scenario_positions_id, version)
-        SELECT v_draft_id, scenario_position_id, v_new_version
-        FROM UNNEST(scenario_position_ids) as scenario_position_id
-        ON CONFLICT ON CONSTRAINT scenario_positions_draft_pkey DO UPDATE
-        SET version = v_new_version;
-    END IF;
-
-    IF scenario_rubric_ids IS NOT NULL THEN
-        INSERT INTO scenario_rubrics_drafts_connection (draft_id, scenario_rubrics_id, version)
-        SELECT v_draft_id, scenario_rubric_id, v_new_version
-        FROM UNNEST(scenario_rubric_ids) as scenario_rubric_id
-        ON CONFLICT ON CONSTRAINT scenario_rubrics_draft_pkey DO UPDATE
-        SET version = v_new_version;
-    END IF;
-
-    IF scenario_time_limit_ids IS NOT NULL THEN
-        INSERT INTO scenario_time_limits_drafts_connection (draft_id, scenario_time_limits_id, version)
-        SELECT v_draft_id, scenario_time_limit_id, v_new_version
-        FROM UNNEST(scenario_time_limit_ids) as scenario_time_limit_id
-        ON CONFLICT ON CONSTRAINT scenario_time_limits_draft_pkey DO UPDATE
-        SET version = v_new_version;
-    END IF;
-
-    IF scenario_persona_ids IS NOT NULL THEN
-        INSERT INTO scenario_personas_drafts_connection (draft_id, scenario_personas_id, version)
-        SELECT v_draft_id, scenario_persona_id, v_new_version
-        FROM UNNEST(scenario_persona_ids) as scenario_persona_id
-        ON CONFLICT ON CONSTRAINT scenario_personas_draft_pkey DO UPDATE
-        SET version = v_new_version;
-    END IF;
-
-    RETURN QUERY SELECT v_draft_id, v_new_version, false;
+    RETURN QUERY SELECT v_draft_id, v_new_version, v_draft_exists;
 END;
 $$;

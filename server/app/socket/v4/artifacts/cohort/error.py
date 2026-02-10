@@ -1,16 +1,16 @@
 """Cohort error handler - listens to generate_*_error events and emits cohort-specific events."""
 
 import uuid
-from typing import Any, cast
+from typing import Any
 
 from fastapi import APIRouter
 
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
+from app.socket.v4.artifacts.cohort.types import CohortGenerationErrorEvent
 from app.sql.types import (
     ValidateCohortResourceErrorSqlParams,
-    ValidateCohortResourceErrorSqlRow,
 )
 from app.utils.sql_helper import execute_sql_typed
 
@@ -60,10 +60,7 @@ async def handle_cohorts_error(data: dict[str, Any]) -> None:
                     or [],  # SQL function expects non-null array
                     artifact_type="cohort",  # Always "cohort" for this handler
                 )
-                result = cast(
-                    ValidateCohortResourceErrorSqlRow,
-                    await execute_sql_typed(conn, SQL_PATH, params=params),
-                )
+                await execute_sql_typed(conn, SQL_PATH, params=params)
         except Exception:
             # SQL validation failed, but still emit error to client
             pass
@@ -91,7 +88,7 @@ async def handle_cohorts_error(data: dict[str, Any]) -> None:
 
 @server_router.post("/cohort_generation_error")
 async def cohort_generation_error_api(
-    request: dict[str, Any],
+    request: CohortGenerationErrorEvent,
 ) -> dict[str, bool]:
     """Server-to-client event: cohort generation error."""
     _ = request

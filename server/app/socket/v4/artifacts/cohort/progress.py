@@ -8,6 +8,7 @@ from fastapi import APIRouter
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
+from app.socket.v4.artifacts.cohort.types import CohortGenerationProgressEvent
 from app.sql.types import (
     ValidateCohortResourceProgressSqlParams,
 )
@@ -80,7 +81,7 @@ async def handle_cohorts_call_progress(data: dict[str, Any]) -> None:
 
 @server_router.post("/cohort_generation_progress")
 async def cohort_generation_progress_api(
-    request: dict[str, Any],
+    request: CohortGenerationProgressEvent,
 ) -> dict[str, bool]:
     """Server-to-client event: cohort generation progress."""
     _ = request

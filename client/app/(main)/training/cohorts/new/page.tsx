@@ -138,7 +138,6 @@ export default async function NewCohortPage({
       descriptions_search: q.descriptionSearch ?? null,
       simulation_search: q.simulationSearch ?? null,
       simulation_show_selected: q.simulationShowSelected ?? null,
-      current_simulation_ids: null, // Will be extracted from draft payload in SQL
       mcp: false,
     } as GetCohortIn["body"],
   };

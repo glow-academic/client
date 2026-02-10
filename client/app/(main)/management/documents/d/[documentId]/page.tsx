@@ -58,7 +58,7 @@ export async function generateMetadata(
     const document = await getDocumentDefault({
       body: { document_id: documentId, draft_id: null },
     });
-    const documentName = document?.resources?.current?.names?.[0]?.name;
+    const documentName = document?.names?.resource?.name;
     return {
       title: `${documentName || "Document"}`,
       description: `${documentName ? `${documentName} - ` : ""}Learning resource and educational document for teaching assistant training. Access course materials, instructional resources, and reference documents to support pedagogical development.`,
