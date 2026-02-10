@@ -31,10 +31,6 @@ type CreateDraftDescriptionsOut = OutputOf<
   "/api/v4/resources/descriptions",
   "post"
 >;
-type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
-type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
-type CreateDraftSettingsIn = InputOf<"/api/v4/resources/settings", "post">;
-type CreateDraftSettingsOut = OutputOf<"/api/v4/resources/settings", "post">;
 
 /** ---- Cached fetch used by both page + metadata (prevents double hit) ---- */
 const getDepartmentDefault = cache(
@@ -70,20 +66,6 @@ async function createDraftDescriptions(
 ): Promise<CreateDraftDescriptionsOut> {
   "use server";
   return api.post("/resources/descriptions", input);
-}
-
-async function createDraftFlags(
-  input: CreateDraftFlagsIn
-): Promise<CreateDraftFlagsOut> {
-  "use server";
-  return api.post("/resources/flags", input);
-}
-
-async function createDraftSettings(
-  input: CreateDraftSettingsIn
-): Promise<CreateDraftSettingsOut> {
-  "use server";
-  return api.post("/resources/settings", input);
 }
 
 async function patchDepartmentDraft(
@@ -153,8 +135,6 @@ export default async function NewDepartmentPage({
         patchDepartmentDraftAction={patchDepartmentDraft}
         createNamesAction={createDraftNames}
         createDescriptionsAction={createDraftDescriptions}
-        createFlagsAction={createDraftFlags}
-        createSettingsAction={createDraftSettings}
       />
     </div>
   );
@@ -164,12 +144,8 @@ export default async function NewDepartmentPage({
 export type {
   CreateDraftDescriptionsIn,
   CreateDraftDescriptionsOut,
-  CreateDraftFlagsIn,
-  CreateDraftFlagsOut,
   CreateDraftNamesIn,
   CreateDraftNamesOut,
-  CreateDraftSettingsIn,
-  CreateDraftSettingsOut,
   GetDepartmentIn,
   GetDepartmentOut,
   PatchDepartmentDraftIn,

@@ -94,7 +94,7 @@ async def save_parameter(
             # Create mode: check role and department permissions
             can_save_result = compute_can_create(
                 user_role=access_result.user_role,
-                department_ids=None,  # Will be validated when saving from draft
+                department_ids=request.departments.resource_ids,
             )
         else:
             # Update mode: full permission check including user department membership
@@ -112,9 +112,8 @@ async def save_parameter(
             )
 
         async with conn.transaction():
-            # Convert API request to SQL params (add profile_id from header)
-            params = SaveParameterSqlParams(
-                **request.model_dump(),
+            params = SaveParameterSqlParams.from_request(
+                request,
                 profile_id=profile_id,
             )
             sql_params = params.to_tuple()

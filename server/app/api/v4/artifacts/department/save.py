@@ -106,8 +106,8 @@ async def save_department(
             )
 
         async with conn.transaction():
-            params = SaveDepartmentSqlParams(
-                **request.model_dump(),
+            params = SaveDepartmentSqlParams.from_request(
+                request,
                 profile_id=profile_id,
             )
             sql_params = params.to_tuple()

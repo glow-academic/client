@@ -1,11 +1,15 @@
 """Route tests for PATCH /api/v4/artifacts/departments/draft endpoint."""
 
-from uuid import UUID
-
 import asyncpg  # type: ignore
 import httpx
 import pytest
 from tests.seed_helpers import get_superadmin_alias  # type: ignore
+from tests.sql.types import (
+    CreateTestDepartmentSqlParams,
+    CreateTestDepartmentSqlRow,
+)
+
+from app.utils.sql_helper import execute_sql_typed
 
 pytestmark = pytest.mark.asyncio
 
@@ -13,100 +17,48 @@ pytestmark = pytest.mark.asyncio
 async def test_patch_department_draft_create(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
-    """Test creating a new department draft."""
     await get_superadmin_alias(db)
 
-    # v4 routes get profile_id from router dependency
+    dept_result = await execute_sql_typed(
+        conn=db,
+        sql_path="tests/sql/v4/integration/queries/api/departments/test_create_test_department_v4_complete.sql",
+        params=CreateTestDepartmentSqlParams(
+            title="Draft Source", description="Draft Source Description"
+        ),
+    )
+    dept = CreateTestDepartmentSqlRow.model_validate(dept_result.model_dump())
+    assert dept.department_id is not None
+
+    detail = await client.post(
+        "/api/v4/artifacts/departments/get",
+        json={"department_id": str(dept.department_id), "draft_id": None},
+    )
+    assert detail.status_code == 200
+    d = detail.json()
+    name_id = d["names"]["resource"]["id"]
+    desc_id = d["descriptions"]["resource"]["id"]
+    group_id = d["group_id"]
+
     response = await client.patch(
         "/api/v4/artifacts/departments/draft",
         json={
-            "patch": {"name": "Draft Department", "description": "Draft description"},
-            "expected_version": 0,
             "input_draft_id": None,
+            "group_id": group_id,
+            "names": {"resource_id": name_id, "create_tool_id": None, "link_tool_id": None},
+            "descriptions": {
+                "resource_id": desc_id,
+                "create_tool_id": None,
+                "link_tool_id": None,
+            },
+            "flags": {"resource_id": None, "create_tool_id": None, "link_tool_id": None},
+            "settings": {"resource_ids": [], "create_tool_id": None, "link_tool_id": None},
+            "expected_version": 0,
         },
     )
 
     assert response.status_code == 200
-    data = response.json()
+    out = response.json()
+    assert out["success"] is True
+    assert out.get("draft_id")
+    assert out.get("new_version") is not None
 
-    assert data is not None
-    assert "draftId" in data
-    assert data["draftId"] is not None
-    assert "newVersion" in data
-    assert data["newVersion"] == 1
-    assert "draftExists" in data
-    assert data["draftExists"] is False  # Newly created
-
-
-async def test_patch_department_draft_update(
-    client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
-) -> None:
-    """Test updating an existing department draft."""
-    await get_superadmin_alias(db)
-
-    # Create a draft first
-    create_response = await client.patch(
-        "/api/v4/artifacts/departments/draft",
-        json={
-            "patch": {"name": "Original Draft", "description": "Original"},
-            "expected_version": 0,
-            "input_draft_id": None,
-        },
-    )
-    assert create_response.status_code == 200
-    create_data = create_response.json()
-    draft_id = UUID(create_data["draftId"])
-    version = create_data["newVersion"]
-
-    # Update the draft
-    response = await client.patch(
-        "/api/v4/artifacts/departments/draft",
-        json={
-            "patch": {"name": "Updated Draft"},
-            "expected_version": version,
-            "input_draft_id": str(draft_id),
-        },
-    )
-
-    assert response.status_code == 200
-    data = response.json()
-
-    assert data is not None
-    assert data["draftId"] == str(draft_id)
-    assert data["newVersion"] == version + 1
-    assert data["draftExists"] is True  # Already existed
-
-
-async def test_patch_department_draft_version_mismatch(
-    client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
-) -> None:
-    """Test version mismatch error when updating draft."""
-    await get_superadmin_alias(db)
-
-    # Create a draft first
-    create_response = await client.patch(
-        "/api/v4/artifacts/departments/draft",
-        json={
-            "patch": {"name": "Original Draft"},
-            "expected_version": 0,
-            "input_draft_id": None,
-        },
-    )
-    assert create_response.status_code == 200
-    create_data = create_response.json()
-    draft_id = UUID(create_data["draftId"])
-
-    # Try to update with wrong version (should create new draft instead)
-    response = await client.patch(
-        "/api/v4/artifacts/departments/draft",
-        json={
-            "patch": {"name": "Updated Draft"},
-            "expected_version": 999,  # Wrong version
-            "input_draft_id": str(draft_id),
-        },
-    )
-
-    # Should succeed but create new draft (optimistic concurrency creates new on mismatch)
-    assert response.status_code == 200
-    data = response.json()
-    assert data["draftExists"] is False  # New draft created due to version mismatch

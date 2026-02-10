@@ -1,8 +1,28 @@
 -- Unified save parameter function - handles both create (input_parameter_id = NULL) and update (input_parameter_id provided)
--- Accepts resource IDs directly (no raw text params)
--- Permission validation is handled in Python (permissions.py)
+-- Uses nested resource action composites with tool call tracking.
 
--- 1) Drop function first (breaks dependency on types)
+DO $$
+BEGIN
+    DROP TYPE IF EXISTS types.parameter_resource_action CASCADE;
+    CREATE TYPE types.parameter_resource_action AS (
+        resource_id uuid,
+        create_tool_id uuid,
+        link_tool_id uuid
+    );
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
+DO $$
+BEGIN
+    DROP TYPE IF EXISTS types.parameter_multi_resource_action CASCADE;
+    CREATE TYPE types.parameter_multi_resource_action AS (
+        resource_ids uuid[],
+        create_tool_id uuid,
+        link_tool_id uuid
+    );
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
 DO $$
 DECLARE
     r RECORD;
@@ -17,30 +37,15 @@ BEGIN
     END LOOP;
 END $$;
 
--- 2) Drop types WITHOUT CASCADE
-DROP TYPE IF EXISTS types.i_save_parameter_v4_field_connection;
-
--- 3) Recreate types
-CREATE TYPE types.i_save_parameter_v4_field_connection AS (
-    field_id uuid,
-    "default" boolean,
-    active boolean
-);
-
--- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_save_parameter_v4(
     profile_id uuid,
     group_id uuid,
     input_parameter_id uuid DEFAULT NULL,
-    -- Required single-select resources
-    name_id uuid DEFAULT NULL,
-    -- Optional single-select resources
-    description_id uuid DEFAULT NULL,
-    active_flag_id uuid DEFAULT NULL,
-    -- Optional multi-select resources
-    flag_ids uuid[] DEFAULT NULL,
-    department_ids uuid[] DEFAULT NULL,
-    field_connections types.i_save_parameter_v4_field_connection[] DEFAULT NULL
+    names types.parameter_resource_action DEFAULT NULL,
+    descriptions types.parameter_resource_action DEFAULT NULL,
+    flags types.parameter_multi_resource_action DEFAULT NULL,
+    departments types.parameter_multi_resource_action DEFAULT NULL,
+    fields types.parameter_multi_resource_action DEFAULT NULL
 )
 RETURNS TABLE (
     parameter_id uuid,
@@ -57,25 +62,33 @@ DECLARE
     v_profile_id uuid;
     v_input_parameter_id uuid;
     is_create boolean;
+
     v_name_id uuid;
     v_description_id uuid;
-    v_active_flag_id uuid;
     v_flag_ids uuid[];
     v_department_ids uuid[];
-    v_field_connections types.i_save_parameter_v4_field_connection[];
+    v_field_ids uuid[];
+
+    -- Denormalized booleans on parameters_resource
+    v_persona_parameter boolean := false;
+    v_document_parameter boolean := false;
+    v_scenario_parameter boolean := false;
+    v_video_parameter boolean := false;
+
+    -- Tool-call tracking
+    v_run_id uuid;
+    v_call_id uuid;
 BEGIN
-    -- Assign parameters to local variables
     v_profile_id := profile_id;
     v_group_id := group_id;
     v_input_parameter_id := input_parameter_id;
-    v_name_id := name_id;
-    v_description_id := description_id;
-    v_active_flag_id := active_flag_id;
-    v_flag_ids := COALESCE(flag_ids, ARRAY[]::uuid[]);
-    v_department_ids := COALESCE(department_ids, ARRAY[]::uuid[]);
-    v_field_connections := COALESCE(field_connections, ARRAY[]::types.i_save_parameter_v4_field_connection[]);
 
-    -- Validate required fields
+    v_name_id := (names).resource_id;
+    v_description_id := (descriptions).resource_id;
+    v_flag_ids := COALESCE((flags).resource_ids, ARRAY[]::uuid[]);
+    v_department_ids := COALESCE((departments).resource_ids, ARRAY[]::uuid[]);
+    v_field_ids := COALESCE((fields).resource_ids, ARRAY[]::uuid[]);
+
     IF v_group_id IS NULL THEN
         RAISE EXCEPTION 'group_id is required';
     END IF;
@@ -84,24 +97,23 @@ BEGIN
         RAISE EXCEPTION 'Name resource is required';
     END IF;
 
-    -- Determine if create or update
     is_create := (v_input_parameter_id IS NULL);
 
-    -- Create or UPDATE parameter_artifact first (outside CTE)
     IF is_create THEN
-        -- CREATE path
         INSERT INTO parameter_artifact (created_at, updated_at)
         VALUES (NOW(), NOW())
         RETURNING id INTO v_parameter_id;
     ELSE
-        -- UPDATE path
         v_parameter_id := v_input_parameter_id;
         UPDATE parameter_artifact
         SET updated_at = NOW()
         WHERE id = v_parameter_id;
+
+        IF NOT FOUND THEN
+            RAISE EXCEPTION 'Parameter not found: %', v_input_parameter_id;
+        END IF;
     END IF;
 
-    -- Validate resource IDs exist
     IF v_name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names_resource WHERE id = v_name_id) THEN
         RAISE EXCEPTION 'Name resource not found: %', v_name_id;
     END IF;
@@ -110,43 +122,187 @@ BEGIN
         RAISE EXCEPTION 'Description resource not found: %', v_description_id;
     END IF;
 
-    IF v_active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = v_active_flag_id) THEN
-        RAISE EXCEPTION 'Flag resource not found: %', v_active_flag_id;
+    IF EXISTS (
+        SELECT 1 FROM UNNEST(v_flag_ids) AS fid
+        WHERE NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = fid)
+    ) THEN
+        RAISE EXCEPTION 'One or more flag_ids not found';
     END IF;
 
-    -- Conditional: For update, remove old links first
+    IF EXISTS (
+        SELECT 1 FROM UNNEST(v_department_ids) AS did
+        WHERE NOT EXISTS (SELECT 1 FROM departments_resource WHERE id = did)
+    ) THEN
+        RAISE EXCEPTION 'One or more department_ids not found';
+    END IF;
+
+    IF EXISTS (
+        SELECT 1 FROM UNNEST(v_field_ids) AS fid
+        WHERE NOT EXISTS (SELECT 1 FROM fields_resource WHERE id = fid)
+    ) THEN
+        RAISE EXCEPTION 'One or more field_ids not found';
+    END IF;
+
+    -- Parameter-type flags for denormalized parameters_resource fields
+    SELECT EXISTS (
+        SELECT 1 FROM flags_resource f
+        WHERE f.id = ANY(v_flag_ids)
+          AND f.name IN ('parameter_persona', 'persona')
+    ) INTO v_persona_parameter;
+
+    SELECT EXISTS (
+        SELECT 1 FROM flags_resource f
+        WHERE f.id = ANY(v_flag_ids)
+          AND f.name IN ('parameter_document', 'document')
+    ) INTO v_document_parameter;
+
+    SELECT EXISTS (
+        SELECT 1 FROM flags_resource f
+        WHERE f.id = ANY(v_flag_ids)
+          AND f.name IN ('parameter_scenario', 'scenario')
+    ) INTO v_scenario_parameter;
+
+    SELECT EXISTS (
+        SELECT 1 FROM flags_resource f
+        WHERE f.id = ANY(v_flag_ids)
+          AND f.name IN ('parameter_video', 'video')
+    ) INTO v_video_parameter;
+
+    -- Update workflow semantics: replace active junctions for current artifact state.
     IF NOT is_create THEN
         DELETE FROM parameter_names_junction WHERE parameter_id = v_parameter_id;
         DELETE FROM parameter_descriptions_junction WHERE parameter_id = v_parameter_id;
         DELETE FROM parameter_departments_junction WHERE parameter_id = v_parameter_id;
         DELETE FROM parameter_fields_junction WHERE parameter_id = v_parameter_id;
-        -- Update existing active flag if it exists
-        UPDATE parameter_flags_junction SET
-            flag_id = COALESCE(v_active_flag_id, parameter_flags_junction.flag_id),
-            value = CASE WHEN v_active_flag_id IS NOT NULL THEN true ELSE false END
-        WHERE parameter_id = v_parameter_id;
+        DELETE FROM parameter_flags_junction WHERE parameter_id = v_parameter_id;
+
+        UPDATE parameter_parameters_junction
+        SET active = false
+        WHERE parameter_id = v_parameter_id
+          AND active = true;
     END IF;
 
-    -- Continue with parameter save using SQL (parameter already created/updated above)
+    -- Tool-call tracking: one run per save.
+    v_run_id := uuidv7();
+    INSERT INTO runs_entry (id, input_tokens, output_tokens, cached_input_tokens, group_id, created_at, updated_at)
+    VALUES (v_run_id, 0, 0, 0, v_group_id, NOW(), NOW());
+
+    IF v_name_id IS NOT NULL THEN
+        IF (names).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'parameter_save_create_names_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((names).create_tool_id, v_call_id);
+            INSERT INTO names_calls_connection (names_id, call_id) VALUES (v_name_id, v_call_id);
+        END IF;
+
+        IF (names).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'parameter_save_link_names_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((names).link_tool_id, v_call_id);
+            INSERT INTO names_calls_connection (names_id, call_id) VALUES (v_name_id, v_call_id);
+        END IF;
+    END IF;
+
+    IF v_description_id IS NOT NULL THEN
+        IF (descriptions).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'parameter_save_create_descriptions_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((descriptions).create_tool_id, v_call_id);
+            INSERT INTO descriptions_calls_connection (descriptions_id, call_id) VALUES (v_description_id, v_call_id);
+        END IF;
+
+        IF (descriptions).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'parameter_save_link_descriptions_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((descriptions).link_tool_id, v_call_id);
+            INSERT INTO descriptions_calls_connection (descriptions_id, call_id) VALUES (v_description_id, v_call_id);
+        END IF;
+    END IF;
+
+    IF COALESCE(array_length(v_flag_ids, 1), 0) > 0 THEN
+        IF (flags).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'parameter_save_create_flags_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((flags).create_tool_id, v_call_id);
+            INSERT INTO flags_calls_connection (flags_id, call_id)
+            SELECT fid, v_call_id FROM UNNEST(v_flag_ids) fid;
+        END IF;
+
+        IF (flags).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'parameter_save_link_flags_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((flags).link_tool_id, v_call_id);
+            INSERT INTO flags_calls_connection (flags_id, call_id)
+            SELECT fid, v_call_id FROM UNNEST(v_flag_ids) fid;
+        END IF;
+    END IF;
+
+    IF COALESCE(array_length(v_department_ids, 1), 0) > 0 THEN
+        IF (departments).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'parameter_save_create_departments_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((departments).create_tool_id, v_call_id);
+            INSERT INTO departments_calls_connection (departments_id, call_id)
+            SELECT did, v_call_id FROM UNNEST(v_department_ids) did;
+        END IF;
+
+        IF (departments).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'parameter_save_link_departments_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((departments).link_tool_id, v_call_id);
+            INSERT INTO departments_calls_connection (departments_id, call_id)
+            SELECT did, v_call_id FROM UNNEST(v_department_ids) did;
+        END IF;
+    END IF;
+
+    IF COALESCE(array_length(v_field_ids, 1), 0) > 0 THEN
+        IF (fields).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'parameter_save_create_fields_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((fields).create_tool_id, v_call_id);
+            INSERT INTO fields_calls_connection (fields_id, call_id)
+            SELECT fid, v_call_id FROM UNNEST(v_field_ids) fid;
+        END IF;
+
+        IF (fields).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'parameter_save_link_fields_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((fields).link_tool_id, v_call_id);
+            INSERT INTO fields_calls_connection (fields_id, call_id)
+            SELECT fid, v_call_id FROM UNNEST(v_field_ids) fid;
+        END IF;
+    END IF;
+
     RETURN QUERY
     WITH params AS (
         SELECT
             v_parameter_id AS parameter_id,
             v_name_id AS name_id,
             v_description_id AS description_id,
-            v_active_flag_id AS active_flag_id,
             v_flag_ids AS flag_ids,
             v_department_ids AS department_ids,
-            v_field_connections AS field_connections,
-            v_profile_id AS profile_id
+            v_field_ids AS field_ids,
+            v_profile_id AS profile_id,
+            v_persona_parameter AS persona_parameter,
+            v_document_parameter AS document_parameter,
+            v_scenario_parameter AS scenario_parameter,
+            v_video_parameter AS video_parameter
     ),
     user_profile AS (
         SELECT role, actor_name
         FROM view_user_profile_context
         WHERE profile_id = (SELECT profile_id FROM params)
     ),
-    -- Permission validation is now handled in Python (permissions.py)
-    -- See compute_can_create and compute_can_save functions
     actor_profile AS (
         SELECT
             x.profile_id,
@@ -154,57 +310,55 @@ BEGIN
         FROM params x
         CROSS JOIN user_profile up
     ),
-    -- Link parameter to name
     link_parameter_name AS (
         INSERT INTO parameter_names_junction (parameter_id, name_id, created_at)
-        SELECT
-            x.parameter_id,
-            x.name_id,
-            NOW()
+        SELECT x.parameter_id, x.name_id, NOW()
         FROM params x
         WHERE x.name_id IS NOT NULL
-        ON CONFLICT (parameter_id, name_id) DO NOTHING
+        ON CONFLICT ON CONSTRAINT parameter_names_pkey DO NOTHING
     ),
-    -- Link parameter to description
     link_parameter_description AS (
         INSERT INTO parameter_descriptions_junction (parameter_id, description_id, created_at)
-        SELECT
-            x.parameter_id,
-            x.description_id,
-            NOW()
+        SELECT x.parameter_id, x.description_id, NOW()
         FROM params x
         WHERE x.description_id IS NOT NULL
-        ON CONFLICT (parameter_id, description_id) DO NOTHING
+        ON CONFLICT ON CONSTRAINT parameter_descriptions_pkey DO NOTHING
     ),
-    -- Insert or UPDATE parameter active flag
-    insert_parameter_active_flag AS (
-        INSERT INTO parameter_flags_junction (parameter_id, flag_id, value, created_at)
-        SELECT x.parameter_id,
-            COALESCE(x.active_flag_id, f.id),
-            CASE WHEN x.active_flag_id IS NOT NULL THEN true ELSE false END,
-            NOW()
-        FROM params x
-        CROSS JOIN flags_resource f
-        WHERE f.name = 'parameter_active'
-        ON CONFLICT (parameter_id, flag_id) DO UPDATE SET
-            flag_id = COALESCE(EXCLUDED.flag_id, parameter_flags_junction.flag_id),
-            value = EXCLUDED.value
-    ),
-    -- Insert additional flag_ids (type flags like parameter_simulation, etc.)
-    insert_flag_ids AS (
+    -- Active flag is always present; true iff parameter_active was selected.
+    upsert_parameter_active_flag AS (
         INSERT INTO parameter_flags_junction (parameter_id, flag_id, value, created_at)
         SELECT
             x.parameter_id,
-            fid,
+            f.id,
+            EXISTS (
+                SELECT 1
+                FROM UNNEST(x.flag_ids) AS selected_flag_id
+                WHERE selected_flag_id = f.id
+            ) AS value,
+            NOW()
+        FROM params x
+        JOIN flags_resource f ON f.name = 'parameter_active'
+        ON CONFLICT ON CONSTRAINT parameter_flags_pkey DO UPDATE SET
+            value = EXCLUDED.value,
+            created_at = EXCLUDED.created_at
+    ),
+    -- Other flags: set selected flags to true (excluding the canonical active flag).
+    upsert_parameter_selected_flags AS (
+        INSERT INTO parameter_flags_junction (parameter_id, flag_id, value, created_at)
+        SELECT
+            x.parameter_id,
+            selected_flag_id,
             true,
             NOW()
         FROM params x
-        CROSS JOIN UNNEST(x.flag_ids) AS fid
-        WHERE COALESCE(array_length(x.flag_ids, 1), 0) > 0
-        ON CONFLICT (parameter_id, flag_id) DO UPDATE SET
-            value = true
+        CROSS JOIN UNNEST(x.flag_ids) AS selected_flag_id
+        WHERE selected_flag_id NOT IN (
+            SELECT id FROM flags_resource WHERE name = 'parameter_active'
+        )
+        ON CONFLICT ON CONSTRAINT parameter_flags_pkey DO UPDATE SET
+            value = true,
+            created_at = EXCLUDED.created_at
     ),
-    -- Link departments (old ones already deleted above if update)
     link_departments AS (
         INSERT INTO parameter_departments_junction (parameter_id, department_id, active, created_at)
         SELECT
@@ -215,72 +369,65 @@ BEGIN
         FROM params x
         CROSS JOIN UNNEST(x.department_ids) as dept_id
         WHERE COALESCE(array_length(x.department_ids, 1), 0) > 0
-        ON CONFLICT (parameter_id, department_id) DO UPDATE SET
+        ON CONFLICT ON CONSTRAINT parameter_departments_pkey DO UPDATE SET
             active = true
     ),
-    -- Expand field connections
-    field_connections_expanded AS (
-        SELECT
-            (x.field_connections[i]).field_id,
-            COALESCE((x.field_connections[i])."default", false) as conn_default,
-            COALESCE((x.field_connections[i]).active, true) as conn_active,
-            i as conn_order
-        FROM params x
-        CROSS JOIN generate_subscripts(x.field_connections, 1) AS i
-        WHERE array_length(x.field_connections, 1) > 0
-        AND (x.field_connections[i]).field_id IS NOT NULL
-    ),
-    ensure_one_default AS (
-        -- Ensure exactly one default: if none specified, set first one; if multiple, keep first
-        SELECT
-            conn_order,
-            CASE
-                WHEN conn_order = (
-                    SELECT MIN(conn_order)
-                    FROM field_connections_expanded
-                    WHERE conn_default = true
-                    LIMIT 1
-                ) THEN true
-                WHEN (SELECT COUNT(*) FROM field_connections_expanded WHERE conn_default = true) = 0
-                     AND conn_order = (SELECT MIN(conn_order) FROM field_connections_expanded)
-                THEN true
-                ELSE false
-            END as conn_default_fixed
-        FROM field_connections_expanded
-    ),
-    field_connections_fixed AS (
-        SELECT
-            fce.field_id,
-            COALESCE(eod.conn_default_fixed, false) as conn_default,
-            fce.conn_active
-        FROM field_connections_expanded fce
-        LEFT JOIN ensure_one_default eod ON eod.conn_order = fce.conn_order
-    ),
-    -- Link fields to parameter via parameter_fields_junction (old ones already deleted above if update)
     link_fields_to_parameter AS (
         INSERT INTO parameter_fields_junction (parameter_id, field_id, created_at)
         SELECT
             x.parameter_id,
-            fcf.field_id,
+            field_id,
             NOW()
         FROM params x
-        CROSS JOIN field_connections_fixed fcf
-        WHERE EXISTS (SELECT 1 FROM field_flags_junction fieldsf JOIN flags_resource fl ON fieldsf.flag_id = fl.id WHERE fieldsf.field_id = fcf.field_id AND fl.name = 'field_active' AND fieldsf.value = true)
-          AND fcf.conn_active = true
-        ON CONFLICT (parameter_id, field_id) DO NOTHING
+        CROSS JOIN UNNEST(x.field_ids) AS field_id
+        WHERE COALESCE(array_length(x.field_ids, 1), 0) > 0
+          AND EXISTS (
+              SELECT 1
+              FROM field_flags_junction ff
+              JOIN flags_resource fr ON fr.id = ff.flag_id
+              WHERE ff.field_id = field_id
+                AND fr.name = 'field_active'
+                AND ff.value = true
+          )
+        ON CONFLICT ON CONSTRAINT parameter_fields_pkey DO NOTHING
     ),
-    -- Sync linked resources with name/description
-    sync_artifact_resources AS (
-        UPDATE parameters_resource r
-        SET name = n.name,
-            description = d.description
-        FROM parameter_parameters_junction j
-        CROSS JOIN params p
-        LEFT JOIN names_resource n ON n.id = p.name_id
-        LEFT JOIN descriptions_resource d ON d.id = p.description_id
-        WHERE j.parameters_id = r.id
-          AND j.parameter_id = p.parameter_id
-        RETURNING r.id
+    create_new_resource AS (
+        INSERT INTO parameters_resource (
+            name,
+            description,
+            department_ids,
+            field_ids,
+            persona_parameter,
+            document_parameter,
+            scenario_parameter,
+            video_parameter,
+            active
+        )
+        SELECT
+            n.name,
+            d.description,
+            x.department_ids,
+            x.field_ids,
+            x.persona_parameter,
+            x.document_parameter,
+            x.scenario_parameter,
+            x.video_parameter,
+            EXISTS (
+                SELECT 1
+                FROM UNNEST(x.flag_ids) AS selected_flag_id
+                JOIN flags_resource f ON f.id = selected_flag_id
+                WHERE f.name = 'parameter_active'
+            )
+        FROM params x
+        LEFT JOIN names_resource n ON n.id = x.name_id
+        LEFT JOIN descriptions_resource d ON d.id = x.description_id
+        RETURNING id AS new_parameters_resource_id
+    ),
+    link_new_resource AS (
+        INSERT INTO parameter_parameters_junction (parameter_id, parameters_id, active)
+        SELECT p.parameter_id, cnr.new_parameters_resource_id, true
+        FROM params p
+        CROSS JOIN create_new_resource cnr
     )
     SELECT
         x.parameter_id AS parameter_id,

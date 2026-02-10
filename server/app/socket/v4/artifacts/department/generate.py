@@ -1,4 +1,4 @@
-"""Department generation handler - domain-based generation through unified pipeline."""
+"""Department generation handler - resource-based generation through unified pipeline."""
 
 import uuid
 from typing import Any
@@ -35,61 +35,44 @@ async def _generate_department_impl(
     profile_id: uuid.UUID,
 ) -> None:
     try:
-        # Validate domain_ids
-        if not data.domain_ids:
+        # Validate resource_types
+        if not data.resource_types:
             await emit_generation_error(
                 sid=sid,
                 artifact_type="department",
-                message="domain_ids must be provided",
+                message="resource_types must be provided",
                 resource_id=str(data.department_id) if data.department_id else None,
                 resource_type="department",
             )
             return
 
-        # Step 1: Fetch department data for domain → agent mapping
+        # Step 1: Fetch department data for resource -> agent mapping
         result = await get_department_websocket(
             profile_id=profile_id,
             department_id=data.department_id,
             draft_id=data.draft_id,
         )
 
-        # Build domain_id → agent_id mapping from result.domains
-        domain_to_agent: dict[uuid.UUID, uuid.UUID | None] = {}
-        if result.domains:
-            for domain in result.domains:
-                domain_to_agent[domain.domain_id] = domain.agent_id
-
-        # Build domain_id → resource_type mapping from result
-        domain_to_resource: dict[uuid.UUID | None, str] = {
-            result.name_domain_id: "names",
-            result.description_domain_id: "descriptions",
-            result.flag_domain_id: "flags",
-            result.settings_domain_id: "settings",
-        }
-        # Remove None key if present
-        domain_to_resource.pop(None, None)
-
-        # Derive resource_types from domain_ids
-        resource_types: list[str] = []
-        for did in data.domain_ids:
-            if did in domain_to_resource:
-                resource_types.append(domain_to_resource[did])
-
+        resource_types = [
+            rt for rt in data.resource_types if rt in DEPARTMENT_RESOURCE_TYPES
+        ]
         if not resource_types:
             await emit_generation_error(
                 sid=sid,
                 artifact_type="department",
-                message="No valid domain_ids provided",
+                message="No valid resource_types provided",
                 resource_id=str(data.department_id) if data.department_id else None,
                 resource_type="department",
             )
             return
 
-        # Get agent_id from the first valid domain_id
+        # Get agent_id from the first valid resource type
         agent_id: uuid.UUID | None = None
-        for did in data.domain_ids:
-            if did in domain_to_agent and domain_to_agent[did] is not None:
-                agent_id = domain_to_agent[did]
+        resource_agent_ids = result.resource_agent_ids or {}
+        for rt in resource_types:
+            aid = resource_agent_ids.get(rt)
+            if aid is not None:
+                agent_id = aid
                 break
 
         if not agent_id:

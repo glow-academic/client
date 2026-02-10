@@ -29,10 +29,6 @@ type CreateDraftDescriptionsOut = OutputOf<
   "/api/v4/resources/descriptions",
   "post"
 >;
-type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
-type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
-type CreateDraftSettingsIn = InputOf<"/api/v4/resources/settings", "post">;
-type CreateDraftSettingsOut = OutputOf<"/api/v4/resources/settings", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -63,14 +59,8 @@ export async function generateMetadata(
       } as GetDepartmentIn["body"],
     };
     const department = await getDepartment(input);
-    const nameResource = department?.resources?.current?.names?.[0] as
-      | { name?: string }
-      | undefined;
-    const descResource = department?.resources?.current?.descriptions?.[0] as
-      | { description?: string }
-      | undefined;
-    const deptName = nameResource?.name;
-    const deptDesc = descResource?.description;
+    const deptName = department?.names?.resource?.name;
+    const deptDesc = department?.descriptions?.resource?.description;
     return {
       title: `${deptName || "Department"} Department`,
       description: `${deptName ? `${deptName} - ` : ""}Academic department for teaching assistant training programs.${deptDesc ? ` ${deptDesc}` : ""} Manage department-specific settings and coordinate L&D programs across different academic units.`,
@@ -116,20 +106,6 @@ async function createDraftDescriptions(
 ): Promise<CreateDraftDescriptionsOut> {
   "use server";
   return api.post("/resources/descriptions", input);
-}
-
-async function createDraftFlags(
-  input: CreateDraftFlagsIn
-): Promise<CreateDraftFlagsOut> {
-  "use server";
-  return api.post("/resources/flags", input);
-}
-
-async function createDraftSettings(
-  input: CreateDraftSettingsIn
-): Promise<CreateDraftSettingsOut> {
-  "use server";
-  return api.post("/resources/settings", input);
 }
 
 /** ---- Server renders client with typed data and actions ---- */
@@ -188,8 +164,6 @@ export default async function DepartmentEditPage({
           patchDepartmentDraftAction={patchDepartmentDraft}
           createNamesAction={createDraftNames}
           createDescriptionsAction={createDraftDescriptions}
-          createFlagsAction={createDraftFlags}
-          createSettingsAction={createDraftSettings}
         />
       </div>
     );
@@ -218,12 +192,8 @@ export default async function DepartmentEditPage({
 export type {
   CreateDraftDescriptionsIn,
   CreateDraftDescriptionsOut,
-  CreateDraftFlagsIn,
-  CreateDraftFlagsOut,
   CreateDraftNamesIn,
   CreateDraftNamesOut,
-  CreateDraftSettingsIn,
-  CreateDraftSettingsOut,
   GetDepartmentIn,
   GetDepartmentOut,
   PatchDepartmentDraftIn,

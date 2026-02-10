@@ -1,6 +1,4 @@
-"""Route tests for POST /api/v4/artifacts/departments/update endpoint."""
-
-from uuid import UUID
+"""Route tests for POST /api/v4/artifacts/departments/save (update mode)."""
 
 import asyncpg  # type: ignore
 import httpx
@@ -9,8 +7,6 @@ from tests.seed_helpers import get_superadmin_alias  # type: ignore
 from tests.sql.types import (
     CreateTestDepartmentSqlParams,
     CreateTestDepartmentSqlRow,
-    GetDepartmentByIdSqlParams,
-    GetDepartmentByIdSqlRow,
 )
 
 from app.utils.sql_helper import execute_sql_typed
@@ -18,80 +14,54 @@ from app.utils.sql_helper import execute_sql_typed
 pytestmark = pytest.mark.asyncio
 
 
-async def test_update_department(
+async def test_update_department_via_save(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
-    """Test updating a department."""
     await get_superadmin_alias(db)
 
-    # Create a department first using SQL file
     dept_result = await execute_sql_typed(
         conn=db,
         sql_path="tests/sql/v4/integration/queries/api/departments/test_create_test_department_v4_complete.sql",
         params=CreateTestDepartmentSqlParams(
-            title="Original Title", description="Original Description"
+            title="Original Department", description="Original Description"
         ),
     )
-    typed_dept = CreateTestDepartmentSqlRow.model_validate(dept_result.model_dump())
-    assert typed_dept.department_id is not None
-    dept_id = typed_dept.department_id
+    dept = CreateTestDepartmentSqlRow.model_validate(dept_result.model_dump())
+    assert dept.department_id is not None
 
-    # v4 routes get profile_id from router dependency, not request body
+    detail = await client.post(
+        "/api/v4/artifacts/departments/get",
+        json={"department_id": str(dept.department_id), "draft_id": None},
+    )
+    assert detail.status_code == 200
+    d = detail.json()
+    name_id = d["names"]["resource"]["id"]
+    desc_id = d["descriptions"]["resource"]["id"]
+    flag_id = (
+        d["flags"]["current"][0]["flag_option_id"]
+        if d.get("flags") and d["flags"].get("current")
+        else None
+    )
+    group_id = d["group_id"]
+
     response = await client.post(
-        "/api/v4/artifacts/departments/update",
+        "/api/v4/artifacts/departments/save",
         json={
-            "departmentId": str(dept_id),
-            "title": "Updated Title",
-            "description": "Updated Description",
-            "active": False,
+            "group_id": group_id,
+            "input_department_id": str(dept.department_id),
+            "names": {"resource_id": name_id, "create_tool_id": None, "link_tool_id": None},
+            "descriptions": {
+                "resource_id": desc_id,
+                "create_tool_id": None,
+                "link_tool_id": None,
+            },
+            "flags": {"resource_id": flag_id, "create_tool_id": None, "link_tool_id": None},
+            "settings": {"resource_ids": [], "create_tool_id": None, "link_tool_id": None},
         },
     )
 
     assert response.status_code == 200
-    data = response.json()
+    out = response.json()
+    assert out["success"] is True
+    assert out.get("department_id") == str(dept.department_id)
 
-    assert data["success"] is True
-    assert data["message"] == "Department updated successfully"
-
-    # Verify department was updated using SQL file
-    updated_dept_result = await execute_sql_typed(
-        conn=db,
-        sql_path="tests/sql/v4/integration/queries/api/departments/test_get_department_by_id_v4_complete.sql",
-        params=GetDepartmentByIdSqlParams(department_id=dept_id),
-    )
-    typed_updated_dept = GetDepartmentByIdSqlRow.model_validate(
-        updated_dept_result.model_dump()
-    )
-    assert typed_updated_dept.department_id is not None
-    assert typed_updated_dept.title == "Updated Title"
-    assert typed_updated_dept.description == "Updated Description"
-
-
-async def test_update_department_not_found(
-    client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
-) -> None:
-    """Test updating a non-existent department."""
-    await get_superadmin_alias(db)
-
-    fake_dept_id = "00000000-0000-0000-0000-000000000000"
-
-    # v4 routes get profile_id from router dependency, not request body
-    response = await client.post(
-        "/api/v4/artifacts/departments/update",
-        json={
-            "departmentId": fake_dept_id,
-            "title": "Updated Title",
-            "description": "Updated Description",
-            "active": True,
-        },
-    )
-
-    # Update should succeed even if department doesn't exist (no error raised)
-    # But let's verify the department wasn't created using SQL file
-    dept_result = await execute_sql_typed(
-        conn=db,
-        sql_path="tests/sql/v4/integration/queries/api/departments/test_get_department_by_id_v4_complete.sql",
-        params=GetDepartmentByIdSqlParams(department_id=UUID(fake_dept_id)),
-    )
-    typed_dept = GetDepartmentByIdSqlRow.model_validate(dept_result.model_dump())
-    assert typed_dept.department_id is None

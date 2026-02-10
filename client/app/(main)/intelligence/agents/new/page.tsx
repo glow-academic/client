@@ -18,22 +18,6 @@ type SaveAgentIn = InputOf<"/api/v4/artifacts/agents/save", "post">;
 type SaveAgentOut = OutputOf<"/api/v4/artifacts/agents/save", "post">;
 type PatchAgentDraftIn = InputOf<"/api/v4/artifacts/agents/draft", "patch">;
 type PatchAgentDraftOut = OutputOf<"/api/v4/artifacts/agents/draft", "patch">;
-type CreateDraftReasoningLevelsIn = InputOf<
-  "/api/v4/resources/reasoning_levels",
-  "post"
->;
-type CreateDraftReasoningLevelsOut = OutputOf<
-  "/api/v4/resources/reasoning_levels",
-  "post"
->;
-type CreateDraftTemperatureLevelsIn = InputOf<
-  "/api/v4/resources/temperature_levels",
-  "post"
->;
-type CreateDraftTemperatureLevelsOut = OutputOf<
-  "/api/v4/resources/temperature_levels",
-  "post"
->;
 type CreateDraftVoicesIn = InputOf<"/api/v4/resources/voices", "post">;
 type CreateDraftVoicesOut = OutputOf<"/api/v4/resources/voices", "post">;
 
@@ -63,18 +47,6 @@ async function patchAgentDraft(input: PatchAgentDraftIn): Promise<PatchAgentDraf
   return api.patch("/artifacts/agents/draft", input);
 }
 
-
-async function createDraftReasoningLevels(input: CreateDraftReasoningLevelsIn): Promise<CreateDraftReasoningLevelsOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/reasoning_levels", input);
-}
-
-async function createDraftTemperatureLevels(input: CreateDraftTemperatureLevelsIn): Promise<CreateDraftTemperatureLevelsOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/temperature_levels", input);
-}
 
 async function createDraftVoices(input: CreateDraftVoicesIn): Promise<CreateDraftVoicesOut> {
   "use server";
@@ -112,9 +84,6 @@ export default async function NewAgentPage({
   // Inline server-side parsers for agent search params
   const agentSearchParams = {
     draftId: parseAsString,
-    descriptionSearch: parseAsString,
-    promptSearch: parseAsString,
-    instructionsSearch: parseAsString,
   };
   const loadAgentSearchParams = createLoader(agentSearchParams);
   const q = loadAgentSearchParams(searchParamsObj);
@@ -124,9 +93,6 @@ export default async function NewAgentPage({
     body: {
       agent_id: null,
       draft_id: q.draftId ?? null,
-      descriptions_search: q.descriptionSearch ?? null,
-      prompts_search: q.promptSearch ?? null,
-      instructions_search: q.instructionsSearch ?? null,
     } as GetAgentIn["body"],
   };
   const agentDetailDefault = await getAgent(input);
@@ -142,8 +108,6 @@ export default async function NewAgentPage({
         agentDetailDefault={agentDetailDefault}
         saveAgentAction={saveAgent}
         patchAgentDraftAction={patchAgentDraft}
-        createReasoningLevelsAction={createDraftReasoningLevels}
-        createTemperatureLevelsAction={createDraftTemperatureLevels}
         createVoicesAction={createDraftVoices}
       />
     </div>

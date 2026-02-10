@@ -10,7 +10,6 @@ The presentation layers transform internal data into consumer-specific formats.
 """
 
 import asyncio
-from dataclasses import dataclass
 from typing import Annotated, Any, cast
 from uuid import UUID
 
@@ -20,7 +19,6 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from app.api.v4.artifacts.parameter.permissions import (
     PARAMETER_FLAG_NAMES,
     PARAMETER_RESOURCES,
-    build_domain_data,
     compute_can_edit,
     compute_departments_required,
     compute_description_required,
@@ -36,13 +34,20 @@ from app.api.v4.artifacts.parameter.permissions import (
     has_access,
 )
 from app.api.v4.artifacts.parameter.types import (
-    DomainAgent,
-    GetParameterApiRequest,
     GetParameterApiResponse,
+    GetParameterApiRequest,
     GetParameterWebsocketResponse,
+    ParameterDepartmentSection,
+    ParameterDescriptionSection,
+    ParameterFieldSection,
     ParameterFlagConfig,
+    ParameterFlagSection,
+    ParameterInternalData,
+    ParameterNameSection,
     ParameterResourceBucket,
     ParameterResources,
+    ParameterWebsocketResources,
+    ParameterWebsocketViews,
 )
 from app.api.v4.permissions import select_agents_for_artifact
 from app.api.v4.resources.departments.get import get_departments_internal
@@ -76,49 +81,6 @@ QUERY1_SQL_PATH = "app/sql/v4/queries/parameters/get_parameter_access_complete.s
 QUERY2_SQL_PATH = "app/sql/v4/queries/parameters/get_parameter_ids_complete.sql"
 
 router = APIRouter()
-
-
-@dataclass
-class ParameterInternalData:
-    """Internal data from core parameter fetching (cacheable layer)."""
-
-    # Access/context
-    actor_name: str | None
-    parameter_exists: bool | None
-    can_edit: bool
-    disabled_reason: str | None
-    draft_version: int | None
-    group_id: UUID | None
-
-    # Domain mappings
-    domain_ids_map: dict[str, UUID | None]
-    agent_ids: dict[str, UUID | None]
-    domains_list: list[DomainAgent]
-
-    # Show/required flags
-    show_flags_map: dict[str, bool]
-    required_flags_map: dict[str, bool]
-
-    # Suggestions (resource -> list of suggestion IDs)
-    suggestions_map: dict[str, list[UUID]]
-
-    # Show AI generate flags
-    show_ai_generate_map: dict[str, bool]
-    basic_show_ai_generate: bool
-    fields_step_show_ai_generate: bool
-
-    # Domain data for modals
-    domain_data_list: list[Any]
-
-    # Resources payload
-    resources_payload: ParameterResources
-
-    # Per-resource group IDs (from draft MV)
-    resource_group_ids: dict[str, UUID | None]
-
-    # Per-resource tool IDs (from selected agents)
-    create_tool_ids_map: dict[str, UUID | None]
-    link_tool_ids_map: dict[str, UUID | None]
 
 
 async def get_parameter_internal(
@@ -200,6 +162,7 @@ async def get_parameter_internal(
     selected_name_id = ids_result.name_id
     selected_description_id = ids_result.description_id
     selected_active_flag_id = ids_result.active_flag_id
+    selected_flag_ids = ids_result.flag_ids or []
 
     selected_department_ids = ids_result.department_ids or []
     selected_field_ids = ids_result.field_ids or []
@@ -210,19 +173,12 @@ async def get_parameter_internal(
         if draft_item.description_ids:
             selected_description_id = draft_item.description_ids[0]
         if draft_item.flag_ids:
+            selected_flag_ids = draft_item.flag_ids
             selected_active_flag_id = draft_item.flag_ids[0]
         if draft_item.department_ids:
             selected_department_ids = draft_item.department_ids
         if draft_item.parameter_field_ids:
             selected_field_ids = draft_item.parameter_field_ids
-
-    resource_group_ids: dict[str, UUID | None] = {
-        "names": draft_item.group_id if draft_item else None,
-        "descriptions": draft_item.group_id if draft_item else None,
-        "flags": draft_item.group_id if draft_item else None,
-        "departments": draft_item.group_id if draft_item else None,
-        "fields": draft_item.group_id if draft_item else None,
-    }
 
     names_has_tools = ids_result.names_has_tools or False
 
@@ -252,18 +208,8 @@ async def get_parameter_internal(
                     link_tool_ids_map[resource] = candidate.link_tool_ids.get(resource)
                     break
 
-    domain_ids_map: dict[str, UUID | None] = {
-        "names": ids_result.name_domain_id,
-        "descriptions": ids_result.description_domain_id,
-        "flags": ids_result.flag_domain_id,
-        "departments": ids_result.departments_domain_id,
-        "fields": ids_result.fields_domain_id,
-    }
-
     def compute_show_ai_generate(resource: str) -> bool:
-        domain_id = domain_ids_map.get(resource)
-        agent_id = agent_ids.get(resource)
-        return domain_id is not None and agent_id is not None
+        return agent_ids.get(resource) is not None
 
     name_show_ai_generate = compute_show_ai_generate("names")
     description_show_ai_generate = compute_show_ai_generate("descriptions")
@@ -427,10 +373,6 @@ async def get_parameter_internal(
         "fields": compute_fields_required(),
     }
 
-    domain_data_list = build_domain_data(
-        domain_ids_map, show_flags_map, required_flags_map
-    )
-
     parameter_flags = [
         ParameterFlagConfig(
             key=derive_flag_key_and_label(flag.name)[0],
@@ -440,11 +382,19 @@ async def get_parameter_internal(
             flag_option_id=flag.id,
             show=show_flag,
             required=compute_flag_required(),
-            domain_id=domain_ids_map.get("flags"),
             generated=flag.generated,
         )
         for flag in flags
         if flag.id
+    ]
+    selected_flag_ids = list(
+        {
+            *selected_flag_ids,
+            *( [selected_active_flag_id] if selected_active_flag_id else [] ),
+        }
+    )
+    current_flags = [
+        f for f in parameter_flags if f.flag_option_id in set(selected_flag_ids)
     ]
 
     if parameter_id is None:
@@ -470,22 +420,11 @@ async def get_parameter_internal(
         current=ParameterResourceBucket(
             names=[name_resource] if name_resource else [],
             descriptions=[description_resource] if description_resource else [],
-            flags=[flag_resource] if flag_resource else [],
+            flags=current_flags,
             departments=department_resources or [],
             fields=field_resources or [],
         ),
     )
-
-    domains_list: list[DomainAgent] = []
-    for resource, domain_id in domain_ids_map.items():
-        if domain_id is not None:
-            domains_list.append(
-                DomainAgent(
-                    domain_id=domain_id,
-                    agent_id=agent_ids.get(resource),
-                    group_id=resource_group_ids.get(resource),
-                )
-            )
 
     show_ai_generate_map = {
         "names": name_show_ai_generate,
@@ -509,20 +448,19 @@ async def get_parameter_internal(
         disabled_reason=disabled_reason,
         draft_version=effective_draft_version,
         group_id=effective_group_id,
-        domain_ids_map=domain_ids_map,
         agent_ids=agent_ids,
-        domains_list=domains_list,
         show_flags_map=show_flags_map,
         required_flags_map=required_flags_map,
         suggestions_map=suggestions_map,
         show_ai_generate_map=show_ai_generate_map,
         basic_show_ai_generate=basic_show_ai_generate,
         fields_step_show_ai_generate=fields_step_show_ai_generate,
-        domain_data_list=domain_data_list,
         resources_payload=resources_payload,
-        resource_group_ids=resource_group_ids,
         create_tool_ids_map=create_tool_ids_map,
         link_tool_ids_map=link_tool_ids_map,
+        config_agent_resources=None,
+        config_model_resources=None,
+        config_provider_resources=None,
     )
 
 
@@ -540,15 +478,38 @@ async def get_parameter_websocket(
         bypass_cache=bypass_cache,
     )
 
+    draft_parameter = None
+    if draft_id:
+        pool = get_pool()
+        if pool:
+            async with pool.acquire() as conn:
+                draft_items = await get_draft_parameter_internal(
+                    conn=conn,
+                    draft_ids=[draft_id],
+                    bypass_cache=bypass_cache,
+                )
+                if draft_items:
+                    draft_parameter = draft_items[0]
+
+    current = data.resources_payload.current
+
     return GetParameterWebsocketResponse(
+        views=ParameterWebsocketViews(draft_parameter=draft_parameter)
+        if draft_parameter
+        else None,
+        resources=ParameterWebsocketResources(
+            names=current.names if current else None,
+            descriptions=current.descriptions if current else None,
+            flags=current.flags if current else None,
+            departments=current.departments if current else None,
+            fields=current.fields if current else None,
+            agents=data.config_agent_resources,
+            models=data.config_model_resources,
+            providers=data.config_provider_resources,
+            tools=None,
+        ),
+        resource_agent_ids=data.agent_ids,
         group_id=data.group_id,
-        name_domain_id=data.domain_ids_map.get("names"),
-        description_domain_id=data.domain_ids_map.get("descriptions"),
-        flag_domain_id=data.domain_ids_map.get("flags"),
-        departments_domain_id=data.domain_ids_map.get("departments"),
-        fields_domain_id=data.domain_ids_map.get("fields"),
-        domains=data.domains_list,
-        resources=data.resources_payload,
     )
 
 
@@ -558,13 +519,26 @@ async def get_parameter_client(
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
 ) -> GetParameterApiResponse:
-    """BFF response for HTTP endpoint/frontend."""
+    """Section-first BFF response for HTTP endpoint/frontend."""
     data = await get_parameter_internal(
         profile_id=profile_id,
         parameter_id=parameter_id,
         draft_id=draft_id,
         bypass_cache=bypass_cache,
     )
+
+    all_resources = data.resources_payload.resources
+    current = data.resources_payload.current
+
+    def section_common(resource_key: str) -> dict[str, Any]:
+        return {
+            "show": data.show_flags_map.get(resource_key, False),
+            "required": data.required_flags_map.get(resource_key, False),
+            "suggestions": data.suggestions_map.get(resource_key),
+            "show_ai_generate": data.show_ai_generate_map.get(resource_key, False),
+            "create_tool_id": data.create_tool_ids_map.get(resource_key),
+            "link_tool_id": data.link_tool_ids_map.get(resource_key),
+        }
 
     return GetParameterApiResponse(
         actor_name=data.actor_name,
@@ -573,47 +547,35 @@ async def get_parameter_client(
         disabled_reason=data.disabled_reason,
         draft_version=data.draft_version,
         group_id=data.group_id,
-        names_group_id=data.resource_group_ids.get("names"),
-        descriptions_group_id=data.resource_group_ids.get("descriptions"),
-        flags_group_id=data.resource_group_ids.get("flags"),
-        departments_group_id=data.resource_group_ids.get("departments"),
-        fields_group_id=data.resource_group_ids.get("fields"),
-        show_name=data.show_flags_map.get("names"),
-        name_domain_id=data.domain_ids_map.get("names"),
-        name_required=data.required_flags_map.get("names"),
-        name_suggestions=data.suggestions_map.get("names"),
-        name_show_ai_generate=data.show_ai_generate_map.get("names"),
-        show_description=data.show_flags_map.get("descriptions"),
-        description_domain_id=data.domain_ids_map.get("descriptions"),
-        description_required=data.required_flags_map.get("descriptions"),
-        description_suggestions=data.suggestions_map.get("descriptions"),
-        description_show_ai_generate=data.show_ai_generate_map.get("descriptions"),
-        show_flag=data.show_flags_map.get("flags"),
-        flag_domain_id=data.domain_ids_map.get("flags"),
-        flag_required=data.required_flags_map.get("flags"),
-        flag_show_ai_generate=data.show_ai_generate_map.get("flags"),
-        show_departments=data.show_flags_map.get("departments"),
-        departments_domain_id=data.domain_ids_map.get("departments"),
-        departments_required=data.required_flags_map.get("departments"),
-        department_suggestions=data.suggestions_map.get("departments"),
-        departments_show_ai_generate=data.show_ai_generate_map.get("departments"),
-        show_fields=data.show_flags_map.get("fields"),
-        fields_domain_id=data.domain_ids_map.get("fields"),
-        fields_required=data.required_flags_map.get("fields"),
-        field_suggestions=data.suggestions_map.get("fields"),
-        fields_show_ai_generate=data.show_ai_generate_map.get("fields"),
         basic_show_ai_generate=data.basic_show_ai_generate,
         fields_step_show_ai_generate=data.fields_step_show_ai_generate,
-        domain_data=data.domain_data_list,
-        resources=data.resources_payload,
-        name_create_tool_id=data.create_tool_ids_map.get("names"),
-        description_create_tool_id=data.create_tool_ids_map.get("descriptions"),
-        fields_create_tool_id=data.create_tool_ids_map.get("fields"),
-        name_link_tool_id=data.link_tool_ids_map.get("names"),
-        description_link_tool_id=data.link_tool_ids_map.get("descriptions"),
-        flag_link_tool_id=data.link_tool_ids_map.get("flags"),
-        departments_link_tool_id=data.link_tool_ids_map.get("departments"),
-        fields_link_tool_id=data.link_tool_ids_map.get("fields"),
+        names=ParameterNameSection(
+            **section_common("names"),
+            resource=(current.names[0] if current and current.names else None),
+            resources=all_resources.names if all_resources else [],
+        ),
+        descriptions=ParameterDescriptionSection(
+            **section_common("descriptions"),
+            resource=(
+                current.descriptions[0] if current and current.descriptions else None
+            ),
+            resources=all_resources.descriptions if all_resources else [],
+        ),
+        flags=ParameterFlagSection(
+            **section_common("flags"),
+            current=current.flags if current else [],
+            resources=all_resources.flags if all_resources else [],
+        ),
+        departments=ParameterDepartmentSection(
+            **section_common("departments"),
+            current=current.departments if current else [],
+            resources=all_resources.departments if all_resources else [],
+        ),
+        fields=ParameterFieldSection(
+            **section_common("fields"),
+            current=current.fields if current else [],
+            resources=all_resources.fields if all_resources else [],
+        ),
     )
 
 

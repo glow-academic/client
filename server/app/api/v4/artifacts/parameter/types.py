@@ -1,36 +1,73 @@
-"""Handcrafted types for parameter endpoints."""
+"""Handcrafted types for parameter artifact endpoints (section-first parity)."""
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
-from app.api.v4.types import DomainAgent, DomainData
+from app.api.v4.views.drafts.types import DraftParameterViewItem
 from app.sql.types import (
+    QGetAgentsV4Item,
     QGetDepartmentsV4Item,
     QGetDescriptionsV4Item,
+    QGetModelsV4Item,
     QGetNamesV4Item,
     QGetParameterFieldsV4Item,
+    QGetProvidersV4Item,
+    QGetToolsV4Item,
 )
-
-# Re-export for backwards compatibility
-__all__ = ["DomainAgent", "DomainData"]
 
 
 class ParameterFlagConfig(BaseModel):
     """Enriched flag config for direct client consumption."""
 
-    key: str  # e.g., "active", "simulation", "document"
-    label: str  # e.g., "Active", "Simulation", "Document"
+    key: str
+    label: str
     description: str | None = None
     icon_id: str | None = None
-    flag_option_id: UUID | None = None  # ID to use when enabling
+    flag_option_id: UUID | None = None
     show: bool = True
     required: bool = False
-    domain_id: UUID | None = None  # Domain ID for generation
     generated: bool | None = None
+
+
+class BaseResourceSection(BaseModel):
+    """Common metadata fields for resource sections."""
+
+    show: bool = False
+    required: bool = False
+    suggestions: list[UUID] | None = None
+    show_ai_generate: bool = False
+    create_tool_id: UUID | None = None
+    link_tool_id: UUID | None = None
+
+
+class ParameterNameSection(BaseResourceSection):
+    resource: QGetNamesV4Item | None = None
+    resources: list[QGetNamesV4Item] | None = None
+
+
+class ParameterDescriptionSection(BaseResourceSection):
+    resource: QGetDescriptionsV4Item | None = None
+    resources: list[QGetDescriptionsV4Item] | None = None
+
+
+class ParameterFlagSection(BaseResourceSection):
+    current: list[ParameterFlagConfig] | None = None
+    resources: list[ParameterFlagConfig] | None = None
+
+
+class ParameterDepartmentSection(BaseResourceSection):
+    current: list[QGetDepartmentsV4Item] | None = None
+    resources: list[QGetDepartmentsV4Item] | None = None
+
+
+class ParameterFieldSection(BaseResourceSection):
+    current: list[QGetParameterFieldsV4Item] | None = None
+    resources: list[QGetParameterFieldsV4Item] | None = None
 
 
 class GetParameterApiRequest(BaseModel):
@@ -38,118 +75,58 @@ class GetParameterApiRequest(BaseModel):
 
     parameter_id: UUID | None = None
     draft_id: UUID | None = None
-    # Search filters for resources
     field_search: str | None = None
-    # Show selected filters
     field_show_selected: bool | None = None
 
 
 class GetParameterApiResponse(BaseModel):
-    """Response model for get parameter endpoint."""
+    """Section-first client response for get parameter endpoint."""
 
-    # Required fields
     actor_name: str | None = None
     parameter_exists: bool | None = None
     can_edit: bool | None = None
     disabled_reason: str | None = None
     draft_version: int | None = None
-
-    # Group ID
     group_id: UUID | None = None
 
-    # Per-resource group IDs (from draft MV)
-    names_group_id: UUID | None = None
-    descriptions_group_id: UUID | None = None
-    flags_group_id: UUID | None = None
-    departments_group_id: UUID | None = None
-    fields_group_id: UUID | None = None
-
-    # Single-select resources: name
-    show_name: bool | None = None
-    name_domain_id: UUID | None = None
-    name_required: bool | None = None
-    name_suggestions: list[UUID] | None = None
-    name_show_ai_generate: bool | None = None
-
-    # Single-select resources: description
-    show_description: bool | None = None
-    description_domain_id: UUID | None = None
-    description_required: bool | None = None
-    description_suggestions: list[UUID] | None = None
-    description_show_ai_generate: bool | None = None
-
-    # Single-select resources: flag
-    show_flag: bool | None = None
-    flag_domain_id: UUID | None = None
-    flag_required: bool | None = None
-    flag_show_ai_generate: bool | None = None
-
-    # Multi-select resources: departments
-    show_departments: bool | None = None
-    departments_domain_id: UUID | None = None
-    departments_required: bool | None = None
-    department_suggestions: list[UUID] | None = None
-    departments_show_ai_generate: bool | None = None
-
-    # Multi-select resources: fields
-    show_fields: bool | None = None
-    fields_domain_id: UUID | None = None
-    fields_required: bool | None = None
-    field_suggestions: list[UUID] | None = None
-    fields_show_ai_generate: bool | None = None
-
-    # Step-level AI generation flags (for "Generate All Basic", etc.)
     basic_show_ai_generate: bool | None = None
     fields_step_show_ai_generate: bool | None = None
 
-    # Per-resource CREATE tool IDs (for AI generation)
-    name_create_tool_id: UUID | None = None
-    description_create_tool_id: UUID | None = None
-    fields_create_tool_id: UUID | None = None
+    names: ParameterNameSection | None = None
+    descriptions: ParameterDescriptionSection | None = None
+    flags: ParameterFlagSection | None = None
+    departments: ParameterDepartmentSection | None = None
+    fields: ParameterFieldSection | None = None
 
-    # Per-resource LINK tool IDs (for AI suggestions)
-    name_link_tool_id: UUID | None = None
-    description_link_tool_id: UUID | None = None
-    flag_link_tool_id: UUID | None = None
-    departments_link_tool_id: UUID | None = None
-    fields_link_tool_id: UUID | None = None
 
-    # Rich domain metadata for client display in modals
-    domain_data: list[DomainData] | None = None
+class ParameterWebsocketViews(BaseModel):
+    draft_parameter: DraftParameterViewItem | None = None
 
-    # Generic resources payload (full objects + current selections)
-    resources: ParameterResources | None = None
+
+class ParameterWebsocketResources(BaseModel):
+    """Hydrated selected resources for websocket generation context."""
+
+    names: list[QGetNamesV4Item] | None = None
+    descriptions: list[QGetDescriptionsV4Item] | None = None
+    flags: list[ParameterFlagConfig] | None = None
+    departments: list[QGetDepartmentsV4Item] | None = None
+    fields: list[QGetParameterFieldsV4Item] | None = None
+
+    # Config resources used by generation flows
+    agents: list[QGetAgentsV4Item] | None = None
+    models: list[QGetModelsV4Item] | None = None
+    providers: list[QGetProvidersV4Item] | None = None
+    tools: list[QGetToolsV4Item] | None = None
 
 
 class GetParameterWebsocketResponse(BaseModel):
-    """Minimal response for WebSocket handlers (get_parameter_websocket).
-
-    Contains only what's needed for AI generation:
-    - Domain IDs (for domain_to_resource mapping)
-    - Domains list (for agent_id lookup)
-    - Group ID (for existing group context)
-    - Resources (for Jinja template context)
-    """
-
+    views: ParameterWebsocketViews | None = None
+    resources: ParameterWebsocketResources
+    resource_agent_ids: dict[str, UUID | None] | None = None
     group_id: UUID | None = None
-
-    # Domain IDs for domain_to_resource mapping
-    name_domain_id: UUID | None = None
-    description_domain_id: UUID | None = None
-    flag_domain_id: UUID | None = None
-    departments_domain_id: UUID | None = None
-    fields_domain_id: UUID | None = None
-
-    # Domains mapping (domain_id -> agent_id) for server-side agent lookup
-    domains: list[DomainAgent] | None = None
-
-    # Resources for Jinja template context
-    resources: ParameterResources | None = None
 
 
 class ParameterResourceBucket(BaseModel):
-    """Generic resources bucket with full objects (always plural lists)."""
-
     names: list[QGetNamesV4Item] | None = None
     descriptions: list[QGetDescriptionsV4Item] | None = None
     flags: list[ParameterFlagConfig] | None = None
@@ -158,27 +135,49 @@ class ParameterResourceBucket(BaseModel):
 
 
 class ParameterResources(BaseModel):
-    """Full resources + current selections."""
-
     resources: ParameterResourceBucket | None = None
     current: ParameterResourceBucket | None = None
+
+
+@dataclass
+class ParameterInternalData:
+    actor_name: str | None
+    parameter_exists: bool | None
+    can_edit: bool
+    disabled_reason: str | None
+    draft_version: int | None
+    group_id: UUID | None
+
+    agent_ids: dict[str, UUID | None]
+    show_flags_map: dict[str, bool]
+    required_flags_map: dict[str, bool]
+    suggestions_map: dict[str, list[UUID]]
+    show_ai_generate_map: dict[str, bool]
+    basic_show_ai_generate: bool
+    fields_step_show_ai_generate: bool
+
+    resources_payload: ParameterResources
+    create_tool_ids_map: dict[str, UUID | None]
+    link_tool_ids_map: dict[str, UUID | None]
+
+    config_agent_resources: list[QGetAgentsV4Item] | None
+    config_model_resources: list[QGetModelsV4Item] | None
+    config_provider_resources: list[QGetProvidersV4Item] | None
 
 
 # ========== List Endpoint Types ==========
 
 
 class ListParameterApiParameter(BaseModel):
-    """Parameter type for list endpoint with computed permissions."""
-
     parameter_id: UUID | None = None
     name: str | None = None
     description: str | None = None
     active: bool | None = None
     department_ids: list[str] | None = None
     scenario_ids: list[UUID] | None = None
+    document_ids: list[UUID] | None = None
     num_items: int | None = None
     sample_items: list[str] | None = None
-    # Computed in Python
     can_edit: bool | None = None
     can_duplicate: bool | None = None
     can_delete: bool | None = None
@@ -186,8 +185,6 @@ class ListParameterApiParameter(BaseModel):
 
 
 class ListParameterApiScenario(BaseModel):
-    """Scenario type for list endpoint."""
-
     scenario_id: UUID | None = None
     name: str | None = None
     description: str | None = None
@@ -197,8 +194,6 @@ class ListParameterApiScenario(BaseModel):
 
 
 class ListParameterApiDepartment(BaseModel):
-    """Department type for list endpoint."""
-
     department_id: UUID | None = None
     name: str | None = None
     description: str | None = None
@@ -206,114 +201,168 @@ class ListParameterApiDepartment(BaseModel):
 
 
 class ListParameterApiResponse(BaseModel):
-    """Response model for list parameter endpoint with computed permissions."""
-
     actor_name: str | None = None
     parameters: list[ListParameterApiParameter] | None = None
     scenarios: list[ListParameterApiScenario] | None = None
     departments: list[ListParameterApiDepartment] | None = None
+    scenario_options: list[dict[str, str]] | None = None
+    document_options: list[dict[str, str]] | None = None
     total_count: int | None = None
 
 
-# ========== Save Endpoint Types ==========
+# ========== Save/Draft Resource Action Types ==========
 
 
-class FieldConnectionItem(BaseModel):
-    """Field connection with per-junction metadata."""
+class ParameterResourceAction(BaseModel):
+    resource_id: UUID | None = None
+    create_tool_id: UUID | None = None
+    link_tool_id: UUID | None = None
 
-    field_id: UUID
-    default: bool = False
-    active: bool = True
+
+class ParameterMultiResourceAction(BaseModel):
+    resource_ids: list[UUID] | None = None
+    create_tool_id: UUID | None = None
+    link_tool_id: UUID | None = None
 
 
 class SaveParameterApiRequest(BaseModel):
-    """Request model for save parameter endpoint - accepts resource IDs."""
+    group_id: UUID
+    input_parameter_id: UUID | None = None
 
-    # Context
-    group_id: UUID  # REQUIRED - which group to save to
-    input_parameter_id: UUID | None = None  # For update mode
-
-    # Required single-select resources
-    name_id: UUID  # REQUIRED
-
-    # Optional single-select resources
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-
-    # Optional multi-select resources
-    flag_ids: list[UUID] | None = None
-    department_ids: list[UUID] | None = None
-    field_connections: list[FieldConnectionItem] | None = None
+    names: ParameterResourceAction
+    descriptions: ParameterResourceAction
+    flags: ParameterMultiResourceAction
+    departments: ParameterMultiResourceAction
+    fields: ParameterMultiResourceAction
 
 
 class SaveParameterApiResponse(BaseModel):
-    """Response model for save parameter endpoint."""
-
     success: bool
     parameter_id: UUID
     message: str
 
 
 class SaveParameterSqlParams(BaseModel):
-    """SQL parameters for save parameter - accepts resource IDs."""
+    profile_id: UUID
+    group_id: UUID
+    input_parameter_id: UUID | None = None
+    names: ParameterResourceAction
+    descriptions: ParameterResourceAction
+    flags: ParameterMultiResourceAction
+    departments: ParameterMultiResourceAction
+    fields: ParameterMultiResourceAction
 
-    # Context
-    profile_id: UUID  # Added from header
-    group_id: UUID  # REQUIRED - which group to save to
-    input_parameter_id: UUID | None = None  # For update mode
-
-    # Required single-select resources
-    name_id: UUID  # REQUIRED
-
-    # Optional single-select resources
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-
-    # Optional multi-select resources
-    flag_ids: list[UUID] | None = None
-    department_ids: list[UUID] | None = None
-    field_connections: list[FieldConnectionItem] | None = None
+    @classmethod
+    def from_request(
+        cls, request: SaveParameterApiRequest, profile_id: UUID
+    ) -> "SaveParameterSqlParams":
+        return cls(profile_id=profile_id, **request.model_dump())
 
     def to_tuple(self) -> tuple:
-        """Convert to tuple for SQL execution."""
-        # Convert field_connections to a format SQL can handle
-        field_conn_tuples = None
-        if self.field_connections:
-            field_conn_tuples = [
-                (fc.field_id, fc.default, fc.active) for fc in self.field_connections
-            ]
+        def single(a: ParameterResourceAction) -> tuple:
+            return (a.resource_id, a.create_tool_id, a.link_tool_id)
+
+        def multi(a: ParameterMultiResourceAction) -> tuple:
+            return (a.resource_ids, a.create_tool_id, a.link_tool_id)
+
         return (
             self.profile_id,
             self.group_id,
             self.input_parameter_id,
-            self.name_id,
-            self.description_id,
-            self.active_flag_id,
-            self.flag_ids,
-            self.department_ids,
-            field_conn_tuples,
+            single(self.names),
+            single(self.descriptions),
+            multi(self.flags),
+            multi(self.departments),
+            multi(self.fields),
         )
 
 
 class SaveParameterSqlRow(BaseModel):
-    """SQL row for save parameter."""
-
     parameter_id: UUID | None = None
     actor_name: str | None = None
+
+
+class PatchParameterDraftApiRequest(BaseModel):
+    input_draft_id: UUID | None = None
+    group_id: UUID | None = None
+    names: ParameterResourceAction | None = None
+    descriptions: ParameterResourceAction | None = None
+    flags: ParameterMultiResourceAction | None = None
+    departments: ParameterMultiResourceAction | None = None
+    fields: ParameterMultiResourceAction | None = None
+    expected_version: int = 0
+
+
+class PatchParameterDraftApiResponse(BaseModel):
+    success: bool
+    draft_id: UUID
+    new_version: int
+    message: str
+
+
+class PatchParameterDraftSqlParams(BaseModel):
+    profile_id: UUID
+    input_draft_id: UUID | None = None
+    group_id: UUID | None = None
+    names: ParameterResourceAction
+    descriptions: ParameterResourceAction
+    flags: ParameterMultiResourceAction
+    departments: ParameterMultiResourceAction
+    fields: ParameterMultiResourceAction
+    expected_version: int = 0
+
+    @classmethod
+    def from_request(
+        cls, request: PatchParameterDraftApiRequest, profile_id: UUID
+    ) -> "PatchParameterDraftSqlParams":
+        empty_single = ParameterResourceAction()
+        empty_multi = ParameterMultiResourceAction()
+        return cls(
+            profile_id=profile_id,
+            input_draft_id=request.input_draft_id,
+            group_id=request.group_id,
+            names=request.names or empty_single,
+            descriptions=request.descriptions or empty_single,
+            flags=request.flags or empty_multi,
+            departments=request.departments or empty_multi,
+            fields=request.fields or empty_multi,
+            expected_version=request.expected_version,
+        )
+
+    def to_tuple(self) -> tuple:
+        def single(a: ParameterResourceAction) -> tuple:
+            return (a.resource_id, a.create_tool_id, a.link_tool_id)
+
+        def multi(a: ParameterMultiResourceAction) -> tuple:
+            return (a.resource_ids, a.create_tool_id, a.link_tool_id)
+
+        return (
+            self.profile_id,
+            self.input_draft_id,
+            self.group_id,
+            single(self.names),
+            single(self.descriptions),
+            multi(self.flags),
+            multi(self.departments),
+            multi(self.fields),
+            self.expected_version,
+        )
+
+
+class PatchParameterDraftSqlRow(BaseModel):
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
 
 
 # ========== Delete Endpoint Types ==========
 
 
 class DeleteParameterApiRequest(BaseModel):
-    """Request model for delete parameter endpoint."""
-
     parameter_id: UUID
 
 
 class DeleteParameterApiResponse(BaseModel):
-    """Response model for delete parameter endpoint."""
-
     success: bool
     message: str
 
@@ -322,39 +371,10 @@ class DeleteParameterApiResponse(BaseModel):
 
 
 class DuplicateParameterApiRequest(BaseModel):
-    """Request model for duplicate parameter endpoint."""
-
     parameter_id: UUID
 
 
 class DuplicateParameterApiResponse(BaseModel):
-    """Response model for duplicate parameter endpoint."""
-
     success: bool
     parameter_id: UUID
-    message: str
-
-
-# ========== Draft Endpoint Types ==========
-
-
-class PatchParameterDraftApiRequest(BaseModel):
-    """Request model for patch parameter draft endpoint."""
-
-    input_draft_id: UUID | None = None
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    flag_ids: list[UUID] | None = None
-    department_ids: list[UUID] | None = None
-    field_ids: list[UUID] | None = None
-    expected_version: int = 0
-
-
-class PatchParameterDraftApiResponse(BaseModel):
-    """Response model for patch parameter draft endpoint."""
-
-    success: bool
-    draft_id: UUID
-    new_version: int
     message: str

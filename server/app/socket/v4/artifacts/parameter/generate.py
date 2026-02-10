@@ -18,7 +18,6 @@ from fastapi import APIRouter
 from app.api.v4.artifacts.parameter.get import get_parameter_websocket
 from app.api.v4.artifacts.parameter.types import (
     GetParameterWebsocketResponse,
-    ParameterResourceBucket,
 )
 from app.infra.v4.generation import convert_tools_to_dict, render_developer_instructions
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
@@ -103,17 +102,9 @@ def _build_parameter_jinja_context(
     response: GetParameterWebsocketResponse, resource_types: list[str]
 ) -> dict[str, Any]:
     """Build Jinja context from parameter websocket response."""
-
-    if response.resources and response.resources.resources:
-        resources = response.resources.resources.model_dump()
-        current = (
-            response.resources.current.model_dump()
-            if response.resources.current
-            else ParameterResourceBucket().model_dump()
-        )
-        resources["current"] = current
-        return resources
-    return {"current": ParameterResourceBucket().model_dump()}
+    if response.resources:
+        return response.resources.model_dump()
+    return {}
 
 
 async def _parameter_generate_impl(
@@ -122,7 +113,7 @@ async def _parameter_generate_impl(
     """Handle parameter generation with all business logic.
 
     This function:
-    1. Validates domain_ids and derives resource_types + agent_id
+    1. Validates resource_types and resolves agent_id
     2. Fetches parameter data via internal function for seed nodes
     3. Expands resources via tree traversal
     4. Calls prepare_parameter_generation SQL (rate limit, group/run, context)
@@ -131,13 +122,12 @@ async def _parameter_generate_impl(
     7. Emits simplified payload to generate_artifact handler
     """
     try:
-        # Validate domain_ids
-        if not data.domain_ids:
+        if not data.resource_types:
             await emit_to_internal(
                 "generate_call_error",
                 GenerateErrorApiRequest(
                     sid=sid,
-                    error_message="domain_ids must be provided",
+                    error_message="resource_types must be provided",
                     artifact_type="parameter",
                     group_id=None,
                     resource_type="parameter",
@@ -161,49 +151,13 @@ async def _parameter_generate_impl(
             return
 
         # Step 1: Fetch parameter data for seed nodes using websocket function
-        # This gives us the domains mapping to look up agent_ids
+        # This gives us resource_agent_ids to look up agent IDs
         result = await get_parameter_websocket(
             profile_id=profile_id,
             parameter_id=data.parameter_id,
             draft_id=data.draft_id,
         )
-
-        # Build domain_id -> agent_id mapping from result.domains
-        domain_to_agent: dict[uuid.UUID, uuid.UUID | None] = {}
-        if result.domains:
-            for domain in result.domains:
-                domain_to_agent[domain.domain_id] = domain.agent_id
-
-        # Build domain_id -> resource_type mapping from result
-        domain_to_resource: dict[uuid.UUID | None, str] = {
-            result.name_domain_id: "names",
-            result.description_domain_id: "descriptions",
-            result.flag_domain_id: "flags",
-            result.departments_domain_id: "departments",
-            result.fields_domain_id: "fields",
-        }
-        # Remove None key if present
-        domain_to_resource.pop(None, None)
-
-        # Derive resource_types from domain_ids (internal use only)
-        resource_types: list[str] = []
-        for did in data.domain_ids:
-            if did in domain_to_resource:
-                resource_types.append(domain_to_resource[did])
-
-        if not resource_types:
-            await emit_to_internal(
-                "generate_call_error",
-                GenerateErrorApiRequest(
-                    sid=sid,
-                    error_message="No valid domain_ids provided",
-                    artifact_type="parameter",
-                    group_id=None,
-                    resource_type="parameter",
-                ),
-                sid=sid,
-            )
-            return
+        resource_types = data.resource_types
 
         invalid_types = [
             rt for rt in resource_types if rt not in PARAMETER_RESOURCE_TYPES
@@ -222,11 +176,13 @@ async def _parameter_generate_impl(
             )
             return
 
-        # Get agent_id from the first valid domain_id
+        # Get agent_id from the first requested resource_type
         agent_id: uuid.UUID | None = None
-        for did in data.domain_ids:
-            if did in domain_to_agent and domain_to_agent[did] is not None:
-                agent_id = domain_to_agent[did]
+        resource_agent_ids = result.resource_agent_ids or {}
+        for rt in resource_types:
+            aid = resource_agent_ids.get(rt)
+            if aid is not None:
+                agent_id = aid
                 break
 
         if not agent_id:
@@ -234,7 +190,7 @@ async def _parameter_generate_impl(
                 "generate_call_error",
                 GenerateErrorApiRequest(
                     sid=sid,
-                    error_message="No agent found for the requested domains",
+                    error_message="No agent found for requested resource_types",
                     artifact_type="parameter",
                     group_id=None,
                     resource_type="parameter",
@@ -259,7 +215,7 @@ async def _parameter_generate_impl(
                 )
 
         # Access resources from nested structure
-        resources_bucket = result.resources.resources if result.resources else None
+        resources_bucket = result.resources
 
         if resources_bucket and resources_bucket.names:
             for name in resources_bucket.names:

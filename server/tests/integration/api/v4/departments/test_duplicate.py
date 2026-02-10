@@ -39,22 +39,22 @@ async def test_duplicate_department(
     # v4 routes get profile_id from router dependency, not request body
     response = await client.post(
         "/api/v4/artifacts/departments/duplicate",
-        json={"departmentId": str(dept_id)},
+        json={"department_id": str(dept_id)},
     )
 
     assert response.status_code == 200
     data = response.json()
 
     assert data["success"] is True
-    assert "departmentId" in data
-    assert data["departmentId"] != str(dept_id)  # New department ID
+    assert "department_id" in data
+    assert data["department_id"] != str(dept_id)  # New department ID
     assert "duplicated successfully" in data["message"].lower()
 
     # Verify duplicate was created using SQL file
     duplicate_result = await execute_sql_typed(
         conn=db,
         sql_path="tests/sql/v4/integration/queries/api/departments/test_get_department_by_id_v4_complete.sql",
-        params=GetDepartmentByIdSqlParams(department_id=UUID(data["departmentId"])),
+        params=GetDepartmentByIdSqlParams(department_id=UUID(data["department_id"])),
     )
     typed_duplicate = GetDepartmentByIdSqlRow.model_validate(
         duplicate_result.model_dump()
@@ -76,7 +76,7 @@ async def test_duplicate_department_not_found(
     # v4 routes get profile_id from router dependency, not request body
     response = await client.post(
         "/api/v4/artifacts/departments/duplicate",
-        json={"departmentId": fake_dept_id},
+        json={"department_id": fake_dept_id},
     )
 
     assert response.status_code == 404

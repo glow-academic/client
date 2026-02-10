@@ -20,22 +20,6 @@ type SaveAgentOut = OutputOf<"/api/v4/artifacts/agents/save", "post">;
 // Prompts delete removed - no prompts delete functionality needed
 type PatchAgentDraftIn = InputOf<"/api/v4/artifacts/agents/draft", "patch">;
 type PatchAgentDraftOut = OutputOf<"/api/v4/artifacts/agents/draft", "patch">;
-type CreateDraftReasoningLevelsIn = InputOf<
-  "/api/v4/resources/reasoning_levels",
-  "post"
->;
-type CreateDraftReasoningLevelsOut = OutputOf<
-  "/api/v4/resources/reasoning_levels",
-  "post"
->;
-type CreateDraftTemperatureLevelsIn = InputOf<
-  "/api/v4/resources/temperature_levels",
-  "post"
->;
-type CreateDraftTemperatureLevelsOut = OutputOf<
-  "/api/v4/resources/temperature_levels",
-  "post"
->;
 type CreateDraftVoicesIn = InputOf<"/api/v4/resources/voices", "post">;
 type CreateDraftVoicesOut = OutputOf<"/api/v4/resources/voices", "post">;
 type CreateDraftPromptsIn = InputOf<"/api/v4/resources/prompts", "post">;
@@ -68,8 +52,8 @@ export async function generateMetadata(
     };
     const agent = await getAgent(input);
     return {
-      title: `${agent?.name || "Agent"} Agent`,
-      description: `${agent?.name ? `${agent.name} - ` : ""}AI agent configuration for teaching assistant training simulations.${agent?.description ? ` ${agent.description}` : ""} Customize intelligent agents to power student personas and enhance simulation-based learning experiences.`,
+      title: `${agent?.names?.resource?.name || "Agent"} Agent`,
+      description: `${agent?.names?.resource?.name ? `${agent.names.resource.name} - ` : ""}AI agent configuration for teaching assistant training simulations.${agent?.descriptions?.resource?.description ? ` ${agent.descriptions.resource.description}` : ""} Customize intelligent agents to power student personas and enhance simulation-based learning experiences.`,
     };
   } catch {
     // Fall through to default metadata
@@ -98,22 +82,6 @@ async function patchAgentDraft(
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.patch("/artifacts/agents/draft", input);
-}
-
-async function createDraftReasoningLevels(
-  input: CreateDraftReasoningLevelsIn
-): Promise<CreateDraftReasoningLevelsOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/reasoning_levels", input);
-}
-
-async function createDraftTemperatureLevels(
-  input: CreateDraftTemperatureLevelsIn
-): Promise<CreateDraftTemperatureLevelsOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/temperature_levels", input);
 }
 
 async function createDraftVoices(
@@ -158,9 +126,6 @@ export default async function AgentEditPage({
   // Inline server-side parsers for agent search params
   const agentSearchParams = {
     draftId: parseAsString,
-    descriptionSearch: parseAsString,
-    promptSearch: parseAsString,
-    instructionsSearch: parseAsString,
   };
   const loadAgentSearchParams = createLoader(agentSearchParams);
   const q = loadAgentSearchParams(searchParamsObj);
@@ -171,9 +136,6 @@ export default async function AgentEditPage({
       body: {
         agent_id: agentId,
         draft_id: q.draftId ?? null,
-        descriptions_search: q.descriptionSearch ?? null,
-        prompts_search: q.promptSearch ?? null,
-        instructions_search: q.instructionsSearch ?? null,
       } as GetAgentIn["body"],
     };
     const agentDetail = agentId ? await getAgent(input) : null;
@@ -185,8 +147,6 @@ export default async function AgentEditPage({
           {...(agentDetail && { agentDetail })}
           saveAgentAction={saveAgent}
           patchAgentDraftAction={patchAgentDraft}
-          createReasoningLevelsAction={createDraftReasoningLevels}
-          createTemperatureLevelsAction={createDraftTemperatureLevels}
           createVoicesAction={createDraftVoices}
           createPromptsAction={createDraftPrompts}
         />

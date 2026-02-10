@@ -1,11 +1,4 @@
-"""WebSocket-specific types for department generation.
-
-Extends base artifact types with department-specific fields.
-Types are registered in OpenAPI via FastAPI endpoints, enabling
-automatic type extraction in the frontend via InputOf/OutputOf.
-"""
-
-from uuid import UUID
+"""WebSocket-specific types for department generation."""
 
 from app.api.v4.artifacts.department.types import GetDepartmentApiRequest
 from app.api.v4.resources.settings.get import QGetSettingsV4Item
@@ -32,8 +25,8 @@ class GenerateDepartmentPayload(GetDepartmentApiRequest):
     with generation-specific fields.
     """
 
-    # Generation-specific fields - domain-based API
-    domain_ids: list[UUID]  # Required: which domains to generate
+    # Generation-specific fields - resource-based API
+    resource_types: list[str]
     user_instructions: list[str] | None = None
 
 

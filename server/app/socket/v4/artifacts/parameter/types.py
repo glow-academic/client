@@ -7,7 +7,8 @@ automatic type extraction in the frontend via InputOf/OutputOf.
 
 from uuid import UUID
 
-from app.api.v4.artifacts.parameter.types import GetParameterApiRequest
+from pydantic import BaseModel
+
 from app.socket.v4.artifacts.types import (
     GenerationCompleteEvent,
     GenerationErrorEvent,
@@ -26,21 +27,14 @@ from app.sql.types import (
 # =============================================================================
 
 
-class GenerateParameterPayload(GetParameterApiRequest):
-    """Request payload for parameter_generate WebSocket event.
+class GenerateParameterPayload(BaseModel):
+    """Request payload for parameter_generate WebSocket event."""
 
-    Extends GetParameterApiRequest (which has parameter_id, draft_id, search terms)
-    with generation-specific fields and form state.
-    """
-
-    # Generation-specific fields - domain-based API
-    domain_ids: list[
-        UUID
-    ]  # Required: which domains to generate (client passes these through)
-    user_instructions: list[str] | None = None  # Optional: user instructions
-
-    # Note: current selections are derived from draft-backed API response.
-    # The server looks up agent_ids and group_ids from the domains mapping in get_parameter_internal().
+    artifact_type: str = "parameter"
+    parameter_id: UUID | None = None
+    draft_id: UUID | None = None
+    resource_types: list[str]
+    user_instructions: list[str] | None = None
 
 
 # =============================================================================

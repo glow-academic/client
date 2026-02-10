@@ -31,10 +31,7 @@ from app.sql.types import (
     GetPersonaGenerationContextSqlParams,
     GetPersonaGenerationContextSqlRow,
 )
-from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed, load_sql
-
-logger = get_logger(__name__)
 
 internal_sio = get_internal_sio()
 
@@ -68,17 +65,10 @@ def _build_agent_jinja_context(
     response: GetAgentWebsocketResponse, resource_types: list[str]
 ) -> dict[str, Any]:
     """Build Jinja context from agent websocket response."""
-
-    if response.resources and response.resources.resources:
-        resources = response.resources.resources.model_dump()
-        current = (
-            response.resources.current.model_dump()
-            if response.resources.current
-            else AgentResourceBucket().model_dump()
-        )
-        resources["current"] = current
-        return resources
-    return {"current": AgentResourceBucket().model_dump()}
+    _ = resource_types
+    if response.resources:
+        return response.resources.model_dump(mode="json")
+    return AgentResourceBucket().model_dump(mode="json")
 
 
 async def _agent_generate_impl(
@@ -87,21 +77,21 @@ async def _agent_generate_impl(
     """Handle agent generation with domain-based agent lookup.
 
     This function:
-    1. Validates domain_ids and derives resource_types + agent_id
-    2. Fetches agent data via get_agent_websocket() for agent lookup
+    1. Validates resource_types and resolves agent_id via resource_agent_ids
+    2. Fetches agent data via get_agent_websocket() for generation context
     3. Validates generation prerequisites (agent, model, rate limit)
     4. Creates run and fetches context
     5. Renders developer instructions with Jinja
     6. Emits simplified payload to generate_artifact handler
     """
     try:
-        # Validate domain_ids
-        if not data.domain_ids:
+        # Validate resource_types
+        if not data.resource_types:
             await emit_to_internal(
                 "generate_call_error",
                 GenerateErrorApiRequest(
                     sid=sid,
-                    error_message="domain_ids must be provided",
+                    error_message="resource_types must be provided",
                     artifact_type="agent",
                     group_id=None,
                     resource_type="agent",
@@ -117,41 +107,13 @@ async def _agent_generate_impl(
             draft_id=data.draft_id,
         )
 
-        # Build domain_id -> agent_id mapping from result.domains
-        domain_to_agent: dict[uuid.UUID, uuid.UUID | None] = {}
-        if result.domains:
-            for domain in result.domains:
-                domain_to_agent[domain.domain_id] = domain.agent_id
-
-        # Build domain_id -> resource_type mapping
-        domain_to_resource: dict[uuid.UUID | None, str] = {
-            result.name_domain_id: "names",
-            result.descriptions_domain_id: "descriptions",
-            result.models_domain_id: "models",
-            result.prompts_domain_id: "prompts",
-            result.instructions_domain_id: "instructions",
-            result.flag_domain_id: "flags",
-            result.departments_domain_id: "departments",
-            result.tools_domain_id: "tools",
-            result.temperature_levels_domain_id: "temperature_levels",
-            result.reasoning_levels_domain_id: "reasoning_levels",
-            result.voices_domain_id: "voices",
-        }
-        # Remove None key if present
-        domain_to_resource.pop(None, None)
-
-        # Derive resource_types from domain_ids
-        resource_types: list[str] = []
-        for did in data.domain_ids:
-            if did in domain_to_resource:
-                resource_types.append(domain_to_resource[did])
-
+        resource_types = [rt for rt in data.resource_types if rt]
         if not resource_types:
             await emit_to_internal(
                 "generate_call_error",
                 GenerateErrorApiRequest(
                     sid=sid,
-                    error_message="No valid domain_ids provided",
+                    error_message="No valid resource_types provided",
                     artifact_type="agent",
                     group_id=None,
                     resource_type="agent",
@@ -175,11 +137,13 @@ async def _agent_generate_impl(
             )
             return
 
-        # Get agent_id from the first valid domain_id
+        # Resolve agent_id from websocket resource_agent_ids
+        resource_agent_ids = result.resource_agent_ids or {}
         agent_id: uuid.UUID | None = None
-        for did in data.domain_ids:
-            if did in domain_to_agent and domain_to_agent[did] is not None:
-                agent_id = domain_to_agent[did]
+        for rt in resource_types:
+            selected = resource_agent_ids.get(rt)
+            if selected is not None:
+                agent_id = selected
                 break
 
         if not agent_id:
@@ -187,7 +151,7 @@ async def _agent_generate_impl(
                 "generate_call_error",
                 GenerateErrorApiRequest(
                     sid=sid,
-                    error_message="No agent found for the requested domains",
+                    error_message="No agent found for the requested resource_types",
                     artifact_type="agent",
                     group_id=None,
                     resource_type="agent",
@@ -200,7 +164,7 @@ async def _agent_generate_impl(
 
         # Build resources list from websocket response
         resources: list[dict[str, Any]] = []
-        resources_bucket = result.resources.resources if result.resources else None
+        resources_bucket = result.resources
 
         if resources_bucket and resources_bucket.names:
             resources.append(
@@ -334,11 +298,6 @@ async def _agent_generate_impl(
 
             if not is_valid:
                 error_msg = format_generation_error(failures)
-                logger.error(
-                    f"Agent generation validation failed - "
-                    f"profile_id={profile_id}, agent_id={agent_id}, "
-                    f"reason: {error_msg}"
-                )
                 await emit_to_internal(
                     "generate_call_error",
                     GenerateErrorApiRequest(
@@ -457,7 +416,6 @@ async def _agent_generate_impl(
             )
 
     except Exception as e:
-        logger.exception(f"Failed to generate agent resources: {str(e)}")
         await emit_to_internal(
             "generate_call_error",
             GenerateErrorApiRequest(

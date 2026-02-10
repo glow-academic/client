@@ -1,16 +1,12 @@
-"""Route tests for POST /api/v4/artifacts/departments/create endpoint."""
-
-from uuid import UUID
+"""Route tests for POST /api/v4/artifacts/departments/save (create mode)."""
 
 import asyncpg  # type: ignore
 import httpx
 import pytest
 from tests.seed_helpers import get_superadmin_alias  # type: ignore
 from tests.sql.types import (
-    GetDepartmentByIdSqlParams,
-    GetDepartmentByIdSqlRow,
-    GetProfileDepartmentLinkV4SqlParams,
-    GetProfileDepartmentLinkV4SqlRow,
+    CreateTestDepartmentSqlParams,
+    CreateTestDepartmentSqlRow,
 )
 
 from app.utils.sql_helper import execute_sql_typed
@@ -18,86 +14,54 @@ from app.utils.sql_helper import execute_sql_typed
 pytestmark = pytest.mark.asyncio
 
 
-async def test_create_department(
+async def test_create_department_via_save(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
-    """Test creating a new department with all fields."""
     await get_superadmin_alias(db)
 
-    # v4 routes get profile_id from router dependency, not request body
-    response = await client.post(
-        "/api/v4/artifacts/departments/create",
-        json={
-            "title": "Test Department",
-            "description": "Test Description",
-            "active": True,
-        },
-    )
-
-    assert response.status_code == 200
-    data = response.json()
-
-    assert data["success"] is True
-    assert "departmentId" in data
-    assert data["message"] == "Department created successfully"
-
-    # Verify department was created in database using SQL file
-    dept_result = await execute_sql_typed(
+    source_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/queries/api/departments/test_get_department_by_id_v4_complete.sql",
-        params=GetDepartmentByIdSqlParams(department_id=UUID(data["departmentId"])),
-    )
-    typed_dept = GetDepartmentByIdSqlRow.model_validate(dept_result.model_dump())
-    assert typed_dept.department_id is not None
-    assert typed_dept.title == "Test Department"
-    assert typed_dept.description == "Test Description"
-
-    # Verify profile link was created (superadmin should be auto-linked) using SQL file
-    profile_id = await get_superadmin_alias(db)
-
-    profile_link_result = await execute_sql_typed(
-        conn=db,
-        sql_path="tests/sql/v4/integration/queries/api/departments/test_get_profile_department_link_v4_complete.sql",
-        params=GetProfileDepartmentLinkV4SqlParams(
-            input_department_id=UUID(data["departmentId"]),
-            input_profile_id=UUID(profile_id),
+        sql_path="tests/sql/v4/integration/queries/api/departments/test_create_test_department_v4_complete.sql",
+        params=CreateTestDepartmentSqlParams(
+            title="Source Department", description="Source Description"
         ),
     )
-    typed_profile_link = GetProfileDepartmentLinkV4SqlRow.model_validate(
-        profile_link_result.model_dump()
+    source = CreateTestDepartmentSqlRow.model_validate(source_result.model_dump())
+    assert source.department_id is not None
+
+    detail = await client.post(
+        "/api/v4/artifacts/departments/get",
+        json={"department_id": str(source.department_id), "draft_id": None},
     )
-    assert typed_profile_link.department_id is not None
+    assert detail.status_code == 200
+    d = detail.json()
+    name_id = d["names"]["resource"]["id"]
+    desc_id = d["descriptions"]["resource"]["id"]
+    flag_id = (
+        d["flags"]["current"][0]["flag_option_id"]
+        if d.get("flags") and d["flags"].get("current")
+        else None
+    )
+    group_id = d["group_id"]
 
-
-async def test_create_department_minimal(
-    client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
-) -> None:
-    """Test creating a department with minimal fields."""
-    await get_superadmin_alias(db)
-
-    # v4 routes get profile_id from router dependency, not request body
     response = await client.post(
-        "/api/v4/artifacts/departments/create",
+        "/api/v4/artifacts/departments/save",
         json={
-            "title": "Minimal Department",
-            "description": "",  # Empty string
-            "active": True,
+            "group_id": group_id,
+            "input_department_id": None,
+            "names": {"resource_id": name_id, "create_tool_id": None, "link_tool_id": None},
+            "descriptions": {
+                "resource_id": desc_id,
+                "create_tool_id": None,
+                "link_tool_id": None,
+            },
+            "flags": {"resource_id": flag_id, "create_tool_id": None, "link_tool_id": None},
+            "settings": {"resource_ids": [], "create_tool_id": None, "link_tool_id": None},
         },
     )
 
     assert response.status_code == 200
-    data = response.json()
+    out = response.json()
+    assert out["success"] is True
+    assert out.get("department_id")
 
-    assert data["success"] is True
-    assert "departmentId" in data
-
-    # Verify department was created using SQL file
-    dept_result = await execute_sql_typed(
-        conn=db,
-        sql_path="tests/sql/v4/integration/queries/api/departments/test_get_department_by_id_v4_complete.sql",
-        params=GetDepartmentByIdSqlParams(department_id=UUID(data["departmentId"])),
-    )
-    typed_dept = GetDepartmentByIdSqlRow.model_validate(dept_result.model_dump())
-    assert typed_dept.department_id is not None
-    assert typed_dept.title == "Minimal Department"
-    assert typed_dept.description == ""  # Empty string

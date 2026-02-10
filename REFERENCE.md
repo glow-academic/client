@@ -801,11 +801,78 @@ Known deviations from gold standard (acceptable for now, migration deferred):
 - `generate.py` uses shared SQL (`get_generation_run_context_and_create_run_complete.sql` + `get_text_run_context_for_existing_run_complete.sql`) instead of artifact-specific prepare SQL
 - Mutation endpoints (delete/duplicate) still use auto-generated SQL types
 
+### Agent Parity Rules (Persona-Style)
+
+Agent artifact follows hard-cut section-first contracts with **11 resources**:
+`names`, `descriptions`, `models`, `prompts`, `instructions`, `flags`, `departments`, `tools`, `temperature_levels`, `reasoning_levels`, `voices`.
+
+Contract rules:
+- API `get` response is section-first; do not expose flat legacy `*_resource`, `*_domain_id`, `*_agent_id`, or nested `resources.current`.
+- Websocket `get_agent_websocket()` returns only: `group_id`, `views.draft_agent`, flat selected `resources`, and `resource_agent_ids`.
+- `agent_generate` payload uses `resource_types` only; never `domain_ids` or `agent_type`.
+- `agent_generation_complete` payload returns hydrated resource objects (not IDs) such as `name_resource`, `description_resource`, `model_resource`, `prompt_resource`, `instructions_resource`, `flag_resource`, `temperature_level_resource`, `reasoning_level_resource`, plus `department_resources` / `tool_resources` / `voice_resources`.
+- Frontend AI visibility uses section `show_ai_generate`; never backend routing fields.
+- Save/draft request contracts use nested section actions with `resource_id/resource_ids`, `create_tool_id`, `link_tool_id`.
+- If SQL signatures are still flat during transition, flatten nested section actions in server route handlers (single compatibility point) while preserving nested external API contracts.
+
+Frontend rules:
+- `client/components/agents/Agent.tsx` should read section data via `s.<section>.*` (or a single normalization layer) and avoid direct legacy field coupling.
+- Step-level generation controls should use shared `StepCardAiButton` (no repeated custom tooltip/button blocks per step).
+- Agent pages should only send contract fields supported by artifact GET (`agent_id`, `draft_id`) and remove legacy search/body extras.
+- Remove invalid create endpoints from agent pages (`reasoning_levels`, `temperature_levels` are non-creatable resources).
+
+### Parameter Parity Rules (Persona-Style)
+
+Parameter artifact is now treated as section-first, with no legacy domain routing fields.
+
+Architecture notes:
+- API `get` response must be section-first: `names`, `descriptions`, `flags`, `departments`, `fields`
+- Each section carries: `show`, `required`, `suggestions`, `show_ai_generate`, `create_tool_id`, `link_tool_id`
+- Websocket `get_parameter_websocket()` must return: `group_id`, `views.draft_parameter`, flat selected `resources`, and `resource_agent_ids`
+- `parameter_generate` websocket payload must use `resource_types` (never `domain_ids` or `agent_type`)
+- Save/draft endpoints must accept nested resource action sections with `resource_id(s)`, `create_tool_id`, `link_tool_id`
+- Parameter save/draft SQL signatures are now composite-first (no flat `name_id`, `description_id`, `flag_ids`, `department_ids`, `field_ids` params at SQL boundary)
+- Parameter save/draft SQL must create `runs_entry` + `calls_entry` + `tool_calls_junction` rows when tool IDs are provided, then link resource calls through:
+  - `names_calls_connection`
+  - `descriptions_calls_connection`
+  - `flags_calls_connection`
+  - `departments_calls_connection`
+  - `fields_calls_connection`
+- Parameter save SQL uses workflow semantics for `parameter_parameters_junction`: deactivate old active links, create a fresh `parameters_resource`, and link it as active
+- Parameter active state is derived from `flags` selections (`parameter_active`), not a standalone `active_flag_id` SQL param
+- No top-level legacy fields in parameter contracts (`*_domain_id`, `domains`, flat `name_id/name_resource` response keys)
+
 Frontend notes:
-- `client/components/models/Model.tsx` is the canonical model create/edit component
-- Model frontend parity stack should match persona:
-  - `useSaveContext` + `useDraftLifecycle` + `useFlushRegistry`
-  - `buildResourceActions` + `computeEffectiveFormState` + `checkHasResourceIds`
-  - step headers use shared `StepCardAiButton` + `useGenerationModal`
-- AI generation must ensure a draft exists before emit (`flushAllAndSave`), then emit `resource_types`
-- Do not call non-existent resource create endpoints from model pages (`flags`, `modalities`, `temperature_levels`, `reasoning_levels`, `qualities`)
+- `client/components/parameters/Parameter.tsx` is the canonical parameter create/edit component
+- Use compact parity stack: `useSaveContext` + `useDraftLifecycle` + `useFlushRegistry` + action builders
+- Use `StepCardAiButton` + `useGenerationModal` for step-level AI controls
+- Keep the switch-based parameter-type UX (simulation/document/persona/scenario/video), but persist through `flags` resource action sections (no legacy flat booleans in save/draft payloads)
+- Do not call non-creatable resource create endpoints for `flags`, `departments`, or `fields`
+
+### Department Parity Rules (Persona-Style)
+
+Department artifact should be hard-migrated to section-first parity with **4 resources**: `names`, `descriptions`, `flags`, `settings`.
+
+Architecture notes:
+- API `get` response is section-first: `names`, `descriptions`, `flags`, `settings` (no domain-facing fields)
+- No legacy top-level or nested legacy containers in contracts:
+  - no top-level `current`
+  - no `resources.current`
+  - no `*_domain_id` / `*_agent_id` fields
+- Websocket `get_department_websocket()` returns `views`, `resources`, `resource_agent_ids`, and `group_id`
+- `department_generate` websocket payload uses `resource_types` (never `domain_ids`)
+- Save/draft endpoints use nested resource action payloads:
+  - single: `{ resource_id, create_tool_id, link_tool_id }`
+  - multi: `{ resource_ids, create_tool_id, link_tool_id }`
+- Save/draft SQL must create `runs_entry` + `calls_entry` + `tool_calls_junction` rows when tool IDs are provided and link resource calls through:
+  - `names_calls_connection`
+  - `descriptions_calls_connection`
+  - `flags_calls_connection`
+  - `settings_calls_connection`
+
+Frontend notes:
+- `client/components/departments/Department.tsx` is canonical and should remain parity-style
+- Use `useSaveContext`, `useDraftLifecycle`, `useFlushRegistry`, and `buildResourceActions`
+- Step AI controls use `StepCardAiButton` + `useGenerationModal`
+- Department pages and metadata must read section fields directly (e.g., `names.resource`, `descriptions.resource`) and never parse `resources.current`
+- Legacy path/contract compatibility adapters should not be reintroduced

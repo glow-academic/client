@@ -5443,24 +5443,41 @@ class GetDepartmentsListApiResponse(BaseModel):
 
 # Generated from: patch_department_draft
 
+class DepartmentMultiResourceAction(BaseModel):
+
+    resource_ids: list[UUID] | None
+    create_tool_id: UUID | None
+    link_tool_id: UUID | None
+
+
+
+
+class DepartmentResourceAction(BaseModel):
+
+    resource_id: UUID | None
+    create_tool_id: UUID | None
+    link_tool_id: UUID | None
+
 class PatchDepartmentDraftSqlParams(BaseModel):
 
     profile_id: UUID
     input_draft_id: UUID | None = None
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    setting_ids: list[UUID] | None = None
+    group_id: UUID | None = None
+    names: DepartmentResourceAction | None = None
+    descriptions: DepartmentResourceAction | None = None
+    flags: DepartmentResourceAction | None = None
+    settings: DepartmentMultiResourceAction | None = None
     expected_version: int | None = 0
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
             self.input_draft_id,
-            self.name_id,
-            self.description_id,
-            self.active_flag_id,
-            self.setting_ids,
+            self.group_id,
+            self.names,
+            self.descriptions,
+            self.flags,
+            self.settings,
             self.expected_version,
         )
 
@@ -5473,10 +5490,11 @@ class PatchDepartmentDraftSqlRow(BaseModel):
 class PatchDepartmentDraftApiRequest(BaseModel):
 
     input_draft_id: UUID | None = None
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    setting_ids: list[UUID] | None = None
+    group_id: UUID | None = None
+    names: DepartmentResourceAction | None = None
+    descriptions: DepartmentResourceAction | None = None
+    flags: DepartmentResourceAction | None = None
+    settings: DepartmentMultiResourceAction | None = None
     expected_version: int | None = 0
 
 class PatchDepartmentDraftApiResponse(BaseModel):
@@ -5494,20 +5512,20 @@ class SaveDepartmentSqlParams(BaseModel):
     profile_id: UUID
     group_id: UUID
     input_department_id: UUID | None = None
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    settings_ids: list[UUID] | None = None
+    names: DepartmentResourceAction | None = None
+    descriptions: DepartmentResourceAction | None = None
+    flags: DepartmentResourceAction | None = None
+    settings: DepartmentMultiResourceAction | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
             self.group_id,
             self.input_department_id,
-            self.name_id,
-            self.description_id,
-            self.active_flag_id,
-            self.settings_ids,
+            self.names,
+            self.descriptions,
+            self.flags,
+            self.settings,
         )
 
 class SaveDepartmentSqlRow(BaseModel):
@@ -5519,10 +5537,10 @@ class SaveDepartmentApiRequest(BaseModel):
 
     group_id: UUID
     input_department_id: UUID | None = None
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    settings_ids: list[UUID] | None = None
+    names: DepartmentResourceAction | None = None
+    descriptions: DepartmentResourceAction | None = None
+    flags: DepartmentResourceAction | None = None
+    settings: DepartmentMultiResourceAction | None = None
 
 class SaveDepartmentApiResponse(BaseModel):
 
@@ -11998,28 +12016,43 @@ class GetParametersListApiResponse(BaseModel):
 
 # Generated from: patch_parameter_draft
 
+class ParameterMultiResourceAction(BaseModel):
+
+    resource_ids: list[UUID] | None
+    create_tool_id: UUID | None
+    link_tool_id: UUID | None
+
+
+
+
+class ParameterResourceAction(BaseModel):
+
+    resource_id: UUID | None
+    create_tool_id: UUID | None
+    link_tool_id: UUID | None
+
 class PatchParameterDraftSqlParams(BaseModel):
 
     profile_id: UUID
     input_draft_id: UUID | None = None
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    flag_ids: list[UUID] | None = None
-    department_ids: list[UUID] | None = None
-    field_ids: list[UUID] | None = None
+    group_id: UUID | None = None
+    names: ParameterResourceAction | None = None
+    descriptions: ParameterResourceAction | None = None
+    flags: ParameterMultiResourceAction | None = None
+    departments: ParameterMultiResourceAction | None = None
+    fields: ParameterMultiResourceAction | None = None
     expected_version: int | None = 0
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
             self.input_draft_id,
-            self.name_id,
-            self.description_id,
-            self.active_flag_id,
-            self.flag_ids,
-            self.department_ids,
-            self.field_ids,
+            self.group_id,
+            self.names,
+            self.descriptions,
+            self.flags,
+            self.departments,
+            self.fields,
             self.expected_version,
         )
 
@@ -12032,12 +12065,12 @@ class PatchParameterDraftSqlRow(BaseModel):
 class PatchParameterDraftApiRequest(BaseModel):
 
     input_draft_id: UUID | None = None
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    flag_ids: list[UUID] | None = None
-    department_ids: list[UUID] | None = None
-    field_ids: list[UUID] | None = None
+    group_id: UUID | None = None
+    names: ParameterResourceAction | None = None
+    descriptions: ParameterResourceAction | None = None
+    flags: ParameterMultiResourceAction | None = None
+    departments: ParameterMultiResourceAction | None = None
+    fields: ParameterMultiResourceAction | None = None
     expected_version: int | None = 0
 
 class PatchParameterDraftApiResponse(BaseModel):
@@ -12050,40 +12083,27 @@ class PatchParameterDraftApiResponse(BaseModel):
 
 # Generated from: save_parameter
 
-class ISaveParameterV4FieldConnection(BaseModel):
-
-    field_id: UUID | None
-    default: bool | None
-    active: bool | None
-
 class SaveParameterSqlParams(BaseModel):
 
     profile_id: UUID
     group_id: UUID
     input_parameter_id: UUID | None = None
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    flag_ids: list[UUID] | None = None
-    department_ids: list[UUID] | None = None
-    field_connections: list[ISaveParameterV4FieldConnection] | None = None
+    names: ParameterResourceAction | None = None
+    descriptions: ParameterResourceAction | None = None
+    flags: ParameterMultiResourceAction | None = None
+    departments: ParameterMultiResourceAction | None = None
+    fields: ParameterMultiResourceAction | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
-        # Convert field_connections composite array to tuples for asyncpg
-        field_connections_tuples = [
-            (conn.field_id, conn.default, conn.active)
-            for conn in (self.field_connections or [])
-        ]
         return (
             self.profile_id,
             self.group_id,
             self.input_parameter_id,
-            self.name_id,
-            self.description_id,
-            self.active_flag_id,
-            self.flag_ids,
-            self.department_ids,
-            field_connections_tuples,
+            self.names,
+            self.descriptions,
+            self.flags,
+            self.departments,
+            self.fields,
         )
 
 class SaveParameterSqlRow(BaseModel):
@@ -12095,12 +12115,11 @@ class SaveParameterApiRequest(BaseModel):
 
     group_id: UUID
     input_parameter_id: UUID | None = None
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    flag_ids: list[UUID] | None = None
-    department_ids: list[UUID] | None = None
-    field_connections: list[ISaveParameterV4FieldConnection] | None = None
+    names: ParameterResourceAction | None = None
+    descriptions: ParameterResourceAction | None = None
+    flags: ParameterMultiResourceAction | None = None
+    departments: ParameterMultiResourceAction | None = None
+    fields: ParameterMultiResourceAction | None = None
 
 class SaveParameterApiResponse(BaseModel):
 

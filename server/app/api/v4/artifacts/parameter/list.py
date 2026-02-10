@@ -167,12 +167,21 @@ async def get_parameter_list(
             for d in (result.departments or [])
         ]
 
+        scenario_options = [
+            {"value": str(s.scenario_id), "label": s.name or "Untitled Scenario"}
+            for s in scenarios
+            if s.scenario_id
+        ]
+        document_options: list[dict[str, str]] = []
+
         # Build API response with computed permissions
         api_response = ListParameterApiResponse(
             actor_name=result.actor_name,
             parameters=parameters_with_permissions,
             scenarios=scenarios,
             departments=departments,
+            scenario_options=scenario_options,
+            document_options=document_options,
             total_count=result.total_count,
         )
 

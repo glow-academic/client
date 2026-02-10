@@ -19,7 +19,6 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.artifacts.department.permissions import (
     DEPARTMENT_RESOURCES,
-    build_domain_data,
     compute_can_edit,
     compute_description_required,
     compute_disabled_reason,
@@ -33,22 +32,29 @@ from app.api.v4.artifacts.department.permissions import (
     has_access,
 )
 from app.api.v4.artifacts.department.types import (
+    DepartmentDescriptionSection,
     DepartmentFlagConfig,
-    DepartmentResourceBucket,
-    DepartmentResources,
-    DomainAgent,
+    DepartmentFlagSection,
+    DepartmentNameSection,
+    DepartmentSettingSection,
+    DepartmentWebsocketResources,
+    DepartmentWebsocketViews,
     GetDepartmentApiRequest,
     GetDepartmentApiResponse,
     GetDepartmentWebsocketResponse,
 )
 from app.api.v4.permissions import select_agents_for_artifact
+from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.descriptions.get import get_descriptions_internal
 from app.api.v4.resources.descriptions.search import search_descriptions_internal
 from app.api.v4.resources.flags.get import get_flags_internal
 from app.api.v4.resources.flags.search import search_flags_internal
+from app.api.v4.resources.models.get import get_models_internal
 from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.names.search import search_names_internal
+from app.api.v4.resources.providers.get import get_providers_internal
 from app.api.v4.resources.settings.get import get_settings_internal
+from app.api.v4.resources.tools.get import get_tools_internal
 from app.api.v4.types import CandidateAgent
 from app.api.v4.views.drafts.get import get_draft_department_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
@@ -87,10 +93,8 @@ class DepartmentInternalData:
     draft_version: int | None
     group_id: UUID | None
 
-    # Domain mappings
-    domain_ids_map: dict[str, UUID | None]
-    agent_ids: dict[str, UUID | None]
-    domains_list: list[DomainAgent]
+    # Agent mappings (resource_type -> agent_id)
+    resource_agent_ids: dict[str, UUID | None]
 
     # Show/required flags
     show_flags_map: dict[str, bool]
@@ -99,19 +103,26 @@ class DepartmentInternalData:
     # Suggestions (resource -> list of suggestion IDs)
     suggestions_map: dict[str, list[UUID]]
 
-    # Show AI generate flags (computed: domain_id exists AND agent exists)
+    # Show AI generate flags (computed: agent exists for resource)
     show_ai_generate_map: dict[str, bool]
     basic_show_ai_generate: bool
     settings_step_show_ai_generate: bool
 
-    # Domain data for modals
-    domain_data_list: list[Any]  # list[DomainData]
+    # Resources
+    names: list[Any]
+    descriptions: list[Any]
+    flags: list[DepartmentFlagConfig]
+    settings: list[Any]
+    names_current: list[Any]
+    descriptions_current: list[Any]
+    flags_current: list[DepartmentFlagConfig]
+    settings_current: list[Any]
 
-    # Resources payload
-    resources_payload: DepartmentResources
-
-    # Per-resource group IDs (from draft MV)
-    resource_group_ids: dict[str, UUID | None]
+    # Config resources for websocket generation context
+    config_agents: list[Any]
+    config_models: list[Any]
+    config_providers: list[Any]
+    config_tools: list[Any]
 
     # Per-resource tool IDs (from selected agents)
     create_tool_ids_map: dict[str, UUID | None]
@@ -219,14 +230,6 @@ async def get_department_internal(
         if draft_item.settings_ids:
             selected_settings_ids = draft_item.settings_ids
 
-    # Build per-resource group_ids from draft_item
-    resource_group_ids: dict[str, UUID | None] = {
-        "names": draft_item.group_id if draft_item else None,
-        "descriptions": draft_item.group_id if draft_item else None,
-        "flags": draft_item.group_id if draft_item else None,
-        "settings": draft_item.group_id if draft_item else None,
-    }
-
     # Get tools existence flags from Query 2
     names_has_tools = ids_result.names_has_tools or False
 
@@ -236,7 +239,7 @@ async def get_department_internal(
     # Use Python scoring to select best agents for each resource
     user_dept_set = set(user_department_ids) if user_department_ids else None
     resources_needed = list(DEPARTMENT_RESOURCES)
-    agent_ids = select_agents_for_artifact(
+    resource_agent_ids = select_agents_for_artifact(
         candidates=candidate_agents,
         artifact_resources=DEPARTMENT_RESOURCES,
         resources_needed=resources_needed,
@@ -249,7 +252,7 @@ async def get_department_internal(
     link_tool_ids_map: dict[str, UUID | None] = {}
 
     for resource in DEPARTMENT_RESOURCES:
-        selected_agent_id = agent_ids.get(resource)
+        selected_agent_id = resource_agent_ids.get(resource)
         if selected_agent_id:
             for candidate in candidate_agents:
                 if candidate.agent_id == selected_agent_id:
@@ -259,19 +262,9 @@ async def get_department_internal(
                     link_tool_ids_map[resource] = candidate.link_tool_ids.get(resource)
                     break
 
-    # === EXTRACT DOMAIN IDS FROM QUERY 2 ===
-    domain_ids_map: dict[str, UUID | None] = {
-        "names": ids_result.name_domain_id,
-        "descriptions": ids_result.description_domain_id,
-        "flags": ids_result.flag_domain_id,
-        "settings": ids_result.settings_domain_id,
-    }
-
     # === COMPUTE SHOW_AI_GENERATE FLAGS ===
     def compute_show_ai_generate(resource: str) -> bool:
-        domain_id = domain_ids_map.get(resource)
-        agent_id = agent_ids.get(resource)
-        return domain_id is not None and agent_id is not None
+        return resource_agent_ids.get(resource) is not None
 
     name_show_ai_generate = compute_show_ai_generate("names")
     description_show_ai_generate = compute_show_ai_generate("descriptions")
@@ -307,7 +300,7 @@ async def get_department_internal(
     # Department-specific flag names
     DEPARTMENT_FLAG_NAMES = {"department_active"}
 
-    async def fetch_names():
+    async def fetch_names() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
             selected = await get_names_internal(c, name_ids, bypass_cache)
             suggestions = await search_names_internal(
@@ -322,7 +315,7 @@ async def get_department_internal(
             )
             return (selected, suggestions)
 
-    async def fetch_descriptions():
+    async def fetch_descriptions() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
             selected = await get_descriptions_internal(c, description_ids, bypass_cache)
             suggestions = await search_descriptions_internal(
@@ -337,7 +330,7 @@ async def get_department_internal(
             )
             return (selected, suggestions)
 
-    async def fetch_flags():
+    async def fetch_flags() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
             selected = await get_flags_internal(c, flag_ids, bypass_cache)
             all_flags = await search_flags_internal(
@@ -352,7 +345,7 @@ async def get_department_internal(
             suggestions = [f for f in all_flags if f.name in DEPARTMENT_FLAG_NAMES]
             return (selected, suggestions)
 
-    async def fetch_settings():
+    async def fetch_settings() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
             # Fetch selected settings one at a time
             selected = []
@@ -387,7 +380,6 @@ async def get_department_internal(
         (d for d in descriptions if d.id == selected_description_id),
         None,
     )
-    flag_resource = next((f for f in flags if f.id == selected_active_flag_id), None)
     settings_resources = [
         s
         for s in settings
@@ -404,7 +396,7 @@ async def get_department_internal(
     show_flag = compute_show_flag()
     show_settings_flag = compute_show_settings(len(settings))
 
-    # Build show and required flags maps for domain_data
+    # Build show and required flags maps for section metadata
     show_flags_map = {
         "names": show_name,
         "descriptions": show_description_flag,
@@ -419,11 +411,6 @@ async def get_department_internal(
         "settings": compute_settings_required(),
     }
 
-    # Build rich domain metadata for client display
-    domain_data_list = build_domain_data(
-        domain_ids_map, show_flags_map, required_flags_map
-    )
-
     # Transform flags to enriched format for client
     department_flags = [
         DepartmentFlagConfig(
@@ -434,7 +421,6 @@ async def get_department_internal(
             flag_option_id=flag.id,
             show=show_flag,
             required=compute_flag_required(),
-            domain_id=domain_ids_map.get("flags"),
             generated=flag.generated,
         )
         for flag in flags
@@ -448,33 +434,66 @@ async def get_department_internal(
             detail="You don't have access to this department. It may be restricted to other departments.",
         )
 
-    # === Construct Response ===
-    resources_payload = DepartmentResources(
-        resources=DepartmentResourceBucket(
-            names=names,
-            descriptions=descriptions,
-            flags=department_flags,
-            settings=settings,
-        ),
-        current=DepartmentResourceBucket(
-            names=[name_resource] if name_resource else [],
-            descriptions=[description_resource] if description_resource else [],
-            flags=[flag_resource] if flag_resource else [],
-            settings=settings_resources or [],
-        ),
-    )
-
-    # Build domains list for WebSocket handler
-    domains_list: list[DomainAgent] = []
-    for resource, domain_id in domain_ids_map.items():
-        if domain_id is not None:
-            domains_list.append(
-                DomainAgent(
-                    domain_id=domain_id,
-                    agent_id=agent_ids.get(resource),
-                    group_id=resource_group_ids.get(resource),
-                )
+    # Fetch config resources for websocket generation context.
+    selected_agent_ids = [
+        aid for aid in resource_agent_ids.values() if aid is not None
+    ]
+    selected_agent_ids = list(dict.fromkeys(selected_agent_ids))
+    config_agents = []
+    config_models = []
+    config_providers = []
+    config_tools = []
+    if selected_agent_ids:
+        async with pool.acquire() as c:
+            config_agents = await get_agents_internal(
+                c,
+                selected_agent_ids,
+                bypass_cache=bypass_cache,
             )
+        model_ids = list(
+            dict.fromkeys(
+                [
+                    a.model_id
+                    for a in config_agents
+                    if a.model_id is not None
+                ]
+            )
+        )
+        if model_ids:
+            async with pool.acquire() as c:
+                config_models = await get_models_internal(
+                    c,
+                    model_ids,
+                    bypass_cache=bypass_cache,
+                )
+        provider_ids = list(
+            dict.fromkeys(
+                [
+                    m.provider_id
+                    for m in config_models
+                    if m.provider_id is not None
+                ]
+            )
+        )
+        if provider_ids:
+            async with pool.acquire() as c:
+                config_providers = await get_providers_internal(
+                    c,
+                    provider_ids,
+                    bypass_cache=bypass_cache,
+                )
+        tool_ids: list[UUID] = []
+        for agent in config_agents:
+            raw = getattr(agent, "tool_ids", None) or []
+            tool_ids.extend([tid for tid in raw if tid is not None])
+        tool_ids = list(dict.fromkeys(tool_ids))
+        if tool_ids:
+            async with pool.acquire() as c:
+                config_tools = await get_tools_internal(
+                    c,
+                    tool_ids,
+                    bypass_cache=bypass_cache,
+                )
 
     # Build show_ai_generate map
     show_ai_generate_map = {
@@ -498,18 +517,29 @@ async def get_department_internal(
         disabled_reason=disabled_reason,
         draft_version=effective_draft_version,
         group_id=effective_group_id,
-        domain_ids_map=domain_ids_map,
-        agent_ids=agent_ids,
-        domains_list=domains_list,
+        resource_agent_ids=resource_agent_ids,
         show_flags_map=show_flags_map,
         required_flags_map=required_flags_map,
         suggestions_map=suggestions_map,
         show_ai_generate_map=show_ai_generate_map,
         basic_show_ai_generate=basic_show_ai_generate,
         settings_step_show_ai_generate=settings_step_show_ai_generate,
-        domain_data_list=domain_data_list,
-        resources_payload=resources_payload,
-        resource_group_ids=resource_group_ids,
+        names=names,
+        descriptions=descriptions,
+        flags=department_flags,
+        settings=settings,
+        names_current=[name_resource] if name_resource else [],
+        descriptions_current=[description_resource] if description_resource else [],
+        flags_current=[
+            f
+            for f in department_flags
+            if f.flag_option_id == selected_active_flag_id
+        ],
+        settings_current=settings_resources or [],
+        config_agents=config_agents,
+        config_models=config_models,
+        config_providers=config_providers,
+        config_tools=config_tools,
         create_tool_ids_map=create_tool_ids_map,
         link_tool_ids_map=link_tool_ids_map,
     )
@@ -521,29 +551,39 @@ async def get_department_websocket(
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
 ) -> GetDepartmentWebsocketResponse:
-    """Minimal response for WebSocket handlers.
-
-    Returns only what's needed for AI generation:
-    - Domain IDs (for domain_to_resource mapping)
-    - Domains list (for agent_id lookup)
-    - Group ID (for existing group context)
-    - Resources (for Jinja template context)
-    """
+    """Websocket response using views/resources pattern."""
     data = await get_department_internal(
         profile_id=profile_id,
         department_id=department_id,
         draft_id=draft_id,
         bypass_cache=bypass_cache,
     )
+    draft_view = None
+    if draft_id is not None:
+        pool = get_pool()
+        if pool:
+            async with pool.acquire() as c:
+                draft_items = await get_draft_department_internal(
+                    conn=c,
+                    draft_ids=[draft_id],
+                    bypass_cache=bypass_cache,
+                )
+                draft_view = draft_items[0] if draft_items else None
 
     return GetDepartmentWebsocketResponse(
+        views=DepartmentWebsocketViews(draft_department=draft_view),
+        resources=DepartmentWebsocketResources(
+            names=data.names_current,
+            descriptions=data.descriptions_current,
+            flags=data.flags_current,
+            settings=data.settings_current,
+            agents=data.config_agents,
+            models=data.config_models,
+            providers=data.config_providers,
+            tools=data.config_tools,
+        ),
+        resource_agent_ids=data.resource_agent_ids,
         group_id=data.group_id,
-        name_domain_id=data.domain_ids_map.get("names"),
-        description_domain_id=data.domain_ids_map.get("descriptions"),
-        flag_domain_id=data.domain_ids_map.get("flags"),
-        settings_domain_id=data.domain_ids_map.get("settings"),
-        domains=data.domains_list,
-        resources=data.resources_payload,
     )
 
 
@@ -566,56 +606,50 @@ async def get_department_client(
     )
 
     return GetDepartmentApiResponse(
-        # Required fields
         actor_name=data.actor_name,
         department_exists=data.department_exists,
         can_edit=data.can_edit,
         disabled_reason=data.disabled_reason,
         draft_version=data.draft_version,
         group_id=data.group_id,
-        # Per-resource group IDs
-        names_group_id=data.resource_group_ids.get("names"),
-        descriptions_group_id=data.resource_group_ids.get("descriptions"),
-        flags_group_id=data.resource_group_ids.get("flags"),
-        settings_group_id=data.resource_group_ids.get("settings"),
-        # Name
-        show_name=data.show_flags_map.get("names"),
-        name_domain_id=data.domain_ids_map.get("names"),
-        name_required=data.required_flags_map.get("names"),
-        name_suggestions=data.suggestions_map.get("names"),
-        name_show_ai_generate=data.show_ai_generate_map.get("names"),
-        # Description
-        show_description=data.show_flags_map.get("descriptions"),
-        description_domain_id=data.domain_ids_map.get("descriptions"),
-        description_required=data.required_flags_map.get("descriptions"),
-        description_suggestions=data.suggestions_map.get("descriptions"),
-        description_show_ai_generate=data.show_ai_generate_map.get("descriptions"),
-        # Flag
-        show_flag=data.show_flags_map.get("flags"),
-        flag_domain_id=data.domain_ids_map.get("flags"),
-        flag_required=data.required_flags_map.get("flags"),
-        flag_show_ai_generate=data.show_ai_generate_map.get("flags"),
-        # Settings
-        show_settings=data.show_flags_map.get("settings"),
-        settings_domain_id=data.domain_ids_map.get("settings"),
-        settings_required=data.required_flags_map.get("settings"),
-        settings_suggestions=data.suggestions_map.get("settings"),
-        settings_show_ai_generate=data.show_ai_generate_map.get("settings"),
-        # Step-level AI generation flags
         basic_show_ai_generate=data.basic_show_ai_generate,
-        settings_step_show_ai_generate=data.settings_step_show_ai_generate,
-        # Domain metadata for client display in modals
-        domain_data=data.domain_data_list,
-        # Resources
-        resources=data.resources_payload,
-        # Per-resource CREATE tool IDs
-        name_create_tool_id=data.create_tool_ids_map.get("names"),
-        description_create_tool_id=data.create_tool_ids_map.get("descriptions"),
-        # Per-resource LINK tool IDs
-        name_link_tool_id=data.link_tool_ids_map.get("names"),
-        description_link_tool_id=data.link_tool_ids_map.get("descriptions"),
-        flag_link_tool_id=data.link_tool_ids_map.get("flags"),
-        settings_link_tool_id=data.link_tool_ids_map.get("settings"),
+        names=DepartmentNameSection(
+            show=data.show_flags_map.get("names", False),
+            required=data.required_flags_map.get("names", False),
+            suggestions=data.suggestions_map.get("names"),
+            show_ai_generate=data.show_ai_generate_map.get("names", False),
+            create_tool_id=data.create_tool_ids_map.get("names"),
+            link_tool_id=data.link_tool_ids_map.get("names"),
+            resource=data.names_current[0] if data.names_current else None,
+            resources=data.names,
+        ),
+        descriptions=DepartmentDescriptionSection(
+            show=data.show_flags_map.get("descriptions", False),
+            required=data.required_flags_map.get("descriptions", False),
+            suggestions=data.suggestions_map.get("descriptions"),
+            show_ai_generate=data.show_ai_generate_map.get("descriptions", False),
+            create_tool_id=data.create_tool_ids_map.get("descriptions"),
+            link_tool_id=data.link_tool_ids_map.get("descriptions"),
+            resource=data.descriptions_current[0] if data.descriptions_current else None,
+            resources=data.descriptions,
+        ),
+        flags=DepartmentFlagSection(
+            show=data.show_flags_map.get("flags", False),
+            required=data.required_flags_map.get("flags", False),
+            show_ai_generate=data.show_ai_generate_map.get("flags", False),
+            link_tool_id=data.link_tool_ids_map.get("flags"),
+            current=data.flags_current,
+            resources=data.flags,
+        ),
+        settings=DepartmentSettingSection(
+            show=data.show_flags_map.get("settings", False),
+            required=data.required_flags_map.get("settings", False),
+            suggestions=data.suggestions_map.get("settings"),
+            show_ai_generate=data.show_ai_generate_map.get("settings", False),
+            link_tool_id=data.link_tool_ids_map.get("settings"),
+            current=data.settings_current,
+            resources=data.settings,
+        ),
     )
 
 
@@ -682,12 +716,9 @@ async def get_department(
             audit_ctx: dict[str, Any] = {
                 "actor": {"name": response_data.actor_name, "id": profile_id}
             }
-            current_name = None
-            current_resources = (
-                response_data.resources.current if response_data.resources else None
-            )
-            if current_resources and current_resources.names:
-                current_name = getattr(current_resources.names[0], "name", None)
+            current_name = response_data.names.resource.name if (
+                response_data.names and response_data.names.resource
+            ) else None
             if request.department_id and current_name:
                 audit_ctx["department"] = {
                     "title": current_name,

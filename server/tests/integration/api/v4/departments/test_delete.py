@@ -41,7 +41,7 @@ async def test_delete_department(
     # v4 routes get profile_id from router dependency, not request body
     response = await client.post(
         "/api/v4/artifacts/departments/delete",
-        json={"departmentId": str(dept_id)},
+        json={"department_id": str(dept_id)},
     )
 
     assert response.status_code == 200
@@ -123,7 +123,7 @@ async def test_delete_department_in_use(
     # v4 routes get profile_id from router dependency, not request body
     response = await client.post(
         "/api/v4/artifacts/departments/delete",
-        json={"departmentId": str(dept_id)},
+        json={"department_id": str(dept_id)},
     )
 
     assert response.status_code == 400
@@ -143,7 +143,7 @@ async def test_delete_department_not_found(
     # v4 routes get profile_id from router dependency, not request body
     response = await client.post(
         "/api/v4/artifacts/departments/delete",
-        json={"departmentId": fake_dept_id},
+        json={"department_id": fake_dept_id},
     )
 
     # The endpoint now properly checks if department exists and returns 404

@@ -21,6 +21,10 @@ type SaveParameterOut = OutputOf<"/api/v4/artifacts/parameters/save", "post">;
 
 type PatchParameterDraftIn = InputOf<"/api/v4/artifacts/parameters/draft", "patch">;
 type PatchParameterDraftOut = OutputOf<"/api/v4/artifacts/parameters/draft", "patch">;
+type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
+type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
+type CreateDraftDescriptionsIn = InputOf<"/api/v4/resources/descriptions", "post">;
+type CreateDraftDescriptionsOut = OutputOf<"/api/v4/resources/descriptions", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -51,9 +55,15 @@ export async function generateMetadata(
       } as ParameterGetIn["body"],
     };
     const parameter = await getParameter(input);
+    const p = parameter as unknown as {
+      names?: { resource?: { name?: string | null } | null } | null;
+      descriptions?: { resource?: { description?: string | null } | null } | null;
+    };
+    const name = p.names?.resource?.name ?? "Parameter";
+    const description = p.descriptions?.resource?.description ?? "";
     return {
-      title: `${parameter?.name || "Parameter"} Parameter`,
-      description: `${parameter?.name ? `${parameter.name} - ` : ""}System parameter configuration for teaching assistant training platform.${parameter?.description ? ` ${parameter.description}` : ""} Manage platform-wide settings and learning environment configurations for effective L&D program administration.`,
+      title: `${name} Parameter`,
+      description: `${name ? `${name} - ` : ""}System parameter configuration for teaching assistant training platform.${description ? ` ${description}` : ""} Manage platform-wide settings and learning environment configurations for effective L&D program administration.`,
     };
   } catch {
     // Fall through to default metadata
@@ -78,6 +88,18 @@ async function patchParameterDraft(input: PatchParameterDraftIn): Promise<PatchP
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.patch("/artifacts/parameters/draft", input);
+}
+
+async function createNames(input: CreateDraftNamesIn): Promise<CreateDraftNamesOut> {
+  "use server";
+  return api.post("/resources/names", input);
+}
+
+async function createDescriptions(
+  input: CreateDraftDescriptionsIn
+): Promise<CreateDraftDescriptionsOut> {
+  "use server";
+  return api.post("/resources/descriptions", input);
 }
 
 
@@ -136,6 +158,8 @@ export default async function ParameterEditPage({
           parameterData={parameterDetail}
           saveParameterAction={saveParameter}
           patchParameterDraftAction={patchParameterDraft}
+          createNamesAction={createNames}
+          createDescriptionsAction={createDescriptions}
         />
       </div>
     );

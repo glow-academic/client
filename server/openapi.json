@@ -40207,6 +40207,178 @@
         "title": "ActivityViews",
         "description": "Activity view data."
       },
+      "AgentDepartmentSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "current": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetDepartmentsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current"
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetDepartmentsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "AgentDepartmentSection"
+      },
+      "AgentDescriptionSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "resource": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetDescriptionsV4Item"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetDescriptionsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "AgentDescriptionSection"
+      },
       "AgentFlagConfig": {
         "properties": {
           "key": {
@@ -40261,18 +40433,6 @@
             "title": "Required",
             "default": false
           },
-          "domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Domain Id"
-          },
           "generated": {
             "anyOf": [
               {
@@ -40293,13 +40453,24 @@
         "title": "AgentFlagConfig",
         "description": "Enriched flag config for direct client consumption."
       },
-      "AgentResourceBucket": {
+      "AgentFlagSection": {
         "properties": {
-          "names": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/QGetNamesV4Item"
+                  "type": "string",
+                  "format": "uuid"
                 },
                 "type": "array"
               },
@@ -40307,65 +40478,38 @@
                 "type": "null"
               }
             ],
-            "title": "Names"
+            "title": "Suggestions"
           },
-          "descriptions": {
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
             "anyOf": [
               {
-                "items": {
-                  "$ref": "#/components/schemas/QGetDescriptionsV4Item"
-                },
-                "type": "array"
+                "type": "string",
+                "format": "uuid"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Descriptions"
+            "title": "Create Tool Id"
           },
-          "models": {
+          "link_tool_id": {
             "anyOf": [
               {
-                "items": {
-                  "$ref": "#/components/schemas/QGetModelsV4Item"
-                },
-                "type": "array"
+                "type": "string",
+                "format": "uuid"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Models"
+            "title": "Link Tool Id"
           },
-          "prompts": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetPromptsV4Item"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Prompts"
-          },
-          "instructions": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetInstructionsV4Item"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Instructions"
-          },
-          "flags": {
+          "current": {
             "anyOf": [
               {
                 "items": {
@@ -40377,13 +40521,13 @@
                 "type": "null"
               }
             ],
-            "title": "Flags"
+            "title": "Current"
           },
-          "departments": {
+          "resources": {
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/QGetDepartmentsV4Item"
+                  "$ref": "#/components/schemas/AgentFlagConfig"
                 },
                 "type": "array"
               },
@@ -40391,13 +40535,30 @@
                 "type": "null"
               }
             ],
-            "title": "Departments"
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "AgentFlagSection"
+      },
+      "AgentInstructionSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
           },
-          "tools": {
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/QGetToolsV4Item"
+                  "type": "string",
+                  "format": "uuid"
                 },
                 "type": "array"
               },
@@ -40405,13 +40566,52 @@
                 "type": "null"
               }
             ],
-            "title": "Tools"
+            "title": "Suggestions"
           },
-          "temperature_levels": {
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "resource": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetInstructionsV4Item"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "resources": {
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/QGetTemperatureLevelsV4Item"
+                  "$ref": "#/components/schemas/QGetInstructionsV4Item"
                 },
                 "type": "array"
               },
@@ -40419,9 +40619,377 @@
                 "type": "null"
               }
             ],
-            "title": "Temperature Levels"
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "AgentInstructionSection"
+      },
+      "AgentModelSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
           },
-          "reasoning_levels": {
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "resource": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetModelsV4Item"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetModelsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "AgentModelSection"
+      },
+      "AgentMultiResourceAction": {
+        "properties": {
+          "resource_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resource Ids"
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          }
+        },
+        "type": "object",
+        "title": "AgentMultiResourceAction",
+        "description": "Multi-select action payload."
+      },
+      "AgentNameSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "resource": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetNamesV4Item"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetNamesV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "AgentNameSection"
+      },
+      "AgentPromptSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "resource": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetPromptsV4Item"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPromptsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "AgentPromptSection"
+      },
+      "AgentReasoningLevelSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "resource": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetReasoningLevelsV4Item"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "resources": {
             "anyOf": [
               {
                 "items": {
@@ -40433,9 +41001,284 @@
                 "type": "null"
               }
             ],
-            "title": "Reasoning Levels"
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "AgentReasoningLevelSection"
+      },
+      "AgentResourceAction": {
+        "properties": {
+          "resource_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resource Id"
           },
-          "voices": {
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          }
+        },
+        "type": "object",
+        "title": "AgentResourceAction",
+        "description": "Single-select action payload."
+      },
+      "AgentTemperatureLevelSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "resource": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetTemperatureLevelsV4Item"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetTemperatureLevelsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "AgentTemperatureLevelSection"
+      },
+      "AgentToolSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "current": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetToolsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current"
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetToolsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "AgentToolSection"
+      },
+      "AgentVoiceSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "current": {
             "anyOf": [
               {
                 "items": {
@@ -40447,39 +41290,25 @@
                 "type": "null"
               }
             ],
-            "title": "Voices"
-          }
-        },
-        "type": "object",
-        "title": "AgentResourceBucket",
-        "description": "Generic resources bucket with full objects (always plural lists)."
-      },
-      "AgentResources": {
-        "properties": {
+            "title": "Current"
+          },
           "resources": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/AgentResourceBucket"
+                "items": {
+                  "$ref": "#/components/schemas/QGetVoicesV4Item"
+                },
+                "type": "array"
               },
               {
                 "type": "null"
               }
-            ]
-          },
-          "current": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/AgentResourceBucket"
-              },
-              {
-                "type": "null"
-              }
-            ]
+            ],
+            "title": "Resources"
           }
         },
         "type": "object",
-        "title": "AgentResources",
-        "description": "Full resources + current selections."
+        "title": "AgentVoiceSection"
       },
       "AggregatedResults": {
         "properties": {
@@ -49954,8 +50783,7 @@
         "required": [
           "department_id"
         ],
-        "title": "DeleteDepartmentApiRequest",
-        "description": "Request model for delete department endpoint."
+        "title": "DeleteDepartmentApiRequest"
       },
       "DeleteDepartmentApiResponse": {
         "properties": {
@@ -49973,8 +50801,7 @@
           "success",
           "message"
         ],
-        "title": "DeleteDepartmentApiResponse",
-        "description": "Response model for delete department endpoint."
+        "title": "DeleteDepartmentApiResponse"
       },
       "DeleteEvalApiRequest": {
         "properties": {
@@ -50090,8 +50917,7 @@
         "required": [
           "parameter_id"
         ],
-        "title": "DeleteParameterApiRequest",
-        "description": "Request model for delete parameter endpoint."
+        "title": "DeleteParameterApiRequest"
       },
       "DeleteParameterApiResponse": {
         "properties": {
@@ -50109,8 +50935,7 @@
           "success",
           "message"
         ],
-        "title": "DeleteParameterApiResponse",
-        "description": "Response model for delete parameter endpoint."
+        "title": "DeleteParameterApiResponse"
       },
       "DeletePersonaApiRequest": {
         "properties": {
@@ -50509,6 +51334,90 @@
         "title": "DeleteToolApiResponse",
         "description": "Response model for delete tool endpoint."
       },
+      "DepartmentDescriptionSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "resource": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetDescriptionsV4Item"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetDescriptionsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "DepartmentDescriptionSection"
+      },
       "DepartmentFlagConfig": {
         "properties": {
           "key": {
@@ -50563,18 +51472,6 @@
             "title": "Required",
             "default": false
           },
-          "domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Domain Id"
-          },
           "generated": {
             "anyOf": [
               {
@@ -50595,33 +51492,63 @@
         "title": "DepartmentFlagConfig",
         "description": "Enriched flag config for direct client consumption."
       },
-      "DepartmentResourceBucket": {
+      "DepartmentFlagSection": {
         "properties": {
-          "names": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
             "anyOf": [
               {
-                "items": {},
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
                 "type": "array"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Names"
+            "title": "Suggestions"
           },
-          "descriptions": {
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
             "anyOf": [
               {
-                "items": {},
-                "type": "array"
+                "type": "string",
+                "format": "uuid"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Descriptions"
+            "title": "Create Tool Id"
           },
-          "flags": {
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "current": {
             "anyOf": [
               {
                 "items": {
@@ -50633,51 +51560,284 @@
                 "type": "null"
               }
             ],
-            "title": "Flags"
+            "title": "Current"
           },
-          "settings": {
+          "resources": {
             "anyOf": [
               {
-                "items": {},
+                "items": {
+                  "$ref": "#/components/schemas/DepartmentFlagConfig"
+                },
                 "type": "array"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Settings"
+            "title": "Resources"
           }
         },
         "type": "object",
-        "title": "DepartmentResourceBucket",
-        "description": "Generic resources bucket with full objects (always plural lists)."
+        "title": "DepartmentFlagSection"
       },
-      "DepartmentResources": {
+      "DepartmentMultiResourceAction": {
         "properties": {
-          "resources": {
+          "resource_ids": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/DepartmentResourceBucket"
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resource Ids"
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          }
+        },
+        "type": "object",
+        "title": "DepartmentMultiResourceAction"
+      },
+      "DepartmentNameSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "resource": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetNamesV4Item"
               },
               {
                 "type": "null"
               }
             ]
           },
-          "current": {
+          "resources": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/DepartmentResourceBucket"
+                "items": {
+                  "$ref": "#/components/schemas/QGetNamesV4Item"
+                },
+                "type": "array"
               },
               {
                 "type": "null"
               }
-            ]
+            ],
+            "title": "Resources"
           }
         },
         "type": "object",
-        "title": "DepartmentResources",
-        "description": "Full resources + current selections."
+        "title": "DepartmentNameSection"
+      },
+      "DepartmentResourceAction": {
+        "properties": {
+          "resource_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resource Id"
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          }
+        },
+        "type": "object",
+        "title": "DepartmentResourceAction"
+      },
+      "DepartmentSettingSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "current": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/app__sql__types__QGetSettingsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current"
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/app__sql__types__QGetSettingsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "DepartmentSettingSection"
       },
       "DescriptionsApiRequest": {
         "properties": {
@@ -51939,8 +53099,7 @@
         "required": [
           "department_id"
         ],
-        "title": "DuplicateDepartmentApiRequest",
-        "description": "Request model for duplicate department endpoint."
+        "title": "DuplicateDepartmentApiRequest"
       },
       "DuplicateDepartmentApiResponse": {
         "properties": {
@@ -51964,8 +53123,7 @@
           "department_id",
           "message"
         ],
-        "title": "DuplicateDepartmentApiResponse",
-        "description": "Response model for duplicate department endpoint."
+        "title": "DuplicateDepartmentApiResponse"
       },
       "DuplicateDocumentApiRequest": {
         "properties": {
@@ -52139,8 +53297,7 @@
         "required": [
           "parameter_id"
         ],
-        "title": "DuplicateParameterApiRequest",
-        "description": "Request model for duplicate parameter endpoint."
+        "title": "DuplicateParameterApiRequest"
       },
       "DuplicateParameterApiResponse": {
         "properties": {
@@ -52164,8 +53321,7 @@
           "parameter_id",
           "message"
         ],
-        "title": "DuplicateParameterApiResponse",
-        "description": "Response model for duplicate parameter endpoint."
+        "title": "DuplicateParameterApiResponse"
       },
       "DuplicatePersonaApiRequest": {
         "properties": {
@@ -53622,31 +54778,6 @@
         ],
         "title": "FeedbackItem",
         "description": "Feedback item with standard info."
-      },
-      "FieldConnectionItem": {
-        "properties": {
-          "field_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Field Id"
-          },
-          "default": {
-            "type": "boolean",
-            "title": "Default",
-            "default": false
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active",
-            "default": true
-          }
-        },
-        "type": "object",
-        "required": [
-          "field_id"
-        ],
-        "title": "FieldConnectionItem",
-        "description": "Field connection with per-junction metadata."
       },
       "FieldFlagConfig": {
         "properties": {
@@ -55560,783 +56691,6 @@
             ],
             "title": "Group Id"
           },
-          "names_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Names Group Id"
-          },
-          "descriptions_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Descriptions Group Id"
-          },
-          "models_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Models Group Id"
-          },
-          "prompts_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Prompts Group Id"
-          },
-          "instructions_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Instructions Group Id"
-          },
-          "flags_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Flags Group Id"
-          },
-          "departments_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departments Group Id"
-          },
-          "tools_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Tools Group Id"
-          },
-          "temperature_levels_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Temperature Levels Group Id"
-          },
-          "reasoning_levels_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Reasoning Levels Group Id"
-          },
-          "voices_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Voices Group Id"
-          },
-          "show_name": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Name"
-          },
-          "name_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name Domain Id"
-          },
-          "name_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name Required"
-          },
-          "name_suggestions": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name Suggestions"
-          },
-          "name_show_ai_generate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name Show Ai Generate"
-          },
-          "show_description": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Description"
-          },
-          "descriptions_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Descriptions Domain Id"
-          },
-          "description_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description Required"
-          },
-          "description_suggestions": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description Suggestions"
-          },
-          "descriptions_show_ai_generate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Descriptions Show Ai Generate"
-          },
-          "show_models": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Models"
-          },
-          "models_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Models Domain Id"
-          },
-          "models_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Models Required"
-          },
-          "model_suggestions": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Model Suggestions"
-          },
-          "models_show_ai_generate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Models Show Ai Generate"
-          },
-          "show_prompts": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Prompts"
-          },
-          "prompts_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Prompts Domain Id"
-          },
-          "prompts_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Prompts Required"
-          },
-          "prompt_suggestions": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Prompt Suggestions"
-          },
-          "prompts_show_ai_generate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Prompts Show Ai Generate"
-          },
-          "show_instructions": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Instructions"
-          },
-          "instructions_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Instructions Domain Id"
-          },
-          "instructions_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Instructions Required"
-          },
-          "instructions_suggestions": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Instructions Suggestions"
-          },
-          "instructions_show_ai_generate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Instructions Show Ai Generate"
-          },
-          "show_flag": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Flag"
-          },
-          "flag_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Flag Domain Id"
-          },
-          "flag_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Flag Required"
-          },
-          "flag_show_ai_generate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Flag Show Ai Generate"
-          },
-          "show_departments": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Departments"
-          },
-          "departments_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departments Domain Id"
-          },
-          "departments_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departments Required"
-          },
-          "department_suggestions": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Suggestions"
-          },
-          "departments_show_ai_generate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departments Show Ai Generate"
-          },
-          "show_tools": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Tools"
-          },
-          "tools_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Tools Domain Id"
-          },
-          "tools_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Tools Required"
-          },
-          "tool_suggestions": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Tool Suggestions"
-          },
-          "tools_show_ai_generate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Tools Show Ai Generate"
-          },
-          "show_temperature_levels": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Temperature Levels"
-          },
-          "temperature_levels_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Temperature Levels Domain Id"
-          },
-          "temperature_levels_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Temperature Levels Required"
-          },
-          "temperature_level_suggestions": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Temperature Level Suggestions"
-          },
-          "temperature_levels_show_ai_generate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Temperature Levels Show Ai Generate"
-          },
-          "show_reasoning_levels": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Reasoning Levels"
-          },
-          "reasoning_levels_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Reasoning Levels Domain Id"
-          },
-          "reasoning_levels_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Reasoning Levels Required"
-          },
-          "reasoning_level_suggestions": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Reasoning Level Suggestions"
-          },
-          "reasoning_levels_show_ai_generate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Reasoning Levels Show Ai Generate"
-          },
-          "show_voices": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Voices"
-          },
-          "voices_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Voices Domain Id"
-          },
-          "voices_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Voices Required"
-          },
-          "voice_suggestions": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Voice Suggestions"
-          },
-          "voices_show_ai_generate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Voices Show Ai Generate"
-          },
           "basic_show_ai_generate": {
             "anyOf": [
               {
@@ -56359,216 +56713,110 @@
             ],
             "title": "General Show Ai Generate"
           },
-          "name_create_tool_id": {
+          "names": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/AgentNameSection"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Name Create Tool Id"
+            ]
           },
-          "descriptions_create_tool_id": {
+          "descriptions": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/AgentDescriptionSection"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Descriptions Create Tool Id"
+            ]
           },
-          "models_create_tool_id": {
+          "models": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/AgentModelSection"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Models Create Tool Id"
+            ]
           },
-          "prompts_create_tool_id": {
+          "prompts": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/AgentPromptSection"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Prompts Create Tool Id"
+            ]
           },
-          "instructions_create_tool_id": {
+          "instructions": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/AgentInstructionSection"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Instructions Create Tool Id"
+            ]
           },
-          "name_link_tool_id": {
+          "flags": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/AgentFlagSection"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Name Link Tool Id"
+            ]
           },
-          "descriptions_link_tool_id": {
+          "departments": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/AgentDepartmentSection"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Descriptions Link Tool Id"
+            ]
           },
-          "models_link_tool_id": {
+          "tools": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/AgentToolSection"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Models Link Tool Id"
+            ]
           },
-          "prompts_link_tool_id": {
+          "temperature_levels": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/AgentTemperatureLevelSection"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Prompts Link Tool Id"
+            ]
           },
-          "instructions_link_tool_id": {
+          "reasoning_levels": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/AgentReasoningLevelSection"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Instructions Link Tool Id"
+            ]
           },
-          "flag_link_tool_id": {
+          "voices": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Flag Link Tool Id"
-          },
-          "departments_link_tool_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departments Link Tool Id"
-          },
-          "tools_link_tool_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Tools Link Tool Id"
-          },
-          "temperature_levels_link_tool_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Temperature Levels Link Tool Id"
-          },
-          "reasoning_levels_link_tool_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Reasoning Levels Link Tool Id"
-          },
-          "voices_link_tool_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Voices Link Tool Id"
-          },
-          "domain_data": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/DomainData"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Domain Data"
-          },
-          "resources": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/AgentResources"
+                "$ref": "#/components/schemas/AgentVoiceSection"
               },
               {
                 "type": "null"
@@ -56578,7 +56826,7 @@
         },
         "type": "object",
         "title": "GetAgentApiResponse",
-        "description": "Response model for get agent endpoint."
+        "description": "Section-first response model for get agent endpoint."
       },
       "GetAgentsListApiRequest": {
         "properties": {},
@@ -59588,8 +59836,7 @@
           }
         },
         "type": "object",
-        "title": "GetDepartmentApiRequest",
-        "description": "Request model for get department endpoint."
+        "title": "GetDepartmentApiRequest"
       },
       "GetDepartmentApiResponse": {
         "properties": {
@@ -59660,279 +59907,6 @@
             ],
             "title": "Group Id"
           },
-          "names_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Names Group Id"
-          },
-          "descriptions_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Descriptions Group Id"
-          },
-          "flags_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Flags Group Id"
-          },
-          "settings_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Settings Group Id"
-          },
-          "show_name": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Name"
-          },
-          "name_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name Domain Id"
-          },
-          "name_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name Required"
-          },
-          "name_suggestions": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name Suggestions"
-          },
-          "name_show_ai_generate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name Show Ai Generate"
-          },
-          "show_description": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Description"
-          },
-          "description_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description Domain Id"
-          },
-          "description_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description Required"
-          },
-          "description_suggestions": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description Suggestions"
-          },
-          "description_show_ai_generate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description Show Ai Generate"
-          },
-          "show_flag": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Flag"
-          },
-          "flag_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Flag Domain Id"
-          },
-          "flag_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Flag Required"
-          },
-          "flag_show_ai_generate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Flag Show Ai Generate"
-          },
-          "show_settings": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Settings"
-          },
-          "settings_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Settings Domain Id"
-          },
-          "settings_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Settings Required"
-          },
-          "settings_suggestions": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Settings Suggestions"
-          },
-          "settings_show_ai_generate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Settings Show Ai Generate"
-          },
           "basic_show_ai_generate": {
             "anyOf": [
               {
@@ -59944,107 +59918,40 @@
             ],
             "title": "Basic Show Ai Generate"
           },
-          "settings_step_show_ai_generate": {
+          "names": {
             "anyOf": [
               {
-                "type": "boolean"
+                "$ref": "#/components/schemas/DepartmentNameSection"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Settings Step Show Ai Generate"
+            ]
           },
-          "name_create_tool_id": {
+          "descriptions": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/DepartmentDescriptionSection"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Name Create Tool Id"
+            ]
           },
-          "description_create_tool_id": {
+          "flags": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/DepartmentFlagSection"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Description Create Tool Id"
+            ]
           },
-          "name_link_tool_id": {
+          "settings": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name Link Tool Id"
-          },
-          "description_link_tool_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description Link Tool Id"
-          },
-          "flag_link_tool_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Flag Link Tool Id"
-          },
-          "settings_link_tool_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Settings Link Tool Id"
-          },
-          "domain_data": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/DomainData"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Domain Data"
-          },
-          "resources": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/DepartmentResources"
+                "$ref": "#/components/schemas/DepartmentSettingSection"
               },
               {
                 "type": "null"
@@ -60053,8 +59960,7 @@
           }
         },
         "type": "object",
-        "title": "GetDepartmentApiResponse",
-        "description": "Response model for get department endpoint."
+        "title": "GetDepartmentApiResponse"
       },
       "GetDepartmentsApiRequest": {
         "properties": {
@@ -63953,351 +63859,6 @@
             ],
             "title": "Group Id"
           },
-          "names_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Names Group Id"
-          },
-          "descriptions_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Descriptions Group Id"
-          },
-          "flags_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Flags Group Id"
-          },
-          "departments_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departments Group Id"
-          },
-          "fields_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Fields Group Id"
-          },
-          "show_name": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Name"
-          },
-          "name_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name Domain Id"
-          },
-          "name_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name Required"
-          },
-          "name_suggestions": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name Suggestions"
-          },
-          "name_show_ai_generate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name Show Ai Generate"
-          },
-          "show_description": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Description"
-          },
-          "description_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description Domain Id"
-          },
-          "description_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description Required"
-          },
-          "description_suggestions": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description Suggestions"
-          },
-          "description_show_ai_generate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description Show Ai Generate"
-          },
-          "show_flag": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Flag"
-          },
-          "flag_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Flag Domain Id"
-          },
-          "flag_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Flag Required"
-          },
-          "flag_show_ai_generate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Flag Show Ai Generate"
-          },
-          "show_departments": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Departments"
-          },
-          "departments_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departments Domain Id"
-          },
-          "departments_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departments Required"
-          },
-          "department_suggestions": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Suggestions"
-          },
-          "departments_show_ai_generate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departments Show Ai Generate"
-          },
-          "show_fields": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Fields"
-          },
-          "fields_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Fields Domain Id"
-          },
-          "fields_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Fields Required"
-          },
-          "field_suggestions": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Field Suggestions"
-          },
-          "fields_show_ai_generate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Fields Show Ai Generate"
-          },
           "basic_show_ai_generate": {
             "anyOf": [
               {
@@ -64320,120 +63881,50 @@
             ],
             "title": "Fields Step Show Ai Generate"
           },
-          "name_create_tool_id": {
+          "names": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/ParameterNameSection"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Name Create Tool Id"
+            ]
           },
-          "description_create_tool_id": {
+          "descriptions": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/ParameterDescriptionSection"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Description Create Tool Id"
+            ]
           },
-          "fields_create_tool_id": {
+          "flags": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/ParameterFlagSection"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Fields Create Tool Id"
+            ]
           },
-          "name_link_tool_id": {
+          "departments": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/ParameterDepartmentSection"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Name Link Tool Id"
+            ]
           },
-          "description_link_tool_id": {
+          "fields": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description Link Tool Id"
-          },
-          "flag_link_tool_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Flag Link Tool Id"
-          },
-          "departments_link_tool_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departments Link Tool Id"
-          },
-          "fields_link_tool_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Fields Link Tool Id"
-          },
-          "domain_data": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/DomainData"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Domain Data"
-          },
-          "resources": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ParameterResources"
+                "$ref": "#/components/schemas/ParameterFieldSection"
               },
               {
                 "type": "null"
@@ -64443,7 +63934,7 @@
         },
         "type": "object",
         "title": "GetParameterApiResponse",
-        "description": "Response model for get parameter endpoint."
+        "description": "Section-first client response for get parameter endpoint."
       },
       "GetParameterFieldsApiRequest": {
         "properties": {
@@ -71547,7 +71038,7 @@
           "item": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/QGetSettingsV4Item"
+                "$ref": "#/components/schemas/app__api__v4__resources__settings__get__QGetSettingsV4Item"
               },
               {
                 "type": "null"
@@ -77719,8 +77210,7 @@
           }
         },
         "type": "object",
-        "title": "ListDepartmentApiCohort",
-        "description": "Cohort type for list endpoint."
+        "title": "ListDepartmentApiCohort"
       },
       "ListDepartmentApiDepartment": {
         "properties": {
@@ -77827,8 +77317,7 @@
           }
         },
         "type": "object",
-        "title": "ListDepartmentApiDepartment",
-        "description": "Department type for list endpoint with computed permissions."
+        "title": "ListDepartmentApiDepartment"
       },
       "ListDepartmentApiProfile": {
         "properties": {
@@ -77868,8 +77357,7 @@
           }
         },
         "type": "object",
-        "title": "ListDepartmentApiProfile",
-        "description": "Profile type for list endpoint."
+        "title": "ListDepartmentApiProfile"
       },
       "ListDepartmentApiResponse": {
         "properties": {
@@ -77939,8 +77427,7 @@
           }
         },
         "type": "object",
-        "title": "ListDepartmentApiResponse",
-        "description": "Response model for list department endpoint with computed permissions."
+        "title": "ListDepartmentApiResponse"
       },
       "ListEvalApiDepartment": {
         "properties": {
@@ -78646,8 +78133,7 @@
           }
         },
         "type": "object",
-        "title": "ListParameterApiDepartment",
-        "description": "Department type for list endpoint."
+        "title": "ListParameterApiDepartment"
       },
       "ListParameterApiParameter": {
         "properties": {
@@ -78725,6 +78211,21 @@
             ],
             "title": "Scenario Ids"
           },
+          "document_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Ids"
+          },
           "num_items": {
             "anyOf": [
               {
@@ -78797,8 +78298,7 @@
           }
         },
         "type": "object",
-        "title": "ListParameterApiParameter",
-        "description": "Parameter type for list endpoint with computed permissions."
+        "title": "ListParameterApiParameter"
       },
       "ListParameterApiResponse": {
         "properties": {
@@ -78855,6 +78355,40 @@
             ],
             "title": "Departments"
           },
+          "scenario_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Options"
+          },
+          "document_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Options"
+          },
           "total_count": {
             "anyOf": [
               {
@@ -78868,8 +78402,7 @@
           }
         },
         "type": "object",
-        "title": "ListParameterApiResponse",
-        "description": "Response model for list parameter endpoint with computed permissions."
+        "title": "ListParameterApiResponse"
       },
       "ListParameterApiScenario": {
         "properties": {
@@ -78946,8 +78479,7 @@
           }
         },
         "type": "object",
-        "title": "ListParameterApiScenario",
-        "description": "Scenario type for list endpoint."
+        "title": "ListParameterApiScenario"
       },
       "ListPersonaApiDepartment": {
         "properties": {
@@ -82577,6 +82109,266 @@
         "type": "object",
         "title": "OptionsApiResponse"
       },
+      "ParameterDepartmentSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "current": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetDepartmentsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current"
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetDepartmentsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "ParameterDepartmentSection"
+      },
+      "ParameterDescriptionSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "resource": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetDescriptionsV4Item"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetDescriptionsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "ParameterDescriptionSection"
+      },
+      "ParameterFieldSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "current": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetParameterFieldsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current"
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetParameterFieldsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "ParameterFieldSection"
+      },
       "ParameterFieldsApiRequest": {
         "properties": {
           "agent_id": {
@@ -82693,18 +82485,6 @@
             "title": "Required",
             "default": false
           },
-          "domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Domain Id"
-          },
           "generated": {
             "anyOf": [
               {
@@ -82724,6 +82504,94 @@
         ],
         "title": "ParameterFlagConfig",
         "description": "Enriched flag config for direct client consumption."
+      },
+      "ParameterFlagSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "current": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ParameterFlagConfig"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current"
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ParameterFlagConfig"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "ParameterFlagSection"
       },
       "ParameterGenerationCompleteEvent": {
         "properties": {
@@ -82839,9 +82707,118 @@
         "title": "ParameterGenerationCompleteEvent",
         "description": "Server-to-client event: parameter_generation_complete.\n\nEmitted when a parameter resource generation completes successfully.\nContains full resource objects (not just IDs) for immediate frontend use."
       },
-      "ParameterResourceBucket": {
+      "ParameterMultiResourceAction": {
         "properties": {
-          "names": {
+          "resource_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resource Ids"
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          }
+        },
+        "type": "object",
+        "title": "ParameterMultiResourceAction"
+      },
+      "ParameterNameSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "resource": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetNamesV4Item"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "resources": {
             "anyOf": [
               {
                 "items": {
@@ -82853,95 +82830,53 @@
                 "type": "null"
               }
             ],
-            "title": "Names"
-          },
-          "descriptions": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetDescriptionsV4Item"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Descriptions"
-          },
-          "flags": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ParameterFlagConfig"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Flags"
-          },
-          "departments": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetDepartmentsV4Item"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departments"
-          },
-          "fields": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetParameterFieldsV4Item"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Fields"
+            "title": "Resources"
           }
         },
         "type": "object",
-        "title": "ParameterResourceBucket",
-        "description": "Generic resources bucket with full objects (always plural lists)."
+        "title": "ParameterNameSection"
       },
-      "ParameterResources": {
+      "ParameterResourceAction": {
         "properties": {
-          "resources": {
+          "resource_id": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/ParameterResourceBucket"
+                "type": "string",
+                "format": "uuid"
               },
               {
                 "type": "null"
               }
-            ]
+            ],
+            "title": "Resource Id"
           },
-          "current": {
+          "create_tool_id": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/ParameterResourceBucket"
+                "type": "string",
+                "format": "uuid"
               },
               {
                 "type": "null"
               }
-            ]
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
           }
         },
         "type": "object",
-        "title": "ParameterResources",
-        "description": "Full resources + current selections."
+        "title": "ParameterResourceAction"
       },
       "PatchAgentDraftApiRequest": {
         "properties": {
@@ -82957,7 +82892,7 @@
             ],
             "title": "Input Draft Id"
           },
-          "name_id": {
+          "group_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -82967,102 +82902,157 @@
                 "type": "null"
               }
             ],
-            "title": "Name Id"
+            "title": "Group Id"
           },
-          "description_id": {
+          "names": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/AgentResourceAction"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Description Id"
+            ]
           },
-          "active_flag_id": {
+          "descriptions": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/AgentResourceAction"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Active Flag Id"
+            ]
           },
-          "department_ids": {
+          "models": {
             "anyOf": [
               {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
+                "$ref": "#/components/schemas/AgentResourceAction"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Department Ids"
+            ]
+          },
+          "prompts": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AgentResourceAction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "instructions": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AgentResourceAction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "flags": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AgentResourceAction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "temperature_levels": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AgentResourceAction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reasoning_levels": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AgentResourceAction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "departments": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AgentMultiResourceAction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "tools": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AgentMultiResourceAction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "voices": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AgentMultiResourceAction"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "expected_version": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
             "title": "Expected Version",
             "default": 0
           }
         },
         "type": "object",
-        "title": "PatchAgentDraftApiRequest"
+        "title": "PatchAgentDraftApiRequest",
+        "description": "Section-action patch draft request for agent endpoint."
       },
       "PatchAgentDraftApiResponse": {
         "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
           "draft_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
+            "format": "uuid",
             "title": "Draft Id"
           },
           "new_version": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
             "title": "New Version"
           },
-          "draft_exists": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Draft Exists"
+          "message": {
+            "type": "string",
+            "title": "Message"
           }
         },
         "type": "object",
-        "title": "PatchAgentDraftApiResponse"
+        "required": [
+          "success",
+          "draft_id",
+          "new_version",
+          "message"
+        ],
+        "title": "PatchAgentDraftApiResponse",
+        "description": "Response model for patch agent draft endpoint."
       },
       "PatchAuthDraftApiRequest": {
         "properties": {
@@ -83356,7 +83346,7 @@
             ],
             "title": "Input Draft Id"
           },
-          "name_id": {
+          "group_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -83366,46 +83356,47 @@
                 "type": "null"
               }
             ],
-            "title": "Name Id"
+            "title": "Group Id"
           },
-          "description_id": {
+          "names": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/DepartmentResourceAction"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Description Id"
+            ]
           },
-          "active_flag_id": {
+          "descriptions": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/DepartmentResourceAction"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Active Flag Id"
+            ]
           },
-          "settings_ids": {
+          "flags": {
             "anyOf": [
               {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
+                "$ref": "#/components/schemas/DepartmentResourceAction"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Settings Ids"
+            ]
+          },
+          "settings": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DepartmentMultiResourceAction"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "expected_version": {
             "type": "integer",
@@ -83414,8 +83405,7 @@
           }
         },
         "type": "object",
-        "title": "PatchDepartmentDraftApiRequest",
-        "description": "Request model for patch department draft endpoint."
+        "title": "PatchDepartmentDraftApiRequest"
       },
       "PatchDepartmentDraftApiResponse": {
         "properties": {
@@ -83444,8 +83434,7 @@
           "new_version",
           "message"
         ],
-        "title": "PatchDepartmentDraftApiResponse",
-        "description": "Response model for patch department draft endpoint."
+        "title": "PatchDepartmentDraftApiResponse"
       },
       "PatchDocumentDraftApiRequest": {
         "properties": {
@@ -84077,7 +84066,7 @@
             ],
             "title": "Input Draft Id"
           },
-          "name_id": {
+          "group_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -84087,76 +84076,57 @@
                 "type": "null"
               }
             ],
-            "title": "Name Id"
+            "title": "Group Id"
           },
-          "description_id": {
+          "names": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/ParameterResourceAction"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Description Id"
+            ]
           },
-          "active_flag_id": {
+          "descriptions": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/ParameterResourceAction"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Active Flag Id"
+            ]
           },
-          "flag_ids": {
+          "flags": {
             "anyOf": [
               {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
+                "$ref": "#/components/schemas/ParameterMultiResourceAction"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Flag Ids"
+            ]
           },
-          "department_ids": {
+          "departments": {
             "anyOf": [
               {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
+                "$ref": "#/components/schemas/ParameterMultiResourceAction"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Department Ids"
+            ]
           },
-          "field_ids": {
+          "fields": {
             "anyOf": [
               {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
+                "$ref": "#/components/schemas/ParameterMultiResourceAction"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Field Ids"
+            ]
           },
           "expected_version": {
             "type": "integer",
@@ -84165,8 +84135,7 @@
           }
         },
         "type": "object",
-        "title": "PatchParameterDraftApiRequest",
-        "description": "Request model for patch parameter draft endpoint."
+        "title": "PatchParameterDraftApiRequest"
       },
       "PatchParameterDraftApiResponse": {
         "properties": {
@@ -84195,8 +84164,7 @@
           "new_version",
           "message"
         ],
-        "title": "PatchParameterDraftApiResponse",
-        "description": "Response model for patch parameter draft endpoint."
+        "title": "PatchParameterDraftApiResponse"
       },
       "PatchPersonaDraftApiRequest": {
         "properties": {
@@ -96714,375 +96682,6 @@
         ],
         "title": "QGetSettingsListV4Setting"
       },
-      "QGetSettingsV4Auth": {
-        "properties": {
-          "auth_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Auth Id"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "slug": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Slug"
-          }
-        },
-        "type": "object",
-        "title": "QGetSettingsV4Auth",
-        "description": "Auth item in settings."
-      },
-      "QGetSettingsV4Item": {
-        "properties": {
-          "settings_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Settings Id"
-          },
-          "created_at": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Created At"
-          },
-          "active": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Active"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "primary_color": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Primary Color"
-          },
-          "accent": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Accent"
-          },
-          "background": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Background"
-          },
-          "surface": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Surface"
-          },
-          "success": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Success"
-          },
-          "warning": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Warning"
-          },
-          "error": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Error"
-          },
-          "sidebar_background": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Sidebar Background"
-          },
-          "sidebar_primary": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Sidebar Primary"
-          },
-          "chart1": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Chart1"
-          },
-          "chart2": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Chart2"
-          },
-          "chart3": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Chart3"
-          },
-          "chart4": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Chart4"
-          },
-          "chart5": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Chart5"
-          },
-          "guest_login_enabled": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Guest Login Enabled"
-          },
-          "success_threshold": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Success Threshold"
-          },
-          "warning_threshold": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Warning Threshold"
-          },
-          "danger_threshold": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Danger Threshold"
-          },
-          "auth_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Auth Ids"
-          },
-          "auths": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetSettingsV4Auth"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Auths"
-          },
-          "provider_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Provider Ids"
-          },
-          "providers": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetSettingsV4Provider"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Providers"
-          }
-        },
-        "type": "object",
-        "title": "QGetSettingsV4Item",
-        "description": "Settings item returned from get endpoint."
-      },
       "QGetSettingsV4Provider": {
         "properties": {
           "provider_id": {
@@ -103669,98 +103268,10 @@
       },
       "SaveAgentApiRequest": {
         "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "model_id": {
+          "group_id": {
             "type": "string",
             "format": "uuid",
-            "title": "Model Id"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "prompt_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Prompt Id"
-          },
-          "system_prompt": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "System Prompt"
-          },
-          "instructions_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Instructions Id"
-          },
-          "active_flag_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Active Flag Id"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "artifact_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Artifact Name"
+            "title": "Group Id"
           },
           "input_agent_id": {
             "anyOf": [
@@ -103774,96 +103285,136 @@
             ],
             "title": "Input Agent Id"
           },
-          "temperature_level_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Temperature Level Id"
+          "names": {
+            "$ref": "#/components/schemas/AgentResourceAction"
           },
-          "reasoning_level_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Reasoning Level Id"
+          "models": {
+            "$ref": "#/components/schemas/AgentResourceAction"
           },
-          "voice_ids": {
+          "descriptions": {
             "anyOf": [
               {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
+                "$ref": "#/components/schemas/AgentResourceAction"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Voice Ids"
+            ]
           },
-          "tool_ids": {
+          "prompts": {
             "anyOf": [
               {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
+                "$ref": "#/components/schemas/AgentResourceAction"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Tool Ids"
+            ]
+          },
+          "instructions": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AgentResourceAction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "flags": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AgentResourceAction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "temperature_levels": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AgentResourceAction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reasoning_levels": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AgentResourceAction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "departments": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AgentMultiResourceAction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "tools": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AgentMultiResourceAction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "voices": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AgentMultiResourceAction"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
         "required": [
-          "name",
-          "model_id"
+          "group_id",
+          "names",
+          "models"
         ],
-        "title": "SaveAgentApiRequest"
+        "title": "SaveAgentApiRequest",
+        "description": "Section-action save request for agent endpoint."
       },
       "SaveAgentApiResponse": {
         "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
           "agent_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
+            "format": "uuid",
             "title": "Agent Id"
           },
-          "actor_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Actor Name"
+          "message": {
+            "type": "string",
+            "title": "Message"
           }
         },
         "type": "object",
-        "title": "SaveAgentApiResponse"
+        "required": [
+          "success",
+          "agent_id",
+          "message"
+        ],
+        "title": "SaveAgentApiResponse",
+        "description": "Response model for save agent endpoint."
       },
       "SaveAuthApiRequest": {
         "properties": {
@@ -104163,58 +103714,28 @@
             ],
             "title": "Input Department Id"
           },
-          "name_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Name Id"
+          "names": {
+            "$ref": "#/components/schemas/DepartmentResourceAction"
           },
-          "description_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description Id"
+          "descriptions": {
+            "$ref": "#/components/schemas/DepartmentResourceAction"
           },
-          "active_flag_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Active Flag Id"
+          "flags": {
+            "$ref": "#/components/schemas/DepartmentResourceAction"
           },
-          "settings_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Settings Ids"
+          "settings": {
+            "$ref": "#/components/schemas/DepartmentMultiResourceAction"
           }
         },
         "type": "object",
         "required": [
           "group_id",
-          "name_id"
+          "names",
+          "descriptions",
+          "flags",
+          "settings"
         ],
-        "title": "SaveDepartmentApiRequest",
-        "description": "Request model for save department endpoint - accepts form data directly (no draft_id)."
+        "title": "SaveDepartmentApiRequest"
       },
       "SaveDepartmentApiResponse": {
         "properties": {
@@ -104238,8 +103759,7 @@
           "department_id",
           "message"
         ],
-        "title": "SaveDepartmentApiResponse",
-        "description": "Response model for save department endpoint."
+        "title": "SaveDepartmentApiResponse"
       },
       "SaveEvalApiRequest": {
         "properties": {
@@ -104686,87 +104206,32 @@
             ],
             "title": "Input Parameter Id"
           },
-          "name_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Name Id"
+          "names": {
+            "$ref": "#/components/schemas/ParameterResourceAction"
           },
-          "description_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description Id"
+          "descriptions": {
+            "$ref": "#/components/schemas/ParameterResourceAction"
           },
-          "active_flag_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Active Flag Id"
+          "flags": {
+            "$ref": "#/components/schemas/ParameterMultiResourceAction"
           },
-          "flag_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Flag Ids"
+          "departments": {
+            "$ref": "#/components/schemas/ParameterMultiResourceAction"
           },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "field_connections": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/FieldConnectionItem"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Field Connections"
+          "fields": {
+            "$ref": "#/components/schemas/ParameterMultiResourceAction"
           }
         },
         "type": "object",
         "required": [
           "group_id",
-          "name_id"
+          "names",
+          "descriptions",
+          "flags",
+          "departments",
+          "fields"
         ],
-        "title": "SaveParameterApiRequest",
-        "description": "Request model for save parameter endpoint - accepts resource IDs."
+        "title": "SaveParameterApiRequest"
       },
       "SaveParameterApiResponse": {
         "properties": {
@@ -104790,8 +104255,7 @@
           "parameter_id",
           "message"
         ],
-        "title": "SaveParameterApiResponse",
-        "description": "Response model for save parameter endpoint."
+        "title": "SaveParameterApiResponse"
       },
       "SavePersonaApiRequest": {
         "properties": {
@@ -118036,6 +117500,375 @@
         "title": "FilterOption",
         "description": "A single filter option for dropdown selectors."
       },
+      "app__api__v4__resources__settings__get__QGetSettingsV4Auth": {
+        "properties": {
+          "auth_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slug"
+          }
+        },
+        "type": "object",
+        "title": "QGetSettingsV4Auth",
+        "description": "Auth item in settings."
+      },
+      "app__api__v4__resources__settings__get__QGetSettingsV4Item": {
+        "properties": {
+          "settings_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settings Id"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "primary_color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Color"
+          },
+          "accent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accent"
+          },
+          "background": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Background"
+          },
+          "surface": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Surface"
+          },
+          "success": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Success"
+          },
+          "warning": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Warning"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "sidebar_background": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sidebar Background"
+          },
+          "sidebar_primary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sidebar Primary"
+          },
+          "chart1": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chart1"
+          },
+          "chart2": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chart2"
+          },
+          "chart3": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chart3"
+          },
+          "chart4": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chart4"
+          },
+          "chart5": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chart5"
+          },
+          "guest_login_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Guest Login Enabled"
+          },
+          "success_threshold": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Success Threshold"
+          },
+          "warning_threshold": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Warning Threshold"
+          },
+          "danger_threshold": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Danger Threshold"
+          },
+          "auth_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Ids"
+          },
+          "auths": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/app__api__v4__resources__settings__get__QGetSettingsV4Auth"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auths"
+          },
+          "provider_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Ids"
+          },
+          "providers": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetSettingsV4Provider"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Providers"
+          }
+        },
+        "type": "object",
+        "title": "QGetSettingsV4Item",
+        "description": "Settings item returned from get endpoint."
+      },
       "app__api__v4__resources__simulations__get__GetSimulationApiRequest": {
         "properties": {
           "id": {
@@ -118329,6 +118162,394 @@
           "link_tool_id"
         ],
         "title": "DocumentResourceAction"
+      },
+      "app__sql__types__QGetSettingsV4Auth": {
+        "properties": {
+          "auth_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slug"
+          }
+        },
+        "type": "object",
+        "required": [
+          "auth_id",
+          "name",
+          "description",
+          "slug"
+        ],
+        "title": "QGetSettingsV4Auth"
+      },
+      "app__sql__types__QGetSettingsV4Item": {
+        "properties": {
+          "settings_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settings Id"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "primary_color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Color"
+          },
+          "accent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accent"
+          },
+          "background": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Background"
+          },
+          "surface": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Surface"
+          },
+          "success": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Success"
+          },
+          "warning": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Warning"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "sidebar_background": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sidebar Background"
+          },
+          "sidebar_primary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sidebar Primary"
+          },
+          "chart1": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chart1"
+          },
+          "chart2": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chart2"
+          },
+          "chart3": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chart3"
+          },
+          "chart4": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chart4"
+          },
+          "chart5": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chart5"
+          },
+          "guest_login_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Guest Login Enabled"
+          },
+          "success_threshold": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Success Threshold"
+          },
+          "warning_threshold": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Warning Threshold"
+          },
+          "danger_threshold": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Danger Threshold"
+          },
+          "auth_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Ids"
+          },
+          "auths": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/app__sql__types__QGetSettingsV4Auth"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auths"
+          },
+          "provider_key_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Key Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "settings_id",
+          "created_at",
+          "active",
+          "name",
+          "description",
+          "primary_color",
+          "accent",
+          "background",
+          "surface",
+          "success",
+          "warning",
+          "error",
+          "sidebar_background",
+          "sidebar_primary",
+          "chart1",
+          "chart2",
+          "chart3",
+          "chart4",
+          "chart5",
+          "guest_login_enabled",
+          "success_threshold",
+          "warning_threshold",
+          "danger_threshold",
+          "auth_ids",
+          "auths",
+          "provider_key_ids"
+        ],
+        "title": "QGetSettingsV4Item"
       },
       "app__sql__types__SaveDocumentApiRequest": {
         "properties": {

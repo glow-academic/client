@@ -22,6 +22,7 @@ import {
   GenericForm,
   type StepStatus,
 } from "@/components/common/forms/GenericForm";
+import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
 import { StepCard } from "@/components/common/forms/StepCard";
 import { GenerateRegenerateModal } from "@/components/common/GenerateRegenerateModal";
 import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
@@ -36,24 +37,25 @@ import { ReasoningLevels } from "@/components/resources/ReasoningLevels";
 import { TemperatureLevels } from "@/components/resources/TemperatureLevels";
 import { Tools } from "@/components/resources/Tools";
 import { Voices } from "@/components/resources/Voices";
-import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
+import { useSaveContext } from "@/contexts/save-context";
 import { useAiGeneration } from "@/hooks/use-ai-generation";
-import { useDraftAutosave } from "@/hooks/use-draft-autosave";
+import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
+import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import { useGenerationModal } from "@/hooks/use-generation-modal";
+import {
+  buildResourceActions,
+  checkHasResourceIds,
+  computeEffectiveFormState,
+  type ResourceConfig,
+} from "@/lib/resources/action-builders";
 import type { ResourceType } from "@/lib/resources/types";
+import type { ServerToClientEvents } from "@/lib/ws/types";
 import {
   getDefaultDepartmentIds,
   transformDepartmentIdsForSubmit,
 } from "@/utils/department-picker-helpers";
-import { Loader2, Sparkles } from "lucide-react";
 import {
   parseAsBoolean,
   parseAsString,
@@ -73,28 +75,80 @@ import type {
 import type { InputOf, OutputOf } from "@/lib/api/types";
 
 // Resource creation action types
-type CreateDraftReasoningLevelsIn = InputOf<
-  "/api/v4/resources/reasoning_levels",
-  "post"
->;
-type CreateDraftReasoningLevelsOut = OutputOf<
-  "/api/v4/resources/reasoning_levels",
-  "post"
->;
-type CreateDraftTemperatureLevelsIn = InputOf<
-  "/api/v4/resources/temperature_levels",
-  "post"
->;
-type CreateDraftTemperatureLevelsOut = OutputOf<
-  "/api/v4/resources/temperature_levels",
-  "post"
->;
 type CreateDraftVoicesIn = InputOf<"/api/v4/resources/voices", "post">;
 type CreateDraftVoicesOut = OutputOf<"/api/v4/resources/voices", "post">;
 type CreateDraftPromptsIn = InputOf<"/api/v4/resources/prompts", "post">;
 type CreateDraftPromptsOut = OutputOf<"/api/v4/resources/prompts", "post">;
-type CreateDraftModelsIn = InputOf<"/api/v4/resources/models", "post">;
-type CreateDraftModelsOut = OutputOf<"/api/v4/resources/models", "post">;
+type AgentGenerationCompletePayload = Parameters<
+  ServerToClientEvents["agent_generation_complete"]
+>[0];
+
+type AgentAiFormData = {
+  name_resource?: AgentGenerationCompletePayload["name_resource"];
+  description_resource?: AgentGenerationCompletePayload["description_resource"];
+  model_resource?: AgentGenerationCompletePayload["model_resource"];
+  prompt_resource?: AgentGenerationCompletePayload["prompt_resource"];
+  instructions_resource?: AgentGenerationCompletePayload["instructions_resource"];
+  flag_resource?: AgentGenerationCompletePayload["flag_resource"];
+  temperature_level_resource?: AgentGenerationCompletePayload["temperature_level_resource"];
+  reasoning_level_resource?: AgentGenerationCompletePayload["reasoning_level_resource"];
+  department_resources?: AgentGenerationCompletePayload["department_resources"];
+  tool_resources?: AgentGenerationCompletePayload["tool_resources"];
+  voice_resources?: AgentGenerationCompletePayload["voice_resources"];
+};
+
+type SaveAgentBody = SaveAgentIn extends { body: infer B } ? B : never;
+
+type FlushResult = {
+  prompt_id?: string | null;
+  voice_ids?: string[];
+};
+
+const FLUSH_KEYS = ["prompts", "voices"] as const;
+
+const AGENT_RESOURCES: ResourceConfig[] = [
+  { key: "names", formKey: "name_id", flushKey: null, type: "single" },
+  {
+    key: "descriptions",
+    formKey: "description_id",
+    flushKey: null,
+    type: "single",
+  },
+  { key: "models", formKey: "modelId", flushKey: null, type: "single" },
+  {
+    key: "prompts",
+    formKey: "prompt_id",
+    flushKey: "prompt_id",
+    type: "single",
+  },
+  {
+    key: "instructions",
+    formKey: "instructions_id",
+    flushKey: null,
+    type: "single",
+  },
+  { key: "flags", formKey: "active_flag_id", flushKey: null, type: "single" },
+  {
+    key: "departments",
+    formKey: "departmentIds",
+    flushKey: null,
+    type: "multi",
+  },
+  { key: "tools", formKey: "tool_ids", flushKey: null, type: "multi" },
+  {
+    key: "temperature_levels",
+    formKey: "temperature_level_id",
+    flushKey: null,
+    type: "single",
+  },
+  {
+    key: "reasoning_levels",
+    formKey: "reasoning_level_id",
+    flushKey: null,
+    type: "single",
+  },
+  { key: "voices", formKey: "voice_ids", flushKey: "voice_ids", type: "multi" },
+];
 
 export interface AgentProps {
   agentId?: string;
@@ -108,21 +162,12 @@ export interface AgentProps {
     input: PatchAgentDraftIn,
   ) => Promise<PatchAgentDraftOut>;
   // Resource creation actions
-  createReasoningLevelsAction?: (
-    input: CreateDraftReasoningLevelsIn,
-  ) => Promise<CreateDraftReasoningLevelsOut>;
-  createTemperatureLevelsAction?: (
-    input: CreateDraftTemperatureLevelsIn,
-  ) => Promise<CreateDraftTemperatureLevelsOut>;
   createVoicesAction?: (
     input: CreateDraftVoicesIn,
   ) => Promise<CreateDraftVoicesOut>;
   createPromptsAction?: (
     input: CreateDraftPromptsIn,
   ) => Promise<CreateDraftPromptsOut>;
-  createModelsAction?: (
-    input: CreateDraftModelsIn,
-  ) => Promise<CreateDraftModelsOut>;
 }
 
 export default function Agent({
@@ -131,18 +176,18 @@ export default function Agent({
   agentDetailDefault: serverAgentDetailDefault,
   saveAgentAction,
   patchAgentDraftAction,
-  createReasoningLevelsAction,
-  createTemperatureLevelsAction,
   createVoicesAction,
   createPromptsAction,
-  createModelsAction: _createModelsAction,
 }: AgentProps) {
   const router = useRouter();
   const isEditMode = !!agentId;
   const { profile, selectedDraftId, setSelectedDraftId, socket, isConnected } =
     useProfile();
+  const { isAutosaveEnabled } = useSaveContext();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
   const isSuperadmin = profile?.role === "superadmin";
+  const { flushRegistryRef, registerFlushCallbacks, flushAllResources } =
+    useFlushRegistry<FlushResult>(FLUSH_KEYS);
 
   // Stabilize server props to prevent unnecessary re-renders from object reference changes
   const stabilizeServerProp = React.useCallback(
@@ -238,7 +283,210 @@ export default function Agent({
   const agentDetailDefault = stableAgentDetailDefaultRef.current.data;
 
   // Use edit detail when editing, default detail when creating
-  const agentData = isEditMode ? agentDetail : agentDetailDefault;
+  const rawAgentData = isEditMode ? agentDetail : agentDetailDefault;
+  const agentData = useMemo(() => {
+    const s = rawAgentData as Record<string, unknown> | undefined;
+    if (!s) return rawAgentData;
+
+    // Already legacy/flat shape (pre-migration fallback)
+    if (!s["names"] || !s["descriptions"]) {
+      return rawAgentData;
+    }
+
+    const names = s["names"] as Record<string, unknown> | null;
+    const descriptions = s["descriptions"] as Record<string, unknown> | null;
+    const models = s["models"] as Record<string, unknown> | null;
+    const prompts = s["prompts"] as Record<string, unknown> | null;
+    const instructions = s["instructions"] as Record<string, unknown> | null;
+    const flags = s["flags"] as Record<string, unknown> | null;
+    const departments = s["departments"] as Record<string, unknown> | null;
+    const tools = s["tools"] as Record<string, unknown> | null;
+    const temperatureLevels = s["temperature_levels"] as
+      | Record<string, unknown>
+      | null;
+    const reasoningLevels = s["reasoning_levels"] as
+      | Record<string, unknown>
+      | null;
+    const voices = s["voices"] as Record<string, unknown> | null;
+
+    const modelResources = ((models?.["resources"] as unknown[]) ?? []).map(
+      (m) => {
+        const item = m as Record<string, unknown>;
+        return {
+          ...item,
+          model_id: (item["id"] as string | undefined) ?? item["model_id"],
+        };
+      },
+    );
+
+    const promptResources = ((prompts?.["resources"] as unknown[]) ?? []).map(
+      (p) => {
+        const item = p as Record<string, unknown>;
+        return {
+          ...item,
+          prompt_id: (item["id"] as string | undefined) ?? item["prompt_id"],
+        };
+      },
+    );
+
+    return {
+      ...s,
+      // flat aliases consumed by existing component code
+      name_id:
+        ((names?.["resource"] as Record<string, unknown> | null)?.["id"] as
+          | string
+          | null
+          | undefined) ?? null,
+      name_resource: names?.["resource"] ?? null,
+      show_name: names?.["show"] ?? true,
+      name_suggestions: names?.["suggestions"] ?? [],
+      names: names?.["resources"] ?? [],
+      name_required: names?.["required"] ?? false,
+      name_agent_id: names?.["show_ai_generate"] ? "agent" : null,
+      name_create_tool_id: names?.["create_tool_id"] ?? null,
+      name_link_tool_id: names?.["link_tool_id"] ?? null,
+      description_id:
+        ((descriptions?.["resource"] as Record<string, unknown> | null)?.[
+          "id"
+        ] as string | null | undefined) ?? null,
+      description_resource: descriptions?.["resource"] ?? null,
+      show_description: descriptions?.["show"] ?? true,
+      description_suggestions: descriptions?.["suggestions"] ?? [],
+      descriptions: descriptions?.["resources"] ?? [],
+      description_required: descriptions?.["required"] ?? false,
+      description_agent_id: descriptions?.["show_ai_generate"] ? "agent" : null,
+      description_create_tool_id: descriptions?.["create_tool_id"] ?? null,
+      description_link_tool_id: descriptions?.["link_tool_id"] ?? null,
+      model_id:
+        ((models?.["resource"] as Record<string, unknown> | null)?.["id"] as
+          | string
+          | null
+          | undefined) ?? null,
+      model_resource: models?.["resource"] ?? null,
+      show_models: models?.["show"] ?? true,
+      model_suggestions: models?.["suggestions"] ?? [],
+      models: modelResources,
+      models_required: models?.["required"] ?? false,
+      models_agent_id: models?.["show_ai_generate"] ? "agent" : null,
+      models_create_tool_id: models?.["create_tool_id"] ?? null,
+      models_link_tool_id: models?.["link_tool_id"] ?? null,
+      prompt_id:
+        ((prompts?.["resource"] as Record<string, unknown> | null)?.["id"] as
+          | string
+          | null
+          | undefined) ?? null,
+      prompt_resource: prompts?.["resource"] ?? null,
+      show_prompts: prompts?.["show"] ?? true,
+      prompt_suggestions: prompts?.["suggestions"] ?? [],
+      prompts: promptResources,
+      prompts_required: prompts?.["required"] ?? false,
+      prompts_agent_id: prompts?.["show_ai_generate"] ? "agent" : null,
+      prompts_create_tool_id: prompts?.["create_tool_id"] ?? null,
+      prompts_link_tool_id: prompts?.["link_tool_id"] ?? null,
+      instructions_id:
+        ((instructions?.["resource"] as Record<string, unknown> | null)?.[
+          "id"
+        ] as string | null | undefined) ?? null,
+      instructions_resource: instructions?.["resource"] ?? null,
+      show_instructions: instructions?.["show"] ?? true,
+      instructions_suggestions: instructions?.["suggestions"] ?? [],
+      instructions: instructions?.["resources"] ?? [],
+      instructions_required: instructions?.["required"] ?? false,
+      instructions_agent_id: instructions?.["show_ai_generate"] ? "agent" : null,
+      instructions_create_tool_id: instructions?.["create_tool_id"] ?? null,
+      instructions_link_tool_id: instructions?.["link_tool_id"] ?? null,
+      active_flag_id:
+        ((flags?.["current"] as Array<Record<string, unknown>> | undefined)?.[0]?.[
+          "flag_option_id"
+        ] as string | null | undefined) ?? null,
+      flag_resource: (() => {
+        const currentFlag = (
+          (flags?.["current"] as Array<Record<string, unknown>> | undefined) ?? []
+        )[0];
+        if (!currentFlag) return null;
+        return {
+          id: currentFlag["flag_option_id"] ?? null,
+          name: currentFlag["label"] ?? null,
+          description: currentFlag["description"] ?? null,
+          icon: currentFlag["icon_id"] ?? null,
+          generated: currentFlag["generated"] ?? null,
+        };
+      })(),
+      show_flag: flags?.["show"] ?? false,
+      flag_required: flags?.["required"] ?? false,
+      flag_agent_id: flags?.["show_ai_generate"] ? "agent" : null,
+      flag_link_tool_id: flags?.["link_tool_id"] ?? null,
+      department_ids:
+        ((departments?.["current"] as Array<Record<string, unknown>> | undefined) ??
+          [])
+          .map((d) => d["department_id"] as string | null)
+          .filter((id): id is string => id != null),
+      department_resources: departments?.["current"] ?? [],
+      show_departments: departments?.["show"] ?? false,
+      department_suggestions: departments?.["suggestions"] ?? [],
+      departments: departments?.["resources"] ?? [],
+      departments_required: departments?.["required"] ?? false,
+      departments_agent_id: departments?.["show_ai_generate"] ? "agent" : null,
+      departments_link_tool_id: departments?.["link_tool_id"] ?? null,
+      tool_ids:
+        ((tools?.["current"] as Array<Record<string, unknown>> | undefined) ?? [])
+          .map((t) => (t["tool_id"] as string | undefined) ?? (t["id"] as string))
+          .filter((id): id is string => !!id),
+      tool_resources: tools?.["current"] ?? [],
+      show_tools: tools?.["show"] ?? false,
+      tool_suggestions: tools?.["suggestions"] ?? [],
+      tools: tools?.["resources"] ?? [],
+      tools_required: tools?.["required"] ?? false,
+      tools_agent_id: tools?.["show_ai_generate"] ? "agent" : null,
+      tools_link_tool_id: tools?.["link_tool_id"] ?? null,
+      temperature_level_id:
+        ((temperatureLevels?.["resource"] as Record<string, unknown> | null)?.[
+          "id"
+        ] as string | null | undefined) ?? null,
+      temperature_level_resource: temperatureLevels?.["resource"] ?? null,
+      show_temperature_levels: temperatureLevels?.["show"] ?? false,
+      temperature_level_suggestions: temperatureLevels?.["suggestions"] ?? [],
+      temperature_levels: temperatureLevels?.["resources"] ?? [],
+      temperature_levels_required: temperatureLevels?.["required"] ?? false,
+      temperature_levels_agent_id: temperatureLevels?.["show_ai_generate"]
+        ? "agent"
+        : null,
+      temperature_levels_link_tool_id: temperatureLevels?.["link_tool_id"] ?? null,
+      reasoning_level_id:
+        ((reasoningLevels?.["resource"] as Record<string, unknown> | null)?.[
+          "id"
+        ] as string | null | undefined) ?? null,
+      reasoning_level_resource: reasoningLevels?.["resource"] ?? null,
+      show_reasoning_levels: reasoningLevels?.["show"] ?? false,
+      reasoning_level_suggestions: reasoningLevels?.["suggestions"] ?? [],
+      reasoning_levels: reasoningLevels?.["resources"] ?? [],
+      reasoning_levels_required: reasoningLevels?.["required"] ?? false,
+      reasoning_levels_agent_id: reasoningLevels?.["show_ai_generate"]
+        ? "agent"
+        : null,
+      reasoning_levels_link_tool_id: reasoningLevels?.["link_tool_id"] ?? null,
+      voice_ids:
+        ((voices?.["current"] as Array<Record<string, unknown>> | undefined) ?? [])
+          .map((v) => v["id"] as string | null)
+          .filter((id): id is string => id != null),
+      voice_resources: voices?.["current"] ?? [],
+      show_voices: voices?.["show"] ?? false,
+      voice_suggestions: voices?.["suggestions"] ?? [],
+      voices: voices?.["resources"] ?? [],
+      voices_required: voices?.["required"] ?? false,
+      voices_agent_id: voices?.["show_ai_generate"] ? "agent" : null,
+      voices_create_tool_id: voices?.["create_tool_id"] ?? null,
+      voices_link_tool_id: voices?.["link_tool_id"] ?? null,
+      valid_department_ids: (
+        (departments?.["resources"] as Array<Record<string, unknown>> | undefined) ??
+        []
+      )
+        .map((d) => d["department_id"] as string | null)
+        .filter((id): id is string => id != null),
+      basic_show_ai_generate: s["basic_show_ai_generate"] ?? false,
+    } as typeof rawAgentData;
+  }, [rawAgentData]);
+  const sectionData = rawAgentData as GetAgentOut | undefined;
 
   // Inline parsers for URL-backed state (search/filter params only - form fields in draftState)
   const agentSearchParamsClient = {
@@ -257,16 +505,10 @@ export default function Agent({
   } as const;
 
   // URL-backed state using nuqs (only navigation/search params)
-  const [urlParams, setUrlParams] = useQueryStates(agentSearchParamsClient, {
+  const [urlParams] = useQueryStates(agentSearchParamsClient, {
     history: "replace",
     shallow: true, // Use shallow routing to prevent server component re-renders
   });
-
-  // Store nuqs setter in ref for use in callbacks (like Persona pattern)
-  const setUrlParamsRef = React.useRef(setUrlParams);
-  React.useEffect(() => {
-    setUrlParamsRef.current = setUrlParams;
-  }, [setUrlParams]);
 
   // Get draftId from URL (managed by nuqs via urlParams)
   const urlDraftId = urlParams.draftId || null;
@@ -277,8 +519,6 @@ export default function Agent({
       setSelectedDraftId(urlDraftId);
     }
   }, [urlDraftId, selectedDraftId, setSelectedDraftId]);
-
-  const draftId = urlDraftId;
 
   // Local draft state (not in URL) - initialized from server data or draft payload
   // Store resource IDs only, not text or resource objects (canonical pattern - matches Persona.tsx)
@@ -346,7 +586,7 @@ export default function Agent({
     agentDetailDefault,
     agentDetailId,
     agentDetailDefaultId,
-    draftId,
+    urlDraftId,
     urlDraftId,
     defaultDepartmentIds,
     // Include resource ID fields so it recomputes when server data changes
@@ -368,6 +608,9 @@ export default function Agent({
   ]);
 
   const [draftState, setDraftState] = useState<DraftState>(initialDraftState);
+  const lastPatchedFormStateRef = useRef<Record<string, unknown>>(
+    initialDraftState as Record<string, unknown>,
+  );
   // Sync draft_version from server to avoid unintended draft forks.
   const draftVersion =
     agentData && "draft_version" in agentData
@@ -389,54 +632,84 @@ export default function Agent({
     if (currentStateStr !== newStateStr) {
       prevInitialDraftStateRef.current = newStateStr;
       setDraftState(initialDraftState);
+      lastPatchedFormStateRef.current = {
+        ...initialDraftState,
+      } as Record<string, unknown>;
     }
   }, [initialDraftState]);
 
-  // Integrate autosave hook
-  // Pattern: Transform hook API to backend API
-  const {
-    saveStatus: _saveStatus,
-    saveNow: _saveNow,
-    lastSavedVersion: _lastSavedVersion,
-  } = useDraftAutosave({
-    draftId,
-    draftState,
-    initialVersion: typeof draftVersion === "number" ? draftVersion : 0,
-    patchDraftAction: patchAgentDraftAction
-      ? async (input) => {
-          // Transform hook API → backend API
-          const result = await patchAgentDraftAction({
-            body: {
-              input_draft_id: input.body.draft_id || null,
-              patch: input.body.patch as Record<string, unknown>,
-              expected_version: input.body.expected_version,
-            } as PatchAgentDraftIn["body"],
-          });
-          // Transform backend API → hook API
-          return {
-            draftId: result.draft_id || "",
-            newVersion: result.new_version || 0,
-            draftExists: result.draft_exists || false,
-          };
-        }
-      : async () => {
-          // Throw error instead of fake success (prevents silent failures)
-          throw new Error("patchAgentDraftAction is required for autosave");
-        },
-    debounceMs: 1000,
-    onDraftCreated: useCallback(
-      (newDraftId: string) => {
-        // Use nuqs setter via ref (canonical pattern - matches Persona.tsx)
-        if (urlParams.draftId === newDraftId) return;
-        setUrlParamsRef.current({ draftId: newDraftId });
-      },
-      [urlParams.draftId],
-    ),
-  });
+  const formStateRef = useRef(draftState as Record<string, unknown>);
+  useEffect(() => {
+    formStateRef.current = draftState as Record<string, unknown>;
+  }, [draftState]);
 
-  // Extract body types from server action types for type safety
-  type SaveAgentBody = SaveAgentIn extends { body: infer B } ? B : never;
-  // Prompts delete removed - DeleteAgentPromptBody no longer needed
+  const hasResourceIds = checkHasResourceIds(
+    AGENT_RESOURCES,
+    draftState as Record<string, unknown>,
+  );
+
+  const patchActionRef = useRef<
+    | ((
+        payload: Record<string, unknown>,
+      ) => Promise<{ draft_id?: string | null; new_version?: number | null }>)
+    | undefined
+  >(undefined);
+
+  useEffect(() => {
+    if (!patchAgentDraftAction) {
+      patchActionRef.current = undefined;
+      return;
+    }
+    patchActionRef.current = async (payload: Record<string, unknown>) =>
+      patchAgentDraftAction({ body: payload } as PatchAgentDraftIn);
+  }, [patchAgentDraftAction]);
+
+  const buildPatchPayload = useCallback(
+    (
+      nextDraftId: string | null,
+      expectedVersion: number,
+      flushResults: Record<string, unknown> = {},
+    ) => {
+      const effective = computeEffectiveFormState(
+        AGENT_RESOURCES,
+        draftState as Record<string, unknown>,
+        flushResults,
+      );
+
+      return {
+        input_draft_id: nextDraftId,
+        group_id: agentData?.group_id ?? null,
+        ...buildResourceActions(AGENT_RESOURCES, {
+          formState: effective,
+          referenceState: lastPatchedFormStateRef.current,
+          flushResults,
+          entityData: (agentData as Record<string, unknown> | undefined) ?? null,
+        }),
+        expected_version: expectedVersion,
+      };
+    },
+    [agentData, draftState],
+  );
+
+  const {
+    setUrlFormDataRef,
+    onFormDataChange,
+    flushAllAndSave,
+    formDataRef,
+  } = useDraftLifecycle({
+    formStateKey: JSON.stringify(draftState),
+    patchActionRef,
+    isAutosaveEnabled,
+    buildPatchPayload,
+    setSelectedDraftId,
+    serverDraftVersion: typeof draftVersion === "number" ? draftVersion : null,
+    hasResourceIds,
+    flushRegistryRef,
+    formStateRef,
+    onPatchSuccess: () => {
+      lastPatchedFormStateRef.current = { ...formStateRef.current };
+    },
+  });
 
   // Use server actions directly (no mutations needed)
   const handleSaveAgent = useCallback(
@@ -649,68 +922,57 @@ export default function Agent({
   // Handle form submission (for GenericForm)
   const handleSubmit = useCallback(
     async (_formData: Values<Record<string, Parser<unknown>>>) => {
-      // Form data from GenericForm is URL params (search/filter)
-      // Actual form fields are in draftState
-
-      // Validation - check resource IDs
-      if (!draftState.name_id) {
-        throw new Error("Agent name is required");
-      }
-
-      if (!draftState.description_id) {
-        throw new Error("Agent description is required");
-      }
-
-      if (!draftState.prompt_id) {
-        throw new Error("Prompt selection is required");
-      }
-
-      if (!draftState.modelId || draftState.modelId.trim().length === 0) {
-        throw new Error("Model selection is required");
-      }
-
       try {
-        const validDepartmentIds = agentData?.valid_department_ids || [];
+        const flushResults = await flushAllResources();
+        const effectiveFormState = computeEffectiveFormState(
+          AGENT_RESOURCES,
+          draftState as Record<string, unknown>,
+          flushResults,
+        );
+
+        const nameId = effectiveFormState["name_id"] as string | null;
+        const descriptionId = effectiveFormState["description_id"] as
+          | string
+          | null;
+        const promptId = effectiveFormState["prompt_id"] as string | null;
+        const modelId = effectiveFormState["modelId"] as string | null;
+        if (!nameId) throw new Error("Agent name is required");
+        if (!descriptionId) throw new Error("Agent description is required");
+        if (!promptId) throw new Error("Prompt selection is required");
+        if (!modelId || modelId.trim().length === 0) {
+          throw new Error("Model selection is required");
+        }
+
+        const validDepartmentIds =
+          agentData?.departments?.resources
+            ?.map((d) => d.department_id)
+            .filter((id): id is string => !!id) ?? [];
         const finalDepartmentIds = transformDepartmentIdsForSubmit(
-          draftState.departmentIds || [],
+          (effectiveFormState["departmentIds"] as string[]) ?? [],
           isSuperadmin,
           validDepartmentIds,
         );
+        const normalizedFormState = {
+          ...effectiveFormState,
+          departmentIds: finalDepartmentIds,
+        };
+        const saveActions = buildResourceActions(AGENT_RESOURCES, {
+          formState: normalizedFormState,
+          referenceState: lastPatchedFormStateRef.current,
+          flushResults,
+          entityData: (agentData as Record<string, unknown> | undefined) ?? null,
+        });
 
         // Save agent using unified v4 API (handles both create and update)
-        // Ensure profileId exists - required for API calls
         if (!profile?.id) {
           toast.error("Profile not loaded. Please refresh the page.");
           throw new Error("Profile not loaded");
         }
 
-        // Note: profileId is added by the server action
-        // Use input_agent_id = null for create, agent_id for update
-        const nameText = agentData?.name_resource?.name || "New Agent";
-        const descriptionText =
-          agentData?.description_resource?.description || null;
-
         await handleSaveAgent({
+          group_id: agentData?.group_id ?? "",
           input_agent_id: isEditMode ? agentId : null,
-          name: nameText,
-          description: descriptionText,
-          model_id: draftState.modelId!.trim(),
-          prompt_id: draftState.prompt_id || null,
-          system_prompt: null, // Prompts component handles system_prompt via prompt_id
-          instructions_id: draftState.instructions_id || null,
-          active_flag_id: draftState.active_flag_id || null,
-          department_ids: finalDepartmentIds,
-          artifact_name: "assistant", // Default artifact name (tools replace role)
-          temperature_level_id: draftState.temperature_level_id || null,
-          reasoning_level_id: draftState.reasoning_level_id || null,
-          voice_ids:
-            draftState.voice_ids && draftState.voice_ids.length > 0
-              ? draftState.voice_ids
-              : [],
-          tool_ids:
-            draftState.tool_ids && draftState.tool_ids.length > 0
-              ? draftState.tool_ids
-              : [],
+          ...saveActions,
         });
         toast.success(
           `Agent ${isEditMode ? "updated" : "created"} successfully!`,
@@ -733,6 +995,7 @@ export default function Agent({
       isSuperadmin,
       profile,
       handleSaveAgent,
+      flushAllResources,
       resetFormAndState,
       router,
     ],
@@ -834,34 +1097,6 @@ export default function Agent({
     [agentData],
   );
 
-  // Helper function to determine agent_type from resource types
-  const determineAgentType = useCallback(
-    (resourceTypes: ResourceType[]): string | null => {
-      if (resourceTypes.length === 1) {
-        const agentTypeMap: Partial<Record<ResourceType, string>> = {
-          names: "name",
-          descriptions: "description",
-          models: "models",
-          prompts: "prompts",
-          instructions: "instructions",
-          flags: "flags",
-          departments: "departments",
-          reasoning_levels: "reasoning_levels",
-          temperature_levels: "temperature_levels",
-          voices: "voices",
-          tools: "tools",
-        };
-        const firstType = resourceTypes[0];
-        if (firstType && firstType in agentTypeMap && agentTypeMap[firstType]) {
-          return agentTypeMap[firstType]!;
-        }
-      }
-      // For multiple resources, use "general" or find first available agent
-      return "general";
-    },
-    [],
-  );
-
   // Valid resource types for AI generation
   const AGENT_VALID_RESOURCE_TYPES: ResourceType[] = useMemo(
     () => [
@@ -882,72 +1117,131 @@ export default function Agent({
 
   // AI generation completion handler
   const onAiComplete = useCallback((data: Record<string, unknown>) => {
-    return {
-      aiUpdates: {} as Record<string, unknown>,
-      formStateUpdater: (prev: Record<string, unknown>) => {
-        const updates: Record<string, unknown> = {};
+    const aiUpdates: Partial<AgentAiFormData> = {};
+    if (data["name_resource"]) {
+      aiUpdates.name_resource = data[
+        "name_resource"
+      ] as AgentAiFormData["name_resource"];
+    }
+    if (data["description_resource"]) {
+      aiUpdates.description_resource = data[
+        "description_resource"
+      ] as AgentAiFormData["description_resource"];
+    }
+    if (data["model_resource"]) {
+      aiUpdates.model_resource = data[
+        "model_resource"
+      ] as AgentAiFormData["model_resource"];
+    }
+    if (data["prompt_resource"]) {
+      aiUpdates.prompt_resource = data[
+        "prompt_resource"
+      ] as AgentAiFormData["prompt_resource"];
+    }
+    if (data["instructions_resource"]) {
+      aiUpdates.instructions_resource = data[
+        "instructions_resource"
+      ] as AgentAiFormData["instructions_resource"];
+    }
+    if (data["flag_resource"]) {
+      aiUpdates.flag_resource = data["flag_resource"] as AgentAiFormData["flag_resource"];
+    }
+    if (data["temperature_level_resource"]) {
+      aiUpdates.temperature_level_resource = data[
+        "temperature_level_resource"
+      ] as AgentAiFormData["temperature_level_resource"];
+    }
+    if (data["reasoning_level_resource"]) {
+      aiUpdates.reasoning_level_resource = data[
+        "reasoning_level_resource"
+      ] as AgentAiFormData["reasoning_level_resource"];
+    }
+    if (data["department_resources"]) {
+      aiUpdates.department_resources = data[
+        "department_resources"
+      ] as AgentAiFormData["department_resources"];
+    }
+    if (data["tool_resources"]) {
+      aiUpdates.tool_resources = data[
+        "tool_resources"
+      ] as AgentAiFormData["tool_resources"];
+    }
+    if (data["voice_resources"]) {
+      aiUpdates.voice_resources = data[
+        "voice_resources"
+      ] as AgentAiFormData["voice_resources"];
+    }
 
-        // Single-value fields
-        if (data["name_id"]) updates["name_id"] = data["name_id"];
-        if (data["description_id"])
-          updates["description_id"] = data["description_id"];
-        if (data["model_id"]) updates["modelId"] = data["model_id"]; // Note: data has model_id, state has modelId
-        if (data["prompt_id"]) updates["prompt_id"] = data["prompt_id"];
-        if (data["active_flag_id"])
-          updates["active_flag_id"] = data["active_flag_id"];
-        if (data["instructions_id"])
-          updates["instructions_id"] = data["instructions_id"];
+    const formStateUpdates: Record<string, unknown> = {};
+    const nameResource = data["name_resource"] as { id?: string } | undefined;
+    if (nameResource?.id) formStateUpdates["name_id"] = nameResource.id;
+    const descriptionResource = data["description_resource"] as
+      | { id?: string }
+      | undefined;
+    if (descriptionResource?.id) {
+      formStateUpdates["description_id"] = descriptionResource.id;
+    }
+    const modelResource = data["model_resource"] as { id?: string } | undefined;
+    if (modelResource?.id) formStateUpdates["modelId"] = modelResource.id;
+    const promptResource = data["prompt_resource"] as { id?: string } | undefined;
+    if (promptResource?.id) formStateUpdates["prompt_id"] = promptResource.id;
+    const instructionsResource = data["instructions_resource"] as
+      | { id?: string }
+      | undefined;
+    if (instructionsResource?.id) {
+      formStateUpdates["instructions_id"] = instructionsResource.id;
+    }
+    const flagResource = data["flag_resource"] as { id?: string } | undefined;
+    if (flagResource?.id) {
+      formStateUpdates["active_flag_id"] = flagResource.id;
+    }
+    const tempLevelResource = data["temperature_level_resource"] as
+      | { id?: string }
+      | undefined;
+    if (tempLevelResource?.id) {
+      formStateUpdates["temperature_level_id"] = tempLevelResource.id;
+    }
+    const reasoningLevelResource = data["reasoning_level_resource"] as
+      | { id?: string }
+      | undefined;
+    if (reasoningLevelResource?.id) {
+      formStateUpdates["reasoning_level_id"] = reasoningLevelResource.id;
+    }
 
-        // Single-value with type check
-        const reasoningLevelId = data["reasoning_level_id"];
-        if (reasoningLevelId && typeof reasoningLevelId === "string") {
-          updates["reasoning_level_id"] = reasoningLevelId;
-        }
-        const temperatureLevelId = data["temperature_level_id"];
-        if (temperatureLevelId && typeof temperatureLevelId === "string") {
-          updates["temperature_level_id"] = temperatureLevelId;
-        }
+    const departmentResources = data["department_resources"] as
+      | Array<{ department_id?: string | null }>
+      | undefined;
+    if (departmentResources?.length) {
+      formStateUpdates["departmentIds"] = departmentResources
+        .map((item) => item.department_id)
+        .filter((id): id is string => !!id);
+    }
 
-        // Array fields with dedup
-        const voiceIds = data["voice_ids"];
-        if (Array.isArray(voiceIds) && voiceIds.length > 0) {
-          const prevVoiceIds = (prev["voice_ids"] as string[]) ?? [];
-          updates["voice_ids"] = [
-            ...new Set([
-              ...prevVoiceIds,
-              ...voiceIds.filter((id): id is string => typeof id === "string"),
-            ]),
-          ];
-        }
+    const toolResources = data["tool_resources"] as
+      | Array<{ id?: string | null }>
+      | undefined;
+    if (toolResources?.length) {
+      formStateUpdates["tool_ids"] = toolResources
+        .map((item) => item.id)
+        .filter((id): id is string => !!id);
+    }
 
-        const deptIds = data["department_ids"];
-        if (Array.isArray(deptIds) && deptIds.length > 0) {
-          const prevDeptIds = (prev["departmentIds"] as string[]) ?? [];
-          updates["departmentIds"] = [
-            ...new Set([...prevDeptIds, ...(deptIds as string[])]),
-          ];
-        }
+    const voiceResources = data["voice_resources"] as
+      | Array<{ id?: string | null }>
+      | undefined;
+    if (voiceResources?.length) {
+      formStateUpdates["voice_ids"] = voiceResources
+        .map((item) => item.id)
+        .filter((id): id is string => !!id);
+    }
 
-        const toolIds = data["tool_ids"];
-        if (Array.isArray(toolIds) && toolIds.length > 0) {
-          const prevToolIds = (prev["tool_ids"] as string[]) ?? [];
-          updates["tool_ids"] = [
-            ...new Set([
-              ...prevToolIds,
-              ...toolIds.filter((id): id is string => typeof id === "string"),
-            ]),
-          ];
-        }
-
-        return { ...prev, ...updates };
-      },
-    };
+    return { aiUpdates, formStateUpdates };
   }, []);
 
   // AI generation hook (replaces WebSocket useEffect + generatingResources state)
-  const { setGeneratingResources, isGenerating } = useAiGeneration<
+  const { setGeneratingResources, isGenerating, aiFormData } = useAiGeneration<
     ResourceType,
-    Record<string, unknown>
+    AgentAiFormData
   >({
     socket,
     isConnected,
@@ -965,7 +1259,6 @@ export default function Agent({
   const handleGenerateResources = useCallback(
     async (
       resourceTypes: ResourceType[],
-      agentType: string | null,
       userInstructions?: string,
     ) => {
       if (!socket || !isConnected) {
@@ -980,66 +1273,62 @@ export default function Agent({
         return next;
       });
 
+      let currentDraftId =
+        (formDataRef.current["draftId"] as string | undefined) ?? null;
+      if (!currentDraftId) currentDraftId = await flushAllAndSave();
+      if (!currentDraftId) {
+        toast.error("Please save a draft before generating with AI");
+        return;
+      }
+
       // Emit agent_generate event
       socket.emit("agent_generate", {
         resource_types: resourceTypes,
-        agent_type: agentType,
         user_instructions: userInstructions ? [userInstructions] : null,
         agent_id: agentId || null,
-        draft_id: draftId || null,
+        draft_id: currentDraftId,
         mcp: false,
       });
     },
-    [socket, isConnected, agentId, draftId, setGeneratingResources],
+    [
+      socket,
+      isConnected,
+      agentId,
+      setGeneratingResources,
+      formDataRef,
+      flushAllAndSave,
+    ],
   );
 
   // Individual generation handlers
   const handleGenerateName = useCallback(
-    async () =>
-      handleGenerateResources(["names"], determineAgentType(["names"])),
-    [handleGenerateResources, determineAgentType],
+    async () => handleGenerateResources(["names"]),
+    [handleGenerateResources],
   );
 
   const handleGenerateDescription = useCallback(
-    async () =>
-      handleGenerateResources(
-        ["descriptions"],
-        determineAgentType(["descriptions"]),
-      ),
-    [handleGenerateResources, determineAgentType],
+    async () => handleGenerateResources(["descriptions"]),
+    [handleGenerateResources],
   );
 
   const handleGenerateDepartments = useCallback(
-    async () =>
-      handleGenerateResources(
-        ["departments"],
-        determineAgentType(["departments"]),
-      ),
-    [handleGenerateResources, determineAgentType],
+    async () => handleGenerateResources(["departments"]),
+    [handleGenerateResources],
   );
 
   const handleGenerateFlags = useCallback(
-    async () =>
-      handleGenerateResources(["flags"], determineAgentType(["flags"])),
-    [handleGenerateResources, determineAgentType],
+    async () => handleGenerateResources(["flags"]),
+    [handleGenerateResources],
   );
 
   const handleGenerateReasoningLevels = useCallback(
-    async () =>
-      handleGenerateResources(
-        ["reasoning_levels"],
-        determineAgentType(["reasoning_levels"]),
-      ),
-    [handleGenerateResources, determineAgentType],
+    async () => handleGenerateResources(["reasoning_levels"]),
+    [handleGenerateResources],
   );
 
   const handleGenerateTemperatureLevels = useCallback(
-    async () =>
-      handleGenerateResources(
-        ["temperature_levels"],
-        determineAgentType(["temperature_levels"]),
-      ),
-    [handleGenerateResources, determineAgentType],
+    async () => handleGenerateResources(["temperature_levels"]),
+    [handleGenerateResources],
   );
 
   // Step-to-resources mapping for multi-generation
@@ -1088,13 +1377,12 @@ export default function Agent({
     [],
   );
 
-  // Modal generate handler (with agent-specific determineAgentType)
+  // Modal generate handler
   const onModalGenerate = useCallback(
     (selectedResources: ResourceType[], instructions?: string) => {
-      const agentType = determineAgentType(selectedResources);
-      handleGenerateResources(selectedResources, agentType, instructions);
+      handleGenerateResources(selectedResources, instructions);
     },
-    [determineAgentType, handleGenerateResources],
+    [handleGenerateResources],
   );
 
   // Generation modal hook (replaces modal state + handleOpenStepCardModal + full-page-generate listener)
@@ -1107,9 +1395,88 @@ export default function Agent({
       isGenerating,
     });
 
+  const mergeById = useCallback(
+    <T extends { id?: string | null }>(base: T[] = [], extra: T[] = []): T[] => {
+      const map = new Map<string, T>();
+      for (const item of base) {
+        if (item.id) map.set(item.id, item);
+      }
+      for (const item of extra) {
+        if (item.id) map.set(item.id, item);
+      }
+      return Array.from(map.values());
+    },
+    [],
+  );
+
+  const mergeByDepartmentId = useCallback(
+    <T extends { department_id?: string | null }>(
+      base: T[] = [],
+      extra: T[] = [],
+    ): T[] => {
+      const map = new Map<string, T>();
+      for (const item of base) {
+        if (item.department_id) map.set(item.department_id, item);
+      }
+      for (const item of extra) {
+        if (item.department_id) map.set(item.department_id, item);
+      }
+      return Array.from(map.values());
+    },
+    [],
+  );
+
+  const aiNameResource = aiFormData.name_resource;
+  const aiDescriptionResource = aiFormData.description_resource;
+  const aiModelResource = aiFormData.model_resource;
+  const aiPromptResource = aiFormData.prompt_resource;
+  const aiInstructionsResource = aiFormData.instructions_resource;
+  const aiTemperatureResource = aiFormData.temperature_level_resource;
+  const aiReasoningResource = aiFormData.reasoning_level_resource;
+
+  const mergedNames = mergeById(
+    agentData?.names ?? [],
+    aiNameResource ? [aiNameResource] : [],
+  );
+  const mergedDescriptions = mergeById(
+    agentData?.descriptions ?? [],
+    aiDescriptionResource ? [aiDescriptionResource] : [],
+  );
+  const mergedModels = mergeById(
+    agentData?.models ?? [],
+    aiModelResource ? [aiModelResource] : [],
+  );
+  const mergedPrompts = mergeById(
+    agentData?.prompts ?? [],
+    aiPromptResource ? [aiPromptResource] : [],
+  );
+  const mergedInstructions = mergeById(
+    agentData?.instructions ?? [],
+    aiInstructionsResource ? [aiInstructionsResource] : [],
+  );
+  const mergedTemperatureLevels = mergeById(
+    agentData?.temperature_levels ?? [],
+    aiTemperatureResource ? [aiTemperatureResource] : [],
+  );
+  const mergedReasoningLevels = mergeById(
+    agentData?.reasoning_levels ?? [],
+    aiReasoningResource ? [aiReasoningResource] : [],
+  );
+  const mergedTools = mergeById(
+    agentData?.tools ?? [],
+    aiFormData.tool_resources ?? [],
+  );
+  const mergedVoices = mergeById(
+    agentData?.voices ?? [],
+    aiFormData.voice_resources ?? [],
+  );
+  const mergedDepartments = mergeByDepartmentId(
+    agentData?.departments ?? [],
+    aiFormData.department_resources ?? [],
+  );
+
   return (
-    <TooltipProvider>
-      <div className="space-y-6 py-4 px-4">
+    <div className="space-y-6 py-4 px-4">
         <ReadOnlyBanner
           disabled={disabled}
           disabledReason={agentData?.disabled_reason ?? null}
@@ -1120,6 +1487,7 @@ export default function Agent({
             nuqsParsers={
               agentSearchParamsClient as Record<string, Parser<unknown>>
             }
+            onFormDataChange={onFormDataChange}
             steps={steps}
             getStepStatus={getStepStatus}
             serverData={agentData}
@@ -1158,7 +1526,9 @@ export default function Agent({
             isReadonly={isReadonly}
             isEditMode={isEditMode}
             registerSetFormData={(setter) => {
-              setUrlParamsRef.current = setter as typeof setUrlParams;
+              setUrlFormDataRef.current = setter as (
+                updates: Record<string, unknown>,
+              ) => void;
             }}
             renderStep={({
               stepId,
@@ -1188,10 +1558,10 @@ export default function Agent({
                       customHeader={
                         <Names
                           name_id={agentData?.name_id ?? null}
-                          name_resource={agentData?.name_resource ?? null}
+                          name_resource={aiNameResource ?? agentData?.name_resource ?? null}
                           show_name={agentData?.show_name ?? true}
                           name_suggestions={agentData?.name_suggestions ?? []}
-                          names={agentData?.names ?? []}
+                          names={mergedNames}
                           disabled={isReadonly}
                           onNameIdChange={(nameId) => {
                             // Update draftState with name_id (canonical pattern - IDs are source of truth)
@@ -1207,7 +1577,7 @@ export default function Agent({
                           required={agentData?.name_required ?? false}
                           hideDescription={true}
                           group_id={agentData?.group_id ?? null}
-                          showAiGenerate={!!agentData?.name_agent_id}
+                          showAiGenerate={!!sectionData?.names?.show_ai_generate}
                         />
                       }
                       resetFields={[
@@ -1219,53 +1589,18 @@ export default function Agent({
                       actions={
                         stepResources["basic"] &&
                         stepResources["basic"].length > 0 &&
-                        (agentData?.name_agent_id ||
-                          agentData?.description_agent_id ||
-                          agentData?.departments_agent_id ||
-                          agentData?.flag_agent_id) ? (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => {
-                                    const hasRegeneratable = stepResources[
-                                      "basic"
-                                    ]!.some((rt) => canRegenerate(rt));
-                                    handleOpenStepCardModal(
-                                      "basic",
-                                      hasRegeneratable
-                                        ? "regenerate"
-                                        : "generate",
-                                    );
-                                  }}
-                                  disabled={
-                                    isReadonly ||
-                                    stepResources["basic"]!.some((rt) =>
-                                      isGenerating(rt),
-                                    )
-                                  }
-                                >
-                                  {stepResources["basic"]!.some((rt) =>
-                                    isGenerating(rt),
-                                  ) ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                  ) : (
-                                    <Sparkles className="h-4 w-4" />
-                                  )}
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                {stepResources["basic"]!.some((rt) =>
-                                  canRegenerate(rt),
-                                )
-                                  ? "Regenerate"
-                                  : "Generate"}
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
+                        (sectionData?.names?.show_ai_generate ||
+                          sectionData?.descriptions?.show_ai_generate ||
+                          sectionData?.departments?.show_ai_generate ||
+                          sectionData?.flags?.show_ai_generate) ? (
+                          <StepCardAiButton
+                            stepId="basic"
+                            resourceTypes={stepResources["basic"] ?? []}
+                            canRegenerate={canRegenerate}
+                            isGenerating={isGenerating}
+                            onOpenModal={handleOpenStepCardModal}
+                            disabled={isReadonly}
+                          />
                         ) : undefined
                       }
                       {...(onReset ? { onReset } : {})}
@@ -1276,13 +1611,13 @@ export default function Agent({
                         <Descriptions
                           description_id={agentData?.description_id ?? null}
                           description_resource={
-                            agentData?.description_resource ?? null
+                            aiDescriptionResource ?? agentData?.description_resource ?? null
                           }
                           show_description={agentData?.show_description ?? true}
                           description_suggestions={
                             agentData?.description_suggestions ?? []
                           }
-                          descriptions={agentData?.descriptions ?? []}
+                          descriptions={mergedDescriptions}
                           disabled={isReadonly}
                           onDescriptionIdChange={(descriptionId) => {
                             // Update draftState with description_id (canonical pattern - IDs are source of truth)
@@ -1303,14 +1638,16 @@ export default function Agent({
                           rows={4}
                           data-testid="input-agent-description"
                           group_id={agentData?.group_id ?? null}
-                          showAiGenerate={!!agentData?.description_agent_id}
+                          showAiGenerate={
+                            !!sectionData?.descriptions?.show_ai_generate
+                          }
                         />
 
                         {/* Department Selection */}
                         <Departments
                           department_ids={draftState.departmentIds || []}
                           department_resources={
-                            agentData?.department_resources ?? []
+                            aiFormData.department_resources ?? agentData?.department_resources ?? []
                           }
                           show_departments={
                             agentData?.show_departments ?? false
@@ -1318,7 +1655,7 @@ export default function Agent({
                           department_suggestions={
                             agentData?.department_suggestions ?? []
                           }
-                          departments={agentData?.departments ?? []}
+                          departments={mergedDepartments}
                           disabled={isReadonly}
                           onChange={(ids) => {
                             setDraftState((prev) => ({
@@ -1330,12 +1667,14 @@ export default function Agent({
                           isGenerating={isGenerating("departments")}
                           required={agentData?.departments_required ?? false}
                           group_id={agentData?.group_id ?? null}
-                          showAiGenerate={!!agentData?.departments_agent_id}
+                          showAiGenerate={
+                            !!sectionData?.departments?.show_ai_generate
+                          }
                         />
 
                         <Flags
                           flag_id={draftState.active_flag_id}
-                          flag_resource={agentData?.flag_resource ?? null}
+                          flag_resource={aiFormData.flag_resource ?? agentData?.flag_resource ?? null}
                           show_flag={agentData?.show_flag ?? false}
                           disabled={isReadonly}
                           onFlagIdChange={(flagId) => {
@@ -1350,7 +1689,8 @@ export default function Agent({
                           helpText="Inactive agents will not be available to perform operations for departments"
                           required={agentData?.flag_required ?? false}
                           group_id={agentData?.group_id ?? null}
-                          agent_id={agentData?.flag_agent_id ?? null}
+                          link_tool_id={agentData?.flag_link_tool_id ?? null}
+                          showAiGenerate={!!sectionData?.flags?.show_ai_generate}
                         />
                       </div>
                     </StepCard>
@@ -1392,59 +1732,24 @@ export default function Agent({
                       actions={
                         stepResources["tools"] &&
                         stepResources["tools"].length > 0 &&
-                        agentData?.tools_agent_id ? (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => {
-                                    const hasRegeneratable = stepResources[
-                                      "tools"
-                                    ]!.some((rt) => canRegenerate(rt));
-                                    handleOpenStepCardModal(
-                                      "tools",
-                                      hasRegeneratable
-                                        ? "regenerate"
-                                        : "generate",
-                                    );
-                                  }}
-                                  disabled={
-                                    isReadonly ||
-                                    stepResources["tools"]!.some((rt) =>
-                                      isGenerating(rt),
-                                    )
-                                  }
-                                >
-                                  {stepResources["tools"]!.some((rt) =>
-                                    isGenerating(rt),
-                                  ) ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                  ) : (
-                                    <Sparkles className="h-4 w-4" />
-                                  )}
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                {stepResources["tools"]!.some((rt) =>
-                                  canRegenerate(rt),
-                                )
-                                  ? "Regenerate"
-                                  : "Generate"}
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
+                        sectionData?.tools?.show_ai_generate ? (
+                          <StepCardAiButton
+                            stepId="tools"
+                            resourceTypes={stepResources["tools"] ?? []}
+                            canRegenerate={canRegenerate}
+                            isGenerating={isGenerating}
+                            onOpenModal={handleOpenStepCardModal}
+                            disabled={isReadonly}
+                          />
                         ) : undefined
                       }
                     >
                       <Tools
                         tool_ids={draftState.tool_ids}
-                        tool_resources={agentData?.tool_resources ?? []}
+                        tool_resources={aiFormData.tool_resources ?? agentData?.tool_resources ?? []}
                         show_tools={agentData?.show_tools ?? false}
                         tool_suggestions={agentData?.tool_suggestions ?? []}
-                        tools={agentData?.tools ?? []}
+                        tools={mergedTools}
                         disabled={isReadonly}
                         onChange={(ids) =>
                           setDraftState((prev) => ({ ...prev, tool_ids: ids }))
@@ -1453,7 +1758,8 @@ export default function Agent({
                         description="Select the tools this agent can use. Tools define what operations the agent can perform."
                         required={agentData?.tools_required ?? false}
                         group_id={agentData?.group_id ?? null}
-                        agent_id={agentData?.tools_agent_id ?? null}
+                        link_tool_id={agentData?.tools_link_tool_id ?? null}
+                        showAiGenerate={!!sectionData?.tools?.show_ai_generate}
                         searchTerm={toolSearch}
                         onSearchChange={(term) =>
                           setStepFormData({ toolSearch: term || null })
@@ -1500,50 +1806,15 @@ export default function Agent({
                       actions={
                         stepResources["model"] &&
                         stepResources["model"].length > 0 &&
-                        agentData?.models_agent_id ? (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => {
-                                    const hasRegeneratable = stepResources[
-                                      "model"
-                                    ]!.some((rt) => canRegenerate(rt));
-                                    handleOpenStepCardModal(
-                                      "model",
-                                      hasRegeneratable
-                                        ? "regenerate"
-                                        : "generate",
-                                    );
-                                  }}
-                                  disabled={
-                                    isReadonly ||
-                                    stepResources["model"]!.some((rt) =>
-                                      isGenerating(rt),
-                                    )
-                                  }
-                                >
-                                  {stepResources["model"]!.some((rt) =>
-                                    isGenerating(rt),
-                                  ) ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                  ) : (
-                                    <Sparkles className="h-4 w-4" />
-                                  )}
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                {stepResources["model"]!.some((rt) =>
-                                  canRegenerate(rt),
-                                )
-                                  ? "Regenerate"
-                                  : "Generate"}
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
+                        sectionData?.models?.show_ai_generate ? (
+                          <StepCardAiButton
+                            stepId="model"
+                            resourceTypes={stepResources["model"] ?? []}
+                            canRegenerate={canRegenerate}
+                            isGenerating={isGenerating}
+                            onOpenModal={handleOpenStepCardModal}
+                            disabled={isReadonly}
+                          />
                         ) : undefined
                       }
                       {...(onReset ? { onReset } : {})}
@@ -1551,10 +1822,10 @@ export default function Agent({
                     >
                       <Models
                         model_id={draftState.modelId || null}
-                        model_resource={agentData?.model_resource ?? null}
+                        model_resource={aiModelResource ?? agentData?.model_resource ?? null}
                         show_models={agentData?.show_models ?? true}
                         model_suggestions={agentData?.model_suggestions ?? []}
-                        models={agentData?.models ?? []}
+                        models={mergedModels}
                         disabled={isReadonly}
                         onModelIdChange={(modelId) => {
                           setDraftState((prev) => ({
@@ -1575,7 +1846,7 @@ export default function Agent({
                           setStepFormData({ modelShowSelected: value })
                         }
                         group_id={agentData?.group_id ?? null}
-                        agent_id={agentData?.models_agent_id ?? null}
+                        link_tool_id={agentData?.models_link_tool_id ?? null}
                       />
                     </StepCard>
                   );
@@ -1600,57 +1871,22 @@ export default function Agent({
                       actions={
                         stepResources["temperature"] &&
                         stepResources["temperature"].length > 0 &&
-                        agentData?.temperature_levels_agent_id ? (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => {
-                                    const hasRegeneratable = stepResources[
-                                      "temperature"
-                                    ]!.some((rt) => canRegenerate(rt));
-                                    handleOpenStepCardModal(
-                                      "temperature",
-                                      hasRegeneratable
-                                        ? "regenerate"
-                                        : "generate",
-                                    );
-                                  }}
-                                  disabled={
-                                    isReadonly ||
-                                    stepResources["temperature"]!.some((rt) =>
-                                      isGenerating(rt),
-                                    )
-                                  }
-                                >
-                                  {stepResources["temperature"]!.some((rt) =>
-                                    isGenerating(rt),
-                                  ) ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                  ) : (
-                                    <Sparkles className="h-4 w-4" />
-                                  )}
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                {stepResources["temperature"]!.some((rt) =>
-                                  canRegenerate(rt),
-                                )
-                                  ? "Regenerate"
-                                  : "Generate"}
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
+                        sectionData?.temperature_levels?.show_ai_generate ? (
+                          <StepCardAiButton
+                            stepId="temperature"
+                            resourceTypes={stepResources["temperature"] ?? []}
+                            canRegenerate={canRegenerate}
+                            isGenerating={isGenerating}
+                            onOpenModal={handleOpenStepCardModal}
+                            disabled={isReadonly}
+                          />
                         ) : undefined
                       }
                     >
                       <TemperatureLevels
                         temperature_level_id={draftState.temperature_level_id}
                         temperature_level_resource={
-                          agentData?.temperature_level_resource ?? null
+                          aiTemperatureResource ?? agentData?.temperature_level_resource ?? null
                         }
                         show_temperature_levels={
                           agentData?.show_temperature_levels ?? true
@@ -1658,7 +1894,7 @@ export default function Agent({
                         temperature_level_suggestions={
                           agentData?.temperature_level_suggestions ?? []
                         }
-                        temperature_levels={agentData?.temperature_levels ?? []}
+                        temperature_levels={mergedTemperatureLevels}
                         temperature_lower={
                           selectedModel?.temperature_lower ?? null
                         }
@@ -1676,11 +1912,11 @@ export default function Agent({
                         isGenerating={isGenerating("temperature_levels")}
                         showSlider={true}
                         group_id={agentData?.group_id ?? null}
-                        agent_id={
-                          agentData?.temperature_levels_agent_id ?? null
+                        link_tool_id={
+                          agentData?.temperature_levels_link_tool_id ?? null
                         }
-                        createTemperatureLevelsAction={
-                          createTemperatureLevelsAction
+                        showAiGenerate={
+                          !!sectionData?.temperature_levels?.show_ai_generate
                         }
                       />
                     </StepCard>
@@ -1702,57 +1938,22 @@ export default function Agent({
                       actions={
                         stepResources["reasoning"] &&
                         stepResources["reasoning"].length > 0 &&
-                        agentData?.reasoning_levels_agent_id ? (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => {
-                                    const hasRegeneratable = stepResources[
-                                      "reasoning"
-                                    ]!.some((rt) => canRegenerate(rt));
-                                    handleOpenStepCardModal(
-                                      "reasoning",
-                                      hasRegeneratable
-                                        ? "regenerate"
-                                        : "generate",
-                                    );
-                                  }}
-                                  disabled={
-                                    isReadonly ||
-                                    stepResources["reasoning"]!.some((rt) =>
-                                      isGenerating(rt),
-                                    )
-                                  }
-                                >
-                                  {stepResources["reasoning"]!.some((rt) =>
-                                    isGenerating(rt),
-                                  ) ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                  ) : (
-                                    <Sparkles className="h-4 w-4" />
-                                  )}
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                {stepResources["reasoning"]!.some((rt) =>
-                                  canRegenerate(rt),
-                                )
-                                  ? "Regenerate"
-                                  : "Generate"}
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
+                        sectionData?.reasoning_levels?.show_ai_generate ? (
+                          <StepCardAiButton
+                            stepId="reasoning"
+                            resourceTypes={stepResources["reasoning"] ?? []}
+                            canRegenerate={canRegenerate}
+                            isGenerating={isGenerating}
+                            onOpenModal={handleOpenStepCardModal}
+                            disabled={isReadonly}
+                          />
                         ) : undefined
                       }
                     >
                       <ReasoningLevels
                         reasoning_level_id={draftState.reasoning_level_id}
                         reasoning_level_resource={
-                          agentData?.reasoning_level_resource ?? null
+                          aiReasoningResource ?? agentData?.reasoning_level_resource ?? null
                         }
                         show_reasoning_levels={
                           agentData?.show_reasoning_levels ?? true
@@ -1760,7 +1961,7 @@ export default function Agent({
                         reasoning_level_suggestions={
                           agentData?.reasoning_level_suggestions ?? []
                         }
-                        reasoning_levels={agentData?.reasoning_levels ?? []}
+                        reasoning_levels={mergedReasoningLevels}
                         disabled={isReadonly}
                         onReasoningLevelIdChange={(id) =>
                           setDraftState((prev) => ({
@@ -1771,9 +1972,11 @@ export default function Agent({
                         onGenerate={handleGenerateReasoningLevels}
                         isGenerating={isGenerating("reasoning_levels")}
                         group_id={agentData?.group_id ?? null}
-                        agent_id={agentData?.reasoning_levels_agent_id ?? null}
-                        createReasoningLevelsAction={
-                          createReasoningLevelsAction
+                        link_tool_id={
+                          agentData?.reasoning_levels_link_tool_id ?? null
+                        }
+                        showAiGenerate={
+                          !!sectionData?.reasoning_levels?.show_ai_generate
                         }
                       />
                     </StepCard>
@@ -1795,66 +1998,33 @@ export default function Agent({
                       actions={
                         stepResources["voice"] &&
                         stepResources["voice"].length > 0 &&
-                        agentData?.voices_agent_id ? (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => {
-                                    const hasRegeneratable = stepResources[
-                                      "voice"
-                                    ]!.some((rt) => canRegenerate(rt));
-                                    handleOpenStepCardModal(
-                                      "voice",
-                                      hasRegeneratable
-                                        ? "regenerate"
-                                        : "generate",
-                                    );
-                                  }}
-                                  disabled={
-                                    isReadonly ||
-                                    stepResources["voice"]!.some((rt) =>
-                                      isGenerating(rt),
-                                    )
-                                  }
-                                >
-                                  {stepResources["voice"]!.some((rt) =>
-                                    isGenerating(rt),
-                                  ) ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                  ) : (
-                                    <Sparkles className="h-4 w-4" />
-                                  )}
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                {stepResources["voice"]!.some((rt) =>
-                                  canRegenerate(rt),
-                                )
-                                  ? "Regenerate"
-                                  : "Generate"}
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
+                        sectionData?.voices?.show_ai_generate ? (
+                          <StepCardAiButton
+                            stepId="voice"
+                            resourceTypes={stepResources["voice"] ?? []}
+                            canRegenerate={canRegenerate}
+                            isGenerating={isGenerating}
+                            onOpenModal={handleOpenStepCardModal}
+                            disabled={isReadonly}
+                          />
                         ) : undefined
                       }
                     >
                       <Voices
                         voice_ids={draftState.voice_ids}
-                        voice_resources={agentData?.voice_resources ?? []}
+                        voice_resources={aiFormData.voice_resources ?? agentData?.voice_resources ?? []}
                         show_voices={agentData?.show_voices ?? true}
                         voice_suggestions={agentData?.voice_suggestions ?? []}
-                        voices={agentData?.voices ?? []}
+                        voices={mergedVoices}
                         disabled={isReadonly}
                         onVoiceIdsChange={(ids) =>
                           setDraftState((prev) => ({ ...prev, voice_ids: ids }))
                         }
                         group_id={agentData?.group_id ?? null}
-                        agent_id={agentData?.voices_agent_id ?? null}
+                        create_tool_id={agentData?.voices_create_tool_id ?? null}
+                        link_tool_id={agentData?.voices_link_tool_id ?? null}
                         createVoicesAction={createVoicesAction}
+                        registerFlush={registerFlushCallbacks["voices"]}
                       />
                     </StepCard>
                   );
@@ -1877,59 +2047,24 @@ export default function Agent({
                       actions={
                         stepResources["prompt"] &&
                         stepResources["prompt"].length > 0 &&
-                        agentData?.prompts_agent_id ? (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => {
-                                    const hasRegeneratable = stepResources[
-                                      "prompt"
-                                    ]!.some((rt) => canRegenerate(rt));
-                                    handleOpenStepCardModal(
-                                      "prompt",
-                                      hasRegeneratable
-                                        ? "regenerate"
-                                        : "generate",
-                                    );
-                                  }}
-                                  disabled={
-                                    isReadonly ||
-                                    stepResources["prompt"]!.some((rt) =>
-                                      isGenerating(rt),
-                                    )
-                                  }
-                                >
-                                  {stepResources["prompt"]!.some((rt) =>
-                                    isGenerating(rt),
-                                  ) ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                  ) : (
-                                    <Sparkles className="h-4 w-4" />
-                                  )}
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                {stepResources["prompt"]!.some((rt) =>
-                                  canRegenerate(rt),
-                                )
-                                  ? "Regenerate"
-                                  : "Generate"}
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
+                        sectionData?.prompts?.show_ai_generate ? (
+                          <StepCardAiButton
+                            stepId="prompt"
+                            resourceTypes={stepResources["prompt"] ?? []}
+                            canRegenerate={canRegenerate}
+                            isGenerating={isGenerating}
+                            onOpenModal={handleOpenStepCardModal}
+                            disabled={isReadonly}
+                          />
                         ) : undefined
                       }
                     >
                       <Prompts
                         prompt_id={draftState.prompt_id}
-                        prompt_resource={agentData?.prompt_resource ?? null}
+                        prompt_resource={aiPromptResource ?? agentData?.prompt_resource ?? null}
                         show_prompts={agentData?.show_prompts ?? true}
                         prompt_suggestions={agentData?.prompt_suggestions ?? []}
-                        prompts={agentData?.prompts ?? []}
+                        prompts={mergedPrompts}
                         disabled={isReadonly}
                         onPromptIdChange={(id) => {
                           setDraftState((prev) => ({ ...prev, prompt_id: id }));
@@ -1939,8 +2074,10 @@ export default function Agent({
                           setStepFormData({ promptSearch: term || null })
                         }
                         group_id={agentData?.group_id ?? null}
-                        agent_id={agentData?.prompts_agent_id ?? null}
+                        create_tool_id={agentData?.prompts_create_tool_id ?? null}
+                        link_tool_id={agentData?.prompts_link_tool_id ?? null}
                         createPromptsAction={createPromptsAction}
+                        registerFlush={registerFlushCallbacks["prompts"]}
                       />
                     </StepCard>
                   );
@@ -1963,54 +2100,28 @@ export default function Agent({
                       actions={
                         stepResources["instructions"] &&
                         stepResources["instructions"].length > 0 &&
-                        agentData?.instructions_agent_id ? (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => {
-                                    const hasRegeneratable = stepResources[
-                                      "instructions"
-                                    ]!.some((rt) => canRegenerate(rt));
-                                    handleOpenStepCardModal(
-                                      "instructions",
-                                      hasRegeneratable
-                                        ? "regenerate"
-                                        : "generate",
-                                    );
-                                  }}
-                                  disabled={
-                                    disabled || isGenerating("instructions")
-                                  }
-                                >
-                                  {isGenerating("instructions") ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                  ) : (
-                                    <Sparkles className="h-4 w-4" />
-                                  )}
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Generate Instructions</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
+                        sectionData?.instructions?.show_ai_generate ? (
+                          <StepCardAiButton
+                            stepId="instructions"
+                            resourceTypes={stepResources["instructions"] ?? []}
+                            canRegenerate={canRegenerate}
+                            isGenerating={isGenerating}
+                            onOpenModal={handleOpenStepCardModal}
+                            disabled={isReadonly}
+                          />
                         ) : undefined
                       }
                     >
                       <Instructions
                         instructions_id={draftState.instructions_id}
                         instructions_resource={
-                          agentData?.instructions_resource ?? null
+                          aiInstructionsResource ?? agentData?.instructions_resource ?? null
                         }
                         show_instructions={agentData?.show_instructions ?? true}
                         instructions_suggestions={
                           agentData?.instructions_suggestions ?? []
                         }
-                        instructions={agentData?.instructions ?? []}
+                        instructions={mergedInstructions}
                         disabled={isReadonly}
                         onInstructionsIdChange={(id) =>
                           setDraftState((prev) => ({
@@ -2023,7 +2134,9 @@ export default function Agent({
                           setStepFormData({ instructionsSearch: term || null })
                         }
                         group_id={agentData?.group_id ?? null}
-                        showAiGenerate={!!agentData?.instructions_agent_id}
+                        showAiGenerate={
+                          !!sectionData?.instructions?.show_ai_generate
+                        }
                       />
                     </StepCard>
                   );
@@ -2037,7 +2150,6 @@ export default function Agent({
 
         {/* Generate/Regenerate Modal */}
         {modalProps.mode && <GenerateRegenerateModal {...modalProps} />}
-      </div>
-    </TooltipProvider>
+    </div>
   );
 }

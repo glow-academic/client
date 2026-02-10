@@ -5,8 +5,6 @@ Types are registered in OpenAPI via FastAPI endpoints, enabling
 automatic type extraction in the frontend via InputOf/OutputOf.
 """
 
-from uuid import UUID
-
 from app.api.v4.artifacts.agent.types import GetAgentApiRequest
 from app.socket.v4.artifacts.types import (
     GenerationCompleteEvent,
@@ -16,6 +14,7 @@ from app.socket.v4.artifacts.types import (
 from app.sql.types import (
     QGetDepartmentsV4Item,
     QGetDescriptionsV4Item,
+    QGetFlagsV4Item,
     QGetInstructionsV4Item,
     QGetModelsV4Item,
     QGetNamesV4Item,
@@ -35,11 +34,11 @@ class GenerateAgentPayload(GetAgentApiRequest):
     """Request payload for agent_generate WebSocket event.
 
     Extends GetAgentApiRequest (which has agent_id, draft_id)
-    with generation-specific fields. Uses domain_ids instead of agent_type.
+    with generation-specific fields.
     """
 
-    # Generation-specific fields - domain-based API
-    domain_ids: list[UUID]  # Required: which domains to generate
+    # Generation-specific fields - resource-type API
+    resource_types: list[str]  # Required: which resources to generate
     user_instructions: list[str] | None = None  # Optional: user instructions
 
 
@@ -63,6 +62,7 @@ class AgentGenerationCompleteEvent(GenerationCompleteEvent):
     model_resource: QGetModelsV4Item | None = None
     prompt_resource: QGetPromptsV4Item | None = None
     instructions_resource: QGetInstructionsV4Item | None = None
+    flag_resource: QGetFlagsV4Item | None = None
     temperature_level_resource: QGetTemperatureLevelsV4Item | None = None
     reasoning_level_resource: QGetReasoningLevelsV4Item | None = None
 
@@ -70,19 +70,6 @@ class AgentGenerationCompleteEvent(GenerationCompleteEvent):
     department_resources: list[QGetDepartmentsV4Item] | None = None
     tool_resources: list[QGetToolsV4Item] | None = None
     voice_resources: list[QGetVoicesV4Item] | None = None
-
-    # Legacy ID fields for backwards compatibility
-    name_id: str | None = None
-    description_id: str | None = None
-    model_id: str | None = None
-    prompt_id: str | None = None
-    instructions_id: str | None = None
-    active_flag_id: str | None = None
-    temperature_level_id: str | None = None
-    reasoning_level_id: str | None = None
-    department_ids: list[str] | None = None
-    tool_ids: list[str] | None = None
-    voice_ids: list[str] | None = None
 
 
 class AgentGenerationProgressEvent(GenerationProgressEvent):

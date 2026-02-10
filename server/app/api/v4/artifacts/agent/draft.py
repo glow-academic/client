@@ -5,12 +5,14 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.artifacts.agent.types import (
+    PatchAgentDraftApiRequest,
+    PatchAgentDraftApiResponse,
+)
 from app.infra.v4.activity.audit import audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
-    PatchAgentDraftApiRequest,
-    PatchAgentDraftApiResponse,
     PatchAgentDraftSqlParams,
     PatchAgentDraftSqlRow,
     load_sql_query,
@@ -48,8 +50,41 @@ async def patch_agent_draft(
             )
 
         async with conn.transaction():
+            params_payload = {
+                "input_draft_id": request.input_draft_id,
+                "name_id": request.names.resource_id if request.names else None,
+                "description_id": (
+                    request.descriptions.resource_id
+                    if request.descriptions
+                    else None
+                ),
+                "model_id": request.models.resource_id if request.models else None,
+                "prompt_id": request.prompts.resource_id if request.prompts else None,
+                "instructions_id": (
+                    request.instructions.resource_id
+                    if request.instructions
+                    else None
+                ),
+                "active_flag_id": request.flags.resource_id if request.flags else None,
+                "temperature_level_id": (
+                    request.temperature_levels.resource_id
+                    if request.temperature_levels
+                    else None
+                ),
+                "reasoning_level_id": (
+                    request.reasoning_levels.resource_id
+                    if request.reasoning_levels
+                    else None
+                ),
+                "department_ids": (
+                    request.departments.resource_ids if request.departments else None
+                ),
+                "tool_ids": request.tools.resource_ids if request.tools else None,
+                "voice_ids": request.voices.resource_ids if request.voices else None,
+                "expected_version": request.expected_version,
+            }
             params = PatchAgentDraftSqlParams(
-                **request.model_dump(), profile_id=profile_id
+                **params_payload, profile_id=profile_id
             )
             sql_params = params.to_tuple()
 

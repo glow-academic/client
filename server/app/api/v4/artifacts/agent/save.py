@@ -2,18 +2,19 @@
 Unified endpoint that handles both create (agent_id = NULL) and update (agent_id provided).
 """
 
-import uuid
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.artifacts.agent.types import (
+    SaveAgentApiRequest,
+    SaveAgentApiResponse,
+)
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
-    SaveAgentApiRequest,
-    SaveAgentApiResponse,
     SaveAgentSqlParams,
     SaveAgentSqlRow,
     load_sql_query,
@@ -59,33 +60,64 @@ async def save_agent(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Validate name is not empty
-        if not request.name or not str(request.name).strip():
+        name_id = request.names.resource_id if request.names else None
+        model_id = request.models.resource_id if request.models else None
+        description_id = (
+            request.descriptions.resource_id
+            if request.descriptions is not None
+            else None
+        )
+        prompt_id = request.prompts.resource_id if request.prompts is not None else None
+        instructions_id = (
+            request.instructions.resource_id
+            if request.instructions is not None
+            else None
+        )
+        active_flag_id = request.flags.resource_id if request.flags is not None else None
+        temperature_level_id = (
+            request.temperature_levels.resource_id
+            if request.temperature_levels is not None
+            else None
+        )
+        reasoning_level_id = (
+            request.reasoning_levels.resource_id
+            if request.reasoning_levels is not None
+            else None
+        )
+        department_ids = (
+            request.departments.resource_ids if request.departments is not None else None
+        )
+        tool_ids = request.tools.resource_ids if request.tools is not None else None
+        voice_ids = request.voices.resource_ids if request.voices is not None else None
+
+        # Validate required section actions
+        if not name_id:
             raise HTTPException(
-                status_code=400, detail="name is required and cannot be empty"
+                status_code=400, detail="names.resource_id is required"
             )
 
-        # Validate model_id is not empty and is a valid UUID
-        if not request.model_id or not str(request.model_id).strip():
+        if not model_id:
             raise HTTPException(
-                status_code=400, detail="model_id is required and cannot be empty"
+                status_code=400, detail="models.resource_id is required"
             )
-
-        # Validate model_id is a valid UUID format
-        try:
-            uuid.UUID(str(request.model_id).strip())
-        except (ValueError, AttributeError):
-            raise HTTPException(
-                status_code=400,
-                detail=f"model_id must be a valid UUID, got: {request.model_id!r}",
-            ) from None
 
         async with conn.transaction():
             # Convert API request to SQL params (add profile_id from header)
-            # Map input_agent_id from API request (already correct field name)
             params = SaveAgentSqlParams(
-                **request.model_dump(),
                 profile_id=profile_id,
+                group_id=request.group_id,
+                input_agent_id=request.input_agent_id,
+                name_id=name_id,
+                model_id=model_id,
+                description_id=description_id,
+                prompt_id=prompt_id,
+                instructions_id=instructions_id,
+                active_flag_id=active_flag_id,
+                temperature_level_id=temperature_level_id,
+                reasoning_level_id=reasoning_level_id,
+                department_ids=department_ids,
+                tool_ids=tool_ids,
+                voice_ids=voice_ids,
             )
             sql_params = params.to_tuple()
 
@@ -113,13 +145,13 @@ async def save_agent(
                 if request.input_agent_id:
                     # Update mode: use request name (from request body)
                     audit_ctx["agent"] = {
-                        "name": request.name or "Agent",
+                        "name": str(name_id),
                         "id": str(result.agent_id),
                     }
                 else:
                     # Create mode: use request name
                     audit_ctx["agent"] = {
-                        "name": request.name or "Agent",
+                        "name": str(name_id),
                         "id": str(result.agent_id),
                     }
                 audit_set(http_request, **audit_ctx)

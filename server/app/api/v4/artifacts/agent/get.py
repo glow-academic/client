@@ -20,7 +20,6 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from app.api.v4.artifacts.agent.permissions import (
     AGENT_BASIC_RESOURCES,
     AGENT_RESOURCES,
-    build_domain_data,
     compute_can_edit,
     compute_departments_required,
     compute_description_required,
@@ -49,14 +48,27 @@ from app.api.v4.artifacts.agent.permissions import (
     has_access,
 )
 from app.api.v4.artifacts.agent.types import (
+    AgentDepartmentSection,
     AgentFlagConfig,
+    AgentFlagSection,
+    AgentInstructionSection,
+    AgentModelSection,
+    AgentNameSection,
+    AgentPromptSection,
+    AgentReasoningLevelSection,
     AgentResourceBucket,
     AgentResources,
-    DomainAgent,
+    AgentTemperatureLevelSection,
+    AgentToolSection,
+    AgentVoiceSection,
+    AgentDescriptionSection,
+    AgentWebsocketResources,
+    AgentWebsocketViews,
     GetAgentApiRequest,
     GetAgentApiResponse,
     GetAgentWebsocketResponse,
 )
+from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.permissions import select_agents_for_artifact
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.departments.search import search_departments_internal
@@ -72,6 +84,7 @@ from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.names.search import search_names_internal
 from app.api.v4.resources.prompts.get import get_prompts_internal
 from app.api.v4.resources.prompts.search import search_prompts_internal
+from app.api.v4.resources.providers.get import get_providers_internal
 from app.api.v4.resources.reasoning_levels.get import get_reasoning_levels_internal
 from app.api.v4.resources.reasoning_levels.search import (
     search_reasoning_levels_internal,
@@ -96,6 +109,8 @@ from app.sql.types import (
     GetAgentAccessSqlRow,
     GetAgentIdsSqlParams,
     GetAgentIdsSqlRow,
+    QGetAgentsV4Item,
+    QGetProvidersV4Item,
     load_sql_query,
 )
 from app.utils.sql_helper import execute_sql_typed
@@ -127,10 +142,8 @@ class AgentInternalData:
     draft_version: int | None
     group_id: UUID | None
 
-    # Domain mappings
-    domain_ids_map: dict[str, UUID | None]
+    # Agent routing map (resource_type -> selected agent_id)
     agent_ids: dict[str, UUID | None]
-    domains_list: list[DomainAgent]
 
     # Show/required flags
     show_flags_map: dict[str, bool]
@@ -139,23 +152,24 @@ class AgentInternalData:
     # Suggestions (resource -> list of suggestion IDs)
     suggestions_map: dict[str, list[UUID]]
 
-    # Show AI generate flags (computed: domain_id exists AND agent exists)
+    # Show AI generate flags (computed: selected agent exists for resource)
     show_ai_generate_map: dict[str, bool]
     basic_show_ai_generate: bool
     general_show_ai_generate: bool
 
-    # Domain data for modals
-    domain_data_list: list[Any]  # list[DomainData]
-
     # Resources payload
     resources_payload: AgentResources
 
-    # Per-resource group IDs (from draft MV)
-    resource_group_ids: dict[str, UUID | None]
+    # Draft view for websocket/jinja context
+    draft_view: Any | None
 
     # Per-resource tool IDs (from selected agents)
     create_tool_ids_map: dict[str, UUID | None]
     link_tool_ids_map: dict[str, UUID | None]
+
+    # Config resources for websocket generation context
+    config_agents: list[QGetAgentsV4Item]
+    config_providers: list[QGetProvidersV4Item]
 
 
 async def get_agent_internal(
@@ -264,21 +278,6 @@ async def get_agent_internal(
         if draft_item.department_ids:
             selected_department_ids = draft_item.department_ids
 
-    # Build per-resource group_ids from draft_item
-    resource_group_ids: dict[str, UUID | None] = {
-        "names": draft_item.group_id if draft_item else None,
-        "descriptions": draft_item.group_id if draft_item else None,
-        "models": draft_item.group_id if draft_item else None,
-        "prompts": draft_item.group_id if draft_item else None,
-        "instructions": draft_item.group_id if draft_item else None,
-        "flags": draft_item.group_id if draft_item else None,
-        "departments": draft_item.group_id if draft_item else None,
-        "tools": draft_item.group_id if draft_item else None,
-        "temperature_levels": draft_item.group_id if draft_item else None,
-        "reasoning_levels": draft_item.group_id if draft_item else None,
-        "voices": draft_item.group_id if draft_item else None,
-    }
-
     # Get tools existence flags from Query 2 (used for show_* UI flags)
     names_has_tools = ids_result.names_has_tools or False
     descriptions_has_tools = ids_result.descriptions_has_tools or False
@@ -320,26 +319,10 @@ async def get_agent_internal(
                     link_tool_ids_map[resource] = candidate.link_tool_ids.get(resource)
                     break
 
-    # === EXTRACT DOMAIN IDS FROM QUERY 2 ===
-    domain_ids_map: dict[str, UUID | None] = {
-        "names": ids_result.name_domain_id,
-        "descriptions": ids_result.descriptions_domain_id,
-        "models": ids_result.models_domain_id,
-        "prompts": ids_result.prompts_domain_id,
-        "instructions": ids_result.instructions_domain_id,
-        "flags": ids_result.flag_domain_id,
-        "departments": ids_result.departments_domain_id,
-        "tools": ids_result.tools_domain_id,
-        "temperature_levels": ids_result.temperature_levels_domain_id,
-        "reasoning_levels": ids_result.reasoning_levels_domain_id,
-        "voices": ids_result.voices_domain_id,
-    }
-
     # === COMPUTE SHOW_AI_GENERATE FLAGS ===
     def compute_show_ai_generate(resource: str) -> bool:
-        domain_id = domain_ids_map.get(resource)
         agent_id_for_resource = agent_ids.get(resource)
-        return domain_id is not None and agent_id_for_resource is not None
+        return agent_id_for_resource is not None
 
     show_ai_generate_map = {
         resource: compute_show_ai_generate(resource) for resource in AGENT_RESOURCES
@@ -591,11 +574,6 @@ async def get_agent_internal(
         "voices": compute_voices_required(),
     }
 
-    # Build rich domain metadata for client display
-    domain_data_list = build_domain_data(
-        domain_ids_map, show_flags_map, required_flags_map
-    )
-
     # Transform flags to enriched format for client
     agent_flags = [
         AgentFlagConfig(
@@ -606,7 +584,6 @@ async def get_agent_internal(
             flag_option_id=flag.id,
             show=show_flag,
             required=compute_flag_required(),
-            domain_id=domain_ids_map.get("flags"),
             generated=flag.generated,
         )
         for flag in flags
@@ -686,16 +663,31 @@ async def get_agent_internal(
         ),
     )
 
-    # Build domains list for WebSocket handler
-    domains_list: list[DomainAgent] = []
-    for resource, domain_id in domain_ids_map.items():
-        if domain_id is not None:
-            domains_list.append(
-                DomainAgent(
-                    domain_id=domain_id,
-                    agent_id=agent_ids.get(resource),
-                    group_id=resource_group_ids.get(resource),
-                )
+    selected_agent_ids = list(
+        {
+            aid
+            for aid in agent_ids.values()
+            if aid is not None
+        }
+    )
+    config_agents: list[QGetAgentsV4Item] = []
+    if selected_agent_ids:
+        async with pool.acquire() as c:
+            config_agents = await get_agents_internal(
+                c, selected_agent_ids, bypass_cache
+            )
+    provider_ids = list(
+        {
+            m.provider_id
+            for m in models
+            if m.provider_id is not None
+        }
+    )
+    config_providers: list[QGetProvidersV4Item] = []
+    if provider_ids:
+        async with pool.acquire() as c:
+            config_providers = await get_providers_internal(
+                c, provider_ids, bypass_cache
             )
 
     return AgentInternalData(
@@ -706,10 +698,7 @@ async def get_agent_internal(
         disabled_reason=disabled_reason,
         draft_version=effective_draft_version,
         group_id=effective_group_id,
-        # Domain mappings
-        domain_ids_map=domain_ids_map,
         agent_ids=agent_ids,
-        domains_list=domains_list,
         # Show/required flags
         show_flags_map=show_flags_map,
         required_flags_map=required_flags_map,
@@ -719,14 +708,15 @@ async def get_agent_internal(
         show_ai_generate_map=show_ai_generate_map,
         basic_show_ai_generate=basic_show_ai_generate,
         general_show_ai_generate=general_show_ai_generate,
-        # Domain data and resources
-        domain_data_list=domain_data_list,
+        # Resources and draft view
         resources_payload=resources_payload,
-        # Per-resource group IDs
-        resource_group_ids=resource_group_ids,
+        draft_view=draft_item,
         # Per-resource tool IDs
         create_tool_ids_map=create_tool_ids_map,
         link_tool_ids_map=link_tool_ids_map,
+        # Config resources
+        config_agents=config_agents,
+        config_providers=config_providers,
     )
 
 
@@ -736,14 +726,7 @@ async def get_agent_websocket(
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
 ) -> GetAgentWebsocketResponse:
-    """Minimal response for WebSocket handlers.
-
-    Returns only what's needed for AI generation:
-    - Domain IDs (for domain_to_resource mapping)
-    - Domains list (for agent_id lookup)
-    - Group ID (for existing group context)
-    - Resources (for Jinja template context)
-    """
+    """WebSocket generation response with selected resources and routing map."""
     data = await get_agent_internal(
         profile_id=profile_id,
         agent_id=agent_id,
@@ -751,24 +734,28 @@ async def get_agent_websocket(
         bypass_cache=bypass_cache,
     )
 
+    current = data.resources_payload.current
+    websocket_resources = AgentWebsocketResources(
+        names=current.names if current else [],
+        descriptions=current.descriptions if current else [],
+        models=current.models if current else [],
+        prompts=current.prompts if current else [],
+        instructions=current.instructions if current else [],
+        flags=current.flags if current else [],
+        departments=current.departments if current else [],
+        tools=current.tools if current else [],
+        temperature_levels=current.temperature_levels if current else [],
+        reasoning_levels=current.reasoning_levels if current else [],
+        voices=current.voices if current else [],
+        agents=data.config_agents,
+        providers=data.config_providers,
+    )
+
     return GetAgentWebsocketResponse(
+        views=AgentWebsocketViews(draft_agent=data.draft_view),
+        resources=websocket_resources,
+        resource_agent_ids=data.agent_ids,
         group_id=data.group_id,
-        # Domain IDs for domain_to_resource mapping
-        name_domain_id=data.domain_ids_map.get("names"),
-        descriptions_domain_id=data.domain_ids_map.get("descriptions"),
-        models_domain_id=data.domain_ids_map.get("models"),
-        prompts_domain_id=data.domain_ids_map.get("prompts"),
-        instructions_domain_id=data.domain_ids_map.get("instructions"),
-        flag_domain_id=data.domain_ids_map.get("flags"),
-        departments_domain_id=data.domain_ids_map.get("departments"),
-        tools_domain_id=data.domain_ids_map.get("tools"),
-        temperature_levels_domain_id=data.domain_ids_map.get("temperature_levels"),
-        reasoning_levels_domain_id=data.domain_ids_map.get("reasoning_levels"),
-        voices_domain_id=data.domain_ids_map.get("voices"),
-        # Domains mapping for agent lookup
-        domains=data.domains_list,
-        # Resources for Jinja context
-        resources=data.resources_payload,
     )
 
 
@@ -778,11 +765,7 @@ async def get_agent_client(
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
 ) -> GetAgentApiResponse:
-    """BFF response for HTTP endpoint/frontend.
-
-    Returns the full response with all UI fields, suggestions, and
-    computed *_show_ai_generate flags.
-    """
+    """BFF response for HTTP endpoint/frontend."""
     data = await get_agent_internal(
         profile_id=profile_id,
         agent_id=agent_id,
@@ -790,123 +773,152 @@ async def get_agent_client(
         bypass_cache=bypass_cache,
     )
 
+    resources = data.resources_payload.resources
+    current = data.resources_payload.current
+    current_flags = current.flags if current else []
+    selected_flag_id = current_flags[0].flag_option_id if current_flags else None
+    temperature_resource = (
+        current.temperature_levels[0]
+        if current and current.temperature_levels
+        else None
+    )
+    reasoning_resource = (
+        current.reasoning_levels[0]
+        if current and current.reasoning_levels
+        else None
+    )
+
     return GetAgentApiResponse(
-        # Required fields
         actor_name=data.actor_name,
         agent_exists=data.agent_exists,
         can_edit=data.can_edit,
         disabled_reason=data.disabled_reason,
         draft_version=data.draft_version,
-        # Group ID
         group_id=data.group_id,
-        # Per-resource group IDs (from draft MV)
-        names_group_id=data.resource_group_ids.get("names"),
-        descriptions_group_id=data.resource_group_ids.get("descriptions"),
-        models_group_id=data.resource_group_ids.get("models"),
-        prompts_group_id=data.resource_group_ids.get("prompts"),
-        instructions_group_id=data.resource_group_ids.get("instructions"),
-        flags_group_id=data.resource_group_ids.get("flags"),
-        departments_group_id=data.resource_group_ids.get("departments"),
-        tools_group_id=data.resource_group_ids.get("tools"),
-        temperature_levels_group_id=data.resource_group_ids.get("temperature_levels"),
-        reasoning_levels_group_id=data.resource_group_ids.get("reasoning_levels"),
-        voices_group_id=data.resource_group_ids.get("voices"),
-        # Name
-        show_name=data.show_flags_map.get("names"),
-        name_domain_id=data.domain_ids_map.get("names"),
-        name_required=data.required_flags_map.get("names"),
-        name_suggestions=data.suggestions_map.get("names"),
-        name_show_ai_generate=data.show_ai_generate_map.get("names"),
-        # Description
-        show_description=data.show_flags_map.get("descriptions"),
-        descriptions_domain_id=data.domain_ids_map.get("descriptions"),
-        description_required=data.required_flags_map.get("descriptions"),
-        description_suggestions=data.suggestions_map.get("descriptions"),
-        descriptions_show_ai_generate=data.show_ai_generate_map.get("descriptions"),
-        # Model
-        show_models=data.show_flags_map.get("models"),
-        models_domain_id=data.domain_ids_map.get("models"),
-        models_required=data.required_flags_map.get("models"),
-        model_suggestions=data.suggestions_map.get("models"),
-        models_show_ai_generate=data.show_ai_generate_map.get("models"),
-        # Prompt
-        show_prompts=data.show_flags_map.get("prompts"),
-        prompts_domain_id=data.domain_ids_map.get("prompts"),
-        prompts_required=data.required_flags_map.get("prompts"),
-        prompt_suggestions=data.suggestions_map.get("prompts"),
-        prompts_show_ai_generate=data.show_ai_generate_map.get("prompts"),
-        # Instructions
-        show_instructions=data.show_flags_map.get("instructions"),
-        instructions_domain_id=data.domain_ids_map.get("instructions"),
-        instructions_required=data.required_flags_map.get("instructions"),
-        instructions_suggestions=data.suggestions_map.get("instructions"),
-        instructions_show_ai_generate=data.show_ai_generate_map.get("instructions"),
-        # Flag
-        show_flag=data.show_flags_map.get("flags"),
-        flag_domain_id=data.domain_ids_map.get("flags"),
-        flag_required=data.required_flags_map.get("flags"),
-        flag_show_ai_generate=data.show_ai_generate_map.get("flags"),
-        # Departments
-        show_departments=data.show_flags_map.get("departments"),
-        departments_domain_id=data.domain_ids_map.get("departments"),
-        departments_required=data.required_flags_map.get("departments"),
-        department_suggestions=data.suggestions_map.get("departments"),
-        departments_show_ai_generate=data.show_ai_generate_map.get("departments"),
-        # Tools
-        show_tools=data.show_flags_map.get("tools"),
-        tools_domain_id=data.domain_ids_map.get("tools"),
-        tools_required=data.required_flags_map.get("tools"),
-        tool_suggestions=data.suggestions_map.get("tools"),
-        tools_show_ai_generate=data.show_ai_generate_map.get("tools"),
-        # Temperature Levels
-        show_temperature_levels=data.show_flags_map.get("temperature_levels"),
-        temperature_levels_domain_id=data.domain_ids_map.get("temperature_levels"),
-        temperature_levels_required=data.required_flags_map.get("temperature_levels"),
-        temperature_level_suggestions=data.suggestions_map.get("temperature_levels"),
-        temperature_levels_show_ai_generate=data.show_ai_generate_map.get(
-            "temperature_levels"
-        ),
-        # Reasoning Levels
-        show_reasoning_levels=data.show_flags_map.get("reasoning_levels"),
-        reasoning_levels_domain_id=data.domain_ids_map.get("reasoning_levels"),
-        reasoning_levels_required=data.required_flags_map.get("reasoning_levels"),
-        reasoning_level_suggestions=data.suggestions_map.get("reasoning_levels"),
-        reasoning_levels_show_ai_generate=data.show_ai_generate_map.get(
-            "reasoning_levels"
-        ),
-        # Voices
-        show_voices=data.show_flags_map.get("voices"),
-        voices_domain_id=data.domain_ids_map.get("voices"),
-        voices_required=data.required_flags_map.get("voices"),
-        voice_suggestions=data.suggestions_map.get("voices"),
-        voices_show_ai_generate=data.show_ai_generate_map.get("voices"),
-        # Step-level AI generation flags
         basic_show_ai_generate=data.basic_show_ai_generate,
         general_show_ai_generate=data.general_show_ai_generate,
-        # Per-resource CREATE tool IDs
-        name_create_tool_id=data.create_tool_ids_map.get("names"),
-        descriptions_create_tool_id=data.create_tool_ids_map.get("descriptions"),
-        models_create_tool_id=data.create_tool_ids_map.get("models"),
-        prompts_create_tool_id=data.create_tool_ids_map.get("prompts"),
-        instructions_create_tool_id=data.create_tool_ids_map.get("instructions"),
-        # Per-resource LINK tool IDs
-        name_link_tool_id=data.link_tool_ids_map.get("names"),
-        descriptions_link_tool_id=data.link_tool_ids_map.get("descriptions"),
-        models_link_tool_id=data.link_tool_ids_map.get("models"),
-        prompts_link_tool_id=data.link_tool_ids_map.get("prompts"),
-        instructions_link_tool_id=data.link_tool_ids_map.get("instructions"),
-        flag_link_tool_id=data.link_tool_ids_map.get("flags"),
-        departments_link_tool_id=data.link_tool_ids_map.get("departments"),
-        tools_link_tool_id=data.link_tool_ids_map.get("tools"),
-        temperature_levels_link_tool_id=data.link_tool_ids_map.get(
-            "temperature_levels"
+        names=AgentNameSection(
+            show=bool(data.show_flags_map.get("names")),
+            required=bool(data.required_flags_map.get("names")),
+            suggestions=data.suggestions_map.get("names"),
+            show_ai_generate=bool(data.show_ai_generate_map.get("names")),
+            create_tool_id=data.create_tool_ids_map.get("names"),
+            link_tool_id=data.link_tool_ids_map.get("names"),
+            resource=current.names[0] if current and current.names else None,
+            resources=resources.names if resources else [],
         ),
-        reasoning_levels_link_tool_id=data.link_tool_ids_map.get("reasoning_levels"),
-        voices_link_tool_id=data.link_tool_ids_map.get("voices"),
-        # Domain metadata for client display in modals
-        domain_data=data.domain_data_list,
-        # Resources
-        resources=data.resources_payload,
+        descriptions=AgentDescriptionSection(
+            show=bool(data.show_flags_map.get("descriptions")),
+            required=bool(data.required_flags_map.get("descriptions")),
+            suggestions=data.suggestions_map.get("descriptions"),
+            show_ai_generate=bool(data.show_ai_generate_map.get("descriptions")),
+            create_tool_id=data.create_tool_ids_map.get("descriptions"),
+            link_tool_id=data.link_tool_ids_map.get("descriptions"),
+            resource=current.descriptions[0]
+            if current and current.descriptions
+            else None,
+            resources=resources.descriptions if resources else [],
+        ),
+        models=AgentModelSection(
+            show=bool(data.show_flags_map.get("models")),
+            required=bool(data.required_flags_map.get("models")),
+            suggestions=data.suggestions_map.get("models"),
+            show_ai_generate=bool(data.show_ai_generate_map.get("models")),
+            create_tool_id=data.create_tool_ids_map.get("models"),
+            link_tool_id=data.link_tool_ids_map.get("models"),
+            resource=current.models[0] if current and current.models else None,
+            resources=resources.models if resources else [],
+        ),
+        prompts=AgentPromptSection(
+            show=bool(data.show_flags_map.get("prompts")),
+            required=bool(data.required_flags_map.get("prompts")),
+            suggestions=data.suggestions_map.get("prompts"),
+            show_ai_generate=bool(data.show_ai_generate_map.get("prompts")),
+            create_tool_id=data.create_tool_ids_map.get("prompts"),
+            link_tool_id=data.link_tool_ids_map.get("prompts"),
+            resource=current.prompts[0] if current and current.prompts else None,
+            resources=resources.prompts if resources else [],
+        ),
+        instructions=AgentInstructionSection(
+            show=bool(data.show_flags_map.get("instructions")),
+            required=bool(data.required_flags_map.get("instructions")),
+            suggestions=data.suggestions_map.get("instructions"),
+            show_ai_generate=bool(data.show_ai_generate_map.get("instructions")),
+            create_tool_id=data.create_tool_ids_map.get("instructions"),
+            link_tool_id=data.link_tool_ids_map.get("instructions"),
+            resource=current.instructions[0]
+            if current and current.instructions
+            else None,
+            resources=resources.instructions if resources else [],
+        ),
+        flags=AgentFlagSection(
+            show=bool(data.show_flags_map.get("flags")),
+            required=bool(data.required_flags_map.get("flags")),
+            suggestions=None,
+            show_ai_generate=bool(data.show_ai_generate_map.get("flags")),
+            create_tool_id=None,
+            link_tool_id=data.link_tool_ids_map.get("flags"),
+            current=[
+                f
+                for f in (resources.flags if resources else [])
+                if selected_flag_id and f.flag_option_id == selected_flag_id
+            ]
+            if selected_flag_id
+            else [],
+            resources=resources.flags if resources else [],
+        ),
+        departments=AgentDepartmentSection(
+            show=bool(data.show_flags_map.get("departments")),
+            required=bool(data.required_flags_map.get("departments")),
+            suggestions=data.suggestions_map.get("departments"),
+            show_ai_generate=bool(data.show_ai_generate_map.get("departments")),
+            create_tool_id=None,
+            link_tool_id=data.link_tool_ids_map.get("departments"),
+            current=current.departments if current else [],
+            resources=resources.departments if resources else [],
+        ),
+        tools=AgentToolSection(
+            show=bool(data.show_flags_map.get("tools")),
+            required=bool(data.required_flags_map.get("tools")),
+            suggestions=data.suggestions_map.get("tools"),
+            show_ai_generate=bool(data.show_ai_generate_map.get("tools")),
+            create_tool_id=None,
+            link_tool_id=data.link_tool_ids_map.get("tools"),
+            current=current.tools if current else [],
+            resources=resources.tools if resources else [],
+        ),
+        temperature_levels=AgentTemperatureLevelSection(
+            show=bool(data.show_flags_map.get("temperature_levels")),
+            required=bool(data.required_flags_map.get("temperature_levels")),
+            suggestions=data.suggestions_map.get("temperature_levels"),
+            show_ai_generate=bool(
+                data.show_ai_generate_map.get("temperature_levels")
+            ),
+            create_tool_id=None,
+            link_tool_id=data.link_tool_ids_map.get("temperature_levels"),
+            resource=temperature_resource,
+            resources=resources.temperature_levels if resources else [],
+        ),
+        reasoning_levels=AgentReasoningLevelSection(
+            show=bool(data.show_flags_map.get("reasoning_levels")),
+            required=bool(data.required_flags_map.get("reasoning_levels")),
+            suggestions=data.suggestions_map.get("reasoning_levels"),
+            show_ai_generate=bool(data.show_ai_generate_map.get("reasoning_levels")),
+            create_tool_id=None,
+            link_tool_id=data.link_tool_ids_map.get("reasoning_levels"),
+            resource=reasoning_resource,
+            resources=resources.reasoning_levels if resources else [],
+        ),
+        voices=AgentVoiceSection(
+            show=bool(data.show_flags_map.get("voices")),
+            required=bool(data.required_flags_map.get("voices")),
+            suggestions=data.suggestions_map.get("voices"),
+            show_ai_generate=bool(data.show_ai_generate_map.get("voices")),
+            create_tool_id=None,
+            link_tool_id=data.link_tool_ids_map.get("voices"),
+            current=current.voices if current else [],
+            resources=resources.voices if resources else [],
+        ),
     )
 
 
@@ -970,12 +982,9 @@ async def get_agent(
             audit_ctx: dict[str, Any] = {
                 "actor": {"name": response_data.actor_name, "id": profile_id}
             }
-            current_name = None
-            current_resources = (
-                response_data.resources.current if response_data.resources else None
-            )
-            if current_resources and current_resources.names:
-                current_name = getattr(current_resources.names[0], "name", None)
+            current_name = response_data.names.resource.name if (
+                response_data.names and response_data.names.resource
+            ) else None
             if request.agent_id and current_name:
                 audit_ctx["agent"] = {
                     "name": current_name,
