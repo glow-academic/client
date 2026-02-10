@@ -761,11 +761,16 @@ Known deviations from gold standard (acceptable for now, migration deferred):
 
 Frontend notes:
 - `client/components/documents/Document.tsx` is the canonical document create/edit component
+- `client/components/documents/DocumentNew.tsx` is deprecated/removed and must not be reintroduced
 - `client/components/resources/Texts.tsx` is a textarea-based multi-select component for text content
 - `client/components/resources/Images.tsx` is used for image selection
 - Frontend `VALID_RESOURCE_TYPES` includes all 8 resource types
 - Document uses step-based wizard with AI generation per step
 - Draft autosave via `useDraftLifecycle` with `expected_version` concurrency control
+- Document frontend parity stack should match persona:
+  - `useSaveContext` + `useDraftLifecycle` + `useFlushRegistry`
+  - `buildResourceActions` + `computeEffectiveFormState` + `checkHasResourceIds`
+  - step headers use shared `StepCardAiButton` + `useGenerationModal` (no ad-hoc step AI button logic)
 
 Resource layer notes:
 - Images: full resource layer exists (`get_images_internal`, `search_images_internal`, `QGetImagesV4Item`)
@@ -795,3 +800,12 @@ Architecture notes:
 Known deviations from gold standard (acceptable for now, migration deferred):
 - `generate.py` uses shared SQL (`get_generation_run_context_and_create_run_complete.sql` + `get_text_run_context_for_existing_run_complete.sql`) instead of artifact-specific prepare SQL
 - Mutation endpoints (delete/duplicate) still use auto-generated SQL types
+
+Frontend notes:
+- `client/components/models/Model.tsx` is the canonical model create/edit component
+- Model frontend parity stack should match persona:
+  - `useSaveContext` + `useDraftLifecycle` + `useFlushRegistry`
+  - `buildResourceActions` + `computeEffectiveFormState` + `checkHasResourceIds`
+  - step headers use shared `StepCardAiButton` + `useGenerationModal`
+- AI generation must ensure a draft exists before emit (`flushAllAndSave`), then emit `resource_types`
+- Do not call non-existent resource create endpoints from model pages (`flags`, `modalities`, `temperature_levels`, `reasoning_levels`, `qualities`)

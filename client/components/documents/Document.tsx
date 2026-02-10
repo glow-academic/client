@@ -15,6 +15,7 @@ import {
   GenericForm,
   type StepStatus,
 } from "@/components/common/forms/GenericForm";
+import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
 import { StepCard } from "@/components/common/forms/StepCard";
 import { GenerateRegenerateModal } from "@/components/common/GenerateRegenerateModal";
 import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
@@ -26,20 +27,22 @@ import { Names } from "@/components/resources/Names";
 import { Images } from "@/components/resources/Images";
 import { Texts } from "@/components/resources/Texts";
 import { Uploads } from "@/components/resources/Uploads";
-import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
+import { useSaveContext } from "@/contexts/save-context";
 import { useAiGeneration } from "@/hooks/use-ai-generation";
+import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
+import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import { useGenerationModal } from "@/hooks/use-generation-modal";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import {
+  buildResourceActions,
+  checkHasResourceIds,
+  computeEffectiveFormState,
+  type ResourceConfig,
+} from "@/lib/resources/action-builders";
 import type { ResourceType } from "@/lib/resources/types";
-import { Loader2, Sparkles } from "lucide-react";
 import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 import type { Dispatch, SetStateAction } from "react";
 
@@ -55,9 +58,48 @@ const VALID_RESOURCE_TYPES = [
 ] as const;
 type DocumentResourceType = (typeof VALID_RESOURCE_TYPES)[number];
 
+const FLUSH_KEYS = [
+  "names",
+  "descriptions",
+  "uploads",
+  "images",
+] as const;
+
+const DOCUMENT_RESOURCES: ResourceConfig[] = [
+  { key: "names", formKey: "name_id", flushKey: "name_id", type: "single" },
+  {
+    key: "descriptions",
+    formKey: "description_id",
+    flushKey: "description_id",
+    type: "single",
+  },
+  { key: "flags", formKey: "active_flag_id", flushKey: null, type: "single" },
+  {
+    key: "departments",
+    formKey: "department_ids",
+    flushKey: null,
+    type: "multi",
+  },
+  { key: "fields", formKey: "field_ids", flushKey: null, type: "multi" },
+  {
+    key: "uploads",
+    formKey: "upload_ids",
+    flushKey: "uploads_id",
+    type: "multi",
+  },
+  {
+    key: "images",
+    formKey: "image_ids",
+    flushKey: "image_ids",
+    type: "multi",
+  },
+  { key: "texts", formKey: "text_ids", flushKey: null, type: "multi" },
+];
+
 // Types defined inline using InputOf/OutputOf
 type SaveDocumentIn = InputOf<"/api/v4/artifacts/documents/save", "post">;
 type SaveDocumentOut = OutputOf<"/api/v4/artifacts/documents/save", "post">;
+type SaveDocumentBody = NonNullable<SaveDocumentIn["body"]>;
 type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
@@ -130,9 +172,12 @@ function DocumentComponent({
   const router = useRouter();
   const isEditMode = mode === "edit" && !!documentId;
   const documentDetail = documentDetailProp ?? documentDetailDefault;
-  const { profile, selectedDraftId, setSelectedDraftId, socket, isConnected } =
+  const { profile, setSelectedDraftId, socket, isConnected } =
     useProfile();
+  const { isAutosaveEnabled } = useSaveContext();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
+  const { flushRegistryRef, registerFlushCallbacks, flushAllResources } =
+    useFlushRegistry<Record<string, unknown>>(FLUSH_KEYS);
 
   // nuqs parsers for URL-backed state (will be passed to GenericForm)
   // Memoize to prevent new object reference on every render
@@ -245,127 +290,88 @@ function DocumentComponent({
     }
   }, [draftVersion]);
 
-  // Get draftId from GenericForm's URL state via bridge (GenericForm is single source of truth)
-  const [draftId, setDraftId] = useState<string | null>(null);
-  const setUrlFormDataRef = React.useRef<
-    null | ((updates: Record<string, unknown>) => void)
-  >(null);
-
-  // Store formData from GenericForm to access search params
-  const formDataRef = React.useRef<Record<string, unknown>>({});
-
-  // Memoized callback to sync draftId from GenericForm - only update if value changed
-  const onFormDataChange = React.useCallback((fd: Record<string, unknown>) => {
-    // Store formData for access in handleGenerateResources
-    formDataRef.current = fd;
-    const next = (fd["draftId"] as string | undefined) ?? null;
-    setDraftId((prev) => (prev === next ? prev : next));
-  }, []);
-
-  // Sync URL draftId to profile context
-  useEffect(() => {
-    if (draftId !== selectedDraftId) {
-      setSelectedDraftId(draftId);
-    }
-  }, [draftId, selectedDraftId, setSelectedDraftId]);
-
-  // Use ref to stabilize patchDocumentDraftAction to prevent effect recreation when prop reference changes
-  const patchDocumentDraftActionRef = React.useRef(patchDocumentDraftAction);
+  const formStateRef = React.useRef(formState as Record<string, unknown>);
   React.useEffect(() => {
-    patchDocumentDraftActionRef.current = patchDocumentDraftAction;
+    formStateRef.current = formState as Record<string, unknown>;
+  }, [formState]);
+
+  const lastPatchedFormStateRef = React.useRef<Record<string, unknown> | null>(
+    null,
+  );
+
+  const patchActionRef = React.useRef<
+    ((payload: Record<string, unknown>) => Promise<{ draft_id?: string | null; new_version?: number | null }>) | undefined
+  >(undefined);
+  React.useEffect(() => {
+    if (patchDocumentDraftAction) {
+      patchActionRef.current = async (payload: Record<string, unknown>) => {
+        return await patchDocumentDraftAction({
+          body: payload,
+        } as PatchDocumentDraftIn);
+      };
+    } else {
+      patchActionRef.current = undefined;
+    }
   }, [patchDocumentDraftAction]);
 
-  // Build a stable key for "what would we patch" - only changes when form data actually changes
-  const draftPatchKey = React.useMemo(() => {
-    return JSON.stringify({
-      draftId: draftId || null,
-      name_id: formState.name_id,
-      description_id: formState.description_id,
-      active_flag_id: formState.active_flag_id,
-      department_ids: formState.department_ids,
-      field_ids: formState.field_ids,
-      upload_ids: formState.upload_ids,
-      image_ids: formState.image_ids,
-      text_ids: formState.text_ids,
-    });
-  }, [
-    draftId,
-    formState.name_id,
-    formState.description_id,
-    formState.active_flag_id,
-    formState.department_ids,
-    formState.field_ids,
-    formState.upload_ids,
-    formState.image_ids,
-    formState.text_ids,
-  ]);
+  const formStateKey = React.useMemo(
+    () =>
+      JSON.stringify({
+        name_id: formState.name_id,
+        description_id: formState.description_id,
+        active_flag_id: formState.active_flag_id,
+        department_ids: formState.department_ids,
+        field_ids: formState.field_ids,
+        upload_ids: formState.upload_ids,
+        image_ids: formState.image_ids,
+        text_ids: formState.text_ids,
+      }),
+    [formState],
+  );
 
-  // Track last patched payload so we don't repatch identical state
-  const lastPatchedKeyRef = React.useRef<string | null>(null);
+  const hasResourceIds = checkHasResourceIds(
+    DOCUMENT_RESOURCES,
+    formState as unknown as Record<string, unknown>,
+  );
 
-  // Draft change listener - watches resource IDs and patches draft
-  // Only triggers when the payload actually changes, not when version changes
-  useEffect(() => {
-    const hasResourceIds =
-      formState.name_id ||
-      formState.description_id ||
-      formState.active_flag_id ||
-      formState.department_ids.length > 0 ||
-      formState.field_ids.length > 0 ||
-      formState.upload_ids.length > 0 ||
-      formState.image_ids.length > 0 ||
-      formState.text_ids.length > 0;
+  const buildPatchPayload = useCallback(
+    (
+      inputDraftId: string | null,
+      expectedVersion: number,
+      flushResults?: Record<string, unknown>,
+    ): Record<string, unknown> => ({
+      input_draft_id: inputDraftId || null,
+      group_id: documentDetail?.group_id ?? null,
+      ...buildResourceActions(DOCUMENT_RESOURCES, {
+        formState: formStateRef.current,
+        referenceState: lastPatchedFormStateRef.current,
+        flushResults: flushResults ?? {},
+        entityData: documentDetail as Record<string, unknown> | null,
+      }),
+      expected_version: expectedVersion,
+    }),
+    [documentDetail],
+  );
 
-    if (!hasResourceIds || !patchDocumentDraftActionRef.current) {
-      return;
-    }
-
-    // If nothing changed since the last successful patch, do nothing.
-    if (lastPatchedKeyRef.current === draftPatchKey) {
-      return;
-    }
-
-    const timer = setTimeout(async () => {
-      try {
-        if (!patchDocumentDraftActionRef.current) return;
-        const result = await patchDocumentDraftActionRef.current({
-          body: {
-            input_draft_id: draftId || null,
-            group_id: documentDetail?.group_id ?? null,
-            names: formState.name_id ? { resource_id: formState.name_id } : null,
-            descriptions: formState.description_id ? { resource_id: formState.description_id } : null,
-            flags: formState.active_flag_id ? { resource_id: formState.active_flag_id } : null,
-            departments: formState.department_ids.length > 0 ? { resource_ids: formState.department_ids } : null,
-            fields: formState.field_ids.length > 0 ? { resource_ids: formState.field_ids } : null,
-            uploads: formState.upload_ids.length > 0 ? { resource_ids: formState.upload_ids } : null,
-            images: formState.image_ids.length > 0 ? { resource_ids: formState.image_ids } : null,
-            texts: formState.text_ids.length > 0 ? { resource_ids: formState.text_ids } : null,
-            expected_version: lastSavedVersionRef.current,
-          },
-        });
-
-        // Mark this payload as patched so we don't loop
-        lastPatchedKeyRef.current = draftPatchKey;
-
-        if (!draftId && result.draft_id) {
-          // Update URL when draft is created via GenericForm bridge (GenericForm owns URL state)
-          setUrlFormDataRef.current?.({ draftId: result.draft_id });
-        }
-
-        // This can stay as state (for UI), but it won't re-trigger patching
-        // because the effect is gated by payload changes.
-        if ((result.new_version ?? 0) !== lastSavedVersionRef.current) {
-          setLastSavedVersion(result.new_version ?? 0);
-          lastSavedVersionRef.current = result.new_version ?? 0;
-        }
-      } catch {
-        // Failed to save draft - error already logged by API
-        // Don't update lastPatchedKeyRef on failure so we retry on next change
-      }
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, [draftPatchKey, draftId, formState, documentDetail?.group_id]);
+  const {
+    setUrlFormDataRef,
+    onFormDataChange,
+    flushAllAndSave,
+    formDataRef,
+  } = useDraftLifecycle({
+    formStateKey,
+    patchActionRef,
+    isAutosaveEnabled,
+    buildPatchPayload,
+    setSelectedDraftId,
+    serverDraftVersion: draftVersion ?? null,
+    hasResourceIds,
+    flushRegistryRef,
+    formStateRef,
+    onPatchSuccess: () => {
+      lastPatchedFormStateRef.current = { ...formStateRef.current };
+    },
+  });
 
   // AI generation via shared hook
   const onAiComplete = useCallback((data: Record<string, unknown>) => {
@@ -490,7 +496,6 @@ function DocumentComponent({
   const handleGenerateResources = useCallback(
     async (
       resourceTypes: ResourceType[],
-      _agentType: string | null,
       userInstructions?: string,
     ) => {
       if (!socket || !isConnected) {
@@ -507,13 +512,20 @@ function DocumentComponent({
 
       // Read search params from formData
       const formData = formDataRef.current;
-      const currentDraftId = (formData["draftId"] as string | undefined) ?? null;
+      let currentDraftId = (formData["draftId"] as string | undefined) ?? null;
+      if (!currentDraftId) {
+        currentDraftId = await flushAllAndSave();
+      }
+      if (!currentDraftId) {
+        toast.error("Please save a draft before generating with AI");
+        return;
+      }
 
       // Emit document_generate event with resource_types (gold standard pattern)
       socket.emit("document_generate", {
         resource_types: resourceTypes,
         user_instructions: userInstructions ? [userInstructions] : null,
-        draft_id: currentDraftId || null,
+        draft_id: currentDraftId,
         document_id: documentId || null,
       });
     },
@@ -522,27 +534,28 @@ function DocumentComponent({
       isConnected,
       documentId,
       setGeneratingResources,
+      flushAllAndSave,
     ],
   );
 
   // Individual generation handlers - generate directly without modals
   const handleGenerateName = useCallback(
-    async () => handleGenerateResources(["names"], null),
+    async () => handleGenerateResources(["names"]),
     [handleGenerateResources],
   );
 
   const handleGenerateDescription = useCallback(
-    async () => handleGenerateResources(["descriptions"], null),
+    async () => handleGenerateResources(["descriptions"]),
     [handleGenerateResources],
   );
 
   const handleGenerateDepartments = useCallback(
-    async () => handleGenerateResources(["departments"], null),
+    async () => handleGenerateResources(["departments"]),
     [handleGenerateResources],
   );
 
   const handleGenerateFlags = useCallback(
-    async () => handleGenerateResources(["flags"], null),
+    async () => handleGenerateResources(["flags"]),
     [handleGenerateResources],
   );
 
@@ -572,6 +585,10 @@ function DocumentComponent({
       }
     },
     [documentDetail],
+  );
+  const canRegenerateForStepCard = useCallback(
+    (resourceType: string) => canRegenerate(resourceType as ResourceType),
+    [canRegenerate],
   );
 
   // Disabled logic based on can_edit flag - standardized for all resource components
@@ -603,15 +620,27 @@ function DocumentComponent({
   // Submit handler for GenericForm (uses formState, not formData parameter)
   const handleSubmit = useCallback(
     async (_formData: Record<string, unknown>) => {
+      let flushResults: Record<string, unknown> = {};
+      if (!isAutosaveEnabled) {
+        flushResults = await flushAllResources();
+      }
+
+      const effectiveFormState = computeEffectiveFormState(
+        DOCUMENT_RESOURCES,
+        formStateRef.current,
+        flushResults,
+      ) as unknown as typeof formState;
+
       // Validate required resource IDs using section required flags
-      if (documentDetail?.names?.required && !formState.name_id) {
+      if (documentDetail?.names?.required && !effectiveFormState.name_id) {
         toast.error("Document name is required");
         throw new Error("Document name is required");
       }
 
       if (
         documentDetail?.departments?.required &&
-        (!formState.department_ids || formState.department_ids.length === 0)
+        (!effectiveFormState.department_ids ||
+          effectiveFormState.department_ids.length === 0)
       ) {
         toast.error("Departments are required");
         throw new Error("Departments are required");
@@ -619,7 +648,8 @@ function DocumentComponent({
 
       if (
         documentDetail?.fields?.required &&
-        (!formState.field_ids || formState.field_ids.length === 0)
+        (!effectiveFormState.field_ids ||
+          effectiveFormState.field_ids.length === 0)
       ) {
         toast.error("Fields are required");
         throw new Error("Fields are required");
@@ -637,7 +667,7 @@ function DocumentComponent({
       }
 
       // Ensure required fields are present (TypeScript guard)
-      if (!formState.name_id) {
+      if (!effectiveFormState.name_id) {
         toast.error("Required fields are missing");
         throw new Error("Required fields are missing");
       }
@@ -649,18 +679,32 @@ function DocumentComponent({
       }
 
       try {
+        const initialState = getInitialFormState() as unknown as Record<
+          string,
+          unknown
+        >;
+        const saveActions = buildResourceActions(DOCUMENT_RESOURCES, {
+          formState: effectiveFormState as unknown as Record<string, unknown>,
+          referenceState: initialState,
+          flushResults,
+          entityData: documentDetail as Record<string, unknown> | null,
+        }) as Pick<
+          SaveDocumentBody,
+          | "names"
+          | "descriptions"
+          | "flags"
+          | "departments"
+          | "fields"
+          | "uploads"
+          | "images"
+          | "texts"
+        >;
+
         await saveDocumentAction({
           body: {
             group_id: groupId,
             input_document_id: isEditMode && documentId ? documentId : null,
-            names: { resource_id: formState.name_id },
-            descriptions: { resource_id: formState.description_id || null },
-            flags: { resource_id: formState.active_flag_id || null },
-            departments: { resource_ids: formState.department_ids || [] },
-            fields: { resource_ids: formState.field_ids || [] },
-            uploads: { resource_ids: formState.upload_ids || [] },
-            images: { resource_ids: formState.image_ids || [] },
-            texts: { resource_ids: formState.text_ids || [] },
+            ...saveActions,
           },
         });
         toast.success(
@@ -675,12 +719,16 @@ function DocumentComponent({
       }
     },
     [
-      formState,
+      documentDetail,
+      formStateRef,
       isEditMode,
       documentId,
       profile?.id,
       saveDocumentAction,
       router,
+      isAutosaveEnabled,
+      flushAllResources,
+      getInitialFormState,
       documentDetail?.names?.required,
       documentDetail?.departments?.required,
       documentDetail?.fields?.required,
@@ -765,11 +813,7 @@ function DocumentComponent({
       resourceLabels,
       canRegenerate,
       onGenerate: (selectedResources, instructions) => {
-        handleGenerateResources(
-          selectedResources as ResourceType[],
-          null,
-          instructions,
-        );
+        handleGenerateResources(selectedResources as ResourceType[], instructions);
       },
       isGenerating,
     });
@@ -960,6 +1004,8 @@ function DocumentComponent({
                   create_tool_id={documentDetail?.names?.create_tool_id ?? null}
                   link_tool_id={documentDetail?.names?.link_tool_id ?? null}
                   createNamesAction={createNamesAction}
+                  isAutosaveEnabled={isAutosaveEnabled}
+                  registerFlush={registerFlushCallbacks["names"]}
                 />
               }
               resetFields={[
@@ -973,45 +1019,14 @@ function DocumentComponent({
                 stepResources["basic"] &&
                 stepResources["basic"].length > 0 &&
                 documentDetail?.basic_show_ai_generate ? (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            const hasRegeneratable = stepResources[
-                              "basic"
-                            ]!.some((rt) => canRegenerate(rt));
-                            handleOpenStepCardModal(
-                              "basic",
-                              hasRegeneratable ? "regenerate" : "generate",
-                            );
-                          }}
-                          disabled={
-                            disabled ||
-                            stepResources["basic"]!.some((rt) =>
-                              isGenerating(rt),
-                            )
-                          }
-                        >
-                          {stepResources["basic"]!.some((rt) =>
-                            isGenerating(rt),
-                          ) ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Sparkles className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {stepResources["basic"]!.some((rt) => canRegenerate(rt))
-                          ? "Regenerate"
-                          : "Generate"}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                  <StepCardAiButton
+                    stepId="basic"
+                    resourceTypes={stepResources["basic"]}
+                    canRegenerate={canRegenerateForStepCard}
+                    isGenerating={isGenerating}
+                    onOpenModal={handleOpenStepCardModal}
+                    disabled={disabled}
+                  />
                 ) : undefined
               }
               {...(onReset ? { onReset } : {})}
@@ -1060,6 +1075,8 @@ function DocumentComponent({
                     documentDetail?.descriptions?.link_tool_id ?? null
                   }
                   createDescriptionsAction={createDescriptionsAction}
+                  isAutosaveEnabled={isAutosaveEnabled}
+                  registerFlush={registerFlushCallbacks["descriptions"]}
                 />
 
                 {/* Department Selection */}
@@ -1164,47 +1181,14 @@ function DocumentComponent({
                 stepResources["fields"] &&
                 stepResources["fields"].length > 0 &&
                 documentDetail?.fields?.show_ai_generate ? (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            const hasRegeneratable = stepResources[
-                              "fields"
-                            ]!.some((rt) => canRegenerate(rt));
-                            handleOpenStepCardModal(
-                              "fields",
-                              hasRegeneratable ? "regenerate" : "generate",
-                            );
-                          }}
-                          disabled={
-                            disabled ||
-                            stepResources["fields"]!.some((rt) =>
-                              isGenerating(rt),
-                            )
-                          }
-                        >
-                          {stepResources["fields"]!.some((rt) =>
-                            isGenerating(rt),
-                          ) ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Sparkles className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {stepResources["fields"]!.some((rt) =>
-                          canRegenerate(rt),
-                        )
-                          ? "Regenerate"
-                          : "Generate"}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                  <StepCardAiButton
+                    stepId="fields"
+                    resourceTypes={stepResources["fields"]}
+                    canRegenerate={canRegenerateForStepCard}
+                    isGenerating={isGenerating}
+                    onOpenModal={handleOpenStepCardModal}
+                    disabled={disabled}
+                  />
                 ) : undefined
               }
             >
@@ -1251,47 +1235,14 @@ function DocumentComponent({
                 stepResources["uploads"] &&
                 stepResources["uploads"].length > 0 &&
                 documentDetail?.uploads?.show_ai_generate ? (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            const hasRegeneratable = stepResources[
-                              "uploads"
-                            ]!.some((rt) => canRegenerate(rt));
-                            handleOpenStepCardModal(
-                              "uploads",
-                              hasRegeneratable ? "regenerate" : "generate",
-                            );
-                          }}
-                          disabled={
-                            disabled ||
-                            stepResources["uploads"]!.some((rt) =>
-                              isGenerating(rt),
-                            )
-                          }
-                        >
-                          {stepResources["uploads"]!.some((rt) =>
-                            isGenerating(rt),
-                          ) ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Sparkles className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {stepResources["uploads"]!.some((rt) =>
-                          canRegenerate(rt),
-                        )
-                          ? "Regenerate"
-                          : "Generate"}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                  <StepCardAiButton
+                    stepId="uploads"
+                    resourceTypes={stepResources["uploads"]}
+                    canRegenerate={canRegenerateForStepCard}
+                    isGenerating={isGenerating}
+                    onOpenModal={handleOpenStepCardModal}
+                    disabled={disabled}
+                  />
                 ) : undefined
               }
             >
@@ -1317,6 +1268,7 @@ function DocumentComponent({
                 link_tool_id={documentDetail?.uploads?.link_tool_id ?? null}
                 createUploadsAction={createUploadsAction}
                 searchTerm={uploadSearchTerm}
+                registerFlush={registerFlushCallbacks["uploads"]}
               />
             </StepCard>
           );
@@ -1337,47 +1289,14 @@ function DocumentComponent({
                 stepResources["images"] &&
                 stepResources["images"].length > 0 &&
                 documentDetail?.images?.show_ai_generate ? (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            const hasRegeneratable = stepResources[
-                              "images"
-                            ]!.some((rt) => canRegenerate(rt));
-                            handleOpenStepCardModal(
-                              "images",
-                              hasRegeneratable ? "regenerate" : "generate",
-                            );
-                          }}
-                          disabled={
-                            disabled ||
-                            stepResources["images"]!.some((rt) =>
-                              isGenerating(rt),
-                            )
-                          }
-                        >
-                          {stepResources["images"]!.some((rt) =>
-                            isGenerating(rt),
-                          ) ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Sparkles className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {stepResources["images"]!.some((rt) =>
-                          canRegenerate(rt),
-                        )
-                          ? "Regenerate"
-                          : "Generate"}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                  <StepCardAiButton
+                    stepId="images"
+                    resourceTypes={stepResources["images"]}
+                    canRegenerate={canRegenerateForStepCard}
+                    isGenerating={isGenerating}
+                    onOpenModal={handleOpenStepCardModal}
+                    disabled={disabled}
+                  />
                 ) : undefined
               }
             >
@@ -1402,6 +1321,7 @@ function DocumentComponent({
                 create_tool_id={documentDetail?.images?.create_tool_id ?? null}
                 link_tool_id={documentDetail?.images?.link_tool_id ?? null}
                 createImagesAction={createImagesAction}
+                registerFlush={registerFlushCallbacks["images"]}
               />
             </StepCard>
           );
@@ -1422,47 +1342,14 @@ function DocumentComponent({
                 stepResources["texts"] &&
                 stepResources["texts"].length > 0 &&
                 documentDetail?.texts?.show_ai_generate ? (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            const hasRegeneratable = stepResources[
-                              "texts"
-                            ]!.some((rt) => canRegenerate(rt));
-                            handleOpenStepCardModal(
-                              "texts",
-                              hasRegeneratable ? "regenerate" : "generate",
-                            );
-                          }}
-                          disabled={
-                            disabled ||
-                            stepResources["texts"]!.some((rt) =>
-                              isGenerating(rt),
-                            )
-                          }
-                        >
-                          {stepResources["texts"]!.some((rt) =>
-                            isGenerating(rt),
-                          ) ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Sparkles className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {stepResources["texts"]!.some((rt) =>
-                          canRegenerate(rt),
-                        )
-                          ? "Regenerate"
-                          : "Generate"}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                  <StepCardAiButton
+                    stepId="texts"
+                    resourceTypes={stepResources["texts"]}
+                    canRegenerate={canRegenerateForStepCard}
+                    isGenerating={isGenerating}
+                    onOpenModal={handleOpenStepCardModal}
+                    disabled={disabled}
+                  />
                 ) : undefined
               }
             >
@@ -1519,6 +1406,7 @@ function DocumentComponent({
       createImagesAction,
       createTextsAction,
       canRegenerate,
+      canRegenerateForStepCard,
       handleOpenStepCardModal,
     ],
   );

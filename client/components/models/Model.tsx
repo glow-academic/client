@@ -23,8 +23,10 @@ import {
   GenericForm,
   type StepStatus,
 } from "@/components/common/forms/GenericForm";
+import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { StepCard } from "@/components/common/forms/StepCard";
+import { GenerateRegenerateModal } from "@/components/common/GenerateRegenerateModal";
 import { ProviderCardGrid } from "@/components/common/models/ProviderCardGrid";
 import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
 import { Descriptions } from "@/components/resources/Descriptions";
@@ -40,7 +42,17 @@ import { Voices } from "@/components/resources/Voices";
 import { Label } from "@/components/ui/label";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
+import { useSaveContext } from "@/contexts/save-context";
+import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
+import { useFlushRegistry } from "@/hooks/use-flush-registry";
+import { useGenerationModal } from "@/hooks/use-generation-modal";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import {
+  buildResourceActions,
+  checkHasResourceIds,
+  computeEffectiveFormState,
+  type ResourceConfig,
+} from "@/lib/resources/action-builders";
 import type { ResourceType } from "@/lib/resources/types";
 import { getDefaultDepartmentIds } from "@/utils/department-picker-helpers";
 import { parseAsString, type Parser } from "nuqs";
@@ -68,6 +80,7 @@ const findCurrentFlagId = (
 // Types defined inline using InputOf/OutputOf
 type SaveModelIn = InputOf<"/api/v4/artifacts/models/save", "post">;
 type SaveModelOut = OutputOf<"/api/v4/artifacts/models/save", "post">;
+type SaveModelBody = NonNullable<SaveModelIn["body"]>;
 type PatchModelDraftIn = InputOf<"/api/v4/artifacts/models/draft", "patch">;
 type PatchModelDraftOut = OutputOf<"/api/v4/artifacts/models/draft", "patch">;
 
@@ -89,6 +102,49 @@ type CreateDraftPricingIn = InputOf<"/api/v4/resources/pricing", "post">;
 type CreateDraftPricingOut = OutputOf<"/api/v4/resources/pricing", "post">;
 type CreateDraftVoicesIn = InputOf<"/api/v4/resources/voices", "post">;
 type CreateDraftVoicesOut = OutputOf<"/api/v4/resources/voices", "post">;
+
+type FlushResult = {
+  name_id?: string | null;
+  description_id?: string | null;
+  value_ids?: string[];
+  pricing_id?: string | null;
+  voice_ids?: string[];
+};
+
+const FLUSH_KEYS = ["names", "descriptions", "values", "pricing", "voices"] as const;
+
+const MODEL_RESOURCES: ResourceConfig[] = [
+  { key: "names", formKey: "name_id", flushKey: "name_id", type: "single" },
+  {
+    key: "descriptions",
+    formKey: "description_id",
+    flushKey: "description_id",
+    type: "single",
+  },
+  { key: "providers", formKey: "provider_id", flushKey: null, type: "single" },
+  {
+    key: "departments",
+    formKey: "departmentIds",
+    flushKey: null,
+    type: "multi",
+  },
+  { key: "modalities", formKey: "modality_ids", flushKey: null, type: "multi" },
+  {
+    key: "temperature_levels",
+    formKey: "temperature_level_ids",
+    flushKey: null,
+    type: "multi",
+  },
+  { key: "pricing", formKey: "pricing_ids", flushKey: null, type: "multi" },
+  {
+    key: "reasoning_levels",
+    formKey: "reasoning_level_ids",
+    flushKey: null,
+    type: "multi",
+  },
+  { key: "qualities", formKey: "quality_ids", flushKey: null, type: "multi" },
+  { key: "voices", formKey: "voice_ids", flushKey: "voice_ids", type: "multi" },
+];
 
 export interface ModelProps {
   modelId?: string;
@@ -129,9 +185,11 @@ function ModelComponent({
 }: ModelProps) {
   const router = useRouter();
   const isEditMode = !!modelId;
-  const { profile, selectedDraftId, setSelectedDraftId, socket, isConnected } =
-    useProfile();
+  const { profile, setSelectedDraftId, socket, isConnected } = useProfile();
+  const { isAutosaveEnabled } = useSaveContext();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
+  const { flushRegistryRef, registerFlushCallbacks, flushAllResources } =
+    useFlushRegistry<FlushResult>(FLUSH_KEYS);
 
   // AI generation completion handler - uses formStateUpdater for complex array dedup
   const onAiComplete = useCallback((data: Record<string, unknown>) => {
@@ -390,36 +448,6 @@ function ModelComponent({
     [s?.voices?.current],
   );
 
-  // Memoize formState array strings for draft listener
-  const formStateDepartmentIdsStr = React.useMemo(
-    () => JSON.stringify(formState.departmentIds),
-    [formState.departmentIds],
-  );
-  const formStateModalityIdsStr = React.useMemo(
-    () => JSON.stringify(formState.modality_ids),
-    [formState.modality_ids],
-  );
-  const formStateTemperatureLevelIdsStr = React.useMemo(
-    () => JSON.stringify(formState.temperature_level_ids),
-    [formState.temperature_level_ids],
-  );
-  const formStateReasoningLevelIdsStr = React.useMemo(
-    () => JSON.stringify(formState.reasoning_level_ids),
-    [formState.reasoning_level_ids],
-  );
-  const formStateQualityIdsStr = React.useMemo(
-    () => JSON.stringify(formState.quality_ids),
-    [formState.quality_ids],
-  );
-  const formStatePricingIdsStr = React.useMemo(
-    () => JSON.stringify(formState.pricing_ids),
-    [formState.pricing_ids],
-  );
-  const formStateVoiceIdsStr = React.useMemo(
-    () => JSON.stringify(formState.voice_ids),
-    [formState.voice_ids],
-  );
-
   // Update form state when server data changes
   useEffect(() => {
     const newState = getInitialFormState();
@@ -473,212 +501,137 @@ function ModelComponent({
     voiceIdsStr,
   ]);
 
-  // Draft version tracking
-  const [lastSavedVersion, setLastSavedVersion] = useState(0);
-  const lastSavedVersionRef = React.useRef(0);
-  React.useEffect(() => {
-    lastSavedVersionRef.current = lastSavedVersion;
-  }, [lastSavedVersion]);
   const draftVersion = s?.draft_version;
+
+  const formStateKey = React.useMemo(
+    () =>
+      JSON.stringify({
+        name_id: formState.name_id,
+        description_id: formState.description_id,
+        value_id: formState.value_id,
+        provider_id: formState.provider_id,
+        active_flag_id: formState.active_flag_id,
+        modalities_enabled_flag_id: formState.modalities_enabled_flag_id,
+        temperature_enabled_flag_id: formState.temperature_enabled_flag_id,
+        pricing_enabled_flag_id: formState.pricing_enabled_flag_id,
+        voices_enabled_flag_id: formState.voices_enabled_flag_id,
+        reasoning_levels_enabled_flag_id:
+          formState.reasoning_levels_enabled_flag_id,
+        qualities_enabled_flag_id: formState.qualities_enabled_flag_id,
+        departmentIds: formState.departmentIds,
+        modality_ids: formState.modality_ids,
+        temperature_level_ids: formState.temperature_level_ids,
+        reasoning_level_ids: formState.reasoning_level_ids,
+        quality_ids: formState.quality_ids,
+        pricing_ids: formState.pricing_ids,
+        voice_ids: formState.voice_ids,
+      }),
+    [formState],
+  );
+
+  const patchActionRef = React.useRef<
+    ((payload: Record<string, unknown>) => Promise<{ draft_id?: string | null; new_version?: number | null }>) | undefined
+  >(undefined);
   React.useEffect(() => {
-    if (
-      typeof draftVersion === "number" &&
-      draftVersion !== lastSavedVersionRef.current
-    ) {
-      setLastSavedVersion(draftVersion);
-      lastSavedVersionRef.current = draftVersion;
+    if (patchModelDraftAction) {
+      patchActionRef.current = async (payload: Record<string, unknown>) =>
+        patchModelDraftAction({
+          body: payload,
+        } as PatchModelDraftIn);
+    } else {
+      patchActionRef.current = undefined;
     }
-  }, [draftVersion]);
-
-  // Get draftId from GenericForm's URL state
-  const [draftId, setDraftId] = useState<string | null>(null);
-  const setUrlFormDataRef = React.useRef<
-    null | ((updates: Record<string, unknown>) => void)
-  >(null);
-
-  const formDataRef = React.useRef<Record<string, unknown>>({});
-
-  const onFormDataChange = React.useCallback((fd: Record<string, unknown>) => {
-    formDataRef.current = fd;
-    const next = (fd["draftId"] as string | undefined) ?? null;
-    setDraftId((prev) => (prev === next ? prev : next));
-  }, []);
-
-  // Sync URL draftId to profile context
-  useEffect(() => {
-    if (draftId !== selectedDraftId) {
-      setSelectedDraftId(draftId);
-    }
-  }, [draftId, selectedDraftId, setSelectedDraftId]);
-
-  const patchModelDraftActionRef = React.useRef(patchModelDraftAction);
-  React.useEffect(() => {
-    patchModelDraftActionRef.current = patchModelDraftAction;
   }, [patchModelDraftAction]);
 
-  // Build stable key for draft patch dedup
-  const draftPatchKey = React.useMemo(() => {
-    return JSON.stringify({
-      draftId: draftId || null,
-      name_id: formState.name_id,
-      description_id: formState.description_id,
-      value_id: formState.value_id,
-      provider_id: formState.provider_id,
-      active_flag_id: formState.active_flag_id,
-      modalities_enabled_flag_id: formState.modalities_enabled_flag_id,
-      temperature_enabled_flag_id: formState.temperature_enabled_flag_id,
-      pricing_enabled_flag_id: formState.pricing_enabled_flag_id,
-      voices_enabled_flag_id: formState.voices_enabled_flag_id,
-      reasoning_levels_enabled_flag_id:
-        formState.reasoning_levels_enabled_flag_id,
-      qualities_enabled_flag_id: formState.qualities_enabled_flag_id,
-      departmentIds: formState.departmentIds,
-      modality_ids: formState.modality_ids,
-      temperature_level_ids: formState.temperature_level_ids,
-      reasoning_level_ids: formState.reasoning_level_ids,
-      quality_ids: formState.quality_ids,
-      pricing_ids: formState.pricing_ids,
-      voice_ids: formState.voice_ids,
+  const lastPatchedFormStateRef = React.useRef<Record<string, unknown> | null>(
+    null,
+  );
+
+  const hasResourceIds =
+    checkHasResourceIds(
+      MODEL_RESOURCES,
+      formState as unknown as Record<string, unknown>,
+    ) ||
+    !!formState.value_id ||
+    !!formState.active_flag_id ||
+    !!formState.modalities_enabled_flag_id ||
+    !!formState.temperature_enabled_flag_id ||
+    !!formState.pricing_enabled_flag_id ||
+    !!formState.voices_enabled_flag_id ||
+    !!formState.reasoning_levels_enabled_flag_id ||
+    !!formState.qualities_enabled_flag_id;
+
+  const buildPatchPayload = useCallback(
+    (
+      inputDraftId: string | null,
+      expectedVersion: number,
+      flushResults?: Record<string, unknown>,
+    ): Record<string, unknown> => {
+      const effectiveFormState = computeEffectiveFormState(
+        MODEL_RESOURCES,
+        formStateRef.current as unknown as Record<string, unknown>,
+        flushResults ?? {},
+      ) as typeof formState;
+      const flushedValueIds = flushResults?.["value_ids"] as
+        | string[]
+        | undefined;
+      const flushedPricingId = flushResults?.["pricing_id"] as
+        | string
+        | null
+        | undefined;
+
+      const valueId = flushedValueIds?.[0] ?? effectiveFormState.value_id;
+      const pricingIds =
+        flushedPricingId && !effectiveFormState.pricing_ids.includes(flushedPricingId)
+          ? [...effectiveFormState.pricing_ids, flushedPricingId]
+          : effectiveFormState.pricing_ids;
+
+      return {
+        input_draft_id: inputDraftId || null,
+        group_id: s?.group_id || "",
+        ...buildResourceActions(MODEL_RESOURCES, {
+          formState: {
+            ...effectiveFormState,
+            pricing_ids: pricingIds,
+          } as unknown as Record<string, unknown>,
+          referenceState: lastPatchedFormStateRef.current,
+          flushResults: flushResults ?? {},
+          entityData: s as Record<string, unknown> | null,
+        }),
+        values: { resource_id: valueId || null },
+        flags: {
+          resource_ids: [
+            effectiveFormState.active_flag_id,
+            effectiveFormState.modalities_enabled_flag_id,
+            effectiveFormState.temperature_enabled_flag_id,
+            effectiveFormState.pricing_enabled_flag_id,
+            effectiveFormState.voices_enabled_flag_id,
+            effectiveFormState.reasoning_levels_enabled_flag_id,
+            effectiveFormState.qualities_enabled_flag_id,
+          ].filter((id): id is string => id != null),
+        },
+        expected_version: expectedVersion,
+      };
+    },
+    [s],
+  );
+
+  const { setUrlFormDataRef, onFormDataChange, flushAllAndSave, formDataRef } =
+    useDraftLifecycle({
+      formStateKey,
+      patchActionRef,
+      isAutosaveEnabled,
+      buildPatchPayload,
+      setSelectedDraftId,
+      serverDraftVersion: draftVersion ?? null,
+      hasResourceIds,
+      flushRegistryRef,
+      formStateRef: formStateRef as React.MutableRefObject<Record<string, unknown>>,
+      onPatchSuccess: () => {
+        lastPatchedFormStateRef.current =
+          formStateRef.current as unknown as Record<string, unknown>;
+      },
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    draftId,
-    formState.name_id,
-    formState.description_id,
-    formState.value_id,
-    formState.provider_id,
-    formState.active_flag_id,
-    formState.modalities_enabled_flag_id,
-    formState.temperature_enabled_flag_id,
-    formState.pricing_enabled_flag_id,
-    formState.voices_enabled_flag_id,
-    formState.reasoning_levels_enabled_flag_id,
-    formState.qualities_enabled_flag_id,
-    formStateDepartmentIdsStr,
-    formStateModalityIdsStr,
-    formStateTemperatureLevelIdsStr,
-    formStateReasoningLevelIdsStr,
-    formStateQualityIdsStr,
-    formStatePricingIdsStr,
-    formStateVoiceIdsStr,
-  ]);
-
-  const lastPatchedKeyRef = React.useRef<string | null>(null);
-
-  // Draft change listener - section-first draft patching with nested resource actions
-  useEffect(() => {
-    const hasResourceIds =
-      formState.name_id ||
-      formState.description_id ||
-      formState.value_id ||
-      formState.provider_id ||
-      formState.active_flag_id ||
-      formState.modalities_enabled_flag_id ||
-      formState.temperature_enabled_flag_id ||
-      formState.pricing_enabled_flag_id ||
-      formState.voices_enabled_flag_id ||
-      formState.reasoning_levels_enabled_flag_id ||
-      formState.qualities_enabled_flag_id ||
-      formState.departmentIds.length > 0 ||
-      formState.modality_ids.length > 0 ||
-      formState.temperature_level_ids.length > 0 ||
-      formState.reasoning_level_ids.length > 0 ||
-      formState.quality_ids.length > 0 ||
-      formState.pricing_ids.length > 0 ||
-      formState.voice_ids.length > 0;
-
-    if (!hasResourceIds || !patchModelDraftActionRef.current) {
-      return;
-    }
-
-    if (lastPatchedKeyRef.current === draftPatchKey) {
-      return;
-    }
-
-    const timer = setTimeout(async () => {
-      try {
-        if (!patchModelDraftActionRef.current) return;
-        const result = await patchModelDraftActionRef.current({
-          body: {
-            input_draft_id: draftId || null,
-            group_id: s?.group_id || "",
-            names: { resource_id: formState.name_id || null },
-            descriptions: { resource_id: formState.description_id || null },
-            values: { resource_id: formState.value_id || null },
-            providers: { resource_id: formState.provider_id || null },
-            flags: {
-              resource_ids: [
-                formState.active_flag_id,
-                formState.modalities_enabled_flag_id,
-                formState.temperature_enabled_flag_id,
-                formState.pricing_enabled_flag_id,
-                formState.voices_enabled_flag_id,
-                formState.reasoning_levels_enabled_flag_id,
-                formState.qualities_enabled_flag_id,
-              ].filter((id): id is string => id != null),
-            },
-            departments: {
-              resource_ids:
-                formState.departmentIds.length > 0
-                  ? formState.departmentIds
-                  : null,
-            },
-            modalities: {
-              resource_ids:
-                formState.modality_ids.length > 0
-                  ? formState.modality_ids
-                  : null,
-            },
-            temperature_levels: {
-              resource_ids:
-                formState.temperature_level_ids.length > 0
-                  ? formState.temperature_level_ids
-                  : null,
-            },
-            pricing: {
-              resource_ids:
-                formState.pricing_ids.length > 0
-                  ? formState.pricing_ids
-                  : null,
-            },
-            reasoning_levels: {
-              resource_ids:
-                formState.reasoning_level_ids.length > 0
-                  ? formState.reasoning_level_ids
-                  : null,
-            },
-            qualities: {
-              resource_ids:
-                formState.quality_ids.length > 0
-                  ? formState.quality_ids
-                  : null,
-            },
-            voices: {
-              resource_ids:
-                formState.voice_ids.length > 0 ? formState.voice_ids : null,
-            },
-            expected_version: lastSavedVersionRef.current,
-          },
-        });
-
-        lastPatchedKeyRef.current = draftPatchKey;
-
-        if (!draftId && result.draft_id) {
-          setUrlFormDataRef.current?.({ draftId: result.draft_id });
-        }
-
-        if ((result.new_version ?? 0) !== lastSavedVersionRef.current) {
-          setLastSavedVersion(result.new_version ?? 0);
-          lastSavedVersionRef.current = result.new_version ?? 0;
-        }
-      } catch {
-        // Failed to save draft
-      }
-    }, 1000);
-
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [draftPatchKey]);
 
   // Generation handler - uses resource_types directly (no domain_ids)
   const handleGenerateResources = useCallback(
@@ -694,18 +647,25 @@ function ModelComponent({
         return next;
       });
 
-      const formData = formDataRef.current;
-      const draftId = (formData["draftId"] as string | undefined) ?? null;
+      let currentDraftId =
+        (formDataRef.current["draftId"] as string | undefined) ?? null;
+      if (!currentDraftId) {
+        currentDraftId = await flushAllAndSave();
+      }
+      if (!currentDraftId) {
+        toast.error("Please save a draft before generating with AI");
+        return;
+      }
 
       // Emit model_generate with resource_types (gold standard pattern)
       socket.emit("model_generate", {
         resource_types: resourceTypes,
         user_instructions: userInstructions ? [userInstructions] : null,
-        draft_id: draftId || null,
+        draft_id: currentDraftId,
         model_id: modelId || null,
       });
     },
-    [socket, isConnected, modelId, setGeneratingResources],
+    [socket, isConnected, modelId, setGeneratingResources, flushAllAndSave],
   );
 
   const handleGenerateName = useCallback(
@@ -715,6 +675,30 @@ function ModelComponent({
 
   const handleGenerateDescription = useCallback(
     async () => handleGenerateResources(["descriptions"]),
+    [handleGenerateResources],
+  );
+  const handleGenerateModalities = useCallback(
+    async () => handleGenerateResources(["modalities"]),
+    [handleGenerateResources],
+  );
+  const handleGenerateTemperatureLevels = useCallback(
+    async () => handleGenerateResources(["temperature_levels"]),
+    [handleGenerateResources],
+  );
+  const handleGeneratePricing = useCallback(
+    async () => handleGenerateResources(["pricing"]),
+    [handleGenerateResources],
+  );
+  const handleGenerateReasoningLevels = useCallback(
+    async () => handleGenerateResources(["reasoning_levels"]),
+    [handleGenerateResources],
+  );
+  const handleGenerateVoices = useCallback(
+    async () => handleGenerateResources(["voices"]),
+    [handleGenerateResources],
+  );
+  const handleGenerateQualities = useCallback(
+    async () => handleGenerateResources(["qualities"]),
     [handleGenerateResources],
   );
 
@@ -766,59 +750,122 @@ function ModelComponent({
     () => ({
       basic: ["names", "descriptions", "flags"],
       provider: [],
-      modalities: [],
+      modalities: ["modalities"],
       temperature: ["temperature_levels"],
-      pricing: [],
+      pricing: ["pricing"],
       reasoning: ["reasoning_levels"],
       voices: ["voices"],
-      qualities: [],
+      qualities: ["qualities"],
       all: [
         "names",
         "descriptions",
         "flags",
+        "modalities",
         "temperature_levels",
+        "pricing",
         "reasoning_levels",
         "voices",
+        "qualities",
       ],
     }),
     [],
   );
 
-  // Listen for full-page-generate event
-  useEffect(() => {
-    const handleFullPageGenerate = (
-      event: CustomEvent<{ agentId?: string }>,
-    ) => {
-      const agentId = event.detail?.agentId;
-      if (agentId) {
-        handleGenerateResources(stepResources["all"] || []);
+  const canRegenerate = useCallback(
+    (resourceType: ResourceType): boolean => {
+      if (!s) return false;
+      switch (resourceType) {
+        case "names":
+          return s.names?.resource?.generated ?? false;
+        case "descriptions":
+          return s.descriptions?.resource?.generated ?? false;
+        case "flags":
+          return s.flags?.current?.some((f) => f.generated) ?? false;
+        case "modalities":
+          return s.modalities?.current?.some((m) => m.generated) ?? false;
+        case "temperature_levels":
+          return s.temperature_levels?.current?.some((t) => t.generated) ?? false;
+        case "pricing":
+          return s.pricing?.current?.some((p) => p.generated) ?? false;
+        case "reasoning_levels":
+          return s.reasoning_levels?.current?.some((r) => r.generated) ?? false;
+        case "voices":
+          return s.voices?.current?.some((v) => v.generated) ?? false;
+        case "qualities":
+          return s.qualities?.current?.some((q) => q.generated) ?? false;
+        default:
+          return false;
       }
-    };
-    window.addEventListener(
-      "full-page-generate",
-      handleFullPageGenerate as EventListener,
-    );
-    return () =>
-      window.removeEventListener(
-        "full-page-generate",
-        handleFullPageGenerate as EventListener,
-      );
-  }, [handleGenerateResources, stepResources]);
+    },
+    [s],
+  );
+  const canRegenerateForStepCard = useCallback(
+    (resourceType: string) => canRegenerate(resourceType as ResourceType),
+    [canRegenerate],
+  );
+
+  const resourceLabels: Partial<Record<ResourceType, string>> = useMemo(
+    () => ({
+      names: "Names",
+      descriptions: "Descriptions",
+      flags: "Flags",
+      modalities: "Modalities",
+      temperature_levels: "Temperature",
+      pricing: "Pricing",
+      reasoning_levels: "Reasoning",
+      voices: "Voices",
+      qualities: "Qualities",
+    }),
+    [],
+  );
+
+  const { handleOpenStepCardModal, modalProps } =
+    useGenerationModal<ResourceType>({
+      stepResources,
+      resourceLabels,
+      canRegenerate,
+      onGenerate: (selectedResources, instructions) => {
+        handleGenerateResources(selectedResources as ResourceType[], instructions);
+      },
+      isGenerating,
+    });
 
   // Submit handler - builds nested resource actions for save
   const handleSubmit = useCallback(
     async (_formData: Record<string, unknown>) => {
-      if (s?.names?.required && !formState.name_id) {
+      let flushResults: Record<string, unknown> = {};
+      if (!isAutosaveEnabled) {
+        flushResults = await flushAllResources();
+      }
+
+      const effectiveFormState = computeEffectiveFormState(
+        MODEL_RESOURCES,
+        formStateRef.current as unknown as Record<string, unknown>,
+        flushResults,
+      ) as typeof formState;
+      const flushedValueIds = flushResults["value_ids"] as string[] | undefined;
+      const flushedPricingId = flushResults["pricing_id"] as
+        | string
+        | null
+        | undefined;
+      const valueId = flushedValueIds?.[0] ?? effectiveFormState.value_id;
+      const pricingIds =
+        flushedPricingId &&
+        !effectiveFormState.pricing_ids.includes(flushedPricingId)
+          ? [...effectiveFormState.pricing_ids, flushedPricingId]
+          : effectiveFormState.pricing_ids;
+
+      if (s?.names?.required && !effectiveFormState.name_id) {
         toast.error("Model name is required");
         throw new Error("Model name is required");
       }
 
-      if (s?.values?.required && !formState.value_id) {
+      if (s?.values?.required && !valueId) {
         toast.error("Model value is required");
         throw new Error("Model value is required");
       }
 
-      if (!formState.provider_id) {
+      if (!effectiveFormState.provider_id) {
         toast.error("Provider is required");
         throw new Error("Provider is required");
       }
@@ -834,64 +881,48 @@ function ModelComponent({
       }
 
       try {
+        const initialState = getInitialFormState() as unknown as Record<
+          string,
+          unknown
+        >;
+        const saveActions = buildResourceActions(MODEL_RESOURCES, {
+          formState: {
+            ...effectiveFormState,
+            pricing_ids: pricingIds,
+          } as unknown as Record<string, unknown>,
+          referenceState: initialState,
+          flushResults,
+          entityData: s as Record<string, unknown> | null,
+        }) as Pick<
+          SaveModelBody,
+          | "names"
+          | "descriptions"
+          | "providers"
+          | "departments"
+          | "modalities"
+          | "temperature_levels"
+          | "pricing"
+          | "reasoning_levels"
+          | "qualities"
+          | "voices"
+        >;
+
         await saveModelAction({
           body: {
             input_model_id: isEditMode && modelId ? modelId : null,
             group_id: s?.group_id || "",
-            names: { resource_id: formState.name_id || null },
-            descriptions: { resource_id: formState.description_id || null },
-            values: { resource_id: formState.value_id || null },
-            providers: { resource_id: formState.provider_id || null },
+            ...saveActions,
+            values: { resource_id: valueId || null },
             flags: {
               resource_ids: [
-                formState.active_flag_id,
-                formState.modalities_enabled_flag_id,
-                formState.temperature_enabled_flag_id,
-                formState.pricing_enabled_flag_id,
-                formState.voices_enabled_flag_id,
-                formState.reasoning_levels_enabled_flag_id,
-                formState.qualities_enabled_flag_id,
+                effectiveFormState.active_flag_id,
+                effectiveFormState.modalities_enabled_flag_id,
+                effectiveFormState.temperature_enabled_flag_id,
+                effectiveFormState.pricing_enabled_flag_id,
+                effectiveFormState.voices_enabled_flag_id,
+                effectiveFormState.reasoning_levels_enabled_flag_id,
+                effectiveFormState.qualities_enabled_flag_id,
               ].filter((id): id is string => id != null),
-            },
-            departments: {
-              resource_ids:
-                formState.departmentIds.length > 0
-                  ? formState.departmentIds
-                  : null,
-            },
-            modalities: {
-              resource_ids:
-                formState.modality_ids.length > 0
-                  ? formState.modality_ids
-                  : null,
-            },
-            temperature_levels: {
-              resource_ids:
-                formState.temperature_level_ids.length > 0
-                  ? formState.temperature_level_ids
-                  : null,
-            },
-            pricing: {
-              resource_ids:
-                formState.pricing_ids.length > 0
-                  ? formState.pricing_ids
-                  : null,
-            },
-            reasoning_levels: {
-              resource_ids:
-                formState.reasoning_level_ids.length > 0
-                  ? formState.reasoning_level_ids
-                  : null,
-            },
-            qualities: {
-              resource_ids:
-                formState.quality_ids.length > 0
-                  ? formState.quality_ids
-                  : null,
-            },
-            voices: {
-              resource_ids:
-                formState.voice_ids.length > 0 ? formState.voice_ids : null,
             },
           },
         });
@@ -907,15 +938,18 @@ function ModelComponent({
       }
     },
     [
-      formState,
       isEditMode,
       modelId,
       profile?.id,
       saveModelAction,
       router,
+      getInitialFormState,
+      isAutosaveEnabled,
+      flushAllResources,
       s?.names?.required,
       s?.values?.required,
       s?.group_id,
+      s,
     ],
   );
 
@@ -1268,6 +1302,8 @@ function ModelComponent({
                   link_tool_id={s?.names?.link_tool_id ?? null}
                   showAiGenerate={s?.names?.show_ai_generate ?? false}
                   createNamesAction={createNamesAction}
+                  isAutosaveEnabled={isAutosaveEnabled}
+                  registerFlush={registerFlushCallbacks["names"]}
                 />
               }
               resetFields={[
@@ -1285,6 +1321,20 @@ function ModelComponent({
               ]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
+              actions={
+                stepResources["basic"] &&
+                stepResources["basic"].length > 0 &&
+                s?.basic_show_ai_generate ? (
+                  <StepCardAiButton
+                    stepId="basic"
+                    resourceTypes={stepResources["basic"]}
+                    canRegenerate={canRegenerateForStepCard}
+                    isGenerating={isGenerating}
+                    onOpenModal={handleOpenStepCardModal}
+                    disabled={disabled}
+                  />
+                ) : undefined
+              }
             >
               <div className="space-y-4">
                 <Descriptions
@@ -1310,6 +1360,8 @@ function ModelComponent({
                   link_tool_id={s?.descriptions?.link_tool_id ?? null}
                   showAiGenerate={s?.descriptions?.show_ai_generate ?? false}
                   createDescriptionsAction={createDescriptionsAction}
+                  isAutosaveEnabled={isAutosaveEnabled}
+                  registerFlush={registerFlushCallbacks["descriptions"]}
                 />
 
                 <Values
@@ -1352,6 +1404,8 @@ function ModelComponent({
                   link_tool_id={s?.values?.link_tool_id ?? null}
                   showAiGenerate={s?.values?.show_ai_generate ?? false}
                   createValuesAction={createValuesAction}
+                  isAutosaveEnabled={isAutosaveEnabled}
+                  registerFlush={registerFlushCallbacks["values"]}
                 />
 
                 {validDepartmentIds && validDepartmentIds.length > 1 && (
@@ -1611,6 +1665,20 @@ function ModelComponent({
               resetFields={["modality_ids"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
+              actions={
+                stepResources["modalities"] &&
+                stepResources["modalities"].length > 0 &&
+                s?.modalities?.show_ai_generate ? (
+                  <StepCardAiButton
+                    stepId="modalities"
+                    resourceTypes={stepResources["modalities"]}
+                    canRegenerate={canRegenerateForStepCard}
+                    isGenerating={isGenerating}
+                    onOpenModal={handleOpenStepCardModal}
+                    disabled={disabled}
+                  />
+                ) : undefined
+              }
             >
               <Modalities
                 modality_ids={formState.modality_ids}
@@ -1640,7 +1708,7 @@ function ModelComponent({
                 group_id={s?.group_id ?? null}
                 link_tool_id={s?.modalities?.link_tool_id ?? null}
                 showAiGenerate={s?.modalities?.show_ai_generate ?? false}
-
+                onGenerate={handleGenerateModalities}
               />
             </StepCard>
           );
@@ -1663,6 +1731,20 @@ function ModelComponent({
               resetFields={["temperature_level_ids"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
+              actions={
+                stepResources["temperature"] &&
+                stepResources["temperature"].length > 0 &&
+                s?.temperature_levels?.show_ai_generate ? (
+                  <StepCardAiButton
+                    stepId="temperature"
+                    resourceTypes={stepResources["temperature"]}
+                    canRegenerate={canRegenerateForStepCard}
+                    isGenerating={isGenerating}
+                    onOpenModal={handleOpenStepCardModal}
+                    disabled={disabled}
+                  />
+                ) : undefined
+              }
             >
               <TemperatureLevels
                 temperature_level_id={
@@ -1714,6 +1796,7 @@ function ModelComponent({
                 showAiGenerate={
                   s?.temperature_levels?.show_ai_generate ?? false
                 }
+                onGenerate={handleGenerateTemperatureLevels}
               />
             </StepCard>
           );
@@ -1736,6 +1819,20 @@ function ModelComponent({
               resetFields={["pricing_ids"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
+              actions={
+                stepResources["pricing"] &&
+                stepResources["pricing"].length > 0 &&
+                s?.pricing?.show_ai_generate ? (
+                  <StepCardAiButton
+                    stepId="pricing"
+                    resourceTypes={stepResources["pricing"]}
+                    canRegenerate={canRegenerateForStepCard}
+                    isGenerating={isGenerating}
+                    onOpenModal={handleOpenStepCardModal}
+                    disabled={disabled}
+                  />
+                ) : undefined
+              }
             >
               <Pricing
                 pricing_ids={formState.pricing_ids}
@@ -1768,6 +1865,9 @@ function ModelComponent({
                 link_tool_id={s?.pricing?.link_tool_id ?? null}
                 showAiGenerate={s?.pricing?.show_ai_generate ?? false}
                 createPricingAction={createPricingAction}
+                onGenerate={handleGeneratePricing}
+                isAutosaveEnabled={isAutosaveEnabled}
+                registerFlush={registerFlushCallbacks["pricing"]}
               />
             </StepCard>
           );
@@ -1790,6 +1890,20 @@ function ModelComponent({
               resetFields={["reasoning_level_ids"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
+              actions={
+                stepResources["reasoning"] &&
+                stepResources["reasoning"].length > 0 &&
+                s?.reasoning_levels?.show_ai_generate ? (
+                  <StepCardAiButton
+                    stepId="reasoning"
+                    resourceTypes={stepResources["reasoning"]}
+                    canRegenerate={canRegenerateForStepCard}
+                    isGenerating={isGenerating}
+                    onOpenModal={handleOpenStepCardModal}
+                    disabled={disabled}
+                  />
+                ) : undefined
+              }
             >
               <ReasoningLevels
                 reasoning_level_id={
@@ -1838,6 +1952,7 @@ function ModelComponent({
                 showAiGenerate={
                   s?.reasoning_levels?.show_ai_generate ?? false
                 }
+                onGenerate={handleGenerateReasoningLevels}
               />
             </StepCard>
           );
@@ -1860,6 +1975,20 @@ function ModelComponent({
               resetFields={["voice_ids"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
+              actions={
+                stepResources["voices"] &&
+                stepResources["voices"].length > 0 &&
+                s?.voices?.show_ai_generate ? (
+                  <StepCardAiButton
+                    stepId="voices"
+                    resourceTypes={stepResources["voices"]}
+                    canRegenerate={canRegenerateForStepCard}
+                    isGenerating={isGenerating}
+                    onOpenModal={handleOpenStepCardModal}
+                    disabled={disabled}
+                  />
+                ) : undefined
+              }
             >
               <Voices
                 voice_ids={formState.voice_ids}
@@ -1881,6 +2010,9 @@ function ModelComponent({
                 group_id={s?.group_id ?? null}
                 link_tool_id={s?.voices?.link_tool_id ?? null}
                 createVoicesAction={createVoicesAction}
+                onGenerate={handleGenerateVoices}
+                isAutosaveEnabled={isAutosaveEnabled}
+                registerFlush={registerFlushCallbacks["voices"]}
               />
             </StepCard>
           );
@@ -1903,6 +2035,20 @@ function ModelComponent({
               resetFields={["quality_ids"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
+              actions={
+                stepResources["qualities"] &&
+                stepResources["qualities"].length > 0 &&
+                s?.qualities?.show_ai_generate ? (
+                  <StepCardAiButton
+                    stepId="qualities"
+                    resourceTypes={stepResources["qualities"]}
+                    canRegenerate={canRegenerateForStepCard}
+                    isGenerating={isGenerating}
+                    onOpenModal={handleOpenStepCardModal}
+                    disabled={disabled}
+                  />
+                ) : undefined
+              }
             >
               <Qualities
                 quality_ids={formState.quality_ids}
@@ -1932,6 +2078,7 @@ function ModelComponent({
                 group_id={s?.group_id ?? null}
                 link_tool_id={s?.qualities?.link_tool_id ?? null}
                 showAiGenerate={s?.qualities?.show_ai_generate ?? false}
+                onGenerate={handleGenerateQualities}
               />
             </StepCard>
           );
@@ -1984,6 +2131,7 @@ function ModelComponent({
           setUrlFormDataRef.current = setter;
         }}
       />
+      <GenerateRegenerateModal {...modalProps} />
     </div>
   );
 }
