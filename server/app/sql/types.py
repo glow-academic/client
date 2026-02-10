@@ -23137,40 +23137,55 @@ class GetSettingsListApiResponse(BaseModel):
 
 # Generated from: patch_setting_draft
 
+class SettingMultiResourceAction(BaseModel):
+
+    resource_ids: list[UUID] | None
+    create_tool_id: UUID | None
+    link_tool_id: UUID | None
+
+
+
+
+class SettingResourceAction(BaseModel):
+
+    resource_id: UUID | None
+    create_tool_id: UUID | None
+    link_tool_id: UUID | None
+
 class PatchSettingDraftSqlParams(BaseModel):
 
     profile_id: UUID
     input_draft_id: UUID | None = None
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    color_ids: list[UUID] | None = None
-    department_ids: list[UUID] | None = None
-    profile_ids: list[UUID] | None = None
-    auth_ids: list[UUID] | None = None
-    provider_ids: list[UUID] | None = None
-    key_ids: list[UUID] | None = None
-    role_ids: list[UUID] | None = None
-    route_ids: list[UUID] | None = None
-    role_route_ids: list[UUID] | None = None
+    group_id: UUID | None = None
+    names: SettingResourceAction | None = None
+    descriptions: SettingResourceAction | None = None
+    flags: SettingResourceAction | None = None
+    colors: SettingMultiResourceAction | None = None
+    departments: SettingMultiResourceAction | None = None
+    profiles: SettingMultiResourceAction | None = None
+    auths: SettingMultiResourceAction | None = None
+    provider_keys: SettingMultiResourceAction | None = None
+    auth_keys: SettingMultiResourceAction | None = None
+    roles: SettingMultiResourceAction | None = None
+    role_routes: SettingMultiResourceAction | None = None
     expected_version: int | None = 0
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
             self.input_draft_id,
-            self.name_id,
-            self.description_id,
-            self.active_flag_id,
-            self.color_ids,
-            self.department_ids,
-            self.profile_ids,
-            self.auth_ids,
-            self.provider_ids,
-            self.key_ids,
-            self.role_ids,
-            self.route_ids,
-            self.role_route_ids,
+            self.group_id,
+            self.names,
+            self.descriptions,
+            self.flags,
+            self.colors,
+            self.departments,
+            self.profiles,
+            self.auths,
+            self.provider_keys,
+            self.auth_keys,
+            self.roles,
+            self.role_routes,
             self.expected_version,
         )
 
@@ -23183,18 +23198,18 @@ class PatchSettingDraftSqlRow(BaseModel):
 class PatchSettingDraftApiRequest(BaseModel):
 
     input_draft_id: UUID | None = None
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    color_ids: list[UUID] | None = None
-    department_ids: list[UUID] | None = None
-    profile_ids: list[UUID] | None = None
-    auth_ids: list[UUID] | None = None
-    provider_ids: list[UUID] | None = None
-    key_ids: list[UUID] | None = None
-    role_ids: list[UUID] | None = None
-    route_ids: list[UUID] | None = None
-    role_route_ids: list[UUID] | None = None
+    group_id: UUID | None = None
+    names: SettingResourceAction | None = None
+    descriptions: SettingResourceAction | None = None
+    flags: SettingResourceAction | None = None
+    colors: SettingMultiResourceAction | None = None
+    departments: SettingMultiResourceAction | None = None
+    profiles: SettingMultiResourceAction | None = None
+    auths: SettingMultiResourceAction | None = None
+    provider_keys: SettingMultiResourceAction | None = None
+    auth_keys: SettingMultiResourceAction | None = None
+    roles: SettingMultiResourceAction | None = None
+    role_routes: SettingMultiResourceAction | None = None
     expected_version: int | None = 0
 
 class PatchSettingDraftApiResponse(BaseModel):
@@ -23209,35 +23224,37 @@ class PatchSettingDraftApiResponse(BaseModel):
 
 class SaveSettingSqlParams(BaseModel):
 
-    name_id: UUID
-    color_ids: list[UUID]
-    department_ids: list[UUID]
     profile_id: UUID
-    auth_ids: list[UUID]
-    provider_key_ids: list[UUID]
-    key_ids: list[UUID]
+    group_id: UUID | None = None
     input_setting_id: UUID | None = None
-    profile_ids: list[UUID] | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    role_ids: list[UUID] | None = None
-    route_ids: list[UUID] | None = None
+    names: SettingResourceAction | None = None
+    descriptions: SettingResourceAction | None = None
+    colors: SettingMultiResourceAction | None = None
+    flags: SettingResourceAction | None = None
+    departments: SettingMultiResourceAction | None = None
+    profiles: SettingMultiResourceAction | None = None
+    auths: SettingMultiResourceAction | None = None
+    provider_keys: SettingMultiResourceAction | None = None
+    auth_keys: SettingMultiResourceAction | None = None
+    roles: SettingMultiResourceAction | None = None
+    role_routes: SettingMultiResourceAction | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.name_id,
-            self.color_ids,
-            self.department_ids,
             self.profile_id,
-            self.auth_ids,
-            self.provider_key_ids,
-            self.key_ids,
+            self.group_id,
             self.input_setting_id,
-            self.profile_ids,
-            self.description_id,
-            self.active_flag_id,
-            self.role_ids,
-            self.route_ids,
+            self.names,
+            self.descriptions,
+            self.colors,
+            self.flags,
+            self.departments,
+            self.profiles,
+            self.auths,
+            self.provider_keys,
+            self.auth_keys,
+            self.roles,
+            self.role_routes,
         )
 
 class SaveSettingSqlRow(BaseModel):
@@ -23247,18 +23264,19 @@ class SaveSettingSqlRow(BaseModel):
 
 class SaveSettingApiRequest(BaseModel):
 
-    name_id: UUID
-    color_ids: list[UUID]
-    department_ids: list[UUID]
-    auth_ids: list[UUID]
-    provider_key_ids: list[UUID]
-    key_ids: list[UUID]
+    group_id: UUID | None = None
     input_setting_id: UUID | None = None
-    profile_ids: list[UUID] | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    role_ids: list[UUID] | None = None
-    route_ids: list[UUID] | None = None
+    names: SettingResourceAction | None = None
+    descriptions: SettingResourceAction | None = None
+    colors: SettingMultiResourceAction | None = None
+    flags: SettingResourceAction | None = None
+    departments: SettingMultiResourceAction | None = None
+    profiles: SettingMultiResourceAction | None = None
+    auths: SettingMultiResourceAction | None = None
+    provider_keys: SettingMultiResourceAction | None = None
+    auth_keys: SettingMultiResourceAction | None = None
+    roles: SettingMultiResourceAction | None = None
+    role_routes: SettingMultiResourceAction | None = None
 
 class SaveSettingApiResponse(BaseModel):
 

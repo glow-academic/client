@@ -23,6 +23,7 @@ interface EntityMetadata {
     | "agent"
     | "provider"
     | "model"
+    | "setting"
     | "chat"
     | "attempt"
     | "video"

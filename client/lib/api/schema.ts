@@ -23277,28 +23277,19 @@ export interface components {
         PatchSettingDraftApiRequest: {
             /** Input Draft Id */
             input_draft_id?: string | null;
-            /** Name Id */
-            name_id?: string | null;
-            /** Description Id */
-            description_id?: string | null;
-            /** Active Flag Id */
-            active_flag_id?: string | null;
-            /** Color Ids */
-            color_ids?: string[] | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Profile Ids */
-            profile_ids?: string[] | null;
-            /** Auth Ids */
-            auth_ids?: string[] | null;
-            /** Provider Key Ids */
-            provider_key_ids?: string[] | null;
-            /** Auth Key Ids */
-            auth_key_ids?: string[] | null;
-            /** Role Ids */
-            role_ids?: string[] | null;
-            /** Role Route Ids */
-            role_route_ids?: string[] | null;
+            /** Group Id */
+            group_id?: string | null;
+            names?: components["schemas"]["SettingResourceAction"] | null;
+            descriptions?: components["schemas"]["SettingResourceAction"] | null;
+            colors?: components["schemas"]["SettingMultiResourceAction"] | null;
+            flags?: components["schemas"]["SettingResourceAction"] | null;
+            departments?: components["schemas"]["SettingMultiResourceAction"] | null;
+            profiles?: components["schemas"]["SettingMultiResourceAction"] | null;
+            auths?: components["schemas"]["SettingMultiResourceAction"] | null;
+            provider_keys?: components["schemas"]["SettingMultiResourceAction"] | null;
+            auth_keys?: components["schemas"]["SettingMultiResourceAction"] | null;
+            roles?: components["schemas"]["SettingMultiResourceAction"] | null;
+            role_routes?: components["schemas"]["SettingMultiResourceAction"] | null;
             /**
              * Expected Version
              * @default 0
@@ -28902,31 +28893,19 @@ export interface components {
         SaveSettingApiRequest: {
             /** Input Setting Id */
             input_setting_id?: string | null;
-            /**
-             * Name Id
-             * Format: uuid
-             */
-            name_id: string;
-            /** Description Id */
-            description_id?: string | null;
-            /** Color Ids */
-            color_ids: string[];
-            /** Active Flag Id */
-            active_flag_id?: string | null;
-            /** Department Ids */
-            department_ids: string[];
-            /** Profile Ids */
-            profile_ids?: string[] | null;
-            /** Auth Ids */
-            auth_ids?: string[] | null;
-            /** Provider Key Ids */
-            provider_key_ids?: string[] | null;
-            /** Auth Key Ids */
-            auth_key_ids?: string[] | null;
-            /** Role Ids */
-            role_ids?: string[] | null;
-            /** Role Route Ids */
-            role_route_ids?: string[] | null;
+            /** Group Id */
+            group_id?: string | null;
+            names: components["schemas"]["SettingResourceAction"];
+            descriptions: components["schemas"]["SettingResourceAction"];
+            colors: components["schemas"]["SettingMultiResourceAction"];
+            flags: components["schemas"]["SettingResourceAction"];
+            departments: components["schemas"]["SettingMultiResourceAction"];
+            profiles: components["schemas"]["SettingMultiResourceAction"];
+            auths: components["schemas"]["SettingMultiResourceAction"];
+            provider_keys: components["schemas"]["SettingMultiResourceAction"];
+            auth_keys: components["schemas"]["SettingMultiResourceAction"];
+            roles: components["schemas"]["SettingMultiResourceAction"];
+            role_routes: components["schemas"]["SettingMultiResourceAction"];
         };
         /** SaveSettingApiResponse */
         SaveSettingApiResponse: {
@@ -31104,6 +31083,24 @@ export interface components {
              * @default 0
              */
             error_count: number;
+        };
+        /** SettingMultiResourceAction */
+        SettingMultiResourceAction: {
+            /** Resource Ids */
+            resource_ids?: string[] | null;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+        };
+        /** SettingResourceAction */
+        SettingResourceAction: {
+            /** Resource Id */
+            resource_id?: string | null;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
         };
         /**
          * SimulationData

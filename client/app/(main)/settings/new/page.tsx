@@ -28,16 +28,6 @@ type CreateDraftDescriptionsOut = OutputOf<
 >;
 type CreateDraftColorsIn = InputOf<"/api/v4/resources/colors", "post">;
 type CreateDraftColorsOut = OutputOf<"/api/v4/resources/colors", "post">;
-type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
-type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
-type CreateDraftDepartmentsIn = InputOf<
-  "/api/v4/resources/departments",
-  "post"
->;
-type CreateDraftDepartmentsOut = OutputOf<
-  "/api/v4/resources/departments",
-  "post"
->;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -91,22 +81,6 @@ async function createDraftColors(
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.post("/resources/colors", input);
-}
-
-async function createDraftFlags(
-  input: CreateDraftFlagsIn
-): Promise<CreateDraftFlagsOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/flags", input);
-}
-
-async function createDraftDepartments(
-  input: CreateDraftDepartmentsIn
-): Promise<CreateDraftDepartmentsOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/departments", input);
 }
 
 async function createProviderKeys(input: {
@@ -257,8 +231,6 @@ export default async function NewSettingPage({
         createNamesAction={createDraftNames}
         createDescriptionsAction={createDraftDescriptions}
         createColorsAction={createDraftColors}
-        createFlagsAction={createDraftFlags}
-        createDepartmentsAction={createDraftDepartments}
         createProviderKeysAction={createProviderKeys}
         getProviderKeysAction={getProviderKeys}
         createAuthKeysAction={createAuthKeys}

@@ -14,32 +14,46 @@ class GetSettingApiRequest(BaseModel):
     mcp: bool | None = False
 
 
+class SettingResourceAction(BaseModel):
+    resource_id: UUID | None = None
+    create_tool_id: UUID | None = None
+    link_tool_id: UUID | None = None
+
+
+class SettingMultiResourceAction(BaseModel):
+    resource_ids: list[UUID] | None = None
+    create_tool_id: UUID | None = None
+    link_tool_id: UUID | None = None
+
+
 class SaveSettingApiRequest(BaseModel):
     input_setting_id: UUID | None = None
-    name_id: UUID
-    description_id: UUID | None = None
-    color_ids: list[UUID]
-    active_flag_id: UUID | None = None
-    department_ids: list[UUID]
-    profile_ids: list[UUID] | None = None
-    auth_ids: list[UUID] | None = None
-    provider_key_ids: list[UUID] | None = None
-    auth_key_ids: list[UUID] | None = None
-    role_ids: list[UUID] | None = None
-    role_route_ids: list[UUID] | None = None
+    group_id: UUID | None = None
+    names: SettingResourceAction
+    descriptions: SettingResourceAction
+    colors: SettingMultiResourceAction
+    flags: SettingResourceAction
+    departments: SettingMultiResourceAction
+    profiles: SettingMultiResourceAction
+    auths: SettingMultiResourceAction
+    provider_keys: SettingMultiResourceAction
+    auth_keys: SettingMultiResourceAction
+    roles: SettingMultiResourceAction
+    role_routes: SettingMultiResourceAction
 
 
 class PatchSettingDraftApiRequest(BaseModel):
     input_draft_id: UUID | None = None
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    color_ids: list[UUID] | None = None
-    department_ids: list[UUID] | None = None
-    profile_ids: list[UUID] | None = None
-    auth_ids: list[UUID] | None = None
-    provider_key_ids: list[UUID] | None = None
-    auth_key_ids: list[UUID] | None = None
-    role_ids: list[UUID] | None = None
-    role_route_ids: list[UUID] | None = None
+    group_id: UUID | None = None
+    names: SettingResourceAction | None = None
+    descriptions: SettingResourceAction | None = None
+    colors: SettingMultiResourceAction | None = None
+    flags: SettingResourceAction | None = None
+    departments: SettingMultiResourceAction | None = None
+    profiles: SettingMultiResourceAction | None = None
+    auths: SettingMultiResourceAction | None = None
+    provider_keys: SettingMultiResourceAction | None = None
+    auth_keys: SettingMultiResourceAction | None = None
+    roles: SettingMultiResourceAction | None = None
+    role_routes: SettingMultiResourceAction | None = None
     expected_version: int = 0

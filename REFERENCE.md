@@ -1173,6 +1173,22 @@ Execution order for one-pass migration:
   - `checkHasResourceIds`
 - Provider SQL save now records tool-call lineage (`create_tool_id` / `link_tool_id`) into `calls_entry` and `*_calls_connection` tables for all persisted resource sections.
 
+### Settings Migration Snapshot (2026-02-10)
+
+- `setting` save/draft contracts are now section-action based in API + SQL:
+  - single: `names`, `descriptions`, `flags`
+  - multi: `colors`, `departments`, `profiles`, `auths`, `provider_keys`, `auth_keys`, `roles`, `role_routes`
+- Save SQL now persists setting-key junctions directly:
+  - `setting_provider_keys_junction`
+  - `setting_auth_keys_junction`
+  - `setting_role_routes_junction`
+- Frontend save/draft payload construction in `Setting.tsx` now emits section-action payloads.
+- `Setting.tsx` hard-migration cleanup completed:
+  - removed legacy/non-existent fields (`show_providers`, `provider_resources`, `providers_agent_id`, `basic_agent_id`, `general_agent_id`)
+  - removed invalid creatable wiring for non-creatable resources (`flags`, `departments`)
+  - aligned component props to resource contracts (no `agent_id` props on Names/Descriptions/Colors/Auths/FlagsLegacy/Departments)
+  - kept pair-resource hydration through `provider_keys/get` and `auth_keys/get`
+
 ### Settings Artifact Resource Contract (Post-Migration)
 
 Persisted settings resources:
@@ -1191,8 +1207,11 @@ Hard migration rules:
 - Socket generation must route by `resource_agent_ids` using `resource_types`.
 - Save/draft payloads should use:
   - `provider_key_ids`
-  - `auth_key_ids`
+  - `key_ids` (maps to `auth_keys` section action in save/draft payload)
   - `role_route_ids`
+- `flags` and `departments` are selection-only/non-creatable in v4 resources:
+  - do not call `POST /api/v4/resources/flags`
+  - do not call `POST /api/v4/resources/departments`
 
 Settings resource endpoint families (required):
 - `provider_keys`
@@ -1212,3 +1231,16 @@ Frontend implementation note:
   - `ProviderKeys.tsx` (provider -> keys)
   - `AuthKeys.tsx` (auth -> keys)
 - Pair components should hydrate selected resource IDs via `*/get` endpoints when details are not preloaded, then emit only resource IDs (`provider_key_ids`, `auth_key_ids`) to artifact draft/save payloads.
+
+### Departments/Auth/Rubrics Parity Audit (2026-02-10)
+
+- Department frontend parity fix:
+  - `Department.tsx` now treats `settings.current` as non-generated lookup data (no `generated` checks on `QGetSettingsV4Item`).
+  - Step-card AI button wiring uses string adapters (`resourceTypes` + `isGenerating`) to match shared `StepCardAiButton` contract.
+- Auth + Rubric audit status:
+  - Frontend generation routing uses `resource_types`.
+  - Server socket generation resolves agents from `resource_agent_ids`.
+  - No legacy `domain_id`/`domains` routing usage found in generate flows.
+- Regression guard:
+  - Keep `current` arrays section-scoped in client contracts (`section.current`), never restore top-level `current`.
+  - Avoid passing `*_agent_id` props into resource components; tool routing remains section-driven (`create_tool_id`/`link_tool_id`) and socket-side (`resource_agent_ids`).

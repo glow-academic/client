@@ -58,20 +58,26 @@ type CreateDraftDescriptionsOut = OutputOf<
 >;
 type CreateDraftColorsIn = InputOf<"/api/v4/resources/colors", "post">;
 type CreateDraftColorsOut = OutputOf<"/api/v4/resources/colors", "post">;
-type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
-type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
-type CreateDraftDepartmentsIn = InputOf<
-  "/api/v4/resources/departments",
-  "post"
->;
-type CreateDraftDepartmentsOut = OutputOf<
-  "/api/v4/resources/departments",
-  "post"
->;
 type PatchSettingDraftIn = InputOf<"/api/v4/artifacts/settings/draft", "patch">;
 type PatchSettingDraftOut = OutputOf<"/api/v4/artifacts/settings/draft", "patch">;
 
 type SettingData = OutputOf<"/api/v4/artifacts/settings/get", "post">;
+
+function singleAction(resourceId: string | null) {
+  return {
+    resource_id: resourceId,
+    create_tool_id: null,
+    link_tool_id: null,
+  };
+}
+
+function multiAction(resourceIds: string[]) {
+  return {
+    resource_ids: resourceIds.length > 0 ? resourceIds : null,
+    create_tool_id: null,
+    link_tool_id: null,
+  };
+}
 
 export interface SettingProps {
   settingId?: string;
@@ -92,12 +98,6 @@ export interface SettingProps {
   createColorsAction?: (
     input: CreateDraftColorsIn
   ) => Promise<CreateDraftColorsOut>;
-  createFlagsAction?: (
-    input: CreateDraftFlagsIn
-  ) => Promise<CreateDraftFlagsOut>;
-  createDepartmentsAction?: (
-    input: CreateDraftDepartmentsIn
-  ) => Promise<CreateDraftDepartmentsOut>;
   createProviderKeysAction?: (input: {
     provider_id: string;
     key_id: string;
@@ -128,9 +128,6 @@ export interface SettingProps {
       generated?: boolean | null;
     }>
   >;
-  createRoleRoutesAction?: (
-    input: InputOf<"/api/v4/resources/setting_role_routes", "post">
-  ) => Promise<OutputOf<"/api/v4/resources/setting_role_routes", "post">>;
 }
 
 function SettingComponent({
@@ -141,13 +138,10 @@ function SettingComponent({
   createNamesAction,
   createDescriptionsAction,
   createColorsAction,
-  createFlagsAction,
-  createDepartmentsAction,
   createProviderKeysAction,
   getProviderKeysAction,
   createAuthKeysAction,
   getAuthKeysAction,
-  createRoleRoutesAction,
 }: SettingProps) {
   const router = useRouter();
   const isEditMode = !!settingId;
@@ -253,13 +247,16 @@ function SettingComponent({
       auths_agent_id: settingData.auths_agent_id,
       auths: settingData.auths,
       auth_ids: settingData.auth_ids,
-      provider_resources: settingData.provider_resources,
-      show_providers: settingData.show_providers,
-      provider_suggestions: settingData.provider_suggestions,
-      providers_required: settingData.providers_required,
-      providers_agent_id: settingData.providers_agent_id,
-      providers: settingData.providers,
       provider_key_ids: settingData.provider_key_ids,
+      providers:
+        ((settingData as Record<string, unknown>)["providers"] as
+          | Array<{
+              provider_id?: string | null;
+              name?: string | null;
+              description?: string | null;
+            }>
+          | null
+          | undefined) ?? [],
       provider_key_resources:
         ((settingData as Record<string, unknown>)["provider_key_resources"] as
           | Array<{
@@ -279,7 +276,7 @@ function SettingComponent({
       keys_required: settingData.keys_required,
       keys_agent_id: settingData.keys_agent_id,
       keys: settingData.keys,
-      auth_key_ids: settingData.auth_key_ids,
+      key_ids: settingData.key_ids,
       auth_key_resources:
         ((settingData as Record<string, unknown>)["auth_key_resources"] as
           | Array<{
@@ -293,8 +290,6 @@ function SettingComponent({
             }>
           | null
           | undefined) ?? [],
-      basic_agent_id: settingData.basic_agent_id,
-      general_agent_id: settingData.general_agent_id,
       role_ids: settingData.role_ids,
       role_resources: settingData.role_resources,
       show_roles: settingData.show_roles,
@@ -358,12 +353,6 @@ function SettingComponent({
     settingData?.auths_agent_id,
     settingData?.auths,
     settingData?.auth_ids,
-    settingData?.provider_resources,
-    settingData?.show_providers,
-    settingData?.provider_suggestions,
-    settingData?.providers_required,
-    settingData?.providers_agent_id,
-    settingData?.providers,
     settingData?.provider_key_ids,
     settingData?.key_resources,
     settingData?.show_keys,
@@ -371,9 +360,7 @@ function SettingComponent({
     settingData?.keys_required,
     settingData?.keys_agent_id,
     settingData?.keys,
-    settingData?.auth_key_ids,
-    settingData?.basic_agent_id,
-    settingData?.general_agent_id,
+    settingData?.key_ids,
     settingData?.role_ids,
     settingData?.role_resources,
     settingData?.show_roles,
@@ -433,7 +420,7 @@ function SettingComponent({
         profile_ids: [] as string[],
         auth_ids: [] as string[],
         provider_key_ids: [] as string[],
-        auth_key_ids: [] as string[],
+        key_ids: [] as string[],
         role_ids: [] as string[],
         role_route_ids: [] as string[],
       };
@@ -449,7 +436,7 @@ function SettingComponent({
       profile_ids: data.profile_ids ?? [],
       auth_ids: data.auth_ids ?? [],
       provider_key_ids: data.provider_key_ids ?? [],
-      auth_key_ids: data.auth_key_ids ?? [],
+      key_ids: data.key_ids ?? [],
       role_ids: data.role_ids ?? [],
       role_route_ids: data.role_route_ids ?? [],
     };
@@ -485,8 +472,8 @@ function SettingComponent({
     [settingData?.provider_key_ids]
   );
   const keyIdsStr = React.useMemo(
-    () => JSON.stringify(settingData?.auth_key_ids ?? []),
-    [settingData?.auth_key_ids]
+    () => JSON.stringify(settingData?.key_ids ?? []),
+    [settingData?.key_ids]
   );
   const roleIdsStr = React.useMemo(
     () => JSON.stringify(settingData?.role_ids ?? []),
@@ -519,8 +506,8 @@ function SettingComponent({
     [formState.provider_key_ids]
   );
   const formStateKeyIdsStr = React.useMemo(
-    () => JSON.stringify(formState.auth_key_ids),
-    [formState.auth_key_ids]
+    () => JSON.stringify(formState.key_ids),
+    [formState.key_ids]
   );
   const formStateRoleIdsStr = React.useMemo(
     () => JSON.stringify(formState.role_ids),
@@ -549,7 +536,7 @@ function SettingComponent({
         JSON.stringify(prev.auth_ids) !== JSON.stringify(newState.auth_ids) ||
         JSON.stringify(prev.provider_key_ids) !==
           JSON.stringify(newState.provider_key_ids) ||
-        JSON.stringify(prev.auth_key_ids) !== JSON.stringify(newState.auth_key_ids) ||
+        JSON.stringify(prev.key_ids) !== JSON.stringify(newState.key_ids) ||
         JSON.stringify(prev.role_ids) !== JSON.stringify(newState.role_ids) ||
         JSON.stringify(prev.role_route_ids) !==
           JSON.stringify(newState.role_route_ids)
@@ -639,7 +626,7 @@ function SettingComponent({
       profile_ids: formState.profile_ids,
       auth_ids: formState.auth_ids,
       provider_key_ids: formState.provider_key_ids,
-      auth_key_ids: formState.auth_key_ids,
+      key_ids: formState.key_ids,
       role_ids: formState.role_ids,
       role_route_ids: formState.role_route_ids,
     });
@@ -675,7 +662,7 @@ function SettingComponent({
       formState.profile_ids.length > 0 ||
       formState.auth_ids.length > 0 ||
       formState.provider_key_ids.length > 0 ||
-      formState.auth_key_ids.length > 0 ||
+      formState.key_ids.length > 0 ||
       formState.role_ids.length > 0 ||
       formState.role_route_ids.length > 0;
 
@@ -694,17 +681,18 @@ function SettingComponent({
         const result = await patchSettingDraftActionRef.current({
           body: {
             input_draft_id: draftId || null,
-            name_id: formState.name_id,
-            description_id: formState.description_id,
-            color_ids: formState.color_ids,
-            active_flag_id: formState.active_flag_id,
-            department_ids: formState.department_ids,
-            profile_ids: formState.profile_ids,
-            auth_ids: formState.auth_ids,
-            provider_key_ids: formState.provider_key_ids,
-            auth_key_ids: formState.auth_key_ids,
-            role_ids: formState.role_ids,
-            role_route_ids: formState.role_route_ids,
+            group_id: settingData?.group_id ?? null,
+            names: singleAction(formState.name_id),
+            descriptions: singleAction(formState.description_id),
+            colors: multiAction(formState.color_ids),
+            flags: singleAction(formState.active_flag_id),
+            departments: multiAction(formState.department_ids),
+            profiles: multiAction(formState.profile_ids),
+            auths: multiAction(formState.auth_ids),
+            provider_keys: multiAction(formState.provider_key_ids),
+            auth_keys: multiAction(formState.key_ids),
+            roles: multiAction(formState.role_ids),
+            role_routes: multiAction(formState.role_route_ids),
             expected_version: lastSavedVersionRef.current, // ✅ ref, not state dep
           },
         });
@@ -804,17 +792,18 @@ function SettingComponent({
         await saveSettingAction({
           body: {
             input_setting_id: isEditMode && settingId ? settingId : null,
-            name_id: formState.name_id,
-            description_id: formState.description_id || null,
-            color_ids: formState.color_ids || [],
-            active_flag_id: formState.active_flag_id || null,
-            department_ids: formState.department_ids || [],
-            profile_ids: formState.profile_ids || [],
-            auth_ids: formState.auth_ids || [],
-            provider_key_ids: formState.provider_key_ids || [],
-            auth_key_ids: formState.auth_key_ids || [],
-            role_ids: formState.role_ids || [],
-            role_route_ids: formState.role_route_ids || [],
+            group_id: settingData?.group_id ?? null,
+            names: singleAction(formState.name_id),
+            descriptions: singleAction(formState.description_id || null),
+            colors: multiAction(formState.color_ids || []),
+            flags: singleAction(formState.active_flag_id || null),
+            departments: multiAction(formState.department_ids || []),
+            profiles: multiAction(formState.profile_ids || []),
+            auths: multiAction(formState.auth_ids || []),
+            provider_keys: multiAction(formState.provider_key_ids || []),
+            auth_keys: multiAction(formState.key_ids || []),
+            roles: multiAction(formState.role_ids || []),
+            role_routes: multiAction(formState.role_route_ids || []),
           },
         });
         toast.success(
@@ -876,7 +865,7 @@ function SettingComponent({
   );
 
   // Resource labels for display
-  const resourceLabels: Record<ResourceType, string> = useMemo(
+  const resourceLabels: Partial<Record<ResourceType, string>> = useMemo(
     () => ({
       names: "Names",
       descriptions: "Descriptions",
@@ -1048,7 +1037,7 @@ function SettingComponent({
       const resources: GenerateRegenerateModalResource[] = resourceTypes.map(
         (rt) => ({
           id: rt,
-          label: resourceLabels[rt],
+          label: resourceLabels[rt] ?? rt,
           active: mode === "regenerate" ? canRegenerate(rt) : true,
         })
       );
@@ -1117,7 +1106,7 @@ function SettingComponent({
         id: "configuration",
         title: "Configuration",
         description: "Configure profiles, auths, provider keys, and auth keys.",
-        resetFields: ["profile_ids", "auth_ids", "provider_key_ids", "auth_key_ids"],
+        resetFields: ["profile_ids", "auth_ids", "provider_key_ids", "key_ids"],
       },
       {
         id: "roles_routes",
@@ -1140,7 +1129,7 @@ function SettingComponent({
       "profile_ids",
       "auth_ids",
       "provider_key_ids",
-      "auth_key_ids",
+      "key_ids",
       "role_ids",
       "role_route_ids",
     ],
@@ -1185,7 +1174,7 @@ function SettingComponent({
             profile_ids: [],
             auth_ids: [],
             provider_key_ids: [],
-            auth_key_ids: [],
+            key_ids: [],
           };
         case "roles_routes":
           return {
@@ -1266,7 +1255,6 @@ function SettingComponent({
                   required={currentSettingData?.name_required ?? false}
                   hideDescription={true}
                   group_id={currentSettingData?.group_id ?? null}
-                  agent_id={currentSettingData?.name_agent_id ?? null}
                   createNamesAction={
                     createNamesAction as
                       | ((
@@ -1364,7 +1352,6 @@ function SettingComponent({
                   rows={4}
                   data-testid="input-setting-description"
                   group_id={currentSettingData?.group_id ?? null}
-                  agent_id={currentSettingData?.description_agent_id ?? null}
                   createDescriptionsAction={createDescriptionsAction}
                 />
 
@@ -1387,8 +1374,6 @@ function SettingComponent({
                   }
                   required={currentSettingData?.departments_required ?? false}
                   group_id={currentSettingData?.group_id ?? null}
-                  agent_id={currentSettingData?.departments_agent_id ?? null}
-                  createDepartmentsAction={createDepartmentsAction}
                 />
 
                 {/* Active Switch - using Flags resource component */}
@@ -1407,8 +1392,6 @@ function SettingComponent({
                   helpText="Inactive settings will not be available"
                   required={currentSettingData?.flag_required ?? false}
                   group_id={currentSettingData?.group_id ?? null}
-                  agent_id={currentSettingData?.flag_agent_id ?? null}
-                  createFlagsAction={createFlagsAction}
                 />
               </div>
             </StepCard>
@@ -1519,7 +1502,6 @@ function SettingComponent({
                 }
                 required={currentSettingData?.colors_required ?? false}
                 group_id={currentSettingData?.group_id ?? null}
-                agent_id={currentSettingData?.colors_agent_id ?? null}
                 createColorsAction={createColorsAction}
               />
             </StepCard>
@@ -1567,7 +1549,6 @@ function SettingComponent({
                     setFormState((prev) => ({ ...prev, role_route_ids: ids }))
                   }
                   group_id={currentSettingData?.group_id ?? null}
-                  createRoleRoutesAction={createRoleRoutesAction}
                   label="Role Routes"
                   description="Configure which routes each role can access"
                 />
@@ -1584,7 +1565,7 @@ function SettingComponent({
               stepDescription={stepDescription}
               isReadonly={disabled}
               isEditMode={isEditMode}
-              resetFields={["profile_ids", "auth_ids", "provider_key_ids", "auth_key_ids"]}
+              resetFields={["profile_ids", "auth_ids", "provider_key_ids", "key_ids"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
             >
@@ -1618,7 +1599,6 @@ function SettingComponent({
                   }
                   required={currentSettingData?.auths_required ?? false}
                   group_id={currentSettingData?.group_id ?? null}
-                  agent_id={currentSettingData?.auths_agent_id ?? null}
                 />
 
                 <ProviderKeys
@@ -1632,20 +1612,20 @@ function SettingComponent({
                   onChange={(ids) =>
                     setFormState((prev) => ({ ...prev, provider_key_ids: ids }))
                   }
-                  show_provider_keys={currentSettingData?.show_providers ?? false}
+                  show_provider_keys={currentSettingData?.show_keys ?? false}
                   createProviderKeysAction={createProviderKeysAction}
                   getProviderKeysAction={getProviderKeysAction}
                 />
 
                 <AuthKeys
-                  auth_key_ids={formState.auth_key_ids ?? []}
+                  auth_key_ids={formState.key_ids ?? []}
                   auth_key_resources={currentSettingData?.auth_key_resources ?? []}
                   auths={currentSettingData?.auths ?? []}
                   keys={currentSettingData?.keys ?? []}
                   selected_auth_ids={formState.auth_ids ?? []}
                   disabled={disabled}
                   onChange={(ids) =>
-                    setFormState((prev) => ({ ...prev, auth_key_ids: ids }))
+                    setFormState((prev) => ({ ...prev, key_ids: ids }))
                   }
                   show_auth_keys={currentSettingData?.show_auths ?? false}
                   createAuthKeysAction={createAuthKeysAction}
@@ -1679,19 +1659,16 @@ function SettingComponent({
       formState.color_ids,
       formState.auth_ids,
       formState.provider_key_ids,
-      formState.auth_key_ids,
+      formState.key_ids,
       formState.role_ids,
       formState.role_route_ids,
       createNamesAction,
       createDescriptionsAction,
       createColorsAction,
-      createFlagsAction,
-      createDepartmentsAction,
       createProviderKeysAction,
       getProviderKeysAction,
       createAuthKeysAction,
       getAuthKeysAction,
-      createRoleRoutesAction,
       canRegenerate,
       handleOpenStepCardModal,
     ]
@@ -1763,8 +1740,8 @@ export default React.memo(SettingComponent, (prevProps, nextProps) => {
     auth_ids: prevProps.settingData?.auth_ids,
     provider_key_ids:
       prevProps.settingData?.provider_key_ids,
-    auth_key_ids:
-      prevProps.settingData?.auth_key_ids,
+    key_ids:
+      prevProps.settingData?.key_ids,
     role_ids: prevProps.settingData?.role_ids,
     role_route_ids: prevProps.settingData?.role_route_ids,
   };
@@ -1777,8 +1754,8 @@ export default React.memo(SettingComponent, (prevProps, nextProps) => {
     auth_ids: nextProps.settingData?.auth_ids,
     provider_key_ids:
       nextProps.settingData?.provider_key_ids,
-    auth_key_ids:
-      nextProps.settingData?.auth_key_ids,
+    key_ids:
+      nextProps.settingData?.key_ids,
     role_ids: nextProps.settingData?.role_ids,
     role_route_ids: nextProps.settingData?.role_route_ids,
   };
@@ -1798,13 +1775,10 @@ export default React.memo(SettingComponent, (prevProps, nextProps) => {
     prevProps.createNamesAction !== nextProps.createNamesAction ||
     prevProps.createDescriptionsAction !== nextProps.createDescriptionsAction ||
     prevProps.createColorsAction !== nextProps.createColorsAction ||
-    prevProps.createFlagsAction !== nextProps.createFlagsAction ||
-    prevProps.createDepartmentsAction !== nextProps.createDepartmentsAction ||
     prevProps.createProviderKeysAction !== nextProps.createProviderKeysAction ||
     prevProps.getProviderKeysAction !== nextProps.getProviderKeysAction ||
     prevProps.createAuthKeysAction !== nextProps.createAuthKeysAction ||
-    prevProps.getAuthKeysAction !== nextProps.getAuthKeysAction ||
-    prevProps.createRoleRoutesAction !== nextProps.createRoleRoutesAction
+    prevProps.getAuthKeysAction !== nextProps.getAuthKeysAction
   ) {
     return false; // Function props changed, re-render
   }

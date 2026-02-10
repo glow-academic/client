@@ -48,7 +48,8 @@ interface UnifiedAccessDeniedProps {
     | "key"
     | "prompt"
     | "video"
-    | "eval";
+    | "eval"
+    | "setting";
   fullWidth?: boolean; // If true, use full-width container (for not-logged-in state)
 }
 
@@ -121,6 +122,8 @@ export function UnifiedAccessDenied({
           return "prompt";
         case "video":
           return "video";
+        case "setting":
+          return "setting";
         default:
           return "resource";
       }
@@ -152,6 +155,8 @@ export function UnifiedAccessDenied({
           return "/intelligence/prompts";
         case "video":
           return "/training/videos";
+        case "setting":
+          return "/settings";
         default:
           return "/";
       }

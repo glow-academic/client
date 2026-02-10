@@ -84250,7 +84250,7 @@
             ],
             "title": "Input Draft Id"
           },
-          "name_id": {
+          "group_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -84260,151 +84260,117 @@
                 "type": "null"
               }
             ],
-            "title": "Name Id"
+            "title": "Group Id"
           },
-          "description_id": {
+          "names": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/SettingResourceAction"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Description Id"
+            ]
           },
-          "active_flag_id": {
+          "descriptions": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/SettingResourceAction"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Active Flag Id"
+            ]
           },
-          "color_ids": {
+          "colors": {
             "anyOf": [
               {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
+                "$ref": "#/components/schemas/SettingMultiResourceAction"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Color Ids"
+            ]
           },
-          "department_ids": {
+          "flags": {
             "anyOf": [
               {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
+                "$ref": "#/components/schemas/SettingResourceAction"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Department Ids"
+            ]
           },
-          "profile_ids": {
+          "departments": {
             "anyOf": [
               {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
+                "$ref": "#/components/schemas/SettingMultiResourceAction"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Profile Ids"
+            ]
           },
-          "auth_ids": {
+          "profiles": {
             "anyOf": [
               {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
+                "$ref": "#/components/schemas/SettingMultiResourceAction"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Auth Ids"
+            ]
           },
-          "provider_key_ids": {
+          "auths": {
             "anyOf": [
               {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
+                "$ref": "#/components/schemas/SettingMultiResourceAction"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Provider Key Ids"
+            ]
           },
-          "auth_key_ids": {
+          "provider_keys": {
             "anyOf": [
               {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
+                "$ref": "#/components/schemas/SettingMultiResourceAction"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Auth Key Ids"
+            ]
           },
-          "role_ids": {
+          "auth_keys": {
             "anyOf": [
               {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
+                "$ref": "#/components/schemas/SettingMultiResourceAction"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Role Ids"
+            ]
           },
-          "role_route_ids": {
+          "roles": {
             "anyOf": [
               {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
+                "$ref": "#/components/schemas/SettingMultiResourceAction"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Role Route Ids"
+            ]
+          },
+          "role_routes": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SettingMultiResourceAction"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "expected_version": {
             "type": "integer",
@@ -105508,12 +105474,7 @@
             ],
             "title": "Input Setting Id"
           },
-          "name_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Name Id"
-          },
-          "description_id": {
+          "group_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -105523,132 +105484,55 @@
                 "type": "null"
               }
             ],
-            "title": "Description Id"
+            "title": "Group Id"
           },
-          "color_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "title": "Color Ids"
+          "names": {
+            "$ref": "#/components/schemas/SettingResourceAction"
           },
-          "active_flag_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Active Flag Id"
+          "descriptions": {
+            "$ref": "#/components/schemas/SettingResourceAction"
           },
-          "department_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "title": "Department Ids"
+          "colors": {
+            "$ref": "#/components/schemas/SettingMultiResourceAction"
           },
-          "profile_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Profile Ids"
+          "flags": {
+            "$ref": "#/components/schemas/SettingResourceAction"
           },
-          "auth_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Auth Ids"
+          "departments": {
+            "$ref": "#/components/schemas/SettingMultiResourceAction"
           },
-          "provider_key_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Provider Key Ids"
+          "profiles": {
+            "$ref": "#/components/schemas/SettingMultiResourceAction"
           },
-          "auth_key_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Auth Key Ids"
+          "auths": {
+            "$ref": "#/components/schemas/SettingMultiResourceAction"
           },
-          "role_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Role Ids"
+          "provider_keys": {
+            "$ref": "#/components/schemas/SettingMultiResourceAction"
           },
-          "role_route_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Role Route Ids"
+          "auth_keys": {
+            "$ref": "#/components/schemas/SettingMultiResourceAction"
+          },
+          "roles": {
+            "$ref": "#/components/schemas/SettingMultiResourceAction"
+          },
+          "role_routes": {
+            "$ref": "#/components/schemas/SettingMultiResourceAction"
           }
         },
         "type": "object",
         "required": [
-          "name_id",
-          "color_ids",
-          "department_ids"
+          "names",
+          "descriptions",
+          "colors",
+          "flags",
+          "departments",
+          "profiles",
+          "auths",
+          "provider_keys",
+          "auth_keys",
+          "roles",
+          "role_routes"
         ],
         "title": "SaveSettingApiRequest"
       },
@@ -113105,6 +112989,93 @@
         ],
         "title": "SessionListItem",
         "description": "Single session in the list response with hydrated metadata."
+      },
+      "SettingMultiResourceAction": {
+        "properties": {
+          "resource_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resource Ids"
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          }
+        },
+        "type": "object",
+        "title": "SettingMultiResourceAction"
+      },
+      "SettingResourceAction": {
+        "properties": {
+          "resource_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resource Id"
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          }
+        },
+        "type": "object",
+        "title": "SettingResourceAction"
       },
       "SimulationData": {
         "properties": {

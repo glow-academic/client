@@ -329,7 +329,7 @@ function DepartmentComponent({
         case "flags":
           return s.flags?.current?.some((f) => f.generated) ?? false;
         case "settings":
-          return s.settings?.current?.some((x) => x.generated) ?? false;
+          return false;
         default:
           return false;
       }
@@ -339,6 +339,10 @@ function DepartmentComponent({
   const canRegenerateForStepCard = useCallback(
     (rt: string) => canRegenerate(rt as ResourceType),
     [canRegenerate],
+  );
+  const isGeneratingForStepCard = useCallback(
+    (rt: string) => isGenerating(rt as ResourceType),
+    [isGenerating],
   );
 
   const stepResources: Record<string, ResourceType[]> = useMemo(
@@ -531,9 +535,9 @@ function DepartmentComponent({
           s?.basic_show_ai_generate ? (
             <StepCardAiButton
               stepId="basic"
-              resourceTypes={stepResources["basic"]}
+              resourceTypes={(stepResources["basic"] ?? []) as string[]}
               canRegenerate={canRegenerateForStepCard}
-              isGenerating={isGenerating}
+              isGenerating={isGeneratingForStepCard}
               onOpenModal={handleOpenStepCardModal}
               disabled={disabled}
             />
@@ -630,6 +634,7 @@ function DepartmentComponent({
       registerFlushCallbacks,
       stepResources,
       canRegenerateForStepCard,
+      isGeneratingForStepCard,
       handleOpenStepCardModal,
     ],
   );
