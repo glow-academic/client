@@ -43,10 +43,14 @@ async def handle_field_call_progress(data: dict[str, Any]) -> None:
     if not sid:
         return
 
+    resource_type = data.get("resource_type")
+    if resource_type == "parameters":
+        resource_type = "conditional_parameters"
+
     event = FieldGenerationProgressEvent(
         artifact_type=artifact_type or "field",
         group_id=data.get("group_id"),
-        resource_type=data.get("resource_type"),
+        resource_type=resource_type,
         resource_id=data.get("resource_id"),
         run_id=data.get("run_id"),
         modality="call",

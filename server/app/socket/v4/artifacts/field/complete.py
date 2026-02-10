@@ -54,6 +54,9 @@ async def handle_field_artifact_complete(data: dict[str, Any]) -> None:
     # Extract all data from event
     group_id_str = data.get("group_id")
     resource_type = data.get("resource_type")
+    normalized_resource_type = (
+        "conditional_parameters" if resource_type == "parameters" else resource_type
+    )
     event_type = data.get("event_type")
 
     # Handle text completion - save assistant message
@@ -104,10 +107,10 @@ async def handle_field_artifact_complete(data: dict[str, Any]) -> None:
     event = FieldGenerationCompleteEvent(
         artifact_type="field",
         group_id=group_id_str,
-        resource_type=resource_type,
+        resource_type=normalized_resource_type,
         run_id=data.get("run_id"),
         success=True,
-        message=f"{resource_type} generation completed successfully",
+        message=f"{normalized_resource_type} generation completed successfully",
     )
 
     try:
@@ -124,9 +127,11 @@ async def handle_field_artifact_complete(data: dict[str, Any]) -> None:
             elif resource_type == "departments":
                 dept_items = await get_departments_internal(conn, [resource_id])
                 event.department_resources = dept_items if dept_items else None
-            elif resource_type == "parameters":
+            elif resource_type in ("conditional_parameters", "parameters"):
                 param_items = await get_parameters_internal(conn, [resource_id])
-                event.parameter_resources = param_items if param_items else None
+                event.conditional_parameter_resources = (
+                    param_items if param_items else None
+                )
     except Exception as e:
         await sio.emit(
             "field_generation_error",

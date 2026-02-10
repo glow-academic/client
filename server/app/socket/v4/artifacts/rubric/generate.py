@@ -1,10 +1,4 @@
-"""Rubric generation router - unified handler for all rubric resource types.
-
-Uses the domain_ids-based API pattern:
-1. Client sends domain_ids (which domains to generate)
-2. Server looks up agent_ids and resource_types from get_rubric_websocket()
-3. Server creates generation run and emits to generate_artifact handler
-"""
+"""Rubric generation router - unified handler for rubric resource generation."""
 
 import uuid
 from typing import Any
@@ -92,14 +86,14 @@ Generate descriptions for ALL combinations of standard groups and standards."""
 async def _generate_rubric_impl(
     sid: str, data: GenerateRubricPayload, profile_id: uuid.UUID
 ) -> None:
-    """Handle rubric generation using domain_ids-based pattern."""
+    """Handle rubric generation using resource_types-based pattern."""
     try:
-        if not data.domain_ids:
+        if not data.resource_types:
             await emit_to_internal(
                 "generate_call_error",
                 GenerateErrorApiRequest(
                     sid=sid,
-                    error_message="domain_ids must be provided",
+                    error_message="resource_types must be provided",
                     artifact_type="rubric",
                     group_id=None,
                     resource_type="rubric",
@@ -108,44 +102,23 @@ async def _generate_rubric_impl(
             )
             return
 
-        # Step 1: Fetch rubric data via websocket function for domain/agent mappings
+        # Step 1: Fetch rubric data via websocket function for resource->agent mapping.
         result = await get_rubric_websocket(
             profile_id=profile_id,
             rubric_id=data.rubric_id,
             draft_id=data.draft_id,
         )
 
-        # Build domain_id -> agent_id mapping from result.domains
-        domain_to_agent: dict[uuid.UUID, uuid.UUID | None] = {}
-        if result.domains:
-            for domain in result.domains:
-                domain_to_agent[domain.domain_id] = domain.agent_id
-
-        # Build domain_id -> resource_type mapping from result
-        domain_to_resource: dict[uuid.UUID | None, str] = {
-            result.name_domain_id: "names",
-            result.description_domain_id: "descriptions",
-            result.flag_domain_id: "flags",
-            result.departments_domain_id: "departments",
-            result.points_domain_id: "points",
-            result.pass_points_domain_id: "pass_points",
-            result.standard_groups_domain_id: "standard_groups",
-            result.standards_domain_id: "standards",
-        }
-        domain_to_resource.pop(None, None)
-
-        # Derive resource_types from domain_ids
-        resource_types: list[str] = []
-        for did in data.domain_ids:
-            if did in domain_to_resource:
-                resource_types.append(domain_to_resource[did])
+        resource_types = [
+            rt for rt in data.resource_types if rt in RUBRIC_RESOURCE_TYPES
+        ]
 
         if not resource_types:
             await emit_to_internal(
                 "generate_call_error",
                 GenerateErrorApiRequest(
                     sid=sid,
-                    error_message="No valid domain_ids provided",
+                    error_message="No valid resource_types provided",
                     artifact_type="rubric",
                     group_id=None,
                     resource_type="rubric",
@@ -154,26 +127,13 @@ async def _generate_rubric_impl(
             )
             return
 
-        invalid_types = [rt for rt in resource_types if rt not in RUBRIC_RESOURCE_TYPES]
-        if invalid_types:
-            await emit_to_internal(
-                "generate_call_error",
-                GenerateErrorApiRequest(
-                    sid=sid,
-                    error_message=f"Invalid resource types: {', '.join(invalid_types)}",
-                    artifact_type="rubric",
-                    group_id=None,
-                    resource_type="rubric",
-                ),
-                sid=sid,
-            )
-            return
-
-        # Get agent_id from the first valid domain_id
+        # Get agent_id from the first valid resource type.
         agent_id: uuid.UUID | None = None
-        for did in data.domain_ids:
-            if did in domain_to_agent and domain_to_agent[did] is not None:
-                agent_id = domain_to_agent[did]
+        resource_agent_ids = result.resource_agent_ids or {}
+        for rt in resource_types:
+            aid = resource_agent_ids.get(rt)
+            if aid is not None:
+                agent_id = aid
                 break
 
         if not agent_id:
@@ -193,7 +153,7 @@ async def _generate_rubric_impl(
         # Build rubric context for standard descriptions if needed
         rubric_context_text: str | None = None
         if "standards" in resource_types or "standard_groups" in resource_types:
-            resources_bucket = result.resources.resources if result.resources else None
+            resources_bucket = result.resources
             if resources_bucket:
                 rubric_context_text = format_rubric_context(
                     resources_bucket.standard_groups,

@@ -115,9 +115,9 @@ def compute_show_departments(departments_count: int) -> bool:
     return departments_count > 0
 
 
-def compute_show_parameters(parameters_count: int) -> bool:
-    """Determine if parameters picker should be shown."""
-    return parameters_count > 0
+def compute_show_conditional_parameters(conditional_parameters_count: int) -> bool:
+    """Determine if conditional parameters picker should be shown."""
+    return conditional_parameters_count > 0
 
 
 def compute_name_required() -> bool:
@@ -140,8 +140,8 @@ def compute_departments_required() -> bool:
     return False
 
 
-def compute_parameters_required() -> bool:
-    """Determine if parameters is required."""
+def compute_conditional_parameters_required() -> bool:
+    """Determine if conditional parameters is required."""
     return False
 
 
@@ -260,7 +260,7 @@ FIELD_RESOURCES: set[str] = {
     "descriptions",
     "flags",
     "departments",
-    "parameters",
+    "conditional_parameters",
 }
 
 # Multi-resource agent definitions for field
@@ -292,8 +292,8 @@ FIELD_DOMAIN_METADATA: dict[str, dict[str, str | bool]] = {
         "description": "Which departments can access this field",
         "icon": "building",
     },
-    "parameters": {
-        "name": "Parameters",
+    "conditional_parameters": {
+        "name": "Conditional Parameters",
         "description": "Conditional parameters linked to this field",
         "icon": "settings",
     },

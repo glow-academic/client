@@ -1,4 +1,4 @@
-"""Handcrafted types for rubric GET endpoint."""
+"""Handcrafted types for rubric artifact endpoints."""
 
 from __future__ import annotations
 
@@ -6,18 +6,19 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.api.v4.types import DomainAgent, DomainData
+from app.api.v4.views.drafts.types import DraftRubricViewItem
 from app.sql.types import (
+    QGetAgentsV4Item,
     QGetDepartmentsV4Item,
     QGetDescriptionsV4Item,
+    QGetModelsV4Item,
     QGetNamesV4Item,
     QGetPointsV4Item,
+    QGetProvidersV4Item,
     QGetStandardGroupsV4Item,
     QGetStandardsV4Item,
+    QGetToolsV4Item,
 )
-
-# Re-export for backwards compatibility
-__all__ = ["DomainAgent", "DomainData"]
 
 
 class RubricFlagConfig(BaseModel):
@@ -30,13 +31,61 @@ class RubricFlagConfig(BaseModel):
     flag_option_id: UUID | None = None
     show: bool = True
     required: bool = False
-    domain_id: UUID | None = None
     generated: bool | None = None
 
 
-class GetRubricApiRequest(BaseModel):
-    """Request model for get rubric endpoint."""
+class BaseResourceSection(BaseModel):
+    """Common metadata fields for all rubric resource sections."""
 
+    show: bool = False
+    required: bool = False
+    suggestions: list[UUID] | None = None
+    show_ai_generate: bool = False
+    create_tool_id: UUID | None = None
+    link_tool_id: UUID | None = None
+
+
+class RubricNameSection(BaseResourceSection):
+    resource: QGetNamesV4Item | None = None
+    resources: list[QGetNamesV4Item] | None = None
+
+
+class RubricDescriptionSection(BaseResourceSection):
+    resource: QGetDescriptionsV4Item | None = None
+    resources: list[QGetDescriptionsV4Item] | None = None
+
+
+class RubricFlagSection(BaseResourceSection):
+    current: list[RubricFlagConfig] | None = None
+    resources: list[RubricFlagConfig] | None = None
+
+
+class RubricDepartmentSection(BaseResourceSection):
+    current: list[QGetDepartmentsV4Item] | None = None
+    resources: list[QGetDepartmentsV4Item] | None = None
+
+
+class RubricPointsSection(BaseResourceSection):
+    resource: QGetPointsV4Item | None = None
+    resources: list[QGetPointsV4Item] | None = None
+
+
+class RubricPassPointsSection(BaseResourceSection):
+    resource: QGetPointsV4Item | None = None
+    resources: list[QGetPointsV4Item] | None = None
+
+
+class RubricStandardGroupsSection(BaseResourceSection):
+    current: list[QGetStandardGroupsV4Item] | None = None
+    resources: list[QGetStandardGroupsV4Item] | None = None
+
+
+class RubricStandardsSection(BaseResourceSection):
+    current: list[QGetStandardsV4Item] | None = None
+    resources: list[QGetStandardsV4Item] | None = None
+
+
+class GetRubricApiRequest(BaseModel):
     rubric_id: UUID | None = None
     draft_id: UUID | None = None
     description_search: str | None = None
@@ -44,137 +93,31 @@ class GetRubricApiRequest(BaseModel):
 
 
 class GetRubricApiResponse(BaseModel):
-    """Response model for get rubric endpoint."""
-
-    # Required fields
     actor_name: str | None = None
     rubric_exists: bool | None = None
     can_edit: bool | None = None
     disabled_reason: str | None = None
     draft_version: int | None = None
-
-    # Group ID
     group_id: UUID | None = None
 
-    # Per-resource group IDs (from draft MV)
-    names_group_id: UUID | None = None
-    descriptions_group_id: UUID | None = None
-    flags_group_id: UUID | None = None
-    departments_group_id: UUID | None = None
-    points_group_id: UUID | None = None
-    pass_points_group_id: UUID | None = None
-    standard_groups_group_id: UUID | None = None
-    standards_group_id: UUID | None = None
-
-    # Single-select resources: name
-    show_name: bool | None = None
-    name_domain_id: UUID | None = None
-    name_required: bool | None = None
-    name_suggestions: list[UUID] | None = None
-    name_show_ai_generate: bool | None = None
-
-    # Single-select resources: description
-    show_description: bool | None = None
-    description_domain_id: UUID | None = None
-    description_required: bool | None = None
-    description_suggestions: list[UUID] | None = None
-    description_show_ai_generate: bool | None = None
-
-    # Single-select resources: flag
-    show_flag: bool | None = None
-    flag_domain_id: UUID | None = None
-    flag_required: bool | None = None
-    flag_show_ai_generate: bool | None = None
-
-    # Multi-select resources: departments
-    show_departments: bool | None = None
-    departments_domain_id: UUID | None = None
-    departments_required: bool | None = None
-    department_suggestions: list[UUID] | None = None
-    departments_show_ai_generate: bool | None = None
-
-    # Single-select resources: points (total)
-    show_points: bool | None = None
-    points_domain_id: UUID | None = None
-    points_required: bool | None = None
-    points_suggestions: list[UUID] | None = None
-    points_show_ai_generate: bool | None = None
-
-    # Single-select resources: pass_points
-    show_pass_points: bool | None = None
-    pass_points_domain_id: UUID | None = None
-    pass_points_required: bool | None = None
-    pass_points_suggestions: list[UUID] | None = None
-    pass_points_show_ai_generate: bool | None = None
-
-    # Multi-select resources: standard_groups
-    show_standard_groups: bool | None = None
-    standard_groups_domain_id: UUID | None = None
-    standard_groups_required: bool | None = None
-    standard_group_suggestions: list[UUID] | None = None
-    standard_groups_show_ai_generate: bool | None = None
-
-    # Multi-select resources: standards
-    show_standards: bool | None = None
-    standards_domain_id: UUID | None = None
-    standards_required: bool | None = None
-    standard_suggestions: list[UUID] | None = None
-    standards_show_ai_generate: bool | None = None
-
-    # Step-level AI generation flags
     basic_show_ai_generate: bool | None = None
     content_show_ai_generate: bool | None = None
 
-    # Per-resource CREATE tool IDs
-    name_create_tool_id: UUID | None = None
-    description_create_tool_id: UUID | None = None
-    points_create_tool_id: UUID | None = None
-    pass_points_create_tool_id: UUID | None = None
-    standard_groups_create_tool_id: UUID | None = None
-    standards_create_tool_id: UUID | None = None
-
-    # Per-resource LINK tool IDs
-    name_link_tool_id: UUID | None = None
-    description_link_tool_id: UUID | None = None
-    flag_link_tool_id: UUID | None = None
-    departments_link_tool_id: UUID | None = None
-    points_link_tool_id: UUID | None = None
-    pass_points_link_tool_id: UUID | None = None
-    standard_groups_link_tool_id: UUID | None = None
-    standards_link_tool_id: UUID | None = None
-
-    # Rich domain metadata for client display in modals
-    domain_data: list[DomainData] | None = None
-
-    # Generic resources payload (full objects + current selections)
-    resources: RubricResources | None = None
+    names: RubricNameSection | None = None
+    descriptions: RubricDescriptionSection | None = None
+    flags: RubricFlagSection | None = None
+    departments: RubricDepartmentSection | None = None
+    points: RubricPointsSection | None = None
+    pass_points: RubricPassPointsSection | None = None
+    standard_groups: RubricStandardGroupsSection | None = None
+    standards: RubricStandardsSection | None = None
 
 
-class GetRubricWebsocketResponse(BaseModel):
-    """Minimal response for WebSocket handlers (get_rubric_websocket)."""
-
-    group_id: UUID | None = None
-
-    # Domain IDs for domain_to_resource mapping
-    name_domain_id: UUID | None = None
-    description_domain_id: UUID | None = None
-    flag_domain_id: UUID | None = None
-    departments_domain_id: UUID | None = None
-    points_domain_id: UUID | None = None
-    pass_points_domain_id: UUID | None = None
-    standard_groups_domain_id: UUID | None = None
-    standards_domain_id: UUID | None = None
-
-    # Domains mapping (domain_id -> agent_id) for server-side agent lookup
-    domains: list[DomainAgent] | None = None
-
-    # Resources for Jinja template context
-    resources: RubricResources | None = None
+class RubricWebsocketViews(BaseModel):
+    draft_rubric: DraftRubricViewItem | None = None
 
 
-class RubricResourceBucket(BaseModel):
-    """Generic resources bucket with full objects (always plural lists)."""
-
+class RubricWebsocketResources(BaseModel):
     names: list[QGetNamesV4Item] | None = None
     descriptions: list[QGetDescriptionsV4Item] | None = None
     flags: list[RubricFlagConfig] | None = None
@@ -183,143 +126,183 @@ class RubricResourceBucket(BaseModel):
     pass_points: list[QGetPointsV4Item] | None = None
     standard_groups: list[QGetStandardGroupsV4Item] | None = None
     standards: list[QGetStandardsV4Item] | None = None
+    agents: list[QGetAgentsV4Item] | None = None
+    models: list[QGetModelsV4Item] | None = None
+    providers: list[QGetProvidersV4Item] | None = None
+    tools: list[QGetToolsV4Item] | None = None
 
 
-class RubricResources(BaseModel):
-    """Full resources + current selections."""
+class GetRubricWebsocketResponse(BaseModel):
+    views: RubricWebsocketViews | None = None
+    resources: RubricWebsocketResources
+    resource_agent_ids: dict[str, UUID | None] | None = None
+    group_id: UUID | None = None
 
-    resources: RubricResourceBucket | None = None
-    current: RubricResourceBucket | None = None
+
+class RubricResourceAction(BaseModel):
+    resource_id: UUID | None = None
+    create_tool_id: UUID | None = None
+    link_tool_id: UUID | None = None
 
 
-# ========== Save Endpoint Types ==========
+class RubricMultiResourceAction(BaseModel):
+    resource_ids: list[UUID] | None = None
+    create_tool_id: UUID | None = None
+    link_tool_id: UUID | None = None
 
 
 class SaveRubricApiRequest(BaseModel):
-    """Request model for save rubric endpoint - accepts form data directly."""
-
     group_id: UUID
     input_rubric_id: UUID | None = None
-
-    # Required single-select resources
-    name_id: UUID
-
-    # Optional single-select resources
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    total_points_id: UUID | None = None
-    pass_points_id: UUID | None = None
-
-    # Optional multi-select resources
-    department_ids: list[UUID] | None = None
-    standard_group_ids: list[UUID] | None = None
-    standard_ids: list[UUID] | None = None
+    names: RubricResourceAction
+    descriptions: RubricResourceAction
+    flags: RubricResourceAction
+    departments: RubricMultiResourceAction
+    points: RubricResourceAction
+    pass_points: RubricResourceAction
+    standard_groups: RubricMultiResourceAction
+    standards: RubricMultiResourceAction
 
 
 class SaveRubricApiResponse(BaseModel):
-    """Response model for save rubric endpoint."""
-
     success: bool
     rubric_id: UUID
     message: str
 
 
 class SaveRubricSqlParams(BaseModel):
-    """SQL parameters for save rubric - accepts form data directly."""
-
     profile_id: UUID
     group_id: UUID
     input_rubric_id: UUID | None = None
+    names: RubricResourceAction
+    descriptions: RubricResourceAction
+    flags: RubricResourceAction
+    departments: RubricMultiResourceAction
+    points: RubricResourceAction
+    pass_points: RubricResourceAction
+    standard_groups: RubricMultiResourceAction
+    standards: RubricMultiResourceAction
 
-    name_id: UUID
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    total_points_id: UUID | None = None
-    pass_points_id: UUID | None = None
-
-    department_ids: list[UUID] | None = None
-    standard_group_ids: list[UUID] | None = None
-    standard_ids: list[UUID] | None = None
+    @classmethod
+    def from_request(
+        cls, request: SaveRubricApiRequest, profile_id: UUID
+    ) -> SaveRubricSqlParams:
+        return cls(profile_id=profile_id, **request.model_dump())
 
     def to_tuple(self) -> tuple:
-        """Convert to tuple for SQL execution."""
         return (
             self.profile_id,
             self.group_id,
             self.input_rubric_id,
-            self.name_id,
-            self.description_id,
-            self.active_flag_id,
-            self.total_points_id,
-            self.pass_points_id,
-            self.department_ids,
-            self.standard_group_ids,
-            self.standard_ids,
+            self.names.model_dump(),
+            self.descriptions.model_dump(),
+            self.flags.model_dump(),
+            self.departments.model_dump(),
+            self.points.model_dump(),
+            self.pass_points.model_dump(),
+            self.standard_groups.model_dump(),
+            self.standards.model_dump(),
         )
 
 
 class SaveRubricSqlRow(BaseModel):
-    """SQL row for save rubric."""
-
     rubric_id: UUID | None = None
     actor_name: str | None = None
 
 
-# ========== Delete Endpoint Types ==========
-
-
 class DeleteRubricApiRequest(BaseModel):
-    """Request model for delete rubric endpoint."""
-
     rubric_id: UUID
 
 
 class DeleteRubricApiResponse(BaseModel):
-    """Response model for delete rubric endpoint."""
-
     success: bool
     message: str
 
 
-# ========== Duplicate Endpoint Types ==========
-
-
 class DuplicateRubricApiRequest(BaseModel):
-    """Request model for duplicate rubric endpoint."""
-
     rubric_id: UUID
 
 
 class DuplicateRubricApiResponse(BaseModel):
-    """Response model for duplicate rubric endpoint."""
-
     success: bool
     rubric_id: UUID
     message: str
 
 
-# ========== Draft Endpoint Types ==========
-
-
 class PatchRubricDraftApiRequest(BaseModel):
-    """Request model for patch rubric draft endpoint."""
-
     input_draft_id: UUID | None = None
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    total_points_id: UUID | None = None
-    pass_points_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    standard_group_ids: list[UUID] | None = None
-    standard_ids: list[UUID] | None = None
+    group_id: UUID | None = None
+    names: RubricResourceAction | None = None
+    descriptions: RubricResourceAction | None = None
+    flags: RubricResourceAction | None = None
+    departments: RubricMultiResourceAction | None = None
+    points: RubricResourceAction | None = None
+    pass_points: RubricResourceAction | None = None
+    standard_groups: RubricMultiResourceAction | None = None
+    standards: RubricMultiResourceAction | None = None
     expected_version: int = 0
 
 
 class PatchRubricDraftApiResponse(BaseModel):
-    """Response model for patch rubric draft endpoint."""
-
     success: bool
     draft_id: UUID
     new_version: int
     message: str
+
+
+class PatchRubricDraftSqlParams(BaseModel):
+    profile_id: UUID
+    input_draft_id: UUID | None = None
+    group_id: UUID | None = None
+    names: RubricResourceAction
+    descriptions: RubricResourceAction
+    flags: RubricResourceAction
+    departments: RubricMultiResourceAction
+    points: RubricResourceAction
+    pass_points: RubricResourceAction
+    standard_groups: RubricMultiResourceAction
+    standards: RubricMultiResourceAction
+    expected_version: int = 0
+
+    @classmethod
+    def from_request(
+        cls, request: PatchRubricDraftApiRequest, profile_id: UUID
+    ) -> PatchRubricDraftSqlParams:
+        empty_single = RubricResourceAction()
+        empty_multi = RubricMultiResourceAction()
+        return cls(
+            profile_id=profile_id,
+            input_draft_id=request.input_draft_id,
+            group_id=request.group_id,
+            names=request.names or empty_single,
+            descriptions=request.descriptions or empty_single,
+            flags=request.flags or empty_single,
+            departments=request.departments or empty_multi,
+            points=request.points or empty_single,
+            pass_points=request.pass_points or empty_single,
+            standard_groups=request.standard_groups or empty_multi,
+            standards=request.standards or empty_multi,
+            expected_version=request.expected_version,
+        )
+
+    def to_tuple(self) -> tuple:
+        return (
+            self.profile_id,
+            self.input_draft_id,
+            self.group_id,
+            self.names.model_dump(),
+            self.descriptions.model_dump(),
+            self.flags.model_dump(),
+            self.departments.model_dump(),
+            self.points.model_dump(),
+            self.pass_points.model_dump(),
+            self.standard_groups.model_dump(),
+            self.standards.model_dump(),
+            self.expected_version,
+        )
+
+
+class PatchRubricDraftSqlRow(BaseModel):
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None

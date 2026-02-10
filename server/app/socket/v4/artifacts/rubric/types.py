@@ -5,8 +5,6 @@ Types are registered in OpenAPI via FastAPI endpoints, enabling
 automatic type extraction in the frontend via InputOf/OutputOf.
 """
 
-from uuid import UUID
-
 from app.api.v4.artifacts.rubric.types import GetRubricApiRequest
 from app.socket.v4.artifacts.types import (
     GenerationCompleteEvent,
@@ -35,8 +33,8 @@ class GenerateRubricPayload(GetRubricApiRequest):
     with generation-specific fields.
     """
 
-    # Generation-specific fields - domain-based API
-    domain_ids: list[UUID]
+    # Generation-specific fields - resource-based API
+    resource_types: list[str]
     user_instructions: list[str] | None = None
 
 

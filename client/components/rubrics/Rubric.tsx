@@ -1,8 +1,6 @@
 /**
  * Rubric.tsx
- * Implementation using modular resource components
- * Used to create and manage rubrics - supports both creation and editing
- * Follows ARTIFACT.md pattern - stores only IDs in form state, resource components handle their own data
+ * Canonical rubric create/edit component (persona parity pattern).
  */
 "use client";
 
@@ -14,7 +12,9 @@ import {
   GenericForm,
   type StepStatus,
 } from "@/components/common/forms/GenericForm";
+import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
 import { StepCard } from "@/components/common/forms/StepCard";
+import { GenerateRegenerateModal } from "@/components/common/GenerateRegenerateModal";
 import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
 import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
@@ -23,16 +23,26 @@ import { Names } from "@/components/resources/Names";
 import { Points } from "@/components/resources/Points";
 import { Standards } from "@/components/resources/Standards";
 import { StandardGroups } from "@/components/resources/StandardGroups";
-import { Input } from "@/components/ui/input";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
+import { useSaveContext } from "@/contexts/save-context";
+import { useAiGeneration } from "@/hooks/use-ai-generation";
+import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
+import { useFlushRegistry } from "@/hooks/use-flush-registry";
+import { useGenerationModal } from "@/hooks/use-generation-modal";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import type { ResourceType } from "@/lib/resources/types";
+import {
+  buildResourceActions,
+  checkHasResourceIds,
+  computeEffectiveFormState,
+  type ResourceConfig,
+} from "@/lib/resources/action-builders";
 import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
-// Types defined inline using InputOf/OutputOf
 type SaveRubricIn = InputOf<"/api/v4/artifacts/rubrics/save", "post">;
 type SaveRubricOut = OutputOf<"/api/v4/artifacts/rubrics/save", "post">;
+type SaveRubricBody = NonNullable<SaveRubricIn["body"]>;
 type PatchRubricDraftIn = InputOf<"/api/v4/artifacts/rubrics/draft", "patch">;
 type PatchRubricDraftOut = OutputOf<"/api/v4/artifacts/rubrics/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
@@ -43,14 +53,6 @@ type CreateDraftDescriptionsIn = InputOf<
 >;
 type CreateDraftDescriptionsOut = OutputOf<
   "/api/v4/resources/descriptions",
-  "post"
->;
-type CreateDraftDepartmentsIn = InputOf<
-  "/api/v4/resources/departments",
-  "post"
->;
-type CreateDraftDepartmentsOut = OutputOf<
-  "/api/v4/resources/departments",
   "post"
 >;
 type CreateDraftPointsIn = InputOf<"/api/v4/resources/points", "post">;
@@ -64,31 +66,104 @@ type CreateDraftStandardGroupsOut = OutputOf<
   "post"
 >;
 type RubricData = OutputOf<"/api/v4/artifacts/rubrics/get", "post">;
+type RubricResourceType =
+  | "names"
+  | "descriptions"
+  | "flags"
+  | "departments"
+  | "points"
+  | "pass_points"
+  | "standard_groups"
+  | "standards";
+
+type RubricFormState = {
+  name_id: string | null;
+  description_id: string | null;
+  active_flag_id: string | null;
+  department_ids: string[];
+  total_points_id: string | null;
+  pass_points_id: string | null;
+  standard_group_ids: string[];
+  standard_ids: string[];
+};
+
+const FLUSH_KEYS = [
+  "names",
+  "descriptions",
+  "departments",
+  "standard_groups",
+] as const;
+
+const VALID_RESOURCE_TYPES: RubricResourceType[] = [
+  "names",
+  "descriptions",
+  "flags",
+  "departments",
+  "points",
+  "pass_points",
+  "standard_groups",
+  "standards",
+];
+
+const RUBRIC_RESOURCES: ResourceConfig[] = [
+  { key: "names", formKey: "name_id", flushKey: "name_id", type: "single" },
+  {
+    key: "descriptions",
+    formKey: "description_id",
+    flushKey: "description_id",
+    type: "single",
+  },
+  { key: "flags", formKey: "active_flag_id", flushKey: null, type: "single" },
+  {
+    key: "departments",
+    formKey: "department_ids",
+    flushKey: "department_ids",
+    type: "multi",
+  },
+  {
+    key: "points",
+    formKey: "total_points_id",
+    flushKey: null,
+    type: "single",
+  },
+  {
+    key: "pass_points",
+    formKey: "pass_points_id",
+    flushKey: null,
+    type: "single",
+  },
+  {
+    key: "standard_groups",
+    formKey: "standard_group_ids",
+    flushKey: "standard_group_ids",
+    type: "multi",
+  },
+  {
+    key: "standards",
+    formKey: "standard_ids",
+    flushKey: null,
+    type: "multi",
+  },
+];
 
 export interface RubricProps {
   rubricId?: string;
-  // Server-provided data (for server-side rendering)
   rubricData?: RubricData;
-  // Server actions (replaces useMutation)
   saveRubricAction?: (input: SaveRubricIn) => Promise<SaveRubricOut>;
   patchRubricDraftAction?: (
-    input: PatchRubricDraftIn
+    input: PatchRubricDraftIn,
   ) => Promise<PatchRubricDraftOut>;
-  // Resource creation actions
   createNamesAction?: (
-    input: CreateDraftNamesIn
+    input: CreateDraftNamesIn,
   ) => Promise<CreateDraftNamesOut>;
   createDescriptionsAction?: (
-    input: CreateDraftDescriptionsIn
+    input: CreateDraftDescriptionsIn,
   ) => Promise<CreateDraftDescriptionsOut>;
-  createDepartmentsAction?: (
-    input: CreateDraftDepartmentsIn
-  ) => Promise<CreateDraftDepartmentsOut>;
   createPointsAction?: (
-    input: CreateDraftPointsIn
+    input: CreateDraftPointsIn,
   ) => Promise<CreateDraftPointsOut>;
   createStandardGroupsAction?: (
-    input: CreateDraftStandardGroupsIn
+    input: CreateDraftStandardGroupsIn,
   ) => Promise<CreateDraftStandardGroupsOut>;
 }
 
@@ -99,638 +174,336 @@ function RubricComponent({
   patchRubricDraftAction,
   createNamesAction,
   createDescriptionsAction,
-  createDepartmentsAction,
   createPointsAction,
   createStandardGroupsAction,
 }: RubricProps) {
   const router = useRouter();
   const isEditMode = !!rubricId;
-  const {
-    profile,
-    selectedDraftId,
-    setSelectedDraftId,
+  const s = rubricData;
+
+  const [formState, setFormState] = useState<RubricFormState>({
+    name_id: null,
+    description_id: null,
+    active_flag_id: null,
+    department_ids: [],
+    total_points_id: null,
+    pass_points_id: null,
+    standard_group_ids: [],
+    standard_ids: [],
+  });
+
+  const { profile, setSelectedDraftId, socket, isConnected } = useProfile();
+  const { isAutosaveEnabled } = useSaveContext();
+  const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
+  const { flushRegistryRef, registerFlushCallbacks } =
+    useFlushRegistry<Record<string, unknown>>(FLUSH_KEYS);
+
+  const onAiComplete = useCallback((data: Record<string, unknown>) => {
+    return {
+      aiUpdates: {} as Record<string, unknown>,
+      formStateUpdater: (prev: Record<string, unknown>) => {
+        const updates: Record<string, unknown> = {};
+        const nameRes = data["name_resource"] as { id?: string | null } | null;
+        const descRes = data["description_resource"] as
+          | { id?: string | null }
+          | null;
+        const flagRes = data["flag_resource"] as
+          | { id?: string | null; flag_option_id?: string | null }
+          | null;
+        const deptRes = data["department_resources"] as
+          | Array<{ department_id?: string | null }>
+          | null;
+        const pointsRes = data["points_resource"] as { id?: string | null } | null;
+        const passPointsRes = data["pass_points_resource"] as
+          | { id?: string | null }
+          | null;
+        const standardGroupRes = data["standard_group_resources"] as
+          | Array<{ standard_group_id?: string | null }>
+          | null;
+        const standardRes = data["standard_resources"] as
+          | Array<{ standard_id?: string | null }>
+          | null;
+
+        if (nameRes?.id) updates["name_id"] = nameRes.id;
+        if (descRes?.id) updates["description_id"] = descRes.id;
+        if (flagRes?.flag_option_id || flagRes?.id) {
+          updates["active_flag_id"] = flagRes.flag_option_id ?? flagRes.id;
+        }
+        if (pointsRes?.id) updates["total_points_id"] = pointsRes.id;
+        if (passPointsRes?.id) updates["pass_points_id"] = passPointsRes.id;
+
+        if (deptRes?.length) {
+          const nextIds = deptRes
+            .map((x) => x.department_id)
+            .filter((x): x is string => !!x);
+          const prevIds = (prev["department_ids"] as string[]) ?? [];
+          updates["department_ids"] = [
+            ...prevIds,
+            ...nextIds.filter((id) => !prevIds.includes(id)),
+          ];
+        }
+
+        if (standardGroupRes?.length) {
+          const nextIds = standardGroupRes
+            .map((x) => x.standard_group_id)
+            .filter((x): x is string => !!x);
+          const prevIds = (prev["standard_group_ids"] as string[]) ?? [];
+          updates["standard_group_ids"] = [
+            ...prevIds,
+            ...nextIds.filter((id) => !prevIds.includes(id)),
+          ];
+        }
+
+        if (standardRes?.length) {
+          const nextIds = standardRes
+            .map((x) => x.standard_id)
+            .filter((x): x is string => !!x);
+          const prevIds = (prev["standard_ids"] as string[]) ?? [];
+          updates["standard_ids"] = [
+            ...prevIds,
+            ...nextIds.filter((id) => !prevIds.includes(id)),
+          ];
+        }
+
+        if (data["active_flag_id"]) updates["active_flag_id"] = data["active_flag_id"];
+        if (data["total_points_id"]) updates["total_points_id"] = data["total_points_id"];
+        if (data["pass_points_id"]) updates["pass_points_id"] = data["pass_points_id"];
+
+        return { ...prev, ...updates };
+      },
+    };
+  }, []);
+
+  const { setGeneratingResources, isGenerating } = useAiGeneration<
+    RubricResourceType,
+    Record<string, unknown>
+  >({
     socket,
     isConnected,
-  } = useProfile();
-  const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
+    artifactType: "rubric",
+    groupId: s?.group_id,
+    eventPrefix: "rubric_generation",
+    validResourceTypes: VALID_RESOURCE_TYPES,
+    onComplete: onAiComplete,
+    setFormState: setFormState as React.Dispatch<
+      React.SetStateAction<Record<string, unknown>>
+    >,
+  });
 
-  // Generation state for AI workflows
-  const [generatingResources, setGeneratingResources] = useState<
-    Set<ResourceType>
-  >(new Set());
-
-  const isGenerating = useCallback(
-    (resourceType: string) =>
-      generatingResources.has(resourceType as ResourceType),
-    [generatingResources]
-  );
-
-  // nuqs parsers for URL-backed state (will be passed to GenericForm)
-  const rubricSearchParamsClient = useMemo(
-    () => ({
-      // Draft ID (URL-backed, updated when draft is created)
-      draftId: parseAsString,
-      descriptionSearch: parseAsString,
-      standardGroupSearch: parseAsString,
-      pointsSearch: parseAsString,
-      pointsShowSelected: parseAsBoolean,
-      standardGroupShowSelected: parseAsBoolean,
-    }),
-    []
-  );
-
-  // Local form state (not in URL) - stores only resource IDs
-  // Display values are managed inside resource components
-  const rubricDataRef = React.useRef(rubricData);
-  React.useEffect(() => {
-    rubricDataRef.current = rubricData;
-  }, [rubricData]);
-
-  // Memoize rubricData fields used in renderStep to prevent callback recreation
-  const stableRubricDataFields = React.useMemo(() => {
-    if (!rubricData) return null;
-    const resources = rubricData.resources?.resources;
-    const current = rubricData.resources?.current;
-    return {
-      group_id: rubricData.group_id,
-      // Name
-      name_resource: current?.names?.[0] ?? null,
-      names: resources?.names ?? [],
-      show_name: rubricData.show_name,
-      name_suggestions: rubricData.name_suggestions,
-      name_required: rubricData.name_required,
-      name_show_ai_generate: rubricData.name_show_ai_generate,
-      name_create_tool_id: rubricData.name_create_tool_id,
-      name_link_tool_id: rubricData.name_link_tool_id,
-      // Description
-      description_resource: current?.descriptions?.[0] ?? null,
-      descriptions: resources?.descriptions ?? [],
-      show_description: rubricData.show_description,
-      description_suggestions: rubricData.description_suggestions,
-      description_required: rubricData.description_required,
-      description_show_ai_generate: rubricData.description_show_ai_generate,
-      description_create_tool_id: rubricData.description_create_tool_id,
-      description_link_tool_id: rubricData.description_link_tool_id,
-      // Departments
-      department_resources: current?.departments ?? [],
-      departments: resources?.departments ?? [],
-      show_departments: rubricData.show_departments,
-      department_suggestions: rubricData.department_suggestions,
-      departments_required: rubricData.departments_required,
-      departments_show_ai_generate: rubricData.departments_show_ai_generate,
-      departments_link_tool_id: rubricData.departments_link_tool_id,
-      // Flag (map RubricFlagConfig to FlagItem shape)
-      flag_resource: current?.flags?.[0]
-        ? {
-            id: current.flags[0].flag_option_id ?? null,
-            name: current.flags[0].label ?? null,
-            description: current.flags[0].description ?? null,
-            icon: current.flags[0].icon_id ?? null,
-            generated: current.flags[0].generated ?? null,
-          }
-        : null,
-      show_flag: rubricData.show_flag,
-      flag_required: rubricData.flag_required,
-      flag_show_ai_generate: rubricData.flag_show_ai_generate,
-      flag_link_tool_id: rubricData.flag_link_tool_id,
-      // Points (total)
-      total_points_resource: current?.points?.[0] ?? null,
-      show_points: rubricData.show_points,
-      points_required: rubricData.points_required,
-      points_suggestions: rubricData.points_suggestions,
-      points: resources?.points ?? [],
-      points_show_ai_generate: rubricData.points_show_ai_generate,
-      points_create_tool_id: rubricData.points_create_tool_id,
-      points_link_tool_id: rubricData.points_link_tool_id,
-      // Pass points
-      pass_points_resource: current?.pass_points?.[0] ?? null,
-      show_pass_points: rubricData.show_pass_points,
-      pass_points_required: rubricData.pass_points_required,
-      pass_points_suggestions: rubricData.pass_points_suggestions,
-      pass_points: resources?.pass_points ?? [],
-      pass_points_show_ai_generate: rubricData.pass_points_show_ai_generate,
-      pass_points_create_tool_id: rubricData.pass_points_create_tool_id,
-      pass_points_link_tool_id: rubricData.pass_points_link_tool_id,
-      // Standard groups
-      standard_group_resources: current?.standard_groups ?? [],
-      standard_groups: resources?.standard_groups ?? [],
-      show_standard_groups: rubricData.show_standard_groups,
-      standard_group_suggestions: rubricData.standard_group_suggestions,
-      standard_groups_required: rubricData.standard_groups_required,
-      standard_groups_show_ai_generate:
-        rubricData.standard_groups_show_ai_generate,
-      standard_groups_create_tool_id: rubricData.standard_groups_create_tool_id,
-      standard_groups_link_tool_id: rubricData.standard_groups_link_tool_id,
-      // Standards
-      standard_resources: current?.standards ?? [],
-      standards: resources?.standards ?? [],
-      show_standards: rubricData.show_standards,
-      standard_suggestions: rubricData.standard_suggestions,
-      standards_required: rubricData.standards_required,
-      standards_show_ai_generate: rubricData.standards_show_ai_generate,
-      standards_link_tool_id: rubricData.standards_link_tool_id,
-    };
-  }, [rubricData]);
-
-  const getInitialFormState = useCallback(() => {
-    const data = rubricDataRef.current;
-    if (!data) {
+  const getInitialFormState = useCallback((): RubricFormState => {
+    if (!s) {
       return {
-        name_id: null as string | null,
-        description_id: null as string | null,
-        department_ids: [] as string[],
-        active_flag_id: null as string | null,
-        total_points_id: null as string | null,
-        pass_points_id: null as string | null,
-        standard_group_ids: [] as string[],
-        standard_ids: [] as string[],
+        name_id: null,
+        description_id: null,
+        active_flag_id: null,
+        department_ids: [],
+        total_points_id: null,
+        pass_points_id: null,
+        standard_group_ids: [],
+        standard_ids: [],
       };
     }
-    // Extract resource IDs from resources bucket
-    const current = data.resources?.current;
-    return {
-      name_id: current?.names?.[0]?.id ?? null,
-      description_id: current?.descriptions?.[0]?.id ?? null,
-      department_ids: (current?.departments ?? [])
-        .map((d) => d.department_id)
-        .filter((id): id is string => id != null),
-      active_flag_id: current?.flags?.[0]?.flag_option_id ?? null,
-      total_points_id: current?.points?.[0]?.id ?? null,
-      pass_points_id: current?.pass_points?.[0]?.id ?? null,
-      standard_group_ids: (current?.standard_groups ?? [])
-        .map((sg) => sg.standard_group_id)
-        .filter((id): id is string => id != null),
-      standard_ids: (current?.standards ?? [])
-        .map((s) => s.standard_id)
-        .filter((id): id is string => id != null),
-    };
-  }, []);
 
-  const [formState, setFormState] = useState(getInitialFormState);
-  const formStateRef = React.useRef(formState);
-  React.useEffect(() => {
-    formStateRef.current = formState;
+    return {
+      name_id: s.names?.resource?.id ?? null,
+      description_id: s.descriptions?.resource?.id ?? null,
+      active_flag_id: s.flags?.current?.[0]?.flag_option_id ?? null,
+      department_ids:
+        s.departments?.current
+          ?.map((x) => x.department_id)
+          .filter((x): x is string => !!x) ?? [],
+      total_points_id: s.points?.resource?.id ?? null,
+      pass_points_id: s.pass_points?.resource?.id ?? null,
+      standard_group_ids:
+        s.standard_groups?.current
+          ?.map((x) => x.standard_group_id)
+          .filter((x): x is string => !!x) ?? [],
+      standard_ids:
+        s.standards?.current
+          ?.map((x) => x.standard_id)
+          .filter((x): x is string => !!x) ?? [],
+    };
+  }, [s]);
+
+  const formStateRef = React.useRef(formState as Record<string, unknown>);
+  useEffect(() => {
+    formStateRef.current = formState as Record<string, unknown>;
   }, [formState]);
 
-  // Memoize stringified array dependencies (extracted from resources bucket)
-  const currentDepartmentIds = React.useMemo(
-    () =>
-      (rubricData?.resources?.current?.departments ?? [])
-        .map((d) => d.department_id)
-        .filter(Boolean),
-    [rubricData?.resources?.current?.departments]
-  );
-  const departmentIdsStr = React.useMemo(
-    () => JSON.stringify(currentDepartmentIds),
-    [currentDepartmentIds]
-  );
-  const currentStandardGroupIds = React.useMemo(
-    () =>
-      (rubricData?.resources?.current?.standard_groups ?? [])
-        .map((sg) => sg.standard_group_id)
-        .filter(Boolean),
-    [rubricData?.resources?.current?.standard_groups]
-  );
-  const standardGroupIdsStr = React.useMemo(
-    () => JSON.stringify(currentStandardGroupIds),
-    [currentStandardGroupIds]
-  );
-  const currentStandardIds = React.useMemo(
-    () =>
-      (rubricData?.resources?.current?.standards ?? [])
-        .map((s) => s.standard_id)
-        .filter(Boolean),
-    [rubricData?.resources?.current?.standards]
-  );
-  const standardIdsStr = React.useMemo(
-    () => JSON.stringify(currentStandardIds),
-    [currentStandardIds]
-  );
-
-  // Update form state when server data changes
   useEffect(() => {
-    const newState = getInitialFormState();
+    const next = getInitialFormState();
     setFormState((prev) => {
-      // Only update if resource IDs actually changed
-      if (
-        prev.name_id !== newState.name_id ||
-        prev.description_id !== newState.description_id ||
-        prev.active_flag_id !== newState.active_flag_id ||
-        prev.total_points_id !== newState.total_points_id ||
-        prev.pass_points_id !== newState.pass_points_id ||
-        JSON.stringify(prev.department_ids) !==
-          JSON.stringify(newState.department_ids) ||
-        JSON.stringify(prev.standard_group_ids) !==
-          JSON.stringify(newState.standard_group_ids) ||
-        JSON.stringify(prev.standard_ids) !==
-          JSON.stringify(newState.standard_ids)
-      ) {
-        return newState;
-      }
+      if (JSON.stringify(prev) !== JSON.stringify(next)) return next;
       return prev;
     });
-  }, [
-    rubricData?.resources?.current?.names,
-    rubricData?.resources?.current?.descriptions,
-    rubricData?.resources?.current?.flags,
-    rubricData?.resources?.current?.points,
-    rubricData?.resources?.current?.pass_points,
-    departmentIdsStr,
-    standardGroupIdsStr,
-    standardIdsStr,
-  ]);
+  }, [getInitialFormState]);
 
-  // Draft version tracking
-  const [lastSavedVersion, setLastSavedVersion] = useState(0);
-  const lastSavedVersionRef = React.useRef(0);
-  React.useEffect(() => {
-    lastSavedVersionRef.current = lastSavedVersion;
-  }, [lastSavedVersion]);
-  // Sync draft_version from server to avoid unintended draft forks.
-  const draftVersion =
-    rubricData && "draft_version" in rubricData
-      ? (rubricData as { draft_version?: number | null }).draft_version
-      : null;
-  React.useEffect(() => {
-    if (
-      typeof draftVersion === "number" &&
-      draftVersion !== lastSavedVersionRef.current
-    ) {
-      setLastSavedVersion(draftVersion);
-      lastSavedVersionRef.current = draftVersion;
-    }
-  }, [draftVersion]);
+  const formStateKey = useMemo(() => JSON.stringify(formState), [formState]);
+  const draftVersion = s?.draft_version ?? null;
 
-  // Get draftId from GenericForm's URL state
-  const [draftId, setDraftId] = useState<string | null>(null);
-  const setUrlFormDataRef = React.useRef<
-    null | ((updates: Record<string, unknown>) => void)
-  >(null);
-
-  const formDataRef = React.useRef<Record<string, unknown>>({});
-
-  const onFormDataChange = React.useCallback((fd: Record<string, unknown>) => {
-    formDataRef.current = fd;
-    const next = (fd["draftId"] as string | undefined) ?? null;
-    setDraftId((prev) => (prev === next ? prev : next));
-  }, []);
-
-  // Sync URL draftId to profile context
+  const patchActionRef = React.useRef<
+    ((payload: Record<string, unknown>) => Promise<{ draft_id?: string | null; new_version?: number | null }>) | undefined
+  >(undefined);
   useEffect(() => {
-    if (draftId !== selectedDraftId) {
-      setSelectedDraftId(draftId);
+    if (!patchRubricDraftAction) {
+      patchActionRef.current = undefined;
+      return;
     }
-  }, [draftId, selectedDraftId, setSelectedDraftId]);
-
-  const patchRubricDraftActionRef = React.useRef(patchRubricDraftAction);
-  React.useEffect(() => {
-    patchRubricDraftActionRef.current = patchRubricDraftAction;
+    patchActionRef.current = async (payload: Record<string, unknown>) =>
+      patchRubricDraftAction({ body: payload } as PatchRubricDraftIn);
   }, [patchRubricDraftAction]);
 
-  // Build a stable key for "what would we patch"
-  const draftPatchKey = React.useMemo(() => {
-    return JSON.stringify({
-      draftId: draftId || null,
-      name_id: formState.name_id,
-      description_id: formState.description_id,
-      department_ids: formState.department_ids,
-      active_flag_id: formState.active_flag_id,
-      total_points_id: formState.total_points_id,
-      pass_points_id: formState.pass_points_id,
-      standard_group_ids: formState.standard_group_ids,
-      standard_ids: formState.standard_ids,
-    });
-  }, [
-    draftId,
-    formState.name_id,
-    formState.description_id,
-    formState.active_flag_id,
-    formState.total_points_id,
-    formState.pass_points_id,
-    departmentIdsStr,
-    standardGroupIdsStr,
-    standardIdsStr,
-  ]);
-
-  const lastPatchedKeyRef = React.useRef<string | null>(null);
-
-  // Draft change listener - watches resource IDs and patches draft
-  useEffect(() => {
-    const hasResourceIds =
-      formState.name_id ||
-      formState.description_id ||
-      formState.active_flag_id ||
-      formState.total_points_id ||
-      formState.pass_points_id ||
-      formState.department_ids.length > 0 ||
-      formState.standard_group_ids.length > 0 ||
-      formState.standard_ids.length > 0;
-
-    if (!hasResourceIds || !patchRubricDraftActionRef.current) {
-      return;
-    }
-
-    if (lastPatchedKeyRef.current === draftPatchKey) {
-      return;
-    }
-
-    const timer = setTimeout(async () => {
-      try {
-        if (!patchRubricDraftActionRef.current) return;
-        const result = await patchRubricDraftActionRef.current({
-          body: {
-            input_draft_id: draftId || null,
-            name_id: formState.name_id,
-            description_id: formState.description_id,
-            department_ids: formState.department_ids,
-            active_flag_id: formState.active_flag_id,
-            total_points_id: formState.total_points_id,
-            pass_points_id: formState.pass_points_id,
-            standard_group_ids: formState.standard_group_ids,
-            standard_ids: formState.standard_ids,
-            expected_version: lastSavedVersionRef.current,
-          },
-        });
-
-        lastPatchedKeyRef.current = draftPatchKey;
-
-        if (!draftId && result.draft_id) {
-          setUrlFormDataRef.current?.({ draftId: result.draft_id });
-          setDraftId(result.draft_id);
-        }
-
-        if ((result.new_version ?? 0) !== lastSavedVersionRef.current) {
-          setLastSavedVersion(result.new_version ?? 0);
-          lastSavedVersionRef.current = result.new_version ?? 0;
-        }
-      } catch {
-        // Failed to save draft - error already logged by API
-      }
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, [draftPatchKey, draftId]);
-
-  // WebSocket handlers for AI generation
-  useEffect(() => {
-    if (!socket || !isConnected) return;
-
-    const currentGroupId = rubricData?.group_id;
-
-    const handleGenerationComplete = (data: {
-      artifact_type?: string;
-      group_id?: string;
-      resource_type?: string;
-      name_id?: string | null;
-      description_id?: string | null;
-      active_flag_id?: string | null;
-      total_points_id?: string | null;
-      pass_points_id?: string | null;
-      department_ids?: string[];
-      standard_group_ids?: string[];
-      standard_ids?: string[];
-      message?: string;
-      success?: boolean;
-      [key: string]: unknown;
-    }) => {
-      if (
-        data.artifact_type !== "rubric" ||
-        !data.group_id ||
-        data.group_id !== currentGroupId
-      ) {
-        return;
-      }
-
-      const validResourceTypes: ResourceType[] = [
-        "names",
-        "descriptions",
-        "departments",
-        "flags",
-        "points",
-        "standard_groups",
-        "standards",
-      ];
-      if (
-        data.resource_type &&
-        validResourceTypes.includes(data.resource_type as ResourceType)
-      ) {
-        setFormState((prev) => {
-          const updates: Partial<typeof prev> = {};
-
-          if (data.name_id) updates.name_id = data.name_id;
-          if (data.description_id) updates.description_id = data.description_id;
-          if (data.active_flag_id) updates.active_flag_id = data.active_flag_id;
-          if (data.total_points_id)
-            updates.total_points_id = data.total_points_id;
-          if (data.pass_points_id) updates.pass_points_id = data.pass_points_id;
-          if (data.department_ids && data.department_ids.length > 0) {
-            const newDeptIds = data.department_ids.filter(
-              (id) => !prev.department_ids.includes(id)
-            );
-            updates.department_ids = [...prev.department_ids, ...newDeptIds];
-          }
-          if (data.standard_group_ids && data.standard_group_ids.length > 0) {
-            const newGroupIds = data.standard_group_ids.filter(
-              (id) => !prev.standard_group_ids.includes(id)
-            );
-            updates.standard_group_ids = [
-              ...prev.standard_group_ids,
-              ...newGroupIds,
-            ];
-          }
-          if (data.standard_ids && data.standard_ids.length > 0) {
-            const newStandardIds = data.standard_ids.filter(
-              (id) => !prev.standard_ids.includes(id)
-            );
-            updates.standard_ids = [...prev.standard_ids, ...newStandardIds];
-          }
-
-          return { ...prev, ...updates };
-        });
-
-        setGeneratingResources((prev) => {
-          const next = new Set(prev);
-          if (data.resource_type) {
-            next.delete(data.resource_type as ResourceType);
-          }
-          return next;
-        });
-        if (data.success) {
-          toast.success(
-            data.message || `${data.resource_type} generated successfully`
-          );
-        } else {
-          toast.error(
-            data.message || `Failed to generate ${data.resource_type}`
-          );
-        }
-      }
-    };
-
-    const handleGenerationProgress = (data: {
-      artifact_type?: string;
-      group_id?: string;
-      resource_type?: string;
-      [key: string]: unknown;
-    }) => {
-      if (
-        data.artifact_type !== "rubric" ||
-        !data.group_id ||
-        data.group_id !== currentGroupId
-      ) {
-        return;
-      }
-    };
-
-    const handleGenerationError = (data: {
-      artifact_type?: string;
-      group_id?: string;
-      message?: string;
-      resource_type?: string;
-      resource_types?: string[];
-    }) => {
-      if (
-        data.artifact_type !== "rubric" ||
-        !data.group_id ||
-        data.group_id !== currentGroupId
-      ) {
-        return;
-      }
-
-      const validResourceTypes: string[] = [
-        "names",
-        "descriptions",
-        "departments",
-        "flags",
-        "points",
-        "standard_groups",
-        "standards",
-      ];
-      const resourceTypes =
-        data.resource_types || (data.resource_type ? [data.resource_type] : []);
-      setGeneratingResources((prev) => {
-        const next = new Set(prev);
-        resourceTypes.forEach((rt) => {
-          if (validResourceTypes.includes(rt)) {
-            next.delete(rt as ResourceType);
-          }
-        });
-        return next;
-      });
-      toast.error(data.message || "Generation failed");
-    };
-
-    socket.on("rubric_generation_progress", handleGenerationProgress);
-    socket.on("rubric_generation_complete", handleGenerationComplete);
-    socket.on("rubric_generation_error", handleGenerationError);
-
-    return () => {
-      socket.off("rubric_generation_progress", handleGenerationProgress);
-      socket.off("rubric_generation_complete", handleGenerationComplete);
-      socket.off("rubric_generation_error", handleGenerationError);
-    };
-  }, [socket, isConnected, rubricData?.group_id]);
-
-  // Map resource types to domain IDs from server response
-  const getDomainIds = useCallback(
-    (resourceTypes: ResourceType[]): string[] => {
-      if (!rubricData) return [];
-      const domainIdMap: Partial<Record<ResourceType, string | null | undefined>> = {
-        names: rubricData.name_domain_id,
-        descriptions: rubricData.description_domain_id,
-        departments: rubricData.departments_domain_id,
-        flags: rubricData.flag_domain_id,
-        points: rubricData.points_domain_id,
-        standard_groups: rubricData.standard_groups_domain_id,
-        standards: rubricData.standards_domain_id,
-      };
-      return resourceTypes
-        .map((rt) => domainIdMap[rt])
-        .filter((id): id is string => id != null);
-    },
-    [rubricData]
+  const lastPatchedFormStateRef = React.useRef<Record<string, unknown> | null>(
+    null,
+  );
+  const hasResourceIds = checkHasResourceIds(
+    RUBRIC_RESOURCES,
+    formState as unknown as Record<string, unknown>,
   );
 
+  const buildPatchPayload = useCallback(
+    (
+      inputDraftId: string | null,
+      expectedVersion: number,
+      flushResults?: Record<string, unknown>,
+    ): Record<string, unknown> => ({
+      input_draft_id: inputDraftId || null,
+      group_id: s?.group_id ?? null,
+      ...buildResourceActions(RUBRIC_RESOURCES, {
+        formState: formStateRef.current,
+        referenceState: lastPatchedFormStateRef.current,
+        flushResults: flushResults ?? {},
+        entityData: s as Record<string, unknown> | null,
+      }),
+      expected_version: expectedVersion,
+    }),
+    [s],
+  );
+
+  const { setUrlFormDataRef, onFormDataChange, flushAllAndSave, formDataRef } =
+    useDraftLifecycle({
+      formStateKey,
+      patchActionRef,
+      isAutosaveEnabled,
+      buildPatchPayload,
+      setSelectedDraftId,
+      serverDraftVersion: draftVersion,
+      hasResourceIds,
+      flushRegistryRef,
+      formStateRef,
+      onPatchSuccess: () => {
+        lastPatchedFormStateRef.current = { ...formStateRef.current };
+      },
+    });
+
   const handleGenerateResources = useCallback(
-    async (
-      resourceTypes: ResourceType[],
-      userInstructions?: string
-    ) => {
+    async (resourceTypes: RubricResourceType[], userInstructions?: string) => {
       if (!socket || !isConnected) {
         toast.error("WebSocket not connected");
         return;
       }
-
-      const domainIds = getDomainIds(resourceTypes);
-      if (domainIds.length === 0) {
-        toast.error("No AI generation configured for this resource");
-        return;
-      }
-
       setGeneratingResources((prev) => {
         const next = new Set(prev);
         resourceTypes.forEach((rt) => next.add(rt));
         return next;
       });
-
-      const formData = formDataRef.current;
-      const draftId = (formData["draftId"] as string | undefined) ?? null;
-
+      let currentDraftId =
+        (formDataRef.current["draftId"] as string | undefined) ?? null;
+      if (!currentDraftId) currentDraftId = await flushAllAndSave();
+      if (!currentDraftId) {
+        toast.error("Please save a draft before generating with AI");
+        return;
+      }
       socket.emit("rubric_generate", {
-        domain_ids: domainIds,
+        resource_types: resourceTypes,
         user_instructions: userInstructions ? [userInstructions] : null,
-        draft_id: draftId || null,
+        draft_id: currentDraftId,
         rubric_id: rubricId || null,
       });
     },
-    [socket, isConnected, rubricId, getDomainIds]
+    [
+      socket,
+      isConnected,
+      rubricId,
+      setGeneratingResources,
+      formDataRef,
+      flushAllAndSave,
+    ],
   );
 
-  // Individual generation handlers
-  const handleGenerateName = useCallback(
-    async () => handleGenerateResources(["names"]),
-    [handleGenerateResources]
+  const canRegenerate = useCallback(
+    (rt: string): boolean => {
+      if (!s) return false;
+      switch (rt) {
+        case "names":
+          return s.names?.resource?.generated ?? false;
+        case "descriptions":
+          return s.descriptions?.resource?.generated ?? false;
+        case "flags":
+          return s.flags?.current?.some((f) => f.generated) ?? false;
+        case "departments":
+          return s.departments?.current?.some((x) => x.generated) ?? false;
+        case "points":
+          return s.points?.resource?.generated ?? false;
+        case "pass_points":
+          return s.pass_points?.resource?.generated ?? false;
+        case "standard_groups":
+          return (
+            s.standard_groups?.current?.some(
+              (x) => (x as { generated?: boolean | null }).generated ?? false,
+            ) ?? false
+          );
+        case "standards":
+          return (
+            s.standards?.current?.some(
+              (x) => (x as { generated?: boolean | null }).generated ?? false,
+            ) ?? false
+          );
+        default:
+          return false;
+      }
+    },
+    [s],
   );
 
-  const handleGenerateDescription = useCallback(
-    async () => handleGenerateResources(["descriptions"]),
-    [handleGenerateResources]
+  const stepResources: Record<string, RubricResourceType[]> = useMemo(
+    () => ({
+      basic: ["names", "descriptions", "flags", "departments"],
+      points: ["points", "pass_points"],
+      standard_groups: ["standard_groups"],
+      standards: ["standards"],
+    }),
+    [],
   );
 
-  const handleGenerateDepartments = useCallback(
-    async () => handleGenerateResources(["departments"]),
-    [handleGenerateResources]
+  const resourceLabels: Partial<Record<RubricResourceType, string>> = useMemo(
+    () => ({
+      names: "Names",
+      descriptions: "Descriptions",
+      flags: "Flags",
+      departments: "Departments",
+      points: "Total Points",
+      pass_points: "Pass Points",
+      standard_groups: "Standard Groups",
+      standards: "Standards",
+    }),
+    [],
   );
 
-  const handleGenerateFlags = useCallback(
-    async () => handleGenerateResources(["flags"]),
-    [handleGenerateResources]
-  );
+  const { handleOpenStepCardModal, modalProps } =
+    useGenerationModal<RubricResourceType>({
+      stepResources,
+      resourceLabels,
+      canRegenerate,
+      onGenerate: (selected, instructions) =>
+        handleGenerateResources(selected, instructions),
+      isGenerating,
+    });
 
-  const handleGeneratePoints = useCallback(
-    async () => handleGenerateResources(["points"]),
-    [handleGenerateResources]
-  );
+  const disabled = useMemo(() => !s?.can_edit, [s?.can_edit]);
 
-  const handleGenerateStandardGroups = useCallback(
-    async () => handleGenerateResources(["standard_groups"]),
-    [handleGenerateResources]
-  );
-
-  const handleGenerateStandards = useCallback(
-    async () => handleGenerateResources(["standards"]),
-    [handleGenerateResources]
-  );
-
-  // Disabled logic based on can_edit flag
-  const disabled = useMemo(() => {
-    if (!rubricData) return false;
-    return !rubricData.can_edit;
-  }, [rubricData]);
-
-  // Set breadcrumb context when rubric data is loaded
   useEffect(() => {
-    const rubricName = rubricData?.resources?.current?.names?.[0]?.name;
+    const rubricName = s?.names?.resource?.name;
     if (rubricName && rubricId && isEditMode) {
       setEntityMetadata({
         entityId: rubricId,
@@ -740,266 +513,158 @@ function RubricComponent({
     }
     return () => clearEntityMetadata();
   }, [
-    rubricData,
+    s?.names?.resource?.name,
     rubricId,
     isEditMode,
     setEntityMetadata,
     clearEntityMetadata,
   ]);
 
-  // Submit handler for GenericForm
   const handleSubmit = useCallback(
     async (_formData: Record<string, unknown>) => {
-      // Validate required resource IDs
-      if (rubricData?.name_required && !formState.name_id) {
-        toast.error("Rubric name is required");
+      const flushResults = isAutosaveEnabled
+        ? {}
+        : await (async () => {
+            const entries = await Promise.all(
+              Object.values(flushRegistryRef.current).map((fn) => fn()),
+            );
+            return entries.reduce<Record<string, unknown>>((acc, cur) => {
+              if (cur && typeof cur === "object") Object.assign(acc, cur);
+              return acc;
+            }, {});
+          })();
+
+      const effectiveFormState = computeEffectiveFormState(
+        RUBRIC_RESOURCES,
+        formStateRef.current,
+        flushResults,
+      ) as unknown as RubricFormState;
+
+      if (s?.names?.required && !effectiveFormState.name_id) {
         throw new Error("Rubric name is required");
       }
-
-      if (
-        rubricData?.departments_required &&
-        (!formState.department_ids || formState.department_ids.length === 0)
-      ) {
-        toast.error("Departments are required");
-        throw new Error("Departments are required");
+      if (s?.departments?.required && effectiveFormState.department_ids.length === 0) {
+        throw new Error("Department is required");
       }
-
-      if (
-        rubricData?.standard_groups_required &&
-        (!formState.standard_group_ids ||
-          formState.standard_group_ids.length === 0)
-      ) {
-        toast.error("Standard groups are required");
-        throw new Error("Standard groups are required");
-      }
-
-      if (
-        rubricData?.standards_required &&
-        (!formState.standard_ids || formState.standard_ids.length === 0)
-      ) {
-        toast.error("Standards are required");
-        throw new Error("Standards are required");
-      }
-
       if (!profile?.id) {
-        toast.error("Profile not loaded. Please refresh the page.");
         throw new Error("Profile not loaded");
       }
-
+      if (!s?.group_id) {
+        throw new Error("Missing group_id");
+      }
       if (!saveRubricAction) {
-        toast.error("Save action not available");
         throw new Error("Save action not available");
       }
 
-      if (!formState.name_id) {
-        toast.error("Required fields are missing");
-        throw new Error("Required fields are missing");
-      }
+      const initialState = getInitialFormState() as unknown as Record<
+        string,
+        unknown
+      >;
+      const saveActions = buildResourceActions(RUBRIC_RESOURCES, {
+        formState: effectiveFormState as unknown as Record<string, unknown>,
+        referenceState: initialState,
+        flushResults,
+        entityData: s as Record<string, unknown> | null,
+      }) as Pick<
+        SaveRubricBody,
+        | "names"
+        | "descriptions"
+        | "flags"
+        | "departments"
+        | "points"
+        | "pass_points"
+        | "standard_groups"
+        | "standards"
+      >;
 
-      if (!rubricData?.group_id) {
-        toast.error("Missing group context. Please refresh the page.");
-        throw new Error("Missing group_id");
-      }
+      await saveRubricAction({
+        body: {
+          input_rubric_id: isEditMode ? rubricId ?? null : null,
+          group_id: s.group_id,
+          ...saveActions,
+        },
+      });
 
-      try {
-        await saveRubricAction({
-          body: {
-            group_id: rubricData.group_id,
-            input_rubric_id: isEditMode && rubricId ? rubricId : null,
-            name_id: formState.name_id,
-            description_id: formState.description_id || null,
-            department_ids: formState.department_ids || [],
-            active_flag_id: formState.active_flag_id || null,
-            total_points_id: formState.total_points_id || null,
-            pass_points_id: formState.pass_points_id || null,
-            standard_group_ids: formState.standard_group_ids || [],
-            standard_ids: formState.standard_ids || [],
-          },
-        });
-        toast.success(
-          `Rubric ${isEditMode ? "updated" : "created"} successfully!`
-        );
-        router.push("/system/rubrics");
-      } catch (error) {
-        toast.error(
-          `Failed to ${isEditMode ? "update" : "create"} rubric: ${
-            error instanceof Error ? error.message : "Unknown error"
-          }`
-        );
-        throw error;
-      }
+      toast.success(`Rubric ${isEditMode ? "updated" : "created"} successfully!`);
+      router.push("/system/rubrics");
     },
     [
-      formState,
-      isEditMode,
-      rubricId,
+      isAutosaveEnabled,
+      flushRegistryRef,
+      s,
       profile?.id,
       saveRubricAction,
+      getInitialFormState,
+      isEditMode,
+      rubricId,
       router,
-      rubricData?.group_id,
-      rubricData?.name_required,
-      rubricData?.departments_required,
-      rubricData?.standard_groups_required,
-      rubricData?.standards_required,
-    ]
+    ],
   );
 
-  // Step status logic - check resource IDs
   const getStepStatus = useCallback(
-    (stepId: string, _formData: Record<string, unknown>): StepStatus => {
-      const hasName = !!formState.name_id;
-      const hasDescription = !!formState.description_id;
-      const hasDepartments = formState.department_ids.length > 0;
-      const hasStandardGroups = formState.standard_group_ids.length > 0;
-      const hasStandards = formState.standard_ids.length > 0;
-
+    (stepId: string): StepStatus => {
       switch (stepId) {
         case "basic":
-          return hasName && hasDescription && hasDepartments
+          return formState.name_id && formState.description_id
             ? "completed"
             : "active";
         case "points":
-          if (!hasName) return "pending";
           return formState.pass_points_id ? "completed" : "active";
         case "standard_groups":
-          if (!hasName) return "pending";
-          return hasStandardGroups ? "completed" : "active";
+          return formState.standard_group_ids.length > 0 ? "completed" : "active";
         case "standards":
-          if (!hasStandardGroups) return "pending";
-          return hasStandards ? "completed" : "active";
+          return formState.standard_ids.length > 0 ? "completed" : "active";
         default:
-          return "pending";
+          return "active";
       }
     },
-    [formState]
+    [formState],
   );
 
-  // Steps configuration for GenericForm
   const steps = useMemo(
     () => [
       {
         id: "basic",
         title: "Basic Information",
-        description:
-          "Set the rubric name, description, departments, and active status.",
-        resetFields: ["name", "description", "department_ids", "active"],
+        description: "Set rubric name, description, departments, and active status.",
+        resetFields: ["name_id", "description_id", "active_flag_id", "department_ids"],
       },
       {
         id: "points",
         title: "Points",
-        description:
-          "Review total points (calculated) and set pass points for the rubric.",
-        resetFields: ["pass_points"],
+        description: "Set total points and pass points.",
+        resetFields: ["total_points_id", "pass_points_id"],
       },
       {
         id: "standard_groups",
         title: "Standard Groups",
-        description: "Add standard groups to organize your rubric.",
+        description: "Choose standard groups.",
         resetFields: ["standard_group_ids"],
       },
       {
         id: "standards",
         title: "Standards",
-        description: "Select standards to include in the rubric grid.",
+        description: "Choose standards.",
         resetFields: ["standard_ids"],
       },
     ],
-    []
+    [],
   );
 
   const formFieldKeys = useMemo(
     () => [
-      "name",
-      "description",
-      "active",
+      "name_id",
+      "description_id",
+      "active_flag_id",
       "department_ids",
-      "total_points",
-      "pass_points",
+      "total_points_id",
+      "pass_points_id",
       "standard_group_ids",
       "standard_ids",
     ],
-    []
+    [],
   );
 
-  const resetSuccessMessage = useCallback((stepId: string) => {
-    switch (stepId) {
-      case "basic":
-        return "Basic information reset";
-      case "points":
-        return "Points reset";
-      case "standard_groups":
-        return "Standard groups reset";
-      case "standards":
-        return "Standards reset";
-      default:
-        return "Reset";
-    }
-  }, []);
-
-  const handleReset = useCallback((stepId: string) => {
-    setFormState((prev) => {
-      switch (stepId) {
-        case "basic":
-          return {
-            ...prev,
-            name_id: null,
-            description_id: null,
-            active_flag_id: null,
-            department_ids: [],
-          };
-        case "points":
-          return {
-            ...prev,
-            pass_points_id: null,
-          };
-        case "standard_groups":
-          return {
-            ...prev,
-            standard_group_ids: [],
-          };
-        case "standards":
-          return {
-            ...prev,
-            standard_ids: [],
-          };
-        default:
-          return prev;
-      }
-    });
-  }, []);
-
-  const submitButton = useMemo(
-    () => ({
-      backUrl: "/system/rubrics",
-      backLabel: "Back",
-      createLabel: "Create Rubric",
-      updateLabel: "Update Rubric",
-    }),
-    []
-  );
-
-  // Listen for full-page-generate event from layout
-  useEffect(() => {
-    const handleFullPageGenerate = (
-      event: CustomEvent<{ agentId?: string }>
-    ) => {
-      const agentId = event.detail?.agentId;
-      if (agentId) {
-        handleGenerateStandardGroups();
-      }
-    };
-    window.addEventListener(
-      "full-page-generate",
-      handleFullPageGenerate as EventListener
-    );
-    return () =>
-      window.removeEventListener(
-        "full-page-generate",
-        handleFullPageGenerate as EventListener
-      );
-  }, [handleGenerateStandardGroups]);
-
-  // Render step function
   const renderStep = useCallback(
     ({
       stepId,
@@ -1007,455 +672,445 @@ function RubricComponent({
       stepTitle,
       stepDescription,
       stepNumber,
-      formData: stepFormData,
-      setFormData: setStepFormData,
       onReset,
     }: {
       stepId: string;
-      stepStatus: StepStatus;
       stepTitle: string;
       stepDescription: string;
       stepNumber: number;
+      stepStatus: StepStatus;
       isOptional: boolean;
       formData: Record<string, unknown>;
       setFormData: (updates: Partial<Record<string, unknown>>) => void;
-      filters?: Array<{
-        key: string;
-        label: string;
-        value: boolean;
-        onChange: (value: boolean) => void;
-      }>;
       onReset?: () => void;
     }) => {
-      const currentRubricData = stableRubricDataFields;
-      const descriptionSearch =
-        (stepFormData["descriptionSearch"] as string | null) ?? "";
-      const standardGroupSearch =
-        (stepFormData["standardGroupSearch"] as string | null) ?? "";
-      const pointsSearch =
-        (stepFormData["pointsSearch"] as string | null) ?? "";
-      const pointsShowSelected =
-        (stepFormData["pointsShowSelected"] as boolean | null) ?? false;
-      const standardGroupShowSelected =
-        (stepFormData["standardGroupShowSelected"] as boolean | null) ?? false;
-      switch (stepId) {
-        case "basic":
-          return (
-            <StepCard
-              stepStatus={stepStatus}
-              stepNumber={stepNumber}
-              stepTitle={stepTitle}
-              stepDescription={stepDescription}
-              isReadonly={disabled}
-              isEditMode={isEditMode}
-              customHeader={
-                <Names
-                  name_id={formState.name_id ?? null}
-                  name_resource={currentRubricData?.name_resource ?? null}
-                  show_name={currentRubricData?.show_name ?? true}
-                  name_suggestions={currentRubricData?.name_suggestions ?? []}
-                  names={currentRubricData?.names ?? []}
-                  disabled={disabled}
-                  onNameIdChange={(nameId) =>
-                    setFormState((prev) => ({ ...prev, name_id: nameId }))
-                  }
-                  onGenerate={handleGenerateName}
-                  isGenerating={isGenerating("names")}
-                  placeholder="e.g., Assessment Rubric"
-                  defaultName="New Rubric"
-                  required={currentRubricData?.name_required ?? false}
-                  hideDescription={true}
-                  group_id={currentRubricData?.group_id ?? null}
-                  showAiGenerate={currentRubricData?.name_show_ai_generate ?? false}
-                  create_tool_id={currentRubricData?.name_create_tool_id ?? null}
-                  link_tool_id={currentRubricData?.name_link_tool_id ?? null}
-                  createNamesAction={createNamesAction}
-                />
-              }
-              resetFields={["name", "description", "department_ids", "active"]}
-              {...(onReset ? { onReset } : {})}
-              resetLabel="Reset"
-            >
-              <div className="space-y-4">
-                <Descriptions
-                  description_id={formState.description_id ?? null}
-                  description_resource={
-                    currentRubricData?.description_resource ?? null
-                  }
-                  show_description={currentRubricData?.show_description ?? true}
-                  description_suggestions={
-                    currentRubricData?.description_suggestions ?? []
-                  }
-                  descriptions={currentRubricData?.descriptions ?? []}
-                  disabled={disabled}
-                  onDescriptionIdChange={(descriptionId) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      description_id: descriptionId,
-                    }))
-                  }
-                  onGenerate={handleGenerateDescription}
-                  isGenerating={isGenerating("descriptions")}
-                  label="Description"
-                  placeholder="Rubric description"
-                  required={currentRubricData?.description_required ?? false}
-                  rows={3}
-                  data-testid="input-rubric-description"
-                  group_id={currentRubricData?.group_id ?? null}
-                  showAiGenerate={currentRubricData?.description_show_ai_generate ?? false}
-                  create_tool_id={currentRubricData?.description_create_tool_id ?? null}
-                  link_tool_id={currentRubricData?.description_link_tool_id ?? null}
-                  createDescriptionsAction={createDescriptionsAction}
-                  searchTerm={descriptionSearch}
-                  onSearchChange={(term) =>
-                    setStepFormData({
-                      descriptionSearch: term || null,
-                    })
-                  }
-                />
-
-                <Departments
-                  department_ids={formState.department_ids ?? []}
-                  department_resources={
-                    currentRubricData?.department_resources ?? []
-                  }
-                  show_departments={
-                    currentRubricData?.show_departments ?? false
-                  }
-                  department_suggestions={
-                    currentRubricData?.department_suggestions ?? []
-                  }
-                  departments={currentRubricData?.departments ?? []}
-                  disabled={disabled}
-                  onChange={(ids) =>
-                    setFormState((prev) => ({ ...prev, department_ids: ids }))
-                  }
-                  onGenerate={handleGenerateDepartments}
-                  isGenerating={isGenerating("departments")}
-                  required={currentRubricData?.departments_required ?? false}
-                  group_id={currentRubricData?.group_id ?? null}
-                  showAiGenerate={currentRubricData?.departments_show_ai_generate ?? false}
-                  link_tool_id={currentRubricData?.departments_link_tool_id ?? null}
-                  createDepartmentsAction={createDepartmentsAction}
-                />
-
-                <Flags
-                  flag_id={formState.active_flag_id ?? null}
-                  flag_resource={currentRubricData?.flag_resource ?? null}
-                  show_flag={currentRubricData?.show_flag ?? false}
-                  disabled={disabled}
-                  onFlagIdChange={(flagId) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      active_flag_id: flagId,
-                    }))
-                  }
-                  onGenerate={handleGenerateFlags}
-                  isGenerating={isGenerating("flags")}
-                  label="Active"
-                  helpText="Inactive rubrics will not be available for simulations"
-                  required={currentRubricData?.flag_required ?? false}
-                  group_id={currentRubricData?.group_id ?? null}
-                  showAiGenerate={currentRubricData?.flag_show_ai_generate ?? false}
-                  link_tool_id={currentRubricData?.flag_link_tool_id ?? null}
-                />
-              </div>
-            </StepCard>
-          );
-
-        case "points": {
-          const totalPointsValue = (
-            currentRubricData?.standard_group_resources ?? []
-          ).reduce((sum, group) => sum + (group.points ?? 0), 0);
-
-          return (
-            <StepCard
-              stepStatus={stepStatus}
-              stepNumber={stepNumber}
-              stepTitle={stepTitle}
-              stepDescription={stepDescription}
-              isReadonly={disabled}
-              isEditMode={isEditMode}
-              searchTerm={pointsSearch}
-              onSearchChange={(term) =>
-                setStepFormData({
-                  pointsSearch: term || null,
-                })
-              }
-              searchPlaceholder="Search points..."
-              filters={[
-                {
-                  key: "pointsShowSelected",
-                  label: "Show selected only",
-                  value: pointsShowSelected,
-                  onChange: (value: boolean) =>
-                    setStepFormData({ pointsShowSelected: value || null }),
-                },
-              ]}
-              actions={
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">
-                    Total Points
-                  </span>
-                  <Input
-                    value={String(totalPointsValue)}
-                    readOnly
-                    disabled
-                    className="h-8 w-20 text-right"
-                  />
-                </div>
-              }
-              resetFields={["pass_points"]}
-              {...(onReset ? { onReset } : {})}
-              resetLabel="Reset"
-            >
-              <div className="space-y-4">
-                <Points
-                  points_id={formState.pass_points_id ?? null}
-                  points_resource={
-                    currentRubricData?.pass_points_resource ?? null
-                  }
-                  show_points={currentRubricData?.show_pass_points ?? false}
-                  points_suggestions={
-                    currentRubricData?.pass_points_suggestions ?? []
-                  }
-                  points={currentRubricData?.pass_points ?? []}
-                  disabled={disabled}
-                  onPointsIdChange={(pointsId) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      pass_points_id: pointsId,
-                    }))
-                  }
-                  onGenerate={handleGeneratePoints}
-                  isGenerating={isGenerating("points")}
-                  label="Pass Points"
-                  required={currentRubricData?.pass_points_required ?? false}
-                  group_id={currentRubricData?.group_id ?? null}
-                  showAiGenerate={currentRubricData?.pass_points_show_ai_generate ?? false}
-                  create_tool_id={currentRubricData?.pass_points_create_tool_id ?? null}
-                  link_tool_id={currentRubricData?.pass_points_link_tool_id ?? null}
-                  createPointsAction={createPointsAction}
-                  searchTerm={pointsSearch}
-                  showSelectedFilter={pointsShowSelected}
-                />
-              </div>
-            </StepCard>
-          );
-        }
-
-        case "standard_groups":
-          return (
-            <StepCard
-              stepStatus={stepStatus}
-              stepNumber={stepNumber}
-              stepTitle={stepTitle}
-              stepDescription={stepDescription}
-              isReadonly={disabled}
-              isEditMode={isEditMode}
-              searchTerm={standardGroupSearch}
-              onSearchChange={(term) =>
-                setStepFormData({
-                  standardGroupSearch: term || null,
-                })
-              }
-              searchPlaceholder="Search standard groups..."
-              filters={[
-                {
-                  key: "standardGroupShowSelected",
-                  label: "Show selected only",
-                  value: standardGroupShowSelected,
-                  onChange: (value: boolean) =>
-                    setStepFormData({
-                      standardGroupShowSelected: value || null,
-                    }),
-                },
-              ]}
-              resetFields={["standard_group_ids"]}
-              {...(onReset ? { onReset } : {})}
-              resetLabel="Reset"
-            >
-              <StandardGroups
-                standard_group_ids={formState.standard_group_ids ?? []}
-                standard_group_resources={
-                  currentRubricData?.standard_group_resources ?? []
+      if (stepId === "basic") {
+        return (
+          <StepCard
+            stepStatus={stepStatus}
+            stepNumber={stepNumber}
+            stepTitle={stepTitle}
+            stepDescription={stepDescription}
+            isReadonly={disabled}
+            isEditMode={isEditMode}
+            customHeader={
+              <Names
+                name_id={formState.name_id}
+                name_resource={s?.names?.resource ?? null}
+                show_name={s?.names?.show ?? true}
+                name_suggestions={s?.names?.suggestions ?? []}
+                names={s?.names?.resources ?? []}
+                disabled={disabled}
+                onNameIdChange={(nameId) =>
+                  setFormState((prev) => ({ ...prev, name_id: nameId }))
                 }
-                show_standard_groups={
-                  currentRubricData?.show_standard_groups ?? false
+                onGenerate={() => handleGenerateResources(["names"])}
+                isGenerating={isGenerating("names")}
+                required={s?.names?.required ?? false}
+                hideDescription={true}
+                group_id={s?.group_id ?? null}
+                showAiGenerate={s?.names?.show_ai_generate ?? false}
+                create_tool_id={s?.names?.create_tool_id ?? null}
+                link_tool_id={s?.names?.link_tool_id ?? null}
+                createNamesAction={createNamesAction}
+                isAutosaveEnabled={isAutosaveEnabled}
+                registerFlush={registerFlushCallbacks["names"]}
+              />
+            }
+            resetFields={[
+              "name_id",
+              "description_id",
+              "active_flag_id",
+              "department_ids",
+            ]}
+            actions={
+              s?.basic_show_ai_generate ? (
+                <StepCardAiButton
+                  stepId="basic"
+                  resourceTypes={stepResources["basic"] ?? []}
+                  canRegenerate={(rt) =>
+                    canRegenerate(rt as RubricResourceType)
+                  }
+                  isGenerating={(rt) =>
+                    isGenerating(rt as RubricResourceType)
+                  }
+                  onOpenModal={handleOpenStepCardModal}
+                  disabled={disabled}
+                />
+              ) : undefined
+            }
+            {...(onReset ? { onReset } : {})}
+          >
+            <div className="space-y-4">
+              <Descriptions
+                description_id={formState.description_id}
+                description_resource={s?.descriptions?.resource ?? null}
+                show_description={s?.descriptions?.show ?? true}
+                description_suggestions={s?.descriptions?.suggestions ?? []}
+                descriptions={s?.descriptions?.resources ?? []}
+                disabled={disabled}
+                onDescriptionIdChange={(descriptionId) =>
+                  setFormState((prev) => ({ ...prev, description_id: descriptionId }))
                 }
-                standard_group_suggestions={
-                  currentRubricData?.standard_group_suggestions ?? []
-                }
-                standard_groups={currentRubricData?.standard_groups ?? []}
+                onGenerate={() => handleGenerateResources(["descriptions"])}
+                isGenerating={isGenerating("descriptions")}
+                required={s?.descriptions?.required ?? false}
+                group_id={s?.group_id ?? null}
+                showAiGenerate={s?.descriptions?.show_ai_generate ?? false}
+                create_tool_id={s?.descriptions?.create_tool_id ?? null}
+                link_tool_id={s?.descriptions?.link_tool_id ?? null}
+                createDescriptionsAction={createDescriptionsAction}
+                isAutosaveEnabled={isAutosaveEnabled}
+                registerFlush={registerFlushCallbacks["descriptions"]}
+              />
+
+              <Departments
+                department_ids={formState.department_ids}
+                department_resources={s?.departments?.current ?? []}
+                show_departments={s?.departments?.show ?? false}
+                department_suggestions={s?.departments?.suggestions ?? []}
+                departments={s?.departments?.resources ?? []}
                 disabled={disabled}
                 onChange={(ids) =>
-                  setFormState((prev) => ({
-                    ...prev,
-                    standard_group_ids: ids,
-                  }))
+                  setFormState((prev) => ({ ...prev, department_ids: ids }))
                 }
-                onGenerate={handleGenerateStandardGroups}
-                isGenerating={isGenerating("standard_groups")}
-                required={currentRubricData?.standard_groups_required ?? false}
-                group_id={currentRubricData?.group_id ?? null}
-                showAiGenerate={currentRubricData?.standard_groups_show_ai_generate ?? false}
-                create_tool_id={currentRubricData?.standard_groups_create_tool_id ?? null}
-                link_tool_id={currentRubricData?.standard_groups_link_tool_id ?? null}
-                createStandardGroupsAction={createStandardGroupsAction}
-                searchTerm={standardGroupSearch}
-                showSelectedFilter={standardGroupShowSelected}
+                onGenerate={() => handleGenerateResources(["departments"])}
+                isGenerating={isGenerating("departments")}
+                required={s?.departments?.required ?? false}
+                group_id={s?.group_id ?? null}
+                showAiGenerate={s?.departments?.show_ai_generate ?? false}
+                link_tool_id={s?.departments?.link_tool_id ?? null}
+                isAutosaveEnabled={isAutosaveEnabled}
+                registerFlush={registerFlushCallbacks["departments"]}
               />
-            </StepCard>
-          );
 
-        case "standards":
-          return (
-            <StepCard
-              stepStatus={stepStatus}
-              stepNumber={stepNumber}
-              stepTitle={stepTitle}
-              stepDescription={stepDescription}
-              isReadonly={disabled}
-              isEditMode={isEditMode}
-              resetFields={["standard_ids"]}
-              {...(onReset ? { onReset } : {})}
-              resetLabel="Reset"
-            >
-              <Standards
-                standard_ids={formState.standard_ids ?? []}
-                standard_resources={currentRubricData?.standard_resources ?? []}
-                show_standards={currentRubricData?.show_standards ?? false}
-                standard_suggestions={
-                  currentRubricData?.standard_suggestions ?? []
+              <Flags
+                flag_id={formState.active_flag_id}
+                flag_resource={
+                  s?.flags?.current?.[0]
+                    ? {
+                        id: s.flags.current[0].flag_option_id ?? null,
+                        name: s.flags.current[0].label ?? null,
+                        description: s.flags.current[0].description ?? null,
+                        icon: s.flags.current[0].icon_id ?? null,
+                        generated: s.flags.current[0].generated ?? null,
+                      }
+                    : null
                 }
-                standards={currentRubricData?.standards ?? []}
+                flags={(s?.flags?.resources ?? []).map((f) => ({
+                  id: f.flag_option_id ?? null,
+                  name: f.label ?? null,
+                  description: f.description ?? null,
+                  icon: f.icon_id ?? null,
+                  generated: f.generated ?? null,
+                }))}
+                show_flag={s?.flags?.show ?? false}
                 disabled={disabled}
-                onChange={(ids) =>
-                  setFormState((prev) => ({
-                    ...prev,
-                    standard_ids: ids,
-                  }))
+                onFlagIdChange={(flagId) =>
+                  setFormState((prev) => ({ ...prev, active_flag_id: flagId }))
                 }
-                onGenerate={handleGenerateStandards}
-                isGenerating={isGenerating("standards")}
-                required={currentRubricData?.standards_required ?? false}
-                group_id={currentRubricData?.group_id ?? null}
-                showAiGenerate={currentRubricData?.standards_show_ai_generate ?? false}
-                link_tool_id={currentRubricData?.standards_link_tool_id ?? null}
+                onGenerate={() => handleGenerateResources(["flags"])}
+                isGenerating={isGenerating("flags")}
+                required={s?.flags?.required ?? false}
+                group_id={s?.group_id ?? null}
+                showAiGenerate={s?.flags?.show_ai_generate ?? false}
+                link_tool_id={s?.flags?.link_tool_id ?? null}
               />
-            </StepCard>
-          );
-
-        default:
-          return null;
+            </div>
+          </StepCard>
+        );
       }
+
+      if (stepId === "points") {
+        return (
+          <StepCard
+            stepStatus={stepStatus}
+            stepNumber={stepNumber}
+            stepTitle={stepTitle}
+            stepDescription={stepDescription}
+            isReadonly={disabled}
+            isEditMode={isEditMode}
+            resetFields={["total_points_id", "pass_points_id"]}
+            actions={
+              s?.content_show_ai_generate ? (
+                <StepCardAiButton
+                  stepId="points"
+                  resourceTypes={stepResources["points"] ?? []}
+                  canRegenerate={(rt) =>
+                    canRegenerate(rt as RubricResourceType)
+                  }
+                  isGenerating={(rt) =>
+                    isGenerating(rt as RubricResourceType)
+                  }
+                  onOpenModal={handleOpenStepCardModal}
+                  disabled={disabled}
+                />
+              ) : undefined
+            }
+            {...(onReset ? { onReset } : {})}
+          >
+            <div className="space-y-4">
+              <Points
+                points_id={formState.total_points_id}
+                points_resource={
+                  s?.points?.resource
+                    ? {
+                        id: s.points.resource.id ?? null,
+                        value: s.points.resource.value ?? null,
+                        generated: s.points.resource.generated ?? null,
+                      }
+                    : null
+                }
+                show_points={s?.points?.show ?? false}
+                points_suggestions={s?.points?.suggestions ?? []}
+                points={(s?.points?.resources ?? []).map((p) => ({
+                  id: p.id ?? null,
+                  value: p.value ?? null,
+                  generated: p.generated ?? null,
+                }))}
+                disabled={disabled}
+                onPointsIdChange={(pointsId) =>
+                  setFormState((prev) => ({ ...prev, total_points_id: pointsId }))
+                }
+                onGenerate={() => handleGenerateResources(["points"])}
+                isGenerating={isGenerating("points")}
+                label="Total Points"
+                required={s?.points?.required ?? false}
+                group_id={s?.group_id ?? null}
+                showAiGenerate={s?.points?.show_ai_generate ?? false}
+                create_tool_id={s?.points?.create_tool_id ?? null}
+                link_tool_id={s?.points?.link_tool_id ?? null}
+                createPointsAction={createPointsAction}
+                isAutosaveEnabled={isAutosaveEnabled}
+              />
+
+              <Points
+                points_id={formState.pass_points_id}
+                points_resource={
+                  s?.pass_points?.resource
+                    ? {
+                        id: s.pass_points.resource.id ?? null,
+                        value: s.pass_points.resource.value ?? null,
+                        generated: s.pass_points.resource.generated ?? null,
+                      }
+                    : null
+                }
+                show_points={s?.pass_points?.show ?? false}
+                points_suggestions={s?.pass_points?.suggestions ?? []}
+                points={(s?.pass_points?.resources ?? []).map((p) => ({
+                  id: p.id ?? null,
+                  value: p.value ?? null,
+                  generated: p.generated ?? null,
+                }))}
+                disabled={disabled}
+                onPointsIdChange={(pointsId) =>
+                  setFormState((prev) => ({ ...prev, pass_points_id: pointsId }))
+                }
+                onGenerate={() => handleGenerateResources(["pass_points"])}
+                isGenerating={isGenerating("pass_points")}
+                label="Pass Points"
+                required={s?.pass_points?.required ?? false}
+                group_id={s?.group_id ?? null}
+                showAiGenerate={s?.pass_points?.show_ai_generate ?? false}
+                create_tool_id={s?.pass_points?.create_tool_id ?? null}
+                link_tool_id={s?.pass_points?.link_tool_id ?? null}
+                createPointsAction={createPointsAction}
+                isAutosaveEnabled={isAutosaveEnabled}
+              />
+            </div>
+          </StepCard>
+        );
+      }
+
+      if (stepId === "standard_groups") {
+        return (
+          <StepCard
+            stepStatus={stepStatus}
+            stepNumber={stepNumber}
+            stepTitle={stepTitle}
+            stepDescription={stepDescription}
+            isReadonly={disabled}
+            isEditMode={isEditMode}
+            resetFields={["standard_group_ids"]}
+            actions={
+              s?.content_show_ai_generate ? (
+                <StepCardAiButton
+                  stepId="standard_groups"
+                  resourceTypes={stepResources["standard_groups"] ?? []}
+                  canRegenerate={(rt) =>
+                    canRegenerate(rt as RubricResourceType)
+                  }
+                  isGenerating={(rt) =>
+                    isGenerating(rt as RubricResourceType)
+                  }
+                  onOpenModal={handleOpenStepCardModal}
+                  disabled={disabled}
+                />
+              ) : undefined
+            }
+            {...(onReset ? { onReset } : {})}
+          >
+            <StandardGroups
+              standard_group_ids={formState.standard_group_ids}
+              standard_group_resources={s?.standard_groups?.current ?? []}
+              show_standard_groups={s?.standard_groups?.show ?? false}
+              standard_group_suggestions={s?.standard_groups?.suggestions ?? []}
+              standard_groups={s?.standard_groups?.resources ?? []}
+              disabled={disabled}
+              onChange={(ids) =>
+                setFormState((prev) => ({ ...prev, standard_group_ids: ids }))
+              }
+              onGenerate={() => handleGenerateResources(["standard_groups"])}
+              isGenerating={isGenerating("standard_groups")}
+              required={s?.standard_groups?.required ?? false}
+              group_id={s?.group_id ?? null}
+              showAiGenerate={s?.standard_groups?.show_ai_generate ?? false}
+              create_tool_id={s?.standard_groups?.create_tool_id ?? null}
+              link_tool_id={s?.standard_groups?.link_tool_id ?? null}
+              createStandardGroupsAction={createStandardGroupsAction}
+              isAutosaveEnabled={isAutosaveEnabled}
+              registerFlush={registerFlushCallbacks["standard_groups"]}
+            />
+          </StepCard>
+        );
+      }
+
+      return (
+        <StepCard
+          stepStatus={stepStatus}
+          stepNumber={stepNumber}
+          stepTitle={stepTitle}
+          stepDescription={stepDescription}
+          isReadonly={disabled}
+          isEditMode={isEditMode}
+          resetFields={["standard_ids"]}
+          actions={
+            s?.content_show_ai_generate ? (
+              <StepCardAiButton
+                stepId="standards"
+                resourceTypes={stepResources["standards"] ?? []}
+                canRegenerate={(rt) =>
+                  canRegenerate(rt as RubricResourceType)
+                }
+                isGenerating={(rt) =>
+                  isGenerating(rt as RubricResourceType)
+                }
+                onOpenModal={handleOpenStepCardModal}
+                disabled={disabled}
+              />
+            ) : undefined
+          }
+          {...(onReset ? { onReset } : {})}
+        >
+          <Standards
+            standard_ids={formState.standard_ids}
+            standard_resources={s?.standards?.current ?? []}
+            show_standards={s?.standards?.show ?? false}
+            standard_suggestions={s?.standards?.suggestions ?? []}
+            standards={s?.standards?.resources ?? []}
+            disabled={disabled}
+            onChange={(ids) =>
+              setFormState((prev) => ({ ...prev, standard_ids: ids }))
+            }
+            onGenerate={() => handleGenerateResources(["standards"])}
+            isGenerating={isGenerating("standards")}
+            required={s?.standards?.required ?? false}
+            group_id={s?.group_id ?? null}
+            showAiGenerate={s?.standards?.show_ai_generate ?? false}
+            link_tool_id={s?.standards?.link_tool_id ?? null}
+          />
+        </StepCard>
+      );
     },
     [
-      formState,
       disabled,
       isEditMode,
-      stableRubricDataFields,
-      handleGenerateName,
-      handleGenerateDescription,
-      handleGenerateDepartments,
-      handleGenerateFlags,
-      handleGeneratePoints,
-      handleGenerateStandardGroups,
-      handleGenerateStandards,
+      formState,
+      s,
+      handleGenerateResources,
       isGenerating,
       createNamesAction,
       createDescriptionsAction,
-      createDepartmentsAction,
       createPointsAction,
       createStandardGroupsAction,
-    ]
+      isAutosaveEnabled,
+      registerFlushCallbacks,
+      stepResources,
+      canRegenerate,
+      handleOpenStepCardModal,
+    ],
   );
 
-  // Initialize form callback (must be before early return)
-  const initializeForm = useCallback(
-    (_serverData: unknown, _isEditMode: boolean) => ({}),
-    []
+  const rubricSearchParamsClient = useMemo(
+    () => ({
+      draftId: parseAsString,
+      descriptionSearch: parseAsString,
+      standardGroupSearch: parseAsString,
+      pointsSearch: parseAsString,
+      pointsShowSelected: parseAsBoolean,
+      standardGroupShowSelected: parseAsBoolean,
+    }),
+    [],
   );
-
-  // Error state
-  if (isEditMode && !rubricData) {
-    return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold">Rubric Not Found</h1>
-          <p className="text-muted-foreground">
-            The rubric you're looking for doesn't exist.
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <div
-      className="space-y-6"
-      data-page={`rubric-${isEditMode ? "edit" : "new"}`}
-    >
-      <ReadOnlyBanner
-        disabled={disabled}
-        disabledReason={rubricData?.disabled_reason ?? null}
-        entityType="rubric"
-      />
-
-      <GenericForm
-        nuqsParsers={
-          rubricSearchParamsClient as Record<string, Parser<unknown>>
-        }
-        steps={steps}
-        getStepStatus={getStepStatus}
-        formData={{}}
-        setFormData={
-          onFormDataChange as (
-            updates: Partial<Record<string, unknown>>
-          ) => void
-        }
-        serverData={rubricData}
-        initializeForm={initializeForm}
-        formFieldKeys={formFieldKeys}
-        onReset={(stepId) => handleReset(stepId)}
-        resetSuccessMessage={resetSuccessMessage}
-        onSubmit={handleSubmit}
-        submitButton={submitButton}
-        isReadonly={disabled}
-        isEditMode={isEditMode}
-        renderStep={renderStep}
-      />
-    </div>
+    <TooltipProvider>
+      <div className="w-full p-6 space-y-8" data-page={`rubric-${isEditMode ? "edit" : "new"}`}>
+        <ReadOnlyBanner
+          disabled={disabled}
+          disabledReason={s?.disabled_reason ?? null}
+          entityType="rubric"
+        />
+        <GenericForm
+          nuqsParsers={rubricSearchParamsClient as Record<string, Parser<unknown>>}
+          steps={steps}
+          getStepStatus={getStepStatus}
+          serverData={s}
+          formFieldKeys={formFieldKeys}
+          resetSuccessMessage={() => "Step reset"}
+          onReset={(stepId) => {
+            if (stepId === "basic") {
+              setFormState((prev) => ({
+                ...prev,
+                name_id: null,
+                description_id: null,
+                active_flag_id: null,
+                department_ids: [],
+              }));
+            }
+            if (stepId === "points") {
+              setFormState((prev) => ({
+                ...prev,
+                total_points_id: null,
+                pass_points_id: null,
+              }));
+            }
+            if (stepId === "standard_groups") {
+              setFormState((prev) => ({ ...prev, standard_group_ids: [] }));
+            }
+            if (stepId === "standards") {
+              setFormState((prev) => ({ ...prev, standard_ids: [] }));
+            }
+          }}
+          onSubmit={handleSubmit}
+          submitButton={{
+            backUrl: "/system/rubrics",
+            backLabel: "Back",
+            createLabel: "Create Rubric",
+            updateLabel: "Update Rubric",
+          }}
+          isReadonly={disabled}
+          isEditMode={isEditMode}
+          renderStep={renderStep}
+          onFormDataChange={onFormDataChange}
+          registerSetFormData={(setter) => {
+            setUrlFormDataRef.current = setter;
+          }}
+        />
+        <GenerateRegenerateModal {...modalProps} />
+      </div>
+    </TooltipProvider>
   );
 }
 
-export default React.memo(RubricComponent, (prevProps, nextProps) => {
-  // Compare rubricData by resource IDs extracted from resources bucket
-  const extractIds = (data: RubricData | undefined) => {
-    const current = data?.resources?.current;
-    return {
-      name_id: current?.names?.[0]?.id,
-      description_id: current?.descriptions?.[0]?.id,
-      department_ids: (current?.departments ?? []).map((d) => d.department_id),
-      active_flag_id: current?.flags?.[0]?.flag_option_id,
-      total_points_id: current?.points?.[0]?.id,
-      pass_points_id: current?.pass_points?.[0]?.id,
-      standard_group_ids: (current?.standard_groups ?? []).map(
-        (sg) => sg.standard_group_id
-      ),
-      standard_ids: (current?.standards ?? []).map((s) => s.standard_id),
-    };
-  };
-
-  const prevIds = extractIds(prevProps.rubricData);
-  const nextIds = extractIds(nextProps.rubricData);
-
-  if (
-    prevProps.rubricId !== nextProps.rubricId ||
-    JSON.stringify(prevIds) !== JSON.stringify(nextIds)
-  ) {
-    return false; // Props changed, re-render
-  }
-
-  return true; // Props unchanged, skip re-render
-});
+export default React.memo(RubricComponent);

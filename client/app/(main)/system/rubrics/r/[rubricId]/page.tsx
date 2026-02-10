@@ -13,11 +13,32 @@ import type { Metadata, ResolvingMetadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
+type GetRubricIn = InputOf<"/api/v4/artifacts/rubrics/get", "post">;
 type GetRubricOut = OutputOf<"/api/v4/artifacts/rubrics/get", "post">;
 type SaveRubricIn = InputOf<"/api/v4/artifacts/rubrics/save", "post">;
 type SaveRubricOut = OutputOf<"/api/v4/artifacts/rubrics/save", "post">;
 type PatchRubricDraftIn = InputOf<"/api/v4/artifacts/rubrics/draft", "patch">;
 type PatchRubricDraftOut = OutputOf<"/api/v4/artifacts/rubrics/draft", "patch">;
+type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
+type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
+type CreateDraftDescriptionsIn = InputOf<
+  "/api/v4/resources/descriptions",
+  "post"
+>;
+type CreateDraftDescriptionsOut = OutputOf<
+  "/api/v4/resources/descriptions",
+  "post"
+>;
+type CreateDraftPointsIn = InputOf<"/api/v4/resources/points", "post">;
+type CreateDraftPointsOut = OutputOf<"/api/v4/resources/points", "post">;
+type CreateDraftStandardGroupsIn = InputOf<
+  "/api/v4/resources/standard_groups",
+  "post"
+>;
+type CreateDraftStandardGroupsOut = OutputOf<
+  "/api/v4/resources/standard_groups",
+  "post"
+>;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -30,14 +51,14 @@ const getRubric = async (
 ): Promise<GetRubricOut> => {
   return api.post(
     "/artifacts/rubrics/get",
-    {
+    ({
       body: {
         rubric_id: rubricId,
         draft_id: draftId || null,
         description_search: descriptionSearch || null,
         standard_group_search: standardGroupSearch || null,
       },
-    },
+    } as GetRubricIn),
     {
       cache: "no-store",
       headers: {
@@ -56,9 +77,8 @@ export async function generateMetadata(
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   try {
     const rubric = await getRubric(rubricId, null, null, null);
-    const rubricName = rubric?.resources?.current?.names?.[0]?.name;
-    const rubricDescription =
-      rubric?.resources?.current?.descriptions?.[0]?.description;
+    const rubricName = rubric?.names?.resource?.name;
+    const rubricDescription = rubric?.descriptions?.resource?.description;
     return {
       title: `${rubricName || "Rubric"}`,
       description: `${rubricName ? `${rubricName} - ` : ""}Assessment rubric for teaching assistant evaluation.${rubricDescription ? ` ${rubricDescription}` : ""} Customize rubric-based evaluation criteria to assess pedagogical performance, teaching effectiveness, and student interaction skills.`,
@@ -127,6 +147,10 @@ export default async function EditRubricPage({
           rubricData={rubricData}
           saveRubricAction={saveRubric}
           patchRubricDraftAction={patchRubricDraft}
+          createNamesAction={createDraftNames}
+          createDescriptionsAction={createDraftDescriptions}
+          createPointsAction={createDraftPoints}
+          createStandardGroupsAction={createDraftStandardGroups}
         />
       </div>
     );
@@ -166,6 +190,34 @@ async function patchRubricDraft(
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
   return api.patch("/artifacts/rubrics/draft", input);
+}
+
+async function createDraftNames(
+  input: CreateDraftNamesIn
+): Promise<CreateDraftNamesOut> {
+  "use server";
+  return api.post("/resources/names", input);
+}
+
+async function createDraftDescriptions(
+  input: CreateDraftDescriptionsIn
+): Promise<CreateDraftDescriptionsOut> {
+  "use server";
+  return api.post("/resources/descriptions", input);
+}
+
+async function createDraftPoints(
+  input: CreateDraftPointsIn
+): Promise<CreateDraftPointsOut> {
+  "use server";
+  return api.post("/resources/points", input);
+}
+
+async function createDraftStandardGroups(
+  input: CreateDraftStandardGroupsIn
+): Promise<CreateDraftStandardGroupsOut> {
+  "use server";
+  return api.post("/resources/standard_groups", input);
 }
 
 // Types are now defined inline in components using InputOf/OutputOf

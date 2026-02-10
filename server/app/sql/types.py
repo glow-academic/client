@@ -7679,20 +7679,15 @@ class GetFieldIdsSqlRow(BaseModel):
     description_id: UUID | None = None
     active_flag_id: UUID | None = None
     department_ids: list[UUID] | None = None
-    parameter_ids: list[UUID] | None = None
+    conditional_parameter_ids: list[UUID] | None = None
     name_suggestions: list[UUID] | None = None
     description_suggestions: list[UUID] | None = None
     department_suggestions: list[UUID] | None = None
-    parameter_suggestions: list[UUID] | None = None
+    conditional_parameter_suggestions: list[UUID] | None = None
     candidate_agents: Any | None = None
     names_has_tools: bool | None = None
     departments_has_tools: bool | None = None
-    parameters_has_tools: bool | None = None
-    name_domain_id: UUID | None = None
-    description_domain_id: UUID | None = None
-    flag_domain_id: UUID | None = None
-    departments_domain_id: UUID | None = None
-    parameters_domain_id: UUID | None = None
+    conditional_parameters_has_tools: bool | None = None
 
 class GetFieldIdsApiRequest(BaseModel):
 
@@ -7707,20 +7702,15 @@ class GetFieldIdsApiResponse(BaseModel):
     description_id: UUID | None = None
     active_flag_id: UUID | None = None
     department_ids: list[UUID] | None = None
-    parameter_ids: list[UUID] | None = None
+    conditional_parameter_ids: list[UUID] | None = None
     name_suggestions: list[UUID] | None = None
     description_suggestions: list[UUID] | None = None
     department_suggestions: list[UUID] | None = None
-    parameter_suggestions: list[UUID] | None = None
+    conditional_parameter_suggestions: list[UUID] | None = None
     candidate_agents: Any | None = None
     names_has_tools: bool | None = None
     departments_has_tools: bool | None = None
-    parameters_has_tools: bool | None = None
-    name_domain_id: UUID | None = None
-    description_domain_id: UUID | None = None
-    flag_domain_id: UUID | None = None
-    departments_domain_id: UUID | None = None
-    parameters_domain_id: UUID | None = None
+    conditional_parameters_has_tools: bool | None = None
 
 
 
@@ -7807,26 +7797,43 @@ class GetFieldsListApiResponse(BaseModel):
 
 # Generated from: patch_field_draft
 
+class FieldMultiResourceAction(BaseModel):
+
+    resource_ids: list[UUID] | None
+    create_tool_id: UUID | None
+    link_tool_id: UUID | None
+
+
+
+
+class FieldResourceAction(BaseModel):
+
+    resource_id: UUID | None
+    create_tool_id: UUID | None
+    link_tool_id: UUID | None
+
 class PatchFieldDraftSqlParams(BaseModel):
 
     profile_id: UUID
     input_draft_id: UUID | None = None
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    parameter_ids: list[UUID] | None = None
+    group_id: UUID | None = None
+    names: FieldResourceAction | None = None
+    descriptions: FieldResourceAction | None = None
+    flags: FieldResourceAction | None = None
+    departments: FieldMultiResourceAction | None = None
+    conditional_parameters: FieldMultiResourceAction | None = None
     expected_version: int | None = 0
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
             self.input_draft_id,
-            self.name_id,
-            self.description_id,
-            self.active_flag_id,
-            self.department_ids,
-            self.parameter_ids,
+            self.group_id,
+            self.names,
+            self.descriptions,
+            self.flags,
+            self.departments,
+            self.conditional_parameters,
             self.expected_version,
         )
 
@@ -7839,11 +7846,12 @@ class PatchFieldDraftSqlRow(BaseModel):
 class PatchFieldDraftApiRequest(BaseModel):
 
     input_draft_id: UUID | None = None
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    parameter_ids: list[UUID] | None = None
+    group_id: UUID | None = None
+    names: FieldResourceAction | None = None
+    descriptions: FieldResourceAction | None = None
+    flags: FieldResourceAction | None = None
+    departments: FieldMultiResourceAction | None = None
+    conditional_parameters: FieldMultiResourceAction | None = None
     expected_version: int | None = 0
 
 class PatchFieldDraftApiResponse(BaseModel):
@@ -7861,22 +7869,22 @@ class SaveFieldSqlParams(BaseModel):
     profile_id: UUID
     group_id: UUID
     input_field_id: UUID | None = None
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    parameter_ids: list[UUID] | None = None
+    names: FieldResourceAction | None = None
+    descriptions: FieldResourceAction | None = None
+    flags: FieldResourceAction | None = None
+    departments: FieldMultiResourceAction | None = None
+    conditional_parameters: FieldMultiResourceAction | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
             self.group_id,
             self.input_field_id,
-            self.name_id,
-            self.description_id,
-            self.active_flag_id,
-            self.department_ids,
-            self.parameter_ids,
+            self.names,
+            self.descriptions,
+            self.flags,
+            self.departments,
+            self.conditional_parameters,
         )
 
 class SaveFieldSqlRow(BaseModel):
@@ -7888,11 +7896,11 @@ class SaveFieldApiRequest(BaseModel):
 
     group_id: UUID
     input_field_id: UUID | None = None
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    parameter_ids: list[UUID] | None = None
+    names: FieldResourceAction | None = None
+    descriptions: FieldResourceAction | None = None
+    flags: FieldResourceAction | None = None
+    departments: FieldMultiResourceAction | None = None
+    conditional_parameters: FieldMultiResourceAction | None = None
 
 class SaveFieldApiResponse(BaseModel):
 
@@ -21076,30 +21084,49 @@ class GetRubricIdsApiResponse(BaseModel):
 
 # Generated from: patch_rubric_draft
 
+class RubricMultiResourceAction(BaseModel):
+
+    resource_ids: list[UUID] | None
+    create_tool_id: UUID | None
+    link_tool_id: UUID | None
+
+
+
+
+class RubricResourceAction(BaseModel):
+
+    resource_id: UUID | None
+    create_tool_id: UUID | None
+    link_tool_id: UUID | None
+
 class PatchRubricDraftSqlParams(BaseModel):
 
     profile_id: UUID
     input_draft_id: UUID | None = None
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    point_ids: list[UUID] | None = None
-    standard_group_ids: list[UUID] | None = None
-    standard_ids: list[UUID] | None = None
+    group_id: UUID | None = None
+    names: RubricResourceAction | None = None
+    descriptions: RubricResourceAction | None = None
+    flags: RubricResourceAction | None = None
+    departments: RubricMultiResourceAction | None = None
+    points: RubricResourceAction | None = None
+    pass_points: RubricResourceAction | None = None
+    standard_groups: RubricMultiResourceAction | None = None
+    standards: RubricMultiResourceAction | None = None
     expected_version: int | None = 0
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
             self.input_draft_id,
-            self.name_id,
-            self.description_id,
-            self.active_flag_id,
-            self.department_ids,
-            self.point_ids,
-            self.standard_group_ids,
-            self.standard_ids,
+            self.group_id,
+            self.names,
+            self.descriptions,
+            self.flags,
+            self.departments,
+            self.points,
+            self.pass_points,
+            self.standard_groups,
+            self.standards,
             self.expected_version,
         )
 
@@ -21112,13 +21139,15 @@ class PatchRubricDraftSqlRow(BaseModel):
 class PatchRubricDraftApiRequest(BaseModel):
 
     input_draft_id: UUID | None = None
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    point_ids: list[UUID] | None = None
-    standard_group_ids: list[UUID] | None = None
-    standard_ids: list[UUID] | None = None
+    group_id: UUID | None = None
+    names: RubricResourceAction | None = None
+    descriptions: RubricResourceAction | None = None
+    flags: RubricResourceAction | None = None
+    departments: RubricMultiResourceAction | None = None
+    points: RubricResourceAction | None = None
+    pass_points: RubricResourceAction | None = None
+    standard_groups: RubricMultiResourceAction | None = None
+    standards: RubricMultiResourceAction | None = None
     expected_version: int | None = 0
 
 class PatchRubricDraftApiResponse(BaseModel):
@@ -21136,28 +21165,28 @@ class SaveRubricSqlParams(BaseModel):
     profile_id: UUID
     group_id: UUID
     input_rubric_id: UUID | None = None
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    total_points_id: UUID | None = None
-    pass_points_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    standard_group_ids: list[UUID] | None = None
-    standard_ids: list[UUID] | None = None
+    names: RubricResourceAction | None = None
+    descriptions: RubricResourceAction | None = None
+    flags: RubricResourceAction | None = None
+    departments: RubricMultiResourceAction | None = None
+    points: RubricResourceAction | None = None
+    pass_points: RubricResourceAction | None = None
+    standard_groups: RubricMultiResourceAction | None = None
+    standards: RubricMultiResourceAction | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
             self.group_id,
             self.input_rubric_id,
-            self.name_id,
-            self.description_id,
-            self.active_flag_id,
-            self.total_points_id,
-            self.pass_points_id,
-            self.department_ids,
-            self.standard_group_ids,
-            self.standard_ids,
+            self.names,
+            self.descriptions,
+            self.flags,
+            self.departments,
+            self.points,
+            self.pass_points,
+            self.standard_groups,
+            self.standards,
         )
 
 class SaveRubricSqlRow(BaseModel):
@@ -21169,14 +21198,14 @@ class SaveRubricApiRequest(BaseModel):
 
     group_id: UUID
     input_rubric_id: UUID | None = None
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    total_points_id: UUID | None = None
-    pass_points_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    standard_group_ids: list[UUID] | None = None
-    standard_ids: list[UUID] | None = None
+    names: RubricResourceAction | None = None
+    descriptions: RubricResourceAction | None = None
+    flags: RubricResourceAction | None = None
+    departments: RubricMultiResourceAction | None = None
+    points: RubricResourceAction | None = None
+    pass_points: RubricResourceAction | None = None
+    standard_groups: RubricMultiResourceAction | None = None
+    standards: RubricMultiResourceAction | None = None
 
 class SaveRubricApiResponse(BaseModel):
 

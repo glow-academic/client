@@ -45,11 +45,21 @@ async def handle_field_generation_error(data: dict[str, Any]) -> None:
         "message", "An error occurred during field generation"
     )
 
+    resource_type = data.get("resource_type")
+    resource_types = data.get("resource_types") or None
+    if resource_type == "parameters":
+        resource_type = "conditional_parameters"
+    if resource_types:
+        resource_types = [
+            "conditional_parameters" if rt == "parameters" else rt
+            for rt in resource_types
+        ]
+
     event = FieldGenerationErrorEvent(
         artifact_type=artifact_type or "field",
         group_id=data.get("group_id"),
-        resource_type=data.get("resource_type"),
-        resource_types=data.get("resource_types") or None,
+        resource_type=resource_type,
+        resource_types=resource_types,
         resource_id=data.get("resource_id"),
         success=False,
         message=error_message,

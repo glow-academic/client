@@ -52,13 +52,13 @@ RETURNS TABLE (
 
     -- Multi-select resource IDs
     department_ids uuid[],
-    parameter_ids uuid[],
+    conditional_parameter_ids uuid[],
 
     -- Suggestion IDs (computed in resource search endpoints)
     name_suggestions uuid[],
     description_suggestions uuid[],
     department_suggestions uuid[],
-    parameter_suggestions uuid[],
+    conditional_parameter_suggestions uuid[],
 
     -- Candidate agents (for Python-side agent scoring)
     candidate_agents field_candidate_agent[],
@@ -66,14 +66,7 @@ RETURNS TABLE (
     -- Tools existence (for Python to compute show_* flags)
     names_has_tools boolean,
     departments_has_tools boolean,
-    parameters_has_tools boolean,
-
-    -- Domain IDs (for domain-based generation)
-    name_domain_id uuid,
-    description_domain_id uuid,
-    flag_domain_id uuid,
-    departments_domain_id uuid,
-    parameters_domain_id uuid
+    conditional_parameters_has_tools boolean
 )
 LANGUAGE sql
 STABLE
@@ -111,7 +104,7 @@ field_parameters_data AS (
                  WHERE fcpj.field_id = (SELECT field_id FROM params) AND fcpj.active = true),
                 ARRAY[]::uuid[]
             )
-        END as parameter_ids
+        END as conditional_parameter_ids
     FROM params
     LIMIT 1
 ),
@@ -212,17 +205,8 @@ tools_existence_check AS (
     SELECT
         EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'names'::resource_type AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as names_has_tools,
         EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'departments'::resource_type AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as departments_has_tools,
-        EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'parameters'::resource_type AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as parameters_has_tools
+        EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'parameters'::resource_type AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as conditional_parameters_has_tools
     FROM params x
-),
--- Domain IDs from domains_resource table
-domain_ids_data AS (
-    SELECT
-        (SELECT id FROM domains_resource WHERE resource = 'names'::resource_type AND active = true LIMIT 1) as name_domain_id,
-        (SELECT id FROM domains_resource WHERE resource = 'descriptions'::resource_type AND active = true LIMIT 1) as description_domain_id,
-        (SELECT id FROM domains_resource WHERE resource = 'flags'::resource_type AND active = true LIMIT 1) as flag_domain_id,
-        (SELECT id FROM domains_resource WHERE resource = 'departments'::resource_type AND active = true LIMIT 1) as departments_domain_id,
-        (SELECT id FROM domains_resource WHERE resource = 'parameters'::resource_type AND active = true LIMIT 1) as parameters_domain_id
 )
 SELECT
     -- Single-select resource IDs
@@ -232,13 +216,13 @@ SELECT
 
     -- Multi-select resource IDs
     (SELECT department_ids FROM field_departments_data) as department_ids,
-    (SELECT parameter_ids FROM field_parameters_data) as parameter_ids,
+    (SELECT conditional_parameter_ids FROM field_parameters_data) as conditional_parameter_ids,
 
     -- Suggestion IDs (computed in resource search endpoints)
     ARRAY[]::uuid[] as name_suggestions,
     ARRAY[]::uuid[] as description_suggestions,
     ARRAY[]::uuid[] as department_suggestions,
-    ARRAY[]::uuid[] as parameter_suggestions,
+    ARRAY[]::uuid[] as conditional_parameter_suggestions,
 
     -- Candidate agents (for Python-side agent scoring)
     (SELECT COALESCE(
@@ -249,15 +233,7 @@ SELECT
     -- Tools existence
     tec.names_has_tools,
     tec.departments_has_tools,
-    tec.parameters_has_tools,
-
-    -- Domain IDs
-    did.name_domain_id,
-    did.description_domain_id,
-    did.flag_domain_id,
-    did.departments_domain_id,
-    did.parameters_domain_id
+    tec.conditional_parameters_has_tools
 FROM params x
-CROSS JOIN tools_existence_check tec
-CROSS JOIN domain_ids_data did;
+CROSS JOIN tools_existence_check tec;
 $$;

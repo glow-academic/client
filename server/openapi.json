@@ -8835,7 +8835,6 @@
           "fields"
         ],
         "summary": "Get Field",
-        "description": "Get field information using two-pass architecture.",
         "operationId": "get_field_api_v4_artifacts_fields_get_post",
         "parameters": [
           {
@@ -50849,8 +50848,7 @@
         "required": [
           "field_id"
         ],
-        "title": "DeleteFieldApiRequest",
-        "description": "Request model for delete field endpoint."
+        "title": "DeleteFieldApiRequest"
       },
       "DeleteFieldApiResponse": {
         "properties": {
@@ -50868,8 +50866,7 @@
           "success",
           "message"
         ],
-        "title": "DeleteFieldApiResponse",
-        "description": "Response model for delete field endpoint."
+        "title": "DeleteFieldApiResponse"
       },
       "DeleteModelApiRequest": {
         "properties": {
@@ -51049,8 +51046,7 @@
         "required": [
           "rubric_id"
         ],
-        "title": "DeleteRubricApiRequest",
-        "description": "Request model for delete rubric endpoint."
+        "title": "DeleteRubricApiRequest"
       },
       "DeleteRubricApiResponse": {
         "properties": {
@@ -51068,8 +51064,7 @@
           "success",
           "message"
         ],
-        "title": "DeleteRubricApiResponse",
-        "description": "Response model for delete rubric endpoint."
+        "title": "DeleteRubricApiResponse"
       },
       "DeleteScenarioApiRequest": {
         "properties": {
@@ -53217,8 +53212,7 @@
         "required": [
           "field_id"
         ],
-        "title": "DuplicateFieldApiRequest",
-        "description": "Request model for duplicate field endpoint."
+        "title": "DuplicateFieldApiRequest"
       },
       "DuplicateFieldApiResponse": {
         "properties": {
@@ -53242,8 +53236,7 @@
           "field_id",
           "message"
         ],
-        "title": "DuplicateFieldApiResponse",
-        "description": "Response model for duplicate field endpoint."
+        "title": "DuplicateFieldApiResponse"
       },
       "DuplicateModelApiRequest": {
         "properties": {
@@ -53453,8 +53446,7 @@
         "required": [
           "rubric_id"
         ],
-        "title": "DuplicateRubricApiRequest",
-        "description": "Request model for duplicate rubric endpoint."
+        "title": "DuplicateRubricApiRequest"
       },
       "DuplicateRubricApiResponse": {
         "properties": {
@@ -53478,8 +53470,7 @@
           "rubric_id",
           "message"
         ],
-        "title": "DuplicateRubricApiResponse",
-        "description": "Response model for duplicate rubric endpoint."
+        "title": "DuplicateRubricApiResponse"
       },
       "DuplicateScenarioApiRequest": {
         "properties": {
@@ -54779,6 +54770,266 @@
         "title": "FeedbackItem",
         "description": "Feedback item with standard info."
       },
+      "FieldConditionalParameterSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "current": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetParametersV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current"
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetParametersV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "FieldConditionalParameterSection"
+      },
+      "FieldDepartmentSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "current": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetDepartmentsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current"
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetDepartmentsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "FieldDepartmentSection"
+      },
+      "FieldDescriptionSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "resource": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetDescriptionsV4Item"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetDescriptionsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "FieldDescriptionSection"
+      },
       "FieldFlagConfig": {
         "properties": {
           "key": {
@@ -54833,18 +55084,6 @@
             "title": "Required",
             "default": false
           },
-          "domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Domain Id"
-          },
           "generated": {
             "anyOf": [
               {
@@ -54864,6 +55103,90 @@
         ],
         "title": "FieldFlagConfig",
         "description": "Enriched flag config for direct client consumption."
+      },
+      "FieldFlagSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "resource": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FieldFlagConfig"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/FieldFlagConfig"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "FieldFlagSection"
       },
       "FieldGenerationCompleteEvent": {
         "properties": {
@@ -54954,7 +55277,7 @@
             ],
             "title": "Department Resources"
           },
-          "parameter_resources": {
+          "conditional_parameter_resources": {
             "anyOf": [
               {
                 "items": {
@@ -54966,7 +55289,7 @@
                 "type": "null"
               }
             ],
-            "title": "Parameter Resources"
+            "title": "Conditional Parameter Resources"
           }
         },
         "type": "object",
@@ -54976,8 +55299,7 @@
           "success",
           "message"
         ],
-        "title": "FieldGenerationCompleteEvent",
-        "description": "Server-to-client event: field_generation_complete.\n\nEmitted when a field resource generation completes successfully.\nContains full resource objects (not just IDs) for immediate frontend use."
+        "title": "FieldGenerationCompleteEvent"
       },
       "FieldGenerationErrorEvent": {
         "properties": {
@@ -55069,8 +55391,7 @@
         "required": [
           "message"
         ],
-        "title": "FieldGenerationErrorEvent",
-        "description": "Server-to-client event: field_generation_error.\n\nEmitted when field resource generation fails."
+        "title": "FieldGenerationErrorEvent"
       },
       "FieldGenerationProgressEvent": {
         "properties": {
@@ -55214,12 +55535,120 @@
           }
         },
         "type": "object",
-        "title": "FieldGenerationProgressEvent",
-        "description": "Server-to-client event: field_generation_progress.\n\nEmitted during field resource generation to show progress."
+        "title": "FieldGenerationProgressEvent"
       },
-      "FieldResourceBucket": {
+      "FieldMultiResourceAction": {
         "properties": {
-          "names": {
+          "resource_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resource Ids"
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          }
+        },
+        "type": "object",
+        "title": "FieldMultiResourceAction"
+      },
+      "FieldNameSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "resource": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetNamesV4Item"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "resources": {
             "anyOf": [
               {
                 "items": {
@@ -55231,95 +55660,53 @@
                 "type": "null"
               }
             ],
-            "title": "Names"
-          },
-          "descriptions": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetDescriptionsV4Item"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Descriptions"
-          },
-          "flags": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/FieldFlagConfig"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Flags"
-          },
-          "departments": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetDepartmentsV4Item"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departments"
-          },
-          "parameters": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetParametersV4Item"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameters"
+            "title": "Resources"
           }
         },
         "type": "object",
-        "title": "FieldResourceBucket",
-        "description": "Generic resources bucket with full objects (always plural lists)."
+        "title": "FieldNameSection"
       },
-      "FieldResources": {
+      "FieldResourceAction": {
         "properties": {
-          "resources": {
+          "resource_id": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/FieldResourceBucket"
+                "type": "string",
+                "format": "uuid"
               },
               {
                 "type": "null"
               }
-            ]
+            ],
+            "title": "Resource Id"
           },
-          "current": {
+          "create_tool_id": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/FieldResourceBucket"
+                "type": "string",
+                "format": "uuid"
               },
               {
                 "type": "null"
               }
-            ]
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
           }
         },
         "type": "object",
-        "title": "FieldResources",
-        "description": "Full resources + current selections."
+        "title": "FieldResourceAction"
       },
       "FinalizeUploadApiResponse": {
         "properties": {
@@ -61700,7 +62087,7 @@
             ],
             "title": "Description Search"
           },
-          "parameter_search": {
+          "conditional_parameter_search": {
             "anyOf": [
               {
                 "type": "string"
@@ -61709,9 +62096,9 @@
                 "type": "null"
               }
             ],
-            "title": "Parameter Search"
+            "title": "Conditional Parameter Search"
           },
-          "parameter_show_selected": {
+          "conditional_parameter_show_selected": {
             "anyOf": [
               {
                 "type": "boolean"
@@ -61720,7 +62107,7 @@
                 "type": "null"
               }
             ],
-            "title": "Parameter Show Selected"
+            "title": "Conditional Parameter Show Selected"
           }
         },
         "type": "object",
@@ -61796,351 +62183,6 @@
             ],
             "title": "Group Id"
           },
-          "names_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Names Group Id"
-          },
-          "descriptions_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Descriptions Group Id"
-          },
-          "flags_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Flags Group Id"
-          },
-          "departments_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departments Group Id"
-          },
-          "parameters_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameters Group Id"
-          },
-          "show_name": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Name"
-          },
-          "name_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name Domain Id"
-          },
-          "name_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name Required"
-          },
-          "name_suggestions": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name Suggestions"
-          },
-          "name_show_ai_generate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name Show Ai Generate"
-          },
-          "show_description": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Description"
-          },
-          "description_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description Domain Id"
-          },
-          "description_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description Required"
-          },
-          "description_suggestions": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description Suggestions"
-          },
-          "description_show_ai_generate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description Show Ai Generate"
-          },
-          "show_flag": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Flag"
-          },
-          "flag_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Flag Domain Id"
-          },
-          "flag_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Flag Required"
-          },
-          "flag_show_ai_generate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Flag Show Ai Generate"
-          },
-          "show_departments": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Departments"
-          },
-          "departments_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departments Domain Id"
-          },
-          "departments_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departments Required"
-          },
-          "department_suggestions": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Suggestions"
-          },
-          "departments_show_ai_generate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departments Show Ai Generate"
-          },
-          "show_parameters": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Parameters"
-          },
-          "parameters_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameters Domain Id"
-          },
-          "parameters_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameters Required"
-          },
-          "parameter_suggestions": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Suggestions"
-          },
-          "parameters_show_ai_generate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameters Show Ai Generate"
-          },
           "basic_show_ai_generate": {
             "anyOf": [
               {
@@ -62152,108 +62194,50 @@
             ],
             "title": "Basic Show Ai Generate"
           },
-          "name_create_tool_id": {
+          "names": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/FieldNameSection"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Name Create Tool Id"
+            ]
           },
-          "description_create_tool_id": {
+          "descriptions": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/FieldDescriptionSection"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Description Create Tool Id"
+            ]
           },
-          "name_link_tool_id": {
+          "flags": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/FieldFlagSection"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Name Link Tool Id"
+            ]
           },
-          "description_link_tool_id": {
+          "departments": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/FieldDepartmentSection"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Description Link Tool Id"
+            ]
           },
-          "flag_link_tool_id": {
+          "conditional_parameters": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Flag Link Tool Id"
-          },
-          "departments_link_tool_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departments Link Tool Id"
-          },
-          "parameters_link_tool_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameters Link Tool Id"
-          },
-          "domain_data": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/DomainData"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Domain Data"
-          },
-          "resources": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/FieldResources"
+                "$ref": "#/components/schemas/FieldConditionalParameterSection"
               },
               {
                 "type": "null"
@@ -62263,7 +62247,7 @@
         },
         "type": "object",
         "title": "GetFieldApiResponse",
-        "description": "Response model for get field endpoint."
+        "description": "Section-first client response for get field endpoint."
       },
       "GetFieldsApiRequest": {
         "properties": {
@@ -67737,8 +67721,7 @@
           }
         },
         "type": "object",
-        "title": "GetRubricApiRequest",
-        "description": "Request model for get rubric endpoint."
+        "title": "GetRubricApiRequest"
       },
       "GetRubricApiResponse": {
         "properties": {
@@ -67809,567 +67792,6 @@
             ],
             "title": "Group Id"
           },
-          "names_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Names Group Id"
-          },
-          "descriptions_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Descriptions Group Id"
-          },
-          "flags_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Flags Group Id"
-          },
-          "departments_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departments Group Id"
-          },
-          "points_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Points Group Id"
-          },
-          "pass_points_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Pass Points Group Id"
-          },
-          "standard_groups_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Standard Groups Group Id"
-          },
-          "standards_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Standards Group Id"
-          },
-          "show_name": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Name"
-          },
-          "name_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name Domain Id"
-          },
-          "name_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name Required"
-          },
-          "name_suggestions": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name Suggestions"
-          },
-          "name_show_ai_generate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name Show Ai Generate"
-          },
-          "show_description": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Description"
-          },
-          "description_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description Domain Id"
-          },
-          "description_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description Required"
-          },
-          "description_suggestions": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description Suggestions"
-          },
-          "description_show_ai_generate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description Show Ai Generate"
-          },
-          "show_flag": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Flag"
-          },
-          "flag_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Flag Domain Id"
-          },
-          "flag_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Flag Required"
-          },
-          "flag_show_ai_generate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Flag Show Ai Generate"
-          },
-          "show_departments": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Departments"
-          },
-          "departments_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departments Domain Id"
-          },
-          "departments_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departments Required"
-          },
-          "department_suggestions": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Suggestions"
-          },
-          "departments_show_ai_generate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departments Show Ai Generate"
-          },
-          "show_points": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Points"
-          },
-          "points_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Points Domain Id"
-          },
-          "points_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Points Required"
-          },
-          "points_suggestions": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Points Suggestions"
-          },
-          "points_show_ai_generate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Points Show Ai Generate"
-          },
-          "show_pass_points": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Pass Points"
-          },
-          "pass_points_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Pass Points Domain Id"
-          },
-          "pass_points_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Pass Points Required"
-          },
-          "pass_points_suggestions": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Pass Points Suggestions"
-          },
-          "pass_points_show_ai_generate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Pass Points Show Ai Generate"
-          },
-          "show_standard_groups": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Standard Groups"
-          },
-          "standard_groups_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Standard Groups Domain Id"
-          },
-          "standard_groups_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Standard Groups Required"
-          },
-          "standard_group_suggestions": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Standard Group Suggestions"
-          },
-          "standard_groups_show_ai_generate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Standard Groups Show Ai Generate"
-          },
-          "show_standards": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Standards"
-          },
-          "standards_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Standards Domain Id"
-          },
-          "standards_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Standards Required"
-          },
-          "standard_suggestions": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Standard Suggestions"
-          },
-          "standards_show_ai_generate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Standards Show Ai Generate"
-          },
           "basic_show_ai_generate": {
             "anyOf": [
               {
@@ -68392,192 +67814,80 @@
             ],
             "title": "Content Show Ai Generate"
           },
-          "name_create_tool_id": {
+          "names": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/RubricNameSection"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Name Create Tool Id"
+            ]
           },
-          "description_create_tool_id": {
+          "descriptions": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/RubricDescriptionSection"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Description Create Tool Id"
+            ]
           },
-          "points_create_tool_id": {
+          "flags": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/RubricFlagSection"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Points Create Tool Id"
+            ]
           },
-          "pass_points_create_tool_id": {
+          "departments": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/RubricDepartmentSection"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Pass Points Create Tool Id"
+            ]
           },
-          "standard_groups_create_tool_id": {
+          "points": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/RubricPointsSection"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Standard Groups Create Tool Id"
+            ]
           },
-          "standards_create_tool_id": {
+          "pass_points": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/RubricPassPointsSection"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Standards Create Tool Id"
+            ]
           },
-          "name_link_tool_id": {
+          "standard_groups": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/RubricStandardGroupsSection"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Name Link Tool Id"
+            ]
           },
-          "description_link_tool_id": {
+          "standards": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description Link Tool Id"
-          },
-          "flag_link_tool_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Flag Link Tool Id"
-          },
-          "departments_link_tool_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departments Link Tool Id"
-          },
-          "points_link_tool_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Points Link Tool Id"
-          },
-          "pass_points_link_tool_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Pass Points Link Tool Id"
-          },
-          "standard_groups_link_tool_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Standard Groups Link Tool Id"
-          },
-          "standards_link_tool_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Standards Link Tool Id"
-          },
-          "domain_data": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/DomainData"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Domain Data"
-          },
-          "resources": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/RubricResources"
+                "$ref": "#/components/schemas/RubricStandardsSection"
               },
               {
                 "type": "null"
@@ -68586,8 +67896,7 @@
           }
         },
         "type": "object",
-        "title": "GetRubricApiResponse",
-        "description": "Response model for get rubric endpoint."
+        "title": "GetRubricApiResponse"
       },
       "GetRubricsApiRequest": {
         "properties": {
@@ -77719,6 +77028,57 @@
         "title": "ListEvalApiResponse",
         "description": "Response model for list eval endpoint with computed permissions."
       },
+      "ListFieldApiConditionalParameter": {
+        "properties": {
+          "parameter_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "title": "ListFieldApiConditionalParameter"
+      },
       "ListFieldApiDepartment": {
         "properties": {
           "department_id": {
@@ -77768,8 +77128,7 @@
           }
         },
         "type": "object",
-        "title": "ListFieldApiDepartment",
-        "description": "Department type for list endpoint."
+        "title": "ListFieldApiDepartment"
       },
       "ListFieldApiField": {
         "properties": {
@@ -77821,7 +77180,7 @@
             ],
             "title": "Department Ids"
           },
-          "parameter_ids": {
+          "conditional_parameter_ids": {
             "anyOf": [
               {
                 "items": {
@@ -77834,7 +77193,7 @@
                 "type": "null"
               }
             ],
-            "title": "Parameter Ids"
+            "title": "Conditional Parameter Ids"
           },
           "is_inactive": {
             "anyOf": [
@@ -77894,60 +77253,7 @@
           }
         },
         "type": "object",
-        "title": "ListFieldApiField",
-        "description": "Field type for list endpoint with computed permissions."
-      },
-      "ListFieldApiParameter": {
-        "properties": {
-          "parameter_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Id"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "count": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Count"
-          }
-        },
-        "type": "object",
-        "title": "ListFieldApiParameter",
-        "description": "Parameter type for list endpoint."
+        "title": "ListFieldApiField"
       },
       "ListFieldApiResponse": {
         "properties": {
@@ -77976,11 +77282,11 @@
             ],
             "title": "Fields"
           },
-          "parameters": {
+          "conditional_parameters": {
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/ListFieldApiParameter"
+                  "$ref": "#/components/schemas/ListFieldApiConditionalParameter"
                 },
                 "type": "array"
               },
@@ -77988,7 +77294,7 @@
                 "type": "null"
               }
             ],
-            "title": "Parameters"
+            "title": "Conditional Parameters"
           },
           "departments": {
             "anyOf": [
@@ -78017,8 +77323,7 @@
           }
         },
         "type": "object",
-        "title": "ListFieldApiResponse",
-        "description": "Response model for list field endpoint with computed permissions."
+        "title": "ListFieldApiResponse"
       },
       "ListModelsApiRequest": {
         "properties": {},
@@ -83753,7 +83058,7 @@
             ],
             "title": "Input Draft Id"
           },
-          "name_id": {
+          "group_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -83763,61 +83068,57 @@
                 "type": "null"
               }
             ],
-            "title": "Name Id"
+            "title": "Group Id"
           },
-          "description_id": {
+          "names": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/FieldResourceAction"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Description Id"
+            ]
           },
-          "active_flag_id": {
+          "descriptions": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/FieldResourceAction"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Active Flag Id"
+            ]
           },
-          "department_ids": {
+          "flags": {
             "anyOf": [
               {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
+                "$ref": "#/components/schemas/FieldResourceAction"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Department Ids"
+            ]
           },
-          "parameter_ids": {
+          "departments": {
             "anyOf": [
               {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
+                "$ref": "#/components/schemas/FieldMultiResourceAction"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Parameter Ids"
+            ]
+          },
+          "conditional_parameters": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FieldMultiResourceAction"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "expected_version": {
             "type": "integer",
@@ -83826,8 +83127,7 @@
           }
         },
         "type": "object",
-        "title": "PatchFieldDraftApiRequest",
-        "description": "Request model for patch field draft endpoint."
+        "title": "PatchFieldDraftApiRequest"
       },
       "PatchFieldDraftApiResponse": {
         "properties": {
@@ -83856,8 +83156,7 @@
           "new_version",
           "message"
         ],
-        "title": "PatchFieldDraftApiResponse",
-        "description": "Response model for patch field draft endpoint."
+        "title": "PatchFieldDraftApiResponse"
       },
       "PatchModelDraftApiRequest": {
         "properties": {
@@ -84611,7 +83910,7 @@
             ],
             "title": "Input Draft Id"
           },
-          "name_id": {
+          "group_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -84621,100 +83920,87 @@
                 "type": "null"
               }
             ],
-            "title": "Name Id"
+            "title": "Group Id"
           },
-          "description_id": {
+          "names": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/RubricResourceAction"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Description Id"
+            ]
           },
-          "active_flag_id": {
+          "descriptions": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/RubricResourceAction"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Active Flag Id"
+            ]
           },
-          "total_points_id": {
+          "flags": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/RubricResourceAction"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Total Points Id"
+            ]
           },
-          "pass_points_id": {
+          "departments": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "$ref": "#/components/schemas/RubricMultiResourceAction"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Pass Points Id"
+            ]
           },
-          "department_ids": {
+          "points": {
             "anyOf": [
               {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
+                "$ref": "#/components/schemas/RubricResourceAction"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Department Ids"
+            ]
           },
-          "standard_group_ids": {
+          "pass_points": {
             "anyOf": [
               {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
+                "$ref": "#/components/schemas/RubricResourceAction"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Standard Group Ids"
+            ]
           },
-          "standard_ids": {
+          "standard_groups": {
             "anyOf": [
               {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
+                "$ref": "#/components/schemas/RubricMultiResourceAction"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Standard Ids"
+            ]
+          },
+          "standards": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RubricMultiResourceAction"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "expected_version": {
             "type": "integer",
@@ -84723,8 +84009,7 @@
           }
         },
         "type": "object",
-        "title": "PatchRubricDraftApiRequest",
-        "description": "Request model for patch rubric draft endpoint."
+        "title": "PatchRubricDraftApiRequest"
       },
       "PatchRubricDraftApiResponse": {
         "properties": {
@@ -84753,8 +84038,7 @@
           "new_version",
           "message"
         ],
-        "title": "PatchRubricDraftApiResponse",
-        "description": "Response model for patch rubric draft endpoint."
+        "title": "PatchRubricDraftApiResponse"
       },
       "PatchScenarioDraftApiRequest": {
         "properties": {
@@ -102477,6 +101761,178 @@
         "type": "object",
         "title": "RoleRoutesApiResponse"
       },
+      "RubricDepartmentSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "current": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetDepartmentsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current"
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetDepartmentsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "RubricDepartmentSection"
+      },
+      "RubricDescriptionSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "resource": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetDescriptionsV4Item"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetDescriptionsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "RubricDescriptionSection"
+      },
       "RubricEntry": {
         "properties": {
           "rubric_id": {
@@ -102594,18 +102050,6 @@
             "title": "Required",
             "default": false
           },
-          "domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Domain Id"
-          },
           "generated": {
             "anyOf": [
               {
@@ -102625,6 +102069,94 @@
         ],
         "title": "RubricFlagConfig",
         "description": "Enriched flag config for direct client consumption."
+      },
+      "RubricFlagSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "current": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/RubricFlagConfig"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current"
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/RubricFlagConfig"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "RubricFlagSection"
       },
       "RubricGenerationCompleteEvent": {
         "properties": {
@@ -102956,9 +102488,118 @@
         "type": "object",
         "title": "RubricHeatmapStandardGroup"
       },
-      "RubricResourceBucket": {
+      "RubricMultiResourceAction": {
         "properties": {
-          "names": {
+          "resource_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resource Ids"
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          }
+        },
+        "type": "object",
+        "title": "RubricMultiResourceAction"
+      },
+      "RubricNameSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "resource": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetNamesV4Item"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "resources": {
             "anyOf": [
               {
                 "items": {
@@ -102970,13 +102611,30 @@
                 "type": "null"
               }
             ],
-            "title": "Names"
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "RubricNameSection"
+      },
+      "RubricPassPointsSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
           },
-          "descriptions": {
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/QGetDescriptionsV4Item"
+                  "type": "string",
+                  "format": "uuid"
                 },
                 "type": "array"
               },
@@ -102984,37 +102642,48 @@
                 "type": "null"
               }
             ],
-            "title": "Descriptions"
+            "title": "Suggestions"
           },
-          "flags": {
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
             "anyOf": [
               {
-                "items": {
-                  "$ref": "#/components/schemas/RubricFlagConfig"
-                },
-                "type": "array"
+                "type": "string",
+                "format": "uuid"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Flags"
+            "title": "Create Tool Id"
           },
-          "departments": {
+          "link_tool_id": {
             "anyOf": [
               {
-                "items": {
-                  "$ref": "#/components/schemas/QGetDepartmentsV4Item"
-                },
-                "type": "array"
+                "type": "string",
+                "format": "uuid"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Departments"
+            "title": "Link Tool Id"
           },
-          "points": {
+          "resource": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetPointsV4Item"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "resources": {
             "anyOf": [
               {
                 "items": {
@@ -103026,9 +102695,79 @@
                 "type": "null"
               }
             ],
-            "title": "Points"
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "RubricPassPointsSection"
+      },
+      "RubricPointsSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
           },
-          "pass_points": {
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "resource": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetPointsV4Item"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "resources": {
             "anyOf": [
               {
                 "items": {
@@ -103040,9 +102779,111 @@
                 "type": "null"
               }
             ],
-            "title": "Pass Points"
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "RubricPointsSection"
+      },
+      "RubricResourceAction": {
+        "properties": {
+          "resource_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resource Id"
           },
-          "standard_groups": {
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          }
+        },
+        "type": "object",
+        "title": "RubricResourceAction"
+      },
+      "RubricStandardGroupsSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "current": {
             "anyOf": [
               {
                 "items": {
@@ -103054,9 +102895,83 @@
                 "type": "null"
               }
             ],
-            "title": "Standard Groups"
+            "title": "Current"
           },
-          "standards": {
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetStandardGroupsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "RubricStandardGroupsSection"
+      },
+      "RubricStandardsSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "current": {
             "anyOf": [
               {
                 "items": {
@@ -103068,39 +102983,25 @@
                 "type": "null"
               }
             ],
-            "title": "Standards"
-          }
-        },
-        "type": "object",
-        "title": "RubricResourceBucket",
-        "description": "Generic resources bucket with full objects (always plural lists)."
-      },
-      "RubricResources": {
-        "properties": {
+            "title": "Current"
+          },
           "resources": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/RubricResourceBucket"
+                "items": {
+                  "$ref": "#/components/schemas/QGetStandardsV4Item"
+                },
+                "type": "array"
               },
               {
                 "type": "null"
               }
-            ]
-          },
-          "current": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/RubricResourceBucket"
-              },
-              {
-                "type": "null"
-              }
-            ]
+            ],
+            "title": "Resources"
           }
         },
         "type": "object",
-        "title": "RubricResources",
-        "description": "Full resources + current selections."
+        "title": "RubricStandardsSection"
       },
       "RubricStructureData": {
         "properties": {
@@ -103989,73 +103890,32 @@
             ],
             "title": "Input Field Id"
           },
-          "name_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Name Id"
+          "names": {
+            "$ref": "#/components/schemas/FieldResourceAction"
           },
-          "description_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description Id"
+          "descriptions": {
+            "$ref": "#/components/schemas/FieldResourceAction"
           },
-          "active_flag_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Active Flag Id"
+          "flags": {
+            "$ref": "#/components/schemas/FieldResourceAction"
           },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
+          "departments": {
+            "$ref": "#/components/schemas/FieldMultiResourceAction"
           },
-          "parameter_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Ids"
+          "conditional_parameters": {
+            "$ref": "#/components/schemas/FieldMultiResourceAction"
           }
         },
         "type": "object",
         "required": [
           "group_id",
-          "name_id"
+          "names",
+          "descriptions",
+          "flags",
+          "departments",
+          "conditional_parameters"
         ],
-        "title": "SaveFieldApiRequest",
-        "description": "Request model for save field endpoint - accepts resource IDs."
+        "title": "SaveFieldApiRequest"
       },
       "SaveFieldApiResponse": {
         "properties": {
@@ -104079,8 +103939,7 @@
           "field_id",
           "message"
         ],
-        "title": "SaveFieldApiResponse",
-        "description": "Response model for save field endpoint."
+        "title": "SaveFieldApiResponse"
       },
       "SaveModelApiRequest": {
         "properties": {
@@ -104592,112 +104451,44 @@
             ],
             "title": "Input Rubric Id"
           },
-          "name_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Name Id"
+          "names": {
+            "$ref": "#/components/schemas/RubricResourceAction"
           },
-          "description_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description Id"
+          "descriptions": {
+            "$ref": "#/components/schemas/RubricResourceAction"
           },
-          "active_flag_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Active Flag Id"
+          "flags": {
+            "$ref": "#/components/schemas/RubricResourceAction"
           },
-          "total_points_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Total Points Id"
+          "departments": {
+            "$ref": "#/components/schemas/RubricMultiResourceAction"
           },
-          "pass_points_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Pass Points Id"
+          "points": {
+            "$ref": "#/components/schemas/RubricResourceAction"
           },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
+          "pass_points": {
+            "$ref": "#/components/schemas/RubricResourceAction"
           },
-          "standard_group_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Standard Group Ids"
+          "standard_groups": {
+            "$ref": "#/components/schemas/RubricMultiResourceAction"
           },
-          "standard_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Standard Ids"
+          "standards": {
+            "$ref": "#/components/schemas/RubricMultiResourceAction"
           }
         },
         "type": "object",
         "required": [
           "group_id",
-          "name_id"
+          "names",
+          "descriptions",
+          "flags",
+          "departments",
+          "points",
+          "pass_points",
+          "standard_groups",
+          "standards"
         ],
-        "title": "SaveRubricApiRequest",
-        "description": "Request model for save rubric endpoint - accepts form data directly."
+        "title": "SaveRubricApiRequest"
       },
       "SaveRubricApiResponse": {
         "properties": {
@@ -104721,8 +104512,7 @@
           "rubric_id",
           "message"
         ],
-        "title": "SaveRubricApiResponse",
-        "description": "Response model for save rubric endpoint."
+        "title": "SaveRubricApiResponse"
       },
       "SaveScenarioApiRequest": {
         "properties": {

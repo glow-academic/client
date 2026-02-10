@@ -1929,10 +1929,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Get Field
-         * @description Get field information using two-pass architecture.
-         */
+        /** Get Field */
         post: operations["get_field_api_v4_artifacts_fields_get_post"];
         delete?: never;
         options?: never;
@@ -13587,10 +13584,7 @@ export interface components {
             /** Message */
             message: string;
         };
-        /**
-         * DeleteFieldApiRequest
-         * @description Request model for delete field endpoint.
-         */
+        /** DeleteFieldApiRequest */
         DeleteFieldApiRequest: {
             /**
              * Field Id
@@ -13598,10 +13592,7 @@ export interface components {
              */
             field_id: string;
         };
-        /**
-         * DeleteFieldApiResponse
-         * @description Response model for delete field endpoint.
-         */
+        /** DeleteFieldApiResponse */
         DeleteFieldApiResponse: {
             /** Success */
             success: boolean;
@@ -13701,10 +13692,7 @@ export interface components {
             /** Message */
             message: string;
         };
-        /**
-         * DeleteRubricApiRequest
-         * @description Request model for delete rubric endpoint.
-         */
+        /** DeleteRubricApiRequest */
         DeleteRubricApiRequest: {
             /**
              * Rubric Id
@@ -13712,10 +13700,7 @@ export interface components {
              */
             rubric_id: string;
         };
-        /**
-         * DeleteRubricApiResponse
-         * @description Response model for delete rubric endpoint.
-         */
+        /** DeleteRubricApiResponse */
         DeleteRubricApiResponse: {
             /** Success */
             success: boolean;
@@ -14451,10 +14436,7 @@ export interface components {
             /** Message */
             message: string;
         };
-        /**
-         * DuplicateFieldApiRequest
-         * @description Request model for duplicate field endpoint.
-         */
+        /** DuplicateFieldApiRequest */
         DuplicateFieldApiRequest: {
             /**
              * Field Id
@@ -14462,10 +14444,7 @@ export interface components {
              */
             field_id: string;
         };
-        /**
-         * DuplicateFieldApiResponse
-         * @description Response model for duplicate field endpoint.
-         */
+        /** DuplicateFieldApiResponse */
         DuplicateFieldApiResponse: {
             /** Success */
             success: boolean;
@@ -14595,10 +14574,7 @@ export interface components {
             /** Message */
             message: string;
         };
-        /**
-         * DuplicateRubricApiRequest
-         * @description Request model for duplicate rubric endpoint.
-         */
+        /** DuplicateRubricApiRequest */
         DuplicateRubricApiRequest: {
             /**
              * Rubric Id
@@ -14606,10 +14582,7 @@ export interface components {
              */
             rubric_id: string;
         };
-        /**
-         * DuplicateRubricApiResponse
-         * @description Response model for duplicate rubric endpoint.
-         */
+        /** DuplicateRubricApiResponse */
         DuplicateRubricApiResponse: {
             /** Success */
             success: boolean;
@@ -15049,6 +15022,89 @@ export interface components {
             /** Feedback */
             feedback?: string | null;
         };
+        /** FieldConditionalParameterSection */
+        FieldConditionalParameterSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["QGetParametersV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetParametersV4Item"][] | null;
+        };
+        /** FieldDepartmentSection */
+        FieldDepartmentSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
+        };
+        /** FieldDescriptionSection */
+        FieldDescriptionSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            resource?: components["schemas"]["QGetDescriptionsV4Item"] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetDescriptionsV4Item"][] | null;
+        };
         /**
          * FieldFlagConfig
          * @description Enriched flag config for direct client consumption.
@@ -15074,18 +15130,37 @@ export interface components {
              * @default false
              */
             required: boolean;
-            /** Domain Id */
-            domain_id?: string | null;
             /** Generated */
             generated?: boolean | null;
         };
-        /**
-         * FieldGenerationCompleteEvent
-         * @description Server-to-client event: field_generation_complete.
-         *
-         *     Emitted when a field resource generation completes successfully.
-         *     Contains full resource objects (not just IDs) for immediate frontend use.
-         */
+        /** FieldFlagSection */
+        FieldFlagSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            resource?: components["schemas"]["FieldFlagConfig"] | null;
+            /** Resources */
+            resources?: components["schemas"]["FieldFlagConfig"][] | null;
+        };
+        /** FieldGenerationCompleteEvent */
         FieldGenerationCompleteEvent: {
             /**
              * Artifact Type
@@ -15109,15 +15184,10 @@ export interface components {
             flag_resource?: components["schemas"]["QGetFlagsV4Item"] | null;
             /** Department Resources */
             department_resources?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
-            /** Parameter Resources */
-            parameter_resources?: components["schemas"]["QGetParametersV4Item"][] | null;
+            /** Conditional Parameter Resources */
+            conditional_parameter_resources?: components["schemas"]["QGetParametersV4Item"][] | null;
         };
-        /**
-         * FieldGenerationErrorEvent
-         * @description Server-to-client event: field_generation_error.
-         *
-         *     Emitted when field resource generation fails.
-         */
+        /** FieldGenerationErrorEvent */
         FieldGenerationErrorEvent: {
             /**
              * Artifact Type
@@ -15144,12 +15214,7 @@ export interface components {
             /** Trace Id */
             trace_id?: string | null;
         };
-        /**
-         * FieldGenerationProgressEvent
-         * @description Server-to-client event: field_generation_progress.
-         *
-         *     Emitted during field resource generation to show progress.
-         */
+        /** FieldGenerationProgressEvent */
         FieldGenerationProgressEvent: {
             /**
              * Artifact Type
@@ -15183,29 +15248,50 @@ export interface components {
             /** Trace Id */
             trace_id?: string | null;
         };
-        /**
-         * FieldResourceBucket
-         * @description Generic resources bucket with full objects (always plural lists).
-         */
-        FieldResourceBucket: {
-            /** Names */
-            names?: components["schemas"]["QGetNamesV4Item"][] | null;
-            /** Descriptions */
-            descriptions?: components["schemas"]["QGetDescriptionsV4Item"][] | null;
-            /** Flags */
-            flags?: components["schemas"]["FieldFlagConfig"][] | null;
-            /** Departments */
-            departments?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
-            /** Parameters */
-            parameters?: components["schemas"]["QGetParametersV4Item"][] | null;
+        /** FieldMultiResourceAction */
+        FieldMultiResourceAction: {
+            /** Resource Ids */
+            resource_ids?: string[] | null;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
         };
-        /**
-         * FieldResources
-         * @description Full resources + current selections.
-         */
-        FieldResources: {
-            resources?: components["schemas"]["FieldResourceBucket"] | null;
-            current?: components["schemas"]["FieldResourceBucket"] | null;
+        /** FieldNameSection */
+        FieldNameSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            resource?: components["schemas"]["QGetNamesV4Item"] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetNamesV4Item"][] | null;
+        };
+        /** FieldResourceAction */
+        FieldResourceAction: {
+            /** Resource Id */
+            resource_id?: string | null;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
         };
         /** FinalizeUploadApiResponse */
         FinalizeUploadApiResponse: {
@@ -17059,14 +17145,14 @@ export interface components {
             draft_id?: string | null;
             /** Description Search */
             description_search?: string | null;
-            /** Parameter Search */
-            parameter_search?: string | null;
-            /** Parameter Show Selected */
-            parameter_show_selected?: boolean | null;
+            /** Conditional Parameter Search */
+            conditional_parameter_search?: string | null;
+            /** Conditional Parameter Show Selected */
+            conditional_parameter_show_selected?: boolean | null;
         };
         /**
          * GetFieldApiResponse
-         * @description Response model for get field endpoint.
+         * @description Section-first client response for get field endpoint.
          */
         GetFieldApiResponse: {
             /** Actor Name */
@@ -17081,83 +17167,13 @@ export interface components {
             draft_version?: number | null;
             /** Group Id */
             group_id?: string | null;
-            /** Names Group Id */
-            names_group_id?: string | null;
-            /** Descriptions Group Id */
-            descriptions_group_id?: string | null;
-            /** Flags Group Id */
-            flags_group_id?: string | null;
-            /** Departments Group Id */
-            departments_group_id?: string | null;
-            /** Parameters Group Id */
-            parameters_group_id?: string | null;
-            /** Show Name */
-            show_name?: boolean | null;
-            /** Name Domain Id */
-            name_domain_id?: string | null;
-            /** Name Required */
-            name_required?: boolean | null;
-            /** Name Suggestions */
-            name_suggestions?: string[] | null;
-            /** Name Show Ai Generate */
-            name_show_ai_generate?: boolean | null;
-            /** Show Description */
-            show_description?: boolean | null;
-            /** Description Domain Id */
-            description_domain_id?: string | null;
-            /** Description Required */
-            description_required?: boolean | null;
-            /** Description Suggestions */
-            description_suggestions?: string[] | null;
-            /** Description Show Ai Generate */
-            description_show_ai_generate?: boolean | null;
-            /** Show Flag */
-            show_flag?: boolean | null;
-            /** Flag Domain Id */
-            flag_domain_id?: string | null;
-            /** Flag Required */
-            flag_required?: boolean | null;
-            /** Flag Show Ai Generate */
-            flag_show_ai_generate?: boolean | null;
-            /** Show Departments */
-            show_departments?: boolean | null;
-            /** Departments Domain Id */
-            departments_domain_id?: string | null;
-            /** Departments Required */
-            departments_required?: boolean | null;
-            /** Department Suggestions */
-            department_suggestions?: string[] | null;
-            /** Departments Show Ai Generate */
-            departments_show_ai_generate?: boolean | null;
-            /** Show Parameters */
-            show_parameters?: boolean | null;
-            /** Parameters Domain Id */
-            parameters_domain_id?: string | null;
-            /** Parameters Required */
-            parameters_required?: boolean | null;
-            /** Parameter Suggestions */
-            parameter_suggestions?: string[] | null;
-            /** Parameters Show Ai Generate */
-            parameters_show_ai_generate?: boolean | null;
             /** Basic Show Ai Generate */
             basic_show_ai_generate?: boolean | null;
-            /** Name Create Tool Id */
-            name_create_tool_id?: string | null;
-            /** Description Create Tool Id */
-            description_create_tool_id?: string | null;
-            /** Name Link Tool Id */
-            name_link_tool_id?: string | null;
-            /** Description Link Tool Id */
-            description_link_tool_id?: string | null;
-            /** Flag Link Tool Id */
-            flag_link_tool_id?: string | null;
-            /** Departments Link Tool Id */
-            departments_link_tool_id?: string | null;
-            /** Parameters Link Tool Id */
-            parameters_link_tool_id?: string | null;
-            /** Domain Data */
-            domain_data?: components["schemas"]["DomainData"][] | null;
-            resources?: components["schemas"]["FieldResources"] | null;
+            names?: components["schemas"]["FieldNameSection"] | null;
+            descriptions?: components["schemas"]["FieldDescriptionSection"] | null;
+            flags?: components["schemas"]["FieldFlagSection"] | null;
+            departments?: components["schemas"]["FieldDepartmentSection"] | null;
+            conditional_parameters?: components["schemas"]["FieldConditionalParameterSection"] | null;
         };
         /** GetFieldsApiRequest */
         GetFieldsApiRequest: {
@@ -18617,10 +18633,7 @@ export interface components {
             /** Items */
             items?: components["schemas"]["QGetRolesV4Item"][] | null;
         };
-        /**
-         * GetRubricApiRequest
-         * @description Request model for get rubric endpoint.
-         */
+        /** GetRubricApiRequest */
         GetRubricApiRequest: {
             /** Rubric Id */
             rubric_id?: string | null;
@@ -18631,10 +18644,7 @@ export interface components {
             /** Standard Group Search */
             standard_group_search?: string | null;
         };
-        /**
-         * GetRubricApiResponse
-         * @description Response model for get rubric endpoint.
-         */
+        /** GetRubricApiResponse */
         GetRubricApiResponse: {
             /** Actor Name */
             actor_name?: string | null;
@@ -18648,135 +18658,18 @@ export interface components {
             draft_version?: number | null;
             /** Group Id */
             group_id?: string | null;
-            /** Names Group Id */
-            names_group_id?: string | null;
-            /** Descriptions Group Id */
-            descriptions_group_id?: string | null;
-            /** Flags Group Id */
-            flags_group_id?: string | null;
-            /** Departments Group Id */
-            departments_group_id?: string | null;
-            /** Points Group Id */
-            points_group_id?: string | null;
-            /** Pass Points Group Id */
-            pass_points_group_id?: string | null;
-            /** Standard Groups Group Id */
-            standard_groups_group_id?: string | null;
-            /** Standards Group Id */
-            standards_group_id?: string | null;
-            /** Show Name */
-            show_name?: boolean | null;
-            /** Name Domain Id */
-            name_domain_id?: string | null;
-            /** Name Required */
-            name_required?: boolean | null;
-            /** Name Suggestions */
-            name_suggestions?: string[] | null;
-            /** Name Show Ai Generate */
-            name_show_ai_generate?: boolean | null;
-            /** Show Description */
-            show_description?: boolean | null;
-            /** Description Domain Id */
-            description_domain_id?: string | null;
-            /** Description Required */
-            description_required?: boolean | null;
-            /** Description Suggestions */
-            description_suggestions?: string[] | null;
-            /** Description Show Ai Generate */
-            description_show_ai_generate?: boolean | null;
-            /** Show Flag */
-            show_flag?: boolean | null;
-            /** Flag Domain Id */
-            flag_domain_id?: string | null;
-            /** Flag Required */
-            flag_required?: boolean | null;
-            /** Flag Show Ai Generate */
-            flag_show_ai_generate?: boolean | null;
-            /** Show Departments */
-            show_departments?: boolean | null;
-            /** Departments Domain Id */
-            departments_domain_id?: string | null;
-            /** Departments Required */
-            departments_required?: boolean | null;
-            /** Department Suggestions */
-            department_suggestions?: string[] | null;
-            /** Departments Show Ai Generate */
-            departments_show_ai_generate?: boolean | null;
-            /** Show Points */
-            show_points?: boolean | null;
-            /** Points Domain Id */
-            points_domain_id?: string | null;
-            /** Points Required */
-            points_required?: boolean | null;
-            /** Points Suggestions */
-            points_suggestions?: string[] | null;
-            /** Points Show Ai Generate */
-            points_show_ai_generate?: boolean | null;
-            /** Show Pass Points */
-            show_pass_points?: boolean | null;
-            /** Pass Points Domain Id */
-            pass_points_domain_id?: string | null;
-            /** Pass Points Required */
-            pass_points_required?: boolean | null;
-            /** Pass Points Suggestions */
-            pass_points_suggestions?: string[] | null;
-            /** Pass Points Show Ai Generate */
-            pass_points_show_ai_generate?: boolean | null;
-            /** Show Standard Groups */
-            show_standard_groups?: boolean | null;
-            /** Standard Groups Domain Id */
-            standard_groups_domain_id?: string | null;
-            /** Standard Groups Required */
-            standard_groups_required?: boolean | null;
-            /** Standard Group Suggestions */
-            standard_group_suggestions?: string[] | null;
-            /** Standard Groups Show Ai Generate */
-            standard_groups_show_ai_generate?: boolean | null;
-            /** Show Standards */
-            show_standards?: boolean | null;
-            /** Standards Domain Id */
-            standards_domain_id?: string | null;
-            /** Standards Required */
-            standards_required?: boolean | null;
-            /** Standard Suggestions */
-            standard_suggestions?: string[] | null;
-            /** Standards Show Ai Generate */
-            standards_show_ai_generate?: boolean | null;
             /** Basic Show Ai Generate */
             basic_show_ai_generate?: boolean | null;
             /** Content Show Ai Generate */
             content_show_ai_generate?: boolean | null;
-            /** Name Create Tool Id */
-            name_create_tool_id?: string | null;
-            /** Description Create Tool Id */
-            description_create_tool_id?: string | null;
-            /** Points Create Tool Id */
-            points_create_tool_id?: string | null;
-            /** Pass Points Create Tool Id */
-            pass_points_create_tool_id?: string | null;
-            /** Standard Groups Create Tool Id */
-            standard_groups_create_tool_id?: string | null;
-            /** Standards Create Tool Id */
-            standards_create_tool_id?: string | null;
-            /** Name Link Tool Id */
-            name_link_tool_id?: string | null;
-            /** Description Link Tool Id */
-            description_link_tool_id?: string | null;
-            /** Flag Link Tool Id */
-            flag_link_tool_id?: string | null;
-            /** Departments Link Tool Id */
-            departments_link_tool_id?: string | null;
-            /** Points Link Tool Id */
-            points_link_tool_id?: string | null;
-            /** Pass Points Link Tool Id */
-            pass_points_link_tool_id?: string | null;
-            /** Standard Groups Link Tool Id */
-            standard_groups_link_tool_id?: string | null;
-            /** Standards Link Tool Id */
-            standards_link_tool_id?: string | null;
-            /** Domain Data */
-            domain_data?: components["schemas"]["DomainData"][] | null;
-            resources?: components["schemas"]["RubricResources"] | null;
+            names?: components["schemas"]["RubricNameSection"] | null;
+            descriptions?: components["schemas"]["RubricDescriptionSection"] | null;
+            flags?: components["schemas"]["RubricFlagSection"] | null;
+            departments?: components["schemas"]["RubricDepartmentSection"] | null;
+            points?: components["schemas"]["RubricPointsSection"] | null;
+            pass_points?: components["schemas"]["RubricPassPointsSection"] | null;
+            standard_groups?: components["schemas"]["RubricStandardGroupsSection"] | null;
+            standards?: components["schemas"]["RubricStandardsSection"] | null;
         };
         /** GetRubricsApiRequest */
         GetRubricsApiRequest: {
@@ -21362,10 +21255,18 @@ export interface components {
             /** User Role */
             user_role?: string | null;
         };
-        /**
-         * ListFieldApiDepartment
-         * @description Department type for list endpoint.
-         */
+        /** ListFieldApiConditionalParameter */
+        ListFieldApiConditionalParameter: {
+            /** Parameter Id */
+            parameter_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Count */
+            count?: number | null;
+        };
+        /** ListFieldApiDepartment */
         ListFieldApiDepartment: {
             /** Department Id */
             department_id?: string | null;
@@ -21376,10 +21277,7 @@ export interface components {
             /** Count */
             count?: number | null;
         };
-        /**
-         * ListFieldApiField
-         * @description Field type for list endpoint with computed permissions.
-         */
+        /** ListFieldApiField */
         ListFieldApiField: {
             /** Field Id */
             field_id?: string | null;
@@ -21389,8 +21287,8 @@ export interface components {
             description?: string | null;
             /** Department Ids */
             department_ids?: string[] | null;
-            /** Parameter Ids */
-            parameter_ids?: string[] | null;
+            /** Conditional Parameter Ids */
+            conditional_parameter_ids?: string[] | null;
             /** Is Inactive */
             is_inactive?: boolean | null;
             /** Can Edit */
@@ -21402,31 +21300,14 @@ export interface components {
             /** Updated At */
             updated_at?: string | null;
         };
-        /**
-         * ListFieldApiParameter
-         * @description Parameter type for list endpoint.
-         */
-        ListFieldApiParameter: {
-            /** Parameter Id */
-            parameter_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Count */
-            count?: number | null;
-        };
-        /**
-         * ListFieldApiResponse
-         * @description Response model for list field endpoint with computed permissions.
-         */
+        /** ListFieldApiResponse */
         ListFieldApiResponse: {
             /** Actor Name */
             actor_name?: string | null;
             /** Fields */
             fields?: components["schemas"]["ListFieldApiField"][] | null;
-            /** Parameters */
-            parameters?: components["schemas"]["ListFieldApiParameter"][] | null;
+            /** Conditional Parameters */
+            conditional_parameters?: components["schemas"]["ListFieldApiConditionalParameter"][] | null;
             /** Departments */
             departments?: components["schemas"]["ListFieldApiDepartment"][] | null;
             /** Total Count */
@@ -22987,33 +22868,24 @@ export interface components {
             /** Message */
             message: string;
         };
-        /**
-         * PatchFieldDraftApiRequest
-         * @description Request model for patch field draft endpoint.
-         */
+        /** PatchFieldDraftApiRequest */
         PatchFieldDraftApiRequest: {
             /** Input Draft Id */
             input_draft_id?: string | null;
-            /** Name Id */
-            name_id?: string | null;
-            /** Description Id */
-            description_id?: string | null;
-            /** Active Flag Id */
-            active_flag_id?: string | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Parameter Ids */
-            parameter_ids?: string[] | null;
+            /** Group Id */
+            group_id?: string | null;
+            names?: components["schemas"]["FieldResourceAction"] | null;
+            descriptions?: components["schemas"]["FieldResourceAction"] | null;
+            flags?: components["schemas"]["FieldResourceAction"] | null;
+            departments?: components["schemas"]["FieldMultiResourceAction"] | null;
+            conditional_parameters?: components["schemas"]["FieldMultiResourceAction"] | null;
             /**
              * Expected Version
              * @default 0
              */
             expected_version: number;
         };
-        /**
-         * PatchFieldDraftApiResponse
-         * @description Response model for patch field draft endpoint.
-         */
+        /** PatchFieldDraftApiResponse */
         PatchFieldDraftApiResponse: {
             /** Success */
             success: boolean;
@@ -23223,39 +23095,27 @@ export interface components {
             /** Message */
             message: string;
         };
-        /**
-         * PatchRubricDraftApiRequest
-         * @description Request model for patch rubric draft endpoint.
-         */
+        /** PatchRubricDraftApiRequest */
         PatchRubricDraftApiRequest: {
             /** Input Draft Id */
             input_draft_id?: string | null;
-            /** Name Id */
-            name_id?: string | null;
-            /** Description Id */
-            description_id?: string | null;
-            /** Active Flag Id */
-            active_flag_id?: string | null;
-            /** Total Points Id */
-            total_points_id?: string | null;
-            /** Pass Points Id */
-            pass_points_id?: string | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Standard Group Ids */
-            standard_group_ids?: string[] | null;
-            /** Standard Ids */
-            standard_ids?: string[] | null;
+            /** Group Id */
+            group_id?: string | null;
+            names?: components["schemas"]["RubricResourceAction"] | null;
+            descriptions?: components["schemas"]["RubricResourceAction"] | null;
+            flags?: components["schemas"]["RubricResourceAction"] | null;
+            departments?: components["schemas"]["RubricMultiResourceAction"] | null;
+            points?: components["schemas"]["RubricResourceAction"] | null;
+            pass_points?: components["schemas"]["RubricResourceAction"] | null;
+            standard_groups?: components["schemas"]["RubricMultiResourceAction"] | null;
+            standards?: components["schemas"]["RubricMultiResourceAction"] | null;
             /**
              * Expected Version
              * @default 0
              */
             expected_version: number;
         };
-        /**
-         * PatchRubricDraftApiResponse
-         * @description Response model for patch rubric draft endpoint.
-         */
+        /** PatchRubricDraftApiResponse */
         PatchRubricDraftApiResponse: {
             /** Success */
             success: boolean;
@@ -27771,6 +27631,61 @@ export interface components {
             /** Role Routes Id */
             role_routes_id?: string | null;
         };
+        /** RubricDepartmentSection */
+        RubricDepartmentSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
+        };
+        /** RubricDescriptionSection */
+        RubricDescriptionSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            resource?: components["schemas"]["QGetDescriptionsV4Item"] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetDescriptionsV4Item"][] | null;
+        };
         /**
          * RubricEntry
          * @description Rubric entry with resource metadata.
@@ -27812,10 +27727,36 @@ export interface components {
              * @default false
              */
             required: boolean;
-            /** Domain Id */
-            domain_id?: string | null;
             /** Generated */
             generated?: boolean | null;
+        };
+        /** RubricFlagSection */
+        RubricFlagSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["RubricFlagConfig"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["RubricFlagConfig"][] | null;
         };
         /**
          * RubricGenerationCompleteEvent
@@ -27901,35 +27842,160 @@ export interface components {
             /** Rubric Id */
             rubric_id?: string | null;
         };
-        /**
-         * RubricResourceBucket
-         * @description Generic resources bucket with full objects (always plural lists).
-         */
-        RubricResourceBucket: {
-            /** Names */
-            names?: components["schemas"]["QGetNamesV4Item"][] | null;
-            /** Descriptions */
-            descriptions?: components["schemas"]["QGetDescriptionsV4Item"][] | null;
-            /** Flags */
-            flags?: components["schemas"]["RubricFlagConfig"][] | null;
-            /** Departments */
-            departments?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
-            /** Points */
-            points?: components["schemas"]["QGetPointsV4Item"][] | null;
-            /** Pass Points */
-            pass_points?: components["schemas"]["QGetPointsV4Item"][] | null;
-            /** Standard Groups */
-            standard_groups?: components["schemas"]["QGetStandardGroupsV4Item"][] | null;
-            /** Standards */
-            standards?: components["schemas"]["QGetStandardsV4Item"][] | null;
+        /** RubricMultiResourceAction */
+        RubricMultiResourceAction: {
+            /** Resource Ids */
+            resource_ids?: string[] | null;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
         };
-        /**
-         * RubricResources
-         * @description Full resources + current selections.
-         */
-        RubricResources: {
-            resources?: components["schemas"]["RubricResourceBucket"] | null;
-            current?: components["schemas"]["RubricResourceBucket"] | null;
+        /** RubricNameSection */
+        RubricNameSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            resource?: components["schemas"]["QGetNamesV4Item"] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetNamesV4Item"][] | null;
+        };
+        /** RubricPassPointsSection */
+        RubricPassPointsSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            resource?: components["schemas"]["QGetPointsV4Item"] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetPointsV4Item"][] | null;
+        };
+        /** RubricPointsSection */
+        RubricPointsSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            resource?: components["schemas"]["QGetPointsV4Item"] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetPointsV4Item"][] | null;
+        };
+        /** RubricResourceAction */
+        RubricResourceAction: {
+            /** Resource Id */
+            resource_id?: string | null;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+        };
+        /** RubricStandardGroupsSection */
+        RubricStandardGroupsSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["QGetStandardGroupsV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetStandardGroupsV4Item"][] | null;
+        };
+        /** RubricStandardsSection */
+        RubricStandardsSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["QGetStandardsV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetStandardsV4Item"][] | null;
         };
         /**
          * RubricStructureData
@@ -28226,10 +28292,7 @@ export interface components {
             /** Message */
             message: string;
         };
-        /**
-         * SaveFieldApiRequest
-         * @description Request model for save field endpoint - accepts resource IDs.
-         */
+        /** SaveFieldApiRequest */
         SaveFieldApiRequest: {
             /**
              * Group Id
@@ -28238,24 +28301,13 @@ export interface components {
             group_id: string;
             /** Input Field Id */
             input_field_id?: string | null;
-            /**
-             * Name Id
-             * Format: uuid
-             */
-            name_id: string;
-            /** Description Id */
-            description_id?: string | null;
-            /** Active Flag Id */
-            active_flag_id?: string | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Parameter Ids */
-            parameter_ids?: string[] | null;
+            names: components["schemas"]["FieldResourceAction"];
+            descriptions: components["schemas"]["FieldResourceAction"];
+            flags: components["schemas"]["FieldResourceAction"];
+            departments: components["schemas"]["FieldMultiResourceAction"];
+            conditional_parameters: components["schemas"]["FieldMultiResourceAction"];
         };
-        /**
-         * SaveFieldApiResponse
-         * @description Response model for save field endpoint.
-         */
+        /** SaveFieldApiResponse */
         SaveFieldApiResponse: {
             /** Success */
             success: boolean;
@@ -28442,10 +28494,7 @@ export interface components {
             /** Message */
             message: string;
         };
-        /**
-         * SaveRubricApiRequest
-         * @description Request model for save rubric endpoint - accepts form data directly.
-         */
+        /** SaveRubricApiRequest */
         SaveRubricApiRequest: {
             /**
              * Group Id
@@ -28454,30 +28503,16 @@ export interface components {
             group_id: string;
             /** Input Rubric Id */
             input_rubric_id?: string | null;
-            /**
-             * Name Id
-             * Format: uuid
-             */
-            name_id: string;
-            /** Description Id */
-            description_id?: string | null;
-            /** Active Flag Id */
-            active_flag_id?: string | null;
-            /** Total Points Id */
-            total_points_id?: string | null;
-            /** Pass Points Id */
-            pass_points_id?: string | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Standard Group Ids */
-            standard_group_ids?: string[] | null;
-            /** Standard Ids */
-            standard_ids?: string[] | null;
+            names: components["schemas"]["RubricResourceAction"];
+            descriptions: components["schemas"]["RubricResourceAction"];
+            flags: components["schemas"]["RubricResourceAction"];
+            departments: components["schemas"]["RubricMultiResourceAction"];
+            points: components["schemas"]["RubricResourceAction"];
+            pass_points: components["schemas"]["RubricResourceAction"];
+            standard_groups: components["schemas"]["RubricMultiResourceAction"];
+            standards: components["schemas"]["RubricMultiResourceAction"];
         };
-        /**
-         * SaveRubricApiResponse
-         * @description Response model for save rubric endpoint.
-         */
+        /** SaveRubricApiResponse */
         SaveRubricApiResponse: {
             /** Success */
             success: boolean;

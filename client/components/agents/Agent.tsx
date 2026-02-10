@@ -282,211 +282,20 @@ export default function Agent({
   const agentDetail = stableAgentDetailRef.current.data;
   const agentDetailDefault = stableAgentDetailDefaultRef.current.data;
 
-  // Use edit detail when editing, default detail when creating
-  const rawAgentData = isEditMode ? agentDetail : agentDetailDefault;
-  const agentData = useMemo(() => {
-    const s = rawAgentData as Record<string, unknown> | undefined;
-    if (!s) return rawAgentData;
-
-    // Already legacy/flat shape (pre-migration fallback)
-    if (!s["names"] || !s["descriptions"]) {
-      return rawAgentData;
-    }
-
-    const names = s["names"] as Record<string, unknown> | null;
-    const descriptions = s["descriptions"] as Record<string, unknown> | null;
-    const models = s["models"] as Record<string, unknown> | null;
-    const prompts = s["prompts"] as Record<string, unknown> | null;
-    const instructions = s["instructions"] as Record<string, unknown> | null;
-    const flags = s["flags"] as Record<string, unknown> | null;
-    const departments = s["departments"] as Record<string, unknown> | null;
-    const tools = s["tools"] as Record<string, unknown> | null;
-    const temperatureLevels = s["temperature_levels"] as
-      | Record<string, unknown>
-      | null;
-    const reasoningLevels = s["reasoning_levels"] as
-      | Record<string, unknown>
-      | null;
-    const voices = s["voices"] as Record<string, unknown> | null;
-
-    const modelResources = ((models?.["resources"] as unknown[]) ?? []).map(
-      (m) => {
-        const item = m as Record<string, unknown>;
-        return {
-          ...item,
-          model_id: (item["id"] as string | undefined) ?? item["model_id"],
-        };
-      },
-    );
-
-    const promptResources = ((prompts?.["resources"] as unknown[]) ?? []).map(
-      (p) => {
-        const item = p as Record<string, unknown>;
-        return {
-          ...item,
-          prompt_id: (item["id"] as string | undefined) ?? item["prompt_id"],
-        };
-      },
-    );
-
-    return {
-      ...s,
-      // flat aliases consumed by existing component code
-      name_id:
-        ((names?.["resource"] as Record<string, unknown> | null)?.["id"] as
-          | string
-          | null
-          | undefined) ?? null,
-      name_resource: names?.["resource"] ?? null,
-      show_name: names?.["show"] ?? true,
-      name_suggestions: names?.["suggestions"] ?? [],
-      names: names?.["resources"] ?? [],
-      name_required: names?.["required"] ?? false,
-      name_agent_id: names?.["show_ai_generate"] ? "agent" : null,
-      name_create_tool_id: names?.["create_tool_id"] ?? null,
-      name_link_tool_id: names?.["link_tool_id"] ?? null,
-      description_id:
-        ((descriptions?.["resource"] as Record<string, unknown> | null)?.[
-          "id"
-        ] as string | null | undefined) ?? null,
-      description_resource: descriptions?.["resource"] ?? null,
-      show_description: descriptions?.["show"] ?? true,
-      description_suggestions: descriptions?.["suggestions"] ?? [],
-      descriptions: descriptions?.["resources"] ?? [],
-      description_required: descriptions?.["required"] ?? false,
-      description_agent_id: descriptions?.["show_ai_generate"] ? "agent" : null,
-      description_create_tool_id: descriptions?.["create_tool_id"] ?? null,
-      description_link_tool_id: descriptions?.["link_tool_id"] ?? null,
-      model_id:
-        ((models?.["resource"] as Record<string, unknown> | null)?.["id"] as
-          | string
-          | null
-          | undefined) ?? null,
-      model_resource: models?.["resource"] ?? null,
-      show_models: models?.["show"] ?? true,
-      model_suggestions: models?.["suggestions"] ?? [],
-      models: modelResources,
-      models_required: models?.["required"] ?? false,
-      models_agent_id: models?.["show_ai_generate"] ? "agent" : null,
-      models_create_tool_id: models?.["create_tool_id"] ?? null,
-      models_link_tool_id: models?.["link_tool_id"] ?? null,
-      prompt_id:
-        ((prompts?.["resource"] as Record<string, unknown> | null)?.["id"] as
-          | string
-          | null
-          | undefined) ?? null,
-      prompt_resource: prompts?.["resource"] ?? null,
-      show_prompts: prompts?.["show"] ?? true,
-      prompt_suggestions: prompts?.["suggestions"] ?? [],
-      prompts: promptResources,
-      prompts_required: prompts?.["required"] ?? false,
-      prompts_agent_id: prompts?.["show_ai_generate"] ? "agent" : null,
-      prompts_create_tool_id: prompts?.["create_tool_id"] ?? null,
-      prompts_link_tool_id: prompts?.["link_tool_id"] ?? null,
-      instructions_id:
-        ((instructions?.["resource"] as Record<string, unknown> | null)?.[
-          "id"
-        ] as string | null | undefined) ?? null,
-      instructions_resource: instructions?.["resource"] ?? null,
-      show_instructions: instructions?.["show"] ?? true,
-      instructions_suggestions: instructions?.["suggestions"] ?? [],
-      instructions: instructions?.["resources"] ?? [],
-      instructions_required: instructions?.["required"] ?? false,
-      instructions_agent_id: instructions?.["show_ai_generate"] ? "agent" : null,
-      instructions_create_tool_id: instructions?.["create_tool_id"] ?? null,
-      instructions_link_tool_id: instructions?.["link_tool_id"] ?? null,
-      active_flag_id:
-        ((flags?.["current"] as Array<Record<string, unknown>> | undefined)?.[0]?.[
-          "flag_option_id"
-        ] as string | null | undefined) ?? null,
-      flag_resource: (() => {
-        const currentFlag = (
-          (flags?.["current"] as Array<Record<string, unknown>> | undefined) ?? []
-        )[0];
-        if (!currentFlag) return null;
-        return {
-          id: currentFlag["flag_option_id"] ?? null,
-          name: currentFlag["label"] ?? null,
-          description: currentFlag["description"] ?? null,
-          icon: currentFlag["icon_id"] ?? null,
-          generated: currentFlag["generated"] ?? null,
-        };
-      })(),
-      show_flag: flags?.["show"] ?? false,
-      flag_required: flags?.["required"] ?? false,
-      flag_agent_id: flags?.["show_ai_generate"] ? "agent" : null,
-      flag_link_tool_id: flags?.["link_tool_id"] ?? null,
-      department_ids:
-        ((departments?.["current"] as Array<Record<string, unknown>> | undefined) ??
-          [])
-          .map((d) => d["department_id"] as string | null)
-          .filter((id): id is string => id != null),
-      department_resources: departments?.["current"] ?? [],
-      show_departments: departments?.["show"] ?? false,
-      department_suggestions: departments?.["suggestions"] ?? [],
-      departments: departments?.["resources"] ?? [],
-      departments_required: departments?.["required"] ?? false,
-      departments_agent_id: departments?.["show_ai_generate"] ? "agent" : null,
-      departments_link_tool_id: departments?.["link_tool_id"] ?? null,
-      tool_ids:
-        ((tools?.["current"] as Array<Record<string, unknown>> | undefined) ?? [])
-          .map((t) => (t["tool_id"] as string | undefined) ?? (t["id"] as string))
-          .filter((id): id is string => !!id),
-      tool_resources: tools?.["current"] ?? [],
-      show_tools: tools?.["show"] ?? false,
-      tool_suggestions: tools?.["suggestions"] ?? [],
-      tools: tools?.["resources"] ?? [],
-      tools_required: tools?.["required"] ?? false,
-      tools_agent_id: tools?.["show_ai_generate"] ? "agent" : null,
-      tools_link_tool_id: tools?.["link_tool_id"] ?? null,
-      temperature_level_id:
-        ((temperatureLevels?.["resource"] as Record<string, unknown> | null)?.[
-          "id"
-        ] as string | null | undefined) ?? null,
-      temperature_level_resource: temperatureLevels?.["resource"] ?? null,
-      show_temperature_levels: temperatureLevels?.["show"] ?? false,
-      temperature_level_suggestions: temperatureLevels?.["suggestions"] ?? [],
-      temperature_levels: temperatureLevels?.["resources"] ?? [],
-      temperature_levels_required: temperatureLevels?.["required"] ?? false,
-      temperature_levels_agent_id: temperatureLevels?.["show_ai_generate"]
-        ? "agent"
-        : null,
-      temperature_levels_link_tool_id: temperatureLevels?.["link_tool_id"] ?? null,
-      reasoning_level_id:
-        ((reasoningLevels?.["resource"] as Record<string, unknown> | null)?.[
-          "id"
-        ] as string | null | undefined) ?? null,
-      reasoning_level_resource: reasoningLevels?.["resource"] ?? null,
-      show_reasoning_levels: reasoningLevels?.["show"] ?? false,
-      reasoning_level_suggestions: reasoningLevels?.["suggestions"] ?? [],
-      reasoning_levels: reasoningLevels?.["resources"] ?? [],
-      reasoning_levels_required: reasoningLevels?.["required"] ?? false,
-      reasoning_levels_agent_id: reasoningLevels?.["show_ai_generate"]
-        ? "agent"
-        : null,
-      reasoning_levels_link_tool_id: reasoningLevels?.["link_tool_id"] ?? null,
-      voice_ids:
-        ((voices?.["current"] as Array<Record<string, unknown>> | undefined) ?? [])
-          .map((v) => v["id"] as string | null)
-          .filter((id): id is string => id != null),
-      voice_resources: voices?.["current"] ?? [],
-      show_voices: voices?.["show"] ?? false,
-      voice_suggestions: voices?.["suggestions"] ?? [],
-      voices: voices?.["resources"] ?? [],
-      voices_required: voices?.["required"] ?? false,
-      voices_agent_id: voices?.["show_ai_generate"] ? "agent" : null,
-      voices_create_tool_id: voices?.["create_tool_id"] ?? null,
-      voices_link_tool_id: voices?.["link_tool_id"] ?? null,
-      valid_department_ids: (
-        (departments?.["resources"] as Array<Record<string, unknown>> | undefined) ??
-        []
-      )
-        .map((d) => d["department_id"] as string | null)
-        .filter((id): id is string => id != null),
-      basic_show_ai_generate: s["basic_show_ai_generate"] ?? false,
-    } as typeof rawAgentData;
-  }, [rawAgentData]);
-  const sectionData = rawAgentData as GetAgentOut | undefined;
+  const sectionData = (
+    isEditMode ? agentDetail : agentDetailDefault
+  ) as GetAgentOut | undefined;
+  const namesSection = sectionData?.names;
+  const descriptionsSection = sectionData?.descriptions;
+  const modelsSection = sectionData?.models;
+  const promptsSection = sectionData?.prompts;
+  const instructionsSection = sectionData?.instructions;
+  const flagsSection = sectionData?.flags;
+  const departmentsSection = sectionData?.departments;
+  const toolsSection = sectionData?.tools;
+  const temperatureLevelsSection = sectionData?.temperature_levels;
+  const reasoningLevelsSection = sectionData?.reasoning_levels;
+  const voicesSection = sectionData?.voices;
 
   // Inline parsers for URL-backed state (search/filter params only - form fields in draftState)
   const agentSearchParamsClient = {
@@ -548,7 +357,7 @@ export default function Agent({
   // Initialize draft state from server data or draft payload
   // Extract resource IDs from server data (canonical pattern - matches Persona.tsx)
   const initialDraftState = useMemo((): DraftState => {
-    const data = isEditMode ? agentDetail : agentDetailDefault;
+    const data = sectionData;
     if (!data) {
       return {
         name_id: null,
@@ -565,46 +374,37 @@ export default function Agent({
       };
     }
 
-    // Extract resource IDs only, not display text or resource objects
+    const currentFlag = data.flags?.current?.[0];
+    const currentDepartments =
+      data.departments?.current
+        ?.map((d) => d.department_id)
+        .filter((id): id is string => !!id) ?? [];
+    const currentTools =
+      data.tools?.current
+        ?.map((t) => t.id)
+        .filter((id): id is string => !!id) ?? [];
+    const currentVoices =
+      data.voices?.current
+        ?.map((v) => v.id)
+        .filter((id): id is string => !!id) ?? [];
+
     return {
-      name_id: data.name_id ?? null,
-      description_id: data.description_id ?? null,
-      prompt_id: data.prompt_id ?? null,
-      modelId: data.model_id ?? "",
-      active_flag_id: data.active_flag_id ?? null,
-      tool_ids: data.tool_ids ?? [],
-      departmentIds: data.department_ids ?? [],
-      temperature_level_id: data.temperature_level_id ?? null,
-      reasoning_level_id: data.reasoning_level_id ?? null,
-      voice_ids: data.voice_ids ?? [],
-      instructions_id: data.instructions_id ?? null,
+      name_id: data.names?.resource?.id ?? null,
+      description_id: data.descriptions?.resource?.id ?? null,
+      prompt_id: data.prompts?.resource?.id ?? null,
+      modelId: data.models?.resource?.id ?? "",
+      active_flag_id: currentFlag?.flag_option_id ?? null,
+      tool_ids: currentTools,
+      departmentIds: currentDepartments,
+      temperature_level_id: data.temperature_levels?.resource?.id ?? null,
+      reasoning_level_id: data.reasoning_levels?.resource?.id ?? null,
+      voice_ids: currentVoices,
+      instructions_id: data.instructions?.resource?.id ?? null,
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    isEditMode,
-    agentDetail,
-    agentDetailDefault,
-    agentDetailId,
-    agentDetailDefaultId,
-    urlDraftId,
-    urlDraftId,
+    sectionData,
     defaultDepartmentIds,
-    // Include resource ID fields so it recomputes when server data changes
-    agentDetailDefault?.name_id,
-    agentDetailDefault?.description_id,
-    agentDetailDefault?.model_id,
-    agentDetailDefault?.tool_ids,
-    agentDetailDefault?.department_ids,
-    agentDetailDefault?.instructions_id,
-    agentDetail?.name_id,
-    agentDetail?.description_id,
-    agentDetail?.model_id,
-    agentDetail?.tool_ids,
-    agentDetail?.department_ids,
-    agentDetail?.temperature_level_id,
-    agentDetail?.reasoning_level_id,
-    agentDetail?.voice_ids,
-    agentDetail?.instructions_id,
   ]);
 
   const [draftState, setDraftState] = useState<DraftState>(initialDraftState);
@@ -612,10 +412,7 @@ export default function Agent({
     initialDraftState as Record<string, unknown>,
   );
   // Sync draft_version from server to avoid unintended draft forks.
-  const draftVersion =
-    agentData && "draft_version" in agentData
-      ? (agentData as { draft_version?: number | null }).draft_version
-      : null;
+  const draftVersion = sectionData?.draft_version ?? null;
 
   // Track previous initialDraftState content to avoid unnecessary updates
   const prevInitialDraftStateRef = useRef<string>(
@@ -678,17 +475,17 @@ export default function Agent({
 
       return {
         input_draft_id: nextDraftId,
-        group_id: agentData?.group_id ?? null,
+        group_id: sectionData?.group_id ?? null,
         ...buildResourceActions(AGENT_RESOURCES, {
           formState: effective,
           referenceState: lastPatchedFormStateRef.current,
           flushResults,
-          entityData: (agentData as Record<string, unknown> | undefined) ?? null,
+          entityData: (sectionData as Record<string, unknown> | undefined) ?? null,
         }),
         expected_version: expectedVersion,
       };
     },
-    [agentData, draftState],
+    [sectionData, draftState],
   );
 
   const {
@@ -728,15 +525,15 @@ export default function Agent({
       return null;
     }
 
-    const selectedModel = agentData?.models?.find(
-      (m) => m.model_id === draftState.modelId,
+    const selectedModel = modelsSection?.resources?.find(
+      (m: any) => m.model_id === draftState.modelId,
     );
     if (!selectedModel) {
       return null;
     }
 
-    const inputMods = selectedModel.input_modalities ?? [];
-    const outputMods = selectedModel.output_modalities ?? [];
+    const inputMods = (selectedModel as any).input_modalities ?? [];
+    const outputMods = (selectedModel as any).output_modalities ?? [];
 
     return {
       input_modalities: inputMods,
@@ -747,11 +544,11 @@ export default function Agent({
       has_image_output: outputMods.includes("image"),
       has_video_output: outputMods.includes("video"),
     };
-  }, [draftState.modelId, agentData?.models]);
+  }, [draftState.modelId, modelsSection?.resources]);
 
   // Set breadcrumb context when agent data is loaded
   useEffect(() => {
-    const agentName = agentData?.name_resource?.name;
+    const agentName = namesSection?.resource?.name;
     if (agentName && agentId && isEditMode) {
       setEntityMetadata({
         entityId: agentId,
@@ -761,7 +558,7 @@ export default function Agent({
     }
     return () => clearEntityMetadata();
   }, [
-    agentData?.name_resource?.name,
+    namesSection?.resource?.name,
     agentId,
     isEditMode,
     setEntityMetadata,
@@ -944,9 +741,9 @@ export default function Agent({
         }
 
         const validDepartmentIds =
-          agentData?.departments?.resources
-            ?.map((d) => d.department_id)
-            .filter((id): id is string => !!id) ?? [];
+          departmentsSection?.resources
+            ?.map((d: any) => d.department_id)
+            .filter((id: any): id is string => !!id) ?? [];
         const finalDepartmentIds = transformDepartmentIdsForSubmit(
           (effectiveFormState["departmentIds"] as string[]) ?? [],
           isSuperadmin,
@@ -960,7 +757,7 @@ export default function Agent({
           formState: normalizedFormState,
           referenceState: lastPatchedFormStateRef.current,
           flushResults,
-          entityData: (agentData as Record<string, unknown> | undefined) ?? null,
+          entityData: (sectionData as Record<string, unknown> | undefined) ?? null,
         });
 
         // Save agent using unified v4 API (handles both create and update)
@@ -969,11 +766,12 @@ export default function Agent({
           throw new Error("Profile not loaded");
         }
 
-        await handleSaveAgent({
-          group_id: agentData?.group_id ?? "",
+        const savePayload = {
+          group_id: sectionData?.group_id ?? "",
           input_agent_id: isEditMode ? agentId : null,
           ...saveActions,
-        });
+        } as SaveAgentBody;
+        await handleSaveAgent(savePayload);
         toast.success(
           `Agent ${isEditMode ? "updated" : "created"} successfully!`,
         );
@@ -991,7 +789,8 @@ export default function Agent({
       draftState,
       isEditMode,
       agentId,
-      agentData,
+      sectionData,
+      departmentsSection?.resources,
       isSuperadmin,
       profile,
       handleSaveAgent,
@@ -1002,14 +801,10 @@ export default function Agent({
   );
 
   // Extract disabled state from can_edit flag (check in both new and edit modes)
-  const disabled = useMemo(() => {
-    if (!agentData) return false;
-    // can_edit exists on unified GetAgentOut response
-    if ("can_edit" in agentData) {
-      return !agentData.can_edit;
-    }
-    return false;
-  }, [agentData]);
+  const disabled = useMemo(
+    () => (sectionData?.can_edit == null ? false : !sectionData.can_edit),
+    [sectionData?.can_edit],
+  );
 
   const isReadonly = disabled; // Alias for backward compatibility
 
@@ -1062,39 +857,54 @@ export default function Agent({
   // Helper to check if a resource type can be regenerated
   const canRegenerate = useCallback(
     (resourceType: ResourceType): boolean => {
-      if (!agentData) return false;
       switch (resourceType) {
         case "names":
-          return agentData.name_resource?.generated ?? false;
+          return namesSection?.resource?.generated ?? false;
         case "descriptions":
-          return agentData.description_resource?.generated ?? false;
+          return descriptionsSection?.resource?.generated ?? false;
         case "models":
           return (
-            agentData.models?.some(
-              (m) => (m as { generated?: boolean }).generated,
+            modelsSection?.resources?.some(
+              (m: any) => (m as { generated?: boolean }).generated,
             ) ?? false
           );
         case "prompts":
-          return agentData.prompts?.some((p) => p.generated) ?? false;
+          return promptsSection?.resources?.some((p: any) => p.generated) ?? false;
         case "instructions":
-          return agentData.instructions_resource?.generated ?? false;
+          return instructionsSection?.resource?.generated ?? false;
         case "flags":
-          return agentData.flag_resource?.generated ?? false;
+          return flagsSection?.current?.some((f) => f.generated) ?? false;
         case "departments":
-          return agentData.departments?.some((d) => d.generated) ?? false;
+          return departmentsSection?.current?.some((d: any) => d.generated) ?? false;
         case "reasoning_levels":
-          return agentData.reasoning_level_resource?.generated ?? false;
+          return reasoningLevelsSection?.resource?.generated ?? false;
         case "temperature_levels":
-          return agentData.temperature_level_resource?.generated ?? false;
+          return temperatureLevelsSection?.resource?.generated ?? false;
         case "voices":
-          return agentData.voice_resources?.some((v) => v.generated) ?? false;
+          return voicesSection?.current?.some((v: any) => v.generated) ?? false;
         case "tools":
-          return agentData.tool_resources?.some((t) => t.generated) ?? false;
+          return toolsSection?.current?.some((t: any) => t.generated) ?? false;
         default:
           return false;
       }
     },
-    [agentData],
+    [
+      namesSection?.resource,
+      descriptionsSection?.resource,
+      modelsSection?.resources,
+      promptsSection?.resources,
+      instructionsSection?.resource,
+      flagsSection?.current,
+      departmentsSection?.current,
+      reasoningLevelsSection?.resource,
+      temperatureLevelsSection?.resource,
+      voicesSection?.current,
+      toolsSection?.current,
+    ],
+  );
+  const canRegenerateForStepCard = useCallback(
+    (resourceType: string) => canRegenerate(resourceType as ResourceType),
+    [canRegenerate],
   );
 
   // Valid resource types for AI generation
@@ -1246,7 +1056,7 @@ export default function Agent({
     socket,
     isConnected,
     artifactType: "agent",
-    groupId: agentData?.group_id,
+    groupId: sectionData?.group_id,
     eventPrefix: "agent_generation",
     validResourceTypes: AGENT_VALID_RESOURCE_TYPES,
     onComplete: onAiComplete,
@@ -1254,6 +1064,10 @@ export default function Agent({
       SetStateAction<Record<string, unknown>>
     >,
   });
+  const isGeneratingForStepCard = useCallback(
+    (resourceType: string) => isGenerating(resourceType as ResourceType),
+    [isGenerating],
+  );
 
   // Multi-generation handler - accepts list of resource types and optional user instructions
   const handleGenerateResources = useCallback(
@@ -1435,51 +1249,55 @@ export default function Agent({
   const aiReasoningResource = aiFormData.reasoning_level_resource;
 
   const mergedNames = mergeById(
-    agentData?.names ?? [],
-    aiNameResource ? [aiNameResource] : [],
+    namesSection?.resources ?? [],
+    aiNameResource ? [aiNameResource as { id?: string | null }] : [],
   );
   const mergedDescriptions = mergeById(
-    agentData?.descriptions ?? [],
-    aiDescriptionResource ? [aiDescriptionResource] : [],
+    descriptionsSection?.resources ?? [],
+    aiDescriptionResource
+      ? [aiDescriptionResource as { id?: string | null }]
+      : [],
   );
   const mergedModels = mergeById(
-    agentData?.models ?? [],
+    modelsSection?.resources ?? [],
     aiModelResource ? [aiModelResource] : [],
   );
   const mergedPrompts = mergeById(
-    agentData?.prompts ?? [],
+    promptsSection?.resources ?? [],
     aiPromptResource ? [aiPromptResource] : [],
   );
   const mergedInstructions = mergeById(
-    agentData?.instructions ?? [],
+    instructionsSection?.resources ?? [],
     aiInstructionsResource ? [aiInstructionsResource] : [],
   );
   const mergedTemperatureLevels = mergeById(
-    agentData?.temperature_levels ?? [],
+    temperatureLevelsSection?.resources ?? [],
     aiTemperatureResource ? [aiTemperatureResource] : [],
   );
   const mergedReasoningLevels = mergeById(
-    agentData?.reasoning_levels ?? [],
+    reasoningLevelsSection?.resources ?? [],
     aiReasoningResource ? [aiReasoningResource] : [],
   );
   const mergedTools = mergeById(
-    agentData?.tools ?? [],
-    aiFormData.tool_resources ?? [],
+    toolsSection?.resources ?? [],
+    (aiFormData.tool_resources ?? []) as Array<{ id?: string | null }>,
   );
   const mergedVoices = mergeById(
-    agentData?.voices ?? [],
-    aiFormData.voice_resources ?? [],
+    voicesSection?.resources ?? [],
+    (aiFormData.voice_resources ?? []) as Array<{ id?: string | null }>,
   );
   const mergedDepartments = mergeByDepartmentId(
-    agentData?.departments ?? [],
-    aiFormData.department_resources ?? [],
+    departmentsSection?.resources ?? [],
+    (aiFormData.department_resources ?? []) as Array<{
+      department_id?: string | null;
+    }>,
   );
 
   return (
     <div className="space-y-6 py-4 px-4">
         <ReadOnlyBanner
           disabled={disabled}
-          disabledReason={agentData?.disabled_reason ?? null}
+          disabledReason={sectionData?.disabled_reason ?? null}
           entityType="agent"
         />
         <div className="w-full">
@@ -1490,7 +1308,7 @@ export default function Agent({
             onFormDataChange={onFormDataChange}
             steps={steps}
             getStepStatus={getStepStatus}
-            serverData={agentData}
+            serverData={sectionData}
             initializeForm={initializeForm}
             formFieldKeys={[]} // Form fields are in draftState, not URL params
             onReset={handleReset}
@@ -1557,10 +1375,10 @@ export default function Agent({
                       isEditMode={isEditMode}
                       customHeader={
                         <Names
-                          name_id={agentData?.name_id ?? null}
-                          name_resource={aiNameResource ?? agentData?.name_resource ?? null}
-                          show_name={agentData?.show_name ?? true}
-                          name_suggestions={agentData?.name_suggestions ?? []}
+                          name_id={draftState.name_id}
+                          name_resource={aiNameResource ?? namesSection?.resource ?? null}
+                          show_name={namesSection?.show ?? true}
+                          name_suggestions={namesSection?.suggestions ?? []}
                           names={mergedNames}
                           disabled={isReadonly}
                           onNameIdChange={(nameId) => {
@@ -1574,9 +1392,9 @@ export default function Agent({
                           isGenerating={isGenerating("names")}
                           placeholder="e.g., Customer Support Agent"
                           defaultName="New Agent"
-                          required={agentData?.name_required ?? false}
+                          required={namesSection?.required ?? false}
                           hideDescription={true}
-                          group_id={agentData?.group_id ?? null}
+                          group_id={sectionData?.group_id ?? null}
                           showAiGenerate={!!sectionData?.names?.show_ai_generate}
                         />
                       }
@@ -1596,8 +1414,8 @@ export default function Agent({
                           <StepCardAiButton
                             stepId="basic"
                             resourceTypes={stepResources["basic"] ?? []}
-                            canRegenerate={canRegenerate}
-                            isGenerating={isGenerating}
+                            canRegenerate={canRegenerateForStepCard}
+                            isGenerating={isGeneratingForStepCard}
                             onOpenModal={handleOpenStepCardModal}
                             disabled={isReadonly}
                           />
@@ -1609,13 +1427,13 @@ export default function Agent({
                       <div className="space-y-4">
                         {/* Description field - using Descriptions resource component */}
                         <Descriptions
-                          description_id={agentData?.description_id ?? null}
+                          description_id={draftState.description_id}
                           description_resource={
-                            aiDescriptionResource ?? agentData?.description_resource ?? null
+                            aiDescriptionResource ?? descriptionsSection?.resource ?? null
                           }
-                          show_description={agentData?.show_description ?? true}
+                          show_description={descriptionsSection?.show ?? true}
                           description_suggestions={
-                            agentData?.description_suggestions ?? []
+                            descriptionsSection?.suggestions ?? []
                           }
                           descriptions={mergedDescriptions}
                           disabled={isReadonly}
@@ -1634,10 +1452,10 @@ export default function Agent({
                           isGenerating={isGenerating("descriptions")}
                           label="Description"
                           placeholder="Detailed behavior description and personality traits"
-                          required={agentData?.description_required ?? false}
+                          required={descriptionsSection?.required ?? false}
                           rows={4}
                           data-testid="input-agent-description"
-                          group_id={agentData?.group_id ?? null}
+                          group_id={sectionData?.group_id ?? null}
                           showAiGenerate={
                             !!sectionData?.descriptions?.show_ai_generate
                           }
@@ -1647,13 +1465,15 @@ export default function Agent({
                         <Departments
                           department_ids={draftState.departmentIds || []}
                           department_resources={
-                            aiFormData.department_resources ?? agentData?.department_resources ?? []
+                            (aiFormData.department_resources ??
+                              departmentsSection?.current ??
+                              []) as any[]
                           }
                           show_departments={
-                            agentData?.show_departments ?? false
+                            departmentsSection?.show ?? false
                           }
                           department_suggestions={
-                            agentData?.department_suggestions ?? []
+                            (departmentsSection?.suggestions ?? []) as string[]
                           }
                           departments={mergedDepartments}
                           disabled={isReadonly}
@@ -1665,8 +1485,8 @@ export default function Agent({
                           }}
                           onGenerate={handleGenerateDepartments}
                           isGenerating={isGenerating("departments")}
-                          required={agentData?.departments_required ?? false}
-                          group_id={agentData?.group_id ?? null}
+                          required={departmentsSection?.required ?? false}
+                          group_id={sectionData?.group_id ?? null}
                           showAiGenerate={
                             !!sectionData?.departments?.show_ai_generate
                           }
@@ -1674,8 +1494,16 @@ export default function Agent({
 
                         <Flags
                           flag_id={draftState.active_flag_id}
-                          flag_resource={aiFormData.flag_resource ?? agentData?.flag_resource ?? null}
-                          show_flag={agentData?.show_flag ?? false}
+                          flag_resource={(aiFormData.flag_resource ?? (flagsSection?.current?.[0]
+                            ? {
+                                id: flagsSection.current[0].flag_option_id ?? null,
+                                name: flagsSection.current[0].label ?? null,
+                                description: flagsSection.current[0].description ?? null,
+                                icon: flagsSection.current[0].icon_id ?? null,
+                                generated: flagsSection.current[0].generated ?? null,
+                              }
+                            : null)) as any}
+                          show_flag={flagsSection?.show ?? false}
                           disabled={isReadonly}
                           onFlagIdChange={(flagId) => {
                             setDraftState((prev) => ({
@@ -1687,9 +1515,9 @@ export default function Agent({
                           isGenerating={isGenerating("flags")}
                           label="Active"
                           helpText="Inactive agents will not be available to perform operations for departments"
-                          required={agentData?.flag_required ?? false}
-                          group_id={agentData?.group_id ?? null}
-                          link_tool_id={agentData?.flag_link_tool_id ?? null}
+                          required={flagsSection?.required ?? false}
+                          group_id={sectionData?.group_id ?? null}
+                          link_tool_id={flagsSection?.link_tool_id ?? null}
                           showAiGenerate={!!sectionData?.flags?.show_ai_generate}
                         />
                       </div>
@@ -1736,8 +1564,8 @@ export default function Agent({
                           <StepCardAiButton
                             stepId="tools"
                             resourceTypes={stepResources["tools"] ?? []}
-                            canRegenerate={canRegenerate}
-                            isGenerating={isGenerating}
+                            canRegenerate={canRegenerateForStepCard}
+                            isGenerating={isGeneratingForStepCard}
                             onOpenModal={handleOpenStepCardModal}
                             disabled={isReadonly}
                           />
@@ -1746,19 +1574,21 @@ export default function Agent({
                     >
                       <Tools
                         tool_ids={draftState.tool_ids}
-                        tool_resources={aiFormData.tool_resources ?? agentData?.tool_resources ?? []}
-                        show_tools={agentData?.show_tools ?? false}
-                        tool_suggestions={agentData?.tool_suggestions ?? []}
-                        tools={mergedTools}
+                        tool_resources={
+                          (aiFormData.tool_resources ?? toolsSection?.current ?? []) as any[]
+                        }
+                        show_tools={toolsSection?.show ?? false}
+                        tool_suggestions={toolsSection?.suggestions ?? []}
+                        tools={mergedTools as any[]}
                         disabled={isReadonly}
                         onChange={(ids) =>
                           setDraftState((prev) => ({ ...prev, tool_ids: ids }))
                         }
                         label="Tools"
                         description="Select the tools this agent can use. Tools define what operations the agent can perform."
-                        required={agentData?.tools_required ?? false}
-                        group_id={agentData?.group_id ?? null}
-                        link_tool_id={agentData?.tools_link_tool_id ?? null}
+                        required={toolsSection?.required ?? false}
+                        group_id={sectionData?.group_id ?? null}
+                        link_tool_id={toolsSection?.link_tool_id ?? null}
                         showAiGenerate={!!sectionData?.tools?.show_ai_generate}
                         searchTerm={toolSearch}
                         onSearchChange={(term) =>
@@ -1810,8 +1640,8 @@ export default function Agent({
                           <StepCardAiButton
                             stepId="model"
                             resourceTypes={stepResources["model"] ?? []}
-                            canRegenerate={canRegenerate}
-                            isGenerating={isGenerating}
+                            canRegenerate={canRegenerateForStepCard}
+                            isGenerating={isGeneratingForStepCard}
                             onOpenModal={handleOpenStepCardModal}
                             disabled={isReadonly}
                           />
@@ -1822,10 +1652,12 @@ export default function Agent({
                     >
                       <Models
                         model_id={draftState.modelId || null}
-                        model_resource={aiModelResource ?? agentData?.model_resource ?? null}
-                        show_models={agentData?.show_models ?? true}
-                        model_suggestions={agentData?.model_suggestions ?? []}
-                        models={mergedModels}
+                        model_resource={
+                          (aiModelResource ?? modelsSection?.resource ?? null) as any
+                        }
+                        show_models={modelsSection?.show ?? true}
+                        model_suggestions={modelsSection?.suggestions ?? []}
+                        models={mergedModels as any[]}
                         disabled={isReadonly}
                         onModelIdChange={(modelId) => {
                           setDraftState((prev) => ({
@@ -1834,7 +1666,7 @@ export default function Agent({
                           }));
                         }}
                         label="Model"
-                        required={agentData?.models_required ?? true}
+                        required={modelsSection?.required ?? true}
                         id="model"
                         helpText="Select the AI model for this agent."
                         searchTerm={modelSearch}
@@ -1845,16 +1677,15 @@ export default function Agent({
                         onShowSelectedChange={(value) =>
                           setStepFormData({ modelShowSelected: value })
                         }
-                        group_id={agentData?.group_id ?? null}
-                        link_tool_id={agentData?.models_link_tool_id ?? null}
+                        link_tool_id={modelsSection?.link_tool_id ?? null}
                       />
                     </StepCard>
                   );
                 }
 
                 case "temperature": {
-                  const selectedModel = agentData?.models?.find(
-                    (m) => m.model_id === draftState.modelId,
+                  const selectedModel = modelsSection?.resources?.find(
+                    (m: any) => m.model_id === draftState.modelId,
                   );
 
                   return (
@@ -1875,8 +1706,8 @@ export default function Agent({
                           <StepCardAiButton
                             stepId="temperature"
                             resourceTypes={stepResources["temperature"] ?? []}
-                            canRegenerate={canRegenerate}
-                            isGenerating={isGenerating}
+                            canRegenerate={canRegenerateForStepCard}
+                            isGenerating={isGeneratingForStepCard}
                             onOpenModal={handleOpenStepCardModal}
                             disabled={isReadonly}
                           />
@@ -1886,20 +1717,22 @@ export default function Agent({
                       <TemperatureLevels
                         temperature_level_id={draftState.temperature_level_id}
                         temperature_level_resource={
-                          aiTemperatureResource ?? agentData?.temperature_level_resource ?? null
+                          (aiTemperatureResource ??
+                            temperatureLevelsSection?.resource ??
+                            null) as any
                         }
                         show_temperature_levels={
-                          agentData?.show_temperature_levels ?? true
+                          temperatureLevelsSection?.show ?? true
                         }
                         temperature_level_suggestions={
-                          agentData?.temperature_level_suggestions ?? []
+                          temperatureLevelsSection?.suggestions ?? []
                         }
-                        temperature_levels={mergedTemperatureLevels}
+                        temperature_levels={mergedTemperatureLevels as any[]}
                         temperature_lower={
-                          selectedModel?.temperature_lower ?? null
+                          (selectedModel as any)?.temperature_lower ?? null
                         }
                         temperature_upper={
-                          selectedModel?.temperature_upper ?? null
+                          (selectedModel as any)?.temperature_upper ?? null
                         }
                         disabled={isReadonly}
                         onTemperatureLevelIdChange={(id) =>
@@ -1911,9 +1744,9 @@ export default function Agent({
                         onGenerate={handleGenerateTemperatureLevels}
                         isGenerating={isGenerating("temperature_levels")}
                         showSlider={true}
-                        group_id={agentData?.group_id ?? null}
+                        group_id={sectionData?.group_id ?? null}
                         link_tool_id={
-                          agentData?.temperature_levels_link_tool_id ?? null
+                          temperatureLevelsSection?.link_tool_id ?? null
                         }
                         showAiGenerate={
                           !!sectionData?.temperature_levels?.show_ai_generate
@@ -1942,8 +1775,8 @@ export default function Agent({
                           <StepCardAiButton
                             stepId="reasoning"
                             resourceTypes={stepResources["reasoning"] ?? []}
-                            canRegenerate={canRegenerate}
-                            isGenerating={isGenerating}
+                            canRegenerate={canRegenerateForStepCard}
+                            isGenerating={isGeneratingForStepCard}
                             onOpenModal={handleOpenStepCardModal}
                             disabled={isReadonly}
                           />
@@ -1953,15 +1786,15 @@ export default function Agent({
                       <ReasoningLevels
                         reasoning_level_id={draftState.reasoning_level_id}
                         reasoning_level_resource={
-                          aiReasoningResource ?? agentData?.reasoning_level_resource ?? null
+                          (aiReasoningResource ?? reasoningLevelsSection?.resource ?? null) as any
                         }
                         show_reasoning_levels={
-                          agentData?.show_reasoning_levels ?? true
+                          reasoningLevelsSection?.show ?? true
                         }
                         reasoning_level_suggestions={
-                          agentData?.reasoning_level_suggestions ?? []
+                          reasoningLevelsSection?.suggestions ?? []
                         }
-                        reasoning_levels={mergedReasoningLevels}
+                        reasoning_levels={mergedReasoningLevels as any[]}
                         disabled={isReadonly}
                         onReasoningLevelIdChange={(id) =>
                           setDraftState((prev) => ({
@@ -1971,9 +1804,9 @@ export default function Agent({
                         }
                         onGenerate={handleGenerateReasoningLevels}
                         isGenerating={isGenerating("reasoning_levels")}
-                        group_id={agentData?.group_id ?? null}
+                        group_id={sectionData?.group_id ?? null}
                         link_tool_id={
-                          agentData?.reasoning_levels_link_tool_id ?? null
+                          reasoningLevelsSection?.link_tool_id ?? null
                         }
                         showAiGenerate={
                           !!sectionData?.reasoning_levels?.show_ai_generate
@@ -2002,8 +1835,8 @@ export default function Agent({
                           <StepCardAiButton
                             stepId="voice"
                             resourceTypes={stepResources["voice"] ?? []}
-                            canRegenerate={canRegenerate}
-                            isGenerating={isGenerating}
+                            canRegenerate={canRegenerateForStepCard}
+                            isGenerating={isGeneratingForStepCard}
                             onOpenModal={handleOpenStepCardModal}
                             disabled={isReadonly}
                           />
@@ -2012,17 +1845,19 @@ export default function Agent({
                     >
                       <Voices
                         voice_ids={draftState.voice_ids}
-                        voice_resources={aiFormData.voice_resources ?? agentData?.voice_resources ?? []}
-                        show_voices={agentData?.show_voices ?? true}
-                        voice_suggestions={agentData?.voice_suggestions ?? []}
-                        voices={mergedVoices}
+                        voice_resources={
+                          (aiFormData.voice_resources ?? voicesSection?.current ?? []) as any[]
+                        }
+                        show_voices={voicesSection?.show ?? true}
+                        voice_suggestions={voicesSection?.suggestions ?? []}
+                        voices={mergedVoices as any[]}
                         disabled={isReadonly}
                         onVoiceIdsChange={(ids) =>
                           setDraftState((prev) => ({ ...prev, voice_ids: ids }))
                         }
-                        group_id={agentData?.group_id ?? null}
-                        create_tool_id={agentData?.voices_create_tool_id ?? null}
-                        link_tool_id={agentData?.voices_link_tool_id ?? null}
+                        group_id={sectionData?.group_id ?? null}
+                        create_tool_id={voicesSection?.create_tool_id ?? null}
+                        link_tool_id={voicesSection?.link_tool_id ?? null}
                         createVoicesAction={createVoicesAction}
                         registerFlush={registerFlushCallbacks["voices"]}
                       />
@@ -2051,8 +1886,8 @@ export default function Agent({
                           <StepCardAiButton
                             stepId="prompt"
                             resourceTypes={stepResources["prompt"] ?? []}
-                            canRegenerate={canRegenerate}
-                            isGenerating={isGenerating}
+                            canRegenerate={canRegenerateForStepCard}
+                            isGenerating={isGeneratingForStepCard}
                             onOpenModal={handleOpenStepCardModal}
                             disabled={isReadonly}
                           />
@@ -2061,10 +1896,12 @@ export default function Agent({
                     >
                       <Prompts
                         prompt_id={draftState.prompt_id}
-                        prompt_resource={aiPromptResource ?? agentData?.prompt_resource ?? null}
-                        show_prompts={agentData?.show_prompts ?? true}
-                        prompt_suggestions={agentData?.prompt_suggestions ?? []}
-                        prompts={mergedPrompts}
+                        prompt_resource={
+                          (aiPromptResource ?? promptsSection?.resource ?? null) as any
+                        }
+                        show_prompts={promptsSection?.show ?? true}
+                        prompt_suggestions={promptsSection?.suggestions ?? []}
+                        prompts={mergedPrompts as any[]}
                         disabled={isReadonly}
                         onPromptIdChange={(id) => {
                           setDraftState((prev) => ({ ...prev, prompt_id: id }));
@@ -2073,9 +1910,9 @@ export default function Agent({
                         onSearchChange={(term: string) =>
                           setStepFormData({ promptSearch: term || null })
                         }
-                        group_id={agentData?.group_id ?? null}
-                        create_tool_id={agentData?.prompts_create_tool_id ?? null}
-                        link_tool_id={agentData?.prompts_link_tool_id ?? null}
+                        group_id={sectionData?.group_id ?? null}
+                        create_tool_id={promptsSection?.create_tool_id ?? null}
+                        link_tool_id={promptsSection?.link_tool_id ?? null}
                         createPromptsAction={createPromptsAction}
                         registerFlush={registerFlushCallbacks["prompts"]}
                       />
@@ -2104,8 +1941,8 @@ export default function Agent({
                           <StepCardAiButton
                             stepId="instructions"
                             resourceTypes={stepResources["instructions"] ?? []}
-                            canRegenerate={canRegenerate}
-                            isGenerating={isGenerating}
+                            canRegenerate={canRegenerateForStepCard}
+                            isGenerating={isGeneratingForStepCard}
                             onOpenModal={handleOpenStepCardModal}
                             disabled={isReadonly}
                           />
@@ -2115,13 +1952,15 @@ export default function Agent({
                       <Instructions
                         instructions_id={draftState.instructions_id}
                         instructions_resource={
-                          aiInstructionsResource ?? agentData?.instructions_resource ?? null
+                          (aiInstructionsResource ??
+                            instructionsSection?.resource ??
+                            null) as any
                         }
-                        show_instructions={agentData?.show_instructions ?? true}
+                        show_instructions={instructionsSection?.show ?? true}
                         instructions_suggestions={
-                          agentData?.instructions_suggestions ?? []
+                          instructionsSection?.suggestions ?? []
                         }
-                        instructions={mergedInstructions}
+                        instructions={mergedInstructions as any[]}
                         disabled={isReadonly}
                         onInstructionsIdChange={(id) =>
                           setDraftState((prev) => ({
@@ -2133,7 +1972,7 @@ export default function Agent({
                         onSearchChange={(term: string) =>
                           setStepFormData({ instructionsSearch: term || null })
                         }
-                        group_id={agentData?.group_id ?? null}
+                        group_id={sectionData?.group_id ?? null}
                         showAiGenerate={
                           !!sectionData?.instructions?.show_ai_generate
                         }

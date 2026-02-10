@@ -818,6 +818,8 @@ Contract rules:
 Frontend rules:
 - `client/components/agents/Agent.tsx` should read section data via `s.<section>.*` (or a single normalization layer) and avoid direct legacy field coupling.
 - Step-level generation controls should use shared `StepCardAiButton` (no repeated custom tooltip/button blocks per step).
+- Draft/save flow should use persona-style hooks/utilities: `useDraftLifecycle`, `useFlushRegistry`, and `buildResourceActions` / `computeEffectiveFormState` / `checkHasResourceIds`.
+- Agent generation should ensure a draft exists before emitting `agent_generate` (flush resources + patch draft first when needed).
 - Agent pages should only send contract fields supported by artifact GET (`agent_id`, `draft_id`) and remove legacy search/body extras.
 - Remove invalid create endpoints from agent pages (`reasoning_levels`, `temperature_levels` are non-creatable resources).
 
@@ -876,3 +878,95 @@ Frontend notes:
 - Step AI controls use `StepCardAiButton` + `useGenerationModal`
 - Department pages and metadata must read section fields directly (e.g., `names.resource`, `descriptions.resource`) and never parse `resources.current`
 - Legacy path/contract compatibility adapters should not be reintroduced
+
+### Rubric Parity Rules (Persona-Style)
+
+Rubric artifact is hard-migrated to section-first parity with **8 resources**:
+`names`, `descriptions`, `flags`, `departments`, `points`, `pass_points`, `standard_groups`, `standards`.
+
+Architecture notes:
+- API `get` response is section-first and must not expose legacy flat keys.
+- Remove legacy routing/internal fields from rubric contracts:
+  - no top-level `current`
+  - no nested `resources.current`
+  - no `*_domain_id` / `domains` routing payload
+  - no exposed `*_agent_id` frontend routing fields
+- Websocket `get_rubric_websocket()` returns:
+  - `views.draft_rubric`
+  - `resources` (selected resources + hydrated `agents/models/providers/tools`)
+  - `resource_agent_ids`
+  - `group_id`
+- `rubric_generate` payload uses `resource_types` (never `domain_ids`).
+- Save/draft external contracts are nested section-action payloads:
+  - single: `{ resource_id, create_tool_id, link_tool_id }`
+  - multi: `{ resource_ids, create_tool_id, link_tool_id }`
+- Save/draft SQL signatures must be composite-action based (no flat legacy IDs in function args).
+- Save/draft SQL must create `runs_entry` + `calls_entry` + `tool_calls_junction` when tool IDs are present and link resources through:
+  - `names_calls_connection`
+  - `descriptions_calls_connection`
+  - `flags_calls_connection`
+  - `departments_calls_connection`
+  - `points_calls_connection`
+  - `standard_groups_calls_connection`
+  - `standards_calls_connection`
+- Rubric socket completion should emit typed `rubric_generation_complete` resource payloads and avoid legacy top-level ID completion payloads (`name_id`, `description_id`, `department_ids`, etc.).
+
+Frontend notes:
+- `client/components/rubrics/Rubric.tsx` is canonical and should use parity stack:
+  - `useSaveContext` + `useDraftLifecycle` + `useFlushRegistry`
+  - `useAiGeneration` + `useGenerationModal` + `StepCardAiButton`
+  - `buildResourceActions` / `computeEffectiveFormState` / `checkHasResourceIds`
+- Rubric pages and metadata should read section fields directly (`names.resource`, `descriptions.resource`), never `resources.current`.
+- Do not wire rubric to `/api/v4/resources/departments` create routes; departments in rubric are selected/linked resources only.
+
+### Field Parity Rules (Persona-Style)
+
+Field artifact is hard-migrated to section-first parity with **5 resources**:
+`names`, `descriptions`, `flags`, `departments`, `conditional_parameters`.
+
+Architecture notes:
+- API `get` response is section-first:
+  - `names`, `descriptions`, `flags`, `departments`, `conditional_parameters`
+  - each section carries `show`, `required`, `suggestions`, `show_ai_generate`, `create_tool_id`, `link_tool_id`
+- Do not expose legacy contract fields:
+  - no top-level `current`
+  - no nested `resources.current`
+  - no `*_domain_id`/`domains`
+  - no exposed `agent_id` routing fields
+- Websocket `get_field_websocket()` returns only:
+  - `views.draft_field`
+  - `resources` (selected artifact resources + hydrated `agents/models/providers/tools`)
+  - `resource_agent_ids`
+  - `group_id`
+- `field_generate` payload uses `resource_types` (never `domain_ids`).
+- Field save/draft endpoints are nested section-action contracts:
+  - single: `{ resource_id, create_tool_id, link_tool_id }`
+  - multi: `{ resource_ids, create_tool_id, link_tool_id }`
+  - sections: `names`, `descriptions`, `flags`, `departments`, `conditional_parameters`
+- Save/draft SQL must remain workflow-style:
+  - create call/run/tool_call rows when `create_tool_id`/`link_tool_id` are present
+  - deactivate old `field_fields_junction` link, create a fresh `fields_resource`, and link as active
+  - deactivate old junctions and insert new active links for names/descriptions/flags/departments/conditional_parameters
+
+Conditional parameter naming rule:
+- External/API/websocket/frontend naming is always `conditional_parameters`.
+- Internal generation/tooling may still use `parameters` resource enum.
+- When needed, map alias internally:
+  - outbound generation call: `conditional_parameters -> parameters`
+  - inbound socket events: `parameters -> conditional_parameters`
+  - candidate-agent tool resource matching should normalize `parameters` to `conditional_parameters` for scoring and tool-id lookup.
+
+Frontend notes:
+- `client/components/fields/Field.tsx` is canonical and should use the compact parity stack:
+  - `useSaveContext` + `useDraftLifecycle` + `useFlushRegistry`
+  - `useAiGeneration` + `useGenerationModal` + `StepCardAiButton`
+  - `buildResourceActions` / `computeEffectiveFormState` / `checkHasResourceIds`
+- Field pages and metadata must read section fields directly (`names.resource`, `descriptions.resource`) and never parse `resources.current`.
+- Field search params should use:
+  - `descriptionSearch`
+  - `conditionalParameterSearch`
+  - `conditionalParameterShowSelected`
+- Request body keys for artifact get should use:
+  - `description_search`
+  - `conditional_parameter_search`
+  - `conditional_parameter_show_selected`

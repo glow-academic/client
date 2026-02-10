@@ -1,7 +1,30 @@
--- Unified save rubric function - handles both create (rubric_id = NULL) and update (rubric_id provided)
--- Accepts all resource IDs directly (not draft_id) following persona save pattern
+-- Unified save rubric function - handles both create (input_rubric_id = NULL) and update (input_rubric_id provided)
+-- Persona-parity signature: composite resource actions + tool call tracking.
 
--- Drop all versions of the function using DO block to handle signature variations
+-- 0) Drop and recreate composite types for resource actions
+DO $$
+BEGIN
+    DROP TYPE IF EXISTS types.rubric_resource_action CASCADE;
+    CREATE TYPE types.rubric_resource_action AS (
+        resource_id uuid,
+        create_tool_id uuid,
+        link_tool_id uuid
+    );
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
+DO $$
+BEGIN
+    DROP TYPE IF EXISTS types.rubric_multi_resource_action CASCADE;
+    CREATE TYPE types.rubric_multi_resource_action AS (
+        resource_ids uuid[],
+        create_tool_id uuid,
+        link_tool_id uuid
+    );
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
+-- 1) Drop function first (breaks dependency on types)
 DO $$
 DECLARE
     r RECORD;
@@ -16,18 +39,19 @@ BEGIN
     END LOOP;
 END $$;
 
+-- 2) Recreate function with composite resource action parameters
 CREATE OR REPLACE FUNCTION api_save_rubric_v4(
     profile_id uuid,
     group_id uuid,
     input_rubric_id uuid DEFAULT NULL,
-    name_id uuid DEFAULT NULL,
-    description_id uuid DEFAULT NULL,
-    active_flag_id uuid DEFAULT NULL,
-    total_points_id uuid DEFAULT NULL,
-    pass_points_id uuid DEFAULT NULL,
-    department_ids uuid[] DEFAULT NULL,
-    standard_group_ids uuid[] DEFAULT NULL,
-    standard_ids uuid[] DEFAULT NULL
+    names types.rubric_resource_action DEFAULT NULL,
+    descriptions types.rubric_resource_action DEFAULT NULL,
+    flags types.rubric_resource_action DEFAULT NULL,
+    departments types.rubric_multi_resource_action DEFAULT NULL,
+    points types.rubric_resource_action DEFAULT NULL,
+    pass_points types.rubric_resource_action DEFAULT NULL,
+    standard_groups types.rubric_multi_resource_action DEFAULT NULL,
+    standards types.rubric_multi_resource_action DEFAULT NULL
 )
 RETURNS TABLE (
     rubric_id uuid,
@@ -39,272 +63,395 @@ AS $$
 DECLARE
     v_rubric_id uuid;
     v_actor_name text;
+    v_profile_id uuid;
+    v_group_id uuid;
+    v_input_rubric_id uuid;
     is_create boolean;
-BEGIN
-    -- Determine if create or update
-    is_create := (input_rubric_id IS NULL);
 
-    -- Create or UPDATE rubric_artifact first
+    -- Extracted resource IDs
+    v_name_id uuid;
+    v_description_id uuid;
+    v_active_flag_id uuid;
+    v_total_points_id uuid;
+    v_pass_points_id uuid;
+    v_department_ids uuid[];
+    v_standard_group_ids uuid[];
+    v_standard_ids uuid[];
+
+    -- Call tracking variables
+    v_run_id uuid;
+    v_call_id uuid;
+BEGIN
+    -- Assign params to local vars
+    v_profile_id := profile_id;
+    v_group_id := group_id;
+    v_input_rubric_id := input_rubric_id;
+
+    v_name_id := (names).resource_id;
+    v_description_id := (descriptions).resource_id;
+    v_active_flag_id := (flags).resource_id;
+    v_total_points_id := (points).resource_id;
+    v_pass_points_id := (pass_points).resource_id;
+    v_department_ids := COALESCE((departments).resource_ids, ARRAY[]::uuid[]);
+    v_standard_group_ids := COALESCE((standard_groups).resource_ids, ARRAY[]::uuid[]);
+    v_standard_ids := COALESCE((standards).resource_ids, ARRAY[]::uuid[]);
+
+    IF v_group_id IS NULL THEN
+        RAISE EXCEPTION 'group_id is required';
+    END IF;
+
+    IF v_name_id IS NULL THEN
+        RAISE EXCEPTION 'Name resource is required';
+    END IF;
+
+    -- Determine if create or update
+    is_create := (v_input_rubric_id IS NULL);
+
+    -- Create or update artifact first
     IF is_create THEN
         INSERT INTO rubric_artifact (created_at, updated_at)
         VALUES (NOW(), NOW())
         RETURNING id INTO v_rubric_id;
     ELSE
-        v_rubric_id := input_rubric_id;
+        v_rubric_id := v_input_rubric_id;
         UPDATE rubric_artifact
         SET updated_at = NOW()
         WHERE id = v_rubric_id;
-    END IF;
 
-    -- Validate required resource IDs exist
-    IF name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names_resource WHERE id = name_id) THEN
-        RAISE EXCEPTION 'Name resource not found: %', name_id;
-    END IF;
-
-    IF description_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM descriptions_resource WHERE id = description_id) THEN
-        RAISE EXCEPTION 'Description resource not found: %', description_id;
-    END IF;
-
-    IF active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = active_flag_id) THEN
-        RAISE EXCEPTION 'Flag resource not found: %', active_flag_id;
-    END IF;
-
-    IF total_points_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM points_resource WHERE id = total_points_id) THEN
-        RAISE EXCEPTION 'Total points resource not found: %', total_points_id;
-    END IF;
-
-    IF pass_points_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM points_resource WHERE id = pass_points_id) THEN
-        RAISE EXCEPTION 'Pass points resource not found: %', pass_points_id;
-    END IF;
-
-    -- Validate standard_group_ids exist
-    IF COALESCE(array_length(standard_group_ids, 1), 0) > 0 THEN
-        IF EXISTS (
-            SELECT 1 FROM UNNEST(standard_group_ids) AS sg_id
-            WHERE NOT EXISTS (SELECT 1 FROM standard_groups_resource WHERE id = sg_id)
-        ) THEN
-            RAISE EXCEPTION 'One or more standard_group_ids not found';
+        IF NOT FOUND THEN
+            RAISE EXCEPTION 'Rubric not found: %', v_input_rubric_id;
         END IF;
     END IF;
 
-    IF COALESCE(array_length(standard_ids, 1), 0) > 0 THEN
-        IF EXISTS (
-            SELECT 1 FROM UNNEST(standard_ids) AS std_id
-            WHERE NOT EXISTS (SELECT 1 FROM standards_resource WHERE id = std_id)
-        ) THEN
-            RAISE EXCEPTION 'One or more standard_ids not found';
-        END IF;
+    -- Validate scalar resources
+    IF v_name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names_resource WHERE id = v_name_id) THEN
+        RAISE EXCEPTION 'Name resource not found: %', v_name_id;
     END IF;
 
-    -- For update, remove old links first
+    IF v_description_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM descriptions_resource WHERE id = v_description_id) THEN
+        RAISE EXCEPTION 'Description resource not found: %', v_description_id;
+    END IF;
+
+    IF v_active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = v_active_flag_id) THEN
+        RAISE EXCEPTION 'Flag resource not found: %', v_active_flag_id;
+    END IF;
+
+    IF v_total_points_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM points_resource WHERE id = v_total_points_id) THEN
+        RAISE EXCEPTION 'Total points resource not found: %', v_total_points_id;
+    END IF;
+
+    IF v_pass_points_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM points_resource WHERE id = v_pass_points_id) THEN
+        RAISE EXCEPTION 'Pass points resource not found: %', v_pass_points_id;
+    END IF;
+
+    -- Validate arrays
+    IF EXISTS (
+        SELECT 1 FROM UNNEST(v_department_ids) AS did
+        WHERE NOT EXISTS (SELECT 1 FROM departments_resource WHERE id = did)
+    ) THEN
+        RAISE EXCEPTION 'One or more department_ids not found';
+    END IF;
+
+    IF EXISTS (
+        SELECT 1 FROM UNNEST(v_standard_group_ids) AS sgid
+        WHERE NOT EXISTS (SELECT 1 FROM standard_groups_resource WHERE id = sgid)
+    ) THEN
+        RAISE EXCEPTION 'One or more standard_group_ids not found';
+    END IF;
+
+    IF EXISTS (
+        SELECT 1 FROM UNNEST(v_standard_ids) AS sid
+        WHERE NOT EXISTS (SELECT 1 FROM standards_resource WHERE id = sid)
+    ) THEN
+        RAISE EXCEPTION 'One or more standard_ids not found';
+    END IF;
+
+    -- Update path cleanup
     IF NOT is_create THEN
-        DELETE FROM rubric_names_junction WHERE rubric_names_junction.rubric_id = v_rubric_id;
-        DELETE FROM rubric_descriptions_junction WHERE rubric_descriptions_junction.rubric_id = v_rubric_id;
-        DELETE FROM rubric_points_junction WHERE rubric_points_junction.rubric_id = v_rubric_id;
-        DELETE FROM rubric_departments_junction WHERE rubric_departments_junction.rubric_id = v_rubric_id;
-        -- Deactivate (don't delete) standard_group links
-        UPDATE rubric_standard_groups_junction SET active = false
-        WHERE rubric_standard_groups_junction.rubric_id = v_rubric_id AND rubric_standard_groups_junction.active = true;
-        -- Deactivate (don't delete) standard links
-        UPDATE rubric_standards_junction SET active = false
-        WHERE rubric_standards_junction.rubric_id = v_rubric_id AND rubric_standards_junction.active = true;
-        -- Update existing active flag if it exists
-        UPDATE rubric_flags_junction SET
-            flag_id = COALESCE(api_save_rubric_v4.active_flag_id, rubric_flags_junction.flag_id),
-            value = CASE WHEN api_save_rubric_v4.active_flag_id IS NOT NULL THEN true ELSE false END
-        WHERE rubric_flags_junction.rubric_id = v_rubric_id;
+        DELETE FROM rubric_names_junction WHERE rubric_id = v_rubric_id;
+        DELETE FROM rubric_descriptions_junction WHERE rubric_id = v_rubric_id;
+        DELETE FROM rubric_points_junction WHERE rubric_id = v_rubric_id;
+        DELETE FROM rubric_departments_junction WHERE rubric_id = v_rubric_id;
+
+        UPDATE rubric_standard_groups_junction
+        SET active = false
+        WHERE rubric_id = v_rubric_id
+          AND active = true;
+
+        UPDATE rubric_standards_junction
+        SET active = false
+        WHERE rubric_id = v_rubric_id
+          AND active = true;
+
+        UPDATE rubric_flags_junction
+        SET flag_id = COALESCE(v_active_flag_id, rubric_flags_junction.flag_id),
+            value = CASE WHEN v_active_flag_id IS NOT NULL THEN true ELSE false END
+        WHERE rubric_id = v_rubric_id;
     END IF;
 
-    -- Continue with rubric save using SQL
-    RETURN QUERY
-    WITH params AS (
-        SELECT
-            v_rubric_id AS rubric_id,
-            api_save_rubric_v4.name_id AS name_id,
-            api_save_rubric_v4.description_id AS description_id,
-            api_save_rubric_v4.active_flag_id AS active_flag_id,
-            api_save_rubric_v4.total_points_id AS total_points_id,
-            api_save_rubric_v4.pass_points_id AS pass_points_id,
-            COALESCE(api_save_rubric_v4.department_ids, ARRAY[]::uuid[]) AS department_ids,
-            COALESCE(api_save_rubric_v4.standard_group_ids, ARRAY[]::uuid[]) AS standard_group_ids,
-            COALESCE(api_save_rubric_v4.standard_ids, ARRAY[]::uuid[]) AS standard_ids,
-            api_save_rubric_v4.profile_id AS profile_id
-    ),
-    user_profile AS (
-        SELECT role, view_user_profile_context.actor_name
-        FROM view_user_profile_context
-        WHERE view_user_profile_context.profile_id = (SELECT p.profile_id FROM params p)
-    ),
-    -- Validate permissions based on operation
-    object_current_departments AS (
-        SELECT COALESCE(ARRAY_AGG(rdj.department_id::text), ARRAY[]::text[]) as department_ids
-        FROM rubric_departments_junction rdj
-        WHERE rdj.rubric_id = (SELECT p.rubric_id FROM params p LIMIT 1) AND rdj.active = true
-    ),
-    user_departments AS (
-        SELECT COALESCE(ARRAY_AGG(pdj.department_id::text), ARRAY[]::text[]) as department_ids
-        FROM profile_departments_junction pdj
-        WHERE pdj.profile_id = (SELECT p.profile_id FROM params p LIMIT 1) AND pdj.active = true
-    ),
-    validate_permissions AS (
-        SELECT
-            CASE
-                WHEN (SELECT p.rubric_id FROM params p) IS NULL THEN
-                    (SELECT validate_department_create_permissions(
-                        up.role::text,
-                        x.department_ids::text[]
-                    ) FROM params x CROSS JOIN user_profile up)
-                ELSE
-                    (SELECT validate_department_update_permissions(
-                        up.role::text,
-                        ocd.department_ids,
-                        ud.department_ids
-                    ) FROM user_profile up
-                    CROSS JOIN object_current_departments ocd
-                    CROSS JOIN user_departments ud)
-            END as validation_passed
-    ),
-    actor_profile AS (
-        SELECT
-            x.profile_id,
-            up.actor_name
-        FROM params x
-        CROSS JOIN user_profile up
-    ),
+    -- Tool-call tracking: create one run only if at least one tool id is present
+    IF (
+        (names).create_tool_id IS NOT NULL OR (names).link_tool_id IS NOT NULL OR
+        (descriptions).create_tool_id IS NOT NULL OR (descriptions).link_tool_id IS NOT NULL OR
+        (flags).create_tool_id IS NOT NULL OR (flags).link_tool_id IS NOT NULL OR
+        (departments).create_tool_id IS NOT NULL OR (departments).link_tool_id IS NOT NULL OR
+        (points).create_tool_id IS NOT NULL OR (points).link_tool_id IS NOT NULL OR
+        (pass_points).create_tool_id IS NOT NULL OR (pass_points).link_tool_id IS NOT NULL OR
+        (standard_groups).create_tool_id IS NOT NULL OR (standard_groups).link_tool_id IS NOT NULL OR
+        (standards).create_tool_id IS NOT NULL OR (standards).link_tool_id IS NOT NULL
+    ) THEN
+        v_run_id := uuidv7();
+        INSERT INTO runs_entry (id, input_tokens, output_tokens, cached_input_tokens, group_id, created_at, updated_at)
+        VALUES (v_run_id, 0, 0, 0, v_group_id, NOW(), NOW());
+
+        -- names
+        IF v_name_id IS NOT NULL AND (names).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'rubric_save_create_names_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((names).create_tool_id, v_call_id);
+            INSERT INTO names_calls_connection (names_id, call_id) VALUES (v_name_id, v_call_id);
+        END IF;
+        IF v_name_id IS NOT NULL AND (names).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'rubric_save_link_names_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((names).link_tool_id, v_call_id);
+            INSERT INTO names_calls_connection (names_id, call_id) VALUES (v_name_id, v_call_id);
+        END IF;
+
+        -- descriptions
+        IF v_description_id IS NOT NULL AND (descriptions).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'rubric_save_create_descriptions_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((descriptions).create_tool_id, v_call_id);
+            INSERT INTO descriptions_calls_connection (descriptions_id, call_id) VALUES (v_description_id, v_call_id);
+        END IF;
+        IF v_description_id IS NOT NULL AND (descriptions).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'rubric_save_link_descriptions_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((descriptions).link_tool_id, v_call_id);
+            INSERT INTO descriptions_calls_connection (descriptions_id, call_id) VALUES (v_description_id, v_call_id);
+        END IF;
+
+        -- flags
+        IF v_active_flag_id IS NOT NULL AND (flags).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'rubric_save_create_flags_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((flags).create_tool_id, v_call_id);
+            INSERT INTO flags_calls_connection (flags_id, call_id) VALUES (v_active_flag_id, v_call_id);
+        END IF;
+        IF v_active_flag_id IS NOT NULL AND (flags).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'rubric_save_link_flags_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((flags).link_tool_id, v_call_id);
+            INSERT INTO flags_calls_connection (flags_id, call_id) VALUES (v_active_flag_id, v_call_id);
+        END IF;
+
+        -- departments
+        IF COALESCE(array_length(v_department_ids, 1), 0) > 0 AND (departments).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'rubric_save_create_departments_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((departments).create_tool_id, v_call_id);
+            INSERT INTO departments_calls_connection (departments_id, call_id)
+            SELECT did, v_call_id FROM UNNEST(v_department_ids) AS did;
+        END IF;
+        IF COALESCE(array_length(v_department_ids, 1), 0) > 0 AND (departments).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'rubric_save_link_departments_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((departments).link_tool_id, v_call_id);
+            INSERT INTO departments_calls_connection (departments_id, call_id)
+            SELECT did, v_call_id FROM UNNEST(v_department_ids) AS did;
+        END IF;
+
+        -- points (total)
+        IF v_total_points_id IS NOT NULL AND (points).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'rubric_save_create_points_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((points).create_tool_id, v_call_id);
+            INSERT INTO points_calls_connection (points_id, call_id) VALUES (v_total_points_id, v_call_id);
+        END IF;
+        IF v_total_points_id IS NOT NULL AND (points).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'rubric_save_link_points_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((points).link_tool_id, v_call_id);
+            INSERT INTO points_calls_connection (points_id, call_id) VALUES (v_total_points_id, v_call_id);
+        END IF;
+
+        -- pass points
+        IF v_pass_points_id IS NOT NULL AND (pass_points).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'rubric_save_create_pass_points_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((pass_points).create_tool_id, v_call_id);
+            INSERT INTO points_calls_connection (points_id, call_id) VALUES (v_pass_points_id, v_call_id);
+        END IF;
+        IF v_pass_points_id IS NOT NULL AND (pass_points).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'rubric_save_link_pass_points_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((pass_points).link_tool_id, v_call_id);
+            INSERT INTO points_calls_connection (points_id, call_id) VALUES (v_pass_points_id, v_call_id);
+        END IF;
+
+        -- standard groups
+        IF COALESCE(array_length(v_standard_group_ids, 1), 0) > 0 AND (standard_groups).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'rubric_save_create_standard_groups_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((standard_groups).create_tool_id, v_call_id);
+            INSERT INTO standard_groups_calls_connection (standard_groups_id, call_id)
+            SELECT sgid, v_call_id FROM UNNEST(v_standard_group_ids) AS sgid;
+        END IF;
+        IF COALESCE(array_length(v_standard_group_ids, 1), 0) > 0 AND (standard_groups).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'rubric_save_link_standard_groups_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((standard_groups).link_tool_id, v_call_id);
+            INSERT INTO standard_groups_calls_connection (standard_groups_id, call_id)
+            SELECT sgid, v_call_id FROM UNNEST(v_standard_group_ids) AS sgid;
+        END IF;
+
+        -- standards
+        IF COALESCE(array_length(v_standard_ids, 1), 0) > 0 AND (standards).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'rubric_save_create_standards_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((standards).create_tool_id, v_call_id);
+            INSERT INTO standards_calls_connection (standards_id, call_id)
+            SELECT sid, v_call_id FROM UNNEST(v_standard_ids) AS sid;
+        END IF;
+        IF COALESCE(array_length(v_standard_ids, 1), 0) > 0 AND (standards).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'rubric_save_link_standards_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((standards).link_tool_id, v_call_id);
+            INSERT INTO standards_calls_connection (standards_id, call_id)
+            SELECT sid, v_call_id FROM UNNEST(v_standard_ids) AS sid;
+        END IF;
+    END IF;
+
     -- Link rubric to name
-    link_rubric_name AS (
-        INSERT INTO rubric_names_junction (rubric_id, name_id, created_at)
-        SELECT
-            x.rubric_id,
-            x.name_id,
-            NOW()
-        FROM params x
-        WHERE x.name_id IS NOT NULL
-        ON CONFLICT ON CONSTRAINT rubric_names_pkey DO NOTHING
-    ),
+    INSERT INTO rubric_names_junction (rubric_id, name_id, created_at)
+    VALUES (v_rubric_id, v_name_id, NOW())
+    ON CONFLICT ON CONSTRAINT rubric_names_pkey DO NOTHING;
+
     -- Link rubric to description
-    link_rubric_description AS (
+    IF v_description_id IS NOT NULL THEN
         INSERT INTO rubric_descriptions_junction (rubric_id, description_id, created_at)
-        SELECT
-            x.rubric_id,
-            x.description_id,
-            NOW()
-        FROM params x
-        WHERE x.description_id IS NOT NULL
-        ON CONFLICT ON CONSTRAINT rubric_descriptions_pkey DO NOTHING
-    ),
-    -- Insert or UPDATE rubric active flag
-    insert_rubric_active_flag AS (
-        INSERT INTO rubric_flags_junction (rubric_id, flag_id, value, created_at) SELECT x.rubric_id,
-            COALESCE(x.active_flag_id, f.id),
-            CASE WHEN x.active_flag_id IS NOT NULL THEN true ELSE false END,
-            NOW()
-        FROM params x
-        CROSS JOIN flags_resource f
-        WHERE f.name = 'rubric_active'
-        ON CONFLICT ON CONSTRAINT rubric_flags_pkey DO UPDATE SET
-            flag_id = COALESCE(EXCLUDED.flag_id, rubric_flags_junction.flag_id),
-            value = EXCLUDED.value
-    ),
-    -- Link total_points
-    link_total_points AS (
+        VALUES (v_rubric_id, v_description_id, NOW())
+        ON CONFLICT ON CONSTRAINT rubric_descriptions_pkey DO NOTHING;
+    END IF;
+
+    -- Insert or update rubric active flag
+    INSERT INTO rubric_flags_junction (rubric_id, flag_id, value, created_at)
+    SELECT
+        v_rubric_id,
+        COALESCE(v_active_flag_id, f.id),
+        CASE WHEN v_active_flag_id IS NOT NULL THEN true ELSE false END,
+        NOW()
+    FROM flags_resource f
+    WHERE f.name = 'rubric_active'
+    ON CONFLICT ON CONSTRAINT rubric_flags_pkey DO UPDATE SET
+        flag_id = COALESCE(EXCLUDED.flag_id, rubric_flags_junction.flag_id),
+        value = EXCLUDED.value;
+
+    -- Link total points
+    IF v_total_points_id IS NOT NULL THEN
         INSERT INTO rubric_points_junction (rubric_id, point_id, type, created_at)
-        SELECT
-            x.rubric_id,
-            x.total_points_id,
-            'total'::point_type,
-            NOW()
-        FROM params x
-        WHERE x.total_points_id IS NOT NULL
-        ON CONFLICT (rubric_id, point_id, type) DO NOTHING
-    ),
-    -- Link pass_points
-    link_pass_points AS (
+        VALUES (v_rubric_id, v_total_points_id, 'total'::point_type, NOW())
+        ON CONFLICT (rubric_id, point_id, type) DO NOTHING;
+    END IF;
+
+    -- Link pass points
+    IF v_pass_points_id IS NOT NULL THEN
         INSERT INTO rubric_points_junction (rubric_id, point_id, type, created_at)
-        SELECT
-            x.rubric_id,
-            x.pass_points_id,
-            'pass'::point_type,
-            NOW()
-        FROM params x
-        WHERE x.pass_points_id IS NOT NULL
-        ON CONFLICT (rubric_id, point_id, type) DO NOTHING
-    ),
+        VALUES (v_rubric_id, v_pass_points_id, 'pass'::point_type, NOW())
+        ON CONFLICT (rubric_id, point_id, type) DO NOTHING;
+    END IF;
+
     -- Link departments
-    link_departments AS (
-        INSERT INTO rubric_departments_junction (rubric_id, department_id, active, created_at)
-        SELECT
-            x.rubric_id,
-            dept_id,
-            true,
-            NOW()
-        FROM params x
-        CROSS JOIN UNNEST(x.department_ids) as dept_id
-        WHERE COALESCE(array_length(x.department_ids, 1), 0) > 0
-        ON CONFLICT ON CONSTRAINT rubric_departments_pkey DO UPDATE SET
-            active = true
-    ),
-    -- Link standard_groups with position
-    standard_groups_with_position AS (
+    INSERT INTO rubric_departments_junction (rubric_id, department_id, active, created_at)
+    SELECT
+        v_rubric_id,
+        dept_id,
+        true,
+        NOW()
+    FROM UNNEST(v_department_ids) AS dept_id
+    ON CONFLICT ON CONSTRAINT rubric_departments_pkey DO UPDATE SET
+        active = true;
+
+    -- Link standard groups (preserve previous position where possible)
+    WITH standard_groups_with_position AS (
         SELECT
             sg_id,
             COALESCE(
-                (SELECT rsg.position FROM rubric_standard_groups_junction rsg
-                 WHERE rsg.rubric_id = (SELECT p2.rubric_id FROM params p2 LIMIT 1)
-                   AND rsg.standard_group_id = sg_id
-                   AND rsg.active = false
-                 ORDER BY rsg.updated_at DESC LIMIT 1),
+                (
+                    SELECT rsg.position
+                    FROM rubric_standard_groups_junction rsg
+                    WHERE rsg.rubric_id = v_rubric_id
+                      AND rsg.standard_group_id = sg_id
+                      AND rsg.active = false
+                    ORDER BY rsg.updated_at DESC
+                    LIMIT 1
+                ),
                 (ROW_NUMBER() OVER (ORDER BY ordinality))::int
-            ) as position
-        FROM params x
-        CROSS JOIN UNNEST(x.standard_group_ids) WITH ORDINALITY as sg_id
-        WHERE COALESCE(array_length(x.standard_group_ids, 1), 0) > 0
-    ),
-    link_standard_groups AS (
-        INSERT INTO rubric_standard_groups_junction (rubric_id, standard_group_id, position, active, created_at)
-        SELECT
-            x.rubric_id,
-            sgwp.sg_id,
-            sgwp.position,
-            true,
-            NOW()
-        FROM params x
-        CROSS JOIN standard_groups_with_position sgwp
-        ON CONFLICT ON CONSTRAINT rubric_standard_groups_pkey DO UPDATE SET
-            position = EXCLUDED.position,
-            active = true
-    ),
-    -- Link standards
-    link_standards AS (
-        INSERT INTO rubric_standards_junction (rubric_id, standard_id, active, created_at)
-        SELECT
-            x.rubric_id,
-            std_id,
-            true,
-            NOW()
-        FROM params x
-        CROSS JOIN UNNEST(x.standard_ids) as std_id
-        WHERE COALESCE(array_length(x.standard_ids, 1), 0) > 0
-        ON CONFLICT ON CONSTRAINT rubric_standards_pkey DO UPDATE SET
-            active = true
-    ),
-    -- Sync linked resources with name/description
-    sync_artifact_resources AS (
-        UPDATE rubrics_resource r
-        SET name = n.name,
-            description = d.description
-        FROM rubric_rubrics_junction j
-        CROSS JOIN params p
-        LEFT JOIN names_resource n ON n.id = p.name_id
-        LEFT JOIN descriptions_resource d ON d.id = p.description_id
-        WHERE j.rubrics_id = r.id
-          AND j.rubric_id = p.rubric_id
-        RETURNING r.id
+            ) AS position
+        FROM UNNEST(v_standard_group_ids) WITH ORDINALITY AS t(sg_id, ordinality)
+    )
+    INSERT INTO rubric_standard_groups_junction (
+        rubric_id,
+        standard_group_id,
+        position,
+        active,
+        created_at
     )
     SELECT
-        x.rubric_id AS rubric_id,
-        ap.actor_name AS actor_name
-    FROM params x
-    CROSS JOIN actor_profile ap;
+        v_rubric_id,
+        sgwp.sg_id,
+        sgwp.position,
+        true,
+        NOW()
+    FROM standard_groups_with_position sgwp
+    ON CONFLICT ON CONSTRAINT rubric_standard_groups_pkey DO UPDATE SET
+        position = EXCLUDED.position,
+        active = true;
+
+    -- Link standards
+    INSERT INTO rubric_standards_junction (rubric_id, standard_id, active, created_at)
+    SELECT
+        v_rubric_id,
+        std_id,
+        true,
+        NOW()
+    FROM UNNEST(v_standard_ids) AS std_id
+    ON CONFLICT ON CONSTRAINT rubric_standards_pkey DO UPDATE SET
+        active = true;
+
+    -- Sync linked resources with name/description
+    UPDATE rubrics_resource r
+    SET name = n.name,
+        description = d.description
+    FROM rubric_rubrics_junction j
+    LEFT JOIN names_resource n ON n.id = v_name_id
+    LEFT JOIN descriptions_resource d ON d.id = v_description_id
+    WHERE j.rubrics_id = r.id
+      AND j.rubric_id = v_rubric_id;
+
+    SELECT up.actor_name
+    INTO v_actor_name
+    FROM view_user_profile_context up
+    WHERE up.profile_id = v_profile_id
+    LIMIT 1;
+
+    RETURN QUERY SELECT v_rubric_id, v_actor_name;
 END;
 $$;

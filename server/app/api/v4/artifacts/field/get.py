@@ -1,16 +1,9 @@
-"""Field get endpoint - Three-layer architecture.
+"""Field get endpoint - section-first parity (three-layer architecture)."""
 
-This implements the three-layer BFF pattern:
-1. get_field_internal() - Core data fetching (cacheable, returns dataclass)
-2. get_field_websocket() - Minimal data for WebSocket handlers
-3. get_field_client() - Full BFF response for HTTP endpoint/frontend
-
-The internal layer handles SQL queries and resource fetching.
-The presentation layers transform internal data into consumer-specific formats.
-"""
+from __future__ import annotations
 
 import asyncio
-from dataclasses import dataclass
+from dataclasses import replace
 from typing import Annotated, Any, cast
 from uuid import UUID
 
@@ -19,31 +12,36 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.artifacts.field.permissions import (
     FIELD_RESOURCES,
-    build_domain_data,
     compute_can_edit,
+    compute_conditional_parameters_required,
     compute_departments_required,
     compute_description_required,
     compute_disabled_reason,
     compute_flag_required,
     compute_name_required,
-    compute_parameters_required,
+    compute_show_conditional_parameters,
     compute_show_departments,
     compute_show_description,
     compute_show_flag,
     compute_show_name,
-    compute_show_parameters,
     has_access,
 )
 from app.api.v4.artifacts.field.types import (
-    DomainAgent,
+    FieldConditionalParameterSection,
+    FieldDepartmentSection,
+    FieldDescriptionSection,
     FieldFlagConfig,
-    FieldResourceBucket,
-    FieldResources,
+    FieldFlagSection,
+    FieldInternalData,
+    FieldNameSection,
+    FieldWebsocketResources,
+    FieldWebsocketViews,
     GetFieldApiRequest,
     GetFieldApiResponse,
     GetFieldWebsocketResponse,
 )
 from app.api.v4.permissions import select_agents_for_artifact
+from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.departments.search import search_departments_internal
 from app.api.v4.resources.descriptions.get import get_descriptions_internal
@@ -52,8 +50,11 @@ from app.api.v4.resources.flags.get import get_flags_internal
 from app.api.v4.resources.flags.search import search_flags_internal
 from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.names.search import search_names_internal
+from app.api.v4.resources.models.get import get_models_internal
 from app.api.v4.resources.parameters.get import get_parameters_internal
 from app.api.v4.resources.parameters.search import search_parameters_internal
+from app.api.v4.resources.providers.get import get_providers_internal
+from app.api.v4.resources.tools.get import get_tools_internal
 from app.api.v4.types import CandidateAgent
 from app.api.v4.views.drafts.get import get_draft_field_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
@@ -68,73 +69,43 @@ from app.sql.types import (
 )
 from app.utils.sql_helper import execute_sql_typed
 
-# SQL paths
 QUERY1_SQL_PATH = "app/sql/v4/queries/fields/get_field_access_complete.sql"
 QUERY2_SQL_PATH = "app/sql/v4/queries/fields/get_field_ids_complete.sql"
 
 router = APIRouter()
 
 
-@dataclass
-class FieldInternalData:
-    """Internal data from core field fetching (cacheable layer).
+def derive_flag_key_and_label(name: str | None) -> tuple[str, str]:
+    if not name:
+        return ("unknown", "Unknown")
+    key = name.replace("field_", "")
+    return (key, key.replace("_", " ").title())
 
-    This dataclass contains all computed data needed by both:
-    - get_field_websocket() - minimal data for WebSocket handlers
-    - get_field_client() - full BFF response for HTTP/frontend
-    """
 
-    # Access/context
-    actor_name: str | None
-    field_exists: bool | None
-    can_edit: bool
-    disabled_reason: str | None
-    draft_version: int | None
-    group_id: UUID | None
+def _dedupe_by_id(items: list[Any], id_attr: str) -> list[Any]:
+    seen: set[UUID] = set()
+    output: list[Any] = []
+    for item in items:
+        item_id = getattr(item, id_attr, None)
+        if item_id and item_id not in seen:
+            seen.add(item_id)
+            output.append(item)
+    return output
 
-    # Domain mappings
-    domain_ids_map: dict[str, UUID | None]
-    agent_ids: dict[str, UUID | None]
-    domains_list: list[DomainAgent]
 
-    # Show/required flags
-    show_flags_map: dict[str, bool]
-    required_flags_map: dict[str, bool]
-
-    # Suggestions (resource -> list of suggestion IDs)
-    suggestions_map: dict[str, list[UUID]]
-
-    # Show AI generate flags (computed: domain_id exists AND agent exists)
-    show_ai_generate_map: dict[str, bool]
-    basic_show_ai_generate: bool
-
-    # Domain data for modals
-    domain_data_list: list[Any]  # list[DomainData]
-
-    # Resources payload
-    resources_payload: FieldResources
-
-    # Per-resource group IDs (from draft MV)
-    resource_group_ids: dict[str, UUID | None]
-
-    # Per-resource tool IDs (from selected agents)
-    create_tool_ids_map: dict[str, UUID | None]
-    link_tool_ids_map: dict[str, UUID | None]
+def _normalize_field_resource_alias(resource: str) -> str:
+    return "conditional_parameters" if resource == "parameters" else resource
 
 
 async def get_field_internal(
     profile_id: UUID,
     field_id: UUID | None,
     draft_id: UUID | None = None,
+    description_search: str | None = None,
+    conditional_parameter_search: str | None = None,
+    conditional_parameter_show_selected: bool | None = None,
     bypass_cache: bool = False,
 ) -> FieldInternalData:
-    """Core data fetching layer (cacheable).
-
-    Fetches all field data using two-pass architecture and returns
-    a dataclass with all computed values.
-    """
-
-    # === QUERY 1: Access Check (always fresh, no cache) ===
     pool = get_pool()
     if not pool:
         raise RuntimeError("Database pool not initialized")
@@ -151,31 +122,26 @@ async def get_field_internal(
                 draft_item = draft_items[0]
 
     async with pool.acquire() as conn:
-        query1_params = GetFieldAccessSqlParams(
-            profile_id=profile_id,
-            field_id=field_id,
-            draft_id=draft_id,
-        )
-
         access_result = cast(
             GetFieldAccessSqlRow,
-            await execute_sql_typed(conn, QUERY1_SQL_PATH, params=query1_params),
+            await execute_sql_typed(
+                conn,
+                QUERY1_SQL_PATH,
+                params=GetFieldAccessSqlParams(
+                    profile_id=profile_id,
+                    field_id=field_id,
+                    draft_id=draft_id,
+                ),
+            ),
         )
 
-        # Extract user context from Query 1
         user_role = access_result.user_role
         user_department_ids = access_result.user_department_ids or []
         field_department_ids = access_result.field_department_ids or []
 
-        # Early validation: check field exists
         if field_id is not None:
             if access_result.field_exists is False:
-                raise HTTPException(
-                    status_code=404,
-                    detail=f"Field {field_id} not found",
-                )
-
-            # Check access
+                raise HTTPException(status_code=404, detail=f"Field {field_id} not found")
             if not has_access(user_role, user_department_ids, field_department_ids):
                 raise HTTPException(
                     status_code=403,
@@ -188,33 +154,30 @@ async def get_field_internal(
             else access_result.group_id
         )
         effective_draft_version = (
-            draft_item.version
-            if draft_item is not None
-            else access_result.draft_version
-        )
-
-        # === QUERY 2: ID Fetching (using user_department_ids from Query 1) ===
-        query2_params = GetFieldIdsSqlParams(
-            profile_id=profile_id,
-            field_id=field_id,
-            draft_id=draft_id,
-            group_id=effective_group_id,
-            user_department_ids=user_department_ids,
+            draft_item.version if draft_item is not None else access_result.draft_version
         )
 
         ids_result = cast(
             GetFieldIdsSqlRow,
-            await execute_sql_typed(conn, QUERY2_SQL_PATH, params=query2_params),
+            await execute_sql_typed(
+                conn,
+                QUERY2_SQL_PATH,
+                params=GetFieldIdsSqlParams(
+                    profile_id=profile_id,
+                    field_id=field_id,
+                    draft_id=draft_id,
+                    group_id=effective_group_id,
+                    user_department_ids=user_department_ids,
+                ),
+            ),
         )
 
     selected_name_id = ids_result.name_id
     selected_description_id = ids_result.description_id
     selected_active_flag_id = ids_result.active_flag_id
-
     selected_department_ids = ids_result.department_ids or []
-    selected_parameter_ids = ids_result.parameter_ids or []
+    selected_conditional_parameter_ids = ids_result.conditional_parameter_ids or []
 
-    # Draft values override canonical field-junction values.
     if draft_item is not None:
         if draft_item.name_ids:
             selected_name_id = draft_item.name_ids[0]
@@ -222,136 +185,112 @@ async def get_field_internal(
             selected_description_id = draft_item.description_ids[0]
         if draft_item.flag_ids:
             selected_active_flag_id = draft_item.flag_ids[0]
-
         if draft_item.department_ids:
             selected_department_ids = draft_item.department_ids
         if draft_item.parameter_ids:
-            selected_parameter_ids = draft_item.parameter_ids
+            selected_conditional_parameter_ids = draft_item.parameter_ids
 
-    # Build per-resource group_ids from draft_item
-    resource_group_ids: dict[str, UUID | None] = {
-        "names": draft_item.group_id if draft_item else None,
-        "descriptions": draft_item.group_id if draft_item else None,
-        "flags": draft_item.group_id if draft_item else None,
-        "departments": draft_item.group_id if draft_item else None,
-        "parameters": draft_item.group_id if draft_item else None,
-    }
-
-    # Get tools existence flags from Query 2 (used for show_* UI flags)
-    names_has_tools = ids_result.names_has_tools or False
-
-    # === PARSE CANDIDATE AGENTS FROM QUERY 2 AND COMPUTE AGENT IDS IN PYTHON ===
-    candidate_agents = CandidateAgent.from_sql_rows(ids_result.candidate_agents)
-
-    # Use Python scoring to select best agents for each resource
-    user_dept_set = set(user_department_ids) if user_department_ids else None
-    resources_needed = list(FIELD_RESOURCES)
+    raw_candidate_agents = CandidateAgent.from_sql_rows(ids_result.candidate_agents)
+    candidate_agents: list[CandidateAgent] = []
+    for candidate in raw_candidate_agents:
+        normalized_tool_resources = {
+            _normalize_field_resource_alias(resource)
+            for resource in candidate.tool_resources
+        }
+        normalized_create_tool_ids = {
+            _normalize_field_resource_alias(resource): tool_id
+            for resource, tool_id in candidate.create_tool_ids.items()
+        }
+        normalized_link_tool_ids = {
+            _normalize_field_resource_alias(resource): tool_id
+            for resource, tool_id in candidate.link_tool_ids.items()
+        }
+        candidate_agents.append(
+            replace(
+                candidate,
+                tool_resources=normalized_tool_resources,
+                create_tool_ids=normalized_create_tool_ids,
+                link_tool_ids=normalized_link_tool_ids,
+            )
+        )
     agent_ids = select_agents_for_artifact(
         candidates=candidate_agents,
         artifact_resources=FIELD_RESOURCES,
-        resources_needed=resources_needed,
-        user_department_ids=user_dept_set,
+        resources_needed=list(FIELD_RESOURCES),
+        user_department_ids=set(user_department_ids) if user_department_ids else None,
         require_mcp=False,
     )
 
-    # === BUILD TOOL_IDS MAPS FROM SELECTED AGENTS ===
     create_tool_ids_map: dict[str, UUID | None] = {}
     link_tool_ids_map: dict[str, UUID | None] = {}
-
     for resource in FIELD_RESOURCES:
         selected_agent_id = agent_ids.get(resource)
-        if selected_agent_id:
-            for candidate in candidate_agents:
-                if candidate.agent_id == selected_agent_id:
-                    create_tool_ids_map[resource] = candidate.create_tool_ids.get(
-                        resource
-                    )
-                    link_tool_ids_map[resource] = candidate.link_tool_ids.get(resource)
-                    break
+        if not selected_agent_id:
+            continue
+        for candidate in candidate_agents:
+            if candidate.agent_id == selected_agent_id:
+                create_tool_ids_map[resource] = candidate.create_tool_ids.get(resource)
+                link_tool_ids_map[resource] = candidate.link_tool_ids.get(resource)
+                break
 
-    # === EXTRACT DOMAIN IDS FROM QUERY 2 ===
-    domain_ids_map: dict[str, UUID | None] = {
-        "names": ids_result.name_domain_id,
-        "descriptions": ids_result.description_domain_id,
-        "flags": ids_result.flag_domain_id,
-        "departments": ids_result.departments_domain_id,
-        "parameters": ids_result.parameters_domain_id,
+    show_ai_generate_map = {
+        "names": agent_ids.get("names") is not None,
+        "descriptions": agent_ids.get("descriptions") is not None,
+        "flags": agent_ids.get("flags") is not None,
+        "departments": agent_ids.get("departments") is not None,
+        "conditional_parameters": agent_ids.get("conditional_parameters") is not None,
     }
 
-    # === COMPUTE SHOW_AI_GENERATE FLAGS ===
-    def compute_show_ai_generate(resource: str) -> bool:
-        """Returns True if domain_id exists AND agent exists for that resource."""
-        domain_id = domain_ids_map.get(resource)
-        agent_id = agent_ids.get(resource)
-        return domain_id is not None and agent_id is not None
-
-    name_show_ai_generate = compute_show_ai_generate("names")
-    description_show_ai_generate = compute_show_ai_generate("descriptions")
-    flag_show_ai_generate = compute_show_ai_generate("flags")
-    departments_show_ai_generate = compute_show_ai_generate("departments")
-    parameters_show_ai_generate = compute_show_ai_generate("parameters")
-
-    # Step-level show_ai_generate flag
     basic_show_ai_generate = any(
         [
-            name_show_ai_generate,
-            description_show_ai_generate,
-            flag_show_ai_generate,
-            departments_show_ai_generate,
+            show_ai_generate_map["names"],
+            show_ai_generate_map["descriptions"],
+            show_ai_generate_map["flags"],
+            show_ai_generate_map["departments"],
         ]
     )
 
-    # === PYTHON BUSINESS LOGIC ===
-    can_edit = compute_can_edit(
-        user_role=user_role,
-        field_department_ids=field_department_ids,
-    )
-
+    can_edit = compute_can_edit(user_role=user_role, field_department_ids=field_department_ids)
     disabled_reason = compute_disabled_reason(
         user_role=user_role,
         field_department_ids=field_department_ids,
     )
 
-    # === PASS 2: Parallel Resource Fetching ===
-
     name_ids = [selected_name_id] if selected_name_id else []
     description_ids = [selected_description_id] if selected_description_id else []
     flag_ids = [selected_active_flag_id] if selected_active_flag_id else []
-    department_ids = selected_department_ids
-    parameter_ids = selected_parameter_ids
 
     async def fetch_names():
         async with pool.acquire() as c:
-            selected = await get_names_internal(c, name_ids, bypass_cache)
-            suggestions = await search_names_internal(
-                c,
-                None,
-                20,
-                0,
-                effective_group_id,
-                "recent",
-                name_ids,
-                bypass_cache,
+            return (
+                await get_names_internal(c, name_ids, bypass_cache),
+                await search_names_internal(
+                    c,
+                    None,
+                    20,
+                    0,
+                    effective_group_id,
+                    "recent",
+                    name_ids,
+                    bypass_cache,
+                ),
             )
-            return (selected, suggestions)
 
     async def fetch_descriptions():
         async with pool.acquire() as c:
-            selected = await get_descriptions_internal(c, description_ids, bypass_cache)
-            suggestions = await search_descriptions_internal(
-                c,
-                None,
-                20,
-                0,
-                effective_group_id,
-                "recent",
-                description_ids,
-                bypass_cache,
+            return (
+                await get_descriptions_internal(c, description_ids, bypass_cache),
+                await search_descriptions_internal(
+                    c,
+                    description_search,
+                    20,
+                    0,
+                    effective_group_id,
+                    "recent",
+                    description_ids,
+                    bypass_cache,
+                ),
             )
-            return (selected, suggestions)
-
-    # Field-specific flag names (business logic)
-    FIELD_FLAG_NAMES = {"field_active"}
 
     async def fetch_flags():
         async with pool.acquire() as c:
@@ -365,105 +304,103 @@ async def get_field_internal(
                 bypass_cache,
                 artifact_type="field",
             )
-            suggestions = [f for f in all_flags if f.name in FIELD_FLAG_NAMES]
+            suggestions = [f for f in all_flags if f.name == "field_active"]
             return (selected, suggestions)
 
     async def fetch_departments():
         async with pool.acquire() as c:
-            selected = await get_departments_internal(c, department_ids, bypass_cache)
-            suggestions = await search_departments_internal(
-                c,
-                None,
-                20,
-                0,
-                user_department_ids,
-                "all",
-                department_ids,
-                bypass_cache,
+            return (
+                await get_departments_internal(c, selected_department_ids, bypass_cache),
+                await search_departments_internal(
+                    c,
+                    None,
+                    20,
+                    0,
+                    user_department_ids,
+                    "all",
+                    selected_department_ids,
+                    bypass_cache,
+                ),
             )
-            return (selected, suggestions)
 
-    async def fetch_parameters():
+    async def fetch_conditional_parameters():
         async with pool.acquire() as c:
-            selected = await get_parameters_internal(
-                c,
-                parameter_ids,
-                bypass_cache,
+            exclude_ids = (
+                [] if (conditional_parameter_show_selected or False) else selected_conditional_parameter_ids
             )
-            suggestions = await search_parameters_internal(
-                c,
-                None,
-                20,
-                0,
-                None,
-                None,
-                None,
-                None,
-                "all",
-                parameter_ids,
-                bypass_cache,
+            return (
+                await get_parameters_internal(c, selected_conditional_parameter_ids, bypass_cache),
+                await search_parameters_internal(
+                    c,
+                    conditional_parameter_search,
+                    20,
+                    0,
+                    None,
+                    None,
+                    None,
+                    None,
+                    "all",
+                    exclude_ids,
+                    bypass_cache,
+                ),
             )
-            return (selected, suggestions)
 
-    # Parallel fetch all resources
     (
         (names_selected, names_suggestions),
         (descriptions_selected, descriptions_suggestions),
         (flags_selected, flags_suggestions),
         (departments_selected, departments_suggestions),
-        (parameters_selected, parameters_suggestions),
+        (conditional_parameters_selected, conditional_parameters_suggestions),
     ) = await asyncio.gather(
         fetch_names(),
         fetch_descriptions(),
         fetch_flags(),
         fetch_departments(),
-        fetch_parameters(),
+        fetch_conditional_parameters(),
     )
 
-    names = _dedupe_by_id(names_selected + names_suggestions, "id")
-    descriptions = _dedupe_by_id(descriptions_selected + descriptions_suggestions, "id")
-    flags = _dedupe_by_id(flags_selected + flags_suggestions, "id")
-    departments = _dedupe_by_id(
-        departments_selected + departments_suggestions, "department_id"
+    all_names = _dedupe_by_id(names_selected + names_suggestions, "id")
+    all_descriptions = _dedupe_by_id(
+        descriptions_selected + descriptions_suggestions,
+        "id",
     )
-    parameters = _dedupe_by_id(
-        parameters_selected + parameters_suggestions, "parameter_id"
+    all_flags_raw = _dedupe_by_id(flags_selected + flags_suggestions, "id")
+    all_departments = _dedupe_by_id(
+        departments_selected + departments_suggestions,
+        "department_id",
+    )
+    all_conditional_parameters = _dedupe_by_id(
+        conditional_parameters_selected + conditional_parameters_suggestions,
+        "parameter_id",
     )
 
-    # Find selected resources
-    name_resource = next((n for n in names if n.id == selected_name_id), None)
+    name_resource = next((n for n in all_names if n.id == selected_name_id), None)
     description_resource = next(
-        (d for d in descriptions if d.id == selected_description_id),
+        (d for d in all_descriptions if d.id == selected_description_id),
         None,
     )
-    flag_resource = next((f for f in flags if f.id == selected_active_flag_id), None)
+    flag_resource = next(
+        (f for f in all_flags_raw if f.id == selected_active_flag_id),
+        None,
+    )
 
-    department_resources = [
-        d for d in departments if d.department_id in selected_department_ids
+    selected_departments = [
+        d for d in all_departments if d.department_id in selected_department_ids
     ]
-    parameter_resources = [
-        p for p in parameters if p.parameter_id in selected_parameter_ids
+    selected_conditional_parameters = [
+        p
+        for p in all_conditional_parameters
+        if p.parameter_id in selected_conditional_parameter_ids
     ]
 
-    name_suggestions_ids = [n.id for n in names_suggestions]
-    description_suggestions_ids = [d.id for d in descriptions_suggestions]
-    department_suggestions_ids = [d.department_id for d in departments_suggestions]
-    parameter_suggestions_ids = [p.parameter_id for p in parameters_suggestions]
-
-    # Compute final show flags based on actual data
-    show_name = compute_show_name(names_has_tools)
-    show_description_flag = compute_show_description()
-    show_flag = compute_show_flag()
-    show_departments_flag = compute_show_departments(len(departments))
-    show_parameters_flag = compute_show_parameters(len(parameters))
-
-    # Build show and required flags maps for domain_data
     show_flags_map = {
-        "names": show_name,
-        "descriptions": show_description_flag,
-        "flags": show_flag,
-        "departments": show_departments_flag,
-        "parameters": show_parameters_flag,
+        "names": compute_show_name(ids_result.names_has_tools or False),
+        "descriptions": compute_show_description(),
+        "flags": compute_show_flag(),
+        "departments": compute_show_departments(len(all_departments)),
+        "conditional_parameters": compute_show_conditional_parameters(
+            len(all_conditional_parameters)
+        ),
     }
 
     required_flags_map = {
@@ -471,120 +408,122 @@ async def get_field_internal(
         "descriptions": compute_description_required(),
         "flags": compute_flag_required(),
         "departments": compute_departments_required(),
-        "parameters": compute_parameters_required(),
+        "conditional_parameters": compute_conditional_parameters_required(),
     }
 
-    # Build rich domain metadata for client display
-    domain_data_list = build_domain_data(
-        domain_ids_map, show_flags_map, required_flags_map
-    )
-
-    # Transform flags to enriched format for client
-    field_flags = [
+    all_flags = [
         FieldFlagConfig(
-            key=derive_flag_key_and_label(flag.name)[0],
-            label=derive_flag_key_and_label(flag.name)[1],
-            description=flag.description,
-            icon_id=flag.icon,
-            flag_option_id=flag.id,
-            show=show_flag,
-            required=compute_flag_required(),
-            domain_id=domain_ids_map.get("flags"),
-            generated=flag.generated,
+            key=derive_flag_key_and_label(f.name)[0],
+            label=derive_flag_key_and_label(f.name)[1],
+            description=f.description,
+            icon_id=f.icon,
+            flag_option_id=f.id,
+            show=show_flags_map["flags"],
+            required=required_flags_map["flags"],
+            generated=f.generated,
         )
-        for flag in flags
-        if flag.id
+        for f in all_flags_raw
+        if f.id
     ]
-
-    # Validation for new mode
-    if field_id is None:
-        if not departments:
-            raise HTTPException(
-                status_code=400, detail="No accessible departments found for user"
-            )
-
-    # Detail mode: check access via name_resource
-    if field_id is not None and not name_resource:
-        raise HTTPException(
-            status_code=403,
-            detail="You don't have access to this field. It may be restricted to other departments.",
-        )
-
-    # === Construct Response ===
-    resources_payload = FieldResources(
-        resources=FieldResourceBucket(
-            names=names,
-            descriptions=descriptions,
-            flags=field_flags,
-            departments=departments,
-            parameters=parameters,
-        ),
-        current=FieldResourceBucket(
-            names=[name_resource] if name_resource else [],
-            descriptions=[description_resource] if description_resource else [],
-            flags=[flag_resource] if flag_resource else [],
-            departments=department_resources or [],
-            parameters=parameter_resources or [],
-        ),
+    selected_flag = next(
+        (f for f in all_flags if f.flag_option_id == selected_active_flag_id),
+        None,
     )
 
-    # Build domains list for WebSocket handler
-    domains_list: list[DomainAgent] = []
-    for resource, domain_id in domain_ids_map.items():
-        if domain_id is not None:
-            domains_list.append(
-                DomainAgent(
-                    domain_id=domain_id,
-                    agent_id=agent_ids.get(resource),
-                    group_id=resource_group_ids.get(resource),
-                )
+    if field_id is None and not all_departments:
+        raise HTTPException(status_code=400, detail="No accessible departments found for user")
+
+    selected_agent_ids = list({aid for aid in agent_ids.values() if aid is not None})
+
+    config_agents = []
+    config_models = []
+    config_providers = []
+    config_tools = []
+    if selected_agent_ids:
+        async with pool.acquire() as config_conn:
+            config_agents = await get_agents_internal(
+                config_conn,
+                selected_agent_ids,
+                bypass_cache,
             )
-
-    # Build show_ai_generate map
-    show_ai_generate_map = {
-        "names": name_show_ai_generate,
-        "descriptions": description_show_ai_generate,
-        "flags": flag_show_ai_generate,
-        "departments": departments_show_ai_generate,
-        "parameters": parameters_show_ai_generate,
-    }
-
-    # Build suggestions map
-    suggestions_map = {
-        "names": name_suggestions_ids,
-        "descriptions": description_suggestions_ids,
-        "departments": department_suggestions_ids,
-        "parameters": parameter_suggestions_ids,
-    }
+            model_ids = list(
+                {
+                    agent.model_id
+                    for agent in config_agents
+                    if agent.model_id is not None
+                }
+            )
+            if model_ids:
+                config_models = await get_models_internal(
+                    config_conn,
+                    model_ids,
+                    bypass_cache,
+                )
+                provider_ids = list(
+                    {
+                        model.provider_id
+                        for model in config_models
+                        if model.provider_id is not None
+                    }
+                )
+                if provider_ids:
+                    config_providers = await get_providers_internal(
+                        config_conn,
+                        provider_ids,
+                        bypass_cache,
+                    )
+            tool_ids = list(
+                {
+                    tool_id
+                    for agent in config_agents
+                    for tool_id in (agent.tool_ids or [])
+                    if tool_id is not None
+                }
+            )
+            if tool_ids:
+                config_tools = await get_tools_internal(
+                    config_conn,
+                    tool_ids,
+                    bypass_cache,
+                )
 
     return FieldInternalData(
-        # Access/context
         actor_name=access_result.actor_name,
         field_exists=access_result.field_exists,
         can_edit=can_edit,
         disabled_reason=disabled_reason,
         draft_version=effective_draft_version,
         group_id=effective_group_id,
-        # Domain mappings
-        domain_ids_map=domain_ids_map,
         agent_ids=agent_ids,
-        domains_list=domains_list,
-        # Show/required flags
         show_flags_map=show_flags_map,
         required_flags_map=required_flags_map,
-        # Suggestions
-        suggestions_map=suggestions_map,
-        # Show AI generate
+        suggestions_map={
+            "names": [n.id for n in names_suggestions],
+            "descriptions": [d.id for d in descriptions_suggestions],
+            "departments": [d.department_id for d in departments_suggestions],
+            "conditional_parameters": [
+                p.parameter_id for p in conditional_parameters_suggestions
+            ],
+        },
         show_ai_generate_map=show_ai_generate_map,
         basic_show_ai_generate=basic_show_ai_generate,
-        # Domain data and resources
-        domain_data_list=domain_data_list,
-        resources_payload=resources_payload,
-        # Per-resource group IDs
-        resource_group_ids=resource_group_ids,
-        # Per-resource tool IDs
+        selected_names=[name_resource] if name_resource else [],
+        all_names=all_names,
+        selected_descriptions=[description_resource] if description_resource else [],
+        all_descriptions=all_descriptions,
+        selected_flags=[selected_flag] if selected_flag else [],
+        all_flags=all_flags,
+        selected_departments=selected_departments,
+        all_departments=all_departments,
+        selected_conditional_parameters=selected_conditional_parameters,
+        all_conditional_parameters=all_conditional_parameters,
         create_tool_ids_map=create_tool_ids_map,
         link_tool_ids_map=link_tool_ids_map,
+        config_agents=config_agents,
+        config_models=config_models,
+        config_providers=config_providers,
+        config_tools=config_tools,
+        draft_view=draft_item,
     )
 
 
@@ -594,23 +533,27 @@ async def get_field_websocket(
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
 ) -> GetFieldWebsocketResponse:
-    """Minimal response for WebSocket handlers."""
     data = await get_field_internal(
         profile_id=profile_id,
         field_id=field_id,
         draft_id=draft_id,
         bypass_cache=bypass_cache,
     )
-
     return GetFieldWebsocketResponse(
         group_id=data.group_id,
-        name_domain_id=data.domain_ids_map.get("names"),
-        description_domain_id=data.domain_ids_map.get("descriptions"),
-        flag_domain_id=data.domain_ids_map.get("flags"),
-        departments_domain_id=data.domain_ids_map.get("departments"),
-        parameters_domain_id=data.domain_ids_map.get("parameters"),
-        domains=data.domains_list,
-        resources=data.resources_payload,
+        views=FieldWebsocketViews(draft_field=data.draft_view),
+        resources=FieldWebsocketResources(
+            names=data.selected_names,
+            descriptions=data.selected_descriptions,
+            flags=data.selected_flags,
+            departments=data.selected_departments,
+            conditional_parameters=data.selected_conditional_parameters,
+            agents=data.config_agents,
+            models=data.config_models,
+            providers=data.config_providers,
+            tools=data.config_tools,
+        ),
+        resource_agent_ids=data.agent_ids,
     )
 
 
@@ -618,96 +561,79 @@ async def get_field_client(
     profile_id: UUID,
     field_id: UUID | None,
     draft_id: UUID | None = None,
+    description_search: str | None = None,
+    conditional_parameter_search: str | None = None,
+    conditional_parameter_show_selected: bool | None = None,
     bypass_cache: bool = False,
 ) -> GetFieldApiResponse:
-    """BFF response for HTTP endpoint/frontend."""
     data = await get_field_internal(
         profile_id=profile_id,
         field_id=field_id,
         draft_id=draft_id,
+        description_search=description_search,
+        conditional_parameter_search=conditional_parameter_search,
+        conditional_parameter_show_selected=conditional_parameter_show_selected,
         bypass_cache=bypass_cache,
     )
 
     return GetFieldApiResponse(
-        # Required fields
         actor_name=data.actor_name,
         field_exists=data.field_exists,
         can_edit=data.can_edit,
         disabled_reason=data.disabled_reason,
         draft_version=data.draft_version,
         group_id=data.group_id,
-        # Per-resource group IDs
-        names_group_id=data.resource_group_ids.get("names"),
-        descriptions_group_id=data.resource_group_ids.get("descriptions"),
-        flags_group_id=data.resource_group_ids.get("flags"),
-        departments_group_id=data.resource_group_ids.get("departments"),
-        parameters_group_id=data.resource_group_ids.get("parameters"),
-        # Name
-        show_name=data.show_flags_map.get("names"),
-        name_domain_id=data.domain_ids_map.get("names"),
-        name_required=data.required_flags_map.get("names"),
-        name_suggestions=data.suggestions_map.get("names"),
-        name_show_ai_generate=data.show_ai_generate_map.get("names"),
-        # Description
-        show_description=data.show_flags_map.get("descriptions"),
-        description_domain_id=data.domain_ids_map.get("descriptions"),
-        description_required=data.required_flags_map.get("descriptions"),
-        description_suggestions=data.suggestions_map.get("descriptions"),
-        description_show_ai_generate=data.show_ai_generate_map.get("descriptions"),
-        # Flag
-        show_flag=data.show_flags_map.get("flags"),
-        flag_domain_id=data.domain_ids_map.get("flags"),
-        flag_required=data.required_flags_map.get("flags"),
-        flag_show_ai_generate=data.show_ai_generate_map.get("flags"),
-        # Departments
-        show_departments=data.show_flags_map.get("departments"),
-        departments_domain_id=data.domain_ids_map.get("departments"),
-        departments_required=data.required_flags_map.get("departments"),
-        department_suggestions=data.suggestions_map.get("departments"),
-        departments_show_ai_generate=data.show_ai_generate_map.get("departments"),
-        # Parameters
-        show_parameters=data.show_flags_map.get("parameters"),
-        parameters_domain_id=data.domain_ids_map.get("parameters"),
-        parameters_required=data.required_flags_map.get("parameters"),
-        parameter_suggestions=data.suggestions_map.get("parameters"),
-        parameters_show_ai_generate=data.show_ai_generate_map.get("parameters"),
-        # Step-level AI generation flags
         basic_show_ai_generate=data.basic_show_ai_generate,
-        # Domain metadata for client display in modals
-        domain_data=data.domain_data_list,
-        # Resources
-        resources=data.resources_payload,
-        # Per-resource CREATE tool IDs
-        name_create_tool_id=data.create_tool_ids_map.get("names"),
-        description_create_tool_id=data.create_tool_ids_map.get("descriptions"),
-        # Per-resource LINK tool IDs
-        name_link_tool_id=data.link_tool_ids_map.get("names"),
-        description_link_tool_id=data.link_tool_ids_map.get("descriptions"),
-        flag_link_tool_id=data.link_tool_ids_map.get("flags"),
-        departments_link_tool_id=data.link_tool_ids_map.get("departments"),
-        parameters_link_tool_id=data.link_tool_ids_map.get("parameters"),
+        names=FieldNameSection(
+            resource=(data.selected_names or [None])[0],
+            resources=data.all_names,
+            show=data.show_flags_map.get("names", False),
+            required=data.required_flags_map.get("names", False),
+            suggestions=data.suggestions_map.get("names"),
+            show_ai_generate=data.show_ai_generate_map.get("names", False),
+            create_tool_id=data.create_tool_ids_map.get("names"),
+            link_tool_id=data.link_tool_ids_map.get("names"),
+        ),
+        descriptions=FieldDescriptionSection(
+            resource=(data.selected_descriptions or [None])[0],
+            resources=data.all_descriptions,
+            show=data.show_flags_map.get("descriptions", False),
+            required=data.required_flags_map.get("descriptions", False),
+            suggestions=data.suggestions_map.get("descriptions"),
+            show_ai_generate=data.show_ai_generate_map.get("descriptions", False),
+            create_tool_id=data.create_tool_ids_map.get("descriptions"),
+            link_tool_id=data.link_tool_ids_map.get("descriptions"),
+        ),
+        flags=FieldFlagSection(
+            resource=(data.selected_flags or [None])[0],
+            resources=data.all_flags,
+            show=data.show_flags_map.get("flags", False),
+            required=data.required_flags_map.get("flags", False),
+            show_ai_generate=data.show_ai_generate_map.get("flags", False),
+            link_tool_id=data.link_tool_ids_map.get("flags"),
+        ),
+        departments=FieldDepartmentSection(
+            current=data.selected_departments,
+            resources=data.all_departments,
+            show=data.show_flags_map.get("departments", False),
+            required=data.required_flags_map.get("departments", False),
+            suggestions=data.suggestions_map.get("departments"),
+            show_ai_generate=data.show_ai_generate_map.get("departments", False),
+            link_tool_id=data.link_tool_ids_map.get("departments"),
+        ),
+        conditional_parameters=FieldConditionalParameterSection(
+            current=data.selected_conditional_parameters,
+            resources=data.all_conditional_parameters,
+            show=data.show_flags_map.get("conditional_parameters", False),
+            required=data.required_flags_map.get("conditional_parameters", False),
+            suggestions=data.suggestions_map.get("conditional_parameters"),
+            show_ai_generate=data.show_ai_generate_map.get(
+                "conditional_parameters",
+                False,
+            ),
+            link_tool_id=data.link_tool_ids_map.get("conditional_parameters"),
+        ),
     )
-
-
-def derive_flag_key_and_label(name: str | None) -> tuple[str, str]:
-    """Derive key and label from flag name like 'field_active' -> ('active', 'Active')"""
-    if not name:
-        return ("unknown", "Unknown")
-    key = name.replace("field_", "")
-    label = key.replace("_", " ").title()
-    return (key, label)
-
-
-def _dedupe_by_id(items: list[Any], id_attr: str) -> list[Any]:
-    """Preserve order while deduplicating by id attribute."""
-    seen: set[UUID] = set()
-    output: list[Any] = []
-    for item in items:
-        item_id = getattr(item, id_attr, None)
-        if item_id and item_id not in seen:
-            seen.add(item_id)
-            output.append(item)
-    return output
 
 
 @router.post(
@@ -726,40 +652,34 @@ async def get_field(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetFieldApiResponse:
-    """Get field information using two-pass architecture."""
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     try:
         profile_id = http_request.state.profile_id
         if not profile_id:
-            raise HTTPException(
-                status_code=401,
-                detail="Profile ID is required. Please sign in again.",
-            )
+            raise HTTPException(status_code=401, detail="Profile ID is required. Please sign in again.")
 
         response_data = await get_field_client(
             profile_id=profile_id,
             field_id=request.field_id,
             draft_id=request.draft_id,
+            description_search=request.description_search,
+            conditional_parameter_search=request.conditional_parameter_search,
+            conditional_parameter_show_selected=request.conditional_parameter_show_selected,
             bypass_cache=bypass_cache,
         )
 
-        # Set audit context
         if response_data.actor_name:
             audit_ctx: dict[str, Any] = {
                 "actor": {"name": response_data.actor_name, "id": profile_id}
             }
-            current_name = None
-            current_resources = (
-                response_data.resources.current if response_data.resources else None
+            current_name = (
+                response_data.names.resource.name
+                if response_data.names and response_data.names.resource
+                else None
             )
-            if current_resources and current_resources.names:
-                current_name = getattr(current_resources.names[0], "name", None)
             if request.field_id and current_name:
-                audit_ctx["field"] = {
-                    "name": current_name,
-                    "id": str(request.field_id),
-                }
+                audit_ctx["field"] = {"name": current_name, "id": str(request.field_id)}
             audit_set(http_request, **audit_ctx)
 
         response.headers["X-Cache-Tags"] = "fields"

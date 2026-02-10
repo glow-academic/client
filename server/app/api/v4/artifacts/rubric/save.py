@@ -109,10 +109,7 @@ async def save_rubric(
             )
 
         async with conn.transaction():
-            params = SaveRubricSqlParams(
-                **request.model_dump(),
-                profile_id=profile_id,
-            )
+            params = SaveRubricSqlParams.from_request(request, profile_id)
             sql_params = params.to_tuple()
 
             result = cast(

@@ -19,7 +19,6 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.artifacts.rubric.permissions import (
     RUBRIC_RESOURCES,
-    build_domain_data,
     compute_can_edit,
     compute_departments_required,
     compute_description_required,
@@ -41,26 +40,37 @@ from app.api.v4.artifacts.rubric.permissions import (
     has_access,
 )
 from app.api.v4.artifacts.rubric.types import (
-    DomainAgent,
     GetRubricApiRequest,
     GetRubricApiResponse,
     GetRubricWebsocketResponse,
+    RubricDepartmentSection,
+    RubricDescriptionSection,
     RubricFlagConfig,
-    RubricResourceBucket,
-    RubricResources,
+    RubricFlagSection,
+    RubricNameSection,
+    RubricPassPointsSection,
+    RubricPointsSection,
+    RubricStandardGroupsSection,
+    RubricStandardsSection,
+    RubricWebsocketResources,
+    RubricWebsocketViews,
 )
 from app.api.v4.permissions import select_agents_for_artifact
+from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.departments.search import search_departments_internal
 from app.api.v4.resources.descriptions.get import get_descriptions_internal
 from app.api.v4.resources.descriptions.search import search_descriptions_internal
 from app.api.v4.resources.flags.get import get_flags_internal
 from app.api.v4.resources.flags.search import search_flags_internal
+from app.api.v4.resources.models.get import get_models_internal
 from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.names.search import search_names_internal
 from app.api.v4.resources.points.get import get_points_internal
+from app.api.v4.resources.providers.get import get_providers_internal
 from app.api.v4.resources.standard_groups.get import get_standard_groups_internal
 from app.api.v4.resources.standards.get import get_standards_internal
+from app.api.v4.resources.tools.get import get_tools_internal
 from app.api.v4.types import CandidateAgent
 from app.api.v4.views.drafts.get import get_draft_rubric_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
@@ -99,10 +109,8 @@ class RubricInternalData:
     draft_version: int | None
     group_id: UUID | None
 
-    # Domain mappings
-    domain_ids_map: dict[str, UUID | None]
-    agent_ids: dict[str, UUID | None]
-    domains_list: list[DomainAgent]
+    # Agent mappings (resource_type -> agent_id)
+    resource_agent_ids: dict[str, UUID | None]
 
     # Show/required flags
     show_flags_map: dict[str, bool]
@@ -111,19 +119,34 @@ class RubricInternalData:
     # Suggestions (resource -> list of suggestion IDs)
     suggestions_map: dict[str, list[UUID]]
 
-    # Show AI generate flags (computed: domain_id exists AND agent exists)
+    # Show AI generate flags (computed: agent exists)
     show_ai_generate_map: dict[str, bool]
     basic_show_ai_generate: bool
     content_show_ai_generate: bool
 
-    # Domain data for modals
-    domain_data_list: list[Any]  # list[DomainData]
+    # Resources
+    names: list[Any]
+    descriptions: list[Any]
+    flags: list[RubricFlagConfig]
+    departments: list[Any]
+    points: list[Any]
+    pass_points: list[Any]
+    standard_groups: list[Any]
+    standards: list[Any]
+    names_current: list[Any]
+    descriptions_current: list[Any]
+    flags_current: list[RubricFlagConfig]
+    departments_current: list[Any]
+    points_current: list[Any]
+    pass_points_current: list[Any]
+    standard_groups_current: list[Any]
+    standards_current: list[Any]
 
-    # Resources payload
-    resources_payload: RubricResources
-
-    # Per-resource group IDs (from draft MV)
-    resource_group_ids: dict[str, UUID | None]
+    # Config resources for websocket generation context
+    config_agents: list[Any]
+    config_models: list[Any]
+    config_providers: list[Any]
+    config_tools: list[Any]
 
     # Per-resource tool IDs (from selected agents)
     create_tool_ids_map: dict[str, UUID | None]
@@ -235,18 +258,6 @@ async def get_rubric_internal(
         if draft_item.department_ids:
             selected_department_ids = draft_item.department_ids
 
-    # Build per-resource group_ids from draft_item
-    resource_group_ids: dict[str, UUID | None] = {
-        "names": draft_item.group_id if draft_item else None,
-        "descriptions": draft_item.group_id if draft_item else None,
-        "flags": draft_item.group_id if draft_item else None,
-        "departments": draft_item.group_id if draft_item else None,
-        "points": None,
-        "pass_points": None,
-        "standard_groups": None,
-        "standards": None,
-    }
-
     # Get tools existence flags from Query 2 (used for show_* UI flags)
     names_has_tools = ids_result.names_has_tools or False
 
@@ -256,7 +267,7 @@ async def get_rubric_internal(
     # Use Python scoring to select best agents for each resource
     user_dept_set = set(user_department_ids) if user_department_ids else None
     resources_needed = list(RUBRIC_RESOURCES)
-    agent_ids = select_agents_for_artifact(
+    resource_agent_ids = select_agents_for_artifact(
         candidates=candidate_agents,
         artifact_resources=RUBRIC_RESOURCES,
         resources_needed=resources_needed,
@@ -269,7 +280,7 @@ async def get_rubric_internal(
     link_tool_ids_map: dict[str, UUID | None] = {}
 
     for resource in RUBRIC_RESOURCES:
-        selected_agent_id = agent_ids.get(resource)
+        selected_agent_id = resource_agent_ids.get(resource)
         if selected_agent_id:
             for candidate in candidate_agents:
                 if candidate.agent_id == selected_agent_id:
@@ -279,24 +290,10 @@ async def get_rubric_internal(
                     link_tool_ids_map[resource] = candidate.link_tool_ids.get(resource)
                     break
 
-    # === EXTRACT DOMAIN IDS FROM QUERY 2 ===
-    domain_ids_map: dict[str, UUID | None] = {
-        "names": ids_result.name_domain_id,
-        "descriptions": ids_result.description_domain_id,
-        "flags": ids_result.flag_domain_id,
-        "departments": ids_result.departments_domain_id,
-        "points": ids_result.points_domain_id,
-        "pass_points": ids_result.pass_points_domain_id,
-        "standard_groups": ids_result.standard_groups_domain_id,
-        "standards": ids_result.standards_domain_id,
-    }
-
     # === COMPUTE SHOW_AI_GENERATE FLAGS ===
     def compute_show_ai_generate(resource: str) -> bool:
-        """Returns True if domain_id exists AND agent exists for that resource."""
-        domain_id = domain_ids_map.get(resource)
-        agent_id = agent_ids.get(resource)
-        return domain_id is not None and agent_id is not None
+        """Returns True if an agent exists for that resource."""
+        return resource_agent_ids.get(resource) is not None
 
     name_show_ai_generate = compute_show_ai_generate("names")
     description_show_ai_generate = compute_show_ai_generate("descriptions")
@@ -350,7 +347,7 @@ async def get_rubric_internal(
     standard_group_ids = selected_standard_group_ids
     standard_ids = selected_standard_ids
 
-    async def fetch_names():
+    async def fetch_names() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
             selected = await get_names_internal(c, name_ids, bypass_cache)
             suggestions = await search_names_internal(
@@ -365,7 +362,7 @@ async def get_rubric_internal(
             )
             return (selected, suggestions)
 
-    async def fetch_descriptions():
+    async def fetch_descriptions() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
             selected = await get_descriptions_internal(c, description_ids, bypass_cache)
             suggestions = await search_descriptions_internal(
@@ -382,7 +379,7 @@ async def get_rubric_internal(
 
     RUBRIC_FLAG_NAMES = {"rubric_active"}
 
-    async def fetch_flags():
+    async def fetch_flags() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
             selected = await get_flags_internal(c, flag_ids, bypass_cache)
             all_flags = await search_flags_internal(
@@ -397,7 +394,7 @@ async def get_rubric_internal(
             suggestions = [f for f in all_flags if f.name in RUBRIC_FLAG_NAMES]
             return (selected, suggestions)
 
-    async def fetch_departments():
+    async def fetch_departments() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
             selected = await get_departments_internal(c, department_ids, bypass_cache)
             suggestions = await search_departments_internal(
@@ -412,21 +409,21 @@ async def get_rubric_internal(
             )
             return (selected, suggestions)
 
-    async def fetch_points():
+    async def fetch_points() -> list[Any]:
         async with pool.acquire() as c:
             return await get_points_internal(c, total_points_ids, bypass_cache)
 
-    async def fetch_pass_points():
+    async def fetch_pass_points() -> list[Any]:
         async with pool.acquire() as c:
             return await get_points_internal(c, pass_points_ids, bypass_cache)
 
-    async def fetch_standard_groups():
+    async def fetch_standard_groups() -> list[Any]:
         async with pool.acquire() as c:
             return await get_standard_groups_internal(
                 c, standard_group_ids, bypass_cache
             )
 
-    async def fetch_standards():
+    async def fetch_standards() -> list[Any]:
         async with pool.acquire() as c:
             return await get_standards_internal(c, standard_ids, bypass_cache)
 
@@ -464,8 +461,6 @@ async def get_rubric_internal(
         (d for d in descriptions if d.id == selected_description_id),
         None,
     )
-    flag_resource = next((f for f in flags if f.id == selected_active_flag_id), None)
-
     department_resources = [
         d for d in departments if d.department_id in selected_department_ids
     ]
@@ -492,7 +487,7 @@ async def get_rubric_internal(
     show_standard_groups_flag = compute_show_standard_groups()
     show_standards_flag = compute_show_standards(len(standard_groups_selected))
 
-    # Build show and required flags maps for domain_data
+    # Build show and required flags maps for section metadata.
     show_flags_map = {
         "names": show_name,
         "descriptions": show_description_flag,
@@ -515,11 +510,6 @@ async def get_rubric_internal(
         "standards": compute_standards_required(),
     }
 
-    # Build rich domain metadata for client display
-    domain_data_list = build_domain_data(
-        domain_ids_map, show_flags_map, required_flags_map
-    )
-
     # Transform flags to enriched format for client
     rubric_flags = [
         RubricFlagConfig(
@@ -530,7 +520,6 @@ async def get_rubric_internal(
             flag_option_id=flag.id,
             show=show_flag,
             required=compute_flag_required(),
-            domain_id=domain_ids_map.get("flags"),
             generated=flag.generated,
         )
         for flag in flags
@@ -551,41 +540,56 @@ async def get_rubric_internal(
             detail="You don't have access to this rubric. It may be restricted to other departments.",
         )
 
-    # === Construct Response ===
-    resources_payload = RubricResources(
-        resources=RubricResourceBucket(
-            names=names,
-            descriptions=descriptions,
-            flags=rubric_flags,
-            departments=departments,
-            points=points_selected,
-            pass_points=pass_points_selected,
-            standard_groups=standard_groups_selected,
-            standards=standards_selected,
-        ),
-        current=RubricResourceBucket(
-            names=[name_resource] if name_resource else [],
-            descriptions=[description_resource] if description_resource else [],
-            flags=[flag_resource] if flag_resource else [],
-            departments=department_resources or [],
-            points=[total_points_resource] if total_points_resource else [],
-            pass_points=[pass_points_resource] if pass_points_resource else [],
-            standard_groups=standard_groups_selected,
-            standards=standards_selected,
-        ),
-    )
-
-    # Build domains list for WebSocket handler
-    domains_list: list[DomainAgent] = []
-    for resource, domain_id in domain_ids_map.items():
-        if domain_id is not None:
-            domains_list.append(
-                DomainAgent(
-                    domain_id=domain_id,
-                    agent_id=agent_ids.get(resource),
-                    group_id=resource_group_ids.get(resource),
-                )
+    # Fetch config resources for websocket generation context.
+    selected_agent_ids = [
+        aid for aid in resource_agent_ids.values() if aid is not None
+    ]
+    selected_agent_ids = list(dict.fromkeys(selected_agent_ids))
+    config_agents = []
+    config_models = []
+    config_providers = []
+    config_tools = []
+    if selected_agent_ids:
+        async with pool.acquire() as c:
+            config_agents = await get_agents_internal(
+                c,
+                selected_agent_ids,
+                bypass_cache=bypass_cache,
             )
+        model_ids = list(
+            dict.fromkeys([a.model_id for a in config_agents if a.model_id is not None])
+        )
+        if model_ids:
+            async with pool.acquire() as c:
+                config_models = await get_models_internal(
+                    c,
+                    model_ids,
+                    bypass_cache=bypass_cache,
+                )
+        provider_ids = list(
+            dict.fromkeys(
+                [m.provider_id for m in config_models if m.provider_id is not None]
+            )
+        )
+        if provider_ids:
+            async with pool.acquire() as c:
+                config_providers = await get_providers_internal(
+                    c,
+                    provider_ids,
+                    bypass_cache=bypass_cache,
+                )
+        tool_ids: list[UUID] = []
+        for agent in config_agents:
+            raw = getattr(agent, "tool_ids", None) or []
+            tool_ids.extend([tid for tid in raw if tid is not None])
+        tool_ids = list(dict.fromkeys(tool_ids))
+        if tool_ids:
+            async with pool.acquire() as c:
+                config_tools = await get_tools_internal(
+                    c,
+                    tool_ids,
+                    bypass_cache=bypass_cache,
+                )
 
     # Build show_ai_generate map
     show_ai_generate_map = {
@@ -618,10 +622,8 @@ async def get_rubric_internal(
         disabled_reason=disabled_reason,
         draft_version=effective_draft_version,
         group_id=effective_group_id,
-        # Domain mappings
-        domain_ids_map=domain_ids_map,
-        agent_ids=agent_ids,
-        domains_list=domains_list,
+        # Agent mappings
+        resource_agent_ids=resource_agent_ids,
         # Show/required flags
         show_flags_map=show_flags_map,
         required_flags_map=required_flags_map,
@@ -631,11 +633,27 @@ async def get_rubric_internal(
         show_ai_generate_map=show_ai_generate_map,
         basic_show_ai_generate=basic_show_ai_generate,
         content_show_ai_generate=content_show_ai_generate,
-        # Domain data and resources
-        domain_data_list=domain_data_list,
-        resources_payload=resources_payload,
-        # Per-resource group IDs
-        resource_group_ids=resource_group_ids,
+        # Resources
+        names=names,
+        descriptions=descriptions,
+        flags=rubric_flags,
+        departments=departments,
+        points=points_selected,
+        pass_points=pass_points_selected,
+        standard_groups=standard_groups_selected,
+        standards=standards_selected,
+        names_current=[name_resource] if name_resource else [],
+        descriptions_current=[description_resource] if description_resource else [],
+        flags_current=[f for f in rubric_flags if f.flag_option_id == selected_active_flag_id],
+        departments_current=department_resources or [],
+        points_current=[total_points_resource] if total_points_resource else [],
+        pass_points_current=[pass_points_resource] if pass_points_resource else [],
+        standard_groups_current=standard_groups_selected,
+        standards_current=standards_selected,
+        config_agents=config_agents,
+        config_models=config_models,
+        config_providers=config_providers,
+        config_tools=config_tools,
         # Per-resource tool IDs
         create_tool_ids_map=create_tool_ids_map,
         link_tool_ids_map=link_tool_ids_map,
@@ -648,36 +666,42 @@ async def get_rubric_websocket(
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
 ) -> GetRubricWebsocketResponse:
-    """Minimal response for WebSocket handlers.
-
-    Returns only what's needed for AI generation:
-    - Domain IDs (for domain_to_resource mapping)
-    - Domains list (for agent_id lookup)
-    - Group ID (for existing group context)
-    - Resources (for Jinja template context)
-    """
+    """Websocket response using views/resources pattern."""
     data = await get_rubric_internal(
         profile_id=profile_id,
         rubric_id=rubric_id,
         draft_id=draft_id,
         bypass_cache=bypass_cache,
     )
-
+    draft_view = None
+    if draft_id is not None:
+        pool = get_pool()
+        if pool:
+            async with pool.acquire() as c:
+                draft_items = await get_draft_rubric_internal(
+                    conn=c,
+                    draft_ids=[draft_id],
+                    bypass_cache=bypass_cache,
+                )
+                draft_view = draft_items[0] if draft_items else None
     return GetRubricWebsocketResponse(
+        views=RubricWebsocketViews(draft_rubric=draft_view),
+        resources=RubricWebsocketResources(
+            names=data.names_current,
+            descriptions=data.descriptions_current,
+            flags=data.flags_current,
+            departments=data.departments_current,
+            points=data.points_current,
+            pass_points=data.pass_points_current,
+            standard_groups=data.standard_groups_current,
+            standards=data.standards_current,
+            agents=data.config_agents,
+            models=data.config_models,
+            providers=data.config_providers,
+            tools=data.config_tools,
+        ),
+        resource_agent_ids=data.resource_agent_ids,
         group_id=data.group_id,
-        # Domain IDs for domain_to_resource mapping
-        name_domain_id=data.domain_ids_map.get("names"),
-        description_domain_id=data.domain_ids_map.get("descriptions"),
-        flag_domain_id=data.domain_ids_map.get("flags"),
-        departments_domain_id=data.domain_ids_map.get("departments"),
-        points_domain_id=data.domain_ids_map.get("points"),
-        pass_points_domain_id=data.domain_ids_map.get("pass_points"),
-        standard_groups_domain_id=data.domain_ids_map.get("standard_groups"),
-        standards_domain_id=data.domain_ids_map.get("standards"),
-        # Domains mapping for agent lookup
-        domains=data.domains_list,
-        # Resources for Jinja context
-        resources=data.resources_payload,
     )
 
 
@@ -700,94 +724,90 @@ async def get_rubric_client(
     )
 
     return GetRubricApiResponse(
-        # Required fields
         actor_name=data.actor_name,
         rubric_exists=data.rubric_exists,
         can_edit=data.can_edit,
         disabled_reason=data.disabled_reason,
         draft_version=data.draft_version,
         group_id=data.group_id,
-        # Per-resource group IDs (from draft MV)
-        names_group_id=data.resource_group_ids.get("names"),
-        descriptions_group_id=data.resource_group_ids.get("descriptions"),
-        flags_group_id=data.resource_group_ids.get("flags"),
-        departments_group_id=data.resource_group_ids.get("departments"),
-        points_group_id=data.resource_group_ids.get("points"),
-        pass_points_group_id=data.resource_group_ids.get("pass_points"),
-        standard_groups_group_id=data.resource_group_ids.get("standard_groups"),
-        standards_group_id=data.resource_group_ids.get("standards"),
-        # Name
-        show_name=data.show_flags_map.get("names"),
-        name_domain_id=data.domain_ids_map.get("names"),
-        name_required=data.required_flags_map.get("names"),
-        name_suggestions=data.suggestions_map.get("names"),
-        name_show_ai_generate=data.show_ai_generate_map.get("names"),
-        # Description
-        show_description=data.show_flags_map.get("descriptions"),
-        description_domain_id=data.domain_ids_map.get("descriptions"),
-        description_required=data.required_flags_map.get("descriptions"),
-        description_suggestions=data.suggestions_map.get("descriptions"),
-        description_show_ai_generate=data.show_ai_generate_map.get("descriptions"),
-        # Flag
-        show_flag=data.show_flags_map.get("flags"),
-        flag_domain_id=data.domain_ids_map.get("flags"),
-        flag_required=data.required_flags_map.get("flags"),
-        flag_show_ai_generate=data.show_ai_generate_map.get("flags"),
-        # Departments
-        show_departments=data.show_flags_map.get("departments"),
-        departments_domain_id=data.domain_ids_map.get("departments"),
-        departments_required=data.required_flags_map.get("departments"),
-        department_suggestions=data.suggestions_map.get("departments"),
-        departments_show_ai_generate=data.show_ai_generate_map.get("departments"),
-        # Points (total)
-        show_points=data.show_flags_map.get("points"),
-        points_domain_id=data.domain_ids_map.get("points"),
-        points_required=data.required_flags_map.get("points"),
-        points_suggestions=data.suggestions_map.get("points"),
-        points_show_ai_generate=data.show_ai_generate_map.get("points"),
-        # Pass Points
-        show_pass_points=data.show_flags_map.get("pass_points"),
-        pass_points_domain_id=data.domain_ids_map.get("pass_points"),
-        pass_points_required=data.required_flags_map.get("pass_points"),
-        pass_points_suggestions=data.suggestions_map.get("pass_points"),
-        pass_points_show_ai_generate=data.show_ai_generate_map.get("pass_points"),
-        # Standard Groups
-        show_standard_groups=data.show_flags_map.get("standard_groups"),
-        standard_groups_domain_id=data.domain_ids_map.get("standard_groups"),
-        standard_groups_required=data.required_flags_map.get("standard_groups"),
-        standard_group_suggestions=data.suggestions_map.get("standard_groups"),
-        standard_groups_show_ai_generate=data.show_ai_generate_map.get(
-            "standard_groups"
-        ),
-        # Standards
-        show_standards=data.show_flags_map.get("standards"),
-        standards_domain_id=data.domain_ids_map.get("standards"),
-        standards_required=data.required_flags_map.get("standards"),
-        standard_suggestions=data.suggestions_map.get("standards"),
-        standards_show_ai_generate=data.show_ai_generate_map.get("standards"),
-        # Step-level AI generation flags
         basic_show_ai_generate=data.basic_show_ai_generate,
         content_show_ai_generate=data.content_show_ai_generate,
-        # Domain metadata for client display in modals
-        domain_data=data.domain_data_list,
-        # Resources
-        resources=data.resources_payload,
-        # Per-resource CREATE tool IDs
-        name_create_tool_id=data.create_tool_ids_map.get("names"),
-        description_create_tool_id=data.create_tool_ids_map.get("descriptions"),
-        points_create_tool_id=data.create_tool_ids_map.get("points"),
-        pass_points_create_tool_id=data.create_tool_ids_map.get("pass_points"),
-        standard_groups_create_tool_id=data.create_tool_ids_map.get("standard_groups"),
-        standards_create_tool_id=data.create_tool_ids_map.get("standards"),
-        # Per-resource LINK tool IDs
-        name_link_tool_id=data.link_tool_ids_map.get("names"),
-        description_link_tool_id=data.link_tool_ids_map.get("descriptions"),
-        flag_link_tool_id=data.link_tool_ids_map.get("flags"),
-        departments_link_tool_id=data.link_tool_ids_map.get("departments"),
-        points_link_tool_id=data.link_tool_ids_map.get("points"),
-        pass_points_link_tool_id=data.link_tool_ids_map.get("pass_points"),
-        standard_groups_link_tool_id=data.link_tool_ids_map.get("standard_groups"),
-        standards_link_tool_id=data.link_tool_ids_map.get("standards"),
+        names=RubricNameSection(
+            show=data.show_flags_map.get("names", False),
+            required=data.required_flags_map.get("names", False),
+            suggestions=data.suggestions_map.get("names"),
+            show_ai_generate=data.show_ai_generate_map.get("names", False),
+            create_tool_id=data.create_tool_ids_map.get("names"),
+            link_tool_id=data.link_tool_ids_map.get("names"),
+            resource=data.names_current[0] if data.names_current else None,
+            resources=data.names,
+        ),
+        descriptions=RubricDescriptionSection(
+            show=data.show_flags_map.get("descriptions", False),
+            required=data.required_flags_map.get("descriptions", False),
+            suggestions=data.suggestions_map.get("descriptions"),
+            show_ai_generate=data.show_ai_generate_map.get("descriptions", False),
+            create_tool_id=data.create_tool_ids_map.get("descriptions"),
+            link_tool_id=data.link_tool_ids_map.get("descriptions"),
+            resource=data.descriptions_current[0] if data.descriptions_current else None,
+            resources=data.descriptions,
+        ),
+        flags=RubricFlagSection(
+            show=data.show_flags_map.get("flags", False),
+            required=data.required_flags_map.get("flags", False),
+            show_ai_generate=data.show_ai_generate_map.get("flags", False),
+            link_tool_id=data.link_tool_ids_map.get("flags"),
+            current=data.flags_current,
+            resources=data.flags,
+        ),
+        departments=RubricDepartmentSection(
+            show=data.show_flags_map.get("departments", False),
+            required=data.required_flags_map.get("departments", False),
+            suggestions=data.suggestions_map.get("departments"),
+            show_ai_generate=data.show_ai_generate_map.get("departments", False),
+            link_tool_id=data.link_tool_ids_map.get("departments"),
+            current=data.departments_current,
+            resources=data.departments,
+        ),
+        points=RubricPointsSection(
+            show=data.show_flags_map.get("points", False),
+            required=data.required_flags_map.get("points", False),
+            suggestions=data.suggestions_map.get("points"),
+            show_ai_generate=data.show_ai_generate_map.get("points", False),
+            create_tool_id=data.create_tool_ids_map.get("points"),
+            link_tool_id=data.link_tool_ids_map.get("points"),
+            resource=data.points_current[0] if data.points_current else None,
+            resources=data.points,
+        ),
+        pass_points=RubricPassPointsSection(
+            show=data.show_flags_map.get("pass_points", False),
+            required=data.required_flags_map.get("pass_points", False),
+            suggestions=data.suggestions_map.get("pass_points"),
+            show_ai_generate=data.show_ai_generate_map.get("pass_points", False),
+            create_tool_id=data.create_tool_ids_map.get("pass_points"),
+            link_tool_id=data.link_tool_ids_map.get("pass_points"),
+            resource=data.pass_points_current[0] if data.pass_points_current else None,
+            resources=data.pass_points,
+        ),
+        standard_groups=RubricStandardGroupsSection(
+            show=data.show_flags_map.get("standard_groups", False),
+            required=data.required_flags_map.get("standard_groups", False),
+            suggestions=data.suggestions_map.get("standard_groups"),
+            show_ai_generate=data.show_ai_generate_map.get("standard_groups", False),
+            create_tool_id=data.create_tool_ids_map.get("standard_groups"),
+            link_tool_id=data.link_tool_ids_map.get("standard_groups"),
+            current=data.standard_groups_current,
+            resources=data.standard_groups,
+        ),
+        standards=RubricStandardsSection(
+            show=data.show_flags_map.get("standards", False),
+            required=data.required_flags_map.get("standards", False),
+            suggestions=data.suggestions_map.get("standards"),
+            show_ai_generate=data.show_ai_generate_map.get("standards", False),
+            link_tool_id=data.link_tool_ids_map.get("standards"),
+            current=data.standards_current,
+            resources=data.standards,
+        ),
     )
 
 
@@ -856,12 +876,9 @@ async def get_rubric(
             audit_ctx: dict[str, Any] = {
                 "actor": {"name": response_data.actor_name, "id": profile_id}
             }
-            current_name = None
-            current_resources = (
-                response_data.resources.current if response_data.resources else None
-            )
-            if current_resources and current_resources.names:
-                current_name = getattr(current_resources.names[0], "name", None)
+            current_name = response_data.names.resource.name if (
+                response_data.names and response_data.names.resource
+            ) else None
             if request.rubric_id and current_name:
                 audit_ctx["rubric"] = {
                     "name": current_name,

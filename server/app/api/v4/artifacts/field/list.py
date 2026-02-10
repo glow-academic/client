@@ -16,9 +16,9 @@ from app.api.v4.artifacts.field.permissions import (
     compute_can_edit,
 )
 from app.api.v4.artifacts.field.types import (
+    ListFieldApiConditionalParameter,
     ListFieldApiDepartment,
     ListFieldApiField,
-    ListFieldApiParameter,
     ListFieldApiResponse,
 )
 from app.infra.v4.activity.audit import audit_activity, audit_set
@@ -123,7 +123,7 @@ async def get_field_list(
                     name=field.name,
                     description=field.description,
                     department_ids=field.department_ids,
-                    parameter_ids=field.conditional_parameter_ids,
+                    conditional_parameter_ids=field.conditional_parameter_ids,
                     is_inactive=field.is_inactive,
                     can_edit=can_edit_val,
                     can_duplicate=can_duplicate_val,
@@ -133,8 +133,8 @@ async def get_field_list(
             )
 
         # Transform parameters and departments to API types
-        parameters = [
-            ListFieldApiParameter(
+        conditional_parameters = [
+            ListFieldApiConditionalParameter(
                 parameter_id=p.parameter_id,
                 name=p.name,
                 description=p.description,
@@ -157,7 +157,7 @@ async def get_field_list(
         api_response = ListFieldApiResponse(
             actor_name=result.actor_name,
             fields=fields_with_permissions,
-            parameters=parameters,
+            conditional_parameters=conditional_parameters,
             departments=departments,
             total_count=result.total_count,
         )

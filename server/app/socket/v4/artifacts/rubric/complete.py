@@ -47,14 +47,14 @@ async def handle_rubric_complete(data: dict[str, Any]) -> None:
     if not sid:
         return
 
-    completion_type = data.get("event_type") or data.get("type", "run_complete")
+    completion_type = data.get("event_type") or data.get("type", "")
     resource_id = data.get("resource_id")
     run_id = data.get("run_id")
     resource_type = data.get("resource_type")
     group_id = data.get("group_id")
 
     try:
-        if completion_type == "tool_call_complete":
+        if completion_type in ("tool_call_complete", "tool_result"):
             tool_name = data.get("tool_name", "")
 
             if tool_name == "standard_description" and run_id:
@@ -204,39 +204,8 @@ async def handle_rubric_complete(data: dict[str, Any]) -> None:
                     room=sid,
                 )
 
-        elif completion_type in ("run_complete", "tool_result"):
-            # For non-tool completions, emit simple completion event
-            complete_payload = {
-                "artifact_type": "rubric",
-                "group_id": group_id,
-                "resource_type": resource_type,
-                "resource_id": resource_id,
-                "run_id": run_id,
-                "success": True,
-                "message": "Rubric generation completed successfully",
-                "trace_id": data.get("trace_id"),
-            }
-            if resource_type == "names" and resource_id:
-                complete_payload["name_id"] = resource_id
-            elif resource_type == "descriptions" and resource_id:
-                complete_payload["description_id"] = resource_id
-            elif resource_type == "flags" and resource_id:
-                complete_payload["active_flag_id"] = resource_id
-            elif resource_type == "departments" and resource_id:
-                complete_payload["department_ids"] = [resource_id]
-            elif resource_type == "standards" and resource_id:
-                complete_payload["standard_ids"] = [resource_id]
-            elif resource_type == "standard_groups" and resource_id:
-                complete_payload["standard_group_ids"] = [resource_id]
-            elif resource_type == "points" and resource_id:
-                complete_payload["total_points_id"] = resource_id
-
-            await sio.emit("rubric_generation_complete", complete_payload, room=sid)
-            await sio.emit(
-                "artifact_generation_complete",
-                complete_payload,
-                room=sid,
-            )
+        else:
+            return
 
     except Exception as e:
         await sio.emit(

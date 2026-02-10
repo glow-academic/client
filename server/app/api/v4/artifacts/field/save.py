@@ -90,7 +90,7 @@ async def save_field(
         if not request.input_field_id:
             can_save_result = compute_can_create(
                 user_role=access_result.user_role,
-                department_ids=None,
+                department_ids=request.departments.resource_ids,
             )
         else:
             can_save_result = compute_can_save(
@@ -106,8 +106,8 @@ async def save_field(
             )
 
         async with conn.transaction():
-            params = SaveFieldSqlParams(
-                **request.model_dump(),
+            params = SaveFieldSqlParams.from_request(
+                request,
                 profile_id=profile_id,
             )
             sql_params = params.to_tuple()

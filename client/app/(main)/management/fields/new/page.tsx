@@ -18,6 +18,16 @@ type SaveFieldIn = InputOf<"/api/v4/artifacts/fields/save", "post">;
 type SaveFieldOut = OutputOf<"/api/v4/artifacts/fields/save", "post">;
 type PatchFieldDraftIn = InputOf<"/api/v4/artifacts/fields/draft", "patch">;
 type PatchFieldDraftOut = OutputOf<"/api/v4/artifacts/fields/draft", "patch">;
+type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
+type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
+type CreateDraftDescriptionsIn = InputOf<
+  "/api/v4/resources/descriptions",
+  "post"
+>;
+type CreateDraftDescriptionsOut = OutputOf<
+  "/api/v4/resources/descriptions",
+  "post"
+>;
 
 /** ---- Direct fetch for default field data with timeout ---- */
 const getFieldDefault = async (input: GetFieldIn): Promise<GetFieldOut> => {
@@ -86,6 +96,20 @@ async function patchFieldDraft(
   return api.patch("/artifacts/fields/draft", input);
 }
 
+async function createNames(
+  input: CreateDraftNamesIn
+): Promise<CreateDraftNamesOut> {
+  "use server";
+  return api.post("/resources/names", input);
+}
+
+async function createDescriptions(
+  input: CreateDraftDescriptionsIn
+): Promise<CreateDraftDescriptionsOut> {
+  "use server";
+  return api.post("/resources/descriptions", input);
+}
+
 /** ---- Server renders client with typed data and actions ---- */
 export default async function NewFieldPage({
   searchParams,
@@ -112,8 +136,8 @@ export default async function NewFieldPage({
   const fieldSearchParams = {
     draftId: parseAsString,
     descriptionSearch: parseAsString,
-    parameterSearch: parseAsString,
-    parameterShowSelected: parseAsBoolean,
+    conditionalParameterSearch: parseAsString,
+    conditionalParameterShowSelected: parseAsBoolean,
   };
   const loadFieldSearchParams = createLoader(fieldSearchParams);
   const q = loadFieldSearchParams(searchParamsObj);
@@ -124,8 +148,9 @@ export default async function NewFieldPage({
       field_id: null, // NULL for new mode
       draft_id: q.draftId ?? null,
       description_search: q.descriptionSearch ?? null,
-      parameter_search: q.parameterSearch ?? null,
-      parameter_show_selected: q.parameterShowSelected ?? null,
+      conditional_parameter_search: q.conditionalParameterSearch ?? null,
+      conditional_parameter_show_selected:
+        q.conditionalParameterShowSelected ?? null,
     } as GetFieldIn["body"],
   };
   const fieldData = await getFieldDefault(input);
@@ -137,6 +162,8 @@ export default async function NewFieldPage({
         fieldData={fieldData}
         saveFieldAction={saveField}
         patchFieldDraftAction={patchFieldDraft}
+        createNamesAction={createNames}
+        createDescriptionsAction={createDescriptions}
       />
     </div>
   );

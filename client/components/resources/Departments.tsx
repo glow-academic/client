@@ -16,19 +16,20 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
-type CreateDraftDepartmentsIn = InputOf<
-  "/api/v4/resources/departments",
-  "post"
->;
-type CreateDraftDepartmentsOut = OutputOf<
-  "/api/v4/resources/departments",
-  "post"
->;
+type CreateDraftDepartmentsIn = {
+  body: {
+    group_id: string;
+    department_id: string;
+    mcp?: boolean;
+  };
+};
+type CreateDraftDepartmentsOut = {
+  id?: string | null;
+};
 
 export interface DepartmentItem {
   id: string;
@@ -96,7 +97,7 @@ export function Departments({
   placeholder: _placeholder = "Select departments...",
   description,
   group_id,
-  link_tool_id,
+  link_tool_id: _link_tool_id,
   showAiGenerate = false,
   createDepartmentsAction,
   onGenerate,
