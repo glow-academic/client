@@ -634,7 +634,6 @@ export function Scenarios({
       setIsGenerating(true);
       socket.emit("scenario_generate", {
         resource_types: selectedResources,
-        agent_type: "general",
         user_instructions: instructions.trim() ? [instructions.trim()] : null,
         scenario_id: null,
         mcp: false,

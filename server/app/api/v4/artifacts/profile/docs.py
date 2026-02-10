@@ -28,8 +28,8 @@ CONFIG = ArtifactDocsConfig(
                 "path": "/save",
                 "method": "POST",
                 "description": "Create or update a profile",
-                "request_model": "SaveProfileApiRequest",
-                "response_model": "SaveProfileApiResponse",
+                "request_model": "SaveProfileRouteApiRequest",
+                "response_model": "SaveProfileRouteApiResponse",
             },
             "list": {
                 "path": "/list",

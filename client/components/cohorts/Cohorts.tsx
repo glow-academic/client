@@ -143,7 +143,6 @@ export default function Cohorts({
       setIsGenerating(true);
       socket.emit("cohort_generate", {
         resource_types: selectedResources,
-        agent_type: "general",
         user_instructions: instructions.trim() ? [instructions.trim()] : null,
         cohort_id: null,
         mcp: false,

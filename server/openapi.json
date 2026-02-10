@@ -9672,7 +9672,7 @@
           "profiles"
         ],
         "summary": "Save Profile",
-        "description": "Save profile - handles both create and update with direct fields.",
+        "description": "Save profile - handles both create and update via nested resource actions.",
         "operationId": "save_profile_api_v4_artifacts_profiles_save_post",
         "parameters": [
           {
@@ -9729,7 +9729,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SaveProfileApiRequest"
+                "$ref": "#/components/schemas/SaveProfileRouteApiRequest"
               }
             }
           }
@@ -9740,7 +9740,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SaveProfileApiResponse"
+                  "$ref": "#/components/schemas/SaveProfileRouteApiResponse"
                 }
               }
             }
@@ -104891,20 +104891,8 @@
         "title": "SavePersonaApiResponse",
         "description": "Response model for save persona endpoint."
       },
-      "SaveProfileApiRequest": {
+      "SaveProfileRouteApiRequest": {
         "properties": {
-          "draft_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Draft Id"
-          },
           "input_profile_id": {
             "anyOf": [
               {
@@ -104941,64 +104929,22 @@
             "title": "Role"
           },
           "names": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ProfileResourceAction"
-              },
-              {
-                "type": "null"
-              }
-            ]
+            "$ref": "#/components/schemas/ProfileResourceAction"
           },
           "flags": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ProfileResourceAction"
-              },
-              {
-                "type": "null"
-              }
-            ]
+            "$ref": "#/components/schemas/ProfileResourceAction"
           },
           "request_limits": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ProfileResourceAction"
-              },
-              {
-                "type": "null"
-              }
-            ]
+            "$ref": "#/components/schemas/ProfileResourceAction"
           },
           "emails": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ProfileMultiResourceAction"
-              },
-              {
-                "type": "null"
-              }
-            ]
+            "$ref": "#/components/schemas/ProfileMultiResourceAction"
           },
           "departments": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ProfileMultiResourceAction"
-              },
-              {
-                "type": "null"
-              }
-            ]
+            "$ref": "#/components/schemas/ProfileMultiResourceAction"
           },
           "cohorts": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ProfileMultiResourceAction"
-              },
-              {
-                "type": "null"
-              }
-            ]
+            "$ref": "#/components/schemas/ProfileMultiResourceAction"
           },
           "expected_version": {
             "type": "integer",
@@ -105007,10 +104953,18 @@
           }
         },
         "type": "object",
-        "title": "SaveProfileApiRequest",
-        "description": "Save payload with persona-style nested resource actions.\n\nSupports:\n- direct save with nested resource actions (persona parity)\n- fallback save from existing draft_id"
+        "required": [
+          "names",
+          "flags",
+          "request_limits",
+          "emails",
+          "departments",
+          "cohorts"
+        ],
+        "title": "SaveProfileRouteApiRequest",
+        "description": "Save payload with persona-style nested resource actions."
       },
-      "SaveProfileApiResponse": {
+      "SaveProfileRouteApiResponse": {
         "properties": {
           "success": {
             "type": "boolean",
@@ -105032,7 +104986,7 @@
           "profile_id",
           "message"
         ],
-        "title": "SaveProfileApiResponse"
+        "title": "SaveProfileRouteApiResponse"
       },
       "SaveProviderApiRequest": {
         "properties": {

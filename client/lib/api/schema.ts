@@ -2108,7 +2108,7 @@ export interface paths {
         put?: never;
         /**
          * Save Profile
-         * @description Save profile - handles both create and update with direct fields.
+         * @description Save profile - handles both create and update via nested resource actions.
          */
         post: operations["save_profile_api_v4_artifacts_profiles_save_post"];
         delete?: never;
@@ -28302,36 +28302,32 @@ export interface components {
             message: string;
         };
         /**
-         * SaveProfileApiRequest
+         * SaveProfileRouteApiRequest
          * @description Save payload with persona-style nested resource actions.
-         *
-         *     Supports:
-         *     - direct save with nested resource actions (persona parity)
-         *     - fallback save from existing draft_id
          */
-        SaveProfileApiRequest: {
-            /** Draft Id */
-            draft_id?: string | null;
+        SaveProfileRouteApiRequest: {
             /** Input Profile Id */
             input_profile_id?: string | null;
+            /** Input Draft Id */
+            input_draft_id?: string | null;
             /** Group Id */
             group_id?: string | null;
             /** Role */
             role?: string | null;
-            names?: components["schemas"]["ProfileResourceAction"] | null;
-            flags?: components["schemas"]["ProfileResourceAction"] | null;
-            request_limits?: components["schemas"]["ProfileResourceAction"] | null;
-            emails?: components["schemas"]["ProfileMultiResourceAction"] | null;
-            departments?: components["schemas"]["ProfileMultiResourceAction"] | null;
-            cohorts?: components["schemas"]["ProfileMultiResourceAction"] | null;
+            names: components["schemas"]["ProfileResourceAction"];
+            flags: components["schemas"]["ProfileResourceAction"];
+            request_limits: components["schemas"]["ProfileResourceAction"];
+            emails: components["schemas"]["ProfileMultiResourceAction"];
+            departments: components["schemas"]["ProfileMultiResourceAction"];
+            cohorts: components["schemas"]["ProfileMultiResourceAction"];
             /**
              * Expected Version
              * @default 0
              */
             expected_version: number;
         };
-        /** SaveProfileApiResponse */
-        SaveProfileApiResponse: {
+        /** SaveProfileRouteApiResponse */
+        SaveProfileRouteApiResponse: {
             /** Success */
             success: boolean;
             /**
@@ -36341,7 +36337,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["SaveProfileApiRequest"];
+                "application/json": components["schemas"]["SaveProfileRouteApiRequest"];
             };
         };
         responses: {
@@ -36351,7 +36347,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SaveProfileApiResponse"];
+                    "application/json": components["schemas"]["SaveProfileRouteApiResponse"];
                 };
             };
             /** @description Validation Error */

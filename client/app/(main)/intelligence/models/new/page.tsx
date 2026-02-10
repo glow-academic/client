@@ -30,34 +30,10 @@ type CreateDraftDescriptionsOut = OutputOf<
 >;
 type CreateDraftValuesIn = InputOf<"/api/v4/resources/values", "post">;
 type CreateDraftValuesOut = OutputOf<"/api/v4/resources/values", "post">;
-type CreateDraftEndpointsIn = InputOf<"/api/v4/resources/endpoints", "post">;
-type CreateDraftEndpointsOut = OutputOf<"/api/v4/resources/endpoints", "post">;
-type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
-type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
-type CreateDraftModalitiesIn = InputOf<"/api/v4/resources/modalities", "post">;
-type CreateDraftModalitiesOut = OutputOf<"/api/v4/resources/modalities", "post">;
-type CreateDraftTemperatureLevelsIn = InputOf<
-  "/api/v4/resources/temperature_levels",
-  "post"
->;
-type CreateDraftTemperatureLevelsOut = OutputOf<
-  "/api/v4/resources/temperature_levels",
-  "post"
->;
-type CreateDraftReasoningLevelsIn = InputOf<
-  "/api/v4/resources/reasoning_levels",
-  "post"
->;
-type CreateDraftReasoningLevelsOut = OutputOf<
-  "/api/v4/resources/reasoning_levels",
-  "post"
->;
 type CreateDraftPricingIn = InputOf<"/api/v4/resources/pricing", "post">;
 type CreateDraftPricingOut = OutputOf<"/api/v4/resources/pricing", "post">;
 type CreateDraftVoicesIn = InputOf<"/api/v4/resources/voices", "post">;
 type CreateDraftVoicesOut = OutputOf<"/api/v4/resources/voices", "post">;
-type CreateDraftQualitiesIn = InputOf<"/api/v4/resources/qualities", "post">;
-type CreateDraftQualitiesOut = OutputOf<"/api/v4/resources/qualities", "post">;
 
 /** ---- Direct fetch for default model data (provider mapping for picker) ---- */
 const getModelDetailDefault = async (
@@ -118,41 +94,6 @@ async function createDraftValues(
   return api.post("/resources/values", input);
 }
 
-async function createDraftEndpoints(
-  input: CreateDraftEndpointsIn
-): Promise<CreateDraftEndpointsOut> {
-  "use server";
-  return api.post("/resources/endpoints", input);
-}
-
-async function createDraftFlags(
-  input: CreateDraftFlagsIn
-): Promise<CreateDraftFlagsOut> {
-  "use server";
-  return api.post("/resources/flags", input);
-}
-
-async function createDraftModalities(
-  input: CreateDraftModalitiesIn
-): Promise<CreateDraftModalitiesOut> {
-  "use server";
-  return api.post("/resources/modalities", input);
-}
-
-async function createDraftTemperatureLevels(
-  input: CreateDraftTemperatureLevelsIn
-): Promise<CreateDraftTemperatureLevelsOut> {
-  "use server";
-  return api.post("/resources/temperature_levels", input);
-}
-
-async function createDraftReasoningLevels(
-  input: CreateDraftReasoningLevelsIn
-): Promise<CreateDraftReasoningLevelsOut> {
-  "use server";
-  return api.post("/resources/reasoning_levels", input);
-}
-
 async function createDraftPricing(
   input: CreateDraftPricingIn
 ): Promise<CreateDraftPricingOut> {
@@ -165,13 +106,6 @@ async function createDraftVoices(
 ): Promise<CreateDraftVoicesOut> {
   "use server";
   return api.post("/resources/voices", input);
-}
-
-async function createDraftQualities(
-  input: CreateDraftQualitiesIn
-): Promise<CreateDraftQualitiesOut> {
-  "use server";
-  return api.post("/resources/qualities", input);
 }
 
 /** ---- Server renders client with typed data and actions ---- */
@@ -207,7 +141,6 @@ export default async function NewModelPage({
     body: {
       model_id: null,
       draft_id: q.draftId ?? null,
-      mcp: null,
     },
   };
   const modelDetailDefault = await getModelDetailDefault(input);
@@ -221,14 +154,8 @@ export default async function NewModelPage({
         createNamesAction={createDraftNames}
         createDescriptionsAction={createDraftDescriptions}
         createValuesAction={createDraftValues}
-        createEndpointsAction={createDraftEndpoints}
-        createFlagsAction={createDraftFlags}
-        createModalitiesAction={createDraftModalities}
-        createTemperatureLevelsAction={createDraftTemperatureLevels}
-        createReasoningLevelsAction={createDraftReasoningLevels}
         createPricingAction={createDraftPricing}
         createVoicesAction={createDraftVoices}
-        createQualitiesAction={createDraftQualities}
       />
     </div>
   );
@@ -248,20 +175,8 @@ export type {
   CreateDraftDescriptionsOut,
   CreateDraftValuesIn,
   CreateDraftValuesOut,
-  CreateDraftEndpointsIn,
-  CreateDraftEndpointsOut,
-  CreateDraftFlagsIn,
-  CreateDraftFlagsOut,
-  CreateDraftModalitiesIn,
-  CreateDraftModalitiesOut,
-  CreateDraftTemperatureLevelsIn,
-  CreateDraftTemperatureLevelsOut,
-  CreateDraftReasoningLevelsIn,
-  CreateDraftReasoningLevelsOut,
   CreateDraftPricingIn,
   CreateDraftPricingOut,
   CreateDraftVoicesIn,
   CreateDraftVoicesOut,
-  CreateDraftQualitiesIn,
-  CreateDraftQualitiesOut,
 };

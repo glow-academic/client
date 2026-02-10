@@ -137,28 +137,22 @@ class GetProfileWebsocketResponse(BaseModel):
     group_id: UUID | None = None
 
 
-class SaveProfileApiRequest(BaseModel):
-    """Save payload with persona-style nested resource actions.
+class SaveProfileRouteApiRequest(BaseModel):
+    """Save payload with persona-style nested resource actions."""
 
-    Supports:
-    - direct save with nested resource actions (persona parity)
-    - fallback save from existing draft_id
-    """
-
-    draft_id: UUID | None = None
     input_profile_id: UUID | None = None
     group_id: UUID | None = None
     role: str | None = None
-    names: ProfileResourceAction | None = None
-    flags: ProfileResourceAction | None = None
-    request_limits: ProfileResourceAction | None = None
-    emails: ProfileMultiResourceAction | None = None
-    departments: ProfileMultiResourceAction | None = None
-    cohorts: ProfileMultiResourceAction | None = None
+    names: ProfileResourceAction
+    flags: ProfileResourceAction
+    request_limits: ProfileResourceAction
+    emails: ProfileMultiResourceAction
+    departments: ProfileMultiResourceAction
+    cohorts: ProfileMultiResourceAction
     expected_version: int = 0
 
 
-class SaveProfileApiResponse(BaseModel):
+class SaveProfileRouteApiResponse(BaseModel):
     success: bool
     profile_id: UUID
     message: str

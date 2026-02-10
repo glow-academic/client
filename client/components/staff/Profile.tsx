@@ -68,6 +68,7 @@ type PatchProfileDraftOut = {
 
 type SaveStaffIn = InputOf<"/api/v4/artifacts/profiles/save", "post">;
 type SaveStaffOut = OutputOf<"/api/v4/artifacts/profiles/save", "post">;
+type SaveStaffBody = NonNullable<SaveStaffIn["body"]>;
 
 type CreateDraftNamesIn = Parameters<NonNullable<NamesProps["createNamesAction"]>>[0];
 type CreateDraftNamesOut = Awaited<
@@ -939,22 +940,25 @@ function ProfileComponent({
       }
 
       try {
-        const currentDraftId =
-          ((formDataRef.current["draftId"] as string | undefined) ?? null) ||
-          (await flushAllAndSave());
-
         const initialState = getInitialFormState();
         const saveActions = buildResourceActions(PROFILE_RESOURCES, {
           formState: formStateRef.current,
           referenceState: initialState as unknown as Record<string, unknown>,
           flushResults,
           entityData: currentStaffData as Record<string, unknown> | null,
-        });
+        }) as Pick<
+          SaveStaffBody,
+          | "names"
+          | "flags"
+          | "request_limits"
+          | "emails"
+          | "departments"
+          | "cohorts"
+        >;
 
         await saveStaffAction({
           body: {
             input_profile_id: isEditMode && staffId ? staffId : null,
-            draft_id: currentDraftId,
             group_id: currentStaffData?.group_id ?? null,
             role: effectiveFormState.role || null,
             ...saveActions,
@@ -981,7 +985,6 @@ function ProfileComponent({
       isAutosaveEnabled,
       flushAllResources,
       formDataRef,
-      flushAllAndSave,
       getInitialFormState,
       currentStaffData?.name_required,
       currentStaffData?.departments_required,

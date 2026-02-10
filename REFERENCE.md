@@ -371,6 +371,8 @@ class Save{Artifact}ApiRequest(BaseModel):
 
 Reference: `types.py:360-374`
 
+Save endpoints should be nested-action first. Do not make `draft_id` the primary save contract for migrated artifacts. If an artifact still uses draft-backed SQL internally, resolve/create the draft inside server save logic.
+
 ### Draft Patch Request
 
 All resources are optional (None means "don't update this resource"):
@@ -709,9 +711,10 @@ The profile artifact should follow the same contract rules as persona/scenario:
   - no `domain_ids`/`domains` routing payload
 - `profile_generate` websocket payload uses `resource_types` (not `domain_ids` or `agent_type`)
 - Profile step-level AI controls should use shared `StepCardAiButton` (same as persona/scenario pattern), not repeated inline tooltip/button blocks
-- Save endpoint is draft-first:
-  - request body: `draft_id`, optional `input_profile_id`
-  - server save SQL reads selected resource IDs from draft links
+- Save endpoint follows persona-style nested actions:
+  - request body includes `input_profile_id`, `group_id`, `role`, and section actions (`names`, `flags`, `request_limits`, `departments`, `emails`, `cohorts`)
+  - do not require `draft_id` as the primary save contract
+  - server may patch/create draft internally before final save SQL
 - Client save action should be fully typed:
   - `InputOf<"/api/v4/artifacts/profiles/save", "post">`
   - `OutputOf<"/api/v4/artifacts/profiles/save", "post">`

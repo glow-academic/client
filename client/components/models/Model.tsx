@@ -85,35 +85,10 @@ type CreateDraftDescriptionsOut = OutputOf<
 >;
 type CreateDraftValuesIn = InputOf<"/api/v4/resources/values", "post">;
 type CreateDraftValuesOut = OutputOf<"/api/v4/resources/values", "post">;
-type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
-type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
-type CreateDraftModalitiesIn = InputOf<"/api/v4/resources/modalities", "post">;
-type CreateDraftModalitiesOut = OutputOf<
-  "/api/v4/resources/modalities",
-  "post"
->;
-type CreateDraftTemperatureLevelsIn = InputOf<
-  "/api/v4/resources/temperature_levels",
-  "post"
->;
-type CreateDraftTemperatureLevelsOut = OutputOf<
-  "/api/v4/resources/temperature_levels",
-  "post"
->;
-type CreateDraftReasoningLevelsIn = InputOf<
-  "/api/v4/resources/reasoning_levels",
-  "post"
->;
-type CreateDraftReasoningLevelsOut = OutputOf<
-  "/api/v4/resources/reasoning_levels",
-  "post"
->;
 type CreateDraftPricingIn = InputOf<"/api/v4/resources/pricing", "post">;
 type CreateDraftPricingOut = OutputOf<"/api/v4/resources/pricing", "post">;
 type CreateDraftVoicesIn = InputOf<"/api/v4/resources/voices", "post">;
 type CreateDraftVoicesOut = OutputOf<"/api/v4/resources/voices", "post">;
-type CreateDraftQualitiesIn = InputOf<"/api/v4/resources/qualities", "post">;
-type CreateDraftQualitiesOut = OutputOf<"/api/v4/resources/qualities", "post">;
 
 export interface ModelProps {
   modelId?: string;
@@ -132,27 +107,12 @@ export interface ModelProps {
   createValuesAction?: (
     input: CreateDraftValuesIn,
   ) => Promise<CreateDraftValuesOut>;
-  createFlagsAction?: (
-    input: CreateDraftFlagsIn,
-  ) => Promise<CreateDraftFlagsOut>;
-  createModalitiesAction?: (
-    input: CreateDraftModalitiesIn,
-  ) => Promise<CreateDraftModalitiesOut>;
-  createTemperatureLevelsAction?: (
-    input: CreateDraftTemperatureLevelsIn,
-  ) => Promise<CreateDraftTemperatureLevelsOut>;
-  createReasoningLevelsAction?: (
-    input: CreateDraftReasoningLevelsIn,
-  ) => Promise<CreateDraftReasoningLevelsOut>;
   createPricingAction?: (
     input: CreateDraftPricingIn,
   ) => Promise<CreateDraftPricingOut>;
   createVoicesAction?: (
     input: CreateDraftVoicesIn,
   ) => Promise<CreateDraftVoicesOut>;
-  createQualitiesAction?: (
-    input: CreateDraftQualitiesIn,
-  ) => Promise<CreateDraftQualitiesOut>;
 }
 
 function ModelComponent({
@@ -164,13 +124,8 @@ function ModelComponent({
   createNamesAction,
   createDescriptionsAction,
   createValuesAction,
-  createFlagsAction,
-  createModalitiesAction,
-  createTemperatureLevelsAction,
-  createReasoningLevelsAction,
   createPricingAction,
   createVoicesAction,
-  createQualitiesAction,
 }: ModelProps) {
   const router = useRouter();
   const isEditMode = !!modelId;
@@ -1999,13 +1954,8 @@ function ModelComponent({
       createNamesAction,
       createDescriptionsAction,
       createValuesAction,
-      createFlagsAction,
-      createModalitiesAction,
-      createTemperatureLevelsAction,
-      createReasoningLevelsAction,
       createPricingAction,
       createVoicesAction,
-      createQualitiesAction,
     ],
   );
 

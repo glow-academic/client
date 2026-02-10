@@ -147,7 +147,6 @@ export function Simulations({
       setIsGenerating(true);
       socket.emit("simulation_generate", {
         resource_types: selectedResources,
-        agent_type: "general",
         user_instructions: instructions.trim() ? [instructions.trim()] : null,
         simulation_id: null,
         mcp: false,
