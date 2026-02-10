@@ -73,24 +73,12 @@ user_departments AS (
 -- Resolve canonical department group context (draft override handled in Python service layer)
 department_group_data AS (
     SELECT
-        COALESCE(
-            (
-                SELECT ggc.groups_id
-                FROM department_groups_junction dgj
-                JOIN groups_groups_connection ggc
-                    ON ggc.group_id = dgj.group_id
-                   AND ggc.active = true
-                WHERE dgj.department_id = x.department_id
-                ORDER BY dgj.created_at DESC
-                LIMIT 1
-            ),
-            (
-                SELECT gr.id
-                FROM groups_resource gr
-                WHERE gr.active = true
-                ORDER BY gr.created_at DESC
-                LIMIT 1
-            )
+        (
+            SELECT gr.id
+            FROM groups_resource gr
+            WHERE gr.active = true
+            ORDER BY gr.created_at DESC
+            LIMIT 1
         ) as group_id
     FROM params x
     WHERE TRUE

@@ -762,13 +762,12 @@ tool_mapping_data AS (
         (SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1) as name,
         COALESCE((SELECT d.description FROM tool_descriptions_junction td JOIN descriptions_resource d ON td.description_id = d.id WHERE td.tool_id = t.id LIMIT 1), '') as description,
         COALESCE(at.generated, false) as generated,
-        tgj.group_id as group_id
+        NULL::uuid as group_id
     FROM params x
     LEFT JOIN agent_tools_junction at ON at.agent_id = x.agent_id AND at.active = true
     LEFT JOIN tools_resource tr ON tr.id = at.tool_id
     LEFT JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
     LEFT JOIN tool_artifact t ON t.id = ttj.tool_id
-    LEFT JOIN tool_groups_junction tgj ON tgj.tool_id = t.id
     WHERE x.agent_id IS NOT NULL
       AND t.id IS NOT NULL
       AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
@@ -805,22 +804,9 @@ tool_suggestions_data AS (
                  JOIN tools_resource tr ON tr.id = at.tool_id
                  JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
                  JOIN tool_artifact t ON t.id = ttj.tool_id
-                 LEFT JOIN tool_groups_junction tgj ON tgj.tool_id = t.id
-                 CROSS JOIN draft_group_data dgd
                  WHERE at.tool_id IS NOT NULL
                    AND at.active = true
                    AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
-                   AND (
-                       -- Option 1: Linked to agents via agent_tools_junction (validated by usage)
-                       -- Option 2: OR linked to same group with generated=true (show generated items from current group)
-                       at.generated = false
-                       OR
-                       (
-                           at.generated = true
-                           AND t.generated = true
-                           AND tgj.group_id = dgd.group_id
-                       )
-                   )
                  GROUP BY ttj.tool_id
                  ORDER BY MAX(at.created_at) DESC
                  LIMIT 20
@@ -838,10 +824,9 @@ tools_data AS (
         (SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1) as name,
         COALESCE((SELECT d.description FROM tool_descriptions_junction td JOIN descriptions_resource d ON td.description_id = d.id WHERE td.tool_id = t.id LIMIT 1), '') as description,
         COALESCE(t.generated, false) as generated,
-        tgj.group_id as group_id
+        NULL::uuid as group_id
     FROM params x
     JOIN tool_artifact t ON EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
-    LEFT JOIN tool_groups_junction tgj ON tgj.tool_id = t.id
     ORDER BY t.created_at DESC
 ),
 -- Suggested resource objects CTEs - fetch full resource objects for suggestions

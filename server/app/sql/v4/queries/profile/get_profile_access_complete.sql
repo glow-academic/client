@@ -125,11 +125,7 @@ target_departments_data AS (
 -- Get group_id from target profile or current profile
 group_id_data AS (
     SELECT
-        COALESCE(
-            (SELECT d.group_id FROM view_drafts_entry d WHERE d.id = (SELECT draft_id FROM params)),
-            (SELECT pgj.group_id FROM profile_groups_junction pgj WHERE pgj.profile_id = (SELECT resolved_target_profile_id FROM resolve_target_profile_id) LIMIT 1),
-            (SELECT pgj.group_id FROM profile_groups_junction pgj WHERE pgj.profile_id = (SELECT profile_id FROM params) LIMIT 1)
-        ) as group_id
+        (SELECT d.group_id FROM view_drafts_entry d WHERE d.id = (SELECT draft_id FROM params)) as group_id
     FROM params
     LIMIT 1
 ),

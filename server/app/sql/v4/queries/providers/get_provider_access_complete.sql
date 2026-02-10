@@ -73,24 +73,12 @@ user_departments AS (
 -- Resolve canonical provider group context (draft override handled in Python service layer)
 provider_group_data AS (
     SELECT
-        COALESCE(
-            (
-                SELECT ggc.groups_id
-                FROM provider_groups_junction pgj
-                JOIN groups_groups_connection ggc
-                    ON ggc.group_id = pgj.group_id
-                   AND ggc.active = true
-                WHERE pgj.provider_id = x.provider_id
-                ORDER BY pgj.created_at DESC
-                LIMIT 1
-            ),
-            (
-                SELECT gr.id
-                FROM groups_resource gr
-                WHERE gr.active = true
-                ORDER BY gr.created_at DESC
-                LIMIT 1
-            )
+        (
+            SELECT gr.id
+            FROM groups_resource gr
+            WHERE gr.active = true
+            ORDER BY gr.created_at DESC
+            LIMIT 1
         ) as group_id
     FROM params x
     WHERE TRUE

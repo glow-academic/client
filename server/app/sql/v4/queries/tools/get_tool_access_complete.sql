@@ -62,25 +62,12 @@ user_profile AS (
 -- Resolve canonical tool group context (draft override handled in Python service layer)
 tool_group_data AS (
     SELECT
-        COALESCE(
-            (
-                SELECT ggc.groups_id
-                FROM tool_groups_junction tgj
-                JOIN groups_groups_connection ggc
-                    ON ggc.group_id = tgj.group_id
-                   AND ggc.active = true
-                WHERE tgj.tool_id = x.tool_id
-                  AND tgj.active = true
-                ORDER BY tgj.created_at DESC
-                LIMIT 1
-            ),
-            (
-                SELECT gr.id
-                FROM groups_resource gr
-                WHERE gr.active = true
-                ORDER BY gr.created_at DESC
-                LIMIT 1
-            )
+        (
+            SELECT gr.id
+            FROM groups_resource gr
+            WHERE gr.active = true
+            ORDER BY gr.created_at DESC
+            LIMIT 1
         ) as group_id
     FROM params x
     WHERE TRUE

@@ -73,25 +73,12 @@ user_departments AS (
 -- Resolve canonical rubric group context (draft override handled in Python service layer)
 rubric_group_data AS (
     SELECT
-        COALESCE(
-            (
-                SELECT ggc.groups_id
-                FROM rubric_groups_junction rgj
-                JOIN groups_groups_connection ggc
-                    ON ggc.group_id = rgj.group_id
-                   AND ggc.active = true
-                WHERE rgj.rubric_id = x.rubric_id
-                  AND rgj.active = true
-                ORDER BY rgj.created_at DESC
-                LIMIT 1
-            ),
-            (
-                SELECT gr.id
-                FROM groups_resource gr
-                WHERE gr.active = true
-                ORDER BY gr.created_at DESC
-                LIMIT 1
-            )
+        (
+            SELECT gr.id
+            FROM groups_resource gr
+            WHERE gr.active = true
+            ORDER BY gr.created_at DESC
+            LIMIT 1
         ) as group_id
     FROM params x
     WHERE TRUE
