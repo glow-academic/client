@@ -77,21 +77,12 @@ BEGIN
         VALUES (NOW(), NOW())
         RETURNING id INTO v_provider_id;
 
-        -- Link group via junction table
-        INSERT INTO provider_groups_junction (provider_id, group_id)
-        VALUES (v_provider_id, group_id)
-        ON CONFLICT DO NOTHING;
     ELSE
         -- UPDATE path
         v_provider_id := input_provider_id;
         UPDATE provider_artifact
         SET updated_at = NOW()
         WHERE id = v_provider_id;
-
-        -- Upsert group
-        INSERT INTO provider_groups_junction (provider_id, group_id)
-        VALUES (v_provider_id, group_id)
-        ON CONFLICT DO NOTHING;
 
         -- Remove old junction links
         DELETE FROM provider_names_junction WHERE provider_names_junction.provider_id = v_provider_id;

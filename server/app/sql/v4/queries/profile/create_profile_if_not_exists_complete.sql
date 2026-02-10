@@ -95,13 +95,6 @@ profile_insert AS (
       AND EXISTS (SELECT 1 FROM new_group)
     RETURNING id, true as created
 ),
--- Link profile to group via junction table
-link_profile_group AS (
-    INSERT INTO profile_groups_junction (profile_id, group_id)
-    SELECT pi.id, (SELECT id FROM new_group)
-    FROM profile_insert pi
-    ON CONFLICT (profile_id, group_id) DO NOTHING
-),
 -- Look up role (only if creating)
 role_resource AS (
     SELECT id as role_id

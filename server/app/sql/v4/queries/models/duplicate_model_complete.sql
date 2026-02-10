@@ -88,13 +88,6 @@ duplicated_model AS (
     WHERE mec.model_exists = true
     RETURNING id
 ),
-link_model_group AS (
-    INSERT INTO model_groups_junction (model_id, group_id)
-    SELECT dm.id, nmg.id
-    FROM duplicated_model dm
-    CROSS JOIN new_model_group nmg
-    ON CONFLICT (model_id, group_id) DO NOTHING
-),
 -- Insert value for duplicated model
 duplicated_model_value AS (
     INSERT INTO values_resource (value, created_at, active, generated, mcp)

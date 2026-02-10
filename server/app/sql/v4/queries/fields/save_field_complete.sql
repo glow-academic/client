@@ -79,20 +79,12 @@ BEGIN
         INSERT INTO field_artifact (created_at, updated_at)
         VALUES (NOW(), NOW())
         RETURNING id INTO v_field_id;
-        -- Link group via junction table
-        INSERT INTO field_groups_junction (field_id, group_id)
-        VALUES (v_field_id, v_group_id)
-        ON CONFLICT DO NOTHING;
     ELSE
         -- UPDATE path
         v_field_id := v_input_field_id;
         UPDATE field_artifact
         SET updated_at = NOW()
         WHERE id = v_field_id;
-        -- Upsert group via junction table
-        INSERT INTO field_groups_junction (field_id, group_id)
-        VALUES (v_field_id, v_group_id)
-        ON CONFLICT DO NOTHING;
     END IF;
 
     -- Validate resource IDs exist

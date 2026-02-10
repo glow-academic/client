@@ -200,11 +200,6 @@ BEGIN
         INSERT INTO profile_artifact (id, created_at, updated_at)
         VALUES (gen_random_uuid(), NOW(), NOW())
         RETURNING id INTO v_profile_id;
-        -- Link group via junction table
-        INSERT INTO profile_groups_junction (profile_id, group_id)
-        VALUES (v_profile_id, v_group_id)
-        ON CONFLICT DO NOTHING;
-        
         -- Check if primary email already exists (only for create)
         IF EXISTS (
             SELECT 1 FROM profile_emails_junction pe

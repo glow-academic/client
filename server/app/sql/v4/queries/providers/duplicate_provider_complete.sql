@@ -75,17 +75,6 @@ new_provider AS (
     FROM original_provider op
     RETURNING id
 ),
--- Link provider to group (copy from original)
-link_provider_group AS (
-    INSERT INTO provider_groups_junction (provider_id, group_id)
-    SELECT
-        np.id,
-        pgj.group_id
-    FROM new_provider np
-    CROSS JOIN params x
-    JOIN provider_groups_junction pgj ON pgj.provider_id = x.provider_id
-    ON CONFLICT DO NOTHING
-),
 -- Link provider to name (new name with " Copy" suffix)
 link_provider_name AS (
     INSERT INTO provider_names_junction (provider_id, name_id, created_at)

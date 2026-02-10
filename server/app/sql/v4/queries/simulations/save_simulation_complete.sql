@@ -94,10 +94,6 @@ BEGIN
         INSERT INTO simulation_artifact (created_at, updated_at)
         VALUES (NOW(), NOW())
         RETURNING id INTO v_simulation_id;
-        -- Link group via junction table
-        INSERT INTO simulation_groups_junction (simulation_id, group_id)
-        VALUES (v_simulation_id, v_group_id)
-        ON CONFLICT DO NOTHING;
     ELSE
         -- UPDATE path
         v_simulation_id := v_input_simulation_id;
@@ -110,10 +106,6 @@ BEGIN
             RAISE EXCEPTION 'Simulation not found: %', v_input_simulation_id;
         END IF;
 
-        -- Upsert group via junction table
-        INSERT INTO simulation_groups_junction (simulation_id, group_id)
-        VALUES (v_simulation_id, v_group_id)
-        ON CONFLICT DO NOTHING;
     END IF;
 
     -- Validate required resource IDs exist

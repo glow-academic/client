@@ -80,10 +80,6 @@ BEGIN
         INSERT INTO tool_artifact (created_at, updated_at)
         VALUES (NOW(), NOW())
         RETURNING id INTO v_tool_id;
-        -- Link group via junction table
-        INSERT INTO tool_groups_junction (tool_id, group_id)
-        VALUES (v_tool_id, v_group_id)
-        ON CONFLICT DO NOTHING;
     ELSE
         -- UPDATE path
         v_tool_id := v_input_tool_id;
@@ -95,10 +91,6 @@ BEGIN
             RAISE EXCEPTION 'Tool not found: %', v_input_tool_id;
         END IF;
 
-        -- Upsert group via junction table
-        INSERT INTO tool_groups_junction (tool_id, group_id)
-        VALUES (v_tool_id, v_group_id)
-        ON CONFLICT DO NOTHING;
     END IF;
 
     -- Validate resource IDs exist

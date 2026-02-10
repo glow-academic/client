@@ -83,13 +83,6 @@ new_scenario AS (
     FROM new_group ng
     RETURNING id
 ),
-link_scenario_group AS (
-    INSERT INTO scenario_groups_junction (scenario_id, group_id)
-    SELECT ns.id, ng.id
-    FROM new_scenario ns
-    CROSS JOIN new_group ng
-    ON CONFLICT (scenario_id, group_id) DO NOTHING
-),
 link_name AS (
     INSERT INTO scenario_names_junction (scenario_id, name_id, created_at)
     SELECT ns.id, gocn.name_id, NOW()

@@ -75,20 +75,12 @@ BEGIN
         INSERT INTO department_artifact (created_at, updated_at)
         VALUES (NOW(), NOW())
         RETURNING id INTO v_department_id;
-        -- Link group via junction table
-        INSERT INTO department_groups_junction (department_id, group_id)
-        VALUES (v_department_id, v_group_id)
-        ON CONFLICT DO NOTHING;
     ELSE
         -- UPDATE path
         v_department_id := v_input_department_id;
         UPDATE department_artifact
         SET updated_at = NOW()
         WHERE id = v_department_id;
-        -- Upsert group via junction table
-        INSERT INTO department_groups_junction (department_id, group_id)
-        VALUES (v_department_id, v_group_id)
-        ON CONFLICT DO NOTHING;
     END IF;
 
     -- Validate resource IDs exist

@@ -59,15 +59,6 @@ new_profile AS (
     FROM source_profile
     RETURNING id
 ),
-copy_group AS (
-    INSERT INTO profile_groups_junction (profile_id, group_id)
-    SELECT
-        np.id,
-        pgj.group_id
-    FROM new_profile np
-    JOIN profile_groups_junction pgj ON pgj.profile_id = (SELECT id FROM source_profile)
-    ON CONFLICT DO NOTHING
-),
 new_name_resource AS (
     INSERT INTO names_resource (name, created_at)
     SELECT sp.original_name || ' Copy', NOW()

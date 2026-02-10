@@ -111,19 +111,11 @@ BEGIN
         INSERT INTO cohort_artifact (created_at, updated_at)
         VALUES (NOW(), NOW())
         RETURNING id INTO v_cohort_id;
-        -- Link group via junction table
-        INSERT INTO cohort_groups_junction (cohort_id, group_id)
-        VALUES (v_cohort_id, v_group_id)
-        ON CONFLICT DO NOTHING;
     ELSE
         v_cohort_id := v_input_cohort_id;
         UPDATE cohort_artifact
         SET updated_at = NOW()
         WHERE id = v_cohort_id;
-        -- Upsert group via junction table
-        INSERT INTO cohort_groups_junction (cohort_id, group_id)
-        VALUES (v_cohort_id, v_group_id)
-        ON CONFLICT DO NOTHING;
     END IF;
 
     -- Conditional: For update, remove old links first (outside CTE since we need PL/pgSQL variable)

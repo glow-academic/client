@@ -184,12 +184,6 @@ new_scenario AS (
     CROSS JOIN group_target gt
     RETURNING id
 ),
-link_scenario_group AS (
-    INSERT INTO scenario_groups_junction (scenario_id, group_id)
-    SELECT ns.id, gt.group_id
-    FROM new_scenario ns
-    CROSS JOIN group_target gt
-),
 -- Link name (new name with " Copy" suffix)
 link_name AS (
     INSERT INTO scenario_names_junction (scenario_id, name_id, created_at)

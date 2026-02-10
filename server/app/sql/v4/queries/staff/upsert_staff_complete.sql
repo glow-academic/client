@@ -113,13 +113,11 @@ existing_profiles AS (
     -- Find existing profiles by email in profile_emails_junction table
     SELECT DISTINCT ON (pe_exp.primary_email)
         pe.profile_id as id,
-        pgj.group_id,
         pe.email,
         pe_exp.profile_idx
     FROM profiles_expanded pe_exp
     LEFT JOIN profile_emails_junction pe ON pe.email = pe_exp.primary_email AND pe.active = true
     LEFT JOIN profile_artifact p ON p.id = pe.profile_id
-    LEFT JOIN profile_groups_junction pgj ON pgj.profile_id = p.id
     WHERE pe.profile_id IS NOT NULL
 ),
 all_emails_expanded AS (
@@ -189,18 +187,6 @@ profile_upsert AS (
     ON CONFLICT (id) DO UPDATE SET
         updated_at = NOW()
     RETURNING id
-),
--- Link new profiles to groups via junction table
-link_profile_groups AS (
-    INSERT INTO profile_groups_junction (profile_id, group_id, created_at)
-    SELECT
-        pwi.profile_id,
-        ng.group_id,
-        NOW()
-    FROM profile_upsert_with_idx pwi
-    JOIN new_groups ng ON ng.profile_id = pwi.profile_id
-    WHERE pwi.will_create = true
-    ON CONFLICT (profile_id, group_id) DO NOTHING
 ),
 -- Look up roles from roles_resource by profile_type (first active match per type)
 role_resource_upsert AS (

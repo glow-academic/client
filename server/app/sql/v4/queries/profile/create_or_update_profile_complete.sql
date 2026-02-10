@@ -93,11 +93,10 @@ primary_email AS (
 ),
 existing_profile AS (
     -- Find existing profile by primary email in profile_emails_junction table
-    SELECT pe.profile_id as id, pgj.group_id
+    SELECT pe.profile_id as id
     FROM profile_emails_junction pe
     JOIN emails_resource e ON pe.email_id = e.id
     JOIN profile_artifact p ON p.id = pe.profile_id
-    LEFT JOIN profile_groups_junction pgj ON pgj.profile_id = p.id
     WHERE e.email = (SELECT email FROM primary_email)
       AND pe.active = true
     LIMIT 1
@@ -133,16 +132,6 @@ profile_upsert AS (
     ON CONFLICT (id) DO UPDATE SET
         updated_at = NOW()
     RETURNING id, NOT EXISTS(SELECT 1 FROM existing_profile) as created
-),
--- Link profile to group via junction table
-link_profile_group AS (
-    INSERT INTO profile_groups_junction (profile_id, group_id)
-    SELECT
-        pu.id,
-        COALESCE((SELECT group_id FROM existing_profile LIMIT 1), (SELECT id FROM new_group))
-    FROM profile_upsert pu
-    WHERE EXISTS (SELECT 1 FROM role_validation WHERE can_assign = true)
-    ON CONFLICT (profile_id, group_id) DO NOTHING
 ),
 -- Look up role from roles_resource by profile_type
 role_resource AS (

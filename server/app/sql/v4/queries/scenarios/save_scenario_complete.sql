@@ -140,10 +140,6 @@ BEGIN
         INSERT INTO scenario_artifact (created_at, updated_at)
         VALUES (NOW(), NOW())
         RETURNING id INTO v_scenario_id;
-        -- Link group via junction table
-        INSERT INTO scenario_groups_junction (scenario_id, group_id)
-        VALUES (v_scenario_id, v_group_id)
-        ON CONFLICT DO NOTHING;
         -- Insert root tree edge so scenario appears in the list
         INSERT INTO scenario_tree_junction (parent_id, child_id, active, created_at)
         VALUES (v_scenario_id, v_scenario_id, true, NOW());
@@ -159,10 +155,6 @@ BEGIN
         SET updated_at = NOW()
         WHERE id = v_scenario_id;
 
-        -- Upsert group via junction table
-        INSERT INTO scenario_groups_junction (scenario_id, group_id)
-        VALUES (v_scenario_id, v_group_id)
-        ON CONFLICT DO NOTHING;
     END IF;
 
     -- Validate required resource IDs exist (single-select resources)

@@ -93,20 +93,12 @@ BEGIN
         INSERT INTO parameter_artifact (created_at, updated_at)
         VALUES (NOW(), NOW())
         RETURNING id INTO v_parameter_id;
-        -- Link group via junction table
-        INSERT INTO parameter_groups_junction (parameter_id, group_id)
-        VALUES (v_parameter_id, v_group_id)
-        ON CONFLICT DO NOTHING;
     ELSE
         -- UPDATE path
         v_parameter_id := v_input_parameter_id;
         UPDATE parameter_artifact
         SET updated_at = NOW()
         WHERE id = v_parameter_id;
-        -- Upsert group via junction table
-        INSERT INTO parameter_groups_junction (parameter_id, group_id)
-        VALUES (v_parameter_id, v_group_id)
-        ON CONFLICT DO NOTHING;
     END IF;
 
     -- Validate resource IDs exist

@@ -99,13 +99,6 @@ new_cohort AS (
     VALUES (NOW(), NOW())
     RETURNING id
 ),
--- Link cohort to group via junction table
-link_cohort_group AS (
-    INSERT INTO cohort_groups_junction (cohort_id, group_id, created_at)
-    SELECT nc.id, ng.id, NOW()
-    FROM new_cohort nc
-    CROSS JOIN new_group ng
-),
 -- Link cohort to title
 link_cohort_title AS (
     INSERT INTO cohort_names_junction (cohort_id, name_id, created_at)
