@@ -85,8 +85,9 @@ async def patch_eval_draft(
             )
 
         async with conn.transaction():
-            params = PatchEvalDraftSqlParams(
-                **request.model_dump(), profile_id=profile_id
+            params = PatchEvalDraftSqlParams.from_request(
+                request=request,
+                profile_id=profile_id,
             )
             sql_params = params.to_tuple()
 

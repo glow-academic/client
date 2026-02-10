@@ -91,7 +91,7 @@ async def save_eval(
         if not request.input_eval_id:
             can_save_result = compute_can_create(
                 user_role=access_result.user_role,
-                department_ids=None,
+                department_ids=request.departments.resource_ids,
             )
         else:
             can_save_result = compute_can_save(
@@ -109,8 +109,8 @@ async def save_eval(
 
         async with conn.transaction():
             # Convert API request to SQL params (add profile_id from header)
-            params = SaveEvalSqlParams(
-                **request.model_dump(),
+            params = SaveEvalSqlParams.from_request(
+                request=request,
                 profile_id=profile_id,
             )
             sql_params = params.to_tuple()
@@ -136,7 +136,7 @@ async def save_eval(
                 audit_ctx = {"actor": {"name": result.actor_name, "id": profile_id}}
                 if request.input_eval_id:
                     audit_ctx["eval"] = {
-                        "name": getattr(request, "name", "Eval"),
+                        "name": "Eval",
                         "id": str(result.eval_id),
                     }
                 audit_set(http_request, **audit_ctx)

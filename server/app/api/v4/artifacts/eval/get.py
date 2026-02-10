@@ -19,7 +19,6 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.artifacts.eval.permissions import (
     EVAL_RESOURCES,
-    build_domain_data,
     compute_active_flag_required,
     compute_agents_required,
     compute_can_edit,
@@ -37,11 +36,19 @@ from app.api.v4.artifacts.eval.permissions import (
     has_access,
 )
 from app.api.v4.artifacts.eval.types import (
+    EvalAgentItem,
+    EvalAgentSection,
+    EvalDepartmentSection,
+    EvalDescriptionSection,
     EvalFlagConfig,
+    EvalFlagSection,
     EvalGroupRubricMapping,
-    EvalResourceBucket,
-    EvalResources,
+    EvalGroupSection,
+    EvalNameSection,
+    EvalRubricItem,
+    EvalRubricSection,
     EvalRunRubricMapping,
+    EvalRunSection,
     EvalWebsocketResources,
     EvalWebsocketViews,
     GetEvalApiRequest,
@@ -49,15 +56,20 @@ from app.api.v4.artifacts.eval.types import (
     GetEvalWebsocketResponse,
 )
 from app.api.v4.permissions import select_agents_for_artifact
+from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.departments.search import search_departments_internal
 from app.api.v4.resources.descriptions.get import get_descriptions_internal
 from app.api.v4.resources.descriptions.search import search_descriptions_internal
 from app.api.v4.resources.flags.get import get_flags_internal
 from app.api.v4.resources.flags.search import search_flags_internal
+from app.api.v4.resources.models.get import get_models_internal
 from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.names.search import search_names_internal
-from app.api.v4.types import CandidateAgent, DomainAgent
+from app.api.v4.resources.providers.get import get_providers_internal
+from app.api.v4.resources.rubrics.get import get_rubrics_batch_internal
+from app.api.v4.resources.tools.get import get_tools_internal
+from app.api.v4.types import CandidateAgent
 from app.api.v4.views.drafts.get import get_draft_eval_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
@@ -95,10 +107,8 @@ class EvalInternalData:
     draft_version: int | None
     group_id: UUID | None
 
-    # Domain mappings
-    domain_ids_map: dict[str, UUID | None]
-    domain_agent_ids: dict[str, UUID | None]
-    domains_list: list[DomainAgent]
+    # Agent mappings
+    resource_agent_ids: dict[str, UUID | None]
 
     # Show/required flags
     show_flags_map: dict[str, bool]
@@ -107,24 +117,33 @@ class EvalInternalData:
     # Suggestions (resource -> list of suggestion IDs)
     suggestions_map: dict[str, list[UUID]]
 
-    # Show AI generate flags (computed: domain_id exists AND agent exists)
+    # Show AI generate flags
     show_ai_generate_map: dict[str, bool]
     basic_show_ai_generate: bool
 
-    # Domain data for modals
-    domain_data_list: list[Any]  # list[DomainData]
-
-    # Resources payload
-    resources_payload: EvalResources
-
-    # Per-resource group IDs (from draft MV)
-    resource_group_ids: dict[str, UUID | None]
+    # Hydrated resources
+    names: list[Any]
+    descriptions: list[Any]
+    flags: list[EvalFlagConfig]
+    departments: list[Any]
+    eval_agents: list[EvalAgentItem]
+    rubrics: list[EvalRubricItem]
+    config_agents: list[Any]
+    config_models: list[Any]
+    config_providers: list[Any]
+    config_tools: list[Any]
+    available_model_runs: list[Any]
+    available_model_runs_total_count: int | None
+    available_model_runs_page: int | None
+    available_model_runs_page_size: int | None
+    available_model_runs_total_pages: int | None
+    available_groups: list[Any]
 
     # Per-resource tool IDs (from selected agents)
     create_tool_ids_map: dict[str, UUID | None]
     link_tool_ids_map: dict[str, UUID | None]
 
-    # Selected resource IDs (for client form state)
+    # Selected resource IDs
     name_id: UUID | None
     description_id: UUID | None
     active_flag_id: UUID | None
@@ -245,16 +264,6 @@ async def get_eval_internal(
         if draft_item.department_ids:
             selected_department_ids = draft_item.department_ids
 
-    # Build per-resource group_ids from draft_item
-    resource_group_ids: dict[str, UUID | None] = {
-        "names": draft_item.group_id if draft_item else None,
-        "descriptions": draft_item.group_id if draft_item else None,
-        "flags": draft_item.group_id if draft_item else None,
-        "departments": draft_item.group_id if draft_item else None,
-        "agents": None,  # No draft for agents
-        "rubrics": None,  # No draft for rubrics
-    }
-
     # Get tools existence flags from Query 2
     names_has_tools = ids_result.names_has_tools or False
 
@@ -287,21 +296,10 @@ async def get_eval_internal(
                     link_tool_ids_map[resource] = candidate.link_tool_ids.get(resource)
                     break
 
-    # === EXTRACT DOMAIN IDS FROM QUERY 2 ===
-    domain_ids_map: dict[str, UUID | None] = {
-        "names": ids_result.name_domain_id,
-        "descriptions": ids_result.description_domain_id,
-        "flags": ids_result.flag_domain_id,
-        "departments": ids_result.departments_domain_id,
-        "agents": ids_result.agents_domain_id,
-        "rubrics": ids_result.rubrics_domain_id,
-    }
-
     # === COMPUTE SHOW_AI_GENERATE FLAGS ===
     def compute_show_ai_generate(resource: str) -> bool:
-        domain_id = domain_ids_map.get(resource)
         agent_id = agent_ids.get(resource)
-        return domain_id is not None and agent_id is not None
+        return agent_id is not None
 
     name_show_ai_generate = compute_show_ai_generate("names")
     description_show_ai_generate = compute_show_ai_generate("descriptions")
@@ -343,8 +341,12 @@ async def get_eval_internal(
     groups_flag_ids = [selected_groups_flag_id] if selected_groups_flag_id else []
     all_flag_ids = active_flag_ids + dynamic_flag_ids + groups_flag_ids
     department_ids = selected_department_ids
+    selected_agent_ids = ids_result.agent_ids or []
+    selected_rubric_ids = ids_result.rubric_ids or []
+    agent_suggestion_ids = ids_result.agent_suggestions or []
+    rubric_suggestion_ids = ids_result.rubric_suggestions or []
 
-    async def fetch_names():
+    async def fetch_names() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
             selected = await get_names_internal(c, name_ids, bypass_cache)
             suggestions = await search_names_internal(
@@ -359,7 +361,7 @@ async def get_eval_internal(
             )
             return (selected, suggestions)
 
-    async def fetch_descriptions():
+    async def fetch_descriptions() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
             selected = await get_descriptions_internal(c, description_ids, bypass_cache)
             suggestions = await search_descriptions_internal(
@@ -377,7 +379,7 @@ async def get_eval_internal(
     # Eval-specific flag names
     EVAL_FLAG_NAMES = {"eval_active", "dynamic", ""}
 
-    async def fetch_flags():
+    async def fetch_flags() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
             selected = await get_flags_internal(c, all_flag_ids, bypass_cache)
             all_flags = await search_flags_internal(
@@ -392,7 +394,7 @@ async def get_eval_internal(
             suggestions = [f for f in all_flags if f.name in EVAL_FLAG_NAMES]
             return (selected, suggestions)
 
-    async def fetch_departments():
+    async def fetch_departments() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
             selected = await get_departments_internal(c, department_ids, bypass_cache)
             suggestions = await search_departments_internal(
@@ -407,17 +409,37 @@ async def get_eval_internal(
             )
             return (selected, suggestions)
 
+    async def fetch_agents() -> tuple[list[Any], list[Any]]:
+        async with pool.acquire() as c:
+            selected = await get_agents_internal(c, selected_agent_ids, bypass_cache)
+            suggestions = await get_agents_internal(c, agent_suggestion_ids, bypass_cache)
+            return (selected, suggestions)
+
+    async def fetch_rubrics() -> tuple[list[Any], list[Any]]:
+        async with pool.acquire() as c:
+            selected = await get_rubrics_batch_internal(
+                c, selected_rubric_ids, bypass_cache
+            )
+            suggestions = await get_rubrics_batch_internal(
+                c, rubric_suggestion_ids, bypass_cache
+            )
+            return (selected, suggestions)
+
     # Parallel fetch all resources
     (
         (names_selected, names_suggestions),
         (descriptions_selected, descriptions_suggestions),
         (flags_selected, flags_suggestions),
         (departments_selected, departments_suggestions),
+        (agents_selected, agents_suggestions),
+        (rubrics_selected, rubrics_suggestions),
     ) = await asyncio.gather(
         fetch_names(),
         fetch_descriptions(),
         fetch_flags(),
         fetch_departments(),
+        fetch_agents(),
+        fetch_rubrics(),
     )
 
     names = _dedupe_by_id(names_selected + names_suggestions, "id")
@@ -426,22 +448,18 @@ async def get_eval_internal(
     departments = _dedupe_by_id(
         departments_selected + departments_suggestions, "department_id"
     )
+    agents = _dedupe_by_id(agents_selected + agents_suggestions, "id")
+    rubrics = _dedupe_by_id(rubrics_selected + rubrics_suggestions, "id")
 
     # Find selected resources
     name_resource = next((n for n in names if n.id == selected_name_id), None)
-    description_resource = next(
-        (d for d in descriptions if d.id == selected_description_id),
-        None,
-    )
-    flag_resource = next((f for f in flags if f.id == selected_active_flag_id), None)
-
-    department_resources = [
-        d for d in departments if d.department_id in selected_department_ids
-    ]
+    agent_resources = [a for a in agents if a.id in selected_agent_ids]
 
     name_suggestion_ids = [n.id for n in names_suggestions]
     description_suggestion_ids = [d.id for d in descriptions_suggestions]
     department_suggestion_ids = [d.department_id for d in departments_suggestions]
+    agent_suggestion_ids_out = [a.id for a in agents_suggestions if a.id]
+    rubric_suggestion_ids_out = [r.id for r in rubrics_suggestions if r.id]
 
     # Compute show flags
     show_name = compute_show_name(names_has_tools)
@@ -470,11 +488,6 @@ async def get_eval_internal(
         "rubrics": compute_rubrics_required(show_rubrics_flag),
     }
 
-    # Build rich domain metadata for client display
-    domain_data_list = build_domain_data(
-        domain_ids_map, show_flags_map, required_flags_map
-    )
-
     # Transform flags to enriched format for client
     eval_flags = [
         EvalFlagConfig(
@@ -485,11 +498,32 @@ async def get_eval_internal(
             flag_option_id=flag.id,
             show=show_active_flag,
             required=compute_active_flag_required(),
-            domain_id=domain_ids_map.get("flags"),
             generated=flag.generated,
         )
         for flag in flags
         if flag.id
+    ]
+
+    eval_agents = [
+        EvalAgentItem(
+            id=a.id,
+            name=a.name,
+            description=a.description,
+            generated=bool(a.generated),
+        )
+        for a in agents
+        if a.id
+    ]
+
+    eval_rubrics = [
+        EvalRubricItem(
+            id=r.id,
+            name=r.name,
+            description=r.description,
+            generated=bool(r.generated),
+        )
+        for r in rubrics
+        if r.id
     ]
 
     # Validation for new mode
@@ -510,38 +544,6 @@ async def get_eval_internal(
     run_rubrics = _parse_run_rubrics(ids_result.run_rubrics)
     group_rubrics = _parse_group_rubrics(ids_result.group_rubrics)
 
-    # === Construct Response ===
-    resources_payload = EvalResources(
-        resources=EvalResourceBucket(
-            names=names,
-            descriptions=descriptions,
-            flags=eval_flags,
-            departments=departments,
-            eval_agents=None,  # Populated later if needed
-            rubrics=None,  # Populated later if needed
-        ),
-        current=EvalResourceBucket(
-            names=[name_resource] if name_resource else [],
-            descriptions=[description_resource] if description_resource else [],
-            flags=[flag_resource] if flag_resource else [],
-            departments=department_resources or [],
-            eval_agents=None,
-            rubrics=None,
-        ),
-    )
-
-    # Build domains list for WebSocket handler
-    domains_list: list[DomainAgent] = []
-    for resource, domain_id in domain_ids_map.items():
-        if domain_id is not None:
-            domains_list.append(
-                DomainAgent(
-                    domain_id=domain_id,
-                    agent_id=agent_ids.get(resource),
-                    group_id=resource_group_ids.get(resource),
-                )
-            )
-
     # Build show_ai_generate map
     show_ai_generate_map = {
         "names": name_show_ai_generate,
@@ -557,7 +559,29 @@ async def get_eval_internal(
         "names": name_suggestion_ids,
         "descriptions": description_suggestion_ids,
         "departments": department_suggestion_ids,
+        "agents": cast(list[UUID], agent_suggestion_ids_out),
+        "rubrics": cast(list[UUID], rubric_suggestion_ids_out),
     }
+
+    # Config chain hydration for websocket generation parity.
+    config_agents = agent_resources
+    model_ids = list({a.model_id for a in config_agents if a.model_id})
+    config_models = []
+    config_providers = []
+    config_tools = []
+    if model_ids:
+        async with pool.acquire() as c:
+            config_models = await get_models_internal(c, model_ids, bypass_cache)
+        provider_ids = list({m.provider_id for m in config_models if m.provider_id})
+        if provider_ids:
+            async with pool.acquire() as c:
+                config_providers = await get_providers_internal(
+                    c, provider_ids, bypass_cache
+                )
+    tool_ids = list({tid for a in config_agents for tid in (a.tool_ids or []) if tid})
+    if tool_ids:
+        async with pool.acquire() as c:
+            config_tools = await get_tools_internal(c, tool_ids, bypass_cache)
 
     return EvalInternalData(
         # Access/context
@@ -567,10 +591,7 @@ async def get_eval_internal(
         disabled_reason=disabled_reason,
         draft_version=effective_draft_version,
         group_id=effective_group_id,
-        # Domain mappings
-        domain_ids_map=domain_ids_map,
-        domain_agent_ids=agent_ids,
-        domains_list=domains_list,
+        resource_agent_ids=agent_ids,
         # Show/required flags
         show_flags_map=show_flags_map,
         required_flags_map=required_flags_map,
@@ -579,11 +600,23 @@ async def get_eval_internal(
         # Show AI generate
         show_ai_generate_map=show_ai_generate_map,
         basic_show_ai_generate=basic_show_ai_generate,
-        # Domain data and resources
-        domain_data_list=domain_data_list,
-        resources_payload=resources_payload,
-        # Per-resource group IDs
-        resource_group_ids=resource_group_ids,
+        # Hydrated resources
+        names=names,
+        descriptions=descriptions,
+        flags=eval_flags,
+        departments=departments,
+        eval_agents=eval_agents,
+        rubrics=eval_rubrics,
+        config_agents=config_agents,
+        config_models=config_models,
+        config_providers=config_providers,
+        config_tools=config_tools,
+        available_model_runs=[],
+        available_model_runs_total_count=0,
+        available_model_runs_page=1,
+        available_model_runs_page_size=50,
+        available_model_runs_total_pages=0,
+        available_groups=[],
         # Per-resource tool IDs
         create_tool_ids_map=create_tool_ids_map,
         link_tool_ids_map=link_tool_ids_map,
@@ -594,7 +627,7 @@ async def get_eval_internal(
         dynamic_flag_id=selected_dynamic_flag_id,
         groups_flag_id=selected_groups_flag_id,
         department_ids=selected_department_ids,
-        agent_ids=ids_result.agent_ids or [],
+        agent_ids=selected_agent_ids,
         model_run_ids=ids_result.model_run_ids or [],
         group_ids=ids_result.group_ids or [],
         # Eval-specific
@@ -623,27 +656,53 @@ async def get_eval_websocket(
         bypass_cache=bypass_cache,
     )
 
-    current = data.resources_payload.current or EvalResourceBucket()
+    selected_name = next((n for n in data.names if n.id == data.name_id), None)
+    selected_description = next(
+        (d for d in data.descriptions if d.id == data.description_id), None
+    )
+    selected_flags = [
+        f
+        for f in data.flags
+        if f.flag_option_id
+        and f.flag_option_id
+        in {
+            data.active_flag_id,
+            data.dynamic_flag_id,
+            data.groups_flag_id,
+        }
+    ]
+    selected_departments = [
+        d for d in data.departments if d.department_id in data.department_ids
+    ]
+    selected_agents = [a for a in data.eval_agents if a.id in data.agent_ids]
+    selected_rubrics = []
+    selected_rubric_ids = {
+        rid for mapping in data.run_rubrics for rid in (mapping.rubric_ids or [])
+    } | {rid for mapping in data.group_rubrics for rid in (mapping.rubric_ids or [])}
+    if selected_rubric_ids:
+        selected_rubrics = [
+            r for r in data.rubrics if r.id in selected_rubric_ids
+        ]
 
     return GetEvalWebsocketResponse(
         views=EvalWebsocketViews(draft_eval=None),
         group_id=data.group_id,
-        resource_agent_ids=data.domain_agent_ids,
+        resource_agent_ids=data.resource_agent_ids,
         resources=EvalWebsocketResources(
-            names=current.names,
-            descriptions=current.descriptions,
-            flags=current.flags,
-            departments=current.departments,
-            eval_agents=current.eval_agents,
-            rubrics=current.rubrics,
+            names=[selected_name] if selected_name else [],
+            descriptions=[selected_description] if selected_description else [],
+            flags=selected_flags,
+            departments=selected_departments,
+            eval_agents=selected_agents,
+            rubrics=selected_rubrics,
             run_positions=None,
             group_positions=None,
             run_rubrics=None,
             group_rubrics=None,
-            agents=None,
-            models=None,
-            providers=None,
-            tools=None,
+            agents=data.config_agents,
+            models=data.config_models,
+            providers=data.config_providers,
+            tools=data.config_tools,
         ),
     )
 
@@ -666,93 +725,154 @@ async def get_eval_client(
         bypass_cache=bypass_cache,
     )
 
+    active_flag = next(
+        (f for f in data.flags if f.flag_option_id == data.active_flag_id), None
+    )
+    dynamic_flag = next(
+        (f for f in data.flags if f.flag_option_id == data.dynamic_flag_id), None
+    )
+    groups_flag = next(
+        (f for f in data.flags if f.flag_option_id == data.groups_flag_id), None
+    )
+
+    selected_name = next((n for n in data.names if n.id == data.name_id), None)
+    selected_description = next(
+        (d for d in data.descriptions if d.id == data.description_id), None
+    )
+    selected_departments = [
+        d for d in data.departments if d.department_id in data.department_ids
+    ]
+    selected_agents = [a for a in data.eval_agents if a.id in data.agent_ids]
+    selected_run_ids = set(data.model_run_ids)
+    selected_group_ids = set(data.group_ids)
+    selected_runs = [
+        r
+        for r in (data.available_model_runs or [])
+        if r.model_run_id in selected_run_ids
+    ]
+    if not selected_runs and data.model_run_ids:
+        selected_runs = [
+            {
+                "model_run_id": run_id,
+                "model_name": f"Run {str(run_id)[:8]}",
+            }
+            for run_id in data.model_run_ids
+        ]
+    selected_groups = [
+        g for g in (data.available_groups or []) if g.group_id in selected_group_ids
+    ]
+    if not selected_groups and data.group_ids:
+        selected_groups = [
+            {
+                "group_id": group_id,
+                "name": f"Group {str(group_id)[:8]}",
+            }
+            for group_id in data.group_ids
+        ]
+    selected_rubric_ids = {
+        rid for mapping in data.run_rubrics for rid in (mapping.rubric_ids or [])
+    } | {rid for mapping in data.group_rubrics for rid in (mapping.rubric_ids or [])}
+    selected_rubrics = [r for r in data.rubrics if r.id in selected_rubric_ids]
+
     return GetEvalApiResponse(
-        # Required fields
         actor_name=data.actor_name,
         eval_exists=data.eval_exists,
         can_edit=data.can_edit,
         disabled_reason=data.disabled_reason,
         draft_version=data.draft_version,
         group_id=data.group_id,
-        # Selected resource IDs
-        name_id=data.name_id,
-        description_id=data.description_id,
-        active_flag_id=data.active_flag_id,
-        dynamic_flag_id=data.dynamic_flag_id,
-        groups_flag_id=data.groups_flag_id,
-        department_ids=data.department_ids or None,
-        agent_ids=data.agent_ids or None,
-        model_run_ids=data.model_run_ids or None,
-        group_ids=data.group_ids or None,
-        # Per-resource group IDs
-        names_group_id=data.resource_group_ids.get("names"),
-        descriptions_group_id=data.resource_group_ids.get("descriptions"),
-        flags_group_id=data.resource_group_ids.get("flags"),
-        departments_group_id=data.resource_group_ids.get("departments"),
-        eval_agents_group_id=data.resource_group_ids.get("agents"),
-        rubrics_group_id=data.resource_group_ids.get("rubrics"),
-        # Name
-        show_name=data.show_flags_map.get("names"),
-        name_domain_id=data.domain_ids_map.get("names"),
-        name_required=data.required_flags_map.get("names"),
-        name_suggestions=data.suggestions_map.get("names"),
-        name_show_ai_generate=data.show_ai_generate_map.get("names"),
-        # Description
-        show_description=data.show_flags_map.get("descriptions"),
-        description_domain_id=data.domain_ids_map.get("descriptions"),
-        description_required=data.required_flags_map.get("descriptions"),
-        description_suggestions=data.suggestions_map.get("descriptions"),
-        description_show_ai_generate=data.show_ai_generate_map.get("descriptions"),
-        # Flags: active
-        show_active_flag=data.show_flags_map.get("flags"),
-        active_flag_domain_id=data.domain_ids_map.get("flags"),
-        active_flag_required=data.required_flags_map.get("flags"),
-        active_flag_show_ai_generate=data.show_ai_generate_map.get("flags"),
-        # Flags: dynamic
-        show_dynamic_flag=True,
-        dynamic_flag_domain_id=data.domain_ids_map.get("flags"),
-        dynamic_flag_required=False,
-        dynamic_flag_show_ai_generate=data.show_ai_generate_map.get("flags"),
-        # Flags: groups
-        show_groups_flag=True,
-        groups_flag_domain_id=data.domain_ids_map.get("flags"),
-        groups_flag_required=False,
-        groups_flag_show_ai_generate=data.show_ai_generate_map.get("flags"),
-        # Departments
-        show_departments=data.show_flags_map.get("departments"),
-        departments_domain_id=data.domain_ids_map.get("departments"),
-        departments_required=data.required_flags_map.get("departments"),
-        department_suggestions=data.suggestions_map.get("departments"),
-        departments_show_ai_generate=data.show_ai_generate_map.get("departments"),
-        # Agents
-        show_agents=data.show_flags_map.get("agents"),
-        agents_domain_id=data.domain_ids_map.get("agents"),
-        agents_required=data.required_flags_map.get("agents"),
-        agents_show_ai_generate=data.show_ai_generate_map.get("agents"),
-        # Rubrics
-        show_rubrics=data.show_flags_map.get("rubrics"),
-        rubrics_domain_id=data.domain_ids_map.get("rubrics"),
-        rubrics_required=data.required_flags_map.get("rubrics"),
-        rubrics_show_ai_generate=data.show_ai_generate_map.get("rubrics"),
-        # Step-level AI generation flags
         basic_show_ai_generate=data.basic_show_ai_generate,
-        # Domain metadata for client display in modals
-        domain_data=data.domain_data_list,
-        # Resources
-        resources=data.resources_payload,
-        # Per-resource CREATE tool IDs
-        name_create_tool_id=data.create_tool_ids_map.get("names"),
-        description_create_tool_id=data.create_tool_ids_map.get("descriptions"),
-        # Per-resource LINK tool IDs
-        name_link_tool_id=data.link_tool_ids_map.get("names"),
-        description_link_tool_id=data.link_tool_ids_map.get("descriptions"),
-        flag_link_tool_id=data.link_tool_ids_map.get("flags"),
-        departments_link_tool_id=data.link_tool_ids_map.get("departments"),
-        agents_link_tool_id=data.link_tool_ids_map.get("agents"),
-        rubrics_link_tool_id=data.link_tool_ids_map.get("rubrics"),
-        # Eval-specific
+        names=EvalNameSection(
+            show=data.show_flags_map.get("names", False),
+            required=data.required_flags_map.get("names", False),
+            suggestions=data.suggestions_map.get("names"),
+            show_ai_generate=data.show_ai_generate_map.get("names", False),
+            create_tool_id=data.create_tool_ids_map.get("names"),
+            link_tool_id=data.link_tool_ids_map.get("names"),
+            resource=selected_name,
+            resources=data.names,
+        ),
+        descriptions=EvalDescriptionSection(
+            show=data.show_flags_map.get("descriptions", False),
+            required=data.required_flags_map.get("descriptions", False),
+            suggestions=data.suggestions_map.get("descriptions"),
+            show_ai_generate=data.show_ai_generate_map.get("descriptions", False),
+            create_tool_id=data.create_tool_ids_map.get("descriptions"),
+            link_tool_id=data.link_tool_ids_map.get("descriptions"),
+            resource=selected_description,
+            resources=data.descriptions,
+        ),
+        active_flags=EvalFlagSection(
+            show=data.show_flags_map.get("flags", False),
+            required=data.required_flags_map.get("flags", False),
+            show_ai_generate=data.show_ai_generate_map.get("flags", False),
+            link_tool_id=data.link_tool_ids_map.get("flags"),
+            resource=active_flag,
+            resources=data.flags,
+        ),
+        dynamic_flags=EvalFlagSection(
+            show=True,
+            required=False,
+            show_ai_generate=data.show_ai_generate_map.get("flags", False),
+            link_tool_id=data.link_tool_ids_map.get("flags"),
+            resource=dynamic_flag,
+            resources=data.flags,
+        ),
+        groups_flags=EvalFlagSection(
+            show=True,
+            required=False,
+            show_ai_generate=data.show_ai_generate_map.get("flags", False),
+            link_tool_id=data.link_tool_ids_map.get("flags"),
+            resource=groups_flag,
+            resources=data.flags,
+        ),
+        departments=EvalDepartmentSection(
+            show=data.show_flags_map.get("departments", False),
+            required=data.required_flags_map.get("departments", False),
+            suggestions=data.suggestions_map.get("departments"),
+            show_ai_generate=data.show_ai_generate_map.get("departments", False),
+            link_tool_id=data.link_tool_ids_map.get("departments"),
+            current=selected_departments,
+            resources=data.departments,
+        ),
+        agents=EvalAgentSection(
+            show=data.show_flags_map.get("agents", False),
+            required=data.required_flags_map.get("agents", False),
+            suggestions=data.suggestions_map.get("agents"),
+            show_ai_generate=data.show_ai_generate_map.get("agents", False),
+            link_tool_id=data.link_tool_ids_map.get("agents"),
+            current=selected_agents,
+            resources=data.eval_agents,
+        ),
+        rubrics=EvalRubricSection(
+            show=data.show_flags_map.get("rubrics", False),
+            required=data.required_flags_map.get("rubrics", False),
+            suggestions=data.suggestions_map.get("rubrics"),
+            show_ai_generate=data.show_ai_generate_map.get("rubrics", False),
+            link_tool_id=data.link_tool_ids_map.get("rubrics"),
+            current=selected_rubrics,
+            resources=data.rubrics,
+        ),
+        runs=EvalRunSection(
+            show=True,
+            required=False,
+            current=selected_runs,
+            resources=data.available_model_runs or selected_runs,
+        ),
+        groups=EvalGroupSection(
+            show=True,
+            required=False,
+            current=selected_groups,
+            resources=data.available_groups or selected_groups,
+        ),
         run_rubrics=data.run_rubrics,
         group_rubrics=data.group_rubrics,
+        available_model_runs=data.available_model_runs or selected_runs,
+        available_model_runs_total_count=data.available_model_runs_total_count,
+        available_model_runs_page=data.available_model_runs_page,
+        available_model_runs_page_size=data.available_model_runs_page_size,
+        available_model_runs_total_pages=data.available_model_runs_total_pages,
+        available_groups=data.available_groups or selected_groups,
     )
 
 
@@ -777,7 +897,7 @@ def _dedupe_by_id(items: list[Any], id_attr: str) -> list[Any]:
     return output
 
 
-def _parse_run_rubrics(raw: Any) -> list[EvalRunRubricMapping]:
+def _parse_run_rubrics(raw: object) -> list[EvalRunRubricMapping]:
     """Parse run_rubrics from SQL composite array."""
     if not raw:
         return []
@@ -788,7 +908,7 @@ def _parse_run_rubrics(raw: Any) -> list[EvalRunRubricMapping]:
     return result
 
 
-def _parse_group_rubrics(raw: Any) -> list[EvalGroupRubricMapping]:
+def _parse_group_rubrics(raw: object) -> list[EvalGroupRubricMapping]:
     """Parse group_rubrics from SQL composite array."""
     if not raw:
         return []
@@ -848,12 +968,11 @@ async def get_eval(
             audit_ctx: dict[str, Any] = {
                 "actor": {"name": response_data.actor_name, "id": profile_id}
             }
-            current_name = None
-            current_resources = (
-                response_data.resources.current if response_data.resources else None
+            current_name = (
+                response_data.names.resource.name
+                if response_data.names and response_data.names.resource
+                else None
             )
-            if current_resources and current_resources.names:
-                current_name = getattr(current_resources.names[0], "name", None)
             if request.eval_id and current_name:
                 audit_ctx["eval"] = {
                     "name": current_name,

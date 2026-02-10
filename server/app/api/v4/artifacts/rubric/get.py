@@ -257,6 +257,17 @@ async def get_rubric_internal(
             selected_active_flag_id = draft_item.flag_ids[0]
         if draft_item.department_ids:
             selected_department_ids = draft_item.department_ids
+        if draft_item.point_ids:
+            selected_total_points_id = draft_item.point_ids[0]
+            selected_pass_points_id = (
+                draft_item.point_ids[1]
+                if len(draft_item.point_ids) > 1
+                else draft_item.point_ids[0]
+            )
+        if draft_item.standard_group_ids:
+            selected_standard_group_ids = draft_item.standard_group_ids
+        if draft_item.standard_ids:
+            selected_standard_ids = draft_item.standard_ids
 
     # Get tools existence flags from Query 2 (used for show_* UI flags)
     names_has_tools = ids_result.names_has_tools or False

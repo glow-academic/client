@@ -39,18 +39,6 @@ type CreateDraftDepartmentsOut = OutputOf<
   "/api/v4/resources/departments",
   "post"
 >;
-type CreateDraftAuthsIn = InputOf<"/api/v4/resources/auths", "post">;
-type CreateDraftAuthsOut = OutputOf<"/api/v4/resources/auths", "post">;
-type CreateDraftProvidersIn = InputOf<
-  "/api/v4/resources/providers",
-  "post"
->;
-type CreateDraftProvidersOut = OutputOf<
-  "/api/v4/resources/providers",
-  "post"
->;
-type CreateDraftKeysIn = InputOf<"/api/v4/resources/keys", "post">;
-type CreateDraftKeysOut = OutputOf<"/api/v4/resources/keys", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -149,29 +137,92 @@ async function createDraftDepartments(
   return api.post("/resources/departments", input);
 }
 
-async function createDraftAuths(
-  input: CreateDraftAuthsIn
-): Promise<CreateDraftAuthsOut> {
+async function createProviderKeys(input: {
+  provider_id: string;
+  key_id: string;
+}): Promise<{ provider_keys_id?: string | null }> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/auths", input);
+  const result = await api.post("/resources/provider_keys" as any, {
+    body: {
+      provider_id: input.provider_id,
+      key_id: input.key_id,
+      mcp: false,
+    },
+  });
+  return result as { provider_keys_id?: string | null };
 }
 
-async function createDraftProviders(
-  input: CreateDraftProvidersIn
-): Promise<CreateDraftProvidersOut> {
+async function getProviderKeys(
+  ids: string[]
+): Promise<
+  Array<{
+    id?: string | null;
+    provider_id?: string | null;
+    key_id?: string | null;
+    provider_name?: string | null;
+    key_name?: string | null;
+    key_description?: string | null;
+    generated?: boolean | null;
+  }>
+> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/providers", input);
+  const result = await api.post("/resources/provider_keys/get" as any, {
+    body: { ids },
+  });
+  return (result as { items?: unknown[] }).items as Array<{
+    id?: string | null;
+    provider_id?: string | null;
+    key_id?: string | null;
+    provider_name?: string | null;
+    key_name?: string | null;
+    key_description?: string | null;
+    generated?: boolean | null;
+  }>;
 }
 
-async function createDraftKeys(
-  input: CreateDraftKeysIn
-): Promise<CreateDraftKeysOut> {
+async function createAuthKeys(input: {
+  auth_id: string;
+  key_id: string;
+}): Promise<{ auth_keys_id?: string | null }> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/keys", input);
+  const result = await api.post("/resources/auth_keys" as any, {
+    body: {
+      auth_id: input.auth_id,
+      key_id: input.key_id,
+      mcp: false,
+    },
+  });
+  return result as { auth_keys_id?: string | null };
 }
+
+async function getAuthKeys(
+  ids: string[]
+): Promise<
+  Array<{
+    id?: string | null;
+    auth_id?: string | null;
+    key_id?: string | null;
+    auth_name?: string | null;
+    key_name?: string | null;
+    key_description?: string | null;
+    generated?: boolean | null;
+  }>
+> {
+  "use server";
+  const result = await api.post("/resources/auth_keys/get" as any, {
+    body: { ids },
+  });
+  return (result as { items?: unknown[] }).items as Array<{
+    id?: string | null;
+    auth_id?: string | null;
+    key_id?: string | null;
+    auth_name?: string | null;
+    key_name?: string | null;
+    key_description?: string | null;
+    generated?: boolean | null;
+  }>;
+}
+
 
 /** ---- Server renders client with typed data and actions ---- */
 export default async function SettingEditPage({
@@ -232,9 +283,10 @@ export default async function SettingEditPage({
           createColorsAction={createDraftColors}
           createFlagsAction={createDraftFlags}
           createDepartmentsAction={createDraftDepartments}
-          createAuthsAction={createDraftAuths}
-          createProvidersAction={createDraftProviders}
-          createKeysAction={createDraftKeys}
+          createProviderKeysAction={createProviderKeys}
+          getProviderKeysAction={getProviderKeys}
+          createAuthKeysAction={createAuthKeys}
+          getAuthKeysAction={getAuthKeys}
         />
       </div>
     );

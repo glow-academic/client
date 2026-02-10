@@ -159,7 +159,7 @@ class ModelInternalData:
     name_resource: Any | None
     description_resource: Any | None
     value_resource: Any | None
-    provider_resource: Any | None  # placeholder
+    provider_resource: Any | None
     model_flags: list[ModelFlagConfig]
     department_resources: list[Any]
     modality_resources: list[Any]
@@ -173,6 +173,7 @@ class ModelInternalData:
     names: list[Any]
     descriptions: list[Any]
     values: list[Any]
+    providers: list[Any]
     flags: list[ModelFlagConfig]
     departments: list[Any]
     modalities: list[Any]
@@ -342,6 +343,7 @@ async def get_model_internal(
     selected_name_id = ids_result.name_id
     selected_description_id = ids_result.description_id
     selected_value_id = ids_result.value_id
+    selected_provider_id = ids_result.provider_id
 
     selected_active_flag_id = ids_result.active_flag_id
     selected_modalities_enabled_flag_id = ids_result.modalities_enabled_flag_id
@@ -367,15 +369,32 @@ async def get_model_internal(
             selected_name_id = draft_item.name_ids[0]
         if draft_item.description_ids:
             selected_description_id = draft_item.description_ids[0]
+        if draft_item.value_ids:
+            selected_value_id = draft_item.value_ids[0]
+        if draft_item.provider_ids:
+            selected_provider_id = draft_item.provider_ids[0]
         if draft_item.flag_ids:
             selected_active_flag_id = draft_item.flag_ids[0]
         if draft_item.department_ids:
             selected_department_ids = draft_item.department_ids
+        if draft_item.modality_ids:
+            selected_modality_ids = draft_item.modality_ids
+        if draft_item.temperature_level_ids:
+            selected_temperature_level_ids = draft_item.temperature_level_ids
+        if draft_item.pricing_ids:
+            selected_pricing_ids = draft_item.pricing_ids
+        if draft_item.reasoning_level_ids:
+            selected_reasoning_level_ids = draft_item.reasoning_level_ids
+        if draft_item.quality_ids:
+            selected_quality_ids = draft_item.quality_ids
+        if draft_item.voice_ids:
+            selected_voice_ids = draft_item.voice_ids
 
     # === PASS 2: Parallel Resource Fetching ===
     name_ids = [selected_name_id] if selected_name_id else []
     description_ids = [selected_description_id] if selected_description_id else []
     value_ids_list = [selected_value_id] if selected_value_id else []
+    provider_ids_list = [selected_provider_id] if selected_provider_id else []
     flag_ids = [
         fid
         for fid in [
@@ -416,6 +435,11 @@ async def get_model_internal(
     async def fetch_values():
         async with pool.acquire() as c:
             selected = await get_values_internal(c, value_ids_list, bypass_cache)
+            return (selected, [])
+
+    async def fetch_providers():
+        async with pool.acquire() as c:
+            selected = await get_providers_internal(c, provider_ids_list, bypass_cache)
             return (selected, [])
 
     async def fetch_flags():
@@ -487,6 +511,7 @@ async def get_model_internal(
         (names_selected, names_suggestions),
         (descriptions_selected, descriptions_suggestions),
         (values_selected, values_suggestions),
+        (providers_selected, providers_suggestions),
         (flags_selected, flags_suggestions),
         (departments_selected, departments_suggestions),
         (modalities_selected, modalities_suggestions),
@@ -499,6 +524,7 @@ async def get_model_internal(
         fetch_names(),
         fetch_descriptions(),
         fetch_values(),
+        fetch_providers(),
         fetch_flags(),
         fetch_departments(),
         fetch_modalities(),
@@ -513,6 +539,7 @@ async def get_model_internal(
     names = _dedupe_by_id(names_selected + names_suggestions, "id")
     descriptions = _dedupe_by_id(descriptions_selected + descriptions_suggestions, "id")
     values = _dedupe_by_id(values_selected + values_suggestions, "id")
+    providers = _dedupe_by_id(providers_selected + providers_suggestions, "id")
     flags = _dedupe_by_id(flags_selected + flags_suggestions, "id")
     departments = _dedupe_by_id(
         departments_selected + departments_suggestions, "department_id"
@@ -536,6 +563,7 @@ async def get_model_internal(
         (d for d in descriptions if d.id == selected_description_id), None
     )
     value_resource = next((v for v in values if v.id == selected_value_id), None)
+    provider_resource = next((p for p in providers if p.id == selected_provider_id), None)
 
     department_resources = [
         d for d in departments if d.department_id in selected_department_ids
@@ -702,7 +730,7 @@ async def get_model_internal(
         name_resource=name_resource,
         description_resource=description_resource,
         value_resource=value_resource,
-        provider_resource=None,
+        provider_resource=provider_resource,
         model_flags=model_flags,
         department_resources=department_resources,
         modality_resources=modality_resources,
@@ -714,6 +742,7 @@ async def get_model_internal(
         names=names,
         descriptions=descriptions,
         values=values,
+        providers=providers,
         flags=model_flags,
         departments=departments,
         modalities=modalities,
@@ -789,7 +818,7 @@ async def get_model_websocket(
                 [data.description_resource] if data.description_resource else None
             ),
             values=[data.value_resource] if data.value_resource else None,
-            providers=[],
+            providers=[data.provider_resource] if data.provider_resource else None,
             flags=selected_enriched_flags or None,
             departments=data.department_resources or None,
             modalities=data.modality_resources or None,
@@ -857,7 +886,7 @@ async def get_model_client(
         ),
         providers=ModelProviderSection(
             resource=data.provider_resource,
-            resources=[],
+            resources=data.providers,
             **section_common("providers"),
         ),
         flags=ModelFlagSection(

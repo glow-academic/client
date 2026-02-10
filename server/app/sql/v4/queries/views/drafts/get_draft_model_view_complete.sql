@@ -44,8 +44,16 @@ CREATE TYPE types.q_get_draft_model_view_v4_item AS (
     regeneration_descriptions text[],
     name_ids uuid[],
     description_ids uuid[],
+    value_ids uuid[],
+    provider_ids uuid[],
     flag_ids uuid[],
-    department_ids uuid[]
+    department_ids uuid[],
+    modality_ids uuid[],
+    temperature_level_ids uuid[],
+    pricing_ids uuid[],
+    reasoning_level_ids uuid[],
+    quality_ids uuid[],
+    voice_ids uuid[]
 );
 
 CREATE OR REPLACE FUNCTION api_get_draft_model_view_v4(
@@ -80,8 +88,16 @@ AS $$
                     regeneration_descriptions,
                     name_ids,
                     description_ids,
+                    value_ids,
+                    provider_ids,
                     flag_ids,
-                    department_ids
+                    department_ids,
+                    modality_ids,
+                    temperature_level_ids,
+                    pricing_ids,
+                    reasoning_level_ids,
+                    quality_ids,
+                    voice_ids
                 )::types.q_get_draft_model_view_v4_item
                 ORDER BY updated_at DESC
             ),

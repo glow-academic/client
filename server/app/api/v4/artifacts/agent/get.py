@@ -273,10 +273,24 @@ async def get_agent_internal(
             selected_name_id = draft_item.name_ids[0]
         if draft_item.description_ids:
             selected_description_id = draft_item.description_ids[0]
+        if draft_item.model_ids:
+            selected_model_id = draft_item.model_ids[0]
+        if draft_item.prompt_ids:
+            selected_prompt_id = draft_item.prompt_ids[0]
+        if draft_item.instruction_ids:
+            selected_instructions_id = draft_item.instruction_ids[0]
         if draft_item.flag_ids:
             selected_active_flag_id = draft_item.flag_ids[0]
         if draft_item.department_ids:
             selected_department_ids = draft_item.department_ids
+        if draft_item.tool_ids:
+            selected_tool_ids = draft_item.tool_ids
+        if draft_item.temperature_level_ids:
+            selected_temperature_level_id = draft_item.temperature_level_ids[0]
+        if draft_item.reasoning_level_ids:
+            selected_reasoning_level_id = draft_item.reasoning_level_ids[0]
+        if draft_item.voice_ids:
+            selected_voice_ids = draft_item.voice_ids
 
     # Get tools existence flags from Query 2 (used for show_* UI flags)
     names_has_tools = ids_result.names_has_tools or False

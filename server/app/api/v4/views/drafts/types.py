@@ -28,8 +28,15 @@ class DraftViewItemBase(BaseModel):
 class DraftAgentViewItem(DraftViewItemBase):
     name_ids: list[UUID] = Field(default_factory=list)
     description_ids: list[UUID] = Field(default_factory=list)
+    model_ids: list[UUID] = Field(default_factory=list)
+    prompt_ids: list[UUID] = Field(default_factory=list)
+    instruction_ids: list[UUID] = Field(default_factory=list)
     flag_ids: list[UUID] = Field(default_factory=list)
     department_ids: list[UUID] = Field(default_factory=list)
+    tool_ids: list[UUID] = Field(default_factory=list)
+    temperature_level_ids: list[UUID] = Field(default_factory=list)
+    reasoning_level_ids: list[UUID] = Field(default_factory=list)
+    voice_ids: list[UUID] = Field(default_factory=list)
 
 
 class DraftAuthViewItem(DraftViewItemBase):
@@ -85,8 +92,16 @@ class DraftFieldViewItem(DraftViewItemBase):
 class DraftModelViewItem(DraftViewItemBase):
     name_ids: list[UUID] = Field(default_factory=list)
     description_ids: list[UUID] = Field(default_factory=list)
+    value_ids: list[UUID] = Field(default_factory=list)
+    provider_ids: list[UUID] = Field(default_factory=list)
     flag_ids: list[UUID] = Field(default_factory=list)
     department_ids: list[UUID] = Field(default_factory=list)
+    modality_ids: list[UUID] = Field(default_factory=list)
+    temperature_level_ids: list[UUID] = Field(default_factory=list)
+    pricing_ids: list[UUID] = Field(default_factory=list)
+    reasoning_level_ids: list[UUID] = Field(default_factory=list)
+    quality_ids: list[UUID] = Field(default_factory=list)
+    voice_ids: list[UUID] = Field(default_factory=list)
 
 
 class DraftParameterViewItem(DraftViewItemBase):
@@ -131,6 +146,9 @@ class DraftRubricViewItem(DraftViewItemBase):
     description_ids: list[UUID] = Field(default_factory=list)
     flag_ids: list[UUID] = Field(default_factory=list)
     department_ids: list[UUID] = Field(default_factory=list)
+    point_ids: list[UUID] = Field(default_factory=list)
+    standard_group_ids: list[UUID] = Field(default_factory=list)
+    standard_ids: list[UUID] = Field(default_factory=list)
 
 
 class DraftScenarioViewItem(DraftViewItemBase):

@@ -7,7 +7,6 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.api.v4.types import DomainData
 from app.api.v4.views.drafts.types import DraftEvalViewItem
 from app.sql.types import (
     QGetAgentsV4Item,
@@ -22,9 +21,6 @@ from app.sql.types import (
     QGetRunRubricsV4Item,
     QGetToolsV4Item,
 )
-
-__all__ = ["DomainData"]
-
 
 # ========== Eval-specific resource types ==========
 
@@ -99,11 +95,59 @@ class EvalFlagConfig(BaseModel):
     flag_option_id: UUID | None = None
     show: bool = True
     required: bool = False
-    domain_id: UUID | None = None
     generated: bool | None = None
 
 
 # ========== GET Endpoint Types ==========
+
+
+class BaseEvalSection(BaseModel):
+    show: bool = False
+    required: bool = False
+    suggestions: list[UUID] | None = None
+    show_ai_generate: bool = False
+    create_tool_id: UUID | None = None
+    link_tool_id: UUID | None = None
+
+
+class EvalNameSection(BaseEvalSection):
+    resource: QGetNamesV4Item | None = None
+    resources: list[QGetNamesV4Item] | None = None
+
+
+class EvalDescriptionSection(BaseEvalSection):
+    resource: QGetDescriptionsV4Item | None = None
+    resources: list[QGetDescriptionsV4Item] | None = None
+
+
+class EvalFlagSection(BaseEvalSection):
+    resource: EvalFlagConfig | None = None
+    resources: list[EvalFlagConfig] | None = None
+
+
+class EvalDepartmentSection(BaseEvalSection):
+    current: list[QGetDepartmentsV4Item] | None = None
+    resources: list[QGetDepartmentsV4Item] | None = None
+
+
+class EvalAgentSection(BaseEvalSection):
+    current: list[EvalAgentItem] | None = None
+    resources: list[EvalAgentItem] | None = None
+
+
+class EvalRubricSection(BaseEvalSection):
+    current: list[EvalRubricItem] | None = None
+    resources: list[EvalRubricItem] | None = None
+
+
+class EvalRunSection(BaseEvalSection):
+    current: list[EvalAvailableModelRun] | None = None
+    resources: list[EvalAvailableModelRun] | None = None
+
+
+class EvalGroupSection(BaseEvalSection):
+    current: list[EvalAvailableGroup] | None = None
+    resources: list[EvalAvailableGroup] | None = None
 
 
 class GetEvalApiRequest(BaseModel):
@@ -122,121 +166,35 @@ class GetEvalApiRequest(BaseModel):
 class GetEvalApiResponse(BaseModel):
     """Response model for get eval endpoint."""
 
-    # Required fields
     actor_name: str | None = None
     eval_exists: bool | None = None
     can_edit: bool | None = None
     disabled_reason: str | None = None
     draft_version: int | None = None
-
-    # Group ID
     group_id: UUID | None = None
 
-    # Selected resource IDs (for client form state initialization)
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    dynamic_flag_id: UUID | None = None
-    groups_flag_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    agent_ids: list[UUID] | None = None
-    model_run_ids: list[UUID] | None = None
-    group_ids: list[UUID] | None = None
-
-    # Per-resource group IDs
-    names_group_id: UUID | None = None
-    descriptions_group_id: UUID | None = None
-    flags_group_id: UUID | None = None
-    departments_group_id: UUID | None = None
-    eval_agents_group_id: UUID | None = None
-    rubrics_group_id: UUID | None = None
-
-    # Single-select resources: name
-    show_name: bool | None = None
-    name_domain_id: UUID | None = None
-    name_required: bool | None = None
-    name_suggestions: list[UUID] | None = None
-    name_show_ai_generate: bool | None = None
-
-    # Single-select resources: description
-    show_description: bool | None = None
-    description_domain_id: UUID | None = None
-    description_required: bool | None = None
-    description_suggestions: list[UUID] | None = None
-    description_show_ai_generate: bool | None = None
-
-    # Flags: active
-    show_active_flag: bool | None = None
-    active_flag_domain_id: UUID | None = None
-    active_flag_required: bool | None = None
-    active_flag_show_ai_generate: bool | None = None
-
-    # Flags: dynamic
-    show_dynamic_flag: bool | None = None
-    dynamic_flag_domain_id: UUID | None = None
-    dynamic_flag_required: bool | None = None
-    dynamic_flag_show_ai_generate: bool | None = None
-
-    # Flags: groups
-    show_groups_flag: bool | None = None
-    groups_flag_domain_id: UUID | None = None
-    groups_flag_required: bool | None = None
-    groups_flag_show_ai_generate: bool | None = None
-
-    # Multi-select resources: departments
-    show_departments: bool | None = None
-    departments_domain_id: UUID | None = None
-    departments_required: bool | None = None
-    department_suggestions: list[UUID] | None = None
-    departments_show_ai_generate: bool | None = None
-
-    # Multi-select resources: eval_agents
-    show_agents: bool | None = None
-    agents_domain_id: UUID | None = None
-    agents_required: bool | None = None
-    agent_suggestions: list[UUID] | None = None
-    agents_show_ai_generate: bool | None = None
-
-    # Multi-select resources: rubrics
-    show_rubrics: bool | None = None
-    rubrics_domain_id: UUID | None = None
-    rubrics_required: bool | None = None
-    rubric_suggestions: list[UUID] | None = None
-    rubrics_show_ai_generate: bool | None = None
-
-    # Per-resource CREATE tool IDs
-    name_create_tool_id: UUID | None = None
-    description_create_tool_id: UUID | None = None
-
-    # Per-resource LINK tool IDs
-    name_link_tool_id: UUID | None = None
-    description_link_tool_id: UUID | None = None
-    flag_link_tool_id: UUID | None = None
-    departments_link_tool_id: UUID | None = None
-    agents_link_tool_id: UUID | None = None
-    rubrics_link_tool_id: UUID | None = None
-
-    # Step-level AI generation flags
     basic_show_ai_generate: bool | None = None
 
-    # Rich domain metadata for client display in modals
-    domain_data: list[DomainData] | None = None
+    names: EvalNameSection | None = None
+    descriptions: EvalDescriptionSection | None = None
+    active_flags: EvalFlagSection | None = None
+    dynamic_flags: EvalFlagSection | None = None
+    groups_flags: EvalFlagSection | None = None
+    departments: EvalDepartmentSection | None = None
+    agents: EvalAgentSection | None = None
+    rubrics: EvalRubricSection | None = None
+    runs: EvalRunSection | None = None
+    groups: EvalGroupSection | None = None
 
-    # Resources payload
-    resources: EvalResources | None = None
-
-    # Eval-specific fields
     run_rubrics: list[EvalRunRubricMapping] | None = None
     group_rubrics: list[EvalGroupRubricMapping] | None = None
 
-    # Available model runs (paginated)
     available_model_runs: list[EvalAvailableModelRun] | None = None
     available_model_runs_total_count: int | None = None
     available_model_runs_page: int | None = None
     available_model_runs_page_size: int | None = None
     available_model_runs_total_pages: int | None = None
 
-    # Available groups
     available_groups: list[EvalAvailableGroup] | None = None
 
 
@@ -266,24 +224,6 @@ class GetEvalWebsocketResponse(BaseModel):
     resources: EvalWebsocketResources
     resource_agent_ids: dict[str, UUID | None] | None = None
     group_id: UUID | None = None
-
-
-class EvalResourceBucket(BaseModel):
-    """Generic resources bucket with full objects."""
-
-    names: list[QGetNamesV4Item] | None = None
-    descriptions: list[QGetDescriptionsV4Item] | None = None
-    flags: list[EvalFlagConfig] | None = None
-    departments: list[QGetDepartmentsV4Item] | None = None
-    eval_agents: list[EvalAgentItem] | None = None
-    rubrics: list[EvalRubricItem] | None = None
-
-
-class EvalResources(BaseModel):
-    """Full resources + current selections."""
-
-    resources: EvalResourceBucket | None = None
-    current: EvalResourceBucket | None = None
 
 
 # ========== List Endpoint Types ==========
@@ -331,30 +271,35 @@ class ListEvalApiResponse(BaseModel):
 # ========== Save Endpoint Types ==========
 
 
-class SaveEvalApiRequest(BaseModel):
-    """Request model for save eval endpoint - accepts form data directly."""
+class EvalResourceAction(BaseModel):
+    resource_id: UUID | None = None
+    create_tool_id: UUID | None = None
+    link_tool_id: UUID | None = None
 
-    # Context
+
+class EvalMultiResourceAction(BaseModel):
+    resource_ids: list[UUID] | None = None
+    create_tool_id: UUID | None = None
+    link_tool_id: UUID | None = None
+
+
+class SaveEvalApiRequest(BaseModel):
+    """Request model for save eval endpoint (nested section actions)."""
+
     group_id: UUID
     input_eval_id: UUID | None = None
 
-    # Required single-select resources
-    name_id: UUID
+    names: EvalResourceAction
+    descriptions: EvalResourceAction
+    flags: EvalMultiResourceAction
+    departments: EvalMultiResourceAction
+    agents: EvalMultiResourceAction
+    runs: EvalMultiResourceAction
+    groups: EvalMultiResourceAction
+    run_positions: EvalMultiResourceAction | None = None
+    group_positions: EvalMultiResourceAction | None = None
 
-    # Optional single-select resources
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    dynamic_flag_id: UUID | None = None
-    groups_flag_id: UUID | None = None
-
-    # Optional multi-select resources
-    department_ids: list[UUID] | None = None
-    agent_ids: list[UUID] | None = None
-    rubric_ids: list[UUID] | None = None
-    model_run_ids: list[UUID] | None = None
-    group_ids: list[UUID] | None = None
-
-    # Rubric mappings
+    # Scoped rubric mappings (target -> rubric ids)
     run_rubrics: list[EvalRunRubricMapping] | None = None
     group_rubrics: list[EvalGroupRubricMapping] | None = None
 
@@ -368,40 +313,74 @@ class SaveEvalApiResponse(BaseModel):
 
 
 class SaveEvalSqlParams(BaseModel):
-    """SQL parameters for save eval."""
-
     profile_id: UUID
     group_id: UUID
     input_eval_id: UUID | None = None
+
     name_id: UUID
     description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    dynamic_flag_id: UUID | None = None
-    groups_flag_id: UUID | None = None
+    flag_ids: list[UUID] | None = None
     department_ids: list[UUID] | None = None
     agent_ids: list[UUID] | None = None
-    rubric_ids: list[UUID] | None = None
     model_run_ids: list[UUID] | None = None
     group_ids: list[UUID] | None = None
+    run_position_ids: list[UUID] | None = None
+    group_position_ids: list[UUID] | None = None
     run_rubrics: list[EvalRunRubricMapping] | None = None
     group_rubrics: list[EvalGroupRubricMapping] | None = None
 
+    @classmethod
+    def from_request(
+        cls, request: SaveEvalApiRequest, profile_id: UUID
+    ) -> SaveEvalSqlParams:
+        name_id = request.names.resource_id
+        if not name_id:
+            raise ValueError("Name resource is required")
+        return cls(
+            profile_id=profile_id,
+            group_id=request.group_id,
+            input_eval_id=request.input_eval_id,
+            name_id=name_id,
+            description_id=request.descriptions.resource_id,
+            flag_ids=request.flags.resource_ids,
+            department_ids=request.departments.resource_ids,
+            agent_ids=request.agents.resource_ids,
+            model_run_ids=request.runs.resource_ids,
+            group_ids=request.groups.resource_ids,
+            run_position_ids=(
+                request.run_positions.resource_ids if request.run_positions else None
+            ),
+            group_position_ids=(
+                request.group_positions.resource_ids
+                if request.group_positions
+                else None
+            ),
+            run_rubrics=request.run_rubrics,
+            group_rubrics=request.group_rubrics,
+        )
+
     def to_tuple(self) -> tuple:
-        """Convert to tuple for SQL execution."""
+        run_rubrics_tuples = [
+            (conn.run_id, conn.rubric_ids) for conn in (self.run_rubrics or [])
+        ]
+        group_rubrics_tuples = [
+            (conn.group_id, conn.rubric_ids) for conn in (self.group_rubrics or [])
+        ]
         return (
             self.profile_id,
             self.group_id,
             self.input_eval_id,
             self.name_id,
             self.description_id,
-            self.active_flag_id,
-            self.dynamic_flag_id,
-            self.groups_flag_id,
+            self.flag_ids,
             self.department_ids,
             self.agent_ids,
-            self.rubric_ids,
             self.model_run_ids,
             self.group_ids,
+            self.run_position_ids,
+            self.group_position_ids,
+            run_rubrics_tuples,
+            group_rubrics_tuples,
         )
 
 
@@ -449,16 +428,17 @@ class DuplicateEvalApiResponse(BaseModel):
 
 
 class PatchEvalDraftApiRequest(BaseModel):
-    """Request model for patch eval draft endpoint."""
-
     input_draft_id: UUID | None = None
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    agent_ids: list[UUID] | None = None
-    model_run_ids: list[UUID] | None = None
-    group_ids: list[UUID] | None = None
+    group_id: UUID | None = None
+    names: EvalResourceAction | None = None
+    descriptions: EvalResourceAction | None = None
+    flags: EvalMultiResourceAction | None = None
+    departments: EvalMultiResourceAction | None = None
+    agents: EvalMultiResourceAction | None = None
+    runs: EvalMultiResourceAction | None = None
+    groups: EvalMultiResourceAction | None = None
+    run_positions: EvalMultiResourceAction | None = None
+    group_positions: EvalMultiResourceAction | None = None
     expected_version: int = 0
 
 
@@ -472,31 +452,62 @@ class PatchEvalDraftApiResponse(BaseModel):
 
 
 class PatchEvalDraftSqlParams(BaseModel):
-    """SQL parameters for patch eval draft."""
-
     profile_id: UUID
     input_draft_id: UUID | None = None
+    group_id: UUID | None = None
     name_id: UUID | None = None
     description_id: UUID | None = None
-    active_flag_id: UUID | None = None
+    flag_ids: list[UUID] | None = None
     department_ids: list[UUID] | None = None
     agent_ids: list[UUID] | None = None
     model_run_ids: list[UUID] | None = None
     group_ids: list[UUID] | None = None
+    run_position_ids: list[UUID] | None = None
+    group_position_ids: list[UUID] | None = None
     expected_version: int = 0
 
+    @classmethod
+    def from_request(
+        cls, request: PatchEvalDraftApiRequest, profile_id: UUID
+    ) -> PatchEvalDraftSqlParams:
+        return cls(
+            profile_id=profile_id,
+            input_draft_id=request.input_draft_id,
+            group_id=request.group_id,
+            name_id=request.names.resource_id if request.names else None,
+            description_id=request.descriptions.resource_id
+            if request.descriptions
+            else None,
+            flag_ids=request.flags.resource_ids if request.flags else None,
+            department_ids=request.departments.resource_ids
+            if request.departments
+            else None,
+            agent_ids=request.agents.resource_ids if request.agents else None,
+            model_run_ids=request.runs.resource_ids if request.runs else None,
+            group_ids=request.groups.resource_ids if request.groups else None,
+            run_position_ids=request.run_positions.resource_ids
+            if request.run_positions
+            else None,
+            group_position_ids=request.group_positions.resource_ids
+            if request.group_positions
+            else None,
+            expected_version=request.expected_version,
+        )
+
     def to_tuple(self) -> tuple:
-        """Convert to tuple for SQL execution."""
         return (
             self.profile_id,
             self.input_draft_id,
+            self.group_id,
             self.name_id,
             self.description_id,
-            self.active_flag_id,
+            self.flag_ids,
             self.department_ids,
             self.agent_ids,
             self.model_run_ids,
             self.group_ids,
+            self.run_position_ids,
+            self.group_position_ids,
             self.expected_version,
         )
 

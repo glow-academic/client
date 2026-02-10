@@ -7175,26 +7175,32 @@ class PatchEvalDraftSqlParams(BaseModel):
 
     profile_id: UUID
     input_draft_id: UUID | None = None
+    group_id: UUID | None = None
     name_id: UUID | None = None
     description_id: UUID | None = None
-    active_flag_id: UUID | None = None
+    flag_ids: list[UUID] | None = None
     department_ids: list[UUID] | None = None
     agent_ids: list[UUID] | None = None
     model_run_ids: list[UUID] | None = None
     group_ids: list[UUID] | None = None
+    run_position_ids: list[UUID] | None = None
+    group_position_ids: list[UUID] | None = None
     expected_version: int | None = 0
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
             self.input_draft_id,
+            self.group_id,
             self.name_id,
             self.description_id,
-            self.active_flag_id,
+            self.flag_ids,
             self.department_ids,
             self.agent_ids,
             self.model_run_ids,
             self.group_ids,
+            self.run_position_ids,
+            self.group_position_ids,
             self.expected_version,
         )
 
@@ -7207,13 +7213,16 @@ class PatchEvalDraftSqlRow(BaseModel):
 class PatchEvalDraftApiRequest(BaseModel):
 
     input_draft_id: UUID | None = None
+    group_id: UUID | None = None
     name_id: UUID | None = None
     description_id: UUID | None = None
-    active_flag_id: UUID | None = None
+    flag_ids: list[UUID] | None = None
     department_ids: list[UUID] | None = None
     agent_ids: list[UUID] | None = None
     model_run_ids: list[UUID] | None = None
     group_ids: list[UUID] | None = None
+    run_position_ids: list[UUID] | None = None
+    group_position_ids: list[UUID] | None = None
     expected_version: int | None = 0
 
 class PatchEvalDraftApiResponse(BaseModel):
@@ -7241,19 +7250,20 @@ class QSaveEvalV4RunRubricLink(BaseModel):
 
 class SaveEvalSqlParams(BaseModel):
 
-    name: str
-    agent_ids: list[UUID]
     profile_id: UUID
-    description: str | None = None
-    use_groups: bool | None = False
+    group_id: UUID
+    input_eval_id: UUID | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    flag_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    agent_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     model_run_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     group_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    run_position_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    group_position_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     run_rubric_links: list[QSaveEvalV4RunRubricLink] | None = Field(default_factory=list)  # type: ignore[arg-type]
     group_rubric_links: list[QSaveEvalV4GroupRubricLink] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    active: bool | None = True
-    dynamic: bool | None = False
-    input_eval_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         # Convert run_rubric_links composite array to tuples for asyncpg
@@ -7267,19 +7277,20 @@ class SaveEvalSqlParams(BaseModel):
             for conn in (self.group_rubric_links or [])
         ]
         return (
-            self.name,
-            self.agent_ids,
             self.profile_id,
-            self.description,
-            self.use_groups,
+            self.group_id,
+            self.input_eval_id,
+            self.name_id,
+            self.description_id,
+            self.flag_ids,
+            self.department_ids,
+            self.agent_ids,
             self.model_run_ids,
             self.group_ids,
+            self.run_position_ids,
+            self.group_position_ids,
             run_rubric_links_tuples,
             group_rubric_links_tuples,
-            self.department_ids,
-            self.active,
-            self.dynamic,
-            self.input_eval_id,
         )
 
 class SaveEvalSqlRow(BaseModel):
@@ -7289,18 +7300,19 @@ class SaveEvalSqlRow(BaseModel):
 
 class SaveEvalApiRequest(BaseModel):
 
-    name: str
-    agent_ids: list[UUID]
-    description: str | None = None
-    use_groups: bool | None = False
+    group_id: UUID
+    input_eval_id: UUID | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    flag_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    agent_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     model_run_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     group_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    run_position_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    group_position_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     run_rubric_links: list[QSaveEvalV4RunRubricLink] | None = Field(default_factory=list)  # type: ignore[arg-type]
     group_rubric_links: list[QSaveEvalV4GroupRubricLink] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    active: bool | None = True
-    dynamic: bool | None = False
-    input_eval_id: UUID | None = None
 
 class SaveEvalApiResponse(BaseModel):
 
@@ -15051,6 +15063,37 @@ class ArgsOutputsApiResponse(BaseModel):
 
 
 
+# Generated from: auth_keys
+
+class AuthKeysSqlParams(BaseModel):
+
+    auth_id: UUID
+    key_id: UUID
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.auth_id,
+            self.key_id,
+            self.mcp,
+        )
+
+class AuthKeysSqlRow(BaseModel):
+
+    auth_keys_id: UUID | None = None
+
+class AuthKeysApiRequest(BaseModel):
+
+    auth_id: UUID
+    key_id: UUID
+    mcp: bool | None = False
+
+class AuthKeysApiResponse(BaseModel):
+
+    auth_keys_id: UUID | None = None
+
+
+
 # Generated from: get_cohorts
 
 class GetCohortsSqlParams(BaseModel):
@@ -17776,6 +17819,107 @@ class ProtocolsApiRequest(BaseModel):
 class ProtocolsApiResponse(BaseModel):
 
     protocols_id: UUID | None = None
+
+
+
+# Generated from: get_provider_keys
+
+class GetProviderKeysSqlParams(BaseModel):
+
+    ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.ids,
+        )
+
+class QGetProviderKeysV4Item(BaseModel):
+
+    id: UUID | None
+    provider_id: UUID | None
+    key_id: UUID | None
+    provider_name: str | None
+    key_name: str | None
+    key_description: str | None
+    active: bool | None
+    generated: bool | None
+
+class GetProviderKeysSqlRow(BaseModel):
+
+    items: list[QGetProviderKeysV4Item] | None = None
+
+class GetProviderKeysApiRequest(BaseModel):
+
+    ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class GetProviderKeysApiResponse(BaseModel):
+
+    items: list[QGetProviderKeysV4Item] | None = None
+
+
+
+# Generated from: search_provider_keys
+
+class SearchProviderKeysSqlParams(BaseModel):
+
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.search,
+            self.limit_count,
+            self.offset_count,
+            self.exclude_ids,
+        )
+
+class SearchProviderKeysSqlRow(BaseModel):
+
+    items: list[QGetProviderKeysV4Item] | None = None
+
+class SearchProviderKeysApiRequest(BaseModel):
+
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class SearchProviderKeysApiResponse(BaseModel):
+
+    items: list[QGetProviderKeysV4Item] | None = None
+
+
+
+# Generated from: provider_keys
+
+class ProviderKeysSqlParams(BaseModel):
+
+    provider_id: UUID
+    key_id: UUID
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.provider_id,
+            self.key_id,
+            self.mcp,
+        )
+
+class ProviderKeysSqlRow(BaseModel):
+
+    provider_keys_id: UUID | None = None
+
+class ProviderKeysApiRequest(BaseModel):
+
+    provider_id: UUID
+    key_id: UUID
+    mcp: bool | None = False
+
+class ProviderKeysApiResponse(BaseModel):
+
+    provider_keys_id: UUID | None = None
 
 
 
@@ -28867,6 +29011,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "ArgsOutputsApiRequest",
         "ArgsOutputsApiResponse",
     ),
+    "app/sql/v4/queries/resources/auth_keys_complete.sql": (
+        "AuthKeysSqlParams",
+        "AuthKeysSqlRow",
+        "AuthKeysApiRequest",
+        "AuthKeysApiResponse",
+    ),
     "app/sql/v4/queries/resources/cohorts/get_cohorts_complete.sql": (
         "GetCohortsSqlParams",
         "GetCohortsSqlRow",
@@ -29334,6 +29484,24 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "ProtocolsSqlRow",
         "ProtocolsApiRequest",
         "ProtocolsApiResponse",
+    ),
+    "app/sql/v4/queries/resources/provider_keys/get_provider_keys_complete.sql": (
+        "GetProviderKeysSqlParams",
+        "GetProviderKeysSqlRow",
+        "GetProviderKeysApiRequest",
+        "GetProviderKeysApiResponse",
+    ),
+    "app/sql/v4/queries/resources/provider_keys/search_provider_keys_complete.sql": (
+        "SearchProviderKeysSqlParams",
+        "SearchProviderKeysSqlRow",
+        "SearchProviderKeysApiRequest",
+        "SearchProviderKeysApiResponse",
+    ),
+    "app/sql/v4/queries/resources/provider_keys_complete.sql": (
+        "ProviderKeysSqlParams",
+        "ProviderKeysSqlRow",
+        "ProviderKeysApiRequest",
+        "ProviderKeysApiResponse",
     ),
     "app/sql/v4/queries/resources/providers/get_providers_complete.sql": (
         "GetProvidersSqlParams",
@@ -31915,6 +32083,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/auth_keys_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/cohorts/get_cohorts_complete.sql"]
     ) -> SqlString: ...
 
@@ -32301,6 +32474,21 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/protocols_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/provider_keys/get_provider_keys_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/provider_keys/search_provider_keys_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/provider_keys_complete.sql"]
     ) -> SqlString: ...
 
     @overload

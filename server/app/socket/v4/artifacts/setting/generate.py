@@ -12,7 +12,6 @@ from app.socket.v4.artifacts.generation_common import (
     emit_generate_artifact,
     emit_generation_error,
     extract_group_id,
-    pick_agent_id,
 )
 from app.sql.types import GetSettingApiRequest, GetSettingSqlParams, GetSettingSqlRow
 from app.utils.sql_helper import execute_sql_typed
@@ -28,7 +27,6 @@ SQL_PATH = "app/sql/v4/queries/settings/get_setting_complete.sql"
 class GenerateSettingPayload(GetSettingApiRequest):
     """Request to generate setting resources."""
 
-    agent_type: str | None = None
     resource_types: list[str]
     user_instructions: list[str] | None = None
 
@@ -60,7 +58,20 @@ async def _generate_setting_impl(
                 await execute_sql_typed(conn, SQL_PATH, params=params),
             )
 
-            agent_id = pick_agent_id(result, data.agent_type, data.resource_types)
+            resource_agent_ids: dict[str, uuid.UUID | None] = {
+                "names": result.name_agent_id,
+                "descriptions": result.description_agent_id,
+                "colors": result.colors_agent_id,
+                "flags": result.flag_agent_id,
+                "departments": result.departments_agent_id,
+                "profiles": result.profiles_agent_id,
+                "auths": result.auths_agent_id,
+                "auth_keys": result.keys_agent_id,
+            }
+            agent_id = next(
+                (resource_agent_ids.get(rt) for rt in data.resource_types if rt in resource_agent_ids and resource_agent_ids.get(rt)),
+                None,
+            )
             if not agent_id:
                 await emit_generation_error(
                     sid=sid,

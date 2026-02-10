@@ -24,6 +24,13 @@ from app.api.v4.resources.args_outputs.search import (
 router.include_router(args_outputs_router)
 router.include_router(args_outputs_get_router)
 router.include_router(args_outputs_search_router)
+from app.api.v4.resources.auth_keys.create import router as auth_keys_router
+from app.api.v4.resources.auth_keys.get import router as auth_keys_get_router
+from app.api.v4.resources.auth_keys.search import router as auth_keys_search_router
+
+router.include_router(auth_keys_router)
+router.include_router(auth_keys_get_router)
+router.include_router(auth_keys_search_router)
 # NOTE: audios removed - converted to audios_entry (migration 328)
 # NOTE: auths removed - non-creatable, sync via artifact save (migration 328)
 # NOTE: cohorts removed - non-creatable, sync via artifact save (migration 328)
@@ -165,6 +172,15 @@ from app.api.v4.resources.keys.get import router as keys_get_router
 router.include_router(keys_router)
 router.include_router(keys_decrypt_router)
 router.include_router(keys_get_router)
+from app.api.v4.resources.provider_keys.create import router as provider_keys_router
+from app.api.v4.resources.provider_keys.get import router as provider_keys_get_router
+from app.api.v4.resources.provider_keys.search import (
+    router as provider_keys_search_router,
+)
+
+router.include_router(provider_keys_router)
+router.include_router(provider_keys_get_router)
+router.include_router(provider_keys_search_router)
 # NOTE: modalities removed - non-creatable (migration 328)
 # GET/Search endpoints available for model two-pass architecture
 from app.api.v4.resources.modalities.get import (

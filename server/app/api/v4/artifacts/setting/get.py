@@ -7,6 +7,7 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.artifacts.setting.types import GetSettingApiRequest
 from app.api.v4.artifacts.setting.permissions import (
     compute_can_edit,
     compute_colors_required,
@@ -28,7 +29,6 @@ from app.main import get_db
 from app.sql.types import (
     GetSettingAccessSqlParams,
     GetSettingAccessSqlRow,
-    GetSettingApiRequest,
     GetSettingApiResponse,
     GetSettingIdsSqlParams,
     GetSettingIdsSqlRow,
@@ -153,7 +153,7 @@ async def get_setting(
         # Extract search and filter params from API request
         color_search = request.color_search
         draft_id = request.draft_id
-        settings_id = request.settings_id  # Can be NULL for new mode
+        settings_id = request.setting_id  # Can be NULL for new mode
 
         # Get mcp flag from header (set by router-level dependency)
         mcp = getattr(http_request.state, "mcp", False) or False
@@ -185,7 +185,7 @@ async def get_setting(
                 )
 
         ids_params = GetSettingIdsSqlParams(
-            settings_id=settings_id,
+            setting_id=settings_id,
             profile_id=profile_id,
             color_search=color_search,
             draft_id=draft_id,
@@ -200,7 +200,7 @@ async def get_setting(
 
         # Config payload (non-generation resources) is preserved from existing SQL contract.
         config_params = GetSettingSqlParams(
-            settings_id=settings_id,
+            setting_id=settings_id,
             profile_id=profile_id,
             color_search=color_search,
             draft_id=draft_id,
@@ -260,15 +260,6 @@ async def get_setting(
                 "active_flag_id": ids_result.active_flag_id,
                 "color_ids": ids_result.color_ids or [],
                 "department_ids": ids_result.department_ids or [],
-                "name_agent_id": ids_result.name_agent_id,
-                "description_agent_id": ids_result.description_agent_id,
-                "colors_agent_id": ids_result.colors_agent_id,
-                "flag_agent_id": ids_result.flag_agent_id,
-                "departments_agent_id": ids_result.departments_agent_id,
-                "profiles_agent_id": ids_result.profiles_agent_id,
-                "auths_agent_id": ids_result.auths_agent_id,
-                "providers_agent_id": ids_result.providers_agent_id,
-                "keys_agent_id": ids_result.keys_agent_id,
                 "show_name": compute_show_name(),
                 "show_description": compute_show_description(),
                 "show_colors": compute_show_colors(len(payload.get("colors") or [])),
@@ -283,6 +274,18 @@ async def get_setting(
                 "departments_required": compute_departments_required(
                     compute_show_departments(len(payload.get("departments") or []))
                 ),
+                "resource_agent_ids": {
+                    "names": ids_result.name_agent_id,
+                    "descriptions": ids_result.description_agent_id,
+                    "colors": ids_result.colors_agent_id,
+                    "flags": ids_result.flag_agent_id,
+                    "departments": ids_result.departments_agent_id,
+                    "profiles": ids_result.profiles_agent_id,
+                    "auths": ids_result.auths_agent_id,
+                    "auth_keys": ids_result.keys_agent_id,
+                    "provider_keys": None,
+                    "role_routes": None,
+                },
             }
         )
 

@@ -142,6 +142,7 @@ def _build_generation_resources(
     add_resource_ids("names", resources_bucket.names, "id")
     add_resource_ids("descriptions", resources_bucket.descriptions, "id")
     add_resource_ids("values", resources_bucket.values, "id")
+    add_resource_ids("providers", resources_bucket.providers, "id")
     add_resource_ids("flags", resources_bucket.flags, "flag_option_id")
     add_resource_ids("departments", resources_bucket.departments, "department_id")
     add_resource_ids("modalities", resources_bucket.modalities, "id")

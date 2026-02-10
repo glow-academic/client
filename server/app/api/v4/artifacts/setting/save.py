@@ -10,8 +10,8 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
+from app.api.v4.artifacts.setting.types import SaveSettingApiRequest
 from app.sql.types import (
-    SaveSettingApiRequest,
     SaveSettingApiResponse,
     SaveSettingSqlParams,
     SaveSettingSqlRow,
@@ -62,8 +62,19 @@ async def save_setting(
             # Convert API request to SQL params (add profile_id from header)
             # Map input_setting_id from API request (already correct field name)
             params = SaveSettingSqlParams(
-                **request.model_dump(),
                 profile_id=profile_id,
+                input_setting_id=request.input_setting_id,
+                name_id=request.name_id,
+                description_id=request.description_id,
+                color_ids=request.color_ids,
+                active_flag_id=request.active_flag_id,
+                department_ids=request.department_ids,
+                profile_ids=request.profile_ids,
+                auth_ids=request.auth_ids or [],
+                provider_key_ids=request.provider_key_ids or [],
+                key_ids=request.auth_key_ids or [],
+                role_ids=request.role_ids,
+                route_ids=None,
             )
             sql_params = params.to_tuple()
 

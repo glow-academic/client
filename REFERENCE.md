@@ -1094,9 +1094,13 @@ Frontend notes:
 Architecture notes:
 - Eval generation routing is resource-first, not domain-first.
 - Eval section model is:
-  - top-level: `names`, `descriptions`, `flags`, `departments`, `agents`, `runs`, `groups`
+  - top-level: `names`, `descriptions`, `active_flags`, `dynamic_flags`, `groups_flags`, `departments`, `agents`, `rubrics`, `runs`, `groups`
   - scoped-by-target: `run_positions`, `group_positions`, `run_rubrics`, `group_rubrics`
-- Do not expose a generic top-level `rubrics` section for eval; rubric selection is scoped to run/group targets.
+- `rubrics` is the rubric catalog section; assignments remain scoped through `run_rubrics` / `group_rubrics` mappings.
+- Hard-cut API GET shape:
+  - no legacy flat IDs (`name_id`, `department_ids`, etc.) as transport contract fields
+  - no legacy `resources.current` or top-level `current`
+  - no `*_domain_id`, `domains`, or domain routing internals
 - `get_eval_websocket()` returns only:
   - `views.draft_eval` (optional)
   - selected flat `resources`
@@ -1104,6 +1108,11 @@ Architecture notes:
   - `group_id`
 - `eval_generate` payload must use `resource_types` and optional `user_instructions`; never `domain_ids`.
 - Agent routing resolves server-side via `resource_agent_ids` only.
+- Eval save/draft request contracts are nested section-action payloads:
+  - single: `{ resource_id, create_tool_id, link_tool_id }`
+  - multi: `{ resource_ids, create_tool_id, link_tool_id }`
+  - sections: `names`, `descriptions`, `flags`, `departments`, `agents`, `runs`, `groups`, `run_positions`, `group_positions`
+  - scoped mappings: `run_rubrics[]`, `group_rubrics[]`
 
 Frontend notes:
 - Eval generation emits:
@@ -1111,6 +1120,7 @@ Frontend notes:
   - `draft_id`
   - `resource_types`
   - optional `user_instructions`
+- Frontend should consume section fields directly (`s.names.resource`, `s.departments.current`, `s.active_flags.resource`) and avoid long-lived compatibility adapters after migration.
 - Do not route eval generation with `*_domain_id` or any domain mapping adapter.
 
 Schema alignment notes:
@@ -1129,3 +1139,43 @@ Schema alignment notes:
   - `auth_generation_complete` emits resource-complete payloads only from `generate_call_complete` tool results.
   - Auth socket `progress`/`error` handlers are scoped to call-based generation events and filtered to valid auth resource types.
   - No auth-specific legacy text/run completion side paths in artifact socket handlers.
+
+### Settings Artifact Resource Contract (Post-Migration)
+
+Persisted settings resources:
+- `auths`
+- `auth_keys`
+- `provider_keys`
+- `profiles`
+- `roles`
+- `role_routes`
+
+Derived/catalog resources:
+- `routes` are lookup/catalog data for role-route editors; they are not a direct persisted settings contract resource.
+
+Hard migration rules:
+- Do not return direct `providers` or `keys` as settings resources in new contracts.
+- Socket generation must route by `resource_agent_ids` using `resource_types`.
+- Save/draft payloads should use:
+  - `provider_key_ids`
+  - `auth_key_ids`
+  - `role_route_ids`
+
+Settings resource endpoint families (required):
+- `provider_keys`
+  - `POST /api/v4/resources/provider_keys`
+  - `POST /api/v4/resources/provider_keys/get`
+  - `POST /api/v4/resources/provider_keys/search`
+- `auth_keys`
+  - `POST /api/v4/resources/auth_keys`
+  - `POST /api/v4/resources/auth_keys/get`
+  - `POST /api/v4/resources/auth_keys/search`
+
+Frontend implementation note:
+- `auth_keys` creation requires `(auth_id, key_id)` pair semantics.
+- `provider_keys` creation requires `(provider_id, key_id)` pair semantics.
+- Do not wire `keys` create directly for settings auth-key creation; use dedicated pair-based pickers/actions.
+- Settings UI should use dedicated nested resource components:
+  - `ProviderKeys.tsx` (provider -> keys)
+  - `AuthKeys.tsx` (auth -> keys)
+- Pair components should hydrate selected resource IDs via `*/get` endpoints when details are not preloaded, then emit only resource IDs (`provider_key_ids`, `auth_key_ids`) to artifact draft/save payloads.

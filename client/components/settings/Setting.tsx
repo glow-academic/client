@@ -18,18 +18,17 @@ import { StepCard } from "@/components/common/forms/StepCard";
 import type { GenerateRegenerateModalResource } from "@/components/common/GenerateRegenerateModal";
 import { GenerateRegenerateModal } from "@/components/common/GenerateRegenerateModal";
 import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
+import { AuthKeys } from "@/components/resources/AuthKeys";
 import { Auths } from "@/components/resources/Auths";
 import { Colors } from "@/components/resources/Colors";
 import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
 import { Flags } from "@/components/resources/FlagsLegacy";
-import { Keys } from "@/components/resources/Keys";
 import { Names } from "@/components/resources/Names";
 import { Profiles } from "@/components/resources/Profiles";
-import { Providers } from "@/components/resources/Providers";
+import { ProviderKeys } from "@/components/resources/ProviderKeys";
 import { Roles } from "@/components/resources/Roles";
 import { RoleRoutes } from "@/components/resources/RoleRoutes";
-import { Routes } from "@/components/resources/Routes";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -99,15 +98,36 @@ export interface SettingProps {
   createDepartmentsAction?: (
     input: CreateDraftDepartmentsIn
   ) => Promise<CreateDraftDepartmentsOut>;
-  createAuthsAction?: (
-    input: InputOf<"/api/v4/resources/auths", "post">
-  ) => Promise<OutputOf<"/api/v4/resources/auths", "post">>;
-  createProvidersAction?: (
-    input: InputOf<"/api/v4/resources/providers", "post">
-  ) => Promise<OutputOf<"/api/v4/resources/providers", "post">>;
-  createKeysAction?: (
-    input: InputOf<"/api/v4/resources/keys", "post">
-  ) => Promise<OutputOf<"/api/v4/resources/keys", "post">>;
+  createProviderKeysAction?: (input: {
+    provider_id: string;
+    key_id: string;
+  }) => Promise<{ provider_keys_id?: string | null }>;
+  getProviderKeysAction?: (ids: string[]) => Promise<
+    Array<{
+      id?: string | null;
+      provider_id?: string | null;
+      key_id?: string | null;
+      provider_name?: string | null;
+      key_name?: string | null;
+      key_description?: string | null;
+      generated?: boolean | null;
+    }>
+  >;
+  createAuthKeysAction?: (input: {
+    auth_id: string;
+    key_id: string;
+  }) => Promise<{ auth_keys_id?: string | null }>;
+  getAuthKeysAction?: (ids: string[]) => Promise<
+    Array<{
+      id?: string | null;
+      auth_id?: string | null;
+      key_id?: string | null;
+      auth_name?: string | null;
+      key_name?: string | null;
+      key_description?: string | null;
+      generated?: boolean | null;
+    }>
+  >;
   createRoleRoutesAction?: (
     input: InputOf<"/api/v4/resources/setting_role_routes", "post">
   ) => Promise<OutputOf<"/api/v4/resources/setting_role_routes", "post">>;
@@ -123,6 +143,10 @@ function SettingComponent({
   createColorsAction,
   createFlagsAction,
   createDepartmentsAction,
+  createProviderKeysAction,
+  getProviderKeysAction,
+  createAuthKeysAction,
+  getAuthKeysAction,
   createRoleRoutesAction,
 }: SettingProps) {
   const router = useRouter();
@@ -235,14 +259,40 @@ function SettingComponent({
       providers_required: settingData.providers_required,
       providers_agent_id: settingData.providers_agent_id,
       providers: settingData.providers,
-      provider_ids: settingData.provider_ids,
+      provider_key_ids: settingData.provider_key_ids,
+      provider_key_resources:
+        ((settingData as Record<string, unknown>)["provider_key_resources"] as
+          | Array<{
+              id?: string | null;
+              provider_id?: string | null;
+              key_id?: string | null;
+              provider_name?: string | null;
+              key_name?: string | null;
+              key_description?: string | null;
+              generated?: boolean | null;
+            }>
+          | null
+          | undefined) ?? [],
       key_resources: settingData.key_resources,
       show_keys: settingData.show_keys,
       key_suggestions: settingData.key_suggestions,
       keys_required: settingData.keys_required,
       keys_agent_id: settingData.keys_agent_id,
       keys: settingData.keys,
-      key_ids: settingData.key_ids,
+      auth_key_ids: settingData.auth_key_ids,
+      auth_key_resources:
+        ((settingData as Record<string, unknown>)["auth_key_resources"] as
+          | Array<{
+              id?: string | null;
+              auth_id?: string | null;
+              key_id?: string | null;
+              auth_name?: string | null;
+              key_name?: string | null;
+              key_description?: string | null;
+              generated?: boolean | null;
+            }>
+          | null
+          | undefined) ?? [],
       basic_agent_id: settingData.basic_agent_id,
       general_agent_id: settingData.general_agent_id,
       role_ids: settingData.role_ids,
@@ -250,7 +300,6 @@ function SettingComponent({
       show_roles: settingData.show_roles,
       roles_required: settingData.roles_required,
       roles: settingData.roles,
-      route_ids: settingData.route_ids,
       route_resources: settingData.route_resources,
       show_routes: settingData.show_routes,
       routes_required: settingData.routes_required,
@@ -315,14 +364,14 @@ function SettingComponent({
     settingData?.providers_required,
     settingData?.providers_agent_id,
     settingData?.providers,
-    settingData?.provider_ids,
+    settingData?.provider_key_ids,
     settingData?.key_resources,
     settingData?.show_keys,
     settingData?.key_suggestions,
     settingData?.keys_required,
     settingData?.keys_agent_id,
     settingData?.keys,
-    settingData?.key_ids,
+    settingData?.auth_key_ids,
     settingData?.basic_agent_id,
     settingData?.general_agent_id,
     settingData?.role_ids,
@@ -330,7 +379,6 @@ function SettingComponent({
     settingData?.show_roles,
     settingData?.roles_required,
     settingData?.roles,
-    settingData?.route_ids,
     settingData?.route_resources,
     settingData?.show_routes,
     settingData?.routes_required,
@@ -384,10 +432,9 @@ function SettingComponent({
         department_ids: [] as string[],
         profile_ids: [] as string[],
         auth_ids: [] as string[],
-        provider_ids: [] as string[],
-        key_ids: [] as string[],
+        provider_key_ids: [] as string[],
+        auth_key_ids: [] as string[],
         role_ids: [] as string[],
-        route_ids: [] as string[],
         role_route_ids: [] as string[],
       };
     }
@@ -401,10 +448,9 @@ function SettingComponent({
       department_ids: data.department_ids ?? [],
       profile_ids: data.profile_ids ?? [],
       auth_ids: data.auth_ids ?? [],
-      provider_ids: data.provider_ids ?? [],
-      key_ids: data.key_ids ?? [],
+      provider_key_ids: data.provider_key_ids ?? [],
+      auth_key_ids: data.auth_key_ids ?? [],
       role_ids: data.role_ids ?? [],
-      route_ids: data.route_ids ?? [],
       role_route_ids: data.role_route_ids ?? [],
     };
     // Remove settingData from dependencies - use ref instead to prevent callback recreation
@@ -435,20 +481,16 @@ function SettingComponent({
     [settingData?.profile_ids]
   );
   const providerIdsStr = React.useMemo(
-    () => JSON.stringify(settingData?.provider_ids ?? []),
-    [settingData?.provider_ids]
+    () => JSON.stringify(settingData?.provider_key_ids ?? []),
+    [settingData?.provider_key_ids]
   );
   const keyIdsStr = React.useMemo(
-    () => JSON.stringify(settingData?.key_ids ?? []),
-    [settingData?.key_ids]
+    () => JSON.stringify(settingData?.auth_key_ids ?? []),
+    [settingData?.auth_key_ids]
   );
   const roleIdsStr = React.useMemo(
     () => JSON.stringify(settingData?.role_ids ?? []),
     [settingData?.role_ids]
-  );
-  const routeIdsStr = React.useMemo(
-    () => JSON.stringify(settingData?.route_ids ?? []),
-    [settingData?.route_ids]
   );
   const roleRouteIdsStr = React.useMemo(
     () => JSON.stringify(settingData?.role_route_ids ?? []),
@@ -473,20 +515,16 @@ function SettingComponent({
     [formState.profile_ids]
   );
   const formStateProviderIdsStr = React.useMemo(
-    () => JSON.stringify(formState.provider_ids),
-    [formState.provider_ids]
+    () => JSON.stringify(formState.provider_key_ids),
+    [formState.provider_key_ids]
   );
   const formStateKeyIdsStr = React.useMemo(
-    () => JSON.stringify(formState.key_ids),
-    [formState.key_ids]
+    () => JSON.stringify(formState.auth_key_ids),
+    [formState.auth_key_ids]
   );
   const formStateRoleIdsStr = React.useMemo(
     () => JSON.stringify(formState.role_ids),
     [formState.role_ids]
-  );
-  const formStateRouteIdsStr = React.useMemo(
-    () => JSON.stringify(formState.route_ids),
-    [formState.route_ids]
   );
   const formStateRoleRouteIdsStr = React.useMemo(
     () => JSON.stringify(formState.role_route_ids),
@@ -509,12 +547,10 @@ function SettingComponent({
         JSON.stringify(prev.profile_ids) !==
           JSON.stringify(newState.profile_ids) ||
         JSON.stringify(prev.auth_ids) !== JSON.stringify(newState.auth_ids) ||
-        JSON.stringify(prev.provider_ids) !==
-          JSON.stringify(newState.provider_ids) ||
-        JSON.stringify(prev.key_ids) !== JSON.stringify(newState.key_ids) ||
+        JSON.stringify(prev.provider_key_ids) !==
+          JSON.stringify(newState.provider_key_ids) ||
+        JSON.stringify(prev.auth_key_ids) !== JSON.stringify(newState.auth_key_ids) ||
         JSON.stringify(prev.role_ids) !== JSON.stringify(newState.role_ids) ||
-        JSON.stringify(prev.route_ids) !==
-          JSON.stringify(newState.route_ids) ||
         JSON.stringify(prev.role_route_ids) !==
           JSON.stringify(newState.role_route_ids)
       ) {
@@ -536,7 +572,6 @@ function SettingComponent({
     providerIdsStr,
     keyIdsStr,
     roleIdsStr,
-    routeIdsStr,
     roleRouteIdsStr,
   ]);
 
@@ -603,10 +638,9 @@ function SettingComponent({
       department_ids: formState.department_ids,
       profile_ids: formState.profile_ids,
       auth_ids: formState.auth_ids,
-      provider_ids: formState.provider_ids,
-      key_ids: formState.key_ids,
+      provider_key_ids: formState.provider_key_ids,
+      auth_key_ids: formState.auth_key_ids,
       role_ids: formState.role_ids,
-      route_ids: formState.route_ids,
       role_route_ids: formState.role_route_ids,
     });
     // Use stringified arrays to prevent recreation when array references change but content is same
@@ -623,7 +657,6 @@ function SettingComponent({
     formStateProviderIdsStr,
     formStateKeyIdsStr,
     formStateRoleIdsStr,
-    formStateRouteIdsStr,
     formStateRoleRouteIdsStr,
   ]);
 
@@ -641,10 +674,9 @@ function SettingComponent({
       formState.department_ids.length > 0 ||
       formState.profile_ids.length > 0 ||
       formState.auth_ids.length > 0 ||
-      formState.provider_ids.length > 0 ||
-      formState.key_ids.length > 0 ||
+      formState.provider_key_ids.length > 0 ||
+      formState.auth_key_ids.length > 0 ||
       formState.role_ids.length > 0 ||
-      formState.route_ids.length > 0 ||
       formState.role_route_ids.length > 0;
 
     if (!hasResourceIds || !patchSettingDraftActionRef.current) {
@@ -669,10 +701,9 @@ function SettingComponent({
             department_ids: formState.department_ids,
             profile_ids: formState.profile_ids,
             auth_ids: formState.auth_ids,
-            provider_ids: formState.provider_ids,
-            key_ids: formState.key_ids,
+            provider_key_ids: formState.provider_key_ids,
+            auth_key_ids: formState.auth_key_ids,
             role_ids: formState.role_ids,
-            route_ids: formState.route_ids,
             role_route_ids: formState.role_route_ids,
             expected_version: lastSavedVersionRef.current, // ✅ ref, not state dep
           },
@@ -780,10 +811,10 @@ function SettingComponent({
             department_ids: formState.department_ids || [],
             profile_ids: formState.profile_ids || [],
             auth_ids: formState.auth_ids || [],
-            provider_ids: formState.provider_ids || [],
-            key_ids: formState.key_ids || [],
+            provider_key_ids: formState.provider_key_ids || [],
+            auth_key_ids: formState.auth_key_ids || [],
             role_ids: formState.role_ids || [],
-            route_ids: formState.route_ids || [],
+            role_route_ids: formState.role_route_ids || [],
           },
         });
         toast.success(
@@ -838,7 +869,7 @@ function SettingComponent({
     () => ({
       basic: ["names", "descriptions", "departments", "flags"],
       colors: ["colors"],
-      configuration: [], // No generation for auths/providers/keys yet
+      configuration: [], // No generation for auths/provider_keys/auth_keys yet
       all: ["names", "descriptions", "colors", "flags", "departments"], // All resources for full-page generation
     }),
     []
@@ -860,53 +891,9 @@ function SettingComponent({
     []
   );
 
-  const determineAgentType = useCallback(
-    (resourceTypes: ResourceType[]): string | null => {
-      const basicResources: ResourceType[] = [
-        "names",
-        "descriptions",
-        "departments",
-        "flags",
-      ];
-      const allResources: ResourceType[] = [
-        "names",
-        "descriptions",
-        "colors",
-        "flags",
-        "departments",
-      ];
-
-      const isBasicCombo =
-        resourceTypes.length === basicResources.length &&
-        resourceTypes.every((rt) => basicResources.includes(rt));
-      const isAllCombo =
-        resourceTypes.length === allResources.length &&
-        resourceTypes.every((rt) => allResources.includes(rt));
-
-      if (isAllCombo) return "general";
-      if (isBasicCombo) return "basic";
-      if (resourceTypes.length === 1) {
-        const agentTypeMap: Partial<Record<ResourceType, string>> = {
-          names: "name",
-          descriptions: "description",
-          colors: "colors",
-          flags: "flags",
-          departments: "departments",
-        };
-        const firstType = resourceTypes[0];
-        if (firstType && firstType in agentTypeMap) {
-          return agentTypeMap[firstType] ?? null;
-        }
-      }
-      return null;
-    },
-    []
-  );
-
   const handleGenerateResources = useCallback(
     async (
       resourceTypes: ResourceType[],
-      agentType: string | null,
       userInstructions?: string
     ) => {
       if (!socket || !isConnected) {
@@ -926,7 +913,6 @@ function SettingComponent({
 
       socket.emit("setting_generate", {
         resource_types: resourceTypes,
-        agent_type: agentType,
         user_instructions: userInstructions ? [userInstructions] : null,
         draft_id: draftId || null,
         color_search: colorSearch || null,
@@ -1079,16 +1065,14 @@ function SettingComponent({
   const handleModalGenerate = useCallback(
     async (selectedResources: string[], instructions: string) => {
       const resourceTypes = selectedResources as ResourceType[];
-      const agentType = determineAgentType(resourceTypes);
       await handleGenerateResources(
         resourceTypes,
-        agentType,
         instructions.trim() || undefined
       );
       setShowGenerateModal(false);
       setModalInstructions("");
     },
-    [determineAgentType, handleGenerateResources]
+    [handleGenerateResources]
   );
 
   // Listen for full-page-generate event from layout
@@ -1132,14 +1116,14 @@ function SettingComponent({
       {
         id: "configuration",
         title: "Configuration",
-        description: "Configure profiles, auths, providers, and keys.",
-        resetFields: ["profile_ids", "auth_ids", "provider_ids", "key_ids"],
+        description: "Configure profiles, auths, provider keys, and auth keys.",
+        resetFields: ["profile_ids", "auth_ids", "provider_key_ids", "auth_key_ids"],
       },
       {
         id: "roles_routes",
         title: "Roles & Routes",
-        description: "Configure available roles and routes for this setting.",
-        resetFields: ["role_ids", "route_ids", "role_route_ids"],
+        description: "Configure available roles and role-route permissions for this setting.",
+        resetFields: ["role_ids", "role_route_ids"],
       },
     ],
     []
@@ -1155,10 +1139,9 @@ function SettingComponent({
       "department_ids",
       "profile_ids",
       "auth_ids",
-      "provider_ids",
-      "key_ids",
+      "provider_key_ids",
+      "auth_key_ids",
       "role_ids",
-      "route_ids",
       "role_route_ids",
     ],
     []
@@ -1201,14 +1184,13 @@ function SettingComponent({
             ...prev,
             profile_ids: [],
             auth_ids: [],
-            provider_ids: [],
-            key_ids: [],
+            provider_key_ids: [],
+            auth_key_ids: [],
           };
         case "roles_routes":
           return {
             ...prev,
             role_ids: [],
-            route_ids: [],
             role_route_ids: [],
           };
         default:
@@ -1553,7 +1535,7 @@ function SettingComponent({
               stepDescription={stepDescription}
               isReadonly={disabled}
               isEditMode={isEditMode}
-              resetFields={["role_ids", "route_ids", "role_route_ids"]}
+              resetFields={["role_ids", "role_route_ids"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
             >
@@ -1570,18 +1552,6 @@ function SettingComponent({
                     setFormState((prev) => ({ ...prev, role_ids: ids }))
                   }
                   label="Roles"
-                />
-
-                <Routes
-                  route_ids={formState.route_ids ?? []}
-                  route_resources={currentSettingData?.route_resources ?? []}
-                  show_routes={currentSettingData?.show_routes ?? true}
-                  routes={currentSettingData?.routes ?? []}
-                  disabled={disabled}
-                  onChange={(ids) =>
-                    setFormState((prev) => ({ ...prev, route_ids: ids }))
-                  }
-                  label="Routes"
                 />
 
                 <RoleRoutes
@@ -1614,7 +1584,7 @@ function SettingComponent({
               stepDescription={stepDescription}
               isReadonly={disabled}
               isEditMode={isEditMode}
-              resetFields={["profile_ids", "auth_ids", "provider_ids", "key_ids"]}
+              resetFields={["profile_ids", "auth_ids", "provider_key_ids", "auth_key_ids"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
             >
@@ -1649,45 +1619,37 @@ function SettingComponent({
                   required={currentSettingData?.auths_required ?? false}
                   group_id={currentSettingData?.group_id ?? null}
                   agent_id={currentSettingData?.auths_agent_id ?? null}
-                  createAuthsAction={createAuthsAction}
                 />
 
-                <Providers
-                  provider_ids={formState.provider_ids ?? []}
-                  provider_resources={
-                    currentSettingData?.provider_resources ?? []
-                  }
-                  show_providers={currentSettingData?.show_providers ?? false}
-                  provider_suggestions={
-                    currentSettingData?.provider_suggestions ?? []
+                <ProviderKeys
+                  provider_key_ids={formState.provider_key_ids ?? []}
+                  provider_key_resources={
+                    currentSettingData?.provider_key_resources ?? []
                   }
                   providers={currentSettingData?.providers ?? []}
-                  disabled={disabled}
-                  onChange={(ids) =>
-                    setFormState((prev) => ({ ...prev, provider_ids: ids }))
-                  }
-                  multiSelect={true}
-                  required={currentSettingData?.providers_required ?? false}
-                  group_id={currentSettingData?.group_id ?? null}
-                  agent_id={currentSettingData?.providers_agent_id ?? null}
-                  createProvidersAction={createProvidersAction}
-                />
-
-                <Keys
-                  key_ids={formState.key_ids ?? []}
-                  key_resources={currentSettingData?.key_resources ?? []}
-                  show_key={currentSettingData?.show_keys ?? false}
-                  key_suggestions={currentSettingData?.key_suggestions ?? []}
                   keys={currentSettingData?.keys ?? []}
                   disabled={disabled}
                   onChange={(ids) =>
-                    setFormState((prev) => ({ ...prev, key_ids: ids }))
+                    setFormState((prev) => ({ ...prev, provider_key_ids: ids }))
                   }
-                  multiSelect={true}
-                  required={currentSettingData?.keys_required ?? false}
-                  group_id={currentSettingData?.group_id ?? null}
-                  agent_id={currentSettingData?.keys_agent_id ?? null}
-                  createKeysAction={createKeysAction}
+                  show_provider_keys={currentSettingData?.show_providers ?? false}
+                  createProviderKeysAction={createProviderKeysAction}
+                  getProviderKeysAction={getProviderKeysAction}
+                />
+
+                <AuthKeys
+                  auth_key_ids={formState.auth_key_ids ?? []}
+                  auth_key_resources={currentSettingData?.auth_key_resources ?? []}
+                  auths={currentSettingData?.auths ?? []}
+                  keys={currentSettingData?.keys ?? []}
+                  selected_auth_ids={formState.auth_ids ?? []}
+                  disabled={disabled}
+                  onChange={(ids) =>
+                    setFormState((prev) => ({ ...prev, auth_key_ids: ids }))
+                  }
+                  show_auth_keys={currentSettingData?.show_auths ?? false}
+                  createAuthKeysAction={createAuthKeysAction}
+                  getAuthKeysAction={getAuthKeysAction}
                 />
               </div>
             </StepCard>
@@ -1716,16 +1678,19 @@ function SettingComponent({
       formState.profile_ids,
       formState.color_ids,
       formState.auth_ids,
-      formState.provider_ids,
-      formState.key_ids,
+      formState.provider_key_ids,
+      formState.auth_key_ids,
       formState.role_ids,
-      formState.route_ids,
       formState.role_route_ids,
       createNamesAction,
       createDescriptionsAction,
       createColorsAction,
       createFlagsAction,
       createDepartmentsAction,
+      createProviderKeysAction,
+      getProviderKeysAction,
+      createAuthKeysAction,
+      getAuthKeysAction,
       createRoleRoutesAction,
       canRegenerate,
       handleOpenStepCardModal,
@@ -1796,10 +1761,11 @@ export default React.memo(SettingComponent, (prevProps, nextProps) => {
     active_flag_id: prevProps.settingData?.active_flag_id,
     department_ids: prevProps.settingData?.department_ids,
     auth_ids: prevProps.settingData?.auth_ids,
-    provider_ids: prevProps.settingData?.provider_ids,
-    key_ids: prevProps.settingData?.key_ids,
+    provider_key_ids:
+      prevProps.settingData?.provider_key_ids,
+    auth_key_ids:
+      prevProps.settingData?.auth_key_ids,
     role_ids: prevProps.settingData?.role_ids,
-    route_ids: prevProps.settingData?.route_ids,
     role_route_ids: prevProps.settingData?.role_route_ids,
   };
   const nextIds = {
@@ -1809,10 +1775,11 @@ export default React.memo(SettingComponent, (prevProps, nextProps) => {
     active_flag_id: nextProps.settingData?.active_flag_id,
     department_ids: nextProps.settingData?.department_ids,
     auth_ids: nextProps.settingData?.auth_ids,
-    provider_ids: nextProps.settingData?.provider_ids,
-    key_ids: nextProps.settingData?.key_ids,
+    provider_key_ids:
+      nextProps.settingData?.provider_key_ids,
+    auth_key_ids:
+      nextProps.settingData?.auth_key_ids,
     role_ids: nextProps.settingData?.role_ids,
-    route_ids: nextProps.settingData?.route_ids,
     role_route_ids: nextProps.settingData?.role_route_ids,
   };
 
@@ -1832,7 +1799,12 @@ export default React.memo(SettingComponent, (prevProps, nextProps) => {
     prevProps.createDescriptionsAction !== nextProps.createDescriptionsAction ||
     prevProps.createColorsAction !== nextProps.createColorsAction ||
     prevProps.createFlagsAction !== nextProps.createFlagsAction ||
-    prevProps.createDepartmentsAction !== nextProps.createDepartmentsAction
+    prevProps.createDepartmentsAction !== nextProps.createDepartmentsAction ||
+    prevProps.createProviderKeysAction !== nextProps.createProviderKeysAction ||
+    prevProps.getProviderKeysAction !== nextProps.getProviderKeysAction ||
+    prevProps.createAuthKeysAction !== nextProps.createAuthKeysAction ||
+    prevProps.getAuthKeysAction !== nextProps.getAuthKeysAction ||
+    prevProps.createRoleRoutesAction !== nextProps.createRoleRoutesAction
   ) {
     return false; // Function props changed, re-render
   }

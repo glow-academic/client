@@ -66,8 +66,18 @@ def _build_agent_jinja_context(
 ) -> dict[str, Any]:
     """Build Jinja context from agent websocket response."""
     _ = resource_types
-    if response.resources:
-        return response.resources.model_dump(mode="json")
+    context: dict[str, Any] = (
+        response.resources.model_dump(mode="json") if response.resources else {}
+    )
+    context["views"] = {
+        "draft_agent": (
+            response.views.draft_agent.model_dump(mode="json")
+            if response.views and response.views.draft_agent
+            else {}
+        )
+    }
+    if context:
+        return context
     return AgentResourceBucket().model_dump(mode="json")
 
 

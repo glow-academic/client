@@ -89,6 +89,10 @@ async def handle_setting_artifact_complete(data: dict[str, Any]) -> None:
         "active_flag_id": str(result.active_flag_id) if result.active_flag_id else None,
         "color_ids": [str(v) for v in (result.color_ids or []) if v],
         "department_ids": [str(v) for v in (result.department_ids or []) if v],
+        "provider_key_ids": [str(v) for v in (result.provider_key_ids or []) if v],
+        "auth_key_ids": [str(v) for v in (result.key_ids or []) if v],
+        "role_ids": [str(v) for v in (result.role_ids or []) if v],
+        "role_route_ids": [str(v) for v in (result.role_route_ids or []) if v],
     }
 
     await sio.emit(

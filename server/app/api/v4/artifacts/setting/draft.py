@@ -5,11 +5,11 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.artifacts.setting.types import PatchSettingDraftApiRequest
 from app.infra.v4.activity.audit import audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
-    PatchSettingDraftApiRequest,
     PatchSettingDraftApiResponse,
     PatchSettingDraftSqlParams,
     PatchSettingDraftSqlRow,
@@ -49,7 +49,21 @@ async def patch_setting_draft(
 
         async with conn.transaction():
             params = PatchSettingDraftSqlParams(
-                **request.model_dump(), profile_id=profile_id
+                profile_id=profile_id,
+                input_draft_id=request.input_draft_id,
+                name_id=request.name_id,
+                description_id=request.description_id,
+                active_flag_id=request.active_flag_id,
+                color_ids=request.color_ids,
+                department_ids=request.department_ids,
+                profile_ids=request.profile_ids,
+                auth_ids=request.auth_ids,
+                provider_ids=request.provider_key_ids,
+                key_ids=request.auth_key_ids,
+                role_ids=request.role_ids,
+                route_ids=None,
+                role_route_ids=request.role_route_ids,
+                expected_version=request.expected_version,
             )
             sql_params = params.to_tuple()
 

@@ -45,7 +45,10 @@ CREATE TYPE types.q_get_draft_rubric_view_v4_item AS (
     name_ids uuid[],
     description_ids uuid[],
     flag_ids uuid[],
-    department_ids uuid[]
+    department_ids uuid[],
+    point_ids uuid[],
+    standard_group_ids uuid[],
+    standard_ids uuid[]
 );
 
 CREATE OR REPLACE FUNCTION api_get_draft_rubric_view_v4(
@@ -81,7 +84,10 @@ AS $$
                     name_ids,
                     description_ids,
                     flag_ids,
-                    department_ids
+                    department_ids,
+                    point_ids,
+                    standard_group_ids,
+                    standard_ids
                 )::types.q_get_draft_rubric_view_v4_item
                 ORDER BY updated_at DESC
             ),
