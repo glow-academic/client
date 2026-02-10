@@ -54,20 +54,8 @@ async def get_config_internal(
                     config_id=item.config_id,
                     agents_id=item.agents_id,
                     models_id=item.models_id,
-                    model_values_id=item.model_values_id,
                     providers_id=item.providers_id,
-                    provider_values_id=item.provider_values_id,
-                    endpoints_id=item.endpoints_id,
-                    keys_id=item.keys_id,
-                    prompts_id=item.prompts_id,
-                    instructions_ids=list(item.instructions_ids)
-                    if item.instructions_ids
-                    else None,
-                    temperature_levels_id=item.temperature_levels_id,
-                    reasoning_levels_id=item.reasoning_levels_id,
-                    qualities_id=item.qualities_id,
-                    voices_id=item.voices_id,
-                    tools_ids=list(item.tools_ids) if item.tools_ids else None,
+                    tool_ids=list(item.tool_ids) if item.tool_ids else None,
                     created_at=item.created_at,
                 )
             )

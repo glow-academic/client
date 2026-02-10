@@ -17,12 +17,10 @@ from typing import Any, cast
 from fastapi import APIRouter
 
 from app.api.v4.artifacts.persona.get import get_persona_websocket
-from app.api.v4.artifacts.persona.types import (
-    GetPersonaWebsocketResponse,
-    PersonaResourceBucket,
-)
+from app.api.v4.artifacts.persona.types import GetPersonaWebsocketResponse
 from app.api.v4.resources.instructions.get import get_instructions_internal
 from app.api.v4.resources.prompts.get import get_prompts_internal
+from app.api.v4.views.config.get import get_config_internal
 from app.infra.v4.generation import convert_tools_to_dict, render_developer_instructions
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
@@ -80,18 +78,15 @@ PERSONA_RESOURCE_TYPES = [
 def _build_persona_jinja_context(
     response: GetPersonaWebsocketResponse, resource_types: list[str]
 ) -> dict[str, Any]:
-    """Build Jinja context from persona websocket response."""
+    """Build Jinja context with resources as top-level variables.
 
-    if response.resources and response.resources.resources:
-        resources = response.resources.resources.model_dump()
-        current = (
-            response.resources.current.model_dump()
-            if response.resources.current
-            else PersonaResourceBucket().model_dump()
-        )
-        resources["current"] = current
-        return resources
-    return {"current": PersonaResourceBucket().model_dump()}
+    Resources are the current selections (from get_persona_internal's ID resolution).
+    Templates access resources directly: {{ names[0].name }}, {{ agents[0].temperature }}
+    Views (e.g. config) are injected separately in generate.py after prepare.
+    """
+    if response.resources:
+        return response.resources.model_dump()
+    return {}
 
 
 async def _persona_generate_impl(
@@ -191,9 +186,9 @@ async def _persona_generate_impl(
             return
 
         # Step 2: Extract LLM config from pre-fetched resources
-        config_agents = result.config_agents or []
-        config_models = result.config_models or []
-        config_providers = result.config_providers or []
+        config_agents = result.resources.agents or []
+        config_models = result.resources.models or []
+        config_providers = result.resources.providers or []
 
         # Find the agent resource that matches the selected agent_id's agents_resource
         # The config_agents list has all agents from the settings chain
@@ -416,16 +411,28 @@ async def _persona_generate_impl(
             jinja_context = persona_jinja_context
 
             # Inject config view into Jinja context for template access
+            if config_id:
+                async with pool.acquire() as config_conn:
+                    config_view_items = await get_config_internal(
+                        conn=config_conn,
+                        config_id=config_id,
+                        bypass_cache=True,
+                    )
+                config_view = (
+                    config_view_items[0].model_dump(mode="json")
+                    if config_view_items
+                    else {}
+                )
+            else:
+                config_view = {}
+            draft_persona_view = (
+                result.views.draft_persona.model_dump(mode="json")
+                if result.views and result.views.draft_persona
+                else {}
+            )
             jinja_context["views"] = {
-                "config": {
-                    "config_id": str(config_id) if config_id else None,
-                    "model_name": model_name,
-                    "provider_name": provider_name,
-                    "temperature": temperature,
-                    "reasoning": reasoning,
-                    "voice": voice,
-                    "quality": quality,
-                },
+                "config": config_view,
+                "draft_persona": draft_persona_view,
             }
 
             # Step 7: Render developer instructions with Jinja

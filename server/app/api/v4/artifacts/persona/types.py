@@ -8,6 +8,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from app.api.v4.views.drafts.types import DraftPersonaViewItem
 from app.sql.types import (
     QGetAgentsV4Item,
     QGetColorsV4Item,
@@ -22,6 +23,7 @@ from app.sql.types import (
     QGetParameterFieldsV4Item,
     QGetParametersV4Item,
     QGetProvidersV4Item,
+    QGetToolsV4Item,
 )
 
 
@@ -153,29 +155,45 @@ class GetPersonaApiResponse(BaseModel):
     fields: list[QGetFieldsV4Item] | None = None
 
 
+class PersonaWebsocketViews(BaseModel):
+    """Views data for websocket response."""
+
+    draft_persona: DraftPersonaViewItem
+
+
+class PersonaWebsocketResources(BaseModel):
+    """Hydrated resources for websocket — selected only, no suggestions."""
+
+    # 10 persona resources
+    names: list[QGetNamesV4Item] | None = None
+    descriptions: list[QGetDescriptionsV4Item] | None = None
+    colors: list[QGetColorsV4Item] | None = None
+    icons: list[QGetIconsV4Item] | None = None
+    instructions: list[QGetInstructionsV4Item] | None = None
+    flags: list[PersonaFlagConfig] | None = None
+    departments: list[QGetDepartmentsV4Item] | None = None
+    parameter_fields: list[QGetParameterFieldsV4Item] | None = None
+    examples: list[QGetExamplesV4Item] | None = None
+    parameters: list[QGetParametersV4Item] | None = None
+    # 4 config resources
+    agents: list[QGetAgentsV4Item] | None = None
+    models: list[QGetModelsV4Item] | None = None
+    providers: list[QGetProvidersV4Item] | None = None
+    tools: list[QGetToolsV4Item] | None = None
+
+
 class GetPersonaWebsocketResponse(BaseModel):
     """Minimal response for WebSocket handlers (get_persona_websocket).
 
-    Contains only what's needed for AI generation:
-    - Resource-to-agent mapping (for agent_id lookup by resource type)
-    - Group ID (for existing group context)
-    - Resources (for Jinja template context)
-    - Config resources (pre-fetched generation config from denormalized chain)
+    Uses views + resources pattern:
+    - Views: draft persona view (convenience for Jinja templates)
+    - Resources: hydrated selected objects + config for generation
     """
 
-    # Resource type -> agent_id mapping (server resolves domains internally)
+    views: PersonaWebsocketViews | None = None
+    resources: PersonaWebsocketResources
     resource_agent_ids: dict[str, UUID | None] | None = None
-
-    # Single top-level group ID
     group_id: UUID | None = None
-
-    # Resources for Jinja template context
-    resources: PersonaResources | None = None
-
-    # Config resources for generation (pre-fetched from denormalized chain)
-    config_agents: list[QGetAgentsV4Item] | None = None
-    config_models: list[QGetModelsV4Item] | None = None
-    config_providers: list[QGetProvidersV4Item] | None = None
 
 
 class PersonaResourceBucket(BaseModel):

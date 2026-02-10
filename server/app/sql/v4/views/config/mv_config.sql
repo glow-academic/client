@@ -62,6 +62,14 @@ providers_agg AS (
     FROM config_providers_connection cpc
     WHERE cpc.active = TRUE
     ORDER BY cpc.config_id, cpc.created_at
+),
+-- Get tool_ids from agents_resource (via agents_agg)
+agents_resource_data AS (
+    SELECT
+        aa.config_id,
+        ar.tool_ids
+    FROM agents_agg aa
+    JOIN agents_resource ar ON ar.id = aa.agents_id
 )
 SELECT
     ce.id AS config_id,
@@ -71,12 +79,16 @@ SELECT
     ma.models_id,
     pa.providers_id,
 
+    -- Tool IDs from agents_resource
+    ard.tool_ids,
+
     ce.created_at AS config_created_at
 
 FROM config_entry ce
 LEFT JOIN agents_agg aa ON aa.config_id = ce.id
 LEFT JOIN models_agg ma ON ma.config_id = ce.id
 LEFT JOIN providers_agg pa ON pa.config_id = ce.id
+LEFT JOIN agents_resource_data ard ON ard.config_id = ce.id
 WHERE ce.active = TRUE
 WITH NO DATA;
 

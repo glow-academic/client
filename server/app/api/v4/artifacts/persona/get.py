@@ -62,6 +62,8 @@ from app.api.v4.artifacts.persona.types import (
     PersonaParameterSection,
     PersonaResourceBucket,
     PersonaResources,
+    PersonaWebsocketResources,
+    PersonaWebsocketViews,
 )
 from app.api.v4.permissions import select_agents_for_artifact
 from app.api.v4.resources.agents.get import get_agents_internal
@@ -87,6 +89,7 @@ from app.api.v4.resources.parameter_fields.get import get_parameter_fields_inter
 from app.api.v4.resources.parameters.get import get_parameters_internal
 from app.api.v4.resources.parameters.search import search_parameters_internal
 from app.api.v4.resources.providers.get import get_providers_internal
+from app.api.v4.resources.tools.get import get_tools_internal
 from app.api.v4.types import CandidateAgent
 from app.api.v4.views.drafts.get import get_draft_persona_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
@@ -793,10 +796,10 @@ async def get_persona_websocket(
 ) -> GetPersonaWebsocketResponse:
     """Minimal response for WebSocket handlers.
 
-    Returns only what's needed for AI generation:
-    - Resource-to-agent mapping (for agent_id lookup by resource type)
-    - Per-resource group IDs (for existing group context)
-    - Resources (for Jinja template context)
+    Wraps get_persona_internal() for shared resource fetching (Q1, Q2, Pass 2),
+    then reshapes into views + resources format. Additionally:
+    - Fetches draft persona view (convenience for Jinja templates, NOT source of truth)
+    - Hydrates tools from config agent's tool_ids
     """
     data = await get_persona_internal(
         profile_id=profile_id,
@@ -805,17 +808,74 @@ async def get_persona_websocket(
         bypass_cache=bypass_cache,
     )
 
+    # Fetch draft persona view for Jinja template convenience
+    draft_persona = None
+    if draft_id:
+        pool = get_pool()
+        if pool:
+            async with pool.acquire() as conn:
+                draft_items = await get_draft_persona_internal(
+                    conn=conn,
+                    draft_ids=[draft_id],
+                    bypass_cache=bypass_cache,
+                )
+                if draft_items:
+                    draft_persona = draft_items[0]
+
+    # Hydrate tools from config agent's tool_ids
+    tools_result: list = []
+    if data.config_agent_resources:
+        agent_resource = data.config_agent_resources[0]
+        if agent_resource and agent_resource.tool_ids:
+            pool = get_pool()
+            if pool:
+                async with pool.acquire() as c:
+                    tools_result = await get_tools_internal(
+                        c, list(agent_resource.tool_ids), bypass_cache
+                    )
+
+    # Extract current (selected) resources from internal data
+    current = data.resources_payload.current
+
+    # Get enriched flags for the selected flag(s)
+    # current.flags contains raw flag objects; resources.flags has enriched PersonaFlagConfig
+    selected_flag_ids = set()
+    if current and current.flags:
+        for f in current.flags:
+            fid = getattr(f, "flag_option_id", None) or getattr(f, "id", None)
+            if fid:
+                selected_flag_ids.add(fid)
+    all_enriched_flags = (
+        data.resources_payload.resources.flags
+        if data.resources_payload.resources
+        else []
+    ) or []
+    selected_enriched_flags = [
+        f for f in all_enriched_flags if f.flag_option_id in selected_flag_ids
+    ]
+
     return GetPersonaWebsocketResponse(
-        # Resource type -> agent_id mapping
+        views=PersonaWebsocketViews(draft_persona=draft_persona)
+        if draft_persona
+        else None,
+        resources=PersonaWebsocketResources(
+            names=current.names if current else None,
+            descriptions=current.descriptions if current else None,
+            colors=current.colors if current else None,
+            icons=current.icons if current else None,
+            instructions=current.instructions if current else None,
+            flags=selected_enriched_flags or None,
+            departments=current.departments if current else None,
+            parameter_fields=current.parameter_fields if current else None,
+            examples=current.examples if current else None,
+            parameters=current.parameters if current else None,
+            agents=data.config_agent_resources,
+            models=data.config_model_resources,
+            providers=data.config_provider_resources,
+            tools=tools_result or None,
+        ),
         resource_agent_ids=data.agent_ids,
-        # Single top-level group ID
         group_id=data.group_id,
-        # Resources for Jinja context
-        resources=data.resources_payload,
-        # Config resources for generation
-        config_agents=data.config_agent_resources,
-        config_models=data.config_model_resources,
-        config_providers=data.config_provider_resources,
     )
 
 

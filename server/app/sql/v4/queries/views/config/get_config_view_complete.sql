@@ -49,6 +49,7 @@ CREATE TYPE types.q_get_config_view_v4_item AS (
     agents_id uuid,
     models_id uuid,
     providers_id uuid,
+    tool_ids uuid[],
     created_at timestamptz
 );
 
@@ -72,6 +73,7 @@ AS $$
                 mc.agents_id,
                 mc.models_id,
                 mc.providers_id,
+                mc.tool_ids,
                 mc.config_created_at
             )::types.q_get_config_view_v4_item
             ORDER BY mc.config_created_at
