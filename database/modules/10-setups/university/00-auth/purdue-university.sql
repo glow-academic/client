@@ -5,7 +5,7 @@
 
 
 -- Resource rows
-INSERT INTO public.auths_resource (created_at, active, generated, mcp, id, group_id, name, description, department_ids) VALUES ('2025-11-23T03:58:01.111785+00:00', true, false, false, '019bb25e-e5e2-74b4-8ff7-70273a42b4c0', '019ba0cd-7631-7ace-811b-fc6595d00220', 'Purdue University', 'Purdue Login', '{}') ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.auths_resource (created_at, active, generated, mcp, id, name, description, department_ids) VALUES ('2025-11-23T03:58:01.111785+00:00', true, false, false, '019bb25e-e5e2-74b4-8ff7-70273a42b4c0', 'Purdue University', 'Purdue Login', '{}') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019b995c-8eaf-7d0f-862f-3530d2a478b4', 'Purdue Login', '2025-11-23T03:58:01.111785+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.items_resource (id, name, description, encrypted, position, active, created_at, generated, mcp) VALUES ('019b3be4-311a-7033-9351-0c9ccb0d4ffd', 'clientSecret', 'Purdue Client Secret', true, 1, true, '2025-11-23T03:58:01.112077+00:00', false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.items_resource (id, name, description, encrypted, position, active, created_at, generated, mcp) VALUES ('019b3be4-311a-7035-8010-1cd26502ebb6', 'clientId', 'Purdue Client ID', true, 2, true, '2025-11-23T03:58:01.112077+00:00', false, false) ON CONFLICT (id) DO NOTHING;

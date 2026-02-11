@@ -5,7 +5,7 @@
 
 
 -- Resource rows
-INSERT INTO public.departments_resource (created_at, active, generated, mcp, id, group_id, name, description, department_ids, setting_ids) VALUES ('2025-10-31T16:50:58.307484+00:00', true, false, false, '019bb25e-e624-7461-ae69-85ba6cc54ae7', '019ba0cd-7630-761a-822c-ff7fd8bb62d5', 'Statistics', 'STAT', '{}', '{}') ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.departments_resource (created_at, active, generated, mcp, id, name, description, department_ids, setting_ids) VALUES ('2025-10-31T16:50:58.307484+00:00', true, false, false, '019bb25e-e624-7461-ae69-85ba6cc54ae7', 'Statistics', 'STAT', '{}', '{}') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019b995c-8eac-786a-bb38-524e00e50f77', 'STAT', '2025-10-31T16:50:58.307484+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019b995c-8ea9-7afd-acf7-e5da96f4314c', 'Statistics', '2025-10-31T16:50:58.307484+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 

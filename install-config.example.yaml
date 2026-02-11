@@ -115,8 +115,29 @@ modules:
       - veo-3.1-generate-preview
       - veo-3.1-fast-generate-preview
 
-  # System agents (03-agents/)
-  agents: all
+  # System agents (03-agents/) — excludes inactive gemini variants
+  agents:
+    - agent
+    - auth
+    - benchmark
+    - chat-agent
+    - cohort
+    - department
+    - document
+    - eval
+    - field
+    - grade-agent
+    - model
+    - parameter
+    - persona
+    - profile
+    - provider
+    - rubric
+    - scenario
+    - setting
+    - simulation
+    - tool
+    - training
 
   # MCP tools (04-tools/)
   tools: all
@@ -131,12 +152,21 @@ modules:
 
   # Setup-specific modules (10-setups/university/)
   university:
-    departments: all
+    departments:
+      - general
+      - purdue-cs
     personas: all
     documents: all
     fields: all
-    rubrics: all
-    simulations: all
+    rubrics:
+      - ta-rubric
+    simulations:
+      - happy-practice
+      - confused-practice
+      - passive-practice
+      - aggressive-practice
+      - general-practice
+      - video-practice
     evals: all
     cohorts: all
     profiles: all

@@ -5,7 +5,7 @@
 
 
 -- Resource rows
-INSERT INTO public.auths_resource (created_at, active, generated, mcp, id, group_id, name, description, department_ids) VALUES ('2025-11-23T03:58:01.110539+00:00', true, false, false, '019bb25e-e5e2-73eb-9313-57d774b30875', '019ba0cd-7629-7dbc-a028-a3207c42f2e7', 'Google', 'Google Workspace', '{}') ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.auths_resource (created_at, active, generated, mcp, id, name, description, department_ids) VALUES ('2025-11-23T03:58:01.110539+00:00', true, false, false, '019bb25e-e5e2-73eb-9313-57d774b30875', 'Google', 'Google Workspace', '{}') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019b995c-8eaf-7d02-a9f1-5fbd76a4f2f3', 'Google Workspace', '2025-11-23T03:58:01.110539+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.items_resource (id, name, description, encrypted, position, active, created_at, generated, mcp) VALUES ('019b3be4-3119-7fdf-908e-6a6b9430f085', 'clientId', 'Google Client ID', true, 2, true, '2025-11-23T03:58:01.111026+00:00', false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.items_resource (id, name, description, encrypted, position, active, created_at, generated, mcp) VALUES ('019b3be4-3119-7fae-9dea-08a64aff6240', 'clientSecret', 'Google Client Secret', true, 1, true, '2025-11-23T03:58:01.111026+00:00', false, false) ON CONFLICT (id) DO NOTHING;

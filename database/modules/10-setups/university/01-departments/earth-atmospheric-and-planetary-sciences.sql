@@ -5,7 +5,7 @@
 
 
 -- Resource rows
-INSERT INTO public.departments_resource (created_at, active, generated, mcp, id, group_id, name, description, department_ids, setting_ids) VALUES ('2025-10-31T16:50:58.307484+00:00', true, false, false, '019bb25e-e624-7459-b42d-b7ee5595e1c7', '019ba0cd-761d-72d6-8566-3fd1beb4d489', 'Earth, Atmospheric, and Planetary Sciences', 'EAPS', '{}', '{}') ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.departments_resource (created_at, active, generated, mcp, id, name, description, department_ids, setting_ids) VALUES ('2025-10-31T16:50:58.307484+00:00', true, false, false, '019bb25e-e624-7459-b42d-b7ee5595e1c7', 'Earth, Atmospheric, and Planetary Sciences', 'EAPS', '{}', '{}') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019b995c-8eac-7862-b0f3-741f57b46be3', 'EAPS', '2025-10-31T16:50:58.307484+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019b995c-8ea9-7af7-b1de-d2be3e608f87', 'Earth, Atmospheric, and Planetary Sciences', '2025-10-31T16:50:58.307484+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 

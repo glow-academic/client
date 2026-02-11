@@ -12,6 +12,8 @@ INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp)
 INSERT INTO public.agent_artifact (created_at, updated_at, id, generated, mcp) VALUES ('2026-01-23T16:46:46.036849+00:00', '2026-01-23T16:46:46.036849+00:00', '73e9692c-88b3-420a-9a3f-b17b150b2505', false, false) ON CONFLICT (id) DO NOTHING;
 
 -- Junctions
+-- agent_flags_junction
+INSERT INTO public.agent_flags_junction (agent_id, flag_id, value, created_at, generated, mcp, active) VALUES ('73e9692c-88b3-420a-9a3f-b17b150b2505', '019be334-bfc4-76ac-80d3-c8ba7618bc7a', false, '2026-02-11T20:37:27.875564+00:00', false, false, true) ON CONFLICT (agent_id, flag_id) DO NOTHING;
 -- agent_models_junction
 INSERT INTO public.agent_models_junction (agent_id, model_id, created_at, generated, mcp, active) VALUES ('73e9692c-88b3-420a-9a3f-b17b150b2505', '019b3be4-36cd-7821-9ad2-6c260f8271b9', '2026-01-23T16:46:46.036849+00:00', false, false, true) ON CONFLICT (agent_id, model_id) DO NOTHING;
 -- agent_names_junction

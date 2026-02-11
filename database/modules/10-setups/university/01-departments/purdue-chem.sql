@@ -5,7 +5,7 @@
 
 
 -- Resource rows
-INSERT INTO public.departments_resource (created_at, active, generated, mcp, id, group_id, name, description, department_ids, setting_ids) VALUES ('2025-10-31T16:50:58.307484+00:00', true, false, false, '019bb25e-e624-7450-8897-a72c55c26107', '019ba0cd-761a-7f20-8103-645e209ba6d0', 'Purdue Chem', 'CHM', '{}', '{019b3be4-3c61-7714-9370-0ca874d1aff4}') ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.departments_resource (created_at, active, generated, mcp, id, name, description, department_ids, setting_ids) VALUES ('2025-10-31T16:50:58.307484+00:00', true, false, false, '019bb25e-e624-7450-8897-a72c55c26107', 'Purdue Chem', 'CHM', '{}', '{019b3be4-3c61-7714-9370-0ca874d1aff4}') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019b995c-8eac-7866-a3ee-5acdbcd39192', 'CHM', '2025-10-31T16:50:58.307484+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019b995c-8ea9-7b04-9e0e-078bf5859bd2', 'Purdue Chem', '2025-10-31T16:50:58.307484+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 

@@ -7,7 +7,7 @@
 INSERT INTO public.cohorts_resource (created_at, active, generated, mcp, id, name, description, department_ids, simulation_ids) VALUES ('2025-05-01T00:00:00+00:00', true, false, false, '019bb25e-e605-749f-a376-47857f500e1c', 'Returning GTAs', 'Returning GTAs
 2025-2026
 (Have been a GTA before)', '{}', '{019bb25e-e62c-7868-9c45-1c50c29ff8dc,019bb25e-e62c-786c-b16c-d435ce8d7ed6}') ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.departments_resource (created_at, active, generated, mcp, id, group_id, name, description, department_ids, setting_ids) VALUES ('2025-10-08T14:16:28.317660+00:00', true, false, false, '019bb25e-e624-73da-8cef-166028a1065a', '019ba0cd-761e-7fa9-a598-42ff212aa69a', 'Purdue CS', 'Innovative base of knowledge in the emerging field of computing', '{}', '{019b3be4-3c61-76ff-befb-69b082df2acd}') ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.departments_resource (created_at, active, generated, mcp, id, name, description, department_ids, setting_ids) VALUES ('2025-10-08T14:16:28.317660+00:00', true, false, false, '019bb25e-e624-73da-8cef-166028a1065a', 'Purdue CS', 'Innovative base of knowledge in the emerging field of computing', '{}', '{019b3be4-3c61-76ff-befb-69b082df2acd}') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019b995c-8e98-783e-ad0c-a379fec40ea4', 'Returning GTAs
 2025-2026
 (Have been a GTA before)', '2025-05-01T00:00:00+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;

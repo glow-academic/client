@@ -11,4 +11,5 @@ INSERT INTO public.texts_resource (id, created_at, active, generated, mcp) VALUE
 INSERT INTO public.texts_resource (id, created_at, active, generated, mcp) VALUES ('019c29d6-005c-72ae-8312-4708579fd54b', '2025-12-06T02:59:23.893847+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.texts_resource (id, created_at, active, generated, mcp) VALUES ('019c29d6-005c-733c-a565-88b232c706d3', '2025-12-06T02:59:23.893847+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.texts_resource (id, created_at, active, generated, mcp) VALUES ('019c29d6-005c-7419-9bbc-db30a5b6483c', '2025-12-06T02:59:23.893847+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.texts_resource (id, created_at, active, generated, mcp) VALUES ('019c29d6-005c-74a5-91f7-f309588e109b', '2025-12-06T02:59:23.893847+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.texts_resource (id, created_at, active, generated, mcp) VALUES ('258ee632-aa7a-4fb5-b9a8-fd4a4635f283', '2026-02-11T23:37:44.066741+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.texts_resource (id, created_at, active, generated, mcp) VALUES ('8e9fdbb5-9c4e-4f8f-9b03-b056a9caa0ea', '2026-02-11T23:37:44.066741+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
