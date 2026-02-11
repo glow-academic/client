@@ -454,8 +454,8 @@ async def _attempt_end_all_impl(sid: str, data: AttemptEndAllPayload) -> None:
                 find_chat_sql = """
                     SELECT c.id
                     FROM simulation_chats_entry c
-                    JOIN simulation_chats_scenarios_connection csc ON csc.chat_id = c.id
-                    JOIN scenario_scenarios_junction ssj ON ssj.scenarios_id = csc.scenarios_id
+                    JOIN mv_simulation_chats msc ON msc.chat_id = c.id
+                    JOIN scenario_scenarios_junction ssj ON ssj.scenarios_id = msc.scenario_id
                     WHERE c.attempt_id = $1 AND ssj.scenario_id = $2 AND c.active = TRUE
                     LIMIT 1
                 """

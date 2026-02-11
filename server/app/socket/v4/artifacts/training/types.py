@@ -42,9 +42,8 @@ class TrainingStartPayload(BaseModel):
     - Emits training_started when ready
     """
 
-    simulation_id: UUID
-    agent_id: UUID  # Content generation agent
-    scenario_id: UUID | None = None  # Optional - uses first if not specified
+    training_bundle_entry_id: UUID  # Selected bundle from training/get
+    department_id: UUID  # Department selected in UI
     user_instructions: list[str] | None = None  # Optional generation hints
     infinite: bool | None = None  # Infinite mode - no time limit
 

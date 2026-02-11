@@ -79,12 +79,8 @@ usage_check AS (
                 AND ssf.value = true
           )
     ) + (
-        SELECT COUNT(*) FROM simulation_chats_scenarios_connection gcsc
-        JOIN scenario_scenarios_junction ssj ON ssj.scenarios_id = gcsc.scenarios_id
-        WHERE ssj.scenario_id = (SELECT p_scenario_id FROM params)
-    ) + (
-        SELECT COUNT(*) FROM simulation_chats_scenarios_connection pcsc
-        JOIN scenario_scenarios_junction ssj ON ssj.scenarios_id = pcsc.scenarios_id
+        SELECT COUNT(*) FROM mv_simulation_chats msc
+        JOIN scenario_scenarios_junction ssj ON ssj.scenarios_id = msc.scenario_id
         WHERE ssj.scenario_id = (SELECT p_scenario_id FROM params)
     ) + (
         SELECT COUNT(*)

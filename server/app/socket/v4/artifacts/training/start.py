@@ -19,11 +19,7 @@ from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
-from app.socket.v4.artifacts.attempt.resolve_agent import resolve_attempt_entries
-from app.socket.v4.artifacts.attempt.types import (
-    ATTEMPT_GRADE_ENTRY_TYPES,
-    ATTEMPT_MESSAGE_ENTRY_TYPES,
-)
+from app.api.v4.artifacts.training.get import get_training_websocket
 from app.socket.v4.artifacts.training.permissions import (
     TrainingGenerationContext,
     check_scenario_needs_generation,
@@ -31,14 +27,11 @@ from app.socket.v4.artifacts.training.permissions import (
     validate_training_access,
 )
 from app.socket.v4.artifacts.training.types import (
-    TRAINING_START_ENTRY_TYPES,
     TrainingStartedEvent,
     TrainingStartPayload,
 )
 from app.socket.v4.artifacts.types import GenerateErrorApiRequest
 from app.sql.types import (
-    GetTrainingStartContextSqlParams,
-    GetTrainingStartContextSqlRow,
     PrepareTrainingGenerationSqlParams,
     PrepareTrainingGenerationSqlRow,
     PrepareTrainingStartSqlParams,
@@ -56,9 +49,6 @@ server_router = APIRouter()
 
 
 # SQL paths
-SQL_PATH_CONTEXT = (
-    "app/sql/v4/queries/generate/training/get_training_start_context_complete.sql"
-)
 SQL_PATH_PREPARE_START = (
     "app/sql/v4/queries/generate/training/prepare_training_start_complete.sql"
 )
@@ -91,32 +81,13 @@ async def _training_start_impl(
     try:
         async with get_db_connection() as conn:
             # Step 1: Fetch context and validate prerequisites
-            context_params = GetTrainingStartContextSqlParams(
-                p_profile_id=profile_id,
-                p_agent_id=data.agent_id,
-                p_simulation_id=data.simulation_id,
-                p_scenario_id=data.scenario_id,
-                p_entry_types=TRAINING_START_ENTRY_TYPES,
+            training_ws = await get_training_websocket(
+                conn=conn,
+                profile_id=profile_id,
+                training_bundle_entry_id=data.training_bundle_entry_id,
+                department_id=data.department_id,
             )
-
-            context_row = cast(
-                GetTrainingStartContextSqlRow,
-                await execute_sql_typed(conn, SQL_PATH_CONTEXT, params=context_params),
-            )
-
-            if not context_row:
-                await emit_to_internal(
-                    "generate_call_error",
-                    GenerateErrorApiRequest(
-                        sid=sid,
-                        error_message="Failed to fetch generation context",
-                        artifact_type="training",
-                        group_id=None,
-                        resource_type="training",
-                    ),
-                    sid=sid,
-                )
-                return
+            context_row = training_ws.resources
 
             # Build context dataclass for validation
             ctx = TrainingGenerationContext(
@@ -139,7 +110,7 @@ async def _training_start_impl(
                 profile_has_access=context_row.profile_has_access or False,
                 has_problem_statement=context_row.has_problem_statement or False,
                 has_persona=context_row.has_persona or False,
-                requested_entry_types=TRAINING_START_ENTRY_TYPES,
+                requested_entry_types=[],
                 valid_entry_types=context_row.valid_entry_types or [],
             )
 
@@ -150,7 +121,7 @@ async def _training_start_impl(
                 error_msg = format_generation_error(failures)
                 logger.error(
                     f"Training start validation failed - "
-                    f"profile_id={profile_id}, simulation_id={data.simulation_id}, "
+                    f"profile_id={profile_id}, training_bundle_entry_id={data.training_bundle_entry_id}, "
                     f"reason: {error_msg}"
                 )
                 await emit_to_internal(
@@ -167,7 +138,20 @@ async def _training_start_impl(
                 return
 
             # Step 2: Check if scenario needs generation (internal decision)
-            scenario_id = data.scenario_id or context_row.scenario_id
+            scenario_id = context_row.scenario_id
+            if not context_row.simulation_id:
+                await emit_to_internal(
+                    "generate_call_error",
+                    GenerateErrorApiRequest(
+                        sid=sid,
+                        error_message="Missing simulation scope for selected training bundle",
+                        artifact_type="training",
+                        group_id=None,
+                        resource_type="training",
+                    ),
+                    sid=sid,
+                )
+                return
             needs_gen = check_scenario_needs_generation(ctx)
 
             if needs_gen and scenario_id:
@@ -184,9 +168,8 @@ async def _training_start_impl(
                 # Call prepare_training_generation SQL
                 gen_params = PrepareTrainingGenerationSqlParams(
                     p_profile_id=profile_id,
-                    p_agent_id=data.agent_id,
-                    p_simulation_id=data.simulation_id,
-                    p_scenario_id=scenario_id,
+                    p_training_bundle_entry_id=data.training_bundle_entry_id,
+                    p_department_id=data.department_id,
                     p_resource_types=TRAINING_RESOURCE_TYPES,
                 )
 
@@ -200,7 +183,7 @@ async def _training_start_impl(
                 if not gen_row or not gen_row.run_id:
                     logger.error(
                         f"Training generation preparation failed - "
-                        f"profile_id={profile_id}, simulation_id={data.simulation_id}"
+                        f"profile_id={profile_id}, training_bundle_entry_id={data.training_bundle_entry_id}"
                     )
                     await emit_to_internal(
                         "generate_call_error",
@@ -257,7 +240,9 @@ async def _training_start_impl(
                             "tool_choice": "required",  # Force tool calls
                         },
                         "tools": convert_tools_to_dict(gen_row.tools),
-                        "simulation_id": str(data.simulation_id),
+                        "simulation_id": str(context_row.simulation_id),
+                        "training_bundle_entry_id": str(data.training_bundle_entry_id),
+                        "department_id": str(data.department_id),
                         # Training-specific field for filtering
                         "scenario_id": str(scenario_id),
                     },
@@ -276,30 +261,12 @@ async def _training_start_impl(
             # NO GENERATION PATH - create attempt directly
             # =============================================
 
-            # Step 3: Resolve agents for attempt entry types
-            all_entry_types = list(
-                set(ATTEMPT_MESSAGE_ENTRY_TYPES + ATTEMPT_GRADE_ENTRY_TYPES)
-            )
-            entries_map = await resolve_attempt_entries(
-                conn, profile_id, all_entry_types
-            )
-
-            # Build parallel arrays for SQL
-            entry_types_arr = list(entries_map.keys())
-            entry_agent_ids_arr = [entries_map[et] for et in entry_types_arr]
-
-            logger.info(
-                f"Resolved attempt entries - "
-                f"profile_id={profile_id}, entries={entry_types_arr}"
-            )
-
-            # Step 4: Create attempt + chat entries (with per-entry groups)
+            # Step 3: Create attempt + chat entries (with server-side entry resolution)
             prepare_params = PrepareTrainingStartSqlParams(
                 p_profile_id=profile_id,
-                p_simulation_id=data.simulation_id,
-                p_scenario_id=scenario_id,
-                p_entry_types=entry_types_arr if entry_types_arr else None,
-                p_entry_agent_ids=entry_agent_ids_arr if entry_agent_ids_arr else None,
+                p_training_bundle_entry_id=data.training_bundle_entry_id,
+                p_department_id=data.department_id,
+                p_infinite_mode=data.infinite,
             )
 
             prepare_row = cast(
@@ -312,7 +279,7 @@ async def _training_start_impl(
             if not prepare_row or not prepare_row.attempt_id:
                 logger.error(
                     f"Training start preparation failed - "
-                    f"profile_id={profile_id}, simulation_id={data.simulation_id}"
+                    f"profile_id={profile_id}, training_bundle_entry_id={data.training_bundle_entry_id}"
                 )
                 await emit_to_internal(
                     "generate_call_error",
@@ -340,7 +307,7 @@ async def _training_start_impl(
 
             # Step 6: Emit training_started event
             started_event = TrainingStartedEvent(
-                simulation_id=str(data.simulation_id),
+                simulation_id=str(context_row.simulation_id),
                 attempt_id=str(prepare_row.attempt_id),
                 chat_id=str(prepare_row.chat_id),
                 scenario_id=str(prepare_row.scenario_id)
@@ -362,7 +329,7 @@ async def _training_start_impl(
 
             logger.info(
                 f"Training session started (no generation) - "
-                f"profile_id={profile_id}, simulation_id={data.simulation_id}, "
+                f"profile_id={profile_id}, simulation_id={context_row.simulation_id}, "
                 f"attempt_id={prepare_row.attempt_id}, chat_id={prepare_row.chat_id}"
             )
 

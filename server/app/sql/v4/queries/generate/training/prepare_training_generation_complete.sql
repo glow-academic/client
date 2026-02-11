@@ -42,9 +42,8 @@ END $$;
 -- 3) Create the function
 CREATE OR REPLACE FUNCTION socket_prepare_training_generation_v4(
     p_profile_id uuid,
-    p_agent_id uuid,
-    p_simulation_id uuid,
-    p_scenario_id uuid DEFAULT NULL,
+    p_training_bundle_entry_id uuid,
+    p_department_id uuid,
     p_resource_types text[] DEFAULT ARRAY['problem_statements', 'objectives', 'personas']
 )
 RETURNS TABLE (
@@ -72,33 +71,91 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-WITH params AS (
+WITH scope AS (
+    SELECT
+        tb.id AS training_bundle_entry_id,
+        tb.scenarios_id AS scenarios_resource_id,
+        t.simulations_id,
+        (
+            SELECT ssj.simulation_id
+            FROM simulation_simulations_junction ssj
+            WHERE ssj.simulations_id = t.simulations_id
+              AND ssj.active = true
+            LIMIT 1
+        ) AS simulation_artifact_id,
+        (
+            SELECT scj.scenario_id
+            FROM scenario_scenarios_junction scj
+            WHERE scj.scenarios_id = tb.scenarios_id
+              AND scj.active = true
+            LIMIT 1
+        ) AS scenario_artifact_id
+    FROM training_bundle_entry tb
+    JOIN training_entry t
+      ON t.id = tb.training_id
+     AND t.active = true
+    WHERE tb.id = p_training_bundle_entry_id
+      AND tb.active = true
+    LIMIT 1
+),
+params AS (
     SELECT
         p_profile_id AS profile_id,
-        p_agent_id AS agent_id,
-        p_simulation_id AS simulation_id,
-        p_scenario_id AS scenario_id,
+        (
+            SELECT aa.agent_id
+            FROM (
+                SELECT
+                    a.id AS agent_id,
+                    COUNT(DISTINCT rt.resource::text) FILTER (
+                        WHERE rt.resource IS NOT NULL
+                          AND rt.resource::text = ANY(p_resource_types)
+                    ) AS coverage
+                FROM agent_artifact a
+                LEFT JOIN agent_tools_junction at
+                  ON at.agent_id = a.id
+                 AND at.active = true
+                LEFT JOIN tools_resource tr
+                  ON tr.id = at.tool_id
+                LEFT JOIN tool_tools_junction ttj
+                  ON ttj.tools_id = tr.id
+                LEFT JOIN resource_tools_relation rt
+                  ON rt.tool_id = ttj.tool_id
+                WHERE EXISTS (
+                    SELECT 1
+                    FROM agent_flags_junction af
+                    JOIN flags_resource f ON f.id = af.flag_id
+                    WHERE af.agent_id = a.id
+                      AND f.name = 'agent_active'
+                      AND af.value = true
+                )
+                  AND (
+                    NOT EXISTS (
+                        SELECT 1
+                        FROM agent_departments_junction ad
+                        WHERE ad.agent_id = a.id
+                          AND ad.active = true
+                    )
+                    OR EXISTS (
+                        SELECT 1
+                        FROM agent_departments_junction ad
+                        WHERE ad.agent_id = a.id
+                          AND ad.department_id = p_department_id
+                          AND ad.active = true
+                    )
+                  )
+                GROUP BY a.id
+            ) aa
+            ORDER BY aa.coverage DESC, aa.agent_id
+            LIMIT 1
+        ) AS agent_id,
+        (SELECT s.simulation_artifact_id FROM scope s) AS simulation_id,
+        (SELECT s.scenario_artifact_id FROM scope s) AS scenario_id,
         p_resource_types AS resource_types
 ),
 -- Resolve scenario (use provided or first from simulation)
 resolved_scenario AS (
     SELECT
-        COALESCE(p.scenario_id, (
-            SELECT sc.id
-            FROM simulation_scenarios_junction ss
-            JOIN scenario_artifact sc ON sc.id = ss.scenario_id
-            WHERE ss.simulation_id = p.simulation_id
-              AND ss.active = true
-            ORDER BY COALESCE(
-                (SELECT spr.value
-                 FROM simulation_scenario_positions_junction ssp
-                 JOIN scenario_positions_resource spr ON spr.id = ssp.scenario_position_id
-                 WHERE ssp.simulation_id = ss.simulation_id AND spr.scenario_id = ss.scenario_id
-                 LIMIT 1),
-                999999
-            ) ASC
-            LIMIT 1
-        )) as scenario_id
+        p.scenario_id AS scenario_id
     FROM params p
 ),
 -- Validate agent exists and is active

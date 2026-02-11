@@ -17,11 +17,10 @@ from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
+from app.api.v4.artifacts.training.get import get_training_websocket
 from app.socket.v4.artifacts.training.types import TrainingStartedEvent
 from app.socket.v4.artifacts.types import GenerateErrorApiRequest
 from app.sql.types import (
-    GetTrainingStartContextSqlParams,
-    GetTrainingStartContextSqlRow,
     PrepareTrainingStartSqlParams,
     PrepareTrainingStartSqlRow,
 )
@@ -35,9 +34,6 @@ internal_sio = get_internal_sio()
 server_router = APIRouter()
 
 # SQL paths
-SQL_PATH_CONTEXT = (
-    "app/sql/v4/queries/generate/training/get_training_start_context_complete.sql"
-)
 SQL_PATH_PREPARE_START = (
     "app/sql/v4/queries/generate/training/prepare_training_start_complete.sql"
 )
@@ -67,11 +63,11 @@ async def handle_training_complete(data: dict[str, Any]) -> None:
     if not profile_id_str:
         return
 
-    simulation_id_str = data.get("simulation_id")
-    scenario_id_str = data.get("scenario_id")
+    training_bundle_entry_id_str = data.get("training_bundle_entry_id")
+    department_id_str = data.get("department_id")
 
-    if not simulation_id_str:
-        logger.error("Training complete missing simulation_id")
+    if not training_bundle_entry_id_str or not department_id_str:
+        logger.error("Training complete missing training bundle context")
         await emit_to_internal(
             "generate_call_error",
             GenerateErrorApiRequest(
@@ -87,35 +83,25 @@ async def handle_training_complete(data: dict[str, Any]) -> None:
 
     try:
         profile_id = uuid.UUID(profile_id_str)
-        simulation_id = uuid.UUID(simulation_id_str)
-        scenario_id = uuid.UUID(scenario_id_str) if scenario_id_str else None
+        training_bundle_entry_id = uuid.UUID(training_bundle_entry_id_str)
+        department_id = uuid.UUID(department_id_str)
 
         async with get_db_connection() as conn:
             # Step 1: Fetch fresh scenario data from DB
-            # We use a dummy agent_id since we only need scenario data, not agent context
-            context_params = GetTrainingStartContextSqlParams(
-                p_profile_id=profile_id,
-                p_agent_id=uuid.UUID("00000000-0000-0000-0000-000000000000"),
-                p_simulation_id=simulation_id,
-                p_scenario_id=scenario_id,
-                p_entry_types=["chats"],
+            training_ws = await get_training_websocket(
+                conn=conn,
+                profile_id=profile_id,
+                training_bundle_entry_id=training_bundle_entry_id,
+                department_id=department_id,
             )
+            context_row = training_ws.resources
 
-            context_row = cast(
-                GetTrainingStartContextSqlRow,
-                await execute_sql_typed(conn, SQL_PATH_CONTEXT, params=context_params),
-            )
-
-            if not context_row:
-                logger.error(
-                    f"Training complete failed to fetch context - "
-                    f"profile_id={profile_id}, simulation_id={simulation_id}"
-                )
+            if not context_row.simulation_id:
                 await emit_to_internal(
                     "generate_call_error",
                     GenerateErrorApiRequest(
                         sid=sid,
-                        error_message="Failed to fetch training context after generation",
+                        error_message="Missing simulation scope for selected training bundle",
                         artifact_type="training",
                         group_id=data.get("group_id"),
                         resource_type="training",
@@ -124,14 +110,11 @@ async def handle_training_complete(data: dict[str, Any]) -> None:
                 )
                 return
 
-            # Resolve scenario_id from context if not provided
-            resolved_scenario_id = scenario_id or context_row.scenario_id
-
             # Step 2: Create attempt + chat entries
             prepare_params = PrepareTrainingStartSqlParams(
                 p_profile_id=profile_id,
-                p_simulation_id=simulation_id,
-                p_scenario_id=resolved_scenario_id,
+                p_training_bundle_entry_id=training_bundle_entry_id,
+                p_department_id=department_id,
             )
 
             prepare_row = cast(
@@ -144,7 +127,7 @@ async def handle_training_complete(data: dict[str, Any]) -> None:
             if not prepare_row or not prepare_row.attempt_id:
                 logger.error(
                     f"Training complete preparation failed - "
-                    f"profile_id={profile_id}, simulation_id={simulation_id}"
+                    f"profile_id={profile_id}, training_bundle_entry_id={training_bundle_entry_id}"
                 )
                 await emit_to_internal(
                     "generate_call_error",
@@ -161,7 +144,7 @@ async def handle_training_complete(data: dict[str, Any]) -> None:
 
             # Step 3: Build scenario data with fresh values from DB
             scenario_data = None
-            if resolved_scenario_id:
+            if context_row.scenario_id:
                 scenario_data = {
                     "problem_statement": context_row.problem_statement,
                     "objectives": context_row.objectives,
@@ -172,7 +155,7 @@ async def handle_training_complete(data: dict[str, Any]) -> None:
 
             # Step 4: Emit training_started event
             started_event = TrainingStartedEvent(
-                simulation_id=str(simulation_id),
+                simulation_id=str(context_row.simulation_id),
                 attempt_id=str(prepare_row.attempt_id),
                 chat_id=str(prepare_row.chat_id),
                 scenario_id=str(prepare_row.scenario_id)
@@ -194,7 +177,7 @@ async def handle_training_complete(data: dict[str, Any]) -> None:
 
             logger.info(
                 f"Training session started (after generation) - "
-                f"profile_id={profile_id}, simulation_id={simulation_id}, "
+                f"profile_id={profile_id}, simulation_id={context_row.simulation_id}, "
                 f"attempt_id={prepare_row.attempt_id}, chat_id={prepare_row.chat_id}"
             )
 

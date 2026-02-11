@@ -177,8 +177,10 @@ chat_data AS (
         TRUE as chat_exists,
         (EXISTS (SELECT 1 FROM simulation_completions_entry comp WHERE comp.chat_id = c.id AND comp.active = TRUE)) as chat_is_completed,
         c.attempt_id,
-        c.hints_enabled
+        COALESCE(t.hints_enabled, true) as hints_enabled
     FROM simulation_chats_entry c
+    LEFT JOIN simulation_attempts_entry a ON a.id = c.attempt_id
+    LEFT JOIN training_entry t ON t.id = a.training_id
     CROSS JOIN params p
     WHERE c.id = p.chat_id
     LIMIT 1

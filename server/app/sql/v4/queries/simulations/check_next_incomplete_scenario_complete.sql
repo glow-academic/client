@@ -44,7 +44,7 @@ all_attempt_simulations AS (
 ),
 -- Unified chat→scenario connections
 all_chat_scenarios AS (
-    SELECT chat_id, scenarios_id FROM simulation_chats_scenarios_connection
+    SELECT chat_id, scenario_id AS scenarios_id FROM mv_simulation_chats
 ),
 attempt_base AS (
     SELECT

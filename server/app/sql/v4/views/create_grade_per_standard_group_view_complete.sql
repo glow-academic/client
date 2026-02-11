@@ -9,9 +9,9 @@
 -- 4. Score percentage calculation (total_score / max_group_points * 100)
 --
 -- Uses the new entry→resource connection tables:
---   simulation_chats_entry, simulation_chats_entry (chats)
---   simulation_chats_scenarios_connection, simulation_chats_scenarios_connection (chat→scenario)
---   simulation_attempts_simulations_connection, simulation_attempts_simulations_connection (attempt→simulation)
+--   simulation_chats_entry (chats)
+--   mv_simulation_chats (chat→scenario projection)
+--   simulation_attempts_simulations_connection (attempt→simulation)
 
 DROP VIEW IF EXISTS view_grade_per_standard_group;
 
@@ -24,8 +24,8 @@ all_chats AS (
 ),
 -- Unified chat→scenario connections
 all_chat_scenarios AS (
-    SELECT chat_id, scenarios_id, created_at
-    FROM simulation_chats_scenarios_connection
+    SELECT chat_id, scenario_id AS scenarios_id, chat_created_at AS created_at
+    FROM mv_simulation_chats
 ),
 -- Unified attempts (general + practice)
 all_attempts AS (

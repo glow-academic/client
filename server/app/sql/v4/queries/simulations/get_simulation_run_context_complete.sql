@@ -87,8 +87,8 @@ all_attempts AS (
 ),
 -- Unified chat→scenario connections
 all_chat_scenarios AS (
-    SELECT chat_id, scenarios_id, created_at
-    FROM simulation_chats_scenarios_connection
+    SELECT chat_id, scenario_id AS scenarios_id, chat_created_at AS created_at
+    FROM mv_simulation_chats
 ),
 -- Unified attempt→simulation connections
 all_attempt_simulations AS (

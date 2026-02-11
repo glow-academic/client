@@ -215,6 +215,7 @@ class TrainingSimulationOperational(BaseModel):
     simulation_name: str | None = None
     simulation_description: str | None = None
     time_limit: int | None = None
+    training_bundle_entry_id: UUID | None = None
     scenario_ids: list[UUID] | None = None  # Ordered list of scenario IDs
     cohort_ids: list[UUID] | None = None  # Cohorts this simulation belongs to
     # Display metadata
@@ -252,6 +253,53 @@ class GetTrainingGetResponse(BaseModel):
     # Rubric data for pre-start display
     standard_groups: list[StandardGroupMapping] | None = None
     standards: list[StandardMapping] | None = None
+
+
+# =============================================================================
+# Websocket endpoint types (shared internal fetch)
+# =============================================================================
+
+
+class TrainingWebsocketViews(BaseModel):
+    """Thin websocket views payload."""
+
+    training_bundle_entry_id: UUID
+    department_id: UUID
+
+
+class TrainingWebsocketResources(BaseModel):
+    """Training resources for websocket handlers."""
+
+    simulation_id: UUID | None = None
+    scenario_id: UUID | None = None
+    problem_statement: str | None = None
+    objectives: dict | list | None = None
+    persona: dict | None = None
+    video_ids: list[UUID] | None = None
+    image_ids: list[UUID] | None = None
+    has_problem_statement: bool = False
+    has_persona: bool = False
+    agent_exists: bool = False
+    agent_name: str | None = None
+    agent_is_active: bool = False
+    model_id: UUID | None = None
+    model_name: str | None = None
+    provider_id: UUID | None = None
+    provider_name: str | None = None
+    has_api_key: bool = False
+    requests_per_day: int | None = None
+    runs_today: int = 0
+    simulation_exists: bool = False
+    simulation_is_active: bool = False
+    profile_has_access: bool = False
+    valid_entry_types: list[str] = Field(default_factory=list)
+
+
+class GetTrainingWebsocketResponse(BaseModel):
+    """Websocket-facing training response."""
+
+    views: TrainingWebsocketViews
+    resources: TrainingWebsocketResources
 
 
 # =============================================================================

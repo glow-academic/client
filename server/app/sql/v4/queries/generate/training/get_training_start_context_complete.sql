@@ -1,9 +1,6 @@
--- Get context data for training simulation generation validation
--- This SQL fetches RAW DATA only - no business logic
--- Python applies the validation rules in permissions.py
--- Extends home context with scenario content checks
+-- Get context data for training simulation generation validation.
+-- Derives simulation, scenario, and agent from training_bundle_entry + department scope.
 
--- 1) Drop function first
 DO $$
 DECLARE
     r RECORD;
@@ -18,45 +15,27 @@ BEGIN
     END LOOP;
 END $$;
 
--- 2) Create the function
 CREATE OR REPLACE FUNCTION socket_get_training_start_context_v4(
     p_profile_id uuid,
-    p_agent_id uuid,
-    p_simulation_id uuid,
-    p_scenario_id uuid DEFAULT NULL,
-    p_entry_types text[] DEFAULT NULL
+    p_training_bundle_entry_id uuid,
+    p_department_id uuid
 )
 RETURNS TABLE (
-    -- Agent context
     agent_exists boolean,
     agent_name text,
     agent_is_active boolean,
-
-    -- Model context
     model_id uuid,
     model_name text,
-
-    -- Provider context
     provider_id uuid,
     provider_name text,
-
-    -- API key context
     has_api_key boolean,
-
-    -- Rate limit context
     requests_per_day integer,
     runs_today bigint,
-
-    -- Simulation context
     simulation_exists boolean,
     simulation_is_active boolean,
     simulation_id uuid,
     simulation_name text,
-
-    -- Access context
     profile_has_access boolean,
-
-    -- Scenario context
     scenario_id uuid,
     has_problem_statement boolean,
     has_persona boolean,
@@ -65,8 +44,6 @@ RETURNS TABLE (
     persona jsonb,
     video_ids uuid[],
     image_ids uuid[],
-
-    -- Entry types
     valid_entry_types text[]
 )
 LANGUAGE sql
@@ -75,190 +52,229 @@ AS $$
 WITH params AS (
     SELECT
         p_profile_id AS profile_id,
-        p_agent_id AS agent_id,
-        p_simulation_id AS simulation_id,
-        p_scenario_id AS scenario_id,
-        p_entry_types AS entry_types
+        p_training_bundle_entry_id AS training_bundle_entry_id,
+        p_department_id AS department_id
 ),
--- Check if agent exists
+scope AS (
+    SELECT
+        tb.id AS training_bundle_entry_id,
+        tb.training_id,
+        tb.scenarios_id,
+        t.simulations_id,
+        t.cohorts_id,
+        t.active AS training_active,
+        sa.id AS simulation_artifact_id,
+        s.name AS simulation_name,
+        s.active AS simulation_resource_active,
+        sc.id AS scenario_artifact_id
+    FROM params p
+    JOIN training_bundle_entry tb
+      ON tb.id = p.training_bundle_entry_id
+     AND tb.active = true
+    JOIN training_entry t
+      ON t.id = tb.training_id
+     AND t.active = true
+    LEFT JOIN simulation_simulations_junction ssj
+      ON ssj.simulations_id = t.simulations_id
+     AND ssj.active = true
+    LEFT JOIN simulation_artifact sa
+      ON sa.id = ssj.simulation_id
+    LEFT JOIN simulations_resource s
+      ON s.id = t.simulations_id
+    LEFT JOIN scenario_scenarios_junction scj
+      ON scj.scenarios_id = tb.scenarios_id
+     AND scj.active = true
+    LEFT JOIN scenario_artifact sc
+      ON sc.id = scj.scenario_id
+    LIMIT 1
+),
+selected_agent AS (
+    SELECT a.id AS agent_id
+    FROM params p
+    JOIN agent_artifact a ON TRUE
+    WHERE EXISTS (
+        SELECT 1
+        FROM agent_flags_junction af
+        JOIN flags_resource f ON f.id = af.flag_id
+        WHERE af.agent_id = a.id
+          AND f.name = 'agent_active'
+          AND af.value = true
+    )
+      AND (
+        NOT EXISTS (
+            SELECT 1
+            FROM agent_departments_junction ad
+            WHERE ad.agent_id = a.id
+              AND ad.active = true
+        )
+        OR EXISTS (
+            SELECT 1
+            FROM agent_departments_junction ad
+            WHERE ad.agent_id = a.id
+              AND ad.department_id = p.department_id
+              AND ad.active = true
+        )
+      )
+    ORDER BY a.id
+    LIMIT 1
+),
 agent_data AS (
     SELECT
-        a.id as agent_id,
-        TRUE as agent_exists,
-        (SELECT n.name FROM agent_names_junction an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) as agent_name,
-        EXISTS (
-            SELECT 1 FROM agent_flags_junction af
-            JOIN flags_resource f ON af.flag_id = f.id
-            WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true
-        ) as agent_is_active
-    FROM agent_artifact a
-    CROSS JOIN params p
-    WHERE a.id = p.agent_id
-    LIMIT 1
+        sa.agent_id,
+        TRUE AS agent_exists,
+        (SELECT n.name
+         FROM agent_names_junction an
+         JOIN names_resource n ON n.id = an.name_id
+         WHERE an.agent_id = sa.agent_id
+         LIMIT 1) AS agent_name,
+        TRUE AS agent_is_active
+    FROM selected_agent sa
 ),
--- Get model via denormalized agents_resource.model_id
 model_data AS (
-    SELECT mr.id as model_id, mr.value as model_name, mr.provider_id as provider_id
-    FROM params p
-    JOIN agent_agents_junction aaj ON aaj.agent_id = p.agent_id
-    JOIN agents_resource ar ON ar.id = aaj.agents_id
-    JOIN models_resource mr ON mr.id = ar.model_id
+    SELECT
+        mr.id AS model_id,
+        mr.value AS model_name,
+        mr.provider_id
+    FROM selected_agent sa
+    JOIN agent_agents_junction aaj
+      ON aaj.agent_id = sa.agent_id
+     AND aaj.active = true
+    JOIN agents_resource ar
+      ON ar.id = aaj.agents_id
+    JOIN models_resource mr
+      ON mr.id = ar.model_id
     LIMIT 1
 ),
--- Get provider via models_resource.provider_id
 provider_data AS (
     SELECT
-        pr.id as providers_resource_id,
-        pr.key as provider_key,
-        (SELECT n.name FROM provider_providers_junction ppj JOIN provider_names_junction pn ON pn.provider_id = ppj.provider_id JOIN names_resource n ON pn.name_id = n.id WHERE ppj.providers_id = pr.id AND ppj.active = true LIMIT 1) as provider_name
+        pr.id AS providers_resource_id,
+        pr.key AS provider_key,
+        (SELECT n.name
+         FROM provider_providers_junction ppj
+         JOIN provider_names_junction pn ON pn.provider_id = ppj.provider_id
+         JOIN names_resource n ON n.id = pn.name_id
+         WHERE ppj.providers_id = pr.id
+           AND ppj.active = true
+         LIMIT 1) AS provider_name
     FROM model_data md
     JOIN providers_resource pr ON pr.id = md.provider_id
     LIMIT 1
 ),
--- Check if provider has API key (on providers_resource.key)
 api_key_check AS (
-    SELECT (pd.provider_key IS NOT NULL AND pd.provider_key != '') as has_api_key
+    SELECT (pd.provider_key IS NOT NULL AND pd.provider_key != '') AS has_api_key
     FROM provider_data pd
 ),
--- Get rate limit
 rate_limit_data AS (
     SELECT rl.requests_per_day
     FROM params p
     JOIN profile_artifact prof ON prof.id = p.profile_id
-    LEFT JOIN profile_request_limits_junction prl ON prl.profile_id = prof.id AND prl.active = true
-    LEFT JOIN request_limits_resource rl ON prl.request_limit_id = rl.id
+    LEFT JOIN profile_request_limits_junction prl
+      ON prl.profile_id = prof.id
+     AND prl.active = true
+    LEFT JOIN request_limits_resource rl
+      ON rl.id = prl.request_limit_id
 ),
--- Count runs today
 runs_today_data AS (
-    SELECT COUNT(*)::bigint as runs_today
+    SELECT COUNT(*)::bigint AS runs_today
     FROM params p
     JOIN profile_runs_junction prj ON prj.profile_id = p.profile_id
-    JOIN view_runs_entry mr ON mr.id = prj.run_id
-    WHERE mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
+    JOIN view_runs_entry vr ON vr.id = prj.run_id
+    WHERE vr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
 ),
--- Check simulation exists (resolve artifact ID to resource via junction)
 simulation_data AS (
     SELECT
-        p.simulation_id as simulation_id,
-        TRUE as simulation_exists,
-        s.name as simulation_name,
-        s.active as simulation_is_active
-    FROM params p
-    JOIN simulation_simulations_junction ssj ON ssj.simulation_id = p.simulation_id AND ssj.active = true
-    JOIN simulations_resource s ON s.id = ssj.simulations_id
-    LIMIT 1
+        s.simulation_artifact_id AS simulation_id,
+        (s.simulation_artifact_id IS NOT NULL) AS simulation_exists,
+        s.simulation_name,
+        COALESCE(s.training_active AND s.simulation_resource_active, false) AS simulation_is_active
+    FROM scope s
 ),
--- Check profile access to simulation via cohort
--- Note: cohorts_resource.simulation_ids contains simulations_resource IDs, so resolve artifact→resource first
 access_data AS (
     SELECT EXISTS (
         SELECT 1
         FROM params p
-        JOIN simulation_simulations_junction ssj ON ssj.simulation_id = p.simulation_id AND ssj.active = true
-        JOIN profile_cohorts_junction pc ON pc.profile_id = p.profile_id AND pc.active = true
-        JOIN cohort_cohorts_junction ccj ON ccj.cohort_id = pc.cohort_id AND ccj.active = true
-        JOIN cohorts_resource cr ON cr.id = ccj.cohorts_id
-        WHERE ssj.simulations_id = ANY(cr.simulation_ids)
-    ) as has_access
+        JOIN scope s ON TRUE
+        JOIN profile_cohorts_junction pcj
+          ON pcj.profile_id = p.profile_id
+         AND pcj.active = true
+        JOIN cohort_cohorts_junction ccj
+          ON ccj.cohort_id = pcj.cohort_id
+         AND ccj.active = true
+        WHERE ccj.cohorts_id = s.cohorts_id
+    ) AS has_access
 ),
--- Get scenario (use provided or first from simulation)
-scenario_data AS (
-    SELECT
-        COALESCE(p.scenario_id, (
-            SELECT sc.id
-            FROM simulation_scenarios_junction ss
-            JOIN scenario_artifact sc ON sc.id = ss.scenario_id
-            WHERE ss.simulation_id = p.simulation_id
-              AND ss.active = true
-            ORDER BY COALESCE(
-                (SELECT spr.value
-                 FROM simulation_scenario_positions_junction ssp
-                 JOIN scenario_positions_resource spr ON spr.id = ssp.scenario_position_id
-                 WHERE ssp.simulation_id = ss.simulation_id AND spr.scenario_id = ss.scenario_id
-                 LIMIT 1),
-                999999
-            ) ASC
-            LIMIT 1
-        )) as scenario_id
-    FROM params p
-),
--- Check scenario content
 scenario_content AS (
     SELECT
-        sd.scenario_id,
-        -- Check for problem statement
+        s.scenario_artifact_id AS scenario_id,
         EXISTS (
-            SELECT 1 FROM scenario_problem_statements_junction spj
+            SELECT 1
+            FROM scenario_problem_statements_junction spj
             JOIN problem_statements_resource psr ON psr.id = spj.problem_statement_id
-            WHERE spj.scenario_id = sd.scenario_id AND spj.active = true
-        ) as has_problem_statement,
-        -- Check for persona
+            WHERE spj.scenario_id = s.scenario_artifact_id
+              AND spj.active = true
+        ) AS has_problem_statement,
         EXISTS (
-            SELECT 1 FROM scenario_personas_junction spj
-            WHERE spj.scenario_id = sd.scenario_id AND spj.active = true
-        ) as has_persona,
-        -- Get problem statement text
-        (SELECT psr.problem_statement FROM scenario_problem_statements_junction spj
+            SELECT 1
+            FROM scenario_personas_junction spj
+            WHERE spj.scenario_id = s.scenario_artifact_id
+              AND spj.active = true
+        ) AS has_persona,
+        (SELECT psr.problem_statement
+         FROM scenario_problem_statements_junction spj
          JOIN problem_statements_resource psr ON psr.id = spj.problem_statement_id
-         WHERE spj.scenario_id = sd.scenario_id AND spj.active = true
-         LIMIT 1) as problem_statement,
-        -- Get objectives as jsonb
+         WHERE spj.scenario_id = s.scenario_artifact_id
+           AND spj.active = true
+         LIMIT 1) AS problem_statement,
         (SELECT jsonb_agg(jsonb_build_object('id', o.id, 'objective', o.objective))
          FROM scenario_objectives_junction soj
          JOIN objectives_resource o ON o.id = soj.objective_id
-         WHERE soj.scenario_id = sd.scenario_id AND soj.active = true) as objectives,
-        -- Get persona as jsonb
+         WHERE soj.scenario_id = s.scenario_artifact_id
+           AND soj.active = true) AS objectives,
         (SELECT jsonb_build_object(
             'id', pa.id,
-            'name', (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = pa.id LIMIT 1),
-            'description', (SELECT d.description FROM persona_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.persona_id = pa.id LIMIT 1)
-         )
+            'name', (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON n.id = pn.name_id WHERE pn.persona_id = pa.id LIMIT 1),
+            'description', (SELECT d.description FROM persona_descriptions_junction pd JOIN descriptions_resource d ON d.id = pd.description_id WHERE pd.persona_id = pa.id LIMIT 1)
+        )
          FROM scenario_personas_junction spj
          JOIN persona_artifact pa ON pa.id = spj.persona_id
-         WHERE spj.scenario_id = sd.scenario_id AND spj.active = true
-         LIMIT 1) as persona,
-        -- Get video IDs
+         WHERE spj.scenario_id = s.scenario_artifact_id
+           AND spj.active = true
+         LIMIT 1) AS persona,
         (SELECT ARRAY_AGG(svj.video_id)
          FROM scenario_videos_junction svj
-         WHERE svj.scenario_id = sd.scenario_id AND svj.active = true) as video_ids,
-        -- Get image IDs
+         WHERE svj.scenario_id = s.scenario_artifact_id
+           AND svj.active = true) AS video_ids,
         (SELECT ARRAY_AGG(sij.image_id)
          FROM scenario_images_junction sij
-         WHERE sij.scenario_id = sd.scenario_id AND sij.active = true) as image_ids
-    FROM scenario_data sd
-),
--- Get valid entry types
-valid_entries AS (
-    SELECT ARRAY_AGG(br.entry::text) as valid_types
-    FROM params p
-    JOIN bindings_resource br ON (p.entry_types IS NULL OR br.entry::text = ANY(p.entry_types))
-    WHERE br.active = true 
+         WHERE sij.scenario_id = s.scenario_artifact_id
+           AND sij.active = true) AS image_ids
+    FROM scope s
 )
 SELECT
-    COALESCE(ad.agent_exists, FALSE) as agent_exists,
+    COALESCE(ad.agent_exists, FALSE) AS agent_exists,
     ad.agent_name,
-    COALESCE(ad.agent_is_active, FALSE) as agent_is_active,
+    COALESCE(ad.agent_is_active, FALSE) AS agent_is_active,
     md.model_id,
     md.model_name,
-    pd.providers_resource_id as provider_id,
+    pd.providers_resource_id AS provider_id,
     pd.provider_name,
-    COALESCE(akc.has_api_key, FALSE) as has_api_key,
+    COALESCE(akc.has_api_key, FALSE) AS has_api_key,
     rld.requests_per_day,
-    COALESCE(rtd.runs_today, 0) as runs_today,
-    COALESCE(sd.simulation_exists, FALSE) as simulation_exists,
-    COALESCE(sd.simulation_is_active, FALSE) as simulation_is_active,
+    COALESCE(rtd.runs_today, 0) AS runs_today,
+    COALESCE(sd.simulation_exists, FALSE) AS simulation_exists,
+    COALESCE(sd.simulation_is_active, FALSE) AS simulation_is_active,
     sd.simulation_id,
     sd.simulation_name,
-    COALESCE(acd.has_access, FALSE) as profile_has_access,
+    COALESCE(acd.has_access, FALSE) AS profile_has_access,
     sc.scenario_id,
-    COALESCE(sc.has_problem_statement, FALSE) as has_problem_statement,
-    COALESCE(sc.has_persona, FALSE) as has_persona,
+    COALESCE(sc.has_problem_statement, FALSE) AS has_problem_statement,
+    COALESCE(sc.has_persona, FALSE) AS has_persona,
     sc.problem_statement,
     sc.objectives,
     sc.persona,
     sc.video_ids,
     sc.image_ids,
-    ve.valid_types as valid_entry_types
+    ARRAY['contents', 'hints', 'grades', 'feedbacks']::text[] AS valid_entry_types
 FROM params p
 LEFT JOIN agent_data ad ON TRUE
 LEFT JOIN model_data md ON TRUE
@@ -268,6 +284,5 @@ LEFT JOIN rate_limit_data rld ON TRUE
 LEFT JOIN runs_today_data rtd ON TRUE
 LEFT JOIN simulation_data sd ON TRUE
 LEFT JOIN access_data acd ON TRUE
-LEFT JOIN scenario_content sc ON TRUE
-LEFT JOIN valid_entries ve ON TRUE
+LEFT JOIN scenario_content sc ON TRUE;
 $$;

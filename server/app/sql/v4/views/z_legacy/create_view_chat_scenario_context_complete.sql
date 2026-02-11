@@ -7,8 +7,8 @@ SELECT
     c.created_at AS chat_created_at,
     c.updated_at AS chat_updated_at,
     ae.attempt_type AS chat_type,
-    scc.scenarios_id AS scenario_id,
-    scc.scenarios_id,
+    msc.scenario_id AS scenario_id,
+    msc.scenario_id AS scenarios_id,
     COALESCE(ssf.value, FALSE) AS scenario_active,
     sd.department_id AS scenario_department_id,
     COALESCE(sn.name, '') AS scenario_name,
@@ -30,17 +30,17 @@ SELECT
     COALESCE(sn.name, '') AS chat_title
 FROM simulation_chats_entry c
 JOIN attempts_entry ae ON ae.id = c.attempt_id
-LEFT JOIN simulation_chats_scenarios_connection scc ON scc.chat_id = c.id
-LEFT JOIN scenario_names_junction snj ON snj.scenario_id = scc.scenarios_id
+LEFT JOIN mv_simulation_chats msc ON msc.chat_id = c.id
+LEFT JOIN scenario_names_junction snj ON snj.scenario_id = msc.scenario_id
 LEFT JOIN names_resource sn ON sn.id = snj.name_id
 LEFT JOIN scenario_departments_junction sd
-       ON sd.scenario_id = scc.scenarios_id
+       ON sd.scenario_id = msc.scenario_id
       AND sd.active = TRUE
 LEFT JOIN scenario_problem_statements_junction sps
-       ON sps.scenario_id = scc.scenarios_id
+       ON sps.scenario_id = msc.scenario_id
       AND sps.active = TRUE
 LEFT JOIN problem_statements_resource ps ON ps.id = sps.problem_statement_id
-LEFT JOIN scenario_personas_junction spj ON spj.scenario_id = scc.scenarios_id
+LEFT JOIN scenario_personas_junction spj ON spj.scenario_id = msc.scenario_id
 LEFT JOIN persona_names_junction pnj ON pnj.persona_id = spj.persona_id
 LEFT JOIN names_resource pn ON pn.id = pnj.name_id
 LEFT JOIN persona_icons_junction pij ON pij.persona_id = spj.persona_id
@@ -51,7 +51,7 @@ LEFT JOIN LATERAL (
     SELECT sfj2.value
     FROM scenario_flags_junction sfj2
     JOIN flags_resource sf2 ON sf2.id = sfj2.flag_id
-    WHERE sfj2.scenario_id = scc.scenarios_id
+    WHERE sfj2.scenario_id = msc.scenario_id
       AND sf2.name = 'scenario_active'
     LIMIT 1
 ) ssf ON TRUE

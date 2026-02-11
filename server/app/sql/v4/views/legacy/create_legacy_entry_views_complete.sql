@@ -87,7 +87,16 @@ SELECT * FROM simulation_attempts_entry;
 
 CREATE OR REPLACE VIEW view_simulation_chats_entry AS
 SELECT
-    c.*,
+    c.id,
+    c.attempt_id,
+    c.created_at,
+    c.updated_at,
+    c.title,
+    c.generated,
+    c.mcp,
+    c.active,
+    c.group_id,
+    c.training_bundle_department_id,
     (EXISTS (SELECT 1 FROM simulation_completions_entry comp WHERE comp.chat_id = c.id AND comp.active = TRUE)) AS completed
 FROM simulation_chats_entry c;
 

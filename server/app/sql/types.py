@@ -9059,9 +9059,6 @@ class GetTrainingSimulationsSqlParams(BaseModel):
 class QGetTrainingSimulationsV4Item(BaseModel):
 
     simulation_id: UUID | None
-    simulation_name: str | None
-    simulation_description: str | None
-    time_limit: int | None
     scenario_ids: list[UUID] | None
     cohort_ids: list[UUID] | None
     color: str | None
@@ -9069,40 +9066,17 @@ class QGetTrainingSimulationsV4Item(BaseModel):
     attempt_count: int | None
     highest_score_percent: float | None
     has_passed: bool | None
-    cohort_names: list[str] | None
     standard_group_ids: list[UUID] | None
     rubric_total_points: int | None
     rubric_pass_points: int | None
-
-
-
-
-class QGetTrainingSimulationsV4Standard(BaseModel):
-
-    standard_id: UUID | None
-    standard_group_id: UUID | None
-    name: str | None
-    description: str | None
-    points: int | None
-
-
-
-
-class QGetTrainingSimulationsV4StandardGroup(BaseModel):
-
-    standard_group_id: UUID | None
-    name: str | None
-    description: str | None
-    points: int | None
-    pass_points: int | None
 
 class GetTrainingSimulationsSqlRow(BaseModel):
 
     actor_name: str | None = None
     user_role: str | None = None
     items: list[QGetTrainingSimulationsV4Item] | None = None
-    standard_groups: list[QGetTrainingSimulationsV4StandardGroup] | None = None
-    standards: list[QGetTrainingSimulationsV4Standard] | None = None
+    standard_group_ids: list[UUID] | None = None
+    standard_ids: list[UUID] | None = None
 
 class GetTrainingSimulationsApiRequest(BaseModel):
 
@@ -9114,8 +9088,8 @@ class GetTrainingSimulationsApiResponse(BaseModel):
     actor_name: str | None = None
     user_role: str | None = None
     items: list[QGetTrainingSimulationsV4Item] | None = None
-    standard_groups: list[QGetTrainingSimulationsV4StandardGroup] | None = None
-    standards: list[QGetTrainingSimulationsV4Standard] | None = None
+    standard_group_ids: list[UUID] | None = None
+    standard_ids: list[UUID] | None = None
 
 
 
@@ -9124,18 +9098,14 @@ class GetTrainingSimulationsApiResponse(BaseModel):
 class GetTrainingStartContextSqlParams(BaseModel):
 
     p_profile_id: UUID
-    p_agent_id: UUID
-    p_simulation_id: UUID
-    p_scenario_id: UUID | None = None
-    p_entry_types: list[str] | None = None
+    p_training_bundle_entry_id: UUID
+    p_department_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.p_profile_id,
-            self.p_agent_id,
-            self.p_simulation_id,
-            self.p_scenario_id,
-            self.p_entry_types,
+            self.p_training_bundle_entry_id,
+            self.p_department_id,
         )
 
 class GetTrainingStartContextSqlRow(BaseModel):
@@ -9168,10 +9138,8 @@ class GetTrainingStartContextSqlRow(BaseModel):
 class GetTrainingStartContextApiRequest(BaseModel):
 
     p_profile_id: UUID
-    p_agent_id: UUID
-    p_simulation_id: UUID
-    p_scenario_id: UUID | None = None
-    p_entry_types: list[str] | None = None
+    p_training_bundle_entry_id: UUID
+    p_department_id: UUID
 
 class GetTrainingStartContextApiResponse(BaseModel):
 
@@ -9207,17 +9175,15 @@ class GetTrainingStartContextApiResponse(BaseModel):
 class PrepareTrainingGenerationSqlParams(BaseModel):
 
     p_profile_id: UUID
-    p_agent_id: UUID
-    p_simulation_id: UUID
-    p_scenario_id: UUID | None = None
+    p_training_bundle_entry_id: UUID
+    p_department_id: UUID
     p_resource_types: list[str] | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.p_profile_id,
-            self.p_agent_id,
-            self.p_simulation_id,
-            self.p_scenario_id,
+            self.p_training_bundle_entry_id,
+            self.p_department_id,
             self.p_resource_types,
         )
 
@@ -9242,9 +9208,8 @@ class PrepareTrainingGenerationSqlRow(BaseModel):
 class PrepareTrainingGenerationApiRequest(BaseModel):
 
     p_profile_id: UUID
-    p_agent_id: UUID
-    p_simulation_id: UUID
-    p_scenario_id: UUID | None = None
+    p_training_bundle_entry_id: UUID
+    p_department_id: UUID
     p_resource_types: list[str] | None = None
 
 class PrepareTrainingGenerationApiResponse(BaseModel):
@@ -9272,18 +9237,16 @@ class PrepareTrainingGenerationApiResponse(BaseModel):
 class PrepareTrainingStartSqlParams(BaseModel):
 
     p_profile_id: UUID
-    p_simulation_id: UUID
-    p_scenario_id: UUID | None = None
-    p_entry_types: list[str] | None = None
-    p_entry_agent_ids: list[UUID] | None = None
+    p_training_bundle_entry_id: UUID
+    p_department_id: UUID
+    p_infinite_mode: bool | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.p_profile_id,
-            self.p_simulation_id,
-            self.p_scenario_id,
-            self.p_entry_types,
-            self.p_entry_agent_ids,
+            self.p_training_bundle_entry_id,
+            self.p_department_id,
+            self.p_infinite_mode,
         )
 
 class PrepareTrainingStartSqlRow(BaseModel):
@@ -9295,10 +9258,9 @@ class PrepareTrainingStartSqlRow(BaseModel):
 class PrepareTrainingStartApiRequest(BaseModel):
 
     p_profile_id: UUID
-    p_simulation_id: UUID
-    p_scenario_id: UUID | None = None
-    p_entry_types: list[str] | None = None
-    p_entry_agent_ids: list[UUID] | None = None
+    p_training_bundle_entry_id: UUID
+    p_department_id: UUID
+    p_infinite_mode: bool | None = None
 
 class PrepareTrainingStartApiResponse(BaseModel):
 
@@ -28143,6 +28105,57 @@ class GetSimulationOverviewViewApiResponse(BaseModel):
 
 
 
+# Generated from: get_training_context_view
+
+class GetTrainingContextViewSqlParams(BaseModel):
+
+    profile_id_filter: UUID
+    practice_filter: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id_filter,
+            self.practice_filter,
+        )
+
+class QGetTrainingContextViewV4Item(BaseModel):
+
+    simulation_id: UUID | None
+    training_bundle_entry_id: UUID | None
+    scenario_ids: list[UUID] | None
+    cohort_ids: list[UUID] | None
+    color: str | None
+    icon: str | None
+    attempt_count: int | None
+    highest_score_percent: float | None
+    has_passed: bool | None
+    standard_group_ids: list[UUID] | None
+    rubric_total_points: int | None
+    rubric_pass_points: int | None
+
+class GetTrainingContextViewSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    user_role: str | None = None
+    items: list[QGetTrainingContextViewV4Item] | None = None
+    standard_group_ids: list[UUID] | None = None
+    standard_ids: list[UUID] | None = None
+
+class GetTrainingContextViewApiRequest(BaseModel):
+
+    profile_id_filter: UUID
+    practice_filter: bool | None = False
+
+class GetTrainingContextViewApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    user_role: str | None = None
+    items: list[QGetTrainingContextViewV4Item] | None = None
+    standard_group_ids: list[UUID] | None = None
+    standard_ids: list[UUID] | None = None
+
+
+
 
 # ============================================================================
 # REGISTRY
@@ -31557,6 +31570,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetSimulationOverviewViewApiRequest",
         "GetSimulationOverviewViewApiResponse",
     ),
+    "app/sql/v4/queries/views/training/context/get_training_context_view_complete.sql": (
+        "GetTrainingContextViewSqlParams",
+        "GetTrainingContextViewSqlRow",
+        "GetTrainingContextViewApiRequest",
+        "GetTrainingContextViewApiResponse",
+    ),
 }
 
 
@@ -34457,6 +34476,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/views/simulation/overview/get_simulation_overview_view_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/views/training/context/get_training_context_view_complete.sql"]
     ) -> SqlString: ...
 
     @overload

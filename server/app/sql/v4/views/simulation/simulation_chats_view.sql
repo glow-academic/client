@@ -1,18 +1,6 @@
 -- Materialized View: mv_simulation_chats
 -- Chat-level data for simulation attempt detail views.
---
--- Grain: One row per chat
--- Filter: archived = FALSE only (practice is a column, not a filter)
---
--- Purpose: Provides chat-level data with grade info and feedbacks for parallel fetching
--- Section: SIMULATION (unified view - both home and practice)
---
--- Dependencies: Only uses _entry and _connection tables
--- ============================================================================
--- Step 0: Drop and recreate composite types
--- ============================================================================
 
--- Create feedback type if it doesn't exist
 DO $$
 BEGIN
     CREATE TYPE types.mv_feedback AS (
@@ -25,7 +13,6 @@ EXCEPTION WHEN duplicate_object THEN
     NULL;
 END $$;
 
--- Create response type for raw quiz responses (no response_id - not a resource)
 DO $$
 BEGIN
     CREATE TYPE types.mv_response AS (
@@ -38,7 +25,6 @@ EXCEPTION WHEN duplicate_object THEN
     NULL;
 END $$;
 
--- Create analysis type for chat-level analysis content
 DO $$
 BEGIN
     CREATE TYPE types.mv_analysis AS (
@@ -47,10 +33,6 @@ BEGIN
 EXCEPTION WHEN duplicate_object THEN
     NULL;
 END $$;
-
--- ============================================================================
--- Step 1: Drop all indexes on mv_simulation_chats materialized view (if it exists)
--- ============================================================================
 
 DO $$
 DECLARE
@@ -66,19 +48,10 @@ BEGIN
     END LOOP;
 END $$;
 
--- ============================================================================
--- Step 2: Drop mv_simulation_chats materialized view if it exists
--- ============================================================================
-
 DROP MATERIALIZED VIEW IF EXISTS mv_simulation_chats CASCADE;
-
--- ============================================================================
--- Step 3: Create mv_simulation_chats Materialized View
--- ============================================================================
 
 CREATE MATERIALIZED VIEW mv_simulation_chats AS
 WITH
--- Latest grade per chat (most recent grade)
 latest_grade AS (
     SELECT DISTINCT ON (g.chat_id)
         g.id AS grade_id,
@@ -90,7 +63,6 @@ latest_grade AS (
     WHERE g.active = TRUE
     ORDER BY g.chat_id, g.created_at DESC
 ),
--- Feedbacks aggregated per grade
 feedbacks_agg AS (
     SELECT
         fe.grade_id,
@@ -103,7 +75,6 @@ feedbacks_agg AS (
     WHERE fe.active = TRUE
     GROUP BY fe.grade_id
 ),
--- Analyses aggregated per grade (chat-level analysis content)
 analyses_agg AS (
     SELECT
         ae.grade_id,
@@ -114,97 +85,62 @@ analyses_agg AS (
     FROM simulation_analyses_entry ae
     GROUP BY ae.grade_id
 ),
--- Base chat data (position/is_current/practice derived from attempt in service layer)
-base_chats AS (
+subbundle_snapshot AS (
     SELECT
-        c.id AS chat_id,
-        c.attempt_id,
-        c.created_at AS chat_created_at,
-        (EXISTS (SELECT 1 FROM simulation_completions_entry comp WHERE comp.chat_id = c.id AND comp.active = TRUE)) AS chat_completed,
-        csc.scenarios_id AS scenario_id,
-        grc.rubrics_id AS rubric_id,
-        -- Chat-level flags (directly on simulation_chats_entry)
-        c.copy_paste_allowed,
-        c.text_enabled,
-        c.audio_enabled,
-        c.hints_enabled,
-        c.show_images,
-        c.show_objectives,
-        c.show_problem_statement,
-        -- Time limit (denormalized from scenario_time_limits)
-        c.time_limit_seconds,
-        -- Negative time flag (allows timer to go negative)
-        c.negative,
-        lg.grade_id
-    FROM simulation_chats_entry c
-    JOIN simulation_attempts_entry a ON a.id = c.attempt_id
-    JOIN simulation_chats_scenarios_connection csc ON csc.chat_id = c.id
-    LEFT JOIN latest_grade lg ON lg.chat_id = c.id
-    LEFT JOIN simulation_grades_rubrics_connection grc ON grc.grade_id = lg.grade_id
-    WHERE c.active = TRUE
-      AND a.active = TRUE
-      AND COALESCE(a.archived, FALSE) = FALSE
+        tbd.id AS training_bundle_department_id,
+        te.copy_paste_allowed,
+        te.text_enabled,
+        te.audio_enabled,
+        te.hints_enabled,
+        te.show_images,
+        te.show_objectives,
+        te.show_problem_statement,
+        COALESCE(MAX(stlr.time_limit_seconds), 0)::int AS time_limit_seconds,
+        COALESCE(BOOL_OR(stlr.negative), false) AS negative,
+        -- singular picks (first by created_at)
+        (ARRAY_AGG(tsc.scenarios_id ORDER BY tsc.created_at) FILTER (WHERE tsc.scenarios_id IS NOT NULL))[1] AS scenario_id,
+        (ARRAY_AGG(trc.rubrics_id ORDER BY trc.created_at) FILTER (WHERE trc.rubrics_id IS NOT NULL))[1] AS rubric_id,
+        (ARRAY_AGG(tpsc.problem_statements_id ORDER BY tpsc.created_at) FILTER (WHERE tpsc.problem_statements_id IS NOT NULL))[1] AS problem_statement_id,
+        -- plural sets
+        COALESCE(ARRAY_AGG(DISTINCT tpc.personas_id ORDER BY tpc.personas_id) FILTER (WHERE tpc.personas_id IS NOT NULL), ARRAY[]::uuid[]) AS persona_ids,
+        COALESCE(ARRAY_AGG(DISTINCT toc.objectives_id ORDER BY toc.objectives_id) FILTER (WHERE toc.objectives_id IS NOT NULL), ARRAY[]::uuid[]) AS objective_ids,
+        COALESCE(ARRAY_AGG(DISTINCT tqc.questions_id ORDER BY tqc.questions_id) FILTER (WHERE tqc.questions_id IS NOT NULL), ARRAY[]::uuid[]) AS question_ids,
+        COALESCE(ARRAY_AGG(DISTINCT topt.options_id ORDER BY topt.options_id) FILTER (WHERE topt.options_id IS NOT NULL), ARRAY[]::uuid[]) AS option_ids,
+        COALESCE(ARRAY_AGG(DISTINCT ttc.templates_id ORDER BY ttc.templates_id) FILTER (WHERE ttc.templates_id IS NOT NULL), ARRAY[]::uuid[]) AS template_ids,
+        COALESCE(ARRAY_AGG(DISTINCT tic.images_id ORDER BY tic.images_id) FILTER (WHERE tic.images_id IS NOT NULL), ARRAY[]::uuid[]) AS image_ids,
+        COALESCE(ARRAY_AGG(DISTINCT tvc.videos_id ORDER BY tvc.videos_id) FILTER (WHERE tvc.videos_id IS NOT NULL), ARRAY[]::uuid[]) AS video_ids,
+        COALESCE(ARRAY_AGG(DISTINCT tdc.documents_id ORDER BY tdc.documents_id) FILTER (WHERE tdc.documents_id IS NOT NULL), ARRAY[]::uuid[]) AS document_ids,
+        COALESCE(ARRAY_AGG(DISTINCT tsgc.standard_groups_id ORDER BY tsgc.standard_groups_id) FILTER (WHERE tsgc.standard_groups_id IS NOT NULL), ARRAY[]::uuid[]) AS standard_group_ids,
+        COALESCE(ARRAY_AGG(DISTINCT tsc2.standards_id ORDER BY tsc2.standards_id) FILTER (WHERE tsc2.standards_id IS NOT NULL), ARRAY[]::uuid[]) AS standard_ids
+    FROM training_bundle_departments_entry tbd
+    JOIN training_bundle_entry tb ON tb.id = tbd.training_bundle_id
+    JOIN training_entry te ON te.id = tb.training_id
+    LEFT JOIN training_bundle_departments_time_limits_connection tdtl ON tdtl.training_bundle_department_id = tbd.id AND tdtl.active = true
+    LEFT JOIN scenario_time_limits_resource stlr ON stlr.id = tdtl.scenario_time_limits_id AND stlr.active = true
+    LEFT JOIN training_bundle_departments_scenarios_connection tsc ON tsc.training_bundle_department_id = tbd.id AND tsc.active = true
+    LEFT JOIN training_bundle_departments_rubrics_connection trc ON trc.training_bundle_department_id = tbd.id AND trc.active = true
+    LEFT JOIN training_bundle_departments_problem_statements_connection tpsc ON tpsc.training_bundle_department_id = tbd.id AND tpsc.active = true
+    LEFT JOIN training_bundle_departments_personas_connection tpc ON tpc.training_bundle_department_id = tbd.id AND tpc.active = true
+    LEFT JOIN training_bundle_departments_objectives_connection toc ON toc.training_bundle_department_id = tbd.id AND toc.active = true
+    LEFT JOIN training_bundle_departments_questions_connection tqc ON tqc.training_bundle_department_id = tbd.id AND tqc.active = true
+    LEFT JOIN training_bundle_departments_options_connection topt ON topt.training_bundle_department_id = tbd.id AND topt.active = true
+    LEFT JOIN training_bundle_departments_templates_connection ttc ON ttc.training_bundle_department_id = tbd.id AND ttc.active = true
+    LEFT JOIN training_bundle_departments_images_connection tic ON tic.training_bundle_department_id = tbd.id AND tic.active = true
+    LEFT JOIN training_bundle_departments_videos_connection tvc ON tvc.training_bundle_department_id = tbd.id AND tvc.active = true
+    LEFT JOIN training_bundle_departments_documents_connection tdc ON tdc.training_bundle_department_id = tbd.id AND tdc.active = true
+    LEFT JOIN training_bundle_departments_standard_groups_connection tsgc ON tsgc.training_bundle_department_id = tbd.id AND tsgc.active = true
+    LEFT JOIN training_bundle_departments_standards_connection tsc2 ON tsc2.training_bundle_department_id = tbd.id AND tsc2.active = true
+    WHERE tbd.active = true
+    GROUP BY
+        tbd.id,
+        te.copy_paste_allowed,
+        te.text_enabled,
+        te.audio_enabled,
+        te.hints_enabled,
+        te.show_images,
+        te.show_objectives,
+        te.show_problem_statement
 ),
--- Aggregate persona IDs per chat (plural array)
-personas_agg AS (
-    SELECT
-        chp.chat_id,
-        ARRAY_AGG(chp.personas_id ORDER BY chp.created_at)
-            FILTER (WHERE chp.personas_id IS NOT NULL) AS persona_ids
-    FROM simulation_chats_personas_connection chp
-    WHERE chp.active = TRUE
-    GROUP BY chp.chat_id
-),
--- Get problem statement ID per chat (singular - first active)
-problem_statements_agg AS (
-    SELECT DISTINCT ON (chps.chat_id)
-        chps.chat_id,
-        chps.problem_statements_id AS problem_statement_id
-    FROM simulation_chats_problem_statements_connection chps
-    WHERE chps.active = TRUE
-    ORDER BY chps.chat_id, chps.created_at
-),
--- Aggregate objective IDs per chat
-objectives_agg AS (
-    SELECT
-        cho.chat_id,
-        ARRAY_AGG(cho.objectives_id ORDER BY cho.created_at)
-            FILTER (WHERE cho.objectives_id IS NOT NULL) AS objective_ids
-    FROM simulation_chats_objectives_connection cho
-    WHERE cho.active = TRUE
-    GROUP BY cho.chat_id
-),
--- Aggregate question IDs per chat
-questions_agg AS (
-    SELECT
-        chq.chat_id,
-        ARRAY_AGG(chq.questions_id ORDER BY chq.created_at)
-            FILTER (WHERE chq.questions_id IS NOT NULL) AS question_ids
-    FROM simulation_chats_questions_connection chq
-    WHERE chq.active = TRUE
-    GROUP BY chq.chat_id
-),
--- Aggregate option IDs per chat
-options_agg AS (
-    SELECT
-        cho.chat_id,
-        ARRAY_AGG(cho.options_id ORDER BY cho.created_at)
-            FILTER (WHERE cho.options_id IS NOT NULL) AS option_ids
-    FROM simulation_chats_options_connection cho
-    WHERE cho.active = TRUE
-    GROUP BY cho.chat_id
-),
--- Aggregate template IDs per chat
-templates_agg AS (
-    SELECT
-        cht.chat_id,
-        ARRAY_AGG(cht.templates_id ORDER BY cht.created_at)
-            FILTER (WHERE cht.templates_id IS NOT NULL) AS template_ids
-    FROM simulation_chats_templates_connection cht
-    WHERE cht.active = TRUE
-    GROUP BY cht.chat_id
-),
--- Aggregate responses per chat (composite type with question and option - no response_id)
 responses_agg AS (
     SELECT
         r.chat_id,
@@ -223,68 +159,57 @@ responses_agg AS (
     WHERE r.active = TRUE
     GROUP BY r.chat_id
 ),
--- Aggregate image IDs per chat (simple UUID array)
-images_agg AS (
-    SELECT
-        chi.chat_id,
-        ARRAY_AGG(chi.images_id ORDER BY chi.created_at)
-            FILTER (WHERE chi.images_id IS NOT NULL) AS image_ids
-    FROM simulation_chats_images_connection chi
-    WHERE chi.active = TRUE
-    GROUP BY chi.chat_id
+legacy_rubric AS (
+    SELECT DISTINCT ON (grc.grade_id)
+        lg.chat_id,
+        grc.rubrics_id AS rubric_id
+    FROM latest_grade lg
+    JOIN simulation_grades_rubrics_connection grc ON grc.grade_id = lg.grade_id
+    ORDER BY grc.grade_id
 ),
--- Aggregate video IDs per chat (simple UUID array)
-videos_agg AS (
+base_chats AS (
     SELECT
-        chv.chat_id,
-        ARRAY_AGG(chv.videos_id ORDER BY chv.created_at)
-            FILTER (WHERE chv.videos_id IS NOT NULL) AS video_ids
-    FROM simulation_chats_videos_connection chv
-    WHERE chv.active = TRUE
-    GROUP BY chv.chat_id
-),
--- Aggregate document IDs per chat (simple UUID array)
-documents_agg AS (
-    SELECT
-        chd.chat_id,
-        ARRAY_AGG(chd.documents_id ORDER BY chd.created_at)
-            FILTER (WHERE chd.documents_id IS NOT NULL) AS document_ids
-    FROM simulation_chats_documents_connection chd
-    WHERE chd.active = TRUE
-    GROUP BY chd.chat_id
-),
--- Aggregate standard_group IDs per chat (from connection table)
-standard_groups_agg AS (
-    SELECT
-        scsg.chat_id,
-        ARRAY_AGG(scsg.standard_groups_id ORDER BY scsg.created_at)
-            FILTER (WHERE scsg.standard_groups_id IS NOT NULL) AS standard_group_ids
-    FROM simulation_chats_standard_groups_connection scsg
-    WHERE scsg.active = TRUE
-    GROUP BY scsg.chat_id
-),
--- Aggregate standard IDs per chat (from connection table)
-standards_agg AS (
-    SELECT
-        scs.chat_id,
-        ARRAY_AGG(scs.standards_id ORDER BY scs.created_at)
-            FILTER (WHERE scs.standards_id IS NOT NULL) AS standard_ids
-    FROM simulation_chats_standards_connection scs
-    WHERE scs.active = TRUE
-    GROUP BY scs.chat_id
+        c.id AS chat_id,
+        c.attempt_id,
+        c.created_at AS chat_created_at,
+        (EXISTS (SELECT 1 FROM simulation_completions_entry comp WHERE comp.chat_id = c.id AND comp.active = TRUE)) AS chat_completed,
+        sb.scenario_id AS scenario_id,
+        COALESCE(sb.rubric_id, lr.rubric_id) AS rubric_id,
+        COALESCE(sb.copy_paste_allowed, true) AS copy_paste_allowed,
+        COALESCE(sb.text_enabled, true) AS text_enabled,
+        COALESCE(sb.audio_enabled, true) AS audio_enabled,
+        COALESCE(sb.hints_enabled, true) AS hints_enabled,
+        COALESCE(sb.show_images, true) AS show_images,
+        COALESCE(sb.show_objectives, true) AS show_objectives,
+        COALESCE(sb.show_problem_statement, true) AS show_problem_statement,
+        COALESCE(sb.time_limit_seconds, 0) AS time_limit_seconds,
+        COALESCE(sb.negative, false) AS negative,
+        sb.problem_statement_id,
+        COALESCE(sb.persona_ids, ARRAY[]::uuid[]) AS persona_ids,
+        COALESCE(sb.objective_ids, ARRAY[]::uuid[]) AS objective_ids,
+        COALESCE(sb.question_ids, ARRAY[]::uuid[]) AS question_ids,
+        COALESCE(sb.option_ids, ARRAY[]::uuid[]) AS option_ids,
+        COALESCE(sb.template_ids, ARRAY[]::uuid[]) AS template_ids,
+        COALESCE(sb.image_ids, ARRAY[]::uuid[]) AS image_ids,
+        COALESCE(sb.video_ids, ARRAY[]::uuid[]) AS video_ids,
+        COALESCE(sb.document_ids, ARRAY[]::uuid[]) AS document_ids,
+        COALESCE(sb.standard_group_ids, ARRAY[]::uuid[]) AS standard_group_ids,
+        COALESCE(sb.standard_ids, ARRAY[]::uuid[]) AS standard_ids,
+        lg.grade_id
+    FROM simulation_chats_entry c
+    JOIN simulation_attempts_entry a ON a.id = c.attempt_id
+    LEFT JOIN subbundle_snapshot sb ON sb.training_bundle_department_id = c.training_bundle_department_id
+    LEFT JOIN latest_grade lg ON lg.chat_id = c.id
+    LEFT JOIN legacy_rubric lr ON lr.chat_id = c.id
+    WHERE c.active = TRUE
+      AND a.active = TRUE
+      AND COALESCE(a.archived, FALSE) = FALSE
 )
 SELECT
-    -- Primary key
     bc.chat_id,
-
-    -- Foreign keys for parallel lookup
     bc.attempt_id,
-
-    -- Resource IDs (from connections for _resource joins at runtime)
     bc.scenario_id,
     bc.rubric_id,
-
-    -- Chat-level flags (directly from simulation_chats_entry)
     bc.copy_paste_allowed,
     bc.text_enabled,
     bc.audio_enabled,
@@ -292,94 +217,47 @@ SELECT
     bc.show_images,
     bc.show_objectives,
     bc.show_problem_statement,
-
-    -- Time limit (denormalized)
     bc.time_limit_seconds,
-    -- Negative time flag (allows timer to go negative)
     bc.negative,
-
-    -- Chat data (position/is_current derived in service layer)
     bc.chat_created_at,
     bc.chat_completed,
-
-    -- Grade data (from latest grade, rubric points fetched via internal handler)
     lg.grade_score,
     lg.grade_passed,
     lg.grade_time_taken,
-
-    -- Feedbacks array (denormalized for grading state display)
     COALESCE(fa.feedbacks, ARRAY[]::types.mv_feedback[]) AS feedbacks,
-
-    -- Analyses array (chat-level analysis content)
     COALESCE(aa.analyses, ARRAY[]::types.mv_analysis[]) AS analyses,
-
-    -- Resource IDs - Normal/General View
-    psa.problem_statement_id,
-    COALESCE(pa.persona_ids, ARRAY[]::uuid[]) AS persona_ids,
-    COALESCE(oa.objective_ids, ARRAY[]::uuid[]) AS objective_ids,
-
-    -- Resource IDs - Video/Quiz View
-    COALESCE(qa.question_ids, ARRAY[]::uuid[]) AS question_ids,
-    COALESCE(opta.option_ids, ARRAY[]::uuid[]) AS option_ids,
+    bc.problem_statement_id,
+    bc.persona_ids,
+    bc.objective_ids,
+    bc.question_ids,
+    bc.option_ids,
     COALESCE(ra.responses, ARRAY[]::types.mv_response[]) AS responses,
-
-    -- Resource IDs - Both Views
-    COALESCE(ta.template_ids, ARRAY[]::uuid[]) AS template_ids,
-    COALESCE(ia.image_ids, ARRAY[]::uuid[]) AS image_ids,
-    COALESCE(va.video_ids, ARRAY[]::uuid[]) AS video_ids,
-    COALESCE(da.document_ids, ARRAY[]::uuid[]) AS document_ids,
-
-    -- Rubric/Grade resource IDs (from connection tables)
-    COALESCE(sga.standard_group_ids, ARRAY[]::uuid[]) AS standard_group_ids,
-    COALESCE(sa.standard_ids, ARRAY[]::uuid[]) AS standard_ids
-
+    bc.template_ids,
+    bc.image_ids,
+    bc.video_ids,
+    bc.document_ids,
+    bc.standard_group_ids,
+    bc.standard_ids
 FROM base_chats bc
 LEFT JOIN latest_grade lg ON lg.chat_id = bc.chat_id
 LEFT JOIN feedbacks_agg fa ON fa.grade_id = bc.grade_id
 LEFT JOIN analyses_agg aa ON aa.grade_id = bc.grade_id
-LEFT JOIN personas_agg pa ON pa.chat_id = bc.chat_id
-LEFT JOIN problem_statements_agg psa ON psa.chat_id = bc.chat_id
-LEFT JOIN objectives_agg oa ON oa.chat_id = bc.chat_id
-LEFT JOIN questions_agg qa ON qa.chat_id = bc.chat_id
-LEFT JOIN options_agg opta ON opta.chat_id = bc.chat_id
-LEFT JOIN templates_agg ta ON ta.chat_id = bc.chat_id
 LEFT JOIN responses_agg ra ON ra.chat_id = bc.chat_id
-LEFT JOIN images_agg ia ON ia.chat_id = bc.chat_id
-LEFT JOIN videos_agg va ON va.chat_id = bc.chat_id
-LEFT JOIN documents_agg da ON da.chat_id = bc.chat_id
-LEFT JOIN standard_groups_agg sga ON sga.chat_id = bc.chat_id
-LEFT JOIN standards_agg sa ON sa.chat_id = bc.chat_id
 WITH NO DATA;
-
--- ============================================================================
--- Step 4: Create Unique Index (Required for CONCURRENT refresh)
--- ============================================================================
 
 CREATE UNIQUE INDEX mv_simulation_chats_pk
     ON mv_simulation_chats (chat_id);
 
--- ============================================================================
--- Step 5: Create Filter/Slicing Indexes
--- ============================================================================
-
--- Attempt ID for parallel lookup (primary filter)
 CREATE INDEX mv_simulation_chats_attempt_id_idx
     ON mv_simulation_chats (attempt_id);
 
--- Scenario ID for filtering
 CREATE INDEX mv_simulation_chats_scenario_id_idx
     ON mv_simulation_chats (scenario_id);
 
--- Completed status
 CREATE INDEX mv_simulation_chats_completed_idx
     ON mv_simulation_chats (chat_completed);
 
--- Composite: attempt + created_at for ordering
 CREATE INDEX mv_simulation_chats_attempt_created_at_idx
     ON mv_simulation_chats (attempt_id, chat_created_at);
-
--- ============================================================================
--- Step 6: Refresh Materialized View with Data
--- ============================================================================
 
 REFRESH MATERIALIZED VIEW mv_simulation_chats;
