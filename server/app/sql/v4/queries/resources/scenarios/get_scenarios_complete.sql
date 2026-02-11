@@ -43,7 +43,9 @@ CREATE TYPE types.q_get_scenarios_v4_item AS (
     video_enabled boolean,
     images_enabled boolean,
     questions_enabled boolean,
-    templates_enabled boolean
+    templates_enabled boolean,
+    -- Denormalized persona_ids for list hydration
+    persona_ids uuid[]
 );
 
 CREATE OR REPLACE FUNCTION api_get_scenarios_v4(
@@ -70,7 +72,8 @@ scenario_data AS (
         s.video_enabled,
         s.images_enabled,
         s.questions_enabled,
-        s.templates_enabled
+        s.templates_enabled,
+        COALESCE(s.persona_ids, ARRAY[]::uuid[]) as persona_ids
     FROM params p
     CROSS JOIN LATERAL unnest(p.scenario_ids) AS sid
     JOIN scenarios_resource s ON s.id = sid
@@ -82,7 +85,7 @@ scenario_data AS (
 SELECT
     COALESCE(
         (SELECT ARRAY_AGG(
-            (sd.scenario_id, sd.name, sd.description, sd.generated, sd.problem_statement_enabled, sd.objectives_enabled, sd.video_enabled, sd.images_enabled, sd.questions_enabled, sd.templates_enabled)::types.q_get_scenarios_v4_item
+            (sd.scenario_id, sd.name, sd.description, sd.generated, sd.problem_statement_enabled, sd.objectives_enabled, sd.video_enabled, sd.images_enabled, sd.questions_enabled, sd.templates_enabled, sd.persona_ids)::types.q_get_scenarios_v4_item
             ORDER BY sd.name
         ) FROM scenario_data sd),
         '{}'::types.q_get_scenarios_v4_item[]

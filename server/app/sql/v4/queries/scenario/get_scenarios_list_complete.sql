@@ -54,44 +54,7 @@ CREATE TYPE types.q_list_scenarios_v4_scenario AS (
     updated_at timestamptz
 );
 
-CREATE TYPE types.q_list_scenarios_v4_objective AS (
-    objective_id text,
-    name text,
-    description text
-);
-
-CREATE TYPE types.q_list_scenarios_v4_field AS (
-    field_id text,
-    name text,
-    description text
-);
-
-CREATE TYPE types.q_list_scenarios_v4_cohort AS (
-    cohort_id text,
-    name text,
-    description text
-);
-
-CREATE TYPE types.q_list_scenarios_v4_persona AS (
-    persona_id text,
-    name text,
-    description text,
-    color text,
-    icon text
-);
-
-CREATE TYPE types.q_list_scenarios_v4_simulation AS (
-    simulation_id text,
-    name text,
-    description text,
-    department_ids text[]
-);
-
-CREATE TYPE types.q_list_scenarios_v4_department AS (
-    department_id text,
-    name text,
-    description text
-);
+-- Mapping types (objective/field/cohort/persona/simulation/department) removed — hydrated in Python
 
 CREATE TYPE types.q_list_scenarios_v4_option AS (
     value text,
@@ -116,12 +79,6 @@ RETURNS TABLE (
     actor_name text,
     user_role text,
     scenarios types.q_list_scenarios_v4_scenario[],
-    objectives types.q_list_scenarios_v4_objective[],
-    fields types.q_list_scenarios_v4_field[],
-    cohorts types.q_list_scenarios_v4_cohort[],
-    personas types.q_list_scenarios_v4_persona[],
-    simulations types.q_list_scenarios_v4_simulation[],
-    departments types.q_list_scenarios_v4_department[],
     persona_options types.q_list_scenarios_v4_option[],
     simulation_options types.q_list_scenarios_v4_option[],
     department_options types.q_list_scenarios_v4_option[],
@@ -306,19 +263,7 @@ page_scenarios AS (
     SELECT sd.* FROM scenario_data sd
     WHERE sd.parent_scenario_id IN (SELECT scenario_id FROM paginated_roots)
 ),
--- Distinct IDs for page-level hydration
-all_persona_ids AS (
-    SELECT DISTINCT unnest(persona_ids)::uuid as persona_id
-    FROM page_scenarios WHERE persona_ids IS NOT NULL
-),
-all_simulation_ids AS (
-    SELECT DISTINCT unnest(simulation_ids) as simulation_id
-    FROM page_scenarios
-),
-all_department_ids AS (
-    SELECT DISTINCT unnest(department_ids) as department_id
-    FROM page_scenarios WHERE department_ids IS NOT NULL
-),
+-- Page-level hydration CTEs removed — hydrated in Python via cached *_internal() functions
 -- Distinct IDs for filter dropdown options (from ALL visible roots, not just page)
 all_persona_ids_options AS (
     SELECT DISTINCT unnest(persona_ids)::uuid as persona_id
@@ -346,61 +291,7 @@ SELECT
         ),
         '{}'::types.q_list_scenarios_v4_scenario[]
     ) as scenarios,
-    -- Objectives hydration (from objectives_resource)
-    COALESCE(
-        (SELECT ARRAY_AGG((o.id::text, o.objective, COALESCE(o.objective, ''))::types.q_list_scenarios_v4_objective)
-         FROM objectives_resource o
-         WHERE o.id::text IN (SELECT DISTINCT unnest(sd2.objective_ids) FROM page_scenarios sd2)),
-        '{}'::types.q_list_scenarios_v4_objective[]
-    ) as objectives,
-    -- Fields hydration (from fields_resource directly — denormalized name/description)
-    COALESCE(
-        (SELECT ARRAY_AGG((fr.id::text, fr.name, COALESCE(fr.description, ''))::types.q_list_scenarios_v4_field)
-         FROM fields_resource fr
-         WHERE fr.id::text IN (SELECT DISTINCT unnest(sd2.field_ids) FROM page_scenarios sd2)),
-        '{}'::types.q_list_scenarios_v4_field[]
-    ) as fields,
-    -- Cohorts hydration (from cohorts_resource directly — denormalized name/description)
-    COALESCE(
-        (SELECT ARRAY_AGG((cr.id::text, cr.name, COALESCE(cr.description, ''))::types.q_list_scenarios_v4_cohort)
-         FROM cohorts_resource cr
-         WHERE cr.id::text IN (SELECT DISTINCT unnest(sd2.cohort_ids) FROM page_scenarios sd2 WHERE sd2.cohort_ids IS NOT NULL)),
-        '{}'::types.q_list_scenarios_v4_cohort[]
-    ) as cohorts,
-    -- Personas hydration (persona junctions for name/description/color/icon — hydration layer only)
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (pr.id::text,
-             (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = ppj.persona_id LIMIT 1),
-             COALESCE((SELECT d.description FROM persona_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.persona_id = ppj.persona_id LIMIT 1), ''),
-             (SELECT c.hex_code FROM persona_colors_junction pc JOIN colors_resource c ON pc.color_id = c.id WHERE pc.persona_id = ppj.persona_id LIMIT 1),
-             (SELECT i.name FROM persona_icons_junction pi JOIN icons_resource i ON pi.icon_id = i.id WHERE pi.persona_id = ppj.persona_id LIMIT 1)
-            )::types.q_list_scenarios_v4_persona
-         )
-         FROM personas_resource pr
-         JOIN persona_personas_junction ppj ON ppj.personas_id = pr.id
-         WHERE pr.id IN (SELECT persona_id FROM all_persona_ids)),
-        '{}'::types.q_list_scenarios_v4_persona[]
-    ) as personas,
-    -- Simulations hydration (from simulations_resource directly — denormalized name/description/department_ids)
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (sim_r.id::text, sim_r.name, COALESCE(sim_r.description, ''),
-             sim_r.department_ids::text[])::types.q_list_scenarios_v4_simulation
-         )
-         FROM simulations_resource sim_r
-         WHERE sim_r.id::text IN (SELECT simulation_id FROM all_simulation_ids)),
-        '{}'::types.q_list_scenarios_v4_simulation[]
-    ) as simulations,
-    -- Departments hydration (from departments_resource directly — denormalized name/description)
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (dr.id::text, dr.name, COALESCE(dr.description, ''))::types.q_list_scenarios_v4_department
-         )
-         FROM departments_resource dr
-         WHERE dr.id IN (SELECT department_id FROM user_departments)),
-        '{}'::types.q_list_scenarios_v4_department[]
-    ) as departments,
+    -- Mapping arrays (objectives/fields/cohorts/personas/simulations/departments) removed — hydrated in Python
     -- Persona filter options
     COALESCE(
         (SELECT ARRAY_AGG(

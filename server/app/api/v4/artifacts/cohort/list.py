@@ -1,18 +1,29 @@
-"""Cohort list endpoint - v4 API."""
+"""Cohort list endpoint - v4 API.
 
+Profile/simulation/department mapping hydrated in Python via cached *_internal() functions.
+"""
+
+import asyncio
 import uuid
 from typing import Annotated, Any
+from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.artifacts.cohort.types import (
     ListCohortApiCohort,
+    ListCohortApiDepartment,
+    ListCohortApiProfile,
     ListCohortApiResponse,
+    ListCohortApiSimulation,
 )
+from app.api.v4.resources.departments.get import get_departments_internal
+from app.api.v4.resources.profiles.get import get_profiles_internal
+from app.api.v4.resources.simulations.get import get_simulations_batch_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db
+from app.main import get_db, get_pool
 from app.sql.types import (
     GetCohortsListApiRequest,
     GetCohortsListSqlParams,
@@ -44,7 +55,7 @@ async def get_cohort_list(
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> ListCohortApiResponse:
     """Get cohorts list with permissions and relationships."""
-    tags = ["cohorts"]  # From router tags
+    tags = ["cohorts"]
 
     # Check for cache bypass header (for testing)
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
@@ -79,7 +90,7 @@ async def get_cohort_list(
         )
         sql_params = params.to_tuple()
 
-        # Execute SQL with typed helper - automatically detects and calls function if present
+        # Execute SQL with typed helper
         result = await execute_sql_typed(
             conn,
             SQL_PATH,
@@ -104,25 +115,102 @@ async def get_cohort_list(
             else:
                 api_cohorts.append(ListCohortApiCohort.model_validate(sql_cohort))
 
-        def _normalize_list(items: list[Any] | None) -> list[dict[str, Any]] | None:
-            if not items:
-                return []
-            normalized: list[dict[str, Any]] = []
-            for item in items:
-                if hasattr(item, "model_dump"):
-                    normalized.append(item.model_dump())
-                else:
-                    normalized.append(dict(item))
-            return normalized
+        # --- Python hydration: profiles, simulations, departments from cached *_internal() ---
+        # 1. Collect unique IDs from paginated cohorts
+        profile_id_set: set[UUID] = set()
+        simulation_id_set: set[UUID] = set()
+        department_id_set: set[UUID] = set()
+
+        for cohort in api_cohorts:
+            for pid in cohort.profile_ids or []:
+                try:
+                    profile_id_set.add(UUID(str(pid)))
+                except (ValueError, AttributeError):
+                    pass
+            for sid in cohort.simulation_ids or []:
+                try:
+                    simulation_id_set.add(UUID(str(sid)))
+                except (ValueError, AttributeError):
+                    pass
+            for did in cohort.department_ids or []:
+                try:
+                    department_id_set.add(UUID(str(did)))
+                except (ValueError, AttributeError):
+                    pass
+
+        # 2. Parallel fetch via asyncio.gather + pool connections
+        profiles_data = []
+        simulations_data = []
+        departments_data = []
+
+        pool = get_pool()
+        if pool and (profile_id_set or simulation_id_set or department_id_set):
+
+            async def fetch_profiles() -> list:
+                if not profile_id_set:
+                    return []
+                async with pool.acquire() as c:
+                    return await get_profiles_internal(
+                        c, list(profile_id_set), bypass_cache
+                    )
+
+            async def fetch_simulations() -> list:
+                if not simulation_id_set:
+                    return []
+                async with pool.acquire() as c:
+                    return await get_simulations_batch_internal(
+                        c, list(simulation_id_set), bypass_cache
+                    )
+
+            async def fetch_departments() -> list:
+                if not department_id_set:
+                    return []
+                async with pool.acquire() as c:
+                    return await get_departments_internal(
+                        c, list(department_id_set), bypass_cache
+                    )
+
+            profiles_data, simulations_data, departments_data = await asyncio.gather(
+                fetch_profiles(), fetch_simulations(), fetch_departments()
+            )
+
+        # 3. Assemble mapping arrays
+        api_profiles: list[ListCohortApiProfile] = [
+            ListCohortApiProfile(
+                profile_id=p.profile_id,
+                name=p.name,
+                description=getattr(p, "description", None) or "",
+            )
+            for p in profiles_data
+        ]
+
+        api_simulations: list[ListCohortApiSimulation] = [
+            ListCohortApiSimulation(
+                simulation_id=s.simulation_id,
+                name=getattr(s, "title", None) or getattr(s, "name", None),
+                description=s.description,
+                department_ids=getattr(s, "department_ids", None),
+            )
+            for s in simulations_data
+        ]
+
+        api_departments: list[ListCohortApiDepartment] = [
+            ListCohortApiDepartment(
+                department_id=d.department_id,
+                name=d.name,
+                description=d.description,
+            )
+            for d in departments_data
+        ]
 
         # Build API response
         api_response = ListCohortApiResponse(
             actor_name=actor_name,
             user_role=user_role,
             cohorts=api_cohorts,
-            profiles=_normalize_list(result.profiles),
-            simulations=_normalize_list(result.simulations),
-            departments=_normalize_list(result.departments),
+            profiles=api_profiles,
+            simulations=api_simulations,
+            departments=api_departments,
         )
 
         # Cache response (use mode='json' to serialize UUIDs and other types)

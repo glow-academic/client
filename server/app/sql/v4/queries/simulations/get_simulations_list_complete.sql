@@ -21,7 +21,6 @@ BEGIN
 END $$;
 
 -- 2) Drop types WITHOUT CASCADE — order matters due to inter-type dependencies
--- scenario depends on persona, document, field; drop scenario first, then leaf types
 DROP TYPE IF EXISTS types.q_list_simulations_v4_scenario;
 DROP TYPE IF EXISTS types.q_list_simulations_v4_persona;
 DROP TYPE IF EXISTS types.q_list_simulations_v4_document;
@@ -32,19 +31,7 @@ DROP TYPE IF EXISTS types.q_list_simulations_v4_department;
 DROP TYPE IF EXISTS types.q_list_simulations_v4_cohort;
 DROP TYPE IF EXISTS types.q_list_simulations_v4_option;
 
--- 3) Recreate types
-CREATE TYPE types.q_list_simulations_v4_persona AS (
-    persona_id uuid,
-    color text
-);
-
-CREATE TYPE types.q_list_simulations_v4_scenario AS (
-    scenario_id uuid,
-    name text,
-    persona_ids text[],
-    persona_mapping types.q_list_simulations_v4_persona[]
-);
-
+-- 3) Recreate types (scenario/persona mapping types removed — hydrated in Python)
 CREATE TYPE types.q_list_simulations_v4_simulation AS (
     simulation_id uuid,
     name text,
@@ -83,7 +70,6 @@ CREATE OR REPLACE FUNCTION api_list_simulations_v4(
 RETURNS TABLE (
     actor_name text,
     simulations types.q_list_simulations_v4_simulation[],
-    scenarios types.q_list_simulations_v4_scenario[],
     scenario_options types.q_list_simulations_v4_option[],
     cohort_options types.q_list_simulations_v4_option[],
     department_options types.q_list_simulations_v4_option[],
@@ -224,43 +210,7 @@ paginated_simulations AS (
     ORDER BY updated_at DESC NULLS LAST
     LIMIT page_size OFFSET page_offset
 ),
--- Scenario mapping: only scenario_id, name, persona_ids, persona_mapping (with just id+color)
-all_scenario_ids AS (
-    SELECT DISTINCT unnest(scenario_ids) as scenario_id
-    FROM paginated_simulations
-),
--- Persona data from personas_resource directly (only need id + color)
-scenario_persona_data AS (
-    SELECT
-        sr.id as scenario_id,
-        pr.id as persona_id,
-        COALESCE(pr.color, '') as color
-    FROM all_scenario_ids asi
-    JOIN scenarios_resource sr ON sr.id = asi.scenario_id
-    JOIN LATERAL unnest(sr.persona_ids) AS pid ON true
-    JOIN personas_resource pr ON pr.id = pid
-),
-scenario_persona_agg AS (
-    SELECT
-        spd.scenario_id,
-        ARRAY_AGG(spd.persona_id::text ORDER BY spd.persona_id) as persona_ids,
-        ARRAY_AGG(
-            (spd.persona_id, spd.color)::types.q_list_simulations_v4_persona
-            ORDER BY spd.persona_id
-        ) as persona_mapping
-    FROM scenario_persona_data spd
-    GROUP BY spd.scenario_id
-),
-scenario_mapping_data AS (
-    SELECT
-        sr.id as scenario_id,
-        COALESCE(sr.name, '') as name,
-        COALESCE(spa.persona_ids, ARRAY[]::text[]) as persona_ids,
-        COALESCE(spa.persona_mapping, ARRAY[]::types.q_list_simulations_v4_persona[]) as persona_mapping
-    FROM all_scenario_ids asi
-    JOIN scenarios_resource sr ON sr.id = asi.scenario_id
-    LEFT JOIN scenario_persona_agg spa ON spa.scenario_id = sr.id
-),
+-- Scenario/persona mapping removed — hydrated in Python via cached *_internal() functions
 -- Options derived from ALL simulation_data (unfiltered) for filter dropdowns
 all_scenario_ids_options AS (
     SELECT DISTINCT unnest(scenario_ids) as scenario_id
@@ -290,15 +240,6 @@ SELECT
         ) FROM paginated_simulations simd),
         '{}'::types.q_list_simulations_v4_simulation[]
     ) as simulations,
-    -- Aggregate scenarios (from paginated simulations' scenarios)
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (smd.scenario_id, smd.name, smd.persona_ids, smd.persona_mapping
-            )::types.q_list_simulations_v4_scenario
-            ORDER BY smd.name
-        ) FROM scenario_mapping_data smd),
-        '{}'::types.q_list_simulations_v4_scenario[]
-    ) as scenarios,
     -- Scenario options (from ALL simulations, filtered by search term) — resource-level IDs
     COALESCE(
         (SELECT ARRAY_AGG(

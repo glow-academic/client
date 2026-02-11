@@ -685,17 +685,11 @@ class ListScenarioSqlScenario(BaseModel):
 
 
 class ListScenarioSqlRow(BaseModel):
-    """Raw SQL row for list scenarios."""
+    """Raw SQL row for list scenarios (mapping arrays hydrated in Python)."""
 
     actor_name: str | None = None
     user_role: str | None = None
     scenarios: list[ListScenarioSqlScenario] | None = None
-    objectives: list[ListScenarioApiObjective] | None = None
-    fields: list[ListScenarioApiField] | None = None
-    cohorts: list[ListScenarioApiCohort] | None = None
-    personas: list[ListScenarioApiPersona] | None = None
-    simulations: list[ListScenarioApiSimulation] | None = None
-    departments: list[ListScenarioApiDepartment] | None = None
     persona_options: list[ListScenarioApiOption] | None = None
     simulation_options: list[ListScenarioApiOption] | None = None
     department_options: list[ListScenarioApiOption] | None = None

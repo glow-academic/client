@@ -51,24 +51,9 @@ CREATE TYPE types.q_list_personas_v4_persona AS (
     updated_at timestamptz
 );
 
-CREATE TYPE types.q_list_personas_v4_scenario AS (
-    scenario_id uuid,
-    name text,
-    description text,
-    count bigint
-);
-
-CREATE TYPE types.q_list_personas_v4_field AS (
-    field_id uuid,
-    name text,
-    description text,
-    count bigint
-);
-
-CREATE TYPE types.q_list_personas_v4_department AS (
-    department_id uuid,
-    name text,
-    description text,
+-- Filter option types simplified: id + count only (names hydrated in Python from cache)
+CREATE TYPE types.q_list_personas_v4_option_id AS (
+    id uuid,
     count bigint
 );
 
@@ -89,9 +74,9 @@ RETURNS TABLE (
     actor_name text,
     user_role text,
     personas types.q_list_personas_v4_persona[],
-    scenarios types.q_list_personas_v4_scenario[],
-    fields types.q_list_personas_v4_field[],
-    departments types.q_list_personas_v4_department[],
+    scenario_option_ids types.q_list_personas_v4_option_id[],
+    field_option_ids types.q_list_personas_v4_option_id[],
+    department_option_ids types.q_list_personas_v4_option_id[],
     total_count bigint
 )
 LANGUAGE sql
@@ -202,62 +187,37 @@ paginated_personas AS (
     ORDER BY fp.updated_at DESC NULLS LAST
     LIMIT page_size OFFSET page_offset
 ),
--- Scenario filter options: from scenarios_resource via denormalized persona_ids
+-- Filter option IDs with counts (names hydrated in Python from cached *_internal() functions)
+-- Search filtering also moved to Python for simplicity
 all_scenario_ids AS (
     SELECT DISTINCT unnest(scenario_ids) as scenario_id
     FROM persona_data
 ),
-scenario_mapping_data AS (
+scenario_option_data AS (
     SELECT
-        sr.id as scenario_id,
-        COALESCE(sr.name, '') as name,
-        COALESCE(sr.description, '') as description,
+        sr.id,
         (SELECT COUNT(*) FROM persona_data pd WHERE sr.id = ANY(pd.scenario_ids)) as count
     FROM scenarios_resource sr
     WHERE sr.id IN (SELECT scenario_id FROM all_scenario_ids)
 ),
--- Filter scenario options by search term
-filtered_scenario_options AS (
-    SELECT smd.*
-    FROM scenario_mapping_data smd
-    WHERE scenario_search IS NULL OR smd.name ILIKE '%' || scenario_search || '%'
-),
--- Department filter options: from departments_resource directly (denormalized name/description)
-department_mapping_data AS (
-    SELECT
-        dr.id as department_id,
-        COALESCE(dr.name, '') as name,
-        COALESCE(dr.description, '') as description,
-        (SELECT COUNT(*) FROM persona_data) as count
-    FROM departments_resource dr
-    WHERE dr.id IN (SELECT department_id FROM user_departments)
-),
--- Filter department options by search term
-filtered_department_options AS (
-    SELECT dmd.*
-    FROM department_mapping_data dmd
-    WHERE department_search IS NULL OR dmd.name ILIKE '%' || department_search || '%'
-),
--- Field filter options: from fields_resource directly (denormalized name/description)
 assigned_field_ids AS (
     SELECT DISTINCT unnest(field_ids) as field_id
     FROM persona_data
     WHERE field_ids IS NOT NULL AND array_length(field_ids, 1) > 0
 ),
-field_mapping_data AS (
+field_option_data AS (
     SELECT
-        fr.id as field_id,
-        COALESCE(fr.name, '') as name,
-        COALESCE(fr.description, '') as description,
+        fr.id,
         (SELECT COUNT(*) FROM persona_data pd WHERE fr.id = ANY(pd.field_ids)) as count
     FROM fields_resource fr
     WHERE fr.id IN (SELECT field_id FROM assigned_field_ids)
 ),
--- Filter field options by search term
-filtered_field_options AS (
-    SELECT fmd.*
-    FROM field_mapping_data fmd
-    WHERE field_search IS NULL OR fmd.name ILIKE '%' || field_search || '%'
+department_option_data AS (
+    SELECT
+        dr.id,
+        (SELECT COUNT(*) FROM persona_data) as count
+    FROM departments_resource dr
+    WHERE dr.id IN (SELECT department_id FROM user_departments)
 )
 SELECT
     up.actor_name::text as actor_name,
@@ -276,30 +236,27 @@ SELECT
         ) FROM paginated_personas pd),
         '{}'::types.q_list_personas_v4_persona[]
     ) as personas,
-    -- Aggregate filtered scenario options
+    -- Scenario option IDs with counts (names hydrated in Python)
     COALESCE(
         (SELECT ARRAY_AGG(
-            (smd.scenario_id, smd.name, smd.description, smd.count)::types.q_list_personas_v4_scenario
-            ORDER BY smd.name
-        ) FROM filtered_scenario_options smd),
-        '{}'::types.q_list_personas_v4_scenario[]
-    ) as scenarios,
-    -- Aggregate filtered field options
+            (sod.id, sod.count)::types.q_list_personas_v4_option_id
+        ) FROM scenario_option_data sod),
+        '{}'::types.q_list_personas_v4_option_id[]
+    ) as scenario_option_ids,
+    -- Field option IDs with counts (names hydrated in Python)
     COALESCE(
         (SELECT ARRAY_AGG(
-            (fmd.field_id, fmd.name, fmd.description, fmd.count)::types.q_list_personas_v4_field
-            ORDER BY fmd.name
-        ) FROM filtered_field_options fmd),
-        '{}'::types.q_list_personas_v4_field[]
-    ) as fields,
-    -- Aggregate filtered department options
+            (fod.id, fod.count)::types.q_list_personas_v4_option_id
+        ) FROM field_option_data fod),
+        '{}'::types.q_list_personas_v4_option_id[]
+    ) as field_option_ids,
+    -- Department option IDs with counts (names hydrated in Python)
     COALESCE(
         (SELECT ARRAY_AGG(
-            (dmd.department_id, dmd.name, dmd.description, dmd.count)::types.q_list_personas_v4_department
-            ORDER BY dmd.name
-        ) FROM filtered_department_options dmd),
-        '{}'::types.q_list_personas_v4_department[]
-    ) as departments,
+            (dod.id, dod.count)::types.q_list_personas_v4_option_id
+        ) FROM department_option_data dod),
+        '{}'::types.q_list_personas_v4_option_id[]
+    ) as department_option_ids,
     -- Total count of filtered personas (before pagination)
     (SELECT total_count FROM filtered_count) as total_count
 FROM user_profile up

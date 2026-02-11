@@ -6490,7 +6490,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/views/simulation/attempts/get": {
+    "/api/v4/views/attempt/list/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -6501,18 +6501,18 @@ export interface paths {
         put?: never;
         /**
          * Get Attempts
-         * @description Get simulation attempt data from the materialized view.
+         * @description Get attempt data from the materialized view.
          *
          *     This endpoint fetches attempt-level data with resource metadata JOINed.
          */
-        post: operations["get_attempts_api_v4_views_simulation_attempts_get_post"];
+        post: operations["get_attempts_api_v4_views_attempt_list_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/views/simulation/attempts/refresh": {
+    "/api/v4/views/attempt/list/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -6523,10 +6523,10 @@ export interface paths {
         put?: never;
         /**
          * Refresh Attempts View
-         * @description Refresh the mv_simulation_attempts materialized view concurrently.
+         * @description Refresh the mv_attempt_list materialized view concurrently.
          *
          *     This is a fast refresh that doesn't require any schema changes.
-         *     It requires a unique index on the MV (mv_simulation_attempts_pk).
+         *     It requires a unique index on the MV (mv_attempt_list_pk).
          *
          *     Use this when:
          *     - You want to update the MV data without downtime
@@ -6535,14 +6535,14 @@ export interface paths {
          *     Use /recreate when:
          *     - You've changed the MV definition (schema changes)
          */
-        post: operations["refresh_attempts_view_api_v4_views_simulation_attempts_refresh_post"];
+        post: operations["refresh_attempts_view_api_v4_views_attempt_list_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/views/simulation/attempts/recreate": {
+    "/api/v4/views/attempt/list/recreate": {
         parameters: {
             query?: never;
             header?: never;
@@ -6553,7 +6553,7 @@ export interface paths {
         put?: never;
         /**
          * Recreate Attempts View
-         * @description Recreate the mv_simulation_attempts materialized view.
+         * @description Recreate the mv_attempt_list materialized view.
          *
          *     This drops and recreates the MV from its definition file.
          *     There will be brief downtime while the MV is being recreated.
@@ -6566,14 +6566,14 @@ export interface paths {
          *     - You just want to update the data
          *     - The MV schema hasn't changed
          */
-        post: operations["recreate_attempts_view_api_v4_views_simulation_attempts_recreate_post"];
+        post: operations["recreate_attempts_view_api_v4_views_attempt_list_recreate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/views/simulation/chats/get": {
+    "/api/v4/views/attempt/chats/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -6584,18 +6584,18 @@ export interface paths {
         put?: never;
         /**
          * Get Chats
-         * @description Get simulation chat data from the materialized view.
+         * @description Get attempt chat data from the materialized view.
          *
          *     This endpoint fetches chat-level data with resource metadata JOINed.
          */
-        post: operations["get_chats_api_v4_views_simulation_chats_get_post"];
+        post: operations["get_chats_api_v4_views_attempt_chats_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/views/simulation/chats/refresh": {
+    "/api/v4/views/attempt/chats/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -6606,16 +6606,16 @@ export interface paths {
         put?: never;
         /**
          * Refresh Chats View
-         * @description Refresh the mv_simulation_chats materialized view concurrently.
+         * @description Refresh the mv_attempt_chats materialized view concurrently.
          */
-        post: operations["refresh_chats_view_api_v4_views_simulation_chats_refresh_post"];
+        post: operations["refresh_chats_view_api_v4_views_attempt_chats_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/views/simulation/chats/recreate": {
+    "/api/v4/views/attempt/chats/recreate": {
         parameters: {
             query?: never;
             header?: never;
@@ -6626,16 +6626,16 @@ export interface paths {
         put?: never;
         /**
          * Recreate Chats View
-         * @description Recreate the mv_simulation_chats materialized view.
+         * @description Recreate the mv_attempt_chats materialized view.
          */
-        post: operations["recreate_chats_view_api_v4_views_simulation_chats_recreate_post"];
+        post: operations["recreate_chats_view_api_v4_views_attempt_chats_recreate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/views/simulation/messages/get": {
+    "/api/v4/views/attempt/messages/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -6646,18 +6646,18 @@ export interface paths {
         put?: never;
         /**
          * Get Messages
-         * @description Get simulation message data from the materialized view.
+         * @description Get attempt message data from the materialized view.
          *
          *     This endpoint fetches message-level data with strengths/improvements.
          */
-        post: operations["get_messages_api_v4_views_simulation_messages_get_post"];
+        post: operations["get_messages_api_v4_views_attempt_messages_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/views/simulation/messages/refresh": {
+    "/api/v4/views/attempt/messages/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -6668,16 +6668,16 @@ export interface paths {
         put?: never;
         /**
          * Refresh Messages View
-         * @description Refresh the mv_simulation_messages materialized view concurrently.
+         * @description Refresh the mv_attempt_messages materialized view concurrently.
          */
-        post: operations["refresh_messages_view_api_v4_views_simulation_messages_refresh_post"];
+        post: operations["refresh_messages_view_api_v4_views_attempt_messages_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/views/simulation/messages/recreate": {
+    "/api/v4/views/attempt/messages/recreate": {
         parameters: {
             query?: never;
             header?: never;
@@ -6688,9 +6688,74 @@ export interface paths {
         put?: never;
         /**
          * Recreate Messages View
-         * @description Recreate the mv_simulation_messages materialized view.
+         * @description Recreate the mv_attempt_messages materialized view.
          */
-        post: operations["recreate_messages_view_api_v4_views_simulation_messages_recreate_post"];
+        post: operations["recreate_messages_view_api_v4_views_attempt_messages_recreate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/views/attempt/overview/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Overview
+         * @description Get attempt overview data from the materialized view.
+         *
+         *     This endpoint fetches simulation-level aggregated data with:
+         *     - Mode-aware aggregation (member vs instructional)
+         *     - Instructional stats: passed_count, in_progress_count, not_started_count, total_members
+         *     - Standard groups and standards for sidebar/legend
+         */
+        post: operations["get_overview_api_v4_views_attempt_overview_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/views/attempt/overview/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Overview View
+         * @description Refresh the mv_simulation_overview materialized view concurrently.
+         */
+        post: operations["refresh_overview_view_api_v4_views_attempt_overview_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/views/attempt/overview/recreate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Recreate Overview View
+         * @description Recreate the mv_simulation_overview materialized view.
+         */
+        post: operations["recreate_overview_view_api_v4_views_attempt_overview_recreate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11718,7 +11783,7 @@ export interface components {
         };
         /**
          * AttemptViewItem
-         * @description Single attempt from the simulation attempts view.
+         * @description Single attempt from the attempt list view.
          */
         AttemptViewItem: {
             /**
@@ -13107,7 +13172,7 @@ export interface components {
         };
         /**
          * ChatViewItem
-         * @description Single chat from the simulation chats view.
+         * @description Single chat from the attempt chats view.
          */
         ChatViewItem: {
             /**
@@ -18296,6 +18361,71 @@ export interface components {
             items: components["schemas"]["GetOptionV4Item"][];
         };
         /**
+         * GetOverviewRequest
+         * @description Request for getting overview data.
+         */
+        GetOverviewRequest: {
+            /**
+             * Start Date
+             * @description Start date for filtering (ISO format)
+             */
+            start_date?: string | null;
+            /**
+             * End Date
+             * @description End date for filtering (ISO format)
+             */
+            end_date?: string | null;
+            /**
+             * Profile Id
+             * @description Filter by profile ID
+             */
+            profile_id?: string | null;
+            /**
+             * Simulation Ids
+             * @description Filter by simulation IDs
+             */
+            simulation_ids?: string[] | null;
+            /**
+             * Cohort Ids
+             * @description Filter by cohort IDs
+             */
+            cohort_ids?: string[] | null;
+            /**
+             * Department Ids
+             * @description Filter by department IDs
+             */
+            department_ids?: string[] | null;
+            /**
+             * Practice
+             * @description Filter by practice mode. None=all, True=practice, False=home
+             */
+            practice?: boolean | null;
+        };
+        /**
+         * GetOverviewResponse
+         * @description Response containing overview data.
+         */
+        GetOverviewResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** User Role */
+            user_role?: string | null;
+            /**
+             * Has Data
+             * @default false
+             */
+            has_data: boolean;
+            /**
+             * Items
+             * @description Simulation card items
+             */
+            items?: components["schemas"]["OverviewViewItem"][];
+            /** Standard Groups */
+            standard_groups?: components["schemas"]["StandardGroupItem"][] | null;
+            /** Standards */
+            standards?: components["schemas"]["StandardItem"][] | null;
+        };
+        /**
          * GetParameterApiRequest
          * @description Request model for get parameter endpoint.
          */
@@ -19949,23 +20079,6 @@ export interface components {
              * @default 0
              */
             page_offset: number | null;
-        };
-        /** GetSimulationsListApiResponse */
-        GetSimulationsListApiResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Simulations */
-            simulations?: components["schemas"]["QListSimulationsV4Simulation"][] | null;
-            /** Scenarios */
-            scenarios?: components["schemas"]["QListSimulationsV4Scenario"][] | null;
-            /** Scenario Options */
-            scenario_options?: components["schemas"]["QListSimulationsV4Option"][] | null;
-            /** Cohort Options */
-            cohort_options?: components["schemas"]["QListSimulationsV4Option"][] | null;
-            /** Department Options */
-            department_options?: components["schemas"]["QListSimulationsV4Option"][] | null;
-            /** Total Count */
-            total_count?: number | null;
         };
         /** GetSlugsApiRequest */
         GetSlugsApiRequest: {
@@ -22336,6 +22449,94 @@ export interface components {
             /** Department Ids */
             department_ids?: string[] | null;
         };
+        /**
+         * ListSimulationApiOption
+         * @description Option for facet filtering.
+         */
+        ListSimulationApiOption: {
+            /** Value */
+            value?: string | null;
+            /** Label */
+            label?: string | null;
+            /** Count */
+            count?: number | null;
+        };
+        /**
+         * ListSimulationApiPersona
+         * @description Persona in list response (minimal: only for color dot rendering).
+         */
+        ListSimulationApiPersona: {
+            /** Persona Id */
+            persona_id?: string | null;
+            /** Color */
+            color?: string | null;
+        };
+        /**
+         * ListSimulationApiResponse
+         * @description Response for listing simulations.
+         */
+        ListSimulationApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Simulations */
+            simulations?: components["schemas"]["ListSimulationApiSimulation"][] | null;
+            /** Scenarios */
+            scenarios?: components["schemas"]["ListSimulationApiScenario"][] | null;
+            /** Scenario Options */
+            scenario_options?: components["schemas"]["ListSimulationApiOption"][] | null;
+            /** Cohort Options */
+            cohort_options?: components["schemas"]["ListSimulationApiOption"][] | null;
+            /** Department Options */
+            department_options?: components["schemas"]["ListSimulationApiOption"][] | null;
+            /** Total Count */
+            total_count?: number | null;
+        };
+        /**
+         * ListSimulationApiScenario
+         * @description Scenario in list response (minimal: only for color dot rendering).
+         */
+        ListSimulationApiScenario: {
+            /** Scenario Id */
+            scenario_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Persona Ids */
+            persona_ids?: string[] | null;
+            /** Persona Mapping */
+            persona_mapping?: components["schemas"]["ListSimulationApiPersona"][] | null;
+        };
+        /**
+         * ListSimulationApiSimulation
+         * @description Simulation item in list response with SQL-computed permissions.
+         */
+        ListSimulationApiSimulation: {
+            /** Simulation Id */
+            simulation_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Active */
+            active?: boolean | null;
+            /** Practice Simulation */
+            practice_simulation?: boolean | null;
+            /** Can Edit */
+            can_edit?: boolean | null;
+            /** Can Delete */
+            can_delete?: boolean | null;
+            /** Can Duplicate */
+            can_duplicate?: boolean | null;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+            /** Num Cohorts */
+            num_cohorts?: number | null;
+            /** Cohort Ids */
+            cohort_ids?: string[] | null;
+            /** Updated At */
+            updated_at?: string | null;
+        };
         /** ListToolApiResponse */
         ListToolApiResponse: {
             /** Actor Name */
@@ -22417,7 +22618,7 @@ export interface components {
         };
         /**
          * MessageViewItem
-         * @description Single message from the simulation messages view.
+         * @description Single message from the attempt messages view.
          *
          *     Position derived in service layer, practice on attempt level.
          */
@@ -22977,6 +23178,64 @@ export interface components {
         OptionsApiResponse: {
             /** Option Id */
             option_id?: string | null;
+        };
+        /**
+         * OverviewViewItem
+         * @description Single simulation overview from the view.
+         */
+        OverviewViewItem: {
+            /**
+             * Simulation Id
+             * Format: uuid
+             */
+            simulation_id: string;
+            /** Simulation Name */
+            simulation_name?: string | null;
+            /** Simulation Description */
+            simulation_description?: string | null;
+            /** Time Limit */
+            time_limit?: number | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Persona Color */
+            persona_color?: string | null;
+            /** Persona Icon */
+            persona_icon?: string | null;
+            /** Cohort Names */
+            cohort_names?: string[] | null;
+            /** Standard Group Ids */
+            standard_group_ids?: string[] | null;
+            /** Practice */
+            practice?: boolean | null;
+            /**
+             * Attempt Count
+             * @default 0
+             */
+            attempt_count: number;
+            /**
+             * Completed Count
+             * @default 0
+             */
+            completed_count: number;
+            /** Highest Score */
+            highest_score?: number | null;
+            /**
+             * Has Passed
+             * @default false
+             */
+            has_passed: boolean;
+            /** Rubric Total Points */
+            rubric_total_points?: number | null;
+            /** Rubric Pass Points */
+            rubric_pass_points?: number | null;
+            /** Passed Count */
+            passed_count?: number | null;
+            /** In Progress Count */
+            in_progress_count?: number | null;
+            /** Not Started Count */
+            not_started_count?: number | null;
+            /** Total Members */
+            total_members?: number | null;
         };
         /** ParameterDepartmentSection */
         ParameterDepartmentSection: {
@@ -26816,6 +27075,8 @@ export interface components {
             questions_enabled: boolean | null;
             /** Templates Enabled */
             templates_enabled: boolean | null;
+            /** Persona Ids */
+            persona_ids: string[] | null;
         };
         /** QGetSettingV4Auth */
         QGetSettingV4Auth: {
@@ -27317,62 +27578,6 @@ export interface components {
             value: string | null;
             /** Label */
             label: string | null;
-        };
-        /** QListSimulationsV4Option */
-        QListSimulationsV4Option: {
-            /** Value */
-            value: string | null;
-            /** Label */
-            label: string | null;
-            /** Count */
-            count: number | null;
-        };
-        /** QListSimulationsV4Persona */
-        QListSimulationsV4Persona: {
-            /** Persona Id */
-            persona_id: string | null;
-            /** Color */
-            color: string | null;
-        };
-        /** QListSimulationsV4Scenario */
-        QListSimulationsV4Scenario: {
-            /** Scenario Id */
-            scenario_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Persona Ids */
-            persona_ids: string[] | null;
-            /** Persona Mapping */
-            persona_mapping: components["schemas"]["QListSimulationsV4Persona"][] | null;
-        };
-        /** QListSimulationsV4Simulation */
-        QListSimulationsV4Simulation: {
-            /** Simulation Id */
-            simulation_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Active */
-            active: boolean | null;
-            /** Practice Simulation */
-            practice_simulation: boolean | null;
-            /** Can Edit */
-            can_edit: boolean | null;
-            /** Can Delete */
-            can_delete: boolean | null;
-            /** Can Duplicate */
-            can_duplicate: boolean | null;
-            /** Scenario Ids */
-            scenario_ids: string[] | null;
-            /** Num Cohorts */
-            num_cohorts: number | null;
-            /** Cohort Ids */
-            cohort_ids: string[] | null;
-            /** Updated At */
-            updated_at: string | null;
         };
         /** QListStaffV4Cohort */
         QListStaffV4Cohort: {
@@ -32082,6 +32287,25 @@ export interface components {
             pass_points?: number | null;
         };
         /**
+         * StandardGroupItem
+         * @description Standard group mapping for sidebar/legend.
+         */
+        StandardGroupItem: {
+            /**
+             * Standard Group Id
+             * Format: uuid
+             */
+            standard_group_id: string;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Points */
+            points?: number | null;
+            /** Pass Points */
+            pass_points?: number | null;
+        };
+        /**
          * StandardGroupMapping
          * @description Standard group metadata for sidebar/legend.
          */
@@ -32146,6 +32370,25 @@ export interface components {
         StandardGroupsApiResponse: {
             /** Standard Group Id */
             standard_group_id?: string | null;
+        };
+        /**
+         * StandardItem
+         * @description Standard mapping for sidebar/legend.
+         */
+        StandardItem: {
+            /**
+             * Standard Id
+             * Format: uuid
+             */
+            standard_id: string;
+            /** Standard Group Id */
+            standard_group_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Points */
+            points?: number | null;
         };
         /**
          * StandardMapping
@@ -33872,6 +34115,8 @@ export interface components {
             questions_enabled?: boolean | null;
             /** Templates Enabled */
             templates_enabled?: boolean | null;
+            /** Persona Ids */
+            persona_ids?: string[] | null;
         };
         /**
          * FilterOption
@@ -34088,6 +34333,8 @@ export interface components {
             questions_enabled: boolean | null;
             /** Templates Enabled */
             templates_enabled: boolean | null;
+            /** Persona Ids */
+            persona_ids: string[] | null;
         };
         /** QGetSettingsV4Auth */
         app__sql__types__QGetSettingsV4Auth: {
@@ -34760,7 +35007,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetSimulationsListApiResponse"];
+                    "application/json": components["schemas"]["ListSimulationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -46245,7 +46492,7 @@ export interface operations {
             };
         };
     };
-    get_attempts_api_v4_views_simulation_attempts_get_post: {
+    get_attempts_api_v4_views_attempt_list_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -46282,7 +46529,7 @@ export interface operations {
             };
         };
     };
-    refresh_attempts_view_api_v4_views_simulation_attempts_refresh_post: {
+    refresh_attempts_view_api_v4_views_attempt_list_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -46315,7 +46562,7 @@ export interface operations {
             };
         };
     };
-    recreate_attempts_view_api_v4_views_simulation_attempts_recreate_post: {
+    recreate_attempts_view_api_v4_views_attempt_list_recreate_post: {
         parameters: {
             query?: never;
             header?: {
@@ -46348,7 +46595,7 @@ export interface operations {
             };
         };
     };
-    get_chats_api_v4_views_simulation_chats_get_post: {
+    get_chats_api_v4_views_attempt_chats_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -46385,7 +46632,7 @@ export interface operations {
             };
         };
     };
-    refresh_chats_view_api_v4_views_simulation_chats_refresh_post: {
+    refresh_chats_view_api_v4_views_attempt_chats_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -46418,7 +46665,7 @@ export interface operations {
             };
         };
     };
-    recreate_chats_view_api_v4_views_simulation_chats_recreate_post: {
+    recreate_chats_view_api_v4_views_attempt_chats_recreate_post: {
         parameters: {
             query?: never;
             header?: {
@@ -46451,7 +46698,7 @@ export interface operations {
             };
         };
     };
-    get_messages_api_v4_views_simulation_messages_get_post: {
+    get_messages_api_v4_views_attempt_messages_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -46488,7 +46735,7 @@ export interface operations {
             };
         };
     };
-    refresh_messages_view_api_v4_views_simulation_messages_refresh_post: {
+    refresh_messages_view_api_v4_views_attempt_messages_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -46521,7 +46768,110 @@ export interface operations {
             };
         };
     };
-    recreate_messages_view_api_v4_views_simulation_messages_recreate_post: {
+    recreate_messages_view_api_v4_views_attempt_messages_recreate_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RefreshResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_overview_api_v4_views_attempt_overview_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetOverviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetOverviewResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_overview_view_api_v4_views_attempt_overview_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RefreshResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    recreate_overview_view_api_v4_views_attempt_overview_recreate_post: {
         parameters: {
             query?: never;
             header?: {

@@ -206,6 +206,8 @@ class QGetScenariosV4Item(BaseModel):
     images_enabled: bool | None = None
     questions_enabled: bool | None = None
     templates_enabled: bool | None = None
+    # Denormalized persona_ids for list hydration
+    persona_ids: list[UUID] | None = None
 
 
 class GetScenariosSqlParams(BaseModel):
@@ -438,12 +440,28 @@ class ListSimulationApiSimulation(BaseModel):
     updated_at: datetime | None = None
 
 
+class ListSimulationApiPersona(BaseModel):
+    """Persona in list response (minimal: only for color dot rendering)."""
+
+    persona_id: str | None = None
+    color: str | None = None
+
+
 class ListSimulationApiScenario(BaseModel):
     """Scenario in list response (minimal: only for color dot rendering)."""
 
     scenario_id: UUID | None = None
     name: str | None = None
     persona_ids: list[str] | None = None
+    persona_mapping: list[ListSimulationApiPersona] | None = None
+
+
+class ListSimulationApiOption(BaseModel):
+    """Option for facet filtering."""
+
+    value: str | None = None
+    label: str | None = None
+    count: int | None = None
 
 
 class ListSimulationApiResponse(BaseModel):
@@ -452,6 +470,10 @@ class ListSimulationApiResponse(BaseModel):
     actor_name: str | None = None
     simulations: list[ListSimulationApiSimulation] | None = None
     scenarios: list[ListSimulationApiScenario] | None = None
+    scenario_options: list[ListSimulationApiOption] | None = None
+    cohort_options: list[ListSimulationApiOption] | None = None
+    department_options: list[ListSimulationApiOption] | None = None
+    total_count: int | None = None
 
 
 # =============================================================================
@@ -750,4 +772,7 @@ class ListSimulationSqlRow(BaseModel):
 
     actor_name: str | None = None
     simulations: list[ListSimulationSqlSimulation] | None = None
-    scenarios: list[ListSimulationApiScenario] | None = None
+    scenario_options: list[dict] | None = None
+    cohort_options: list[dict] | None = None
+    department_options: list[dict] | None = None
+    total_count: int | None = None

@@ -36,7 +36,7 @@ BEGIN
     END LOOP;
 END $$;
 
--- 3) Recreate types
+-- 3) Recreate types (profile/simulation/department mapping types removed — hydrated in Python)
 CREATE TYPE types.q_list_cohorts_v4_cohort AS (
     cohort_id uuid,
     name text,
@@ -52,25 +52,6 @@ CREATE TYPE types.q_list_cohorts_v4_cohort AS (
     can_duplicate boolean,
     can_leave boolean,
     updated_at timestamptz
-);
-
-CREATE TYPE types.q_list_cohorts_v4_profile AS (
-    profile_id uuid,
-    name text,
-    description text
-);
-
-CREATE TYPE types.q_list_cohorts_v4_simulation AS (
-    simulation_id uuid,
-    name text,
-    description text,
-    department_ids text[]
-);
-
-CREATE TYPE types.q_list_cohorts_v4_department AS (
-    department_id uuid,
-    name text,
-    description text
 );
 
 CREATE TYPE types.q_list_cohorts_v4_option AS (
@@ -96,9 +77,6 @@ RETURNS TABLE (
     actor_name text,
     user_role text,
     cohorts types.q_list_cohorts_v4_cohort[],
-    profiles types.q_list_cohorts_v4_profile[],
-    simulations types.q_list_cohorts_v4_simulation[],
-    departments types.q_list_cohorts_v4_department[],
     simulation_options types.q_list_cohorts_v4_option[],
     profile_options types.q_list_cohorts_v4_option[],
     department_options types.q_list_cohorts_v4_option[],
@@ -152,20 +130,19 @@ cohort_usage AS (
     GROUP BY crb.cohort_id
 ),
 -- Profiles per cohort via denormalized profiles_resource.cohort_ids
--- Role-based visibility: only show profiles at or below user's role level
+-- Now using resource-level IDs (pr.id) to match get_profiles_internal()
 cohort_profiles_agg AS (
     SELECT
         crb.cohort_id,
-        ARRAY_AGG(ppj.profile_id ORDER BY pr.name) as profile_ids
+        ARRAY_AGG(pr.id ORDER BY pr.name) as profile_ids
     FROM cohort_resource_bridge crb
     JOIN profiles_resource pr ON crb.resource_id = ANY(pr.cohort_ids)
-    JOIN profile_profiles_junction ppj ON ppj.profiles_id = pr.id
     GROUP BY crb.cohort_id
 ),
 cohort_profiles_role_filtered AS (
     SELECT
         crb.cohort_id,
-        ARRAY_AGG(ppj.profile_id) FILTER (
+        ARRAY_AGG(pr.id) FILTER (
             WHERE
                 (up.role = 'superadmin'::profile_type) OR
                 (up.role = 'admin'::profile_type AND pr.role IN ('admin', 'instructional', 'member', 'guest')) OR
@@ -175,7 +152,6 @@ cohort_profiles_role_filtered AS (
         ) as profile_ids
     FROM cohort_resource_bridge crb
     JOIN profiles_resource pr ON crb.resource_id = ANY(pr.cohort_ids)
-    JOIN profile_profiles_junction ppj ON ppj.profiles_id = pr.id
     CROSS JOIN user_profile up
     GROUP BY crb.cohort_id
 ),
@@ -258,51 +234,7 @@ paginated_cohorts AS (
     ORDER BY updated_at DESC NULLS LAST
     LIMIT page_size OFFSET page_offset
 ),
--- Derive mapping data from paginated cohorts
-all_profile_ids AS (
-    SELECT DISTINCT unnest(profile_ids) as profile_id
-    FROM paginated_cohorts
-),
-all_simulation_ids AS (
-    SELECT DISTINCT unnest(simulation_ids) as simulation_id
-    FROM paginated_cohorts
-),
-all_department_ids AS (
-    SELECT DISTINCT unnest(department_ids)::uuid as department_id
-    FROM cohorts_data
-    WHERE department_ids IS NOT NULL
-    UNION
-    SELECT department_id FROM user_departments
-),
--- Profile mapping from profiles_resource directly
-profile_mapping_data AS (
-    SELECT
-        ppj.profile_id as profile_id,
-        COALESCE(pr.name, '') as name,
-        COALESCE(pr.description, '') as description
-    FROM profiles_resource pr
-    JOIN profile_profiles_junction ppj ON ppj.profiles_id = pr.id
-    WHERE ppj.profile_id IN (SELECT profile_id FROM all_profile_ids)
-),
--- Simulation mapping from simulations_resource directly (resource-level IDs)
-simulation_mapping_data AS (
-    SELECT
-        sr.id as simulation_id,
-        COALESCE(sr.name, '') as name,
-        COALESCE(sr.description, '') as description,
-        COALESCE(sr.department_ids::text[], ARRAY[]::text[]) as department_ids
-    FROM simulations_resource sr
-    WHERE sr.id IN (SELECT simulation_id FROM all_simulation_ids)
-),
--- Department mapping from departments_resource directly
-department_mapping_data AS (
-    SELECT
-        dr.id as department_id,
-        COALESCE(dr.name, '') as name,
-        COALESCE(dr.description, '') as description
-    FROM departments_resource dr
-    WHERE dr.id IN (SELECT department_id FROM all_department_ids)
-),
+-- Profile/simulation/department mapping removed — hydrated in Python via cached *_internal() functions
 -- Options derived from ALL cohorts_data (unfiltered) for filter dropdowns
 all_simulation_ids_options AS (
     SELECT DISTINCT unnest(simulation_ids) as simulation_id
@@ -335,30 +267,6 @@ SELECT
         ) FROM paginated_cohorts cd),
         '{}'::types.q_list_cohorts_v4_cohort[]
     ) as cohorts,
-    -- Aggregate profiles separately
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (pmd.profile_id, pmd.name, pmd.description)::types.q_list_cohorts_v4_profile
-            ORDER BY pmd.name
-        ) FROM profile_mapping_data pmd),
-        '{}'::types.q_list_cohorts_v4_profile[]
-    ) as profiles,
-    -- Aggregate simulations separately
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (smd.simulation_id, smd.name, smd.description, smd.department_ids)::types.q_list_cohorts_v4_simulation
-            ORDER BY smd.name
-        ) FROM simulation_mapping_data smd),
-        '{}'::types.q_list_cohorts_v4_simulation[]
-    ) as simulations,
-    -- Aggregate departments separately
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (dmd.department_id, dmd.name, dmd.description)::types.q_list_cohorts_v4_department
-            ORDER BY dmd.name
-        ) FROM department_mapping_data dmd),
-        '{}'::types.q_list_cohorts_v4_department[]
-    ) as departments,
     -- Simulation options (from ALL cohorts, filtered by search term) — resource-level IDs
     COALESCE(
         (SELECT ARRAY_AGG(
@@ -370,15 +278,14 @@ SELECT
            AND (simulation_search IS NULL OR LOWER(sr.name) LIKE '%' || LOWER(simulation_search) || '%')),
         '{}'::types.q_list_cohorts_v4_option[]
     ) as simulation_options,
-    -- Profile options (from ALL cohorts, filtered by search term)
+    -- Profile options (from ALL cohorts, filtered by search term) — now resource-level IDs
     COALESCE(
         (SELECT ARRAY_AGG(
-            (ppj.profile_id::text, COALESCE(pr.name, ''), (SELECT COUNT(*) FROM cohorts_data cd WHERE ppj.profile_id = ANY(cd.profile_ids)))::types.q_list_cohorts_v4_option
+            (pr.id::text, COALESCE(pr.name, ''), (SELECT COUNT(*) FROM cohorts_data cd WHERE pr.id = ANY(cd.profile_ids)))::types.q_list_cohorts_v4_option
             ORDER BY pr.name
         )
          FROM profiles_resource pr
-         JOIN profile_profiles_junction ppj ON ppj.profiles_id = pr.id
-         WHERE ppj.profile_id IN (SELECT profile_id FROM all_profile_ids_options)
+         WHERE pr.id IN (SELECT profile_id FROM all_profile_ids_options)
            AND (profile_search IS NULL OR LOWER(pr.name) LIKE '%' || LOWER(profile_search) || '%')),
         '{}'::types.q_list_cohorts_v4_option[]
     ) as profile_options,

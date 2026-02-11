@@ -37,6 +37,7 @@ END $$;
 CREATE TYPE types.q_get_profiles_v4_item AS (
     profile_id uuid,
     name text,
+    description text,
     emails text[],
     primary_email text
 );
@@ -75,6 +76,7 @@ SELECT COALESCE(
         (
             p.id,
             p.name,
+            COALESCE(p.description, ''),
             COALESCE(pem.emails, ARRAY[]::text[]),
             pem.primary_email
         )::types.q_get_profiles_v4_item
