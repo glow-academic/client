@@ -105,10 +105,10 @@ async def duplicate_field(
                 ),
             )
 
-            if not result or not result.field_id:
+            if not result or not result.new_field_id:
                 raise ValueError(f"Field not found: {request.field_id}")
 
-            original_name = result.field_name or "Unknown"
+            original_name = result.original_name or "Unknown"
 
             # Set audit context with data from SQL query
             if result.actor_name:
@@ -122,7 +122,7 @@ async def duplicate_field(
             api_response = DuplicateFieldApiResponse.model_validate(
                 {
                     "success": True,
-                    "field_id": str(result.field_id),
+                    "field_id": str(result.new_field_id),
                     "message": f"Field '{original_name}' duplicated successfully",
                 }
             )

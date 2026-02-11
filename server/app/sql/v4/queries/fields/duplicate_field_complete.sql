@@ -1,15 +1,28 @@
--- Duplicate field with all parameter and department associations
+-- Duplicate field with all parameter, department, and conditional parameter associations
 -- Converted to function
-DROP FUNCTION IF EXISTS api_duplicate_field_v4(uuid, uuid);
+-- 1) Drop function first (breaks dependency on types)
+-- Drop all versions of the function using DO block to handle signature variations
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN
+        SELECT oidvectortypes(proargtypes) as sig
+        FROM pg_proc
+        WHERE proname = 'api_duplicate_field_v4'
+          AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+    LOOP
+        EXECUTE format('DROP FUNCTION IF EXISTS api_duplicate_field_v4(%s)', r.sig);
+    END LOOP;
+END $$;
 
 CREATE OR REPLACE FUNCTION api_duplicate_field_v4(
     field_id uuid,
     profile_id uuid
 )
 RETURNS TABLE (
-    field_exists boolean,
-    field_id uuid,
-    field_name text,
+    new_field_id uuid,
+    original_name text,
     actor_name text
 )
 LANGUAGE sql
@@ -20,24 +33,18 @@ WITH params AS (
         field_id AS field_id,
         profile_id AS profile_id
 ),
-field_exists_check AS (
-    -- Check if field exists independently of access control
-    SELECT EXISTS(
-        SELECT 1 FROM field_artifact WHERE id = (SELECT field_id FROM params)
-    )::boolean as field_exists
-),
 user_profile AS (
     SELECT actor_name
     FROM view_user_profile_context
     WHERE profile_id = (SELECT profile_id FROM params)
 ),
 original_field AS (
-    SELECT 
+    SELECT
         f.id,
         (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) as name,
         (SELECT d.description FROM field_descriptions_junction fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1) as description
     FROM params x
-    JOIN fields_resource f ON f.id = x.field_id
+    JOIN field_artifact f ON f.id = x.field_id
 ),
 original_parameters AS (
     SELECT pf.parameter_id
@@ -50,6 +57,12 @@ original_departments AS (
     SELECT fd.department_id
     FROM params x
     JOIN field_departments_junction fd ON fd.field_id = x.field_id AND fd.active = true
+),
+original_conditional_parameters AS (
+    SELECT fcpj.conditional_parameter_id
+    FROM params x
+    JOIN field_conditional_parameters_junction fcpj
+        ON fcpj.field_id = x.field_id AND fcpj.active = true
 ),
 -- Insert name INTO names_resource table
 new_name_resource AS (
@@ -79,7 +92,7 @@ new_field AS (
 -- Link field to name
 link_field_name AS (
     INSERT INTO field_names_junction (field_id, name_id, created_at)
-    SELECT 
+    SELECT
         nf.field_id,
         nnr.name_id,
         NOW()
@@ -90,7 +103,7 @@ link_field_name AS (
 -- Link field to description
 link_field_description AS (
     INSERT INTO field_descriptions_junction (field_id, description_id, created_at)
-    SELECT 
+    SELECT
         nf.field_id,
         ndr.description_id,
         NOW()
@@ -101,7 +114,7 @@ link_field_description AS (
 -- Link field to parameter via parameter_fields_junction junction table
 link_field_parameter AS (
     INSERT INTO parameter_fields_junction (parameter_id, field_id, created_at)
-    SELECT 
+    SELECT
         op.parameter_id,
         nf.field_id,
         NOW()
@@ -119,21 +132,13 @@ link_field_active_flag AS (
     FROM new_field nf
     CROSS JOIN flags_resource f
     WHERE f.name = 'field_active'
-    ON CONFLICT (field_id, flag_id) DO UPDATE SET 
+    ON CONFLICT (field_id, flag_id) DO UPDATE SET
         value = FALSE
-),
-field_with_name AS (
-    -- Get field with name for return
-    SELECT 
-        nf.field_id,
-        nnr.name as field_name
-    FROM new_field nf
-    LEFT JOIN new_name_resource nnr ON true
 ),
 link_departments AS (
     -- Link new field to same departments as original
     INSERT INTO field_departments_junction (field_id, department_id, active, created_at)
-    SELECT 
+    SELECT
         nf.field_id,
         od.department_id,
         true,
@@ -142,13 +147,21 @@ link_departments AS (
     CROSS JOIN original_departments od
     ON CONFLICT (field_id, department_id) DO UPDATE SET
         active = true
+),
+copy_conditional_parameters AS (
+    -- Link new field to same conditional parameters as original
+    INSERT INTO field_conditional_parameters_junction (field_id, conditional_parameter_id, active, created_at)
+    SELECT
+        nf.field_id,
+        ocp.conditional_parameter_id,
+        true,
+        NOW()
+    FROM new_field nf
+    CROSS JOIN original_conditional_parameters ocp
+    ON CONFLICT (field_id, conditional_parameter_id) DO NOTHING
 )
-SELECT 
-    fec.field_exists::boolean as field_exists,
-    fwn.field_id,
-    fwn.field_name,
-    up.actor_name
-FROM field_exists_check fec
-CROSS JOIN user_profile up
-LEFT JOIN field_with_name fwn ON fec.field_exists = true
+SELECT
+    (SELECT field_id FROM new_field LIMIT 1) as new_field_id,
+    (SELECT name FROM original_field LIMIT 1) as original_name,
+    (SELECT actor_name FROM user_profile LIMIT 1) as actor_name
 $$;

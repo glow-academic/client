@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import datetime as dt
+from datetime import date as date_type
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -288,3 +290,72 @@ class PatchProfileDraftSqlRow(BaseModel):
     draft_id: UUID | None = None
     new_version: int | None = None
     draft_exists: bool | None = None
+
+
+# ========== List Endpoint Types ==========
+
+
+class ListStaffApiStaff(BaseModel):
+    """Staff member type for list endpoint with computed permissions."""
+
+    profile_id: UUID | None = None
+    emails: list[str] | None = None
+    primary_email: str | None = None
+    name: str | None = None
+    role: str | None = None
+    initials: str | None = None
+    active: bool | None = None
+    last_active: dt.datetime | None = None
+    cohort_ids: list[str] | None = None
+    department_ids: list[str] | None = None
+    primary_department_id: str | None = None
+    requests_per_day: int | None = None
+    total_requests: int | None = None
+    requests_in_last_day: int | None = None
+    # Computed in Python
+    can_edit: bool | None = None
+    can_duplicate: bool | None = None
+    can_delete: bool | None = None
+
+
+class ListStaffApiCohort(BaseModel):
+    """Cohort type for list endpoint filter options."""
+
+    cohort_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    count: int | None = None
+
+
+class ListStaffApiDepartment(BaseModel):
+    """Department type for list endpoint filter options."""
+
+    department_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    count: int | None = None
+
+
+class ListStaffApiTrendData(BaseModel):
+    """Trend data point for staff analytics charts."""
+
+    date: date_type | None = None
+    value: float | None = None
+    count: int | None = None
+
+
+class ListStaffApiResponse(BaseModel):
+    """Response model for staff list endpoint with computed permissions."""
+
+    actor_name: str | None = None
+    staff: list[ListStaffApiStaff] | None = None
+    cohorts: list[ListStaffApiCohort] | None = None
+    departments: list[ListStaffApiDepartment] | None = None
+    trend_data_active: list[ListStaffApiTrendData] | None = None
+    trend_data_admin: list[ListStaffApiTrendData] | None = None
+    trend_data_instructional: list[ListStaffApiTrendData] | None = None
+    trend_data_member: list[ListStaffApiTrendData] | None = None
+    trend_data_total_requests: list[ListStaffApiTrendData] | None = None
+    role_options: list[str] | None = None
+    last_active_options: list[str] | None = None
+    total_count: int | None = None

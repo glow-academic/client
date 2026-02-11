@@ -110,7 +110,11 @@ async def delete_field(
             if not result:
                 raise ValueError("Failed to check field usage")
 
-            if not result.field_exists:
+            usage_count = result.usage_count or 0
+            if usage_count > 0:
+                raise ValueError("Cannot delete field that is in use by parameters")
+
+            if not result.deleted:
                 raise ValueError(f"Field not found: {request.field_id}")
 
             field_name = result.name or "Unknown"

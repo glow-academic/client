@@ -26,27 +26,45 @@ __all__ = [
     "PROFILE_GENERAL_RESOURCES",
 ]
 
+# Role hierarchy for list-view permission computation
+ROLE_HIERARCHY = {
+    "superadmin": 5,
+    "admin": 4,
+    "instructional": 3,
+    "member": 2,
+    "guest": 1,
+    "custom": 1,
+}
+
 
 def compute_can_edit(
     user_role: str | None,
     target_is_self: bool,
     target_department_ids: list[str] | list[UUID] | None,
+    target_role: str | None = None,
 ) -> bool:
     """Unified can_edit logic for both get and list views.
 
     Constraints:
-    1. Superadmin can edit all profiles
-    2. Admin can edit profiles in their departments
-    3. Staff/instructional can only edit their own profile
-    4. Learners cannot edit profiles
+    1. Always allow editing self
+    2. Superadmin can edit all profiles
+    3. If target_role provided, use role hierarchy (list view)
+    4. Fallback: existing get-view logic (admin/instructional can edit)
     """
+    if target_is_self:
+        return True
+
     if user_role == "superadmin":
         return True
 
-    if user_role in ("admin", "instructional"):
-        return True
+    # List view: use role hierarchy
+    if target_role is not None:
+        user_rank = ROLE_HIERARCHY.get(user_role or "", 0)
+        target_rank = ROLE_HIERARCHY.get(target_role or "", 0)
+        return user_rank > target_rank
 
-    if user_role == "staff" and target_is_self:
+    # Fallback: existing get-view logic
+    if user_role in ("admin", "instructional"):
         return True
 
     return False
@@ -182,16 +200,35 @@ def compute_cohorts_required() -> bool:
 def compute_can_delete(
     user_role: str | None,
     target_is_self: bool,
+    target_role: str | None = None,
+    total_cohort_links: int = 0,
 ) -> bool:
     """Compute can_delete permission.
 
     Business logic:
     - Cannot delete own profile
-    - Only admins and superadmins can delete
+    - Superadmin can delete anyone (except self)
+    - Profiles with cohort links cannot be deleted (prevent orphaned data)
+    - If target_role provided, use role hierarchy (list view)
+    - Fallback: existing delete-endpoint logic (admin/superadmin can delete)
     """
     if target_is_self:
         return False
 
+    if user_role == "superadmin":
+        return True
+
+    # Profiles with cohort links cannot be deleted
+    if total_cohort_links > 0:
+        return False
+
+    # List view: use role hierarchy
+    if target_role is not None:
+        user_rank = ROLE_HIERARCHY.get(user_role or "", 0)
+        target_rank = ROLE_HIERARCHY.get(target_role or "", 0)
+        return user_rank > target_rank
+
+    # Fallback: existing delete-endpoint logic
     return user_role in ("admin", "superadmin")
 
 

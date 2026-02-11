@@ -43,11 +43,11 @@ usage_check AS (
     JOIN scenario_parameter_fields_junction spf ON spf.parameter_field_id = pfr.id AND spf.active = true
 ),
 parameter_info AS (
-    SELECT 
-        (SELECT n.name FROM parameter_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = p.id LIMIT 1) as name,
+    SELECT
+        (SELECT n.name FROM parameter_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = pa.id LIMIT 1) as name,
         COALESCE(uc.usage_count, 0) as usage_count
     FROM params x
-    JOIN parameters_resource p ON p.id = x.parameter_id
+    JOIN parameter_artifact pa ON pa.id = x.parameter_id
     CROSS JOIN usage_check uc
 ),
 delete_parameter AS (

@@ -454,7 +454,7 @@ export interface paths {
         put?: never;
         /**
          * Get Document List
-         * @description Get documents list with tags and scenarios.
+         * @description Get documents list with permissions and scenario details.
          */
         post: operations["get_document_list_api_v4_artifacts_documents_list_post"];
         delete?: never;
@@ -17714,29 +17714,48 @@ export interface components {
             items?: components["schemas"]["QGetDocumentResourceV4Item"][] | null;
         };
         /** GetDocumentsListApiRequest */
-        GetDocumentsListApiRequest: Record<string, never>;
+        GetDocumentsListApiRequest: {
+            /** Search */
+            search?: string | null;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+            /** Field Ids */
+            field_ids?: string[] | null;
+            /** Filter Department Ids */
+            filter_department_ids?: string[] | null;
+            /** Scenario Search */
+            scenario_search?: string | null;
+            /** Field Search */
+            field_search?: string | null;
+            /** Department Search */
+            department_search?: string | null;
+            /**
+             * Page Size
+             * @default 12
+             */
+            page_size: number | null;
+            /**
+             * Page Offset
+             * @default 0
+             */
+            page_offset: number | null;
+        };
         /** GetDocumentsListApiResponse */
         GetDocumentsListApiResponse: {
             /** Actor Name */
             actor_name?: string | null;
+            /** User Role */
+            user_role?: string | null;
             /** Documents */
             documents?: components["schemas"]["QListDocumentsV4Document"][] | null;
-            /** Scenarios */
-            scenarios?: components["schemas"]["QListDocumentsV4Scenario"][] | null;
-            /** Fields */
-            fields?: components["schemas"]["QListDocumentsV4Field"][] | null;
-            /** Departments */
-            departments?: components["schemas"]["QListDocumentsV4Department"][] | null;
-            /** Parameters */
-            parameters?: components["schemas"]["QListDocumentsV4Parameter"][] | null;
-            /** Scenario Options Junction */
-            scenario_options_junction?: components["schemas"]["QListDocumentsV4ScenarioOption"][] | null;
-            /** Department Options */
-            department_options?: components["schemas"]["QListDocumentsV4DepartmentOption"][] | null;
-            /** Valid Department Ids */
-            valid_department_ids?: string[] | null;
-            /** Document Type Options */
-            document_type_options?: string[] | null;
+            /** Scenario Option Ids */
+            scenario_option_ids?: components["schemas"]["QListDocumentsV4OptionId"][] | null;
+            /** Field Option Ids */
+            field_option_ids?: components["schemas"]["QListDocumentsV4OptionId"][] | null;
+            /** Department Option Ids */
+            department_option_ids?: components["schemas"]["QListDocumentsV4OptionId"][] | null;
+            /** Total Count */
+            total_count?: number | null;
         };
         /** GetEmailsApiRequest */
         GetEmailsApiRequest: {
@@ -21930,6 +21949,108 @@ export interface components {
             profiles?: components["schemas"]["ListDepartmentApiProfile"][] | null;
             /** Total Count */
             total_count?: number | null;
+        };
+        /**
+         * ListDocumentApiDepartment
+         * @description Department type for list endpoint.
+         */
+        ListDocumentApiDepartment: {
+            /** Department Id */
+            department_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Count */
+            count?: number | null;
+        };
+        /**
+         * ListDocumentApiDocument
+         * @description Document type for list endpoint with computed permissions.
+         */
+        ListDocumentApiDocument: {
+            /** Document Id */
+            document_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+            /** Field Ids */
+            field_ids?: string[] | null;
+            /** Is Inactive */
+            is_inactive?: boolean | null;
+            /** Num Scenarios */
+            num_scenarios?: number | null;
+            /** Active Scenario Count */
+            active_scenario_count?: number | null;
+            /** Total Scenario Links */
+            total_scenario_links?: number | null;
+            /** Can Edit */
+            can_edit?: boolean | null;
+            /** Can Duplicate */
+            can_duplicate?: boolean | null;
+            /** Can Delete */
+            can_delete?: boolean | null;
+            /** Updated At */
+            updated_at?: string | null;
+        };
+        /**
+         * ListDocumentApiField
+         * @description Field type for list endpoint.
+         */
+        ListDocumentApiField: {
+            /** Field Id */
+            field_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Count */
+            count?: number | null;
+        };
+        /**
+         * ListDocumentApiResponse
+         * @description Response model for list document endpoint with computed permissions.
+         */
+        ListDocumentApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Documents */
+            documents?: components["schemas"]["ListDocumentApiDocument"][] | null;
+            /** Scenarios */
+            scenarios?: components["schemas"]["ListDocumentApiScenario"][] | null;
+            /** Fields */
+            fields?: components["schemas"]["ListDocumentApiField"][] | null;
+            /** Departments */
+            departments?: components["schemas"]["ListDocumentApiDepartment"][] | null;
+            /** Total Count */
+            total_count?: number | null;
+        };
+        /**
+         * ListDocumentApiScenario
+         * @description Scenario type for list endpoint.
+         */
+        ListDocumentApiScenario: {
+            /** Scenario Id */
+            scenario_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Active */
+            active?: boolean | null;
+            /** Persona Ids */
+            persona_ids?: string[] | null;
+            /** Document Ids */
+            document_ids?: string[] | null;
+            /** Parameter Item Ids */
+            parameter_item_ids?: string[] | null;
+            /** Count */
+            count?: number | null;
         };
         /**
          * ListEvalApiDepartment
@@ -27439,104 +27560,35 @@ export interface components {
             /** Actor Name */
             actor_name: string | null;
         };
-        /** QListDocumentsV4Department */
-        QListDocumentsV4Department: {
-            /** Department Id */
-            department_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Parameter Ids */
-            parameter_ids: string[] | null;
-            /** Field Ids */
-            field_ids: string[] | null;
-        };
-        /** QListDocumentsV4DepartmentOption */
-        QListDocumentsV4DepartmentOption: {
-            /** Value */
-            value: string | null;
-            /** Label */
-            label: string | null;
-        };
         /** QListDocumentsV4Document */
         QListDocumentsV4Document: {
             /** Document Id */
             document_id: string | null;
             /** Name */
             name: string | null;
-            /** Updated At */
-            updated_at: string | null;
-            /** Upload Id */
-            upload_id: string | null;
-            /** Active */
-            active: boolean | null;
-            /** Extension */
-            extension: string | null;
             /** Department Ids */
             department_ids: string[] | null;
             /** Scenario Ids */
             scenario_ids: string[] | null;
             /** Field Ids */
             field_ids: string[] | null;
-            /** Valid Field Ids */
-            valid_field_ids: string[] | null;
+            /** Is Inactive */
+            is_inactive: boolean | null;
+            /** Num Scenarios */
+            num_scenarios: number | null;
             /** Active Scenario Count */
             active_scenario_count: number | null;
             /** Total Scenario Links */
             total_scenario_links: number | null;
-            /** Can Edit */
-            can_edit: boolean | null;
-            /** Can Delete */
-            can_delete: boolean | null;
+            /** Updated At */
+            updated_at: string | null;
         };
-        /** QListDocumentsV4Field */
-        QListDocumentsV4Field: {
-            /** Field Id */
-            field_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Parameter Id */
-            parameter_id: string | null;
-            /** Parameter Name */
-            parameter_name: string | null;
-        };
-        /** QListDocumentsV4Parameter */
-        QListDocumentsV4Parameter: {
-            /** Parameter Id */
-            parameter_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Document Parameter */
-            document_parameter: boolean | null;
-            /** Persona Parameter */
-            persona_parameter: boolean | null;
-            /** Scenario Parameter */
-            scenario_parameter: boolean | null;
-            /** Video Parameter */
-            video_parameter: boolean | null;
-        };
-        /** QListDocumentsV4Scenario */
-        QListDocumentsV4Scenario: {
-            /** Scenario Id */
-            scenario_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Active */
-            active: boolean | null;
-        };
-        /** QListDocumentsV4ScenarioOption */
-        QListDocumentsV4ScenarioOption: {
-            /** Value */
-            value: string | null;
-            /** Label */
-            label: string | null;
+        /** QListDocumentsV4OptionId */
+        QListDocumentsV4OptionId: {
+            /** Id */
+            id: string | null;
+            /** Count */
+            count: number | null;
         };
         /** QListModelsV4Model */
         QListModelsV4Model: {
@@ -35227,7 +35279,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetDocumentsListApiResponse"];
+                    "application/json": components["schemas"]["ListDocumentApiResponse"];
                 };
             };
             /** @description Validation Error */

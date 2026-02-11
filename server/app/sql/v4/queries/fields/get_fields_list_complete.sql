@@ -1,13 +1,37 @@
 -- Get fields list with permissions and relationships
--- Converted to function with composite types
+-- Resource-first: only touches field_artifact + field's own junctions + resource tables
+-- No cross-entity artifact tables
 -- 1) Drop function first (breaks dependency on types)
-DROP FUNCTION IF EXISTS api_list_fields_v4(uuid);
+-- Drop all versions of the function using DO block to handle signature variations
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN
+        SELECT oidvectortypes(proargtypes) as sig
+        FROM pg_proc
+        WHERE proname = 'api_list_fields_v4'
+          AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+    LOOP
+        EXECUTE format('DROP FUNCTION IF EXISTS api_list_fields_v4(%s)', r.sig);
+    END LOOP;
+END $$;
 
 -- 2) Drop types WITHOUT CASCADE
-DROP TYPE IF EXISTS types.q_list_fields_v4_field;
-DROP TYPE IF EXISTS types.q_list_fields_v4_parameter;
-DROP TYPE IF EXISTS types.q_list_fields_v4_department;
-DROP TYPE IF EXISTS types.q_list_fields_v4_option;
+-- Drop all types matching prefix pattern to handle type additions/removals
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN
+        SELECT typname
+        FROM pg_type
+        WHERE typname LIKE 'q_list_fields_v4_%'
+          AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
+    LOOP
+        EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
+    END LOOP;
+END $$;
 
 -- 3) Recreate types
 CREATE TYPE types.q_list_fields_v4_field AS (
@@ -21,26 +45,14 @@ CREATE TYPE types.q_list_fields_v4_field AS (
     parameter_ids text[],
     conditional_parameter_ids text[],
     total_parameter_links bigint,
-    is_inactive boolean
+    is_inactive boolean,
+    persona_ids uuid[]
 );
 
-CREATE TYPE types.q_list_fields_v4_parameter AS (
-    parameter_id uuid,
-    name text,
-    description text,
+-- Filter option types simplified: id + count only (names hydrated in Python from cache)
+CREATE TYPE types.q_list_fields_v4_option_id AS (
+    id uuid,
     count bigint
-);
-
-CREATE TYPE types.q_list_fields_v4_department AS (
-    department_id uuid,
-    name text,
-    description text,
-    count bigint
-);
-
-CREATE TYPE types.q_list_fields_v4_option AS (
-    value text,
-    label text
 );
 
 -- 4) Recreate function
@@ -51,10 +63,9 @@ RETURNS TABLE (
     actor_name text,
     user_role text,
     fields types.q_list_fields_v4_field[],
-    parameters types.q_list_fields_v4_parameter[],
-    departments types.q_list_fields_v4_department[],
-    parameter_options types.q_list_fields_v4_option[],
-    department_options types.q_list_fields_v4_option[],
+    parameter_option_ids types.q_list_fields_v4_option_id[],
+    persona_option_ids types.q_list_fields_v4_option_id[],
+    department_option_ids types.q_list_fields_v4_option_id[],
     total_count bigint
 )
 LANGUAGE sql
@@ -102,6 +113,18 @@ field_conditional_parameters_agg AS (
     WHERE fcpj.active = true
     GROUP BY fcpj.field_id
 ),
+-- Persona linkage: field → field_fields_junction → fields_resource → parameter_fields_resource → persona_parameter_fields_junction → persona_artifact
+field_personas_data AS (
+    SELECT
+        ffj.field_id,
+        ARRAY_AGG(DISTINCT ppfj.persona_id) as persona_ids
+    FROM field_fields_junction ffj
+    JOIN fields_resource fr ON fr.id = ffj.fields_id
+    JOIN parameter_fields_resource pfr ON pfr.field_id = fr.id
+    JOIN persona_parameter_fields_junction ppfj ON ppfj.parameter_field_id = pfr.id AND ppfj.active = true
+    WHERE ffj.active = true
+    GROUP BY ffj.field_id
+),
 fields_data AS (
     SELECT
         f.id as field_id,
@@ -114,12 +137,14 @@ fields_data AS (
         COALESCE(fpa.parameter_ids, ARRAY[]::text[]) as parameter_ids,
         COALESCE(fcpa.conditional_parameter_ids, ARRAY[]::text[]) as conditional_parameter_ids,
         COALESCE(fcpa.total_parameter_links, 0)::bigint as total_parameter_links,
-        NOT EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'field_active' AND ff.value = TRUE) as is_inactive
+        NOT EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'field_active' AND ff.value = TRUE) as is_inactive,
+        COALESCE(fpd.persona_ids, ARRAY[]::uuid[]) as persona_ids
     FROM params x
     JOIN field_artifact f ON true
     LEFT JOIN field_departments_data fdd ON fdd.field_id = f.id
     LEFT JOIN field_parameters_agg fpa ON fpa.field_id = f.id
     LEFT JOIN field_conditional_parameters_agg fcpa ON fcpa.field_id = f.id
+    LEFT JOIN field_personas_data fpd ON fpd.field_id = f.id
     CROSS JOIN user_profile up
     WHERE EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'field_active' AND ff.value = true)
     AND (
@@ -137,67 +162,38 @@ fields_data AS (
             AND fd.active = true
         )
     )
-    GROUP BY f.id, (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1), (SELECT d.description FROM field_descriptions_junction fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1), EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'field_active' AND ff.value = TRUE), f.created_at, f.updated_at, fdd.department_ids, fpa.parameter_ids, fcpa.conditional_parameter_ids, fcpa.total_parameter_links, up.role
+    GROUP BY f.id, (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1), (SELECT d.description FROM field_descriptions_junction fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1), EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'field_active' AND ff.value = TRUE), f.created_at, f.updated_at, fdd.department_ids, fpa.parameter_ids, fcpa.conditional_parameter_ids, fcpa.total_parameter_links, up.role, fpd.persona_ids
 ),
-assigned_parameter_ids AS (
-    SELECT DISTINCT unnest(parameter_ids)::text as parameter_id
-    FROM fields_data
-    WHERE parameter_ids IS NOT NULL
-),
-assigned_department_ids AS (
-    SELECT DISTINCT unnest(department_ids)::text as department_id
-    FROM fields_data
-    WHERE department_ids IS NOT NULL
-),
+-- Filter option IDs with counts (names hydrated in Python from cached *_internal() functions)
 all_parameter_ids AS (
     SELECT DISTINCT unnest(parameter_ids)::uuid as parameter_id
     FROM field_parameters_agg
 ),
-parameter_data AS (
+parameter_option_data AS (
     SELECT
-        p.id as parameter_id,
-        (SELECT n.name FROM parameter_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = p.id LIMIT 1),
-        COALESCE((SELECT d.description FROM parameter_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.parameter_id = p.id LIMIT 1), '') as description,
-        (SELECT COUNT(*) FROM fields_data fd WHERE p.id::text = ANY(fd.parameter_ids))::bigint as count
-    FROM all_parameter_ids api
-    JOIN parameters_resource p ON p.id = api.parameter_id
+        pr.id,
+        (SELECT COUNT(*) FROM fields_data fd WHERE pr.id::text = ANY(fd.parameter_ids))::bigint as count
+    FROM parameters_resource pr
+    WHERE pr.id IN (SELECT parameter_id FROM all_parameter_ids)
 ),
-parameter_options_data AS (
+all_persona_ids AS (
+    SELECT DISTINCT unnest(persona_ids) as persona_id
+    FROM fields_data
+    WHERE persona_ids IS NOT NULL AND array_length(persona_ids, 1) > 0
+),
+persona_option_data AS (
     SELECT
-        ARRAY_AGG(
-            (p.parameter_id::text,
-             CASE
-                 WHEN (SELECT COUNT(*) FROM parameter_data pd2 WHERE pd2.name = p.name) > 1
-                 THEN p.name || ' (' || SUBSTRING(p.parameter_id::text FROM LENGTH(p.parameter_id::text) - 7) || ')'
-                 ELSE p.name
-             END)::types.q_list_fields_v4_option
-            ORDER BY p.name
-        ) FILTER (WHERE p.parameter_id IN (SELECT parameter_id::uuid FROM assigned_parameter_ids)) as options
-    FROM parameter_data p
+        pa.id,
+        (SELECT COUNT(*) FROM fields_data fd WHERE pa.id = ANY(fd.persona_ids))::bigint as count
+    FROM persona_artifact pa
+    WHERE pa.id IN (SELECT persona_id FROM all_persona_ids)
 ),
-all_department_ids AS (
-    SELECT DISTINCT unnest(department_ids)::uuid as department_id
-    FROM field_departments_data
-    WHERE department_ids IS NOT NULL
-    UNION
-    SELECT department_id FROM user_departments
-),
-department_data AS (
+department_option_data AS (
     SELECT
-        d.id as department_id,
-        (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name,
-        COALESCE((SELECT d_desc.description FROM department_descriptions_junction dd JOIN descriptions_resource d_desc ON dd.description_id = d_desc.id WHERE dd.department_id = d.id LIMIT 1), '') as description,
-        (SELECT COUNT(*) FROM fields_data fd WHERE d.id::text = ANY(fd.department_ids))::bigint as count
-    FROM all_department_ids adi
-    JOIN departments_resource d ON d.id = adi.department_id
-),
-department_options_data AS (
-    SELECT
-        ARRAY_AGG(
-            (d.department_id::text, d.name)::types.q_list_fields_v4_option
-            ORDER BY d.name
-        ) FILTER (WHERE d.department_id::text IN (SELECT department_id FROM assigned_department_ids) AND d.department_id IN (SELECT department_id FROM user_departments)) as options
-    FROM department_data d
+        dr.id,
+        (SELECT COUNT(*) FROM fields_data)::bigint as count
+    FROM departments_resource dr
+    WHERE dr.id IN (SELECT department_id FROM user_departments)
 )
 SELECT
     up.actor_name,
@@ -205,31 +201,32 @@ SELECT
     -- Aggregate fields
     COALESCE(
         (SELECT ARRAY_AGG(
-            (fd.field_id, fd.name, fd.description, fd.active, fd.created_at, fd.updated_at, fd.department_ids, fd.parameter_ids, fd.conditional_parameter_ids, fd.total_parameter_links, fd.is_inactive)::types.q_list_fields_v4_field
+            (fd.field_id, fd.name, fd.description, fd.active, fd.created_at, fd.updated_at, fd.department_ids, fd.parameter_ids, fd.conditional_parameter_ids, fd.total_parameter_links, fd.is_inactive, fd.persona_ids)::types.q_list_fields_v4_field
             ORDER BY fd.name
         ) FROM fields_data fd),
         '{}'::types.q_list_fields_v4_field[]
     ) as fields,
-    -- Aggregate parameters
+    -- Parameter option IDs with counts (names hydrated in Python)
     COALESCE(
         (SELECT ARRAY_AGG(
-            (pd.parameter_id, pd.name, pd.description, pd.count)::types.q_list_fields_v4_parameter
-            ORDER BY pd.name
-        ) FROM parameter_data pd),
-        '{}'::types.q_list_fields_v4_parameter[]
-    ) as parameters,
-    -- Aggregate departments
+            (pod.id, pod.count)::types.q_list_fields_v4_option_id
+        ) FROM parameter_option_data pod),
+        '{}'::types.q_list_fields_v4_option_id[]
+    ) as parameter_option_ids,
+    -- Persona option IDs with counts (names hydrated in Python)
     COALESCE(
         (SELECT ARRAY_AGG(
-            (dd.department_id, dd.name, dd.description, dd.count)::types.q_list_fields_v4_department
-            ORDER BY dd.name
-        ) FROM department_data dd),
-        '{}'::types.q_list_fields_v4_department[]
-    ) as departments,
-    -- Parameter options (for UI filtering)
-    COALESCE((SELECT options FROM parameter_options_data), '{}'::types.q_list_fields_v4_option[]) as parameter_options,
-    -- Department options (for UI filtering)
-    COALESCE((SELECT options FROM department_options_data), '{}'::types.q_list_fields_v4_option[]) as department_options,
+            (peod.id, peod.count)::types.q_list_fields_v4_option_id
+        ) FROM persona_option_data peod),
+        '{}'::types.q_list_fields_v4_option_id[]
+    ) as persona_option_ids,
+    -- Department option IDs with counts (names hydrated in Python)
+    COALESCE(
+        (SELECT ARRAY_AGG(
+            (dod.id, dod.count)::types.q_list_fields_v4_option_id
+        ) FROM department_option_data dod),
+        '{}'::types.q_list_fields_v4_option_id[]
+    ) as department_option_ids,
     -- Total count
     (SELECT COUNT(*) FROM fields_data)::bigint as total_count
 FROM user_profile up

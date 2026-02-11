@@ -49,15 +49,6 @@ SELECT * FROM messages_entry;
 CREATE OR REPLACE VIEW view_message_tree_entry AS
 SELECT * FROM message_tree_entry;
 
-CREATE OR REPLACE VIEW view_strengths_entry AS
-SELECT * FROM strengths_entry;
-
-CREATE OR REPLACE VIEW view_improvements_entry AS
-SELECT * FROM improvements_entry;
-
-CREATE OR REPLACE VIEW view_hints_entry AS
-SELECT * FROM hints_entry;
-
 CREATE OR REPLACE VIEW view_highlights_entry AS
 SELECT * FROM highlights_entry;
 

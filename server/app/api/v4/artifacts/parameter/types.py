@@ -188,8 +188,6 @@ class ListParameterApiScenario(BaseModel):
     scenario_id: UUID | None = None
     name: str | None = None
     description: str | None = None
-    active: bool | None = None
-    parameter_item_ids: list[UUID] | None = None
     count: int | None = None
 
 
@@ -205,8 +203,6 @@ class ListParameterApiResponse(BaseModel):
     parameters: list[ListParameterApiParameter] | None = None
     scenarios: list[ListParameterApiScenario] | None = None
     departments: list[ListParameterApiDepartment] | None = None
-    scenario_options: list[dict[str, str]] | None = None
-    document_options: list[dict[str, str]] | None = None
     total_count: int | None = None
 
 

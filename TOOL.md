@@ -1,6 +1,6 @@
-# Tool Audit — Args, Args Outputs, Bindings, Domains Integrity Check
+# Tool Audit — Args, Args Outputs, Bindings, Domains, Registry Integrity Check
 
-You are a tool auditor for the GLOW project. Your job is to verify that all tools have consistent, complete, and correctly linked args, args_outputs, bindings, and domains. You do NOT fix anything. You REPORT errors, inconsistencies, and orphans.
+You are a tool auditor for the GLOW project. Your job is to verify that all tools have consistent, complete, and correctly linked args, args_outputs, bindings, domains, and registry relations. You do NOT fix anything. You REPORT errors, inconsistencies, and orphans.
 
 **IMPORTANT**: Run `make restore-db` first for a clean baseline, then `make sql-compile` so MVs and SPs are available for any runtime queries.
 
@@ -16,6 +16,13 @@ psql postgresql://myuser:mypassword@localhost:5432/mydb
 
 ## The Tool Data Model
 
+### Tool Types
+
+Tools are categorized by naming convention:
+
+- **`create_*` tools**: Create new resource or entry instances. Linked to `domains_resource` (for resources) or `bindings_resource` (for entries).
+- **`use_*` tools**: Link/reference existing resources (non-creatable). These are "link tools" that wire existing data into artifacts.
+
 ### Entity Relationship
 
 ```
@@ -26,10 +33,14 @@ tool_artifact
     +-- tool_flags_junction -----------> flags_resource (with value column)
     +-- tool_args_junction ------------> args_resource
     |                                        |
-    |                                        +-- args_resource.field_type (string|number|boolean|array|uuid|...)
+    |                                        +-- args_resource.field_type (string|number|boolean|array|uuid|object)
     |                                        +-- args_resource.required (bool)
-    |                                        +-- args_resource.position (int, ordering)
     |                                        +-- args_resource.default_value (text)
+    |
+    +-- tool_arg_positions_junction ---> arg_positions_resource
+    |                                        |
+    |                                        +-- arg_positions_resource.args_id FK -> args_resource.id
+    |                                        +-- arg_positions_resource.value (int, per-tool ordering)
     |
     +-- tool_args_outputs_junction ----> args_outputs_resource
     |                                        |
@@ -66,8 +77,18 @@ args_outputs_values_entry  — stores runtime output values per call
 ### Registry Tables
 
 ```
-resource_tools_relation    — maps tool_artifact.id -> resource_type enum for resource-level tool access
-entry_tools_relation       — maps entry_type -> tool_artifact.id for entry-level tool access
+resource_tools_relation    — maps resource_type -> tool_artifact.id
+                             Every resource should have a create_* tool.
+                             Non-creatable resources should also have a use_* tool.
+
+entry_tools_relation       — maps entry_type -> tool_artifact.id
+                             Every binding entry type should have a create_* tool.
+
+domains_resource           — declares which resources a tool operates on
+                             creatable = true: tool creates new instances
+                             creatable = false: tool links existing instances
+
+bindings_resource          — declares which entry types a tool creates
 ```
 
 ---
@@ -94,9 +115,9 @@ Every `args_resource` row should be linked to at least one tool via `tool_args_j
 
 Every `args_outputs_resource` row should be linked to at least one tool via `tool_args_outputs_junction`.
 
-### Rule 6: Args positions must be contiguous per tool
+### Rule 6: Arg positions must be contiguous per tool
 
-For each tool, the `args_resource.position` values across its linked args should form a contiguous sequence starting from 0 (0, 1, 2, ...). Gaps indicate missing args or position errors.
+For each tool, the `arg_positions_resource.value` entries (via `tool_arg_positions_junction`) should form a contiguous sequence starting from 0 (0, 1, 2, ...). Gaps indicate missing args or position errors. Positions are per-tool (not per-arg) since args can be shared.
 
 ### Rule 7: Args names must be unique per tool
 
@@ -130,13 +151,37 @@ Every `entry_tools_relation.tool_id` must reference an existing `tool_artifact.i
 
 If a tool has `tool_args_junction.active = false` for an arg, any `tool_args_outputs_junction` rows linking to args_outputs that reference that arg should also be inactive.
 
-### Rule 15: Args type column should not be nullable
-
-`args_resource.type` (flag_type) is nullable — audit how many rows have NULL vs. a value.
-
-### Rule 16: Calls connection completeness
+### Rule 15: Calls connection completeness
 
 Every `args_resource` should have a corresponding `args_calls_connection` row. Same for `args_outputs_resource` -> `args_outputs_calls_connection`.
+
+### Rule 16: Every non-creatable domain must have a use_ (link) tool
+
+For every `domains_resource` row with `creatable = false`, there must be a corresponding `use_*` tool registered in `resource_tools_relation` for that resource. Link tools allow wiring existing resources into artifacts without creating new ones.
+
+### Rule 17: Every creatable domain must have a create_ tool
+
+For every `domains_resource` row with `creatable = true`, there must be a corresponding `create_*` tool registered in `resource_tools_relation` for that resource.
+
+### Rule 18: Every domain must have a corresponding resource_tools_relation entry
+
+Every `domains_resource.resource` value must appear in `resource_tools_relation` with at least one tool. A domain without a registered tool is unreachable.
+
+### Rule 19: Every resource in resource_tools_relation must have a domain
+
+Every distinct `resource_tools_relation.resource` value must have a corresponding active `domains_resource` row. Resources registered in the relation table but missing from domains are orphan registrations.
+
+### Rule 20: Every binding must have a create_ tool
+
+For every `bindings_resource.entry` value, there must be a `create_*` tool linked via `tool_bindings_junction` to that binding. Bindings declare entry types that a tool creates — an unlinked binding is unreachable.
+
+### Rule 21: Every binding entry type should be registered in entry_tools_relation
+
+Every `bindings_resource.entry` value should have a corresponding row in `entry_tools_relation` mapping it to its create tool.
+
+### Rule 22: Every arg must have a position entry per tool
+
+For each `(tool_id, args_id)` in `tool_args_junction`, there must be a corresponding `arg_positions_resource` row (with matching `args_id`) linked to the same tool via `tool_arg_positions_junction`.
 
 ---
 
@@ -220,12 +265,12 @@ ORDER BY ao.name;
 ```sql
 WITH tool_positions AS (
     SELECT
-        taj.tool_id,
-        ar.position,
-        ROW_NUMBER() OVER (PARTITION BY taj.tool_id ORDER BY ar.position) - 1 AS expected_position
-    FROM tool_args_junction taj
-    JOIN args_resource ar ON ar.id = taj.args_id
-    WHERE taj.active = true AND ar.active = true
+        tapj.tool_id,
+        apr.value AS position,
+        ROW_NUMBER() OVER (PARTITION BY tapj.tool_id ORDER BY apr.value) - 1 AS expected_position
+    FROM tool_arg_positions_junction tapj
+    JOIN arg_positions_resource apr ON apr.id = tapj.arg_positions_id
+    WHERE tapj.active = true AND apr.active = true
 )
 SELECT tool_id, position, expected_position
 FROM tool_positions
@@ -355,20 +400,10 @@ ORDER BY taoj.tool_id;
 
 **Expected**: Empty. Any rows = active output linked to deactivated arg.
 
-### Audit 15: Args with NULL type column
+### Audit 15: Args/args_outputs missing calls_connection
 
 ```sql
-SELECT ar.id, ar.name, ar.field_type, ar.type IS NULL AS type_is_null
-FROM args_resource ar
-ORDER BY ar.type IS NULL DESC, ar.name;
-```
-
-**Expected**: Informational. Count how many have `type IS NULL`.
-
-### Audit 16: Args/args_outputs missing calls_connection
-
-```sql
--- 16a: Args without calls_connection
+-- 15a: Args without calls_connection
 SELECT ar.id, ar.name
 FROM args_resource ar
 WHERE NOT EXISTS (
@@ -378,7 +413,7 @@ ORDER BY ar.name;
 ```
 
 ```sql
--- 16b: Args_outputs without calls_connection
+-- 15b: Args_outputs without calls_connection
 SELECT ao.id, ao.name
 FROM args_outputs_resource ao
 WHERE NOT EXISTS (
@@ -389,7 +424,121 @@ ORDER BY ao.name;
 
 **Expected**: Empty. Any rows = resource missing call traceability.
 
-### Audit 17: Args_outputs template validation
+### Audit 16: Non-creatable domains missing use_ (link) tools
+
+```sql
+SELECT dr.resource::text AS domain_resource
+FROM domains_resource dr
+WHERE dr.active = true AND dr.creatable = false
+    AND NOT EXISTS (
+        SELECT 1 FROM resource_tools_relation rtr
+        JOIN tool_names_junction tnj ON tnj.tool_id = rtr.tool_id AND tnj.active = true
+        JOIN names_resource nr ON nr.id = tnj.name_id
+        WHERE rtr.resource = dr.resource AND nr.name LIKE 'use_%'
+    )
+ORDER BY dr.resource;
+```
+
+**Expected**: Empty. Any rows = non-creatable domain has no link tool. Users cannot wire this resource into artifacts.
+
+### Audit 17: Creatable domains missing create_ tools
+
+```sql
+SELECT dr.resource::text AS domain_resource
+FROM domains_resource dr
+WHERE dr.active = true AND dr.creatable = true
+    AND NOT EXISTS (
+        SELECT 1 FROM resource_tools_relation rtr
+        JOIN tool_names_junction tnj ON tnj.tool_id = rtr.tool_id AND tnj.active = true
+        JOIN names_resource nr ON nr.id = tnj.name_id
+        WHERE rtr.resource = dr.resource AND nr.name LIKE 'create_%'
+    )
+ORDER BY dr.resource;
+```
+
+**Expected**: Empty. Any rows = creatable domain has no create tool. The resource cannot be created.
+
+### Audit 18: Domains without resource_tools_relation entries
+
+```sql
+SELECT dr.resource::text AS domain_resource
+FROM domains_resource dr
+WHERE dr.active = true
+    AND NOT EXISTS (
+        SELECT 1 FROM resource_tools_relation rtr WHERE rtr.resource = dr.resource
+    )
+ORDER BY dr.resource;
+```
+
+**Expected**: Empty. Any rows = domain declares a resource but no tool is registered to handle it.
+
+### Audit 19: resource_tools_relation entries without domains
+
+```sql
+SELECT rtr.resource::text AS orphan_resource,
+    (SELECT nr.name FROM tool_names_junction tnj JOIN names_resource nr ON nr.id = tnj.name_id
+     WHERE tnj.tool_id = rtr.tool_id AND tnj.active = true LIMIT 1) AS tool_name
+FROM resource_tools_relation rtr
+WHERE NOT EXISTS (
+    SELECT 1 FROM domains_resource dr WHERE dr.resource = rtr.resource AND dr.active = true
+)
+ORDER BY rtr.resource;
+```
+
+**Expected**: Empty. Any rows = tool is registered for a resource that has no domain declaration.
+
+### Audit 20: Bindings without a linked create_ tool
+
+```sql
+SELECT br.entry::text AS binding_entry
+FROM bindings_resource br
+WHERE br.active = true
+    AND NOT EXISTS (
+        SELECT 1 FROM tool_bindings_junction tbj
+        JOIN tool_names_junction tnj ON tnj.tool_id = tbj.tool_id AND tnj.active = true
+        JOIN names_resource nr ON nr.id = tnj.name_id
+        WHERE tbj.binding_id = br.id AND tbj.active = true AND nr.name LIKE 'create_%'
+    )
+ORDER BY br.entry;
+```
+
+**Expected**: Empty. Any rows = binding declares an entry type but no create tool is linked to produce it.
+
+### Audit 21: Binding entry types missing from entry_tools_relation
+
+```sql
+SELECT br.entry::text AS binding_entry
+FROM bindings_resource br
+WHERE br.active = true
+    AND NOT EXISTS (
+        SELECT 1 FROM entry_tools_relation etr WHERE etr.entry = br.entry
+    )
+ORDER BY br.entry;
+```
+
+**Expected**: Empty. Any rows = binding entry type not registered in the entry-tool mapping.
+
+### Audit 22: Args missing position entries per tool
+
+```sql
+SELECT taj.tool_id, taj.args_id, ar.name AS arg_name,
+    (SELECT nr.name FROM tool_names_junction tnj JOIN names_resource nr ON nr.id = tnj.name_id
+     WHERE tnj.tool_id = taj.tool_id AND tnj.active = true LIMIT 1) AS tool_name
+FROM tool_args_junction taj
+JOIN args_resource ar ON ar.id = taj.args_id
+WHERE taj.active = true AND ar.active = true
+    AND NOT EXISTS (
+        SELECT 1 FROM tool_arg_positions_junction tapj
+        JOIN arg_positions_resource apr ON apr.id = tapj.arg_positions_id
+        WHERE tapj.tool_id = taj.tool_id AND apr.args_id = taj.args_id
+            AND tapj.active = true AND apr.active = true
+    )
+ORDER BY tool_name, ar.name;
+```
+
+**Expected**: Empty. Any rows = tool has an arg but no position entry for it.
+
+### Audit 23: Args_outputs template validation (informational)
 
 ```sql
 -- Args_outputs with empty templates (may be intentional but worth flagging)
@@ -402,7 +551,7 @@ ORDER BY ar.name, ao.name;
 
 **Expected**: Informational. Empty templates may mean the output just passes through the value.
 
-### Audit 18: Cross-tool arg sharing (informational)
+### Audit 24: Cross-tool arg sharing (informational)
 
 ```sql
 -- Args linked to multiple tools (not necessarily wrong, but worth knowing)
@@ -416,7 +565,7 @@ ORDER BY tool_count DESC, ar.name;
 
 **Expected**: Informational. Args are resources and CAN be shared, but shared args mean a change affects multiple tools.
 
-### Audit 19: Tool completeness summary
+### Audit 25: Tool completeness summary (informational)
 
 ```sql
 -- Per-tool summary: name, arg count, output count, binding count, domain count
@@ -436,17 +585,19 @@ SELECT
     (SELECT COUNT(*) FROM tool_descriptions_junction tdej
      WHERE tdej.tool_id = ta.id AND tdej.active = true) AS has_description,
     (SELECT COUNT(*) FROM tool_flags_junction tfj
-     WHERE tfj.tool_id = ta.id AND tfj.active = true) AS has_flag
+     WHERE tfj.tool_id = ta.id AND tfj.active = true) AS has_flag,
+    (SELECT COUNT(*) FROM tool_arg_positions_junction tapj
+     WHERE tapj.tool_id = ta.id AND tapj.active = true) AS position_count
 FROM tool_artifact ta
 ORDER BY tool_name;
 ```
 
-**Expected**: Informational. Every tool should have arg_count >= 0, output_count >= 0, has_description = 1, has_flag >= 1, domain_count >= 5.
+**Expected**: Informational. Every tool should have arg_count >= 0, output_count >= 0, has_description = 1, has_flag >= 1, domain_count >= 5, position_count = arg_count.
 
-### Audit 20: Bidirectional junction integrity
+### Audit 26: Bidirectional junction integrity
 
 ```sql
--- 20a: tool_args_junction rows where the arg no longer exists
+-- 26a: tool_args_junction rows where the arg no longer exists
 SELECT taj.tool_id, taj.args_id
 FROM tool_args_junction taj
 WHERE NOT EXISTS (
@@ -456,7 +607,7 @@ ORDER BY taj.tool_id;
 ```
 
 ```sql
--- 20b: tool_args_outputs_junction rows where the args_output no longer exists
+-- 26b: tool_args_outputs_junction rows where the args_output no longer exists
 SELECT taoj.tool_id, taoj.args_outputs_id
 FROM tool_args_outputs_junction taoj
 WHERE NOT EXISTS (
@@ -466,6 +617,32 @@ ORDER BY taoj.tool_id;
 ```
 
 **Expected**: Both empty (FK CASCADE should handle this).
+
+### Audit 27: Domain/binding coverage summary (informational)
+
+```sql
+-- Full domain coverage: resource, creatable, has create tool, has use tool
+SELECT
+    dr.resource::text,
+    dr.creatable,
+    EXISTS(
+        SELECT 1 FROM resource_tools_relation rtr
+        JOIN tool_names_junction tnj ON tnj.tool_id = rtr.tool_id AND tnj.active = true
+        JOIN names_resource nr ON nr.id = tnj.name_id
+        WHERE rtr.resource = dr.resource AND nr.name LIKE 'create_%'
+    ) AS has_create_tool,
+    EXISTS(
+        SELECT 1 FROM resource_tools_relation rtr
+        JOIN tool_names_junction tnj ON tnj.tool_id = rtr.tool_id AND tnj.active = true
+        JOIN names_resource nr ON nr.id = tnj.name_id
+        WHERE rtr.resource = dr.resource AND nr.name LIKE 'use_%'
+    ) AS has_use_tool
+FROM domains_resource dr
+WHERE dr.active = true
+ORDER BY dr.resource;
+```
+
+**Expected**: Informational. Creatable domains should have `has_create_tool = true`. Non-creatable domains should have `has_use_tool = true`. Both can also have the other.
 
 ---
 
@@ -512,10 +689,10 @@ End with a summary:
 ```
 SUMMARY
 =======
-Total audits: 20
+Total audits: 27
 Passed: {N}
 Failed: {N}
-Warnings: {N} (informational audits like 15, 17, 18, 19)
+Warnings: {N} (informational audits like 23, 24, 25, 27)
 ```
 
 ---
@@ -528,4 +705,6 @@ Warnings: {N} (informational audits like 15, 17, 18, 19)
 4. **tool_tools_junction** links `tool_artifact` to `tools_resource` (a meta-level registry resource). This is an artifact-to-resource junction, not self-referential.
 5. **tool_calls_junction** links `tool_artifact` to `calls_entry`. This is an artifact-to-entry junction tracking call lineage.
 6. **Args can be shared across tools** — a single `args_resource` row can appear in multiple `tool_args_junction` rows. This is valid but changes to shared args affect all linked tools.
-7. **Run this after any tool migration** to catch regressions.
+7. **Positions are per-tool** — `arg_positions_resource` stores position per (tool, arg) pair via `tool_arg_positions_junction`, not on `args_resource` directly.
+8. **`create_*` vs `use_*` naming** — the tool name prefix determines its role. `create_*` tools produce new resources/entries. `use_*` tools link existing ones. The naming convention MUST match the domain's `creatable` flag.
+9. **Run this after any tool migration** to catch regressions.

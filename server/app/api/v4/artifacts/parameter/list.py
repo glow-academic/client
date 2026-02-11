@@ -3,9 +3,14 @@
 Two-pass architecture:
 1. SQL returns raw data with active_scenario_count and total_scenario_links
 2. Python computes permissions (can_edit, can_delete, can_duplicate)
+
+Filter option names hydrated from cached *_internal() functions.
+Search filtering applied in Python.
 """
 
+import asyncio
 from typing import Annotated, Any, cast
+from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -21,9 +26,11 @@ from app.api.v4.artifacts.parameter.types import (
     ListParameterApiResponse,
     ListParameterApiScenario,
 )
+from app.api.v4.resources.departments.get import get_departments_internal
+from app.api.v4.resources.scenarios.get import get_scenarios_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db
+from app.main import get_db, get_pool
 from app.sql.types import (
     GetParametersListApiRequest,
     GetParametersListSqlParams,
@@ -87,9 +94,16 @@ async def get_parameter_list(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Convert API request to SQL params (add profile_id from header)
+        # Convert API request to SQL params (add profile_id from header + request body fields)
         params = GetParametersListSqlParams(
             profile_id=profile_id,
+            search=request.search,
+            scenario_ids=request.scenario_ids,
+            filter_department_ids=request.filter_department_ids,
+            scenario_search=request.scenario_search,
+            department_search=request.department_search,
+            page_size=request.page_size,
+            page_offset=request.page_offset,
         )
         sql_params = params.to_tuple()
 
@@ -113,7 +127,6 @@ async def get_parameter_list(
         # Compute permissions for each parameter in Python
         parameters_with_permissions: list[ListParameterApiParameter] = []
         for parameter in result.parameters or []:
-            # Compute permissions based on user role and parameter state
             can_edit_val = compute_can_edit(
                 user_role=user_role,
                 parameter_department_ids=parameter.department_ids,
@@ -144,35 +157,95 @@ async def get_parameter_list(
                 )
             )
 
-        # Transform scenarios, departments to API types
-        scenarios = [
+        # --- Python hydration: filter option names from cached *_internal() ---
+        # Extract option IDs and counts from SQL result
+        scenario_option_ids = getattr(result, "scenario_option_ids", None) or []
+        department_option_ids = getattr(result, "department_option_ids", None) or []
+
+        # Build ID -> count maps
+        scenario_count_map: dict[UUID, int] = {}
+        scenario_ids_to_fetch: list[UUID] = []
+        for opt in scenario_option_ids:
+            opt_id = getattr(opt, "id", None)
+            opt_count = getattr(opt, "count", 0)
+            if opt_id:
+                uid = UUID(str(opt_id)) if not isinstance(opt_id, UUID) else opt_id
+                scenario_count_map[uid] = int(opt_count or 0)
+                scenario_ids_to_fetch.append(uid)
+
+        department_count_map: dict[UUID, int] = {}
+        department_ids_to_fetch: list[UUID] = []
+        for opt in department_option_ids:
+            opt_id = getattr(opt, "id", None)
+            opt_count = getattr(opt, "count", 0)
+            if opt_id:
+                uid = UUID(str(opt_id)) if not isinstance(opt_id, UUID) else opt_id
+                department_count_map[uid] = int(opt_count or 0)
+                department_ids_to_fetch.append(uid)
+
+        # Parallel fetch names from cached *_internal() functions
+        scenarios_data = []
+        departments_data = []
+
+        pool = get_pool()
+        has_ids = any([scenario_ids_to_fetch, department_ids_to_fetch])
+
+        if pool and has_ids:
+
+            async def fetch_scenarios() -> list:
+                if not scenario_ids_to_fetch:
+                    return []
+                async with pool.acquire() as c:
+                    return await get_scenarios_internal(
+                        c, scenario_ids_to_fetch, bypass_cache
+                    )
+
+            async def fetch_departments() -> list:
+                if not department_ids_to_fetch:
+                    return []
+                async with pool.acquire() as c:
+                    return await get_departments_internal(
+                        c, department_ids_to_fetch, bypass_cache
+                    )
+
+            scenarios_data, departments_data = await asyncio.gather(
+                fetch_scenarios(), fetch_departments()
+            )
+
+        # Merge names with counts, apply search filtering in Python
+        scenario_search = request.scenario_search
+        scenarios: list[ListParameterApiScenario] = [
             ListParameterApiScenario(
                 scenario_id=s.scenario_id,
                 name=s.name,
-                description=s.description,
-                active=s.active,
-                parameter_item_ids=s.parameter_item_ids,
-                count=s.count,
+                description=s.description or "",
+                count=scenario_count_map.get(s.scenario_id, 0) if s.scenario_id else 0,
             )
-            for s in (result.scenarios or [])
+            for s in scenarios_data
+            if s.scenario_id
+            and (
+                scenario_search is None
+                or scenario_search.lower() in (s.name or "").lower()
+            )
         ]
 
-        departments = [
+        department_search = request.department_search
+        departments: list[ListParameterApiDepartment] = [
             ListParameterApiDepartment(
                 department_id=d.department_id,
                 name=d.name,
-                description=d.description,
-                count=d.count,
+                description=d.description or "",
+                count=department_count_map.get(d.department_id, 0)
+                if d.department_id
+                else 0,
             )
-            for d in (result.departments or [])
+            for d in departments_data
+            if d.department_id
+            and (
+                department_search is None
+                or department_search.lower() in (d.name or "").lower()
+            )
         ]
-
-        scenario_options = [
-            {"value": str(s.scenario_id), "label": s.name or "Untitled Scenario"}
-            for s in scenarios
-            if s.scenario_id
-        ]
-        document_options: list[dict[str, str]] = []
 
         # Build API response with computed permissions
         api_response = ListParameterApiResponse(
@@ -180,8 +253,6 @@ async def get_parameter_list(
             parameters=parameters_with_permissions,
             scenarios=scenarios,
             departments=departments,
-            scenario_options=scenario_options,
-            document_options=document_options,
             total_count=result.total_count,
         )
 

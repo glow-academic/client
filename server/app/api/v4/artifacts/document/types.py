@@ -194,6 +194,8 @@ class ListDocumentApiDocument(BaseModel):
     field_ids: list[UUID] | None = None
     is_inactive: bool | None = None
     num_scenarios: int | None = None
+    active_scenario_count: int | None = None
+    total_scenario_links: int | None = None
     # Computed in Python
     can_edit: bool | None = None
     can_duplicate: bool | None = None

@@ -168,6 +168,7 @@ class ListFieldApiField(BaseModel):
     description: str | None = None
     department_ids: list[str] | None = None
     conditional_parameter_ids: list[UUID] | None = None
+    persona_ids: list[UUID] | None = None
     is_inactive: bool | None = None
     can_edit: bool | None = None
     can_duplicate: bool | None = None
@@ -177,6 +178,13 @@ class ListFieldApiField(BaseModel):
 
 class ListFieldApiConditionalParameter(BaseModel):
     parameter_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    count: int | None = None
+
+
+class ListFieldApiPersona(BaseModel):
+    persona_id: UUID | None = None
     name: str | None = None
     description: str | None = None
     count: int | None = None
@@ -193,6 +201,7 @@ class ListFieldApiResponse(BaseModel):
     actor_name: str | None = None
     fields: list[ListFieldApiField] | None = None
     conditional_parameters: list[ListFieldApiConditionalParameter] | None = None
+    personas: list[ListFieldApiPersona] | None = None
     departments: list[ListFieldApiDepartment] | None = None
     total_count: int | None = None
 
