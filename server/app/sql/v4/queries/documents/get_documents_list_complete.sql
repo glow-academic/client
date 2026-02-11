@@ -1,15 +1,15 @@
 -- Get documents list with permissions and mappings
--- Converted to function with composite types
--- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
+-- Resource-first: only touches document_artifact + document's own junctions + resource tables
+-- No cross-entity artifact tables (scenario_artifact, field_artifact, department_artifact)
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
 DECLARE
     r RECORD;
 BEGIN
-    FOR r IN 
-        SELECT oidvectortypes(proargtypes) as sig 
-        FROM pg_proc 
+    FOR r IN
+        SELECT oidvectortypes(proargtypes) as sig
+        FROM pg_proc
         WHERE proname = 'api_list_documents_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
@@ -24,9 +24,9 @@ DO $$
 DECLARE
     r RECORD;
 BEGIN
-    FOR r IN 
-        SELECT typname 
-        FROM pg_type 
+    FOR r IN
+        SELECT typname
+        FROM pg_type
         WHERE typname LIKE 'q_list_documents_v4_%'
           AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
     LOOP
@@ -35,79 +35,47 @@ BEGIN
 END $$;
 
 -- 3) Recreate types
+-- Document: NO can_edit/can_delete (moved to Python)
 CREATE TYPE types.q_list_documents_v4_document AS (
     document_id uuid,
     name text,
-    updated_at timestamptz,
-    upload_id uuid,
-    active boolean,
-    extension text,
     department_ids text[],
     scenario_ids uuid[],
     field_ids uuid[],
-    valid_field_ids text[],
+    is_inactive boolean,
+    num_scenarios int,
     active_scenario_count int,
     total_scenario_links int,
-    can_edit boolean,
-    can_delete boolean
+    updated_at timestamptz
 );
 
-CREATE TYPE types.q_list_documents_v4_scenario AS (
-    scenario_id uuid,
-    name text,
-    description text,
-    active boolean
-);
-
-CREATE TYPE types.q_list_documents_v4_field AS (
-    field_id uuid,
-    name text,
-    description text,
-    parameter_id uuid,
-    parameter_name text
-);
-
-CREATE TYPE types.q_list_documents_v4_department AS (
-    department_id uuid,
-    name text,
-    description text,
-    parameter_ids text[],
-    field_ids text[]
-);
-
-CREATE TYPE types.q_list_documents_v4_parameter AS (
-    parameter_id uuid,
-    name text,
-    description text,
-    document_parameter boolean,
-    persona_parameter boolean,
-    scenario_parameter boolean,
-    video_parameter boolean
-);
-
-CREATE TYPE types.q_list_documents_v4_scenario_option AS (
-    value text,  -- UUID as text for frontend compatibility
-    label text
-);
-
-CREATE TYPE types.q_list_documents_v4_department_option AS (
-    value text,  -- UUID as text for frontend compatibility
-    label text
+-- Filter option types simplified: id + count only (names hydrated in Python from cache)
+CREATE TYPE types.q_list_documents_v4_option_id AS (
+    id uuid,
+    count bigint
 );
 
 -- 4) Recreate function
-CREATE OR REPLACE FUNCTION api_list_documents_v4(profile_id uuid)
+CREATE OR REPLACE FUNCTION api_list_documents_v4(
+    profile_id uuid,
+    search text DEFAULT NULL,
+    scenario_ids uuid[] DEFAULT NULL,
+    field_ids uuid[] DEFAULT NULL,
+    filter_department_ids uuid[] DEFAULT NULL,
+    scenario_search text DEFAULT NULL,
+    field_search text DEFAULT NULL,
+    department_search text DEFAULT NULL,
+    page_size int DEFAULT 12,
+    page_offset int DEFAULT 0
+)
 RETURNS TABLE (
     actor_name text,
+    user_role text,
     documents types.q_list_documents_v4_document[],
-    scenarios types.q_list_documents_v4_scenario[],
-    fields types.q_list_documents_v4_field[],
-    departments types.q_list_documents_v4_department[],
-    parameters types.q_list_documents_v4_parameter[],
-    scenario_options_junction types.q_list_documents_v4_scenario_option[],
-    department_options types.q_list_documents_v4_department_option[],
-    valid_department_ids text[],
-    document_type_options text[]
+    scenario_option_ids types.q_list_documents_v4_option_id[],
+    field_option_ids types.q_list_documents_v4_option_id[],
+    department_option_ids types.q_list_documents_v4_option_id[],
+    total_count bigint
 )
 LANGUAGE sql
 STABLE
@@ -120,8 +88,14 @@ user_departments AS (
     FROM params x
     JOIN profile_departments_junction ON profile_departments_junction.profile_id = x.profile_id AND profile_departments_junction.active = true
 ),
+user_profile AS (
+    SELECT role, COALESCE(NULLIF(actor_name, ''), 'System') as actor_name
+    FROM view_user_profile_context
+    WHERE profile_id = (SELECT profile_id FROM params)
+),
+-- Scenario linkage via scenario_documents_junction (junction table, not artifact)
 document_active_scenario_links AS (
-    SELECT 
+    SELECT
         sd.document_id,
         COUNT(*) as active_scenario_count
     FROM scenario_documents_junction sd
@@ -129,20 +103,21 @@ document_active_scenario_links AS (
     GROUP BY sd.document_id
 ),
 document_all_scenario_links AS (
-    SELECT 
+    SELECT
         sd.document_id,
         COUNT(*) as total_scenario_links
     FROM scenario_documents_junction sd
     GROUP BY sd.document_id
 ),
 document_scenarios AS (
-    SELECT 
+    SELECT
         sd.document_id,
         ARRAY_AGG(DISTINCT sd.scenario_id) as scenario_ids
     FROM scenario_documents_junction sd
     WHERE sd.active = true
     GROUP BY sd.document_id
 ),
+-- Field linkage via parameter_fields_resource.field_id -> fields_resource.id
 document_fields_cte AS (
     SELECT
         dpfj.document_id,
@@ -153,7 +128,7 @@ document_fields_cte AS (
     GROUP BY dpfj.document_id
 ),
 document_departments_data AS (
-    SELECT 
+    SELECT
         dd.document_id,
         ARRAY_AGG(dd.department_id::text ORDER BY dd.created_at) as department_ids
     FROM document_departments_junction dd
@@ -163,296 +138,125 @@ document_departments_data AS (
 document_data AS (
     SELECT
         d.id as document_id,
-        (SELECT n.name FROM document_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1),
-        d.updated_at,
-        uuc.upload_id,
+        (SELECT n.name FROM document_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1) as document_name,
         EXISTS (SELECT 1 FROM document_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.document_id = d.id AND f.name = 'document_active' AND df.value = TRUE) as active,
-        CASE
-            WHEN u.file_path IS NOT NULL THEN SUBSTRING(u.file_path FROM '\\.([^\\.]+)$')
-            ELSE NULL
-        END as extension,
+        d.updated_at,
         COALESCE(ddd.department_ids, NULL) as department_ids,
         COALESCE(ds.scenario_ids, ARRAY[]::uuid[]) as scenario_ids,
         COALESCE(dfc.field_ids, ARRAY[]::uuid[]) as field_ids,
         COALESCE(dasl.active_scenario_count, 0) as active_scenario_count,
         COALESCE(dasl_all.total_scenario_links, 0) as total_scenario_links
     FROM document_artifact d
-    LEFT JOIN document_uploads_resource dur ON dur.document_id = d.id AND dur.active = true
-    LEFT JOIN uploads_resource ur ON ur.id = dur.uploads_id
-    LEFT JOIN uploads_uploads_connection uuc ON uuc.uploads_id = ur.id
-    LEFT JOIN view_uploads_entry u ON u.id = uuc.upload_id
     LEFT JOIN document_departments_junction dd ON dd.document_id = d.id AND dd.active = true
     LEFT JOIN document_departments_data ddd ON ddd.document_id = d.id
     LEFT JOIN document_scenarios ds ON ds.document_id = d.id
     LEFT JOIN document_fields_cte dfc ON dfc.document_id = d.id
     LEFT JOIN document_active_scenario_links dasl ON dasl.document_id = d.id
     LEFT JOIN document_all_scenario_links dasl_all ON dasl_all.document_id = d.id
-    GROUP BY d.id, (SELECT n.name FROM document_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1), d.updated_at, uuc.upload_id, u.file_path, EXISTS (SELECT 1 FROM document_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.document_id = d.id AND f.name = 'document_active' AND df.value = TRUE),
-             ddd.department_ids, ds.scenario_ids, dfc.field_ids, dasl.active_scenario_count, dasl_all.total_scenario_links
-    HAVING 
+    GROUP BY d.id,
+        (SELECT n.name FROM document_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1),
+        EXISTS (SELECT 1 FROM document_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.document_id = d.id AND f.name = 'document_active' AND df.value = TRUE),
+        d.updated_at,
+        ddd.department_ids, ds.scenario_ids, dfc.field_ids, dasl.active_scenario_count, dasl_all.total_scenario_links
+    HAVING
         COUNT(dd.document_id) FILTER (WHERE dd.department_id IN (SELECT department_id FROM user_departments)) > 0
         OR NOT EXISTS (SELECT 1 FROM document_departments_junction dd2 WHERE dd2.document_id = d.id AND dd2.active = true)
 ),
-all_field_ids AS (
-    SELECT DISTINCT unnest(field_ids) as field_id
-    FROM document_data
+-- Apply server-side filters
+filtered_documents AS (
+    SELECT dd.*
+    FROM document_data dd
+    WHERE
+        -- Search filter: match name (case-insensitive)
+        (search IS NULL OR LOWER(dd.document_name) LIKE '%' || LOWER(search) || '%')
+        -- Scenario filter: document must be linked to at least one selected scenario
+        AND (api_list_documents_v4.scenario_ids IS NULL OR dd.scenario_ids && api_list_documents_v4.scenario_ids)
+        -- Field filter: document must have at least one of the selected fields
+        AND (api_list_documents_v4.field_ids IS NULL OR dd.field_ids && api_list_documents_v4.field_ids)
+        -- Department filter: document must belong to at least one selected department
+        AND (filter_department_ids IS NULL OR dd.department_ids && filter_department_ids::text[])
 ),
-user_profile AS (
-    SELECT role, COALESCE(NULLIF(actor_name, ''), 'System') as actor_name
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
+-- Count total filtered results (before pagination)
+filtered_count AS (
+    SELECT COUNT(*)::bigint as total_count FROM filtered_documents
 ),
+-- Paginate filtered results
+paginated_documents AS (
+    SELECT fd.*
+    FROM filtered_documents fd
+    ORDER BY fd.updated_at DESC NULLS LAST
+    LIMIT page_size OFFSET page_offset
+),
+-- Filter option IDs with counts (names hydrated in Python from cached *_internal() functions)
 all_scenario_ids AS (
     SELECT DISTINCT unnest(scenario_ids) as scenario_id
     FROM document_data
 ),
-scenario_data AS (
-    SELECT 
-        sa.id as scenario_id,
-        (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = sa.id LIMIT 1),
-        COALESCE(ps.problem_statement, '') as description,
-        EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = sa.id AND f.name = 'scenario_active' AND sf.value = TRUE) as active
-    FROM all_scenario_ids asi
-    JOIN scenario_artifact sa ON sa.id = asi.scenario_id
-    LEFT JOIN scenario_problem_statements_junction sps ON sps.scenario_id = sa.id AND sps.active = true
-    LEFT JOIN problem_statements_resource ps ON ps.id = sps.problem_statement_id
-    LEFT JOIN scenario_tree_junction st ON st.parent_id = sa.id AND st.child_id = sa.id
-    WHERE st.parent_id IS NOT NULL
-),
-field_data AS (
+scenario_option_data AS (
     SELECT
-        fr.id as field_id,
-        (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1),
-        (SELECT d.description FROM field_descriptions_junction fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1),
-        (SELECT pf.parameter_id FROM parameter_fields_junction pf WHERE pf.field_resource_id = fr.id LIMIT 1),
-        (SELECT n.name FROM parameter_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = (SELECT pf.parameter_id FROM parameter_fields_junction pf WHERE pf.field_resource_id = fr.id LIMIT 1) LIMIT 1) as parameter_name
-    FROM field_artifact f
-    JOIN field_fields_junction ffj ON ffj.field_id = f.id
-    JOIN fields_resource fr ON fr.id = ffj.fields_id
-    WHERE fr.id IN (SELECT field_id FROM all_field_ids)
-    GROUP BY fr.id, f.id, (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1), (SELECT d.description FROM field_descriptions_junction fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1), (SELECT pf.parameter_id FROM parameter_fields_junction pf WHERE pf.field_resource_id = fr.id LIMIT 1), (SELECT n.name FROM parameter_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = (SELECT pf.parameter_id FROM parameter_fields_junction pf WHERE pf.field_resource_id = fr.id LIMIT 1) LIMIT 1)
+        sr.id,
+        (SELECT COUNT(*) FROM document_data dd WHERE sr.id = ANY(dd.scenario_ids)) as count
+    FROM scenarios_resource sr
+    WHERE sr.id IN (SELECT scenario_id FROM all_scenario_ids)
 ),
-department_parameter_ids AS (
+assigned_field_ids AS (
+    SELECT DISTINCT unnest(field_ids) as field_id
+    FROM document_data
+    WHERE field_ids IS NOT NULL AND array_length(field_ids, 1) > 0
+),
+field_option_data AS (
     SELECT
-        dr.id as department_id,
-        COALESCE(ARRAY_AGG(DISTINCT p.id::text) FILTER (WHERE p.id IS NOT NULL), ARRAY[]::text[]) as parameter_ids
+        fr.id,
+        (SELECT COUNT(*) FROM document_data dd WHERE fr.id = ANY(dd.field_ids)) as count
+    FROM fields_resource fr
+    WHERE fr.id IN (SELECT field_id FROM assigned_field_ids)
+),
+department_option_data AS (
+    SELECT
+        dr.id,
+        (SELECT COUNT(*) FROM document_data) as count
     FROM departments_resource dr
-    LEFT JOIN parameters_resource p ON EXISTS (SELECT 1 FROM parameter_flags_junction paf JOIN flags_resource fl ON paf.flag_id = fl.id WHERE paf.parameter_id = p.id AND fl.name = 'parameter_active' AND paf.value = TRUE)
-    LEFT JOIN parameter_fields_junction pf_link ON pf_link.parameter_id = p.id
-    LEFT JOIN fields_resource f_pf ON f_pf.id = pf_link.field_resource_id
-    LEFT JOIN field_fields_junction ffj_pf ON ffj_pf.fields_id = f_pf.id AND EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource fl3 ON ff.flag_id = fl3.id WHERE ff.field_id = ffj_pf.field_id AND fl3.name = 'field_active' AND ff.value = TRUE)
-    LEFT JOIN field_departments_junction fd ON fd.field_id = ffj_pf.field_id AND fd.active = true
     WHERE dr.id IN (SELECT department_id FROM user_departments)
-    AND (fd.department_id = dr.id OR NOT EXISTS (SELECT 1 FROM field_departments_junction fd2
-                                                 JOIN field_fields_junction ffj2 ON ffj2.field_id = fd2.field_id
-                                                 JOIN fields_resource fr2 ON fr2.id = ffj2.fields_id
-                                                 JOIN parameter_fields_junction pf2 ON pf2.field_resource_id = fr2.id
-                                                 WHERE pf2.parameter_id = p.id AND EXISTS (SELECT 1 FROM field_flags_junction ff2 JOIN flags_resource fl2 ON ff2.flag_id = fl2.id WHERE ff2.field_id = fd2.field_id AND fl2.name = 'field_active' AND ff2.value = TRUE) AND fd2.active = true))
-    GROUP BY dr.id
-),
-cross_department_items AS (
-    -- Fields with no department restrictions (available to all)
-    SELECT DISTINCT fr.id
-    FROM field_artifact f
-    JOIN field_fields_junction ffj ON ffj.field_id = f.id
-    JOIN fields_resource fr ON fr.id = ffj.fields_id
-    JOIN parameters_resource p ON p.id = (SELECT pf.parameter_id FROM parameter_fields_junction pf WHERE pf.field_resource_id = fr.id LIMIT 1) AND EXISTS (SELECT 1 FROM persona_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.persona_id = p.id AND f.name = 'persona_active' AND pf.value = true)
-    WHERE NOT EXISTS (
-        SELECT 1 FROM field_departments_junction fd 
-        WHERE fd.field_id = f.id 
-        AND fd.active = true
-    )
-),
-department_field_ids AS (
-    SELECT
-        dr.id as department_id,
-        COALESCE(ARRAY_AGG(f.id::text ORDER BY f.id) FILTER (WHERE f.id IS NOT NULL), ARRAY[]::text[]) as field_ids
-    FROM departments_resource dr
-    LEFT JOIN (
-        -- Fields assigned to this specific department
-        SELECT DISTINCT fd.department_id, f.id
-        FROM field_departments_junction fd
-        JOIN field_fields_junction ffj ON ffj.field_id = fd.field_id
-        JOIN fields_resource f ON f.id = ffj.fields_id
-        JOIN parameters_resource p ON p.id = (SELECT pf.parameter_id FROM parameter_fields_junction pf WHERE pf.field_resource_id = f.id LIMIT 1) AND EXISTS (SELECT 1 FROM persona_flags_junction pf JOIN flags_resource fl ON pf.flag_id = fl.id WHERE pf.persona_id = p.id AND fl.name = 'persona_active' AND pf.value = true)
-        WHERE fd.active = true
-        UNION
-        -- Cross-department fields (available to all user departments)
-        SELECT DISTINCT ud.department_id, cdi.id
-        FROM user_departments ud
-        CROSS JOIN cross_department_items cdi
-    ) f_dept ON f_dept.department_id = dr.id
-    LEFT JOIN fields_resource f ON f.id = f_dept.id
-    WHERE dr.id IN (SELECT department_id FROM user_departments)
-    GROUP BY dr.id
-),
-department_data AS (
-    SELECT 
-        dr.id as department_id,
-        (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = da.id LIMIT 1) as name,
-        COALESCE((SELECT d2.description FROM department_descriptions_junction dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = da.id LIMIT 1), '') as description,
-        COALESCE(dparami.parameter_ids, ARRAY[]::text[]) as parameter_ids,
-        COALESCE(dparamitems.field_ids, ARRAY[]::text[]) as field_ids
-    FROM departments_resource dr
-    JOIN department_departments_junction ddj ON ddj.departments_id = dr.id
-    JOIN department_artifact da ON da.id = ddj.department_id
-    LEFT JOIN department_parameter_ids dparami ON dparami.department_id = dr.id
-    LEFT JOIN department_field_ids dparamitems ON dparamitems.department_id = dr.id
-    WHERE dr.id IN (SELECT department_id FROM user_departments)
-),
-parameter_data AS (
-    SELECT DISTINCT
-        p.id as parameter_id,
-        (SELECT n.name FROM parameter_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = p.id LIMIT 1),
-        COALESCE((SELECT d.description FROM parameter_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.parameter_id = p.id LIMIT 1), '') as description,
-        EXISTS (SELECT 1 FROM parameter_flags_junction paf JOIN flags_resource fl ON paf.flag_id = fl.id WHERE paf.parameter_id = p.id AND fl.name = 'document_parameter' AND paf.value = TRUE) as document_parameter,
-        EXISTS (SELECT 1 FROM parameter_flags_junction paf JOIN flags_resource fl ON paf.flag_id = fl.id WHERE paf.parameter_id = p.id AND fl.name = 'persona_parameter' AND paf.value = TRUE) as persona_parameter,
-        CASE WHEN EXISTS (SELECT 1 FROM scenario_parameters_junction sp WHERE sp.parameter_id = p.id AND sp.active = true) THEN true ELSE false END as scenario_parameter,
-        EXISTS (SELECT 1 FROM parameter_flags_junction paf JOIN flags_resource fl ON paf.flag_id = fl.id WHERE paf.parameter_id = p.id AND fl.name = 'video_parameter' AND paf.value = TRUE) as video_parameter
-    FROM parameter_artifact p
-    JOIN fields_resource f ON (SELECT pf.parameter_id FROM parameter_fields_junction pf WHERE pf.field_resource_id = f.id LIMIT 1) = p.id
-    JOIN field_fields_junction ffj ON ffj.fields_id = f.id AND EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource fl2 ON ff.flag_id = fl2.id WHERE ff.field_id = ffj.field_id AND fl2.name = 'field_active' AND ff.value = true)
-    LEFT JOIN field_departments_junction fd ON fd.field_id = ffj.field_id AND fd.active = true
-    WHERE EXISTS (SELECT 1 FROM parameter_flags_junction paf JOIN flags_resource fl ON paf.flag_id = fl.id WHERE paf.parameter_id = p.id AND fl.name = 'parameter_active' AND paf.value = TRUE)
-    GROUP BY p.id, (SELECT n.name FROM parameter_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = p.id LIMIT 1), (SELECT d.description FROM parameter_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.parameter_id = p.id LIMIT 1)
-    HAVING
-        COUNT(fd.field_id) FILTER (WHERE fd.department_id IN (SELECT department_id FROM user_departments)) > 0
-        OR NOT EXISTS (SELECT 1 FROM field_departments_junction fd2
-                      JOIN field_fields_junction ffj2 ON ffj2.field_id = fd2.field_id
-                      JOIN fields_resource fr2 ON fr2.id = ffj2.fields_id
-                      JOIN parameter_fields_junction pf2 ON pf2.field_resource_id = fr2.id
-                      WHERE pf2.parameter_id = p.id AND EXISTS (SELECT 1 FROM field_flags_junction ff2 JOIN flags_resource fl4 ON ff2.flag_id = fl4.id WHERE ff2.field_id = fd2.field_id AND fl4.name = 'field_active' AND ff2.value = TRUE) AND fd2.active = true)
-    ORDER BY (SELECT n.name FROM parameter_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = p.id LIMIT 1)
-),
-document_valid_fields AS (
-    SELECT
-        dd.document_id,
-        COALESCE(
-            ARRAY_AGG(DISTINCT f.id::text ORDER BY f.id::text) FILTER (WHERE f.id IS NOT NULL),
-            ARRAY[]::text[]
-        ) as valid_field_ids
-    FROM document_data dd
-    LEFT JOIN fields_resource f ON (SELECT pf.parameter_id FROM parameter_fields_junction pf WHERE pf.field_resource_id = f.id LIMIT 1) IN (SELECT p.id FROM parameter_artifact p WHERE EXISTS (SELECT 1 FROM parameter_flags_junction paf JOIN flags_resource fl ON paf.flag_id = fl.id WHERE paf.parameter_id = p.id AND fl.name = 'parameter_active' AND paf.value = TRUE))
-    LEFT JOIN field_fields_junction ffj ON ffj.fields_id = f.id AND EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource fl2 ON ff.flag_id = fl2.id WHERE ff.field_id = ffj.field_id AND fl2.name = 'field_active' AND ff.value = true)
-    LEFT JOIN field_departments_junction fd ON fd.field_id = ffj.field_id AND fd.active = true
-    WHERE (
-        -- If document has no departments, include only cross-department fields
-        (dd.department_ids IS NULL OR array_length(dd.department_ids, 1) = 0)
-        AND NOT EXISTS (
-            SELECT 1 FROM field_departments_junction fd2
-            WHERE fd2.field_id = ffj.field_id
-            AND fd2.active = true
-        )
-    ) OR (
-        -- If document has departments, include fields from those departments OR cross-department fields
-        dd.department_ids IS NOT NULL
-        AND array_length(dd.department_ids, 1) > 0
-        AND (
-            fd.department_id = ANY(SELECT unnest(dd.department_ids)::uuid)
-            OR NOT EXISTS (
-                SELECT 1 FROM field_departments_junction fd2
-                WHERE fd2.field_id = ffj.field_id
-                AND fd2.active = true
-            )
-        )
-    )
-    GROUP BY dd.document_id
-),
-scenario_options_data AS (
-    SELECT 
-        sd.scenario_id,
-        sd.name,
-        CASE 
-            WHEN (SELECT COUNT(*) FROM scenario_data sd2 WHERE sd2.name = sd.name) > 1 
-            THEN sd.name || ' (' || SUBSTRING(sd.scenario_id::text FROM LENGTH(sd.scenario_id::text) - 7) || ')'
-            ELSE sd.name
-        END as label
-    FROM scenario_data sd
-),
-department_options_data AS (
-    SELECT 
-        dd.department_id,
-        dd.name as label
-    FROM department_data dd
 )
-SELECT 
+SELECT
     up.actor_name::text as actor_name,
-    -- Aggregate documents separately
+    up.role::text as user_role,
+    -- Aggregate paginated documents
     COALESCE(
         (SELECT ARRAY_AGG(
-            (dd.document_id, dd.name, dd.updated_at, dd.upload_id, dd.active, dd.extension,
-             COALESCE(dd.department_ids, ARRAY[]::text[]), dd.scenario_ids, dd.field_ids,
-             COALESCE(dvf.valid_field_ids, ARRAY[]::text[]), dd.active_scenario_count, dd.total_scenario_links,
-             CASE 
-                 WHEN dd.active_scenario_count > 0 THEN false
-                 WHEN up.role IN ('admin'::profile_type, 'instructional'::profile_type, 'superadmin'::profile_type) THEN true
-                 ELSE false
-             END,
-             CASE 
-                 WHEN dd.total_scenario_links > 0 THEN false
-                 WHEN up.role IN ('admin'::profile_type, 'instructional'::profile_type, 'superadmin'::profile_type) THEN true
-                 ELSE false
-             END
+            (pd.document_id, pd.document_name,
+             pd.department_ids, pd.scenario_ids, pd.field_ids,
+             NOT pd.active, COALESCE(array_length(pd.scenario_ids, 1), 0),
+             pd.active_scenario_count,
+             pd.total_scenario_links,
+             pd.updated_at
             )::types.q_list_documents_v4_document
-            ORDER BY dd.updated_at DESC
-        ) FROM document_data dd
-        LEFT JOIN document_valid_fields dvf ON dvf.document_id = dd.document_id),
+            ORDER BY pd.updated_at DESC NULLS LAST
+        ) FROM paginated_documents pd),
         '{}'::types.q_list_documents_v4_document[]
     ) as documents,
-    -- Aggregate scenarios separately
+    -- Scenario option IDs with counts (names hydrated in Python)
     COALESCE(
         (SELECT ARRAY_AGG(
-            (sd.scenario_id, sd.name, sd.description, sd.active)::types.q_list_documents_v4_scenario
-            ORDER BY sd.name
-        ) FROM scenario_data sd),
-        '{}'::types.q_list_documents_v4_scenario[]
-    ) as scenarios,
-    -- Aggregate fields separately
+            (sod.id, sod.count)::types.q_list_documents_v4_option_id
+        ) FROM scenario_option_data sod),
+        '{}'::types.q_list_documents_v4_option_id[]
+    ) as scenario_option_ids,
+    -- Field option IDs with counts (names hydrated in Python)
     COALESCE(
         (SELECT ARRAY_AGG(
-            (fd.field_id, fd.name, fd.description, fd.parameter_id, fd.parameter_name)::types.q_list_documents_v4_field
-            ORDER BY fd.name
-        ) FROM field_data fd),
-        '{}'::types.q_list_documents_v4_field[]
-    ) as fields,
-    -- Aggregate departments separately
+            (fod.id, fod.count)::types.q_list_documents_v4_option_id
+        ) FROM field_option_data fod),
+        '{}'::types.q_list_documents_v4_option_id[]
+    ) as field_option_ids,
+    -- Department option IDs with counts (names hydrated in Python)
     COALESCE(
         (SELECT ARRAY_AGG(
-            (dd2.department_id, dd2.name, dd2.description, dd2.parameter_ids, dd2.field_ids)::types.q_list_documents_v4_department
-            ORDER BY dd2.name
-        ) FROM department_data dd2),
-        '{}'::types.q_list_documents_v4_department[]
-    ) as departments,
-    -- Aggregate parameters separately
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (pd.parameter_id, pd.name, pd.description, pd.document_parameter, pd.persona_parameter, pd.scenario_parameter, pd.video_parameter)::types.q_list_documents_v4_parameter
-            ORDER BY pd.name
-        ) FROM parameter_data pd),
-        '{}'::types.q_list_documents_v4_parameter[]
-    ) as parameters,
-    -- Scenario options (composite type array)
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (sod.scenario_id::text, sod.label)::types.q_list_documents_v4_scenario_option
-            ORDER BY sod.label
-        ) FROM scenario_options_data sod),
-        '{}'::types.q_list_documents_v4_scenario_option[]
-    ) as scenario_options_junction,
-    -- Department options (composite type array)
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (dod.department_id::text, dod.label)::types.q_list_documents_v4_department_option
-            ORDER BY dod.label
-        ) FROM department_options_data dod),
-        '{}'::types.q_list_documents_v4_department_option[]
-    ) as department_options,
-    -- Valid department IDs
-    COALESCE(
-        (SELECT ARRAY_AGG(dd2.department_id::text ORDER BY dd2.department_id::text) FROM department_data dd2),
-        ARRAY[]::text[]
-    ) as valid_department_ids,
-    -- Document type options (hardcoded)
-    ARRAY['homework', 'project', 'quiz', 'midterm', 'lab', 'lecture', 'syllabus']::text[] as document_type_options
+            (dod.id, dod.count)::types.q_list_documents_v4_option_id
+        ) FROM department_option_data dod),
+        '{}'::types.q_list_documents_v4_option_id[]
+    ) as department_option_ids,
+    -- Total count of filtered documents (before pagination)
+    (SELECT total_count FROM filtered_count) as total_count
 FROM user_profile up
 $$;
