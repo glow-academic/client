@@ -2671,18 +2671,52 @@ export interface paths {
         /**
          * Training Get
          * @description Get simulations available for training (operational).
-         *
-         *     OPERATIONAL endpoint: Returns simulations user can take, scoped by
-         *     their cohorts based on practice mode.
-         *
-         *     Used by frontend to display available simulations and get data
-         *     needed to start a training session (scenario_ids, etc).
          */
         post: operations["training_get_api_v4_artifacts_training_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v4/artifacts/training/bundle/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Training Bundle Get
+         * @description Get hydrated resources for training bundle customization.
+         */
+        post: operations["training_bundle_get_api_v4_artifacts_training_bundle_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/artifacts/training/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Patch Training Draft
+         * @description Patch training bundle draft for bundle configuration and create/update draft.
+         */
+        patch: operations["patch_training_draft_api_v4_artifacts_training_draft_patch"];
         trace?: never;
     };
     "/api/v4/artifacts/training/refresh": {
@@ -2770,6 +2804,26 @@ export interface paths {
          * @description Get unified attempt history list for home/practice style screens.
          */
         post: operations["list_attempts_api_v4_artifacts_attempt_list_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/artifacts/attempt/create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Attempt
+         * @description Create a new training attempt (no chat - lobby will start chat later).
+         */
+        post: operations["create_attempt_api_v4_artifacts_attempt_create_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7226,6 +7280,46 @@ export interface paths {
          * @description Recreate the mv_config materialized view.
          */
         post: operations["recreate_config_view_api_v4_views_config_recreate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/views/training/context/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Training Context View
+         * @description Get training context view for current profile and mode.
+         */
+        post: operations["get_training_context_view_api_v4_views_training_context_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/views/training/bundle/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Training Bundle View
+         * @description Get thin bundle scope for a single training bundle entry.
+         */
+        post: operations["get_training_bundle_view_api_v4_views_training_bundle_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -13305,6 +13399,22 @@ export interface components {
             /** Position */
             position?: number | null;
         };
+        /** CreateAttemptRequest */
+        CreateAttemptRequest: {
+            /**
+             * Training Bundle Entry Id
+             * Format: uuid
+             */
+            training_bundle_entry_id: string;
+        };
+        /** CreateAttemptResponse */
+        CreateAttemptResponse: {
+            /**
+             * Attempt Id
+             * Format: uuid
+             */
+            attempt_id: string;
+        };
         /** CreateEmulationGrantApiRequest */
         CreateEmulationGrantApiRequest: {
             /**
@@ -16340,6 +16450,10 @@ export interface components {
             is_own_attempt?: boolean | null;
             available_continuation_options?: components["schemas"]["AvailableContinuationOptions"] | null;
             rubric_structure?: components["schemas"]["RubricStructureData"] | null;
+            /** Training Id */
+            training_id?: string | null;
+            /** Training Bundle Entry Id */
+            training_bundle_entry_id?: string | null;
             resources?: components["schemas"]["AttemptResources"] | null;
             views?: components["schemas"]["AttemptViews"] | null;
         };
@@ -19022,7 +19136,7 @@ export interface components {
          */
         GetScenariosApiResponse: {
             /** Items */
-            items?: components["schemas"]["QGetScenariosV4Item-Output"][] | null;
+            items?: components["schemas"]["app__api__v4__artifacts__simulation__types__QGetScenariosV4Item"][] | null;
         };
         /**
          * GetScenariosListApiRequest
@@ -19775,6 +19889,159 @@ export interface components {
         GetToolsApiResponse: {
             /** Items */
             items?: components["schemas"]["QGetToolsV4Item"][] | null;
+        };
+        /**
+         * GetTrainingBundleRequest
+         * @description Client API request for one training bundle customization payload.
+         */
+        GetTrainingBundleRequest: {
+            /**
+             * Training Bundle Entry Id
+             * Format: uuid
+             */
+            training_bundle_entry_id: string;
+            /** Draft Id */
+            draft_id?: string | null;
+        };
+        /**
+         * GetTrainingBundleResponse
+         * @description Client-facing bundle response — section-first pattern.
+         */
+        GetTrainingBundleResponse: {
+            /**
+             * Training Bundle Entry Id
+             * Format: uuid
+             */
+            training_bundle_entry_id: string;
+            /** Training Id */
+            training_id?: string | null;
+            /** Simulation Id */
+            simulation_id?: string | null;
+            /** Simulation Name */
+            simulation_name?: string | null;
+            /** Scenario Id */
+            scenario_id?: string | null;
+            /**
+             * Profile Has Access
+             * @default false
+             */
+            profile_has_access: boolean;
+            /** Group Id */
+            group_id?: string | null;
+            /** Draft Version */
+            draft_version?: number | null;
+            scenario_flags?: components["schemas"]["TrainingBundleScenarioFlags"] | null;
+            departments?: components["schemas"]["TrainingBundleDepartmentSection"] | null;
+            personas?: components["schemas"]["TrainingBundlePersonaSection"] | null;
+            documents?: components["schemas"]["TrainingBundleDocumentSection"] | null;
+            parameter_fields?: components["schemas"]["TrainingBundleParameterFieldSection"] | null;
+            scenarios?: components["schemas"]["TrainingBundleScenarioSection"] | null;
+            parameters?: components["schemas"]["TrainingBundleParameterSection"] | null;
+            fields?: components["schemas"]["TrainingBundleFieldSection"] | null;
+            questions?: components["schemas"]["TrainingBundleQuestionSection"] | null;
+            options?: components["schemas"]["TrainingBundleOptionSection"] | null;
+            videos?: components["schemas"]["TrainingBundleVideoSection"] | null;
+            images?: components["schemas"]["TrainingBundleImageSection"] | null;
+            templates?: components["schemas"]["TrainingBundleTemplateSection"] | null;
+            problem_statements?: components["schemas"]["TrainingBundleProblemStatementSection"] | null;
+            objectives?: components["schemas"]["TrainingBundleObjectiveSection"] | null;
+            /** Agents */
+            agents?: components["schemas"]["QGetAgentsV4Item"][] | null;
+            /** Models */
+            models?: components["schemas"]["QGetModelsV4Item"][] | null;
+            /** Providers */
+            providers?: components["schemas"]["QGetProvidersV4Item"][] | null;
+            /** Tools */
+            tools?: components["schemas"]["QGetToolsV4Item"][] | null;
+        };
+        /**
+         * GetTrainingBundleViewResponse
+         * @description Thin MV-backed view response for a single training bundle.
+         */
+        GetTrainingBundleViewResponse: {
+            /**
+             * Profile Has Access
+             * @default false
+             */
+            profile_has_access: boolean;
+            /** Training Bundle Entry Id */
+            training_bundle_entry_id?: string | null;
+            /** Training Id */
+            training_id?: string | null;
+            /** Scenario Ids */
+            scenario_ids?: string[];
+            /** Department Ids */
+            department_ids?: string[];
+            /** Persona Ids */
+            persona_ids?: string[];
+            /** Document Ids */
+            document_ids?: string[];
+            /** Parameter Field Ids */
+            parameter_field_ids?: string[];
+            /** Parameter Ids */
+            parameter_ids?: string[];
+            /** Field Ids */
+            field_ids?: string[];
+            /** Question Ids */
+            question_ids?: string[];
+            /** Option Ids */
+            option_ids?: string[];
+            /** Video Ids */
+            video_ids?: string[];
+            /** Image Ids */
+            image_ids?: string[];
+            /** Template Ids */
+            template_ids?: string[];
+            /** Problem Statement Ids */
+            problem_statement_ids?: string[];
+            /** Objective Ids */
+            objective_ids?: string[];
+            /**
+             * Video Enabled
+             * @default false
+             */
+            video_enabled: boolean;
+            /**
+             * Problem Statement Enabled
+             * @default false
+             */
+            problem_statement_enabled: boolean;
+            /**
+             * Objectives Enabled
+             * @default false
+             */
+            objectives_enabled: boolean;
+            /**
+             * Images Enabled
+             * @default false
+             */
+            images_enabled: boolean;
+            /**
+             * Questions Enabled
+             * @default false
+             */
+            questions_enabled: boolean;
+            /**
+             * Use Templates
+             * @default false
+             */
+            use_templates: boolean;
+        };
+        /**
+         * GetTrainingContextViewResponse
+         * @description View-layer response for training context.
+         */
+        GetTrainingContextViewResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** User Role */
+            user_role?: string | null;
+            /** Items */
+            items?: components["schemas"]["TrainingContextViewItem"][];
+            /** Standard Group Ids */
+            standard_group_ids?: string[];
+            /** Standard Ids */
+            standard_ids?: string[];
         };
         /**
          * GetTrainingGetRequest
@@ -23279,6 +23546,46 @@ export interface components {
             /** Message */
             message: string;
         };
+        /**
+         * PatchTrainingBundleDraftApiRequest
+         * @description Request for patching a training bundle draft.
+         */
+        PatchTrainingBundleDraftApiRequest: {
+            /** Input Draft Id */
+            input_draft_id?: string | null;
+            /** Group Id */
+            group_id?: string | null;
+            /**
+             * Expected Version
+             * @default 0
+             */
+            expected_version: number;
+            departments?: components["schemas"]["TrainingBundleMultiResourceAction"] | null;
+            personas?: components["schemas"]["TrainingBundleMultiResourceAction"] | null;
+            documents?: components["schemas"]["TrainingBundleMultiResourceAction"] | null;
+            parameter_fields?: components["schemas"]["TrainingBundleMultiResourceAction"] | null;
+            parameters?: components["schemas"]["TrainingBundleMultiResourceAction"] | null;
+            fields?: components["schemas"]["TrainingBundleMultiResourceAction"] | null;
+            questions?: components["schemas"]["TrainingBundleMultiResourceAction"] | null;
+            options?: components["schemas"]["TrainingBundleMultiResourceAction"] | null;
+            videos?: components["schemas"]["TrainingBundleMultiResourceAction"] | null;
+            images?: components["schemas"]["TrainingBundleMultiResourceAction"] | null;
+            templates?: components["schemas"]["TrainingBundleMultiResourceAction"] | null;
+            problem_statements?: components["schemas"]["TrainingBundleMultiResourceAction"] | null;
+            objectives?: components["schemas"]["TrainingBundleMultiResourceAction"] | null;
+        };
+        /**
+         * PatchTrainingBundleDraftApiResponse
+         * @description Response for patching a training bundle draft.
+         */
+        PatchTrainingBundleDraftApiResponse: {
+            /** Draft Id */
+            draft_id?: string | null;
+            /** New Version */
+            new_version?: number | null;
+            /** Draft Exists */
+            draft_exists?: boolean | null;
+        };
         /** PersonaChartRow */
         PersonaChartRow: {
             /** Name */
@@ -25576,6 +25883,19 @@ export interface components {
             /** Generated */
             generated: boolean | null;
         };
+        /** QGetOptionsV4Item */
+        QGetOptionsV4Item: {
+            /** Option Id */
+            option_id: string | null;
+            /** Option Text */
+            option_text: string | null;
+            /** Is Correct */
+            is_correct: boolean | null;
+            /** Generated */
+            generated: boolean | null;
+            /** Question Id */
+            question_id: string | null;
+        };
         /** QGetParameterFieldsV4Item */
         QGetParameterFieldsV4Item: {
             /** Id */
@@ -26195,32 +26515,6 @@ export interface components {
             questions_enabled: boolean | null;
             /** Templates Enabled */
             templates_enabled: boolean | null;
-        };
-        /**
-         * QGetScenariosV4Item
-         * @description Scenario item from scenarios resource query.
-         */
-        "QGetScenariosV4Item-Output": {
-            /** Scenario Id */
-            scenario_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Generated */
-            generated?: boolean | null;
-            /** Problem Statement Enabled */
-            problem_statement_enabled?: boolean | null;
-            /** Objectives Enabled */
-            objectives_enabled?: boolean | null;
-            /** Video Enabled */
-            video_enabled?: boolean | null;
-            /** Images Enabled */
-            images_enabled?: boolean | null;
-            /** Questions Enabled */
-            questions_enabled?: boolean | null;
-            /** Templates Enabled */
-            templates_enabled?: boolean | null;
         };
         /** QGetSettingV4Auth */
         QGetSettingV4Auth: {
@@ -30505,7 +30799,7 @@ export interface components {
          */
         SearchScenariosApiResponse: {
             /** Items */
-            items?: components["schemas"]["QGetScenariosV4Item-Output"][] | null;
+            items?: components["schemas"]["app__api__v4__artifacts__simulation__types__QGetScenariosV4Item"][] | null;
         };
         /** SearchSimulatableProfilesApiRequest */
         SearchSimulatableProfilesApiRequest: {
@@ -32341,6 +32635,471 @@ export interface components {
             /** Link Tool Id */
             link_tool_id?: string | null;
         };
+        /** TrainingBundleDepartmentSection */
+        TrainingBundleDepartmentSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
+        };
+        /** TrainingBundleDocumentSection */
+        TrainingBundleDocumentSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["QGetDocumentsV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetDocumentsV4Item"][] | null;
+        };
+        /** TrainingBundleFieldSection */
+        TrainingBundleFieldSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["QGetFieldsV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetFieldsV4Item"][] | null;
+        };
+        /** TrainingBundleImageSection */
+        TrainingBundleImageSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["QGetImagesV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetImagesV4Item"][] | null;
+        };
+        /**
+         * TrainingBundleMultiResourceAction
+         * @description Multi-resource action for training bundle draft patch.
+         */
+        TrainingBundleMultiResourceAction: {
+            /** Resource Ids */
+            resource_ids?: string[] | null;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+        };
+        /** TrainingBundleObjectiveSection */
+        TrainingBundleObjectiveSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["QGetObjectivesV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetObjectivesV4Item"][] | null;
+        };
+        /** TrainingBundleOptionSection */
+        TrainingBundleOptionSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["QGetOptionsV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetOptionsV4Item"][] | null;
+        };
+        /** TrainingBundleParameterFieldSection */
+        TrainingBundleParameterFieldSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["QGetParameterFieldsV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetParameterFieldsV4Item"][] | null;
+        };
+        /** TrainingBundleParameterSection */
+        TrainingBundleParameterSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["QGetParametersV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetParametersV4Item"][] | null;
+        };
+        /** TrainingBundlePersonaSection */
+        TrainingBundlePersonaSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["QGetPersonasV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetPersonasV4Item"][] | null;
+        };
+        /** TrainingBundleProblemStatementSection */
+        TrainingBundleProblemStatementSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["QGetProblemStatementsV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetProblemStatementsV4Item"][] | null;
+        };
+        /** TrainingBundleQuestionSection */
+        TrainingBundleQuestionSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["QGetQuestionsV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetQuestionsV4Item"][] | null;
+        };
+        /**
+         * TrainingBundleScenarioFlags
+         * @description Scenario-level flags that control section visibility.
+         */
+        TrainingBundleScenarioFlags: {
+            /**
+             * Video Enabled
+             * @default false
+             */
+            video_enabled: boolean;
+            /**
+             * Problem Statement Enabled
+             * @default false
+             */
+            problem_statement_enabled: boolean;
+            /**
+             * Objectives Enabled
+             * @default false
+             */
+            objectives_enabled: boolean;
+            /**
+             * Images Enabled
+             * @default false
+             */
+            images_enabled: boolean;
+            /**
+             * Questions Enabled
+             * @default false
+             */
+            questions_enabled: boolean;
+            /**
+             * Use Templates
+             * @default false
+             */
+            use_templates: boolean;
+        };
+        /** TrainingBundleScenarioSection */
+        TrainingBundleScenarioSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["app__sql__types__QGetScenariosV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["app__sql__types__QGetScenariosV4Item"][] | null;
+        };
+        /** TrainingBundleTemplateSection */
+        TrainingBundleTemplateSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["QGetTemplatesV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetTemplatesV4Item"][] | null;
+        };
+        /** TrainingBundleVideoSection */
+        TrainingBundleVideoSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["QGetVideosV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetVideosV4Item"][] | null;
+        };
+        /**
+         * TrainingContextViewItem
+         * @description IDs-first training simulation item — raw IDs only, no computed fields.
+         */
+        TrainingContextViewItem: {
+            /**
+             * Simulation Id
+             * Format: uuid
+             */
+            simulation_id: string;
+            /** Training Bundle Entry Ids */
+            training_bundle_entry_ids?: string[] | null;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+            /** Cohort Ids */
+            cohort_ids?: string[] | null;
+            /** Persona Ids */
+            persona_ids?: string[] | null;
+            /** Standard Group Ids */
+            standard_group_ids?: string[] | null;
+            /** Standard Ids */
+            standard_ids?: string[] | null;
+            /** Rubric Ids */
+            rubric_ids?: string[] | null;
+        };
         /**
          * TrainingErrorEvent
          * @description Server-to-client event: training_error.
@@ -32436,6 +33195,8 @@ export interface components {
             simulation_description?: string | null;
             /** Time Limit */
             time_limit?: number | null;
+            /** Training Bundle Entry Id */
+            training_bundle_entry_id?: string | null;
             /** Scenario Ids */
             scenario_ids?: string[] | null;
             /** Cohort Ids */
@@ -32478,22 +33239,24 @@ export interface components {
          *     Starts a new training session. Server handles everything internally:
          *     - Checks if scenario needs generation
          *     - If generation needed, runs it and streams progress
-         *     - Creates attempt + chat entries
+         *     - Creates attempt + chat entries (or just chat if attempt_id provided)
          *     - Emits training_started when ready
+         *
+         *     Lobby flow: attempt_id is provided (pre-created via REST), department_id
+         *     and draft_id are optional (server resolves defaults if not provided).
          */
         TrainingStartPayload: {
             /**
-             * Simulation Id
+             * Training Bundle Entry Id
              * Format: uuid
              */
-            simulation_id: string;
-            /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /** Scenario Id */
-            scenario_id?: string | null;
+            training_bundle_entry_id: string;
+            /** Department Id */
+            department_id?: string | null;
+            /** Draft Id */
+            draft_id?: string | null;
+            /** Attempt Id */
+            attempt_id?: string | null;
             /** User Instructions */
             user_instructions?: string[] | null;
             /** Infinite */
@@ -32855,6 +33618,32 @@ export interface components {
             rubrics?: components["schemas"]["QGetRubricsV4Item"][] | null;
         };
         /**
+         * QGetScenariosV4Item
+         * @description Scenario item from scenarios resource query.
+         */
+        app__api__v4__artifacts__simulation__types__QGetScenariosV4Item: {
+            /** Scenario Id */
+            scenario_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Generated */
+            generated?: boolean | null;
+            /** Problem Statement Enabled */
+            problem_statement_enabled?: boolean | null;
+            /** Objectives Enabled */
+            objectives_enabled?: boolean | null;
+            /** Video Enabled */
+            video_enabled?: boolean | null;
+            /** Images Enabled */
+            images_enabled?: boolean | null;
+            /** Questions Enabled */
+            questions_enabled?: boolean | null;
+            /** Templates Enabled */
+            templates_enabled?: boolean | null;
+        };
+        /**
          * FilterOption
          * @description A single filter option for dropdown selectors.
          */
@@ -33046,6 +33835,29 @@ export interface components {
             create_tool_id: string | null;
             /** Link Tool Id */
             link_tool_id: string | null;
+        };
+        /** QGetScenariosV4Item */
+        app__sql__types__QGetScenariosV4Item: {
+            /** Scenario Id */
+            scenario_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Generated */
+            generated: boolean | null;
+            /** Problem Statement Enabled */
+            problem_statement_enabled: boolean | null;
+            /** Objectives Enabled */
+            objectives_enabled: boolean | null;
+            /** Video Enabled */
+            video_enabled: boolean | null;
+            /** Images Enabled */
+            images_enabled: boolean | null;
+            /** Questions Enabled */
+            questions_enabled: boolean | null;
+            /** Templates Enabled */
+            templates_enabled: boolean | null;
         };
         /** QGetSettingsV4Auth */
         app__sql__types__QGetSettingsV4Auth: {
@@ -38060,6 +38872,80 @@ export interface operations {
             };
         };
     };
+    training_bundle_get_api_v4_artifacts_training_bundle_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetTrainingBundleRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetTrainingBundleResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_training_draft_api_v4_artifacts_training_draft_patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchTrainingBundleDraftApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PatchTrainingBundleDraftApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     training_refresh_api_v4_artifacts_training_refresh_post: {
         parameters: {
             query?: never;
@@ -38193,6 +39079,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetAttemptListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_attempt_api_v4_artifacts_attempt_create_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAttemptRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateAttemptResponse"];
                 };
             };
             /** @description Validation Error */
@@ -46445,6 +47368,76 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RefreshResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_training_context_view_api_v4_views_training_context_get_post: {
+        parameters: {
+            query?: {
+                practice?: boolean;
+            };
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetTrainingContextViewResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_training_bundle_view_api_v4_views_training_bundle_get_post: {
+        parameters: {
+            query: {
+                training_bundle_entry_id: string;
+            };
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetTrainingBundleViewResponse"];
                 };
             };
             /** @description Validation Error */

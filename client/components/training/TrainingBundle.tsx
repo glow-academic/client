@@ -4,109 +4,113 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useProfile } from "@/contexts/profile-context";
+import { Departments } from "@/components/resources/Departments";
+import { Personas } from "@/components/resources/Personas";
+import { Documents } from "@/components/resources/Documents";
+import { ParameterFields } from "@/components/resources/ParameterFields";
+import { Scenarios } from "@/components/resources/Scenarios";
+import { Parameters } from "@/components/resources/Parameters";
+import { Fields } from "@/components/resources/Fields";
+import { Questions } from "@/components/resources/Questions";
+import { Videos } from "@/components/resources/Videos";
+import { Images } from "@/components/resources/Images";
+import { Templates } from "@/components/resources/Templates";
+import { ProblemStatements } from "@/components/resources/ProblemStatements";
+import { Objectives } from "@/components/resources/Objectives";
+import type { InputOf, OutputOf } from "@/lib/api/types";
 import { useRouter } from "next/navigation";
 import { parseAsBoolean, parseAsString, useQueryStates } from "nuqs";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
-export type TrainingBundleData = {
-  training_bundle_entry_id: string;
-  simulation_name?: string | null;
-  profile_has_access: boolean;
-  group_id?: string | null;
-  views?: {
-    draft_training_bundle?: {
-      draft_id?: string | null;
-      version?: number | null;
-      department_ids?: string[];
-      persona_ids?: string[];
-      document_ids?: string[];
-      parameter_field_ids?: string[];
-    } | null;
-  } | null;
-  resources?: {
-    current?: {
-      departments?: Array<{ department_id?: string | null; name?: string | null }> | null;
-      personas?: Array<{ persona_id?: string | null; name?: string | null }> | null;
-      documents?: Array<{ document_id?: string | null; name?: string | null }> | null;
-      parameter_fields?: Array<{
-        field_id?: string | null;
-        name?: string | null;
-        parameter_name?: string | null;
-      }> | null;
-      scenario_time_limits?: Array<{ id?: string | null; time_limit_seconds?: number | null }> | null;
-    } | null;
-    suggestions?: {
-      departments?: Array<{ department_id?: string | null; name?: string | null }> | null;
-      personas?: Array<{ persona_id?: string | null; name?: string | null }> | null;
-      documents?: Array<{ document_id?: string | null; name?: string | null }> | null;
-      parameter_fields?: Array<{
-        field_id?: string | null;
-        name?: string | null;
-        parameter_name?: string | null;
-      }> | null;
-      scenario_time_limits?: Array<{ id?: string | null; time_limit_seconds?: number | null }> | null;
-    } | null;
-  } | null;
-};
+type GetTrainingBundleOut = OutputOf<
+  "/api/v4/artifacts/training/bundle/get",
+  "post"
+>;
+export type TrainingBundleData = GetTrainingBundleOut;
+type PatchTrainingBundleDraftIn = InputOf<
+  "/api/v4/artifacts/training/draft",
+  "patch"
+>;
+type PatchTrainingBundleDraftOut = OutputOf<
+  "/api/v4/artifacts/training/draft",
+  "patch"
+>;
 
-type PatchTrainingDraftIn = {
-  body: {
-    input_draft_id?: string | null;
-    expected_version?: number;
-    departments?: { resource_ids?: string[] };
-    personas?: { resource_ids?: string[] };
-    documents?: { resource_ids?: string[] };
-    parameter_fields?: { resource_ids?: string[] };
-  };
-};
-
-type PatchTrainingDraftOut = {
-  draft_id?: string | null;
-  new_version?: number | null;
+type TrainingBundleFormState = {
+  department_ids: string[];
+  persona_ids: string[];
+  document_ids: string[];
+  parameter_field_ids: string[];
+  scenario_ids: string[];
+  parameter_ids: string[];
+  field_ids: string[];
+  question_ids: string[];
+  option_ids: string[];
+  video_ids: string[];
+  image_ids: string[];
+  template_ids: string[];
+  problem_statement_ids: string[];
+  objective_ids: string[];
 };
 
 interface TrainingBundleProps {
   mode: "practice" | "home";
-  bundleData: TrainingBundleData;
-  patchTrainingDraftAction: (input: PatchTrainingDraftIn) => Promise<PatchTrainingDraftOut>;
+  bundleData: GetTrainingBundleOut;
+  patchTrainingDraftAction: (
+    input: PatchTrainingBundleDraftIn,
+  ) => Promise<PatchTrainingBundleDraftOut>;
+  attemptId: string;
+}
+
+function extractIds<T>(
+  items: T[] | null | undefined,
+  idKey: keyof T,
+): string[] {
+  if (!items) return [];
+  return items
+    .map((item) => item[idKey] as string | null | undefined)
+    .filter((id): id is string => !!id);
 }
 
 export default function TrainingBundle({
   mode,
   bundleData,
   patchTrainingDraftAction,
+  attemptId,
 }: TrainingBundleProps) {
   const router = useRouter();
-  const { socket, isConnected } = useProfile();
+  const s = bundleData;
 
-  const draft = bundleData.views?.draft_training_bundle || null;
-  const current = bundleData.resources?.current;
-  const suggestions = bundleData.resources?.suggestions;
+  const initialFormState = useMemo<TrainingBundleFormState>(
+    () => ({
+      department_ids: extractIds(s.departments?.current, "department_id"),
+      persona_ids: extractIds(s.personas?.current, "persona_id"),
+      document_ids: extractIds(s.documents?.current, "document_id"),
+      parameter_field_ids: extractIds(
+        s.parameter_fields?.current,
+        "field_id",
+      ),
+      scenario_ids: extractIds(s.scenarios?.current, "scenario_id"),
+      parameter_ids: extractIds(s.parameters?.current, "parameter_id"),
+      field_ids: extractIds(s.fields?.current, "field_id"),
+      question_ids: extractIds(s.questions?.current, "question_id"),
+      option_ids: extractIds(s.options?.current, "option_id"),
+      video_ids: extractIds(s.videos?.current, "video_id"),
+      image_ids: extractIds(s.images?.current, "image_id"),
+      template_ids: extractIds(s.templates?.current, "template_id"),
+      problem_statement_ids: extractIds(
+        s.problem_statements?.current,
+        "problem_statement_id",
+      ),
+      objective_ids: extractIds(s.objectives?.current, "objective_id"),
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
 
-  const departments = useMemo(
-    () => suggestions?.departments || current?.departments || [],
-    [current?.departments, suggestions?.departments],
-  );
-  const personas = useMemo(
-    () => suggestions?.personas || current?.personas || [],
-    [current?.personas, suggestions?.personas],
-  );
-  const documents = useMemo(
-    () => suggestions?.documents || current?.documents || [],
-    [current?.documents, suggestions?.documents],
-  );
-  const parameterFields = useMemo(
-    () => suggestions?.parameter_fields || current?.parameter_fields || [],
-    [current?.parameter_fields, suggestions?.parameter_fields],
-  );
-
-  const initialDepartmentId =
-    draft?.department_ids?.[0] ||
-    current?.departments?.[0]?.department_id ||
-    departments.find((d) => d.department_id)?.department_id ||
-    null;
+  const [formState, setFormState] =
+    useState<TrainingBundleFormState>(initialFormState);
 
   const [urlParams, setUrlParams] = useQueryStates(
     {
@@ -117,13 +121,13 @@ export default function TrainingBundle({
     { history: "replace", shallow: true },
   );
 
-  const [draftId, setDraftId] = useState<string | null>(urlParams.draftId || draft?.draft_id || null);
-  const [draftVersion, setDraftVersion] = useState<number>(draft?.version || 0);
-  const [departmentId, setDepartmentId] = useState<string | null>(initialDepartmentId);
-  const [personaIds, setPersonaIds] = useState<string[]>(draft?.persona_ids || []);
-  const [documentIds, setDocumentIds] = useState<string[]>(draft?.document_ids || []);
-  const [parameterFieldIds, setParameterFieldIds] = useState<string[]>(draft?.parameter_field_ids || []);
-  const [isStarting, setIsStarting] = useState(false);
+  const [draftId, setDraftId] = useState<string | null>(
+    urlParams.draftId || null,
+  );
+  const [draftVersion, setDraftVersion] = useState<number>(
+    s.draft_version ?? 0,
+  );
+  const [isSaving, setIsSaving] = useState(false);
 
   const infiniteMode = urlParams.infiniteMode ?? false;
   const userInstructions = urlParams.userInstructions || "";
@@ -137,19 +141,8 @@ export default function TrainingBundle({
     }
   }, [draftId, setUrlParams, urlParams.draftId]);
 
-  const toggleSelection = useCallback(
-    (id: string, values: string[], setter: (next: string[]) => void) => {
-      if (values.includes(id)) {
-        setter(values.filter((x) => x !== id));
-      } else {
-        setter([...values, id]);
-      }
-    },
-    [],
-  );
-
   const saveDraftNow = useCallback(async () => {
-    if (!departmentId || savingRef.current) return;
+    if (savingRef.current) return;
 
     savingRef.current = true;
     try {
@@ -157,12 +150,23 @@ export default function TrainingBundle({
         body: {
           input_draft_id: draftId,
           expected_version: draftVersion,
-          departments: { resource_ids: [departmentId] },
-          personas: { resource_ids: personaIds },
-          documents: { resource_ids: documentIds },
-          parameter_fields: { resource_ids: parameterFieldIds },
+          departments: { resource_ids: formState.department_ids },
+          personas: { resource_ids: formState.persona_ids },
+          documents: { resource_ids: formState.document_ids },
+          parameter_fields: { resource_ids: formState.parameter_field_ids },
+          parameters: { resource_ids: formState.parameter_ids },
+          fields: { resource_ids: formState.field_ids },
+          questions: { resource_ids: formState.question_ids },
+          options: { resource_ids: formState.option_ids },
+          videos: { resource_ids: formState.video_ids },
+          images: { resource_ids: formState.image_ids },
+          templates: { resource_ids: formState.template_ids },
+          problem_statements: {
+            resource_ids: formState.problem_statement_ids,
+          },
+          objectives: { resource_ids: formState.objective_ids },
         },
-      });
+      } as PatchTrainingBundleDraftIn);
 
       if (result.draft_id) {
         setDraftId(result.draft_id);
@@ -175,10 +179,10 @@ export default function TrainingBundle({
     } finally {
       savingRef.current = false;
     }
-  }, [departmentId, draftId, draftVersion, personaIds, documentIds, parameterFieldIds, patchTrainingDraftAction]);
+  }, [draftId, draftVersion, formState, patchTrainingDraftAction]);
 
+  // Debounced autosave on form state change
   useEffect(() => {
-    if (!departmentId) return;
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => {
       void saveDraftNow();
@@ -187,169 +191,227 @@ export default function TrainingBundle({
     return () => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     };
-  }, [departmentId, personaIds, documentIds, parameterFieldIds, saveDraftNow]);
+  }, [formState, saveDraftNow]);
 
-  useEffect(() => {
-    if (!socket) return;
-
-    const handleTrainingStarted = (data: { attempt_id?: string }) => {
-      if (!isStarting) return;
-      setIsStarting(false);
-      if (data.attempt_id) {
-        const basePath = mode === "practice" ? "/practice" : "/home";
-        router.push(`${basePath}/a/${data.attempt_id}`);
-        router.refresh();
-      }
-    };
-
-    const handleTrainingError = (data: { message?: string }) => {
-      if (!isStarting) return;
-      setIsStarting(false);
-      toast.error(data.message || "Failed to start training");
-    };
-
-    socket.on("training_started", handleTrainingStarted);
-    socket.on("training_error", handleTrainingError);
-
-    return () => {
-      socket.off("training_started", handleTrainingStarted);
-      socket.off("training_error", handleTrainingError);
-    };
-  }, [socket, isStarting, mode, router]);
-
-  const canStart = useMemo(() => {
-    return !!departmentId && !!bundleData.training_bundle_entry_id;
-  }, [departmentId, bundleData.training_bundle_entry_id]);
-
-  const startTraining = useCallback(async () => {
-    if (!socket || !isConnected) {
-      toast.error("WebSocket not connected. Please refresh the page.");
-      return;
+  const saveAndReturn = useCallback(async () => {
+    setIsSaving(true);
+    try {
+      await saveDraftNow();
+      const basePath = mode === "practice" ? "/practice" : "/home";
+      const params = new URLSearchParams();
+      if (draftId) params.set("draftId", draftId);
+      if (infiniteMode) params.set("infiniteMode", "true");
+      if (userInstructions.trim()) params.set("userInstructions", userInstructions.trim());
+      const qs = params.toString();
+      router.push(`${basePath}/a/${attemptId}${qs ? `?${qs}` : ""}`);
+    } catch {
+      toast.error("Failed to save draft.");
+    } finally {
+      setIsSaving(false);
     }
-    if (!canStart || !departmentId) {
-      toast.error("Please choose a department before starting.");
-      return;
-    }
+  }, [saveDraftNow, mode, attemptId, draftId, infiniteMode, userInstructions, router]);
 
-    await saveDraftNow();
-
-    if (!draftId) {
-      toast.error("Draft is required before starting.");
-      return;
-    }
-
-    setIsStarting(true);
-    socket.emit("training_start", {
-      training_bundle_entry_id: bundleData.training_bundle_entry_id,
-      department_id: departmentId,
-      draft_id: draftId,
-      infinite: infiniteMode,
-      user_instructions: userInstructions.trim() ? [userInstructions.trim()] : null,
-    });
-  }, [
-    socket,
-    isConnected,
-    canStart,
-    departmentId,
-    saveDraftNow,
-    draftId,
-    bundleData.training_bundle_entry_id,
-    infiniteMode,
-    userInstructions,
-  ]);
-
-  if (!bundleData.profile_has_access) {
-    return <p className="text-sm text-muted-foreground">You do not have access to this training bundle.</p>;
+  if (!s.profile_has_access) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        You do not have access to this training bundle.
+      </p>
+    );
   }
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Customize Training</h1>
-        <p className="text-sm text-muted-foreground">{bundleData.simulation_name || "Training bundle"}</p>
+        <p className="text-sm text-muted-foreground">
+          {s.simulation_name || "Training bundle"}
+        </p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Department</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          {departments.map((department) => (
-            <label key={department.department_id || "unknown"} className="flex items-center gap-2 text-sm">
-              <input
-                type="radio"
-                checked={departmentId === department.department_id}
-                onChange={() => setDepartmentId(department.department_id || null)}
-              />
-              <span>{department.name || "Unnamed department"}</span>
-            </label>
-          ))}
-        </CardContent>
-      </Card>
+      {s.departments?.show && (
+        <Departments
+          department_ids={formState.department_ids}
+          department_resources={s.departments.current ?? []}
+          show_departments={s.departments.show}
+          departments={s.departments.resources ?? []}
+          onChange={(ids) =>
+            setFormState((prev) => ({ ...prev, department_ids: ids }))
+          }
+          disabled={false}
+          label="Departments"
+        />
+      )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Personas</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          {personas.map((persona) => {
-            const id = persona.persona_id || "";
-            return (
-              <label key={id} className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={id ? personaIds.includes(id) : false}
-                  onChange={() => id && toggleSelection(id, personaIds, setPersonaIds)}
-                />
-                <span>{persona.name || "Unnamed persona"}</span>
-              </label>
-            );
-          })}
-        </CardContent>
-      </Card>
+      {s.personas?.show && (
+        <Personas
+          persona_ids={formState.persona_ids}
+          persona_resources={s.personas.current ?? []}
+          show_personas={s.personas.show}
+          personas={s.personas.resources ?? []}
+          onChange={(ids) =>
+            setFormState((prev) => ({ ...prev, persona_ids: ids }))
+          }
+          disabled={false}
+          label="Personas"
+        />
+      )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Documents</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          {documents.map((document) => {
-            const id = document.document_id || "";
-            return (
-              <label key={id} className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={id ? documentIds.includes(id) : false}
-                  onChange={() => id && toggleSelection(id, documentIds, setDocumentIds)}
-                />
-                <span>{document.name || "Unnamed document"}</span>
-              </label>
-            );
-          })}
-        </CardContent>
-      </Card>
+      {s.documents?.show && (
+        <Documents
+          document_ids={formState.document_ids}
+          document_resources={s.documents.current ?? []}
+          show_documents={s.documents.show}
+          documents={s.documents.resources ?? []}
+          onChange={(ids) =>
+            setFormState((prev) => ({ ...prev, document_ids: ids }))
+          }
+          disabled={false}
+          label="Documents"
+        />
+      )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Parameter Fields</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          {parameterFields.map((field) => {
-            const id = field.field_id || "";
-            return (
-              <label key={id} className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={id ? parameterFieldIds.includes(id) : false}
-                  onChange={() => id && toggleSelection(id, parameterFieldIds, setParameterFieldIds)}
-                />
-                <span>{field.name || "Unnamed field"}</span>
-                {field.parameter_name ? <span className="text-muted-foreground">({field.parameter_name})</span> : null}
-              </label>
-            );
-          })}
-        </CardContent>
-      </Card>
+      {s.parameter_fields?.show && (
+        <ParameterFields
+          parameter_field_ids={formState.parameter_field_ids}
+          parameter_field_resources={s.parameter_fields.current ?? []}
+          show_parameter_fields={s.parameter_fields.show}
+          parameter_fields={s.parameter_fields.resources ?? []}
+          onChange={(ids) =>
+            setFormState((prev) => ({ ...prev, parameter_field_ids: ids }))
+          }
+          disabled={false}
+          label="Parameter Fields"
+        />
+      )}
+
+      {s.scenarios?.show && (
+        <Scenarios
+          scenario_ids={formState.scenario_ids}
+          scenario_resources={s.scenarios.current ?? []}
+          show_scenarios={s.scenarios.show}
+          scenarios={s.scenarios.resources ?? []}
+          onChange={(ids) =>
+            setFormState((prev) => ({ ...prev, scenario_ids: ids }))
+          }
+          disabled={false}
+          label="Scenarios"
+        />
+      )}
+
+      {s.parameters?.show && (
+        <Parameters
+          parameter_ids={formState.parameter_ids}
+          parameter_resources={s.parameters.current ?? []}
+          show_parameters={s.parameters.show}
+          parameters={s.parameters.resources ?? []}
+          onChange={(ids) =>
+            setFormState((prev) => ({ ...prev, parameter_ids: ids }))
+          }
+          disabled={false}
+          label="Parameters"
+        />
+      )}
+
+      {s.fields?.show && (
+        <Fields
+          field_ids={formState.field_ids}
+          field_resources={s.fields.current ?? []}
+          show_fields={s.fields.show}
+          fields={s.fields.resources ?? []}
+          onChange={(ids) =>
+            setFormState((prev) => ({ ...prev, field_ids: ids }))
+          }
+          disabled={false}
+          label="Fields"
+        />
+      )}
+
+      {s.questions?.show && (
+        <Questions
+          question_ids={formState.question_ids}
+          question_resources={s.questions.current ?? []}
+          show_questions={s.questions.show}
+          questions={s.questions.resources ?? []}
+          onChange={(ids) =>
+            setFormState((prev) => ({ ...prev, question_ids: ids }))
+          }
+          disabled={false}
+          label="Questions"
+        />
+      )}
+
+      {s.videos?.show && (
+        <Videos
+          video_ids={formState.video_ids}
+          video_resources={s.videos.current ?? []}
+          show_videos={s.videos.show}
+          videos={s.videos.resources ?? []}
+          onChange={(ids) =>
+            setFormState((prev) => ({ ...prev, video_ids: ids }))
+          }
+          disabled={false}
+          label="Videos"
+        />
+      )}
+
+      {s.images?.show && (
+        <Images
+          image_ids={formState.image_ids}
+          image_resources={s.images.current ?? []}
+          show_images={s.images.show}
+          images={s.images.resources ?? []}
+          onChange={(ids) =>
+            setFormState((prev) => ({ ...prev, image_ids: ids }))
+          }
+          disabled={false}
+          label="Images"
+        />
+      )}
+
+      {s.templates?.show && (
+        <Templates
+          template_ids={formState.template_ids}
+          template_resources={s.templates.current ?? []}
+          show_templates={s.templates.show}
+          templates={s.templates.resources ?? []}
+          onChange={(ids) =>
+            setFormState((prev) => ({ ...prev, template_ids: ids }))
+          }
+          disabled={false}
+          label="Templates"
+        />
+      )}
+
+      {s.problem_statements?.show && (
+        <ProblemStatements
+          problem_statement_ids={formState.problem_statement_ids}
+          problem_statement_resources={s.problem_statements.current ?? []}
+          show_problem_statements={s.problem_statements.show}
+          problem_statements={s.problem_statements.resources ?? []}
+          onChange={(ids) =>
+            setFormState((prev) => ({
+              ...prev,
+              problem_statement_ids: ids,
+            }))
+          }
+          disabled={false}
+          label="Problem Statements"
+        />
+      )}
+
+      {s.objectives?.show && (
+        <Objectives
+          objective_ids={formState.objective_ids}
+          objective_resources={s.objectives.current ?? []}
+          show_objectives={s.objectives.show}
+          objectives={s.objectives.resources ?? []}
+          onChange={(ids) =>
+            setFormState((prev) => ({ ...prev, objective_ids: ids }))
+          }
+          disabled={false}
+          label="Objectives"
+        />
+      )}
 
       <Card>
         <CardHeader>
@@ -360,7 +422,9 @@ export default function TrainingBundle({
             <input
               type="checkbox"
               checked={infiniteMode}
-              onChange={(e) => void setUrlParams({ infiniteMode: e.target.checked })}
+              onChange={(e) =>
+                void setUrlParams({ infiniteMode: e.target.checked })
+              }
             />
             <span>Infinite mode</span>
           </label>
@@ -370,7 +434,11 @@ export default function TrainingBundle({
             <Input
               id="user-instructions"
               value={userInstructions}
-              onChange={(e) => void setUrlParams({ userInstructions: e.target.value || null })}
+              onChange={(e) =>
+                void setUrlParams({
+                  userInstructions: e.target.value || null,
+                })
+              }
               placeholder="Optional hint for generation"
             />
           </div>
@@ -379,8 +447,11 @@ export default function TrainingBundle({
             <Button variant="outline" onClick={() => router.back()}>
               Cancel
             </Button>
-            <Button onClick={() => void startTraining()} disabled={!canStart || isStarting}>
-              {isStarting ? "Starting..." : "Start Training"}
+            <Button
+              onClick={() => void saveAndReturn()}
+              disabled={isSaving}
+            >
+              {isSaving ? "Saving..." : "Save & Return"}
             </Button>
           </div>
         </CardContent>

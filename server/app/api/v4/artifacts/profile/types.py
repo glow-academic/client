@@ -245,7 +245,7 @@ class PatchProfileDraftSqlParams(BaseModel):
     @classmethod
     def from_request(
         cls, request: PatchProfileDraftApiRequest, profile_id: UUID
-    ) -> "PatchProfileDraftSqlParams":
+    ) -> PatchProfileDraftSqlParams:
         empty_single = ProfileResourceAction()
         empty_multi = ProfileMultiResourceAction()
         return cls(

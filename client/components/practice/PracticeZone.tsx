@@ -32,8 +32,6 @@ interface PracticeZoneProps {
   standardGroupsMapping: StandardGroupsMapping;
   standardsMapping: StandardsMapping;
   profile: ProfileItem | null;
-  /** Whether to show customize button on cards */
-  showCustomizeButton?: boolean;
 }
 
 export default function PracticeZone({
@@ -42,7 +40,6 @@ export default function PracticeZone({
   standardGroupsMapping,
   standardsMapping,
   profile,
-  showCustomizeButton = false,
 }: PracticeZoneProps) {
   const [carouselIndex, setCarouselIndex] = useState(0);
 
@@ -150,7 +147,6 @@ export default function PracticeZone({
                 })}
                 type="default"
                 profile={profile}
-                showCustomizeButton={showCustomizeButton}
               />
             );
           },

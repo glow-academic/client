@@ -484,6 +484,24 @@ async def get_attempt_internal(
                 actor={"name": profile_name, "id": profile_id},
             )
 
+        # === RESOLVE TRAINING CONTEXT (for lobby flow) ===
+        training_id: UUID | None = None
+        training_bundle_entry_id: UUID | None = None
+        training_row = await conn.fetchrow(
+            """
+            SELECT a.training_id,
+                   (SELECT tb.id FROM training_bundle_entry tb
+                    WHERE tb.training_id = a.training_id AND tb.active = true
+                    LIMIT 1) AS training_bundle_entry_id
+            FROM simulation_attempts_entry a
+            WHERE a.id = $1
+            """,
+            attempt_id,
+        )
+        if training_row:
+            training_id = training_row["training_id"]
+            training_bundle_entry_id = training_row["training_bundle_entry_id"]
+
         # === COMPUTE TIME LIMIT FROM CHATS ===
         time_limit_seconds = sum(
             c.time_limit_seconds or 0 for c in (chats_result or [])
@@ -1108,6 +1126,8 @@ async def get_attempt_internal(
             is_own_attempt=is_own_attempt,
             available_continuation_options=None,
             rubric_structure=rubric_structure,
+            training_id=training_id,
+            training_bundle_entry_id=training_bundle_entry_id,
             resources=resources_payload,
             views=AttemptViews(
                 simulation_attempts=[attempt_item],

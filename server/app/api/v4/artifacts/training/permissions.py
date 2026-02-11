@@ -238,3 +238,50 @@ def compute_show_continue(
             return False
         completed = num_scenarios_completed or 0
         return completed < num_scenarios
+
+
+# =============================================================================
+# Training bundle constants
+# =============================================================================
+
+TRAINING_BUNDLE_RESOURCES: set[str] = {
+    "departments",
+    "personas",
+    "documents",
+    "parameter_fields",
+    "scenarios",
+    "parameters",
+    "fields",
+    "questions",
+    "options",
+    "videos",
+    "images",
+    "templates",
+    "problem_statements",
+    "objectives",
+}
+
+# Scenario flag → resource visibility mapping.
+# Resources not in this map are always shown.
+TRAINING_BUNDLE_FLAG_MAP: dict[str, str] = {
+    "videos": "video_enabled",
+    "images": "images_enabled",
+    "problem_statements": "problem_statement_enabled",
+    "objectives": "objectives_enabled",
+    "questions": "questions_enabled",
+    "templates": "use_templates",
+}
+
+
+def compute_bundle_section_show(
+    resource: str,
+    scenario_flags: dict[str, bool],
+) -> bool:
+    """Determine if a bundle section should be visible.
+
+    Resources without a flag mapping are always shown.
+    """
+    flag_key = TRAINING_BUNDLE_FLAG_MAP.get(resource)
+    if flag_key is None:
+        return True
+    return scenario_flags.get(flag_key, False)

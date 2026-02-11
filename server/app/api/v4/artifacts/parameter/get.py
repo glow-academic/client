@@ -34,8 +34,8 @@ from app.api.v4.artifacts.parameter.permissions import (
     has_access,
 )
 from app.api.v4.artifacts.parameter.types import (
-    GetParameterApiResponse,
     GetParameterApiRequest,
+    GetParameterApiResponse,
     GetParameterWebsocketResponse,
     ParameterDepartmentSection,
     ParameterDescriptionSection,

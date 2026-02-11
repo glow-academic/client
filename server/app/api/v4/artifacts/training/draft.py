@@ -1,15 +1,15 @@
-"""Training draft endpoint - handles autosave for training bundle setup."""
+"""Training bundle draft endpoint - handles autosave for training bundle setup."""
 
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.api.v4.artifacts.scenario.types import (
-    PatchScenarioDraftApiRequest,
-    PatchScenarioDraftApiResponse,
-    PatchScenarioDraftSqlParams,
-    PatchScenarioDraftSqlRow,
+from app.api.v4.artifacts.training.types import (
+    PatchTrainingBundleDraftApiRequest,
+    PatchTrainingBundleDraftApiResponse,
+    PatchTrainingBundleDraftSqlParams,
+    PatchTrainingBundleDraftSqlRow,
 )
 from app.infra.v4.activity.audit import audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
@@ -18,22 +18,22 @@ from app.sql.types import load_sql_query
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/v4/queries/scenarios/patch_scenario_draft_complete.sql"
+SQL_PATH = "app/sql/v4/queries/training/patch_training_bundle_draft_complete.sql"
 
 router = APIRouter()
 
 
 @router.patch(
     "/draft",
-    response_model=PatchScenarioDraftApiResponse,
+    response_model=PatchTrainingBundleDraftApiResponse,
 )
 async def patch_training_draft(
-    request: PatchScenarioDraftApiRequest,
+    request: PatchTrainingBundleDraftApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> PatchScenarioDraftApiResponse:
-    """Patch training draft for bundle configuration and create/update draft."""
+) -> PatchTrainingBundleDraftApiResponse:
+    """Patch training bundle draft for bundle configuration and create/update draft."""
     tags = ["training", "drafts"]
 
     sql_query = load_sql_query(SQL_PATH)
@@ -48,18 +48,18 @@ async def patch_training_draft(
             )
 
         async with conn.transaction():
-            params = PatchScenarioDraftSqlParams.from_request(
+            params = PatchTrainingBundleDraftSqlParams.from_request(
                 request, profile_id=profile_id
             )
             sql_params = params.to_tuple()
 
             result = cast(
-                PatchScenarioDraftSqlRow,
+                PatchTrainingBundleDraftSqlRow,
                 await execute_sql_typed(conn, SQL_PATH, params=params),
             )
 
             if not result:
-                raise ValueError("Failed to patch training draft")
+                raise ValueError("Failed to patch training bundle draft")
 
             audit_set(
                 http_request,
@@ -67,7 +67,9 @@ async def patch_training_draft(
                 draft={"id": str(result.draft_id)},
             )
 
-        api_response = PatchScenarioDraftApiResponse.model_validate(result.model_dump())
+        api_response = PatchTrainingBundleDraftApiResponse.model_validate(
+            result.model_dump()
+        )
 
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

@@ -59,10 +59,24 @@ export async function generateMetadata(
 /** ---- Page component ---- */
 export default async function PracticeAttemptPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ attemptId: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { attemptId } = await params;
+  const sp = await searchParams;
+  const rawDraftId = sp["draftId"];
+  const draftId =
+    typeof rawDraftId === "string"
+      ? rawDraftId
+      : Array.isArray(rawDraftId)
+        ? (rawDraftId[0] ?? null)
+        : null;
+  const infiniteMode = sp["infiniteMode"] === "true";
+  const rawInstructions = sp["userInstructions"];
+  const userInstructions =
+    typeof rawInstructions === "string" ? rawInstructions : null;
 
   // Access control handled server-side in layout
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
@@ -87,6 +101,9 @@ export default async function PracticeAttemptPage({
         <AttemptChat
           attempt_id={attemptId}
           attempt_data={attemptData}
+          draft_id={draftId}
+          infinite_mode={infiniteMode}
+          user_instructions={userInstructions}
         />
       </div>
     );

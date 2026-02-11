@@ -40,6 +40,7 @@ import type { QuestionTakingInputProps } from "../inputAreas/QuestionTakingInput
 import { QuestionTakingInput } from "../inputAreas/QuestionTakingInput";
 import type { HybridInputProps, HybridInputHandle } from "../inputAreas/HybridInput";
 import { HybridInput } from "../inputAreas/HybridInput";
+import { AttemptLobby } from "../AttemptLobby";
 
 // ============================================================================
 // TYPES
@@ -116,6 +117,9 @@ type AttemptErrorEvent = Parameters<ServerToClientEvents["attempt_error"]>[0];
 export interface AttemptChatProps {
   attempt_id: string;
   attempt_data: AttemptData;
+  draft_id?: string | null;
+  infinite_mode?: boolean;
+  user_instructions?: string | null;
 }
 
 /** Grading state in Record format (matches server response) */
@@ -140,6 +144,9 @@ type HintsByMessage = {
 export function AttemptChat({
   attempt_id,
   attempt_data: initialAttemptData,
+  draft_id: draftIdProp = null,
+  infinite_mode: infiniteModeProp = false,
+  user_instructions: userInstructionsProp = null,
 }: AttemptChatProps) {
   const router = useRouter();
   const { socket, isConnected } = useProfile();
@@ -1765,6 +1772,22 @@ export function AttemptChat({
   // ---------------------------------------------------------------------------
   // RENDER
   // ---------------------------------------------------------------------------
+
+  // Lobby state: no chats yet — show lobby for the user to start or customize
+  if (chats.length === 0 && attemptData.training_bundle_entry_id) {
+    const practice = attemptData?.attempt?.practice ?? false;
+    return (
+      <AttemptLobby
+        attemptId={attempt_id}
+        trainingBundleEntryId={attemptData.training_bundle_entry_id}
+        simulationName={attemptData?.simulation?.name ?? null}
+        mode={practice ? "practice" : "home"}
+        draftId={draftIdProp ?? null}
+        infiniteMode={infiniteModeProp}
+        userInstructions={userInstructionsProp}
+      />
+    );
+  }
 
   // Build pagination footer - show in graded view modes OR completed video chats
   const isGradedViewMode = chatAreaViewMode === "rubric" || chatAreaViewMode === "graded-messages" || chatAreaViewMode === "graded-video" || (chatAreaViewMode === "video" && currentChat?.completed);

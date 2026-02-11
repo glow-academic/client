@@ -12357,7 +12357,7 @@
           "training"
         ],
         "summary": "Training Get",
-        "description": "Get simulations available for training (operational).\n\nOPERATIONAL endpoint: Returns simulations user can take, scoped by\ntheir cohorts based on practice mode.\n\nUsed by frontend to display available simulations and get data\nneeded to start a training session (scenario_ids, etc).",
+        "description": "Get simulations available for training (operational).",
         "operationId": "training_get_api_v4_artifacts_training_get_post",
         "parameters": [
           {
@@ -12426,6 +12426,196 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/GetTrainingGetResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v4/artifacts/training/bundle/get": {
+      "post": {
+        "tags": [
+          "v4",
+          "artifacts",
+          "artifacts",
+          "training"
+        ],
+        "summary": "Training Bundle Get",
+        "description": "Get hydrated resources for training bundle customization.",
+        "operationId": "training_bundle_get_api_v4_artifacts_training_bundle_get_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetTrainingBundleRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetTrainingBundleResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v4/artifacts/training/draft": {
+      "patch": {
+        "tags": [
+          "v4",
+          "artifacts",
+          "artifacts",
+          "training"
+        ],
+        "summary": "Patch Training Draft",
+        "description": "Patch training bundle draft for bundle configuration and create/update draft.",
+        "operationId": "patch_training_draft_api_v4_artifacts_training_draft_patch",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchTrainingBundleDraftApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatchTrainingBundleDraftApiResponse"
                 }
               }
             }
@@ -12797,6 +12987,101 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/GetAttemptListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v4/artifacts/attempt/create": {
+      "post": {
+        "tags": [
+          "v4",
+          "artifacts",
+          "artifacts",
+          "attempt"
+        ],
+        "summary": "Create Attempt",
+        "description": "Create a new training attempt (no chat - lobby will start chat later).",
+        "operationId": "create_attempt_api_v4_artifacts_attempt_create_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAttemptRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateAttemptResponse"
                 }
               }
             }
@@ -33699,6 +33984,202 @@
         }
       }
     },
+    "/api/v4/views/training/context/get": {
+      "post": {
+        "tags": [
+          "v4",
+          "views",
+          "views",
+          "training",
+          "views",
+          "training",
+          "context"
+        ],
+        "summary": "Get Training Context View",
+        "description": "Get training context view for current profile and mode.",
+        "operationId": "get_training_context_view_api_v4_views_training_context_get_post",
+        "parameters": [
+          {
+            "name": "practice",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Practice"
+            }
+          },
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetTrainingContextViewResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v4/views/training/bundle/get": {
+      "post": {
+        "tags": [
+          "v4",
+          "views",
+          "views",
+          "training",
+          "views",
+          "training",
+          "bundle"
+        ],
+        "summary": "Get Training Bundle View",
+        "description": "Get thin bundle scope for a single training bundle entry.",
+        "operationId": "get_training_bundle_view_api_v4_views_training_bundle_get_post",
+        "parameters": [
+          {
+            "name": "training_bundle_entry_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Training Bundle Entry Id"
+            }
+          },
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetTrainingBundleViewResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v4/auth/login": {
       "post": {
         "tags": [
@@ -50081,6 +50562,34 @@
         "title": "ContinuationOption",
         "description": "Continuation option for using previous chat results."
       },
+      "CreateAttemptRequest": {
+        "properties": {
+          "training_bundle_entry_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Training Bundle Entry Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "training_bundle_entry_id"
+        ],
+        "title": "CreateAttemptRequest"
+      },
+      "CreateAttemptResponse": {
+        "properties": {
+          "attempt_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Attempt Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attempt_id"
+        ],
+        "title": "CreateAttemptResponse"
+      },
       "CreateEmulationGrantApiRequest": {
         "properties": {
           "requester_profile_id": {
@@ -59286,6 +59795,30 @@
                 "type": "null"
               }
             ]
+          },
+          "training_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Training Id"
+          },
+          "training_bundle_entry_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Training Bundle Entry Id"
           },
           "resources": {
             "anyOf": [
@@ -68980,7 +69513,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/QGetScenariosV4Item-Output"
+                  "$ref": "#/components/schemas/app__api__v4__artifacts__simulation__types__QGetScenariosV4Item"
                 },
                 "type": "array"
               },
@@ -71963,6 +72496,559 @@
         },
         "type": "object",
         "title": "GetToolsApiResponse"
+      },
+      "GetTrainingBundleRequest": {
+        "properties": {
+          "training_bundle_entry_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Training Bundle Entry Id"
+          },
+          "draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "training_bundle_entry_id"
+        ],
+        "title": "GetTrainingBundleRequest",
+        "description": "Client API request for one training bundle customization payload."
+      },
+      "GetTrainingBundleResponse": {
+        "properties": {
+          "training_bundle_entry_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Training Bundle Entry Id"
+          },
+          "training_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Training Id"
+          },
+          "simulation_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Id"
+          },
+          "simulation_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Name"
+          },
+          "scenario_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Id"
+          },
+          "profile_has_access": {
+            "type": "boolean",
+            "title": "Profile Has Access",
+            "default": false
+          },
+          "group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Id"
+          },
+          "draft_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Version"
+          },
+          "scenario_flags": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TrainingBundleScenarioFlags"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "departments": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TrainingBundleDepartmentSection"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "personas": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TrainingBundlePersonaSection"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "documents": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TrainingBundleDocumentSection"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "parameter_fields": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TrainingBundleParameterFieldSection"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "scenarios": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TrainingBundleScenarioSection"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "parameters": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TrainingBundleParameterSection"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "fields": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TrainingBundleFieldSection"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "questions": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TrainingBundleQuestionSection"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "options": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TrainingBundleOptionSection"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "videos": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TrainingBundleVideoSection"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "images": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TrainingBundleImageSection"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "templates": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TrainingBundleTemplateSection"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "problem_statements": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TrainingBundleProblemStatementSection"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "objectives": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TrainingBundleObjectiveSection"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "agents": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetAgentsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agents"
+          },
+          "models": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetModelsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Models"
+          },
+          "providers": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetProvidersV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Providers"
+          },
+          "tools": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetToolsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tools"
+          }
+        },
+        "type": "object",
+        "required": [
+          "training_bundle_entry_id"
+        ],
+        "title": "GetTrainingBundleResponse",
+        "description": "Client-facing bundle response \u2014 section-first pattern."
+      },
+      "GetTrainingBundleViewResponse": {
+        "properties": {
+          "profile_has_access": {
+            "type": "boolean",
+            "title": "Profile Has Access",
+            "default": false
+          },
+          "training_bundle_entry_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Training Bundle Entry Id"
+          },
+          "training_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Training Id"
+          },
+          "scenario_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Scenario Ids"
+          },
+          "department_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Department Ids"
+          },
+          "persona_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Persona Ids"
+          },
+          "document_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Document Ids"
+          },
+          "parameter_field_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Parameter Field Ids"
+          },
+          "parameter_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Parameter Ids"
+          },
+          "field_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Field Ids"
+          },
+          "question_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Question Ids"
+          },
+          "option_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Option Ids"
+          },
+          "video_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Video Ids"
+          },
+          "image_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Image Ids"
+          },
+          "template_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Template Ids"
+          },
+          "problem_statement_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Problem Statement Ids"
+          },
+          "objective_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Objective Ids"
+          },
+          "video_enabled": {
+            "type": "boolean",
+            "title": "Video Enabled",
+            "default": false
+          },
+          "problem_statement_enabled": {
+            "type": "boolean",
+            "title": "Problem Statement Enabled",
+            "default": false
+          },
+          "objectives_enabled": {
+            "type": "boolean",
+            "title": "Objectives Enabled",
+            "default": false
+          },
+          "images_enabled": {
+            "type": "boolean",
+            "title": "Images Enabled",
+            "default": false
+          },
+          "questions_enabled": {
+            "type": "boolean",
+            "title": "Questions Enabled",
+            "default": false
+          },
+          "use_templates": {
+            "type": "boolean",
+            "title": "Use Templates",
+            "default": false
+          }
+        },
+        "type": "object",
+        "title": "GetTrainingBundleViewResponse",
+        "description": "Thin MV-backed view response for a single training bundle."
+      },
+      "GetTrainingContextViewResponse": {
+        "properties": {
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "user_role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Role"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/TrainingContextViewItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "standard_group_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Standard Group Ids"
+          },
+          "standard_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Standard Ids"
+          }
+        },
+        "type": "object",
+        "title": "GetTrainingContextViewResponse",
+        "description": "View-layer response for training context."
       },
       "GetTrainingGetRequest": {
         "properties": {
@@ -84394,6 +85480,213 @@
         ],
         "title": "PatchToolDraftApiResponse"
       },
+      "PatchTrainingBundleDraftApiRequest": {
+        "properties": {
+          "input_draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Draft Id"
+          },
+          "group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Id"
+          },
+          "expected_version": {
+            "type": "integer",
+            "title": "Expected Version",
+            "default": 0
+          },
+          "departments": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TrainingBundleMultiResourceAction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "personas": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TrainingBundleMultiResourceAction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "documents": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TrainingBundleMultiResourceAction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "parameter_fields": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TrainingBundleMultiResourceAction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "parameters": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TrainingBundleMultiResourceAction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "fields": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TrainingBundleMultiResourceAction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "questions": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TrainingBundleMultiResourceAction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "options": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TrainingBundleMultiResourceAction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "videos": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TrainingBundleMultiResourceAction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "images": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TrainingBundleMultiResourceAction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "templates": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TrainingBundleMultiResourceAction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "problem_statements": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TrainingBundleMultiResourceAction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "objectives": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TrainingBundleMultiResourceAction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "PatchTrainingBundleDraftApiRequest",
+        "description": "Request for patching a training bundle draft."
+      },
+      "PatchTrainingBundleDraftApiResponse": {
+        "properties": {
+          "draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Id"
+          },
+          "new_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Version"
+          },
+          "draft_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Exists"
+          }
+        },
+        "type": "object",
+        "title": "PatchTrainingBundleDraftApiResponse",
+        "description": "Response for patching a training bundle draft."
+      },
       "PersonaChartRow": {
         "properties": {
           "name": {
@@ -92107,6 +93400,76 @@
         ],
         "title": "QGetObjectivesV4Item"
       },
+      "QGetOptionsV4Item": {
+        "properties": {
+          "option_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Option Id"
+          },
+          "option_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Option Text"
+          },
+          "is_correct": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Correct"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          },
+          "question_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Question Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "option_id",
+          "option_text",
+          "is_correct",
+          "generated",
+          "question_id"
+        ],
+        "title": "QGetOptionsV4Item"
+      },
       "QGetParameterFieldsV4Item": {
         "properties": {
           "id": {
@@ -95495,124 +96858,6 @@
           "templates_enabled"
         ],
         "title": "QGetScenariosV4Item"
-      },
-      "QGetScenariosV4Item-Output": {
-        "properties": {
-          "scenario_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenario Id"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "generated": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Generated"
-          },
-          "problem_statement_enabled": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Problem Statement Enabled"
-          },
-          "objectives_enabled": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Objectives Enabled"
-          },
-          "video_enabled": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Video Enabled"
-          },
-          "images_enabled": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Images Enabled"
-          },
-          "questions_enabled": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Questions Enabled"
-          },
-          "templates_enabled": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Templates Enabled"
-          }
-        },
-        "type": "object",
-        "title": "QGetScenariosV4Item",
-        "description": "Scenario item from scenarios resource query."
       },
       "QGetSettingV4Auth": {
         "properties": {
@@ -111001,7 +112246,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/QGetScenariosV4Item-Output"
+                  "$ref": "#/components/schemas/app__api__v4__artifacts__simulation__types__QGetScenariosV4Item"
                 },
                 "type": "array"
               },
@@ -116711,6 +117956,1441 @@
         "type": "object",
         "title": "ToolResourceAction"
       },
+      "TrainingBundleDepartmentSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "current": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetDepartmentsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current"
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetDepartmentsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "TrainingBundleDepartmentSection"
+      },
+      "TrainingBundleDocumentSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "current": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetDocumentsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current"
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetDocumentsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "TrainingBundleDocumentSection"
+      },
+      "TrainingBundleFieldSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "current": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetFieldsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current"
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetFieldsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "TrainingBundleFieldSection"
+      },
+      "TrainingBundleImageSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "current": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetImagesV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current"
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetImagesV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "TrainingBundleImageSection"
+      },
+      "TrainingBundleMultiResourceAction": {
+        "properties": {
+          "resource_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resource Ids"
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          }
+        },
+        "type": "object",
+        "title": "TrainingBundleMultiResourceAction",
+        "description": "Multi-resource action for training bundle draft patch."
+      },
+      "TrainingBundleObjectiveSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "current": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetObjectivesV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current"
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetObjectivesV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "TrainingBundleObjectiveSection"
+      },
+      "TrainingBundleOptionSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "current": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetOptionsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current"
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetOptionsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "TrainingBundleOptionSection"
+      },
+      "TrainingBundleParameterFieldSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "current": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetParameterFieldsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current"
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetParameterFieldsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "TrainingBundleParameterFieldSection"
+      },
+      "TrainingBundleParameterSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "current": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetParametersV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current"
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetParametersV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "TrainingBundleParameterSection"
+      },
+      "TrainingBundlePersonaSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "current": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPersonasV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current"
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPersonasV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "TrainingBundlePersonaSection"
+      },
+      "TrainingBundleProblemStatementSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "current": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetProblemStatementsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current"
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetProblemStatementsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "TrainingBundleProblemStatementSection"
+      },
+      "TrainingBundleQuestionSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "current": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetQuestionsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current"
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetQuestionsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "TrainingBundleQuestionSection"
+      },
+      "TrainingBundleScenarioFlags": {
+        "properties": {
+          "video_enabled": {
+            "type": "boolean",
+            "title": "Video Enabled",
+            "default": false
+          },
+          "problem_statement_enabled": {
+            "type": "boolean",
+            "title": "Problem Statement Enabled",
+            "default": false
+          },
+          "objectives_enabled": {
+            "type": "boolean",
+            "title": "Objectives Enabled",
+            "default": false
+          },
+          "images_enabled": {
+            "type": "boolean",
+            "title": "Images Enabled",
+            "default": false
+          },
+          "questions_enabled": {
+            "type": "boolean",
+            "title": "Questions Enabled",
+            "default": false
+          },
+          "use_templates": {
+            "type": "boolean",
+            "title": "Use Templates",
+            "default": false
+          }
+        },
+        "type": "object",
+        "title": "TrainingBundleScenarioFlags",
+        "description": "Scenario-level flags that control section visibility."
+      },
+      "TrainingBundleScenarioSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "current": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/app__sql__types__QGetScenariosV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current"
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/app__sql__types__QGetScenariosV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "TrainingBundleScenarioSection"
+      },
+      "TrainingBundleTemplateSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "current": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetTemplatesV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current"
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetTemplatesV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "TrainingBundleTemplateSection"
+      },
+      "TrainingBundleVideoSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "create_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Tool Id"
+          },
+          "link_tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Tool Id"
+          },
+          "current": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetVideosV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current"
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetVideosV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "TrainingBundleVideoSection"
+      },
+      "TrainingContextViewItem": {
+        "properties": {
+          "simulation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Simulation Id"
+          },
+          "training_bundle_entry_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Training Bundle Entry Ids"
+          },
+          "scenario_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Ids"
+          },
+          "cohort_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Ids"
+          },
+          "persona_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Ids"
+          },
+          "standard_group_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Group Ids"
+          },
+          "standard_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Ids"
+          },
+          "rubric_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "simulation_id"
+        ],
+        "title": "TrainingContextViewItem",
+        "description": "IDs-first training simulation item \u2014 raw IDs only, no computed fields."
+      },
       "TrainingErrorEvent": {
         "properties": {
           "artifact_type": {
@@ -117011,6 +119691,18 @@
             ],
             "title": "Time Limit"
           },
+          "training_bundle_entry_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Training Bundle Entry Id"
+          },
           "scenario_ids": {
             "anyOf": [
               {
@@ -117219,17 +119911,12 @@
       },
       "TrainingStartPayload": {
         "properties": {
-          "simulation_id": {
+          "training_bundle_entry_id": {
             "type": "string",
             "format": "uuid",
-            "title": "Simulation Id"
+            "title": "Training Bundle Entry Id"
           },
-          "agent_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Agent Id"
-          },
-          "scenario_id": {
+          "department_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -117239,7 +119926,31 @@
                 "type": "null"
               }
             ],
-            "title": "Scenario Id"
+            "title": "Department Id"
+          },
+          "draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Id"
+          },
+          "attempt_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Id"
           },
           "user_instructions": {
             "anyOf": [
@@ -117269,11 +119980,10 @@
         },
         "type": "object",
         "required": [
-          "simulation_id",
-          "agent_id"
+          "training_bundle_entry_id"
         ],
         "title": "TrainingStartPayload",
-        "description": "Request payload for training_start WebSocket event.\n\nStarts a new training session. Server handles everything internally:\n- Checks if scenario needs generation\n- If generation needed, runs it and streams progress\n- Creates attempt + chat entries\n- Emits training_started when ready"
+        "description": "Request payload for training_start WebSocket event.\n\nStarts a new training session. Server handles everything internally:\n- Checks if scenario needs generation\n- If generation needed, runs it and streams progress\n- Creates attempt + chat entries (or just chat if attempt_id provided)\n- Emits training_started when ready\n\nLobby flow: attempt_id is provided (pre-created via REST), department_id\nand draft_id are optional (server resolves defaults if not provided)."
       },
       "TrainingStartedEvent": {
         "properties": {
@@ -118293,6 +121003,124 @@
         "title": "GetSimulationApiResponse",
         "description": "Section-first response for simulation editor."
       },
+      "app__api__v4__artifacts__simulation__types__QGetScenariosV4Item": {
+        "properties": {
+          "scenario_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          },
+          "problem_statement_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Problem Statement Enabled"
+          },
+          "objectives_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objectives Enabled"
+          },
+          "video_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Enabled"
+          },
+          "images_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Images Enabled"
+          },
+          "questions_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Questions Enabled"
+          },
+          "templates_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Templates Enabled"
+          }
+        },
+        "type": "object",
+        "title": "QGetScenariosV4Item",
+        "description": "Scenario item from scenarios resource query."
+      },
       "app__api__v4__artifacts__types__FilterOption": {
         "properties": {
           "value": {
@@ -118991,6 +121819,135 @@
           "link_tool_id"
         ],
         "title": "DocumentResourceAction"
+      },
+      "app__sql__types__QGetScenariosV4Item": {
+        "properties": {
+          "scenario_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          },
+          "problem_statement_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Problem Statement Enabled"
+          },
+          "objectives_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objectives Enabled"
+          },
+          "video_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Enabled"
+          },
+          "images_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Images Enabled"
+          },
+          "questions_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Questions Enabled"
+          },
+          "templates_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Templates Enabled"
+          }
+        },
+        "type": "object",
+        "required": [
+          "scenario_id",
+          "name",
+          "description",
+          "generated",
+          "problem_statement_enabled",
+          "objectives_enabled",
+          "video_enabled",
+          "images_enabled",
+          "questions_enabled",
+          "templates_enabled"
+        ],
+        "title": "QGetScenariosV4Item"
       },
       "app__sql__types__QGetSettingsV4Auth": {
         "properties": {

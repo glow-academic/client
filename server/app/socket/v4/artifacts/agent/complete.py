@@ -28,7 +28,8 @@ server_router = APIRouter()
 
 @internal_sio.on("generate_call_complete")  # type: ignore
 async def handle_agent_artifact_complete(data: dict[str, Any]) -> None:
-    """Handle generation completion and emit hydrated agent resource payload."""    if data.get("artifact_type") != "agent":
+    """Handle generation completion and emit hydrated agent resource payload."""
+    if data.get("artifact_type") != "agent":
         return
 
     sid = data.get("sid", "")
@@ -83,7 +84,9 @@ async def handle_agent_artifact_complete(data: dict[str, Any]) -> None:
     async with get_db_connection() as conn:
         if resource_type == "names":
             items = await get_names_internal(conn, [resource_id], bypass_cache=True)
-            payload["name_resource"] = items[0].model_dump(mode="json") if items else None
+            payload["name_resource"] = (
+                items[0].model_dump(mode="json") if items else None
+            )
         elif resource_type == "descriptions":
             items = await get_descriptions_internal(
                 conn, [resource_id], bypass_cache=True
@@ -110,7 +113,9 @@ async def handle_agent_artifact_complete(data: dict[str, Any]) -> None:
             )
         elif resource_type == "flags":
             items = await get_flags_internal(conn, [resource_id], bypass_cache=True)
-            payload["flag_resource"] = items[0].model_dump(mode="json") if items else None
+            payload["flag_resource"] = (
+                items[0].model_dump(mode="json") if items else None
+            )
         elif resource_type == "temperature_levels":
             items = await get_temperature_levels_internal(
                 conn, [resource_id], bypass_cache=True

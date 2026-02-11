@@ -38,13 +38,21 @@ class TrainingStartPayload(BaseModel):
     Starts a new training session. Server handles everything internally:
     - Checks if scenario needs generation
     - If generation needed, runs it and streams progress
-    - Creates attempt + chat entries
+    - Creates attempt + chat entries (or just chat if attempt_id provided)
     - Emits training_started when ready
+
+    Lobby flow: attempt_id is provided (pre-created via REST), department_id
+    and draft_id are optional (server resolves defaults if not provided).
     """
 
     training_bundle_entry_id: UUID  # Selected bundle from training/get
-    department_id: UUID  # Department selected in UI
-    draft_id: UUID  # Required training draft for bundle start
+    department_id: UUID | None = (
+        None  # Department selected in UI (resolved server-side if None)
+    )
+    draft_id: UUID | None = (
+        None  # Training draft for bundle start (created server-side if None)
+    )
+    attempt_id: UUID | None = None  # Pre-created attempt ID (lobby flow)
     user_instructions: list[str] | None = None  # Optional generation hints
     infinite: bool | None = None  # Infinite mode - no time limit
 

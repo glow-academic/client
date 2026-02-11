@@ -48,9 +48,9 @@ from app.api.v4.resources.descriptions.get import get_descriptions_internal
 from app.api.v4.resources.descriptions.search import search_descriptions_internal
 from app.api.v4.resources.flags.get import get_flags_internal
 from app.api.v4.resources.flags.search import search_flags_internal
+from app.api.v4.resources.models.get import get_models_internal
 from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.names.search import search_names_internal
-from app.api.v4.resources.models.get import get_models_internal
 from app.api.v4.resources.parameters.get import get_parameters_internal
 from app.api.v4.resources.parameters.search import search_parameters_internal
 from app.api.v4.resources.providers.get import get_providers_internal

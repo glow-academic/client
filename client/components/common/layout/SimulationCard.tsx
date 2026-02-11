@@ -28,13 +28,11 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useProfile } from "@/contexts/profile-context";
 import { api } from "@/lib/api/client";
-import type { ServerToClientEvents } from "@/lib/ws/types";
 import { getPersonaIconComponent } from "@/utils/persona-icons";
-import { Info, SlidersHorizontal, Table, Timer, User, Users } from "lucide-react";
+import { Info, Table, Timer, User, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 import { toast } from "sonner";
 // ProfileItem type derived from server response (single source of truth)
 import type { ProfileItem } from "@/app/(main)/layout-server";
@@ -52,20 +50,6 @@ type StandardsMapping = Record<string, {
   description: string;
   points: number;
 }>;
-type PatchTrainingDraftIn = {
-  body: {
-    input_draft_id?: string | null;
-    expected_version?: number;
-    departments?: { resource_ids?: string[] };
-    personas?: { resource_ids?: string[] };
-    documents?: { resource_ids?: string[] };
-    parameter_fields?: { resource_ids?: string[] };
-  };
-};
-type PatchTrainingDraftOut = {
-  draft_id?: string | null;
-  new_version?: number | null;
-};
 
 const generateGradientFromHex = (hexColor: string): string => {
   // Remove # if present
@@ -105,8 +89,6 @@ export interface SimulationCardProps {
   /** "default" = practice mode, "cohort" = home mode */
   type: "default" | "cohort";
   profile: ProfileItem;
-  /** Whether to show infinite mode button (practice only) */
-  showCustomizeButton?: boolean;
 }
 
 export default function SimulationCard({
@@ -126,187 +108,56 @@ export default function SimulationCard({
   passRate,
   type,
   profile,
-  showCustomizeButton = false,
 }: SimulationCardProps) {
   const router = useRouter();
-  const { socket, isConnected } = useProfile();
 
   // Determine if this is practice mode based on type
   const practice = type === "default";
 
   // Loading state for this card
   const [isStarting, setIsStarting] = useState(false);
-  const [loadingToastId, setLoadingToastId] = useState<string | number | null>(null);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Cleanup function for timeout and toast
-  const cleanup = useCallback(() => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
-    if (loadingToastId) {
-      toast.dismiss(loadingToastId);
-      setLoadingToastId(null);
-    }
-  }, [loadingToastId]);
-
-  // Handle training_started and training_error events
-  useEffect(() => {
-    if (!socket) return;
-
-    const handleTrainingStarted = (
-      data: Parameters<ServerToClientEvents["training_started"]>[0]
-    ) => {
-      // Only handle if this card initiated the start
-      if (!isStarting) return;
-
-      cleanup();
-      setIsStarting(false);
-
-      // Receiving this event means success - navigate to the attempt
-      if (data.attempt_id) {
-        toast.success("Training started successfully");
-
-        // Refresh current page data so it's updated when user returns
-        router.refresh();
-
-        // Navigate to the attempt page
-        const basePath = practice ? "/practice" : "/home";
-        router.push(`${basePath}/a/${data.attempt_id}`);
-
-        // Dispatch custom event for other components
-        window.dispatchEvent(
-          new CustomEvent("trainingStarted", {
-            detail: { attemptId: data.attempt_id },
-          })
-        );
-      }
-    };
-
-    const handleTrainingError = (
-      data: Parameters<ServerToClientEvents["training_error"]>[0]
-    ) => {
-      // Only handle if this card initiated the start
-      if (!isStarting) return;
-
-      cleanup();
-      setIsStarting(false);
-
-      const errorMessage = data.message || "Training error occurred";
-      toast.error(errorMessage);
-
-      // Dispatch custom event for other components
-      window.dispatchEvent(new CustomEvent("trainingError"));
-    };
-
-    // Subscribe to events
-    socket.on("training_started", handleTrainingStarted);
-    socket.on("training_error", handleTrainingError);
-
-    // Cleanup
-    return () => {
-      socket.off("training_started", handleTrainingStarted);
-      socket.off("training_error", handleTrainingError);
-    };
-  }, [socket, isStarting, practice, router, cleanup]);
-
-  // Start training function
+  // Start training function - creates attempt via REST, navigates to attempt page
   const handleStartTraining = useCallback(
-    async (infinite: boolean = false) => {
-      // Validate socket connection
-      if (!socket || !isConnected) {
-        toast.error("WebSocket not connected. Please refresh the page.");
-        return;
-      }
-
+    async () => {
       if (!trainingBundleEntryId) {
         toast.error("Training bundle is missing for this simulation.");
         return;
       }
 
-      const departmentId = profile?.primary_department_id;
-      if (!departmentId) {
-        toast.error("No primary department found for this profile.");
-        return;
-      }
-
-      let draftId: string | null = null;
+      setIsStarting(true);
       try {
-        const draftResult: PatchTrainingDraftOut = await api.patch(
-          "/artifacts/training/draft" as never,
+        const result = await api.post(
+          "/artifacts/attempt/create" as never,
           {
             body: {
-              input_draft_id: null,
-              expected_version: 0,
-              departments: { resource_ids: [departmentId] },
+              training_bundle_entry_id: trainingBundleEntryId,
             },
-          } as PatchTrainingDraftIn,
+          } as never,
         );
-        draftId = draftResult.draft_id || null;
+        const attemptId = (result as { attempt_id?: string }).attempt_id;
+        if (!attemptId) {
+          toast.error("Failed to create training attempt.");
+          return;
+        }
+
+        const basePath = practice ? "/practice" : "/home";
+        router.push(`${basePath}/a/${attemptId}`);
+
+        // Dispatch custom event for analytics
+        window.dispatchEvent(
+          new CustomEvent("simulationButtonPressed", {
+            detail: { simulationId: id },
+          })
+        );
       } catch {
-        toast.error("Failed to prepare a default draft for this training.");
-        return;
-      }
-
-      if (!draftId) {
-        toast.error("Could not resolve a draft for this training.");
-        return;
-      }
-
-      // Set loading state
-      setIsStarting(true);
-
-      // Show loading toast
-      const toastId = toast.loading(
-        infinite ? "Starting infinite mode..." : "Starting simulation...",
-        { dismissible: true }
-      );
-      setLoadingToastId(toastId);
-
-      // Build payload
-      const payload: Record<string, unknown> = {
-        training_bundle_entry_id: trainingBundleEntryId,
-        department_id: departmentId,
-        draft_id: draftId,
-      };
-
-      // Add infinite mode flag
-      if (infinite) {
-        payload["infinite"] = true;
-      }
-
-      // Emit the training_start event
-      socket.emit("training_start", payload);
-
-      // Dispatch event for analytics
-      window.dispatchEvent(
-        new CustomEvent("simulationButtonPressed", {
-          detail: { simulationId: id },
-        })
-      );
-
-      // Set up timeout (30 seconds)
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-      timeoutRef.current = setTimeout(() => {
-        cleanup();
+        toast.error("Failed to create training attempt.");
+      } finally {
         setIsStarting(false);
-        toast.error("Training start timed out. Please try again.");
-      }, 30000);
+      }
     },
-    [socket, isConnected, trainingBundleEntryId, profile?.primary_department_id, cleanup]
+    [trainingBundleEntryId, practice, router, id]
   );
-
-  const handleOpenCustomize = useCallback(() => {
-    if (!trainingBundleEntryId) {
-      toast.error("Training bundle is missing for this simulation.");
-      return;
-    }
-    const basePath = practice ? "/practice" : "/home";
-    router.push(`${basePath}/b/${trainingBundleEntryId}`);
-  }, [practice, router, trainingBundleEntryId]);
 
   // Get persona configuration and icon based on persona data
   const IconComponent =
@@ -327,26 +178,11 @@ export default function SimulationCard({
   };
 
   const gradientClass = getGradientClass();
-  // For cohort simulations (non-practice), use status-based colors
-  // For practice simulations (default), use color prop or default purple
-  const iconColor =
-    type === "cohort"
-      ? hasPassed
-        ? "#22c55e" // green-500 when passed
-        : "#9333ea" // purple-600 when not passed
-      : color
-        ? color.startsWith("#")
-          ? color
-          : `#${color}`
-        : "rgb(168, 85, 247)"; // purple-500 default for practice
 
   const backgroundGradient =
     type === "cohort" && hasPassed
       ? "from-green-900 to-green-600"
       : "from-gray-900 to-gray-600";
-
-  // Determine if we should use persona color for icons (only for default type with color prop)
-  const shouldUsePersonaColor = type === "default" && color;
 
   // Make the card fill available height and stretch the header to create space
   return (
@@ -540,99 +376,40 @@ export default function SimulationCard({
         </CardContent>
 
         <CardFooter className="pt-0 relative z-10">
-          {showCustomizeButton && profile?.role !== "guest" ? (
-            <div className="flex gap-2 w-full">
-              <Button
-                onClick={() => void handleStartTraining(false)}
-                disabled={isStarting}
-                data-testid={`start-simulation-${id}`}
-                variant={gradientClass ? undefined : "default"}
-                className={`flex-1 hover:shadow-lg transition-all duration-300 ${
-                  isStarting ? "animate-pulse" : "hover:scale-105"
-                } ${
-                  typeof gradientClass === "string" &&
-                  gradientClass !== null &&
-                  !gradientClass.startsWith("linear-gradient")
-                    ? `bg-gradient-to-r ${gradientClass} text-white border-0 hover:opacity-90`
-                    : typeof gradientClass === "string" &&
-                        gradientClass.startsWith("linear-gradient")
-                      ? "border-0"
-                      : ""
-                }`}
-                style={{
-                  ...(typeof gradientClass === "string" &&
-                    gradientClass.startsWith("linear-gradient") && {
-                      background: gradientClass,
-                      color: "white",
-                      border: "none",
-                    }),
-                }}
-              >
-                {isStarting ? "Starting..." : "Start Simulation"}
-              </Button>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    onClick={handleOpenCustomize}
-                    disabled={isStarting}
-                    variant="default"
-                    size="icon"
-                    className="flex-shrink-0 hover:scale-105 transition-all duration-300"
-                    data-testid={`customize-training-${id}`}
-                    style={
-                      shouldUsePersonaColor
-                        ? {
-                            backgroundColor: iconColor,
-                            borderColor: iconColor,
-                            color: "white",
-                          }
-                        : undefined
-                    }
-                  >
-                    <SlidersHorizontal className="h-4 w-4 text-white" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Customize</p>
-                </TooltipContent>
-              </Tooltip>
-            </div>
-          ) : (
-            <Button
-              onClick={() => void handleStartTraining(false)}
-              disabled={isStarting}
-              data-testid={`start-simulation-${id}`}
-              variant={gradientClass ? undefined : "default"}
-              className={`w-full hover:shadow-lg transition-all duration-300 ${
-                isStarting ? "animate-pulse" : "hover:scale-105"
-              } ${
-                typeof gradientClass === "string" &&
-                gradientClass !== null &&
-                !gradientClass.startsWith("linear-gradient")
-                  ? `bg-gradient-to-r ${gradientClass} text-white border-0 hover:opacity-90`
-                  : typeof gradientClass === "string" &&
-                      gradientClass.startsWith("linear-gradient")
-                    ? "border-0"
-                    : ""
-              }`}
-              style={{
-                ...(typeof gradientClass === "string" &&
-                  gradientClass.startsWith("linear-gradient") && {
-                    background: gradientClass,
-                    color: "white",
-                    border: "none",
-                  }),
-              }}
-            >
-              {isStarting
-                ? "Starting..."
-                : type === "default"
-                  ? "Start Simulation"
-                  : hasPassed
-                    ? "Start Simulation (Complete)"
-                    : "Start Simulation"}
-            </Button>
-          )}
+          <Button
+            onClick={() => void handleStartTraining()}
+            disabled={isStarting}
+            data-testid={`start-simulation-${id}`}
+            variant={gradientClass ? undefined : "default"}
+            className={`w-full hover:shadow-lg transition-all duration-300 ${
+              isStarting ? "animate-pulse" : "hover:scale-105"
+            } ${
+              typeof gradientClass === "string" &&
+              gradientClass !== null &&
+              !gradientClass.startsWith("linear-gradient")
+                ? `bg-gradient-to-r ${gradientClass} text-white border-0 hover:opacity-90`
+                : typeof gradientClass === "string" &&
+                    gradientClass.startsWith("linear-gradient")
+                  ? "border-0"
+                  : ""
+            }`}
+            style={{
+              ...(typeof gradientClass === "string" &&
+                gradientClass.startsWith("linear-gradient") && {
+                  background: gradientClass,
+                  color: "white",
+                  border: "none",
+                }),
+            }}
+          >
+            {isStarting
+              ? "Starting..."
+              : type === "default"
+                ? "Start Simulation"
+                : hasPassed
+                  ? "Start Simulation (Complete)"
+                  : "Start Simulation"}
+          </Button>
         </CardFooter>
       </Card>
     </div>

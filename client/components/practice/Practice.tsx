@@ -116,7 +116,6 @@ export default function Practice({
               | "admin"
               | "guest",
           }}
-          showCustomizeButton={!isGuest}
         />
       </div>
     </TooltipProvider>

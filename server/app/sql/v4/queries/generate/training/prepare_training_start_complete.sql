@@ -21,7 +21,8 @@ CREATE OR REPLACE FUNCTION socket_prepare_training_start_v4(
     p_training_bundle_entry_id uuid,
     p_department_id uuid,
     p_draft_id uuid DEFAULT NULL,
-    p_infinite_mode boolean DEFAULT NULL
+    p_infinite_mode boolean DEFAULT NULL,
+    p_attempt_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     attempt_id uuid,
@@ -374,33 +375,39 @@ BEGIN
         ON CONFLICT (training_bundle_department_id, standard_groups_id) DO NOTHING;
     END IF;
 
-    -- Create attempt entry.
-    INSERT INTO simulation_attempts_entry (created_at, updated_at, practice, infinite_mode, training_id)
-    VALUES (NOW(), NOW(), v_is_practice, COALESCE(p_infinite_mode, false), v_training_id)
-    RETURNING id INTO v_attempt_id;
+    -- Create attempt entry (or use pre-created attempt from lobby flow).
+    IF p_attempt_id IS NOT NULL THEN
+        -- Lobby flow: attempt already created via REST, just use it
+        v_attempt_id := p_attempt_id;
+    ELSE
+        -- Legacy flow: create attempt inline
+        INSERT INTO simulation_attempts_entry (created_at, updated_at, practice, infinite_mode, training_id)
+        VALUES (NOW(), NOW(), v_is_practice, COALESCE(p_infinite_mode, false), v_training_id)
+        RETURNING id INTO v_attempt_id;
 
-    INSERT INTO simulation_attempts_simulations_connection (simulations_id, attempt_id, active)
-    VALUES (v_simulations_resource_id, v_attempt_id, true)
-    ON CONFLICT (attempt_id, simulations_id) DO NOTHING;
+        INSERT INTO simulation_attempts_simulations_connection (simulations_id, attempt_id, active)
+        VALUES (v_simulations_resource_id, v_attempt_id, true)
+        ON CONFLICT (attempt_id, simulations_id) DO NOTHING;
 
-    INSERT INTO simulation_attempts_profiles_connection (profiles_id, attempt_id, active)
-    VALUES (v_profiles_resource_id, v_attempt_id, true)
-    ON CONFLICT (attempt_id, profiles_id) DO NOTHING;
+        INSERT INTO simulation_attempts_profiles_connection (profiles_id, attempt_id, active)
+        VALUES (v_profiles_resource_id, v_attempt_id, true)
+        ON CONFLICT (attempt_id, profiles_id) DO NOTHING;
 
-    IF v_cohorts_resource_id IS NOT NULL THEN
-        INSERT INTO simulation_attempts_cohorts_connection (cohorts_id, attempt_id, active)
-        VALUES (v_cohorts_resource_id, v_attempt_id, true)
-        ON CONFLICT (attempt_id, cohorts_id) DO NOTHING;
-    END IF;
+        IF v_cohorts_resource_id IS NOT NULL THEN
+            INSERT INTO simulation_attempts_cohorts_connection (cohorts_id, attempt_id, active)
+            VALUES (v_cohorts_resource_id, v_attempt_id, true)
+            ON CONFLICT (attempt_id, cohorts_id) DO NOTHING;
+        END IF;
 
-    INSERT INTO simulation_attempts_departments_connection (departments_id, attempt_id, active)
-    VALUES (v_selected_department_id, v_attempt_id, true)
-    ON CONFLICT (attempt_id, departments_id) DO NOTHING;
+        INSERT INTO simulation_attempts_departments_connection (departments_id, attempt_id, active)
+        VALUES (v_selected_department_id, v_attempt_id, true)
+        ON CONFLICT (attempt_id, departments_id) DO NOTHING;
 
-    IF v_roles_resource_id IS NOT NULL THEN
-        INSERT INTO simulation_attempts_roles_connection (roles_id, attempt_id, active)
-        VALUES (v_roles_resource_id, v_attempt_id, true)
-        ON CONFLICT (attempt_id, roles_id) DO NOTHING;
+        IF v_roles_resource_id IS NOT NULL THEN
+            INSERT INTO simulation_attempts_roles_connection (roles_id, attempt_id, active)
+            VALUES (v_roles_resource_id, v_attempt_id, true)
+            ON CONFLICT (attempt_id, roles_id) DO NOTHING;
+        END IF;
     END IF;
 
     -- Create chat entry.

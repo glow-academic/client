@@ -49,6 +49,7 @@ from app.api.v4.artifacts.agent.permissions import (
 )
 from app.api.v4.artifacts.agent.types import (
     AgentDepartmentSection,
+    AgentDescriptionSection,
     AgentFlagConfig,
     AgentFlagSection,
     AgentInstructionSection,
@@ -61,15 +62,14 @@ from app.api.v4.artifacts.agent.types import (
     AgentTemperatureLevelSection,
     AgentToolSection,
     AgentVoiceSection,
-    AgentDescriptionSection,
     AgentWebsocketResources,
     AgentWebsocketViews,
     GetAgentApiRequest,
     GetAgentApiResponse,
     GetAgentWebsocketResponse,
 )
-from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.permissions import select_agents_for_artifact
+from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.departments.search import search_departments_internal
 from app.api.v4.resources.descriptions.get import get_descriptions_internal

@@ -242,7 +242,7 @@ class SaveFieldSqlParams(BaseModel):
     @classmethod
     def from_request(
         cls, request: SaveFieldApiRequest, profile_id: UUID
-    ) -> "SaveFieldSqlParams":
+    ) -> SaveFieldSqlParams:
         return cls(profile_id=profile_id, **request.model_dump())
 
     def to_tuple(self) -> tuple:
@@ -301,7 +301,7 @@ class PatchFieldDraftSqlParams(BaseModel):
     @classmethod
     def from_request(
         cls, request: PatchFieldDraftApiRequest, profile_id: UUID
-    ) -> "PatchFieldDraftSqlParams":
+    ) -> PatchFieldDraftSqlParams:
         empty_single = FieldResourceAction()
         empty_multi = FieldMultiResourceAction()
         return cls(

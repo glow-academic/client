@@ -7,7 +7,6 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.api.v4.artifacts.setting.types import GetSettingApiRequest
 from app.api.v4.artifacts.setting.permissions import (
     compute_can_edit,
     compute_colors_required,
@@ -23,6 +22,7 @@ from app.api.v4.artifacts.setting.permissions import (
     compute_show_name,
     has_access,
 )
+from app.api.v4.artifacts.setting.types import GetSettingApiRequest
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db

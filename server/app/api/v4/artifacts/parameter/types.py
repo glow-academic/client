@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from app.api.v4.views.drafts.types import DraftParameterViewItem
 from app.sql.types import (
@@ -255,7 +255,7 @@ class SaveParameterSqlParams(BaseModel):
     @classmethod
     def from_request(
         cls, request: SaveParameterApiRequest, profile_id: UUID
-    ) -> "SaveParameterSqlParams":
+    ) -> SaveParameterSqlParams:
         return cls(profile_id=profile_id, **request.model_dump())
 
     def to_tuple(self) -> tuple:
@@ -314,7 +314,7 @@ class PatchParameterDraftSqlParams(BaseModel):
     @classmethod
     def from_request(
         cls, request: PatchParameterDraftApiRequest, profile_id: UUID
-    ) -> "PatchParameterDraftSqlParams":
+    ) -> PatchParameterDraftSqlParams:
         empty_single = ParameterResourceAction()
         empty_multi = ParameterMultiResourceAction()
         return cls(

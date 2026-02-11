@@ -596,6 +596,9 @@ class GetAttemptDetailResponse(BaseModel):
     available_continuation_options: AvailableContinuationOptions | None = None
     # Extended data (scenario_documents removed - use chat.documents)
     rubric_structure: RubricStructureData | None = None
+    # Training context (for lobby flow)
+    training_id: UUID | None = None
+    training_bundle_entry_id: UUID | None = None
     # New normalized maps
     resources: AttemptResources | None = None
     views: AttemptViews | None = None

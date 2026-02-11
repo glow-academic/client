@@ -51,7 +51,7 @@ export const ROUTE_PERMISSIONS: SectionPermission[] = [
         redirectTo: "/home",
       },
       {
-        path: "/home/b/[bundleId]",
+        path: "/home/a/[attemptId]/[bundleId]",
         roles: ["member", "instructional", "admin", "superadmin"],
         title: "Customize Training",
         redirectTo: "/home",
@@ -77,7 +77,7 @@ export const ROUTE_PERMISSIONS: SectionPermission[] = [
         redirectTo: "/practice",
       },
       {
-        path: "/practice/b/[bundleId]",
+        path: "/practice/a/[attemptId]/[bundleId]",
         roles: ["member", "instructional", "admin", "superadmin"],
         title: "Customize Practice",
         redirectTo: "/practice",

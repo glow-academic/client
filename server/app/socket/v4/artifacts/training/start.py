@@ -14,12 +14,12 @@ from typing import Any, cast
 
 from fastapi import APIRouter
 
+from app.api.v4.artifacts.training.get import get_training_websocket
 from app.infra.v4.generation import convert_tools_to_dict, render_developer_instructions
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
-from app.api.v4.artifacts.training.get import get_training_websocket
 from app.socket.v4.artifacts.training.permissions import (
     TrainingGenerationContext,
     check_scenario_needs_generation,
@@ -80,12 +80,40 @@ async def _training_start_impl(
     """
     try:
         async with get_db_connection() as conn:
+            # Resolve department_id if not provided (use profile's primary department)
+            resolved_department_id = data.department_id
+            if not resolved_department_id:
+                resolved_department_id = await conn.fetchval(
+                    """
+                    SELECT pdj.departments_id
+                    FROM profile_departments_junction pdj
+                    WHERE pdj.profile_id = $1
+                      AND pdj.active = true
+                      AND pdj.is_primary = true
+                    LIMIT 1
+                    """,
+                    profile_id,
+                )
+                if not resolved_department_id:
+                    await emit_to_internal(
+                        "generate_call_error",
+                        GenerateErrorApiRequest(
+                            sid=sid,
+                            error_message="No primary department found for this profile.",
+                            artifact_type="training",
+                            group_id=None,
+                            resource_type="training",
+                        ),
+                        sid=sid,
+                    )
+                    return
+
             # Step 1: Fetch context and validate prerequisites
             training_ws = await get_training_websocket(
                 conn=conn,
                 profile_id=profile_id,
                 training_bundle_entry_id=data.training_bundle_entry_id,
-                department_id=data.department_id,
+                department_id=resolved_department_id,
                 draft_id=data.draft_id,
             )
             context_row = training_ws.resources
@@ -170,7 +198,7 @@ async def _training_start_impl(
                 gen_params = PrepareTrainingGenerationSqlParams(
                     p_profile_id=profile_id,
                     p_training_bundle_entry_id=data.training_bundle_entry_id,
-                    p_department_id=data.department_id,
+                    p_department_id=resolved_department_id,
                     p_draft_id=data.draft_id,
                     p_resource_types=TRAINING_RESOURCE_TYPES,
                 )
@@ -244,8 +272,9 @@ async def _training_start_impl(
                         "tools": convert_tools_to_dict(gen_row.tools),
                         "simulation_id": str(context_row.simulation_id),
                         "training_bundle_entry_id": str(data.training_bundle_entry_id),
-                        "department_id": str(data.department_id),
+                        "department_id": str(resolved_department_id),
                         "draft_id": str(data.draft_id) if data.draft_id else None,
+                        "attempt_id": str(data.attempt_id) if data.attempt_id else None,
                         # Training-specific field for filtering
                         "scenario_id": str(scenario_id),
                     },
@@ -268,9 +297,10 @@ async def _training_start_impl(
             prepare_params = PrepareTrainingStartSqlParams(
                 p_profile_id=profile_id,
                 p_training_bundle_entry_id=data.training_bundle_entry_id,
-                p_department_id=data.department_id,
+                p_department_id=resolved_department_id,
                 p_draft_id=data.draft_id,
                 p_infinite_mode=data.infinite,
+                p_attempt_id=data.attempt_id,
             )
 
             prepare_row = cast(

@@ -344,7 +344,6 @@ export default function Home({ homeData }: HomeProps) {
                         passRate: item.pass_pct,
                       })}
                       type="cohort"
-                      showCustomizeButton={profile.role !== "guest"}
                       profile={{
                         ...profile,
                         role: profile.role as
