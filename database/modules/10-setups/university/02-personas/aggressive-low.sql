@@ -1,0 +1,47 @@
+-- Module: Aggressive (Low)
+-- Category: persona
+-- Description: Aggressive (Low) persona
+-- ============================================================
+
+
+-- Resource rows
+INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019b995c-8e9a-77ad-88cb-b094c285656d', 'Pushes back on your ideas and challenges assumptions, with milder intensity.', '2025-12-13T18:43:03.010434+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.examples_resource (created_at, example, id, generated, mcp) VALUES ('2025-12-10T15:04:04.378076+00:00', 'That''s not right at all!', '019b3be4-3253-7e14-b9c6-1154261ba098', false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.examples_resource (created_at, example, id, generated, mcp) VALUES ('2025-12-10T15:04:04.378076+00:00', 'I disagree completely', '019b3be4-3253-7e51-8303-9cabeb4503e8', false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.examples_resource (created_at, example, id, generated, mcp) VALUES ('2025-12-10T15:04:04.378076+00:00', 'You''re wrong about this', '019b3be4-3253-7e5f-924b-78734cc404fe', false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.instructions_resource (id, template, active, created_at, generated, mcp) VALUES ('019b9bab-8a06-78ee-8799-516e562679c3', 'Start mildly frustrated, slightly irritated. Use occasional emphasis but not ALL CAPS. Over time, become calmer if the TA gives helpful guidance. If told to calm down → tone drops significantly. Mildly frustrated but not hostile — still wants to learn. Treat vague responses as unhelpful. Push back gently: "That doesn''t help much..." "Could you be more specific?" Avoid aggressive lines. Mildly frustrated but cooperative when guided with course terminology.', true, '2025-12-13T18:43:03.010434+00:00', false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019b995c-8e99-784d-ac71-c00f7395486b', 'Aggressive (Low)', '2025-12-13T18:43:03.010434+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.parameter_fields_resource (id, field_id, active, generated, created_at, updated_at, parameter_id) VALUES ('c7fe08ab-7ff8-413f-bf44-d3114ed6b687', '019bb25e-e5f8-7dfe-80eb-f1a07c2d4f85', true, false, '2025-12-13T18:43:03.013853+00:00', '2026-01-28T14:15:32.407116+00:00', '019bb25e-e621-7037-bc24-32292586d2d2') ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.parameter_fields_resource (id, field_id, active, generated, created_at, updated_at, parameter_id) VALUES ('dc4b384e-176a-40d8-be4d-fc40fa9afbb9', '019bb25e-e5f8-7e01-90e4-9a8120acb076', true, false, '2025-12-13T18:43:03.013853+00:00', '2026-01-28T14:15:32.407116+00:00', '019bb25e-e621-7037-bc24-32292586d2d2') ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.parameter_fields_resource (id, field_id, active, generated, created_at, updated_at, parameter_id) VALUES ('56ad5379-6fa1-4d70-b0d4-c415245f4895', '019bb25e-e5f8-7e05-8724-d06378756d1d', true, false, '2025-12-13T18:43:03.013853+00:00', '2026-01-28T14:15:32.407116+00:00', '019bb25e-e621-7037-bc24-32292586d2d2') ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.parameter_fields_resource (id, field_id, active, generated, created_at, updated_at, parameter_id) VALUES ('485d83e9-e2ee-4e13-98c1-09f3ab99c991', '019bb25e-e5f8-7e09-9ae0-23cdc02687d3', true, false, '2025-12-13T18:43:03.013853+00:00', '2026-01-28T14:15:32.407116+00:00', '019bb25e-e621-7037-bc24-32292586d2d2') ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.personas_resource (created_at, active, generated, mcp, id, name, description, icon, color, department_ids, instructions, examples) VALUES ('2025-12-13T18:43:03.010434+00:00', true, false, false, '019bb25e-e60c-735e-ab74-35a73988ae2c', 'Aggressive (Low)', 'Pushes back on your ideas and challenges assumptions, with milder intensity.', 'Zap', '#ef4444', '{}', 'Start mildly frustrated, slightly irritated. Use occasional emphasis but not ALL CAPS. Over time, become calmer if the TA gives helpful guidance. If told to calm down → tone drops significantly. Mildly frustrated but not hostile — still wants to learn. Treat vague responses as unhelpful. Push back gently: "That doesn''t help much..." "Could you be more specific?" Avoid aggressive lines. Mildly frustrated but cooperative when guided with course terminology.', '{"That's not right at all!","I disagree completely","You're wrong about this"}') ON CONFLICT (id) DO NOTHING;
+
+-- Artifact
+-- persona_artifact
+INSERT INTO public.persona_artifact (created_at, updated_at, id, generated, mcp) VALUES ('2025-12-13T18:43:03.010434+00:00', '2025-12-13T18:43:03.010434+00:00', '019b3be4-36e2-7732-b994-bb36d8683426', false, false) ON CONFLICT (id) DO NOTHING;
+
+-- Junctions
+-- persona_colors_junction
+INSERT INTO public.persona_colors_junction (persona_id, color_id, created_at, generated, mcp, active) VALUES ('019b3be4-36e2-7732-b994-bb36d8683426', '019b995b-52f6-7749-8ebd-e1c6bb66de89', '2025-12-13T18:43:03.010434+00:00', false, false, true) ON CONFLICT (persona_id, color_id) DO NOTHING;
+-- persona_descriptions_junction
+INSERT INTO public.persona_descriptions_junction (persona_id, description_id, created_at, generated, mcp, active) VALUES ('019b3be4-36e2-7732-b994-bb36d8683426', '019b995c-8e9a-77ad-88cb-b094c285656d', '2025-12-13T18:43:03.010434+00:00', false, false, true) ON CONFLICT (persona_id, description_id) DO NOTHING;
+-- persona_examples_junction
+INSERT INTO public.persona_examples_junction (idx, created_at, example_id, persona_id, active, generated, mcp) VALUES (0, '2025-12-13T18:43:03.010434+00:00', '019b3be4-3253-7e14-b9c6-1154261ba098', '019b3be4-36e2-7732-b994-bb36d8683426', true, false, false) ON CONFLICT (persona_id, example_id) DO NOTHING;
+INSERT INTO public.persona_examples_junction (idx, created_at, example_id, persona_id, active, generated, mcp) VALUES (1, '2025-12-13T18:43:03.010434+00:00', '019b3be4-3253-7e51-8303-9cabeb4503e8', '019b3be4-36e2-7732-b994-bb36d8683426', true, false, false) ON CONFLICT (persona_id, example_id) DO NOTHING;
+INSERT INTO public.persona_examples_junction (idx, created_at, example_id, persona_id, active, generated, mcp) VALUES (2, '2025-12-13T18:43:03.010434+00:00', '019b3be4-3253-7e5f-924b-78734cc404fe', '019b3be4-36e2-7732-b994-bb36d8683426', true, false, false) ON CONFLICT (persona_id, example_id) DO NOTHING;
+-- persona_flags_junction
+INSERT INTO public.persona_flags_junction (persona_id, flag_id, value, created_at, generated, mcp, active) VALUES ('019b3be4-36e2-7732-b994-bb36d8683426', '019be334-bfc3-7998-9dcf-a00d3d137da5', true, '2025-12-13T18:43:03.010434+00:00', false, false, true) ON CONFLICT (persona_id, flag_id) DO NOTHING;
+-- persona_icons_junction
+INSERT INTO public.persona_icons_junction (persona_id, icon_id, created_at, generated, mcp, active) VALUES ('019b3be4-36e2-7732-b994-bb36d8683426', '019b995b-52f7-751c-a202-cd5099fe80bb', '2025-12-13T18:43:03.010434+00:00', false, false, true) ON CONFLICT (persona_id, icon_id) DO NOTHING;
+-- persona_instructions_junction
+INSERT INTO public.persona_instructions_junction (persona_id, instruction_id, created_at, generated, mcp, active) VALUES ('019b3be4-36e2-7732-b994-bb36d8683426', '019b9bab-8a06-78ee-8799-516e562679c3', '2025-12-13T18:43:03.010434+00:00', false, false, true) ON CONFLICT (persona_id, instruction_id) DO NOTHING;
+-- persona_names_junction
+INSERT INTO public.persona_names_junction (persona_id, name_id, created_at, generated, mcp, active) VALUES ('019b3be4-36e2-7732-b994-bb36d8683426', '019b995c-8e99-784d-ac71-c00f7395486b', '2025-12-13T18:43:03.010434+00:00', false, false, true) ON CONFLICT (persona_id, name_id) DO NOTHING;
+-- persona_parameter_fields_junction
+INSERT INTO public.persona_parameter_fields_junction (persona_id, parameter_field_id, active, generated, mcp, created_at) VALUES ('019b3be4-36e2-7732-b994-bb36d8683426', 'c7fe08ab-7ff8-413f-bf44-d3114ed6b687', true, false, false, '2025-12-13T18:43:03.013853+00:00') ON CONFLICT (persona_id, parameter_field_id) DO NOTHING;
+INSERT INTO public.persona_parameter_fields_junction (persona_id, parameter_field_id, active, generated, mcp, created_at) VALUES ('019b3be4-36e2-7732-b994-bb36d8683426', 'dc4b384e-176a-40d8-be4d-fc40fa9afbb9', true, false, false, '2025-12-13T18:43:03.013853+00:00') ON CONFLICT (persona_id, parameter_field_id) DO NOTHING;
+INSERT INTO public.persona_parameter_fields_junction (persona_id, parameter_field_id, active, generated, mcp, created_at) VALUES ('019b3be4-36e2-7732-b994-bb36d8683426', '56ad5379-6fa1-4d70-b0d4-c415245f4895', true, false, false, '2025-12-13T18:43:03.013853+00:00') ON CONFLICT (persona_id, parameter_field_id) DO NOTHING;
+INSERT INTO public.persona_parameter_fields_junction (persona_id, parameter_field_id, active, generated, mcp, created_at) VALUES ('019b3be4-36e2-7732-b994-bb36d8683426', '485d83e9-e2ee-4e13-98c1-09f3ab99c991', true, false, false, '2025-12-13T18:43:03.013853+00:00') ON CONFLICT (persona_id, parameter_field_id) DO NOTHING;
+-- persona_personas_junction
+INSERT INTO public.persona_personas_junction (persona_id, personas_id, active, created_at, generated, mcp) VALUES ('019b3be4-36e2-7732-b994-bb36d8683426', '019bb25e-e60c-735e-ab74-35a73988ae2c', true, '2025-12-13T18:43:03.010434+00:00', false, false) ON CONFLICT (persona_id, personas_id) DO NOTHING;

@@ -18,7 +18,7 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 # Path to MV definition SQL file
 MV_SQL_PATH = (
     Path(__file__).parent.parent.parent.parent.parent
-    / "sql/v4/views/simulation/simulation_attempts_view.sql"
+    / "sql/v4/views/simulation/mv_simulation_attempts.sql"
 )
 
 router = APIRouter()

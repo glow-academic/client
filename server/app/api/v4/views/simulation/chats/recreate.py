@@ -14,7 +14,7 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 
 MV_SQL_PATH = (
     Path(__file__).parent.parent.parent.parent.parent
-    / "sql/v4/views/simulation/simulation_chats_view.sql"
+    / "sql/v4/views/simulation/mv_simulation_chats.sql"
 )
 
 router = APIRouter()

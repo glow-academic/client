@@ -2,6 +2,8 @@
 
 You are a database auditor for the GLOW project. Your job is to verify that all relation tables, junction tables, connection tables, entry tables, resource tables, artifact tables, and materialized views follow the canonical rules defined below. You do NOT fix anything. You REPORT errors, inconsistencies, and missing constraints.
 
+**IMPORTANT**: Before running the audit, run `make restore-db` to get the raw migration state. This ensures you audit the schema as defined by migrations only — before `make sql-compile` injects MVs and stored procedures. MVs and SPs are JIT-compiled at server startup and are NOT permanent schema objects.
+
 Run each audit step in order. For each step, run the provided SQL query against the database. Compare the results against the rule. If the result set is non-empty (unless stated otherwise), that is an error. Collect all errors into a final report at the end.
 
 ---
@@ -19,22 +21,36 @@ psql postgresql://myuser:mypassword@localhost:5432/mydb
 | Type | Naming Convention | Purpose | Mutability |
 |------|------------------|---------|------------|
 | **Artifact** | `{entity}_artifact` | Core graph nodes (17 total). Represent configurable entities. | Read/Write |
-| **Resource** | `{entity}_resource` | Shared reusable components. Always have `call_id`. | Read/Write |
+| **Resource** | `{entity}_resource` | Shared reusable components. NO `call_id` — traceability via `{resource}_calls_connection`. | Read/Write |
 | **Entry** | `{entity}_entry` | Analytical/operational write-only tables. Sessions, attempts, logs, metrics. | Write-only (read via MVs) |
-| **Junction** | `{artifact}_{resource}` | Connect an artifact to a resource. Composite PK `(artifact_id, resource_id)`. | Read/Write |
-| **Connection** | `{entry}_{resource}_connection` | Connect an entry to a resource. Composite PK `(entry_id, resource_id)`. | Write-only |
+| **Junction** | `{artifact}_{resource}_junction` | Connect an artifact to a resource. Composite PK. Suffix `_junction`. | Read/Write |
+| **Connection** | `{entry}_{resource}_connection` | Connect an entry/resource to another entry/resource. Composite PK. Suffix `_connection`. | Write-only |
+
+### Connection Table Sub-Types
+
+Connection tables come in several categories, all sharing the `_connection` suffix:
+
+| Sub-Type | Pattern | Purpose |
+|----------|---------|---------|
+| **Resource-to-Call** | `{resource}_calls_connection` | Traces which call created a resource (replaces old `call_id` column on resource) |
+| **Resource-to-Draft** | `{resource}_drafts_connection` | Traces which draft session created a resource |
+| **Entry-to-Resource** | `{entry}_{resource}_connection` | Operational link from entry to resource at write time |
+| **Resource-to-Resource** | `{resource}_{resource}_connection` | Direct resource-to-resource link (e.g., `domains_domains_connection`) |
+| **Entry-to-Entry** | Embedded via FK | Entry tables use direct FK columns for parent-child (not connection tables) |
+| **Compound** | `{parent}_{child}_connection` | Nested operational links (e.g., `training_bundle_departments_*_connection`) |
 
 ---
 
-## The Six Relation Registry Tables
+## The Relation Registry Tables
 
-These are metadata registries that declare what relationships ARE ALLOWED. They do not store data — they store the schema's own rules.
+These are metadata registries that declare what relationships ARE ALLOWED. They do not store operational data — they store the schema's own rules.
 
 | Registry | PK | Purpose |
 |----------|-----|---------|
 | `artifact_resources_relation` | `(artifact, resource)` | Which artifact types can link to which resource types via junction tables |
 | `artifact_flags_relation` | `(artifact, flag_type)` | Which flag types each artifact supports |
 | `artifact_outputs_relation` | `(id)` | Master list of output field definitions (name, field_type) |
+| `artifact_view_relation` | `(artifact, view)` | Which artifact types (pages) use which view types |
 | `entry_resource_relation` | `(entry, resource)` | Which entry types can link to which resource types via connection tables |
 | `entry_entry_relation` | `(parent, child)` | Which entry types can have parent-child FK relationships |
 | `entry_outputs_relation` | `(entry, output_id)` | Which output fields each entry type exposes |
@@ -44,7 +60,6 @@ These are metadata registries that declare what relationships ARE ALLOWED. They 
 | `view_entry_relation` | `(view, entry)` | Which view types query which entry types |
 | `view_resource_relation` | `(view, resource)` | Which view types join which resource types |
 | `view_outputs_relation` | `(view, outputs_id)` | Which output fields each view type exposes |
-| `artifact_view_relation` | `(artifact, view)` | Which artifact types (pages) use which view types |
 
 ---
 
@@ -62,26 +77,25 @@ All 17 artifact tables must have exactly these standard columns:
 
 No additional columns beyond these six.
 
-### Rule 2: Every `_resource` table must have `call_id NOT NULL`
+### Rule 2: Resource tables must NOT have `call_id`
 
-All resource tables MUST have `call_id uuid NOT NULL REFERENCES calls(id)`. They must also have the standard columns: `id`, `created_at`, `updated_at`, `active`, `generated`, `mcp`.
+Resource tables do NOT store `call_id` directly. Instead, call traceability is handled via `{resource}_calls_connection` tables that link a resource row to a `calls_entry` row. Every resource table in `resource_type` enum MUST have a corresponding `{resource}_calls_connection` table.
+
+Resource standard columns: `id`, `created_at`, `active`, `generated`, `mcp`, plus resource-specific data columns.
+
+**Exception**: Binding-type resources (e.g., `auth_item_keys_resource`) that represent cross-entity bindings MAY retain `call_id` directly, since they are inherently transactional.
 
 ### Rule 3: Junction tables connect ONLY artifact-to-resource
 
-A junction table `{artifact}_{resource}` must have:
-- `{artifact}_id uuid NOT NULL REFERENCES {artifact}_artifact(id) ON DELETE CASCADE`
-- `{resource}_id uuid NOT NULL REFERENCES {resource}_resource(id) ON DELETE CASCADE`
-- `created_at`, `updated_at`, `generated`, `mcp`, `active` standard columns
-- Composite PK `({artifact}_id, {resource}_id)`
+A junction table `{artifact}_{resource}_junction` must have:
+- Two FK columns forming a composite PK
+- `created_at`, `generated`, `mcp`, `active` standard columns
+- The `_junction` suffix
 - NO `call_id` column
 
-### Rule 4: Connection tables connect ONLY entry-to-resource
+### Rule 4: Connection tables use the `_connection` suffix
 
-A connection table `{entry}_{resource}_connection` must have:
-- `{entry}_id uuid NOT NULL REFERENCES {entry}_entry(id) ON DELETE CASCADE`
-- `{resource}_id uuid NOT NULL REFERENCES {resource}_resource(id)`
-- `created_at`, `active`, `generated`, `mcp` standard columns
-- Composite PK `({entry}_id, {resource}_id)`
+All connection tables must end in `_connection` and have a composite PK of the two FK columns they join.
 
 ### Rule 5: Resource-to-resource is allowed as direct FKs
 
@@ -95,79 +109,73 @@ Entry tables MAY have direct FK columns pointing to other entry tables. These re
 
 Entry tables are written to during operational flows (sessions, attempts, chats, metrics). They are NOT read directly by the API. Reads come from materialized views.
 
-### Rule 8: No normal views — business logic lives in the service layer
+### Rule 8: No normal views in raw migration state
 
-There should be NO `CREATE VIEW` statements in the database. All read-side aggregation is done via materialized views (MVs) that are JIT-compiled and refreshed, combined with Python service logic.
+After `make restore-db`, there should be NO `CREATE VIEW` statements in the database beyond known exceptions. All read-side aggregation is done via materialized views (MVs) that are JIT-compiled at server startup via `make sql-compile`.
 
-### Rule 9: No stored procedures for business logic
+**Known exceptions**: `hints_entry` and `view_calls_entry` (unification views over split tables).
 
-Stored procedures/functions (`CREATE FUNCTION`) should only exist for utility purposes (e.g., `uuidv7()`). Business logic belongs in the Python service layer, not in SQL functions.
+### Rule 9: No stored procedures for business logic in migrations
+
+Stored procedures/functions should only appear in migration files for:
+- Utility functions (e.g., `uuidv7()`, `gen_trace_id`)
+- Crypto/pgcrypto extensions
+- Test helper functions (`test_*`)
+- Trigger functions (`update_updated_at_column`)
+
+All `api_*`, `socket_*`, `infrastructure_*`, `infra_*` functions are JIT-compiled at server startup — they should NOT survive a `make restore-db`. If they do, they were incorrectly placed in a migration file.
 
 ### Rule 10: MVs are not permanent schema — they are JIT-compiled
 
-Materialized views are dropped and recreated each time they are refreshed. They are defined in SQL files under `server/app/sql/` and compiled at runtime. They should NOT appear in migration files as permanent objects.
+Materialized views are dropped and recreated by `make sql-compile`. After `make restore-db`, only MVs explicitly created in migration files should exist. Currently `mv_draft_agent` and `mv_draft_model` exist in migrations (legacy — should eventually be moved to JIT).
 
 ### Rule 11: The `artifact_resources_relation` registry must match actual junction tables
 
-Every row in `artifact_resources_relation` must have a corresponding physical junction table `{artifact}_{resource}` in the database. Conversely, every junction table must have a corresponding row in the registry.
+Every row `(artifact, resource)` in `artifact_resources_relation` must have a corresponding physical junction table `{artifact}_{resource}_junction`. Conversely, every `_junction` table that connects an artifact to a resource must have a row in the registry.
 
 ### Rule 12: The `entry_resource_relation` registry must match actual connection tables
 
-Every row in `entry_resource_relation` must have a corresponding physical connection table `{entry}_{resource}_connection`. And vice versa.
+Every row in `entry_resource_relation` must have a corresponding physical connection table. And vice versa.
 
 ### Rule 13: The `entry_entry_relation` registry must match actual FK columns
 
-Every row in `entry_entry_relation (parent, child)` must correspond to an actual FK from `{child}_entry` to `{parent}_entry`. And vice versa.
+Every row in `entry_entry_relation (parent, child)` must correspond to an actual FK from the child entry table to the parent entry table.
 
 ### Rule 14: The `resource_resource_relation` registry must match actual FK columns
 
-Every row in `resource_resource_relation (parent_resource, child_resource)` must correspond to an actual FK from `{parent}_resource` to `{child}_resource`. And vice versa.
+Every row in `resource_resource_relation (parent_resource, child_resource)` must correspond to an actual FK between those resource tables.
 
 ### Rule 15: Outputs relation tables must be a whitelist of actual columns
 
-The `resource_outputs_relation` must contain entries that correspond to actual columns on the respective `_resource` table. At minimum, every column on a resource table should appear in the outputs relation (or be explicitly marked inactive). Missing columns mean the outputs registry is incomplete.
+The `resource_outputs_relation`, `entry_outputs_relation`, and `view_outputs_relation` must contain entries that correspond to actual columns on their respective tables. Missing columns mean the outputs registry is incomplete.
 
-Same principle for `entry_outputs_relation` and `view_outputs_relation`.
+### Rule 16: All FKs must be declared and indexed
 
-### Rule 16: All FKs must be declared
-
-Every `uuid` column that references another table must have an explicit `FOREIGN KEY` constraint. No implicit/application-level-only foreign keys.
+Every `uuid` column that references another table must have an explicit `FOREIGN KEY` constraint. Every FK column must have a supporting index.
 
 ### Rule 17: No NULL-able columns where a DEFAULT would suffice
 
 Boolean columns must be `NOT NULL DEFAULT false` (or `true`). Timestamp columns must be `NOT NULL DEFAULT now()`. Follow the no-nulls policy.
 
+**Known exceptions**:
+- `grants_entry.revoked_at`, `grants_entry.used_at` (event-based, legitimately nullable)
+- `args_values_entry.boolean_value`, `args_outputs_values_entry.boolean_value` (polymorphic value columns)
+
 ### Rule 18: Enum types must match actual table suffixes
 
-The `artifact_type` enum values must match the set of `*_artifact` tables. The `resource_type` enum values must match the set of `*_resource` tables. The `entry_type` enum values must match the set of `*_entry` tables.
+- `artifact_type` enum values must include all `*_artifact` table prefixes (plus virtual page types)
+- `resource_type` enum values must match the set of `*_resource` tables
+- `entry_type` enum values must match the set of `*_entry` base tables
 
 ---
 
 ## Audit Queries
 
-Run each query. Non-empty results indicate violations.
+Run `make restore-db` first, then run each query. Non-empty results indicate violations.
 
-### Audit 1: Artifact tables missing standard columns
-
-```sql
--- Find artifact tables that are missing any of the 6 required columns
-SELECT
-    t.table_name,
-    ARRAY['id','created_at','updated_at','generated','mcp','group_id']
-        EXCEPT
-    ARRAY_AGG(c.column_name::text) AS missing_columns
-FROM information_schema.tables t
-JOIN information_schema.columns c
-    ON c.table_schema = t.table_schema AND c.table_name = t.table_name
-WHERE t.table_schema = 'public'
-    AND t.table_name LIKE '%_artifact'
-GROUP BY t.table_name;
-```
-
-More practical version:
+### Audit 1: Artifact tables with extra columns
 
 ```sql
--- Artifact tables with extra columns beyond the standard 6
 SELECT table_name, column_name
 FROM information_schema.columns
 WHERE table_schema = 'public'
@@ -176,112 +184,93 @@ WHERE table_schema = 'public'
 ORDER BY table_name, column_name;
 ```
 
-**Expected**: Empty result set. Any rows = artifact table has non-standard columns.
+**Expected**: Empty.
 
-### Audit 2: Resource tables missing `call_id`
+### Audit 2: Resource tables that still have `call_id` (they should NOT)
 
 ```sql
-SELECT t.table_name
-FROM information_schema.tables t
-WHERE t.table_schema = 'public'
-    AND t.table_name LIKE '%\_resource'
-    AND t.table_name NOT IN (
-        SELECT table_name FROM information_schema.columns
-        WHERE table_schema = 'public' AND column_name = 'call_id'
+SELECT table_name
+FROM information_schema.columns
+WHERE table_schema = 'public'
+    AND table_name LIKE '%\_resource'
+    AND column_name = 'call_id'
+ORDER BY table_name;
+```
+
+**Expected**: Empty, or only known binding-type exceptions (e.g., `auth_item_keys_resource`). Any other rows = resource table incorrectly retains `call_id`.
+
+### Audit 3: Resource tables missing their `_calls_connection` table
+
+```sql
+-- Every resource in resource_type enum should have a {resource}_calls_connection table
+SELECT e.enumlabel AS resource_name,
+    e.enumlabel || '_calls_connection' AS expected_table
+FROM pg_type t
+JOIN pg_enum e ON e.enumtypid = t.oid
+WHERE t.typname = 'resource_type'
+    AND NOT EXISTS (
+        SELECT 1 FROM information_schema.tables tbl
+        WHERE tbl.table_schema = 'public'
+            AND tbl.table_name = e.enumlabel || '_calls_connection'
     )
-ORDER BY t.table_name;
+ORDER BY e.enumlabel;
 ```
 
-**Expected**: Empty result set. Any rows = resource table missing `call_id`.
+**Expected**: Empty. Any rows = resource type missing its calls traceability connection.
 
-### Audit 3: Resource tables missing standard columns
-
-```sql
-SELECT table_name, column_name AS missing
-FROM (
-    SELECT t.table_name, unnest(ARRAY['id','created_at','updated_at','active','generated','mcp','call_id']) AS column_name
-    FROM information_schema.tables t
-    WHERE t.table_schema = 'public' AND t.table_name LIKE '%\_resource'
-) expected
-WHERE NOT EXISTS (
-    SELECT 1 FROM information_schema.columns c
-    WHERE c.table_schema = 'public'
-        AND c.table_name = expected.table_name
-        AND c.column_name = expected.column_name
-)
-ORDER BY table_name, missing;
-```
-
-**Expected**: Empty result set.
-
-### Audit 4: Junction tables that have `call_id` (they should NOT)
+### Audit 4: Junction/other tables that have `call_id` (they should NOT)
 
 ```sql
--- Junction tables are identified as tables that are NOT _artifact, _resource, _entry, _connection, _relation
--- and whose name matches {artifact}_{resource} pattern
 SELECT table_name
 FROM information_schema.columns
 WHERE table_schema = 'public'
     AND column_name = 'call_id'
-    AND table_name NOT LIKE '%\_resource'
     AND table_name NOT LIKE '%\_entry'
-    AND table_name NOT LIKE '%\_artifact'
-    AND table_name NOT LIKE '%\_relation'
     AND table_name NOT LIKE '%\_connection'
-    AND table_name != 'calls'
+    AND table_name NOT LIKE '%\_relation'
+    AND table_name <> 'calls'
+    -- Exclude known binding exceptions
+    AND table_name NOT IN ('auth_item_keys_resource')
 ORDER BY table_name;
 ```
 
-**Expected**: Empty result set. Any rows = non-resource table incorrectly has `call_id`.
+**Expected**: Empty. Any rows = table incorrectly has `call_id`.
 
 ### Audit 5: Registry vs. physical junction table sync
 
 ```sql
--- Rows in artifact_resources_relation with no matching physical table
+-- 5a: Registry entries with no matching physical junction table
 SELECT ar.artifact, ar.resource,
-    ar.artifact || '_' || ar.resource AS expected_table
+    ar.artifact || '_' || ar.resource || '_junction' AS expected_table
 FROM artifact_resources_relation ar
 WHERE NOT EXISTS (
     SELECT 1 FROM information_schema.tables t
     WHERE t.table_schema = 'public'
-        AND t.table_name = ar.artifact || '_' || ar.resource
+        AND t.table_name = ar.artifact || '_' || ar.resource || '_junction'
 )
 ORDER BY ar.artifact, ar.resource;
 ```
 
 ```sql
--- Physical junction-like tables with no registry entry
--- (tables named {artifact}_{something} where {artifact} is a known artifact)
-WITH artifact_names AS (
-    SELECT unnest(enum_range(NULL::artifact_type))::text AS artifact
-),
-candidate_junctions AS (
-    SELECT t.table_name
-    FROM information_schema.tables t
-    WHERE t.table_schema = 'public'
-        AND t.table_name NOT LIKE '%\_artifact'
-        AND t.table_name NOT LIKE '%\_resource'
-        AND t.table_name NOT LIKE '%\_entry'
-        AND t.table_name NOT LIKE '%\_relation'
-        AND t.table_name NOT LIKE '%\_connection'
-        AND t.table_name NOT LIKE 'mv\_%'
-)
-SELECT cj.table_name
-FROM candidate_junctions cj
-JOIN artifact_names an ON cj.table_name LIKE an.artifact || '\_%'
-WHERE NOT EXISTS (
-    SELECT 1 FROM artifact_resources_relation ar
-    WHERE ar.artifact || '_' || ar.resource = cj.table_name
-)
-ORDER BY cj.table_name;
+-- 5b: Physical junction tables with no registry entry
+SELECT t.table_name
+FROM information_schema.tables t
+WHERE t.table_schema = 'public'
+    AND t.table_name LIKE '%\_junction'
+    AND t.table_type = 'BASE TABLE'
+    AND NOT EXISTS (
+        SELECT 1 FROM artifact_resources_relation ar
+        WHERE ar.artifact || '_' || ar.resource || '_junction' = t.table_name
+    )
+ORDER BY t.table_name;
 ```
 
-**Expected**: Both empty. First = registry has phantom entries. Second = physical tables not registered.
+**Expected**: Both empty. 5a = phantom registry entries. 5b = unregistered junction tables.
 
-### Audit 6: Registry vs. physical connection table sync
+### Audit 6: Entry-resource registry vs. physical connection table sync
 
 ```sql
--- Rows in entry_resource_relation with no matching physical connection table
+-- 6a: Registry entries with no matching physical connection table
 SELECT er.entry, er.resource,
     er.entry || '_' || er.resource || '_connection' AS expected_table
 FROM entry_resource_relation er
@@ -294,11 +283,12 @@ ORDER BY er.entry, er.resource;
 ```
 
 ```sql
--- Physical connection tables with no registry entry
+-- 6b: Physical connection tables with no registry entry
 SELECT t.table_name
 FROM information_schema.tables t
 WHERE t.table_schema = 'public'
     AND t.table_name LIKE '%\_connection'
+    AND t.table_type = 'BASE TABLE'
     AND NOT EXISTS (
         SELECT 1 FROM entry_resource_relation er
         WHERE er.entry || '_' || er.resource || '_connection' = t.table_name
@@ -311,7 +301,6 @@ ORDER BY t.table_name;
 ### Audit 7: entry_entry_relation vs. actual FKs
 
 ```sql
--- entry_entry_relation rows with no matching FK constraint
 SELECT ee.parent, ee.child
 FROM entry_entry_relation ee
 WHERE NOT EXISTS (
@@ -326,12 +315,11 @@ WHERE NOT EXISTS (
 ORDER BY ee.parent, ee.child;
 ```
 
-**Expected**: Empty. Any rows = declared entry-entry relation has no backing FK.
+**Expected**: Empty.
 
 ### Audit 8: resource_resource_relation vs. actual FKs
 
 ```sql
--- resource_resource_relation rows with no matching FK
 SELECT rr.parent_resource, rr.child_resource
 FROM resource_resource_relation rr
 WHERE NOT EXISTS (
@@ -348,60 +336,67 @@ ORDER BY rr.parent_resource, rr.child_resource;
 
 **Expected**: Empty.
 
-### Audit 9: NULL-able boolean/timestamp columns
+### Audit 9: Nullable booleans/timestamps on base tables
 
 ```sql
--- Boolean columns that allow NULL
-SELECT table_name, column_name
-FROM information_schema.columns
-WHERE table_schema = 'public'
-    AND data_type = 'boolean'
-    AND is_nullable = 'YES'
-    AND table_name NOT LIKE 'pg_%'
-ORDER BY table_name, column_name;
-```
-
-```sql
--- Timestamp columns that allow NULL
-SELECT table_name, column_name
-FROM information_schema.columns
-WHERE table_schema = 'public'
-    AND data_type LIKE 'timestamp%'
-    AND is_nullable = 'YES'
-    AND table_name NOT LIKE 'pg_%'
-ORDER BY table_name, column_name;
-```
-
-**Expected**: Empty or a known exception list. Any rows = no-nulls policy violation.
-
-### Audit 10: UUID columns without FK constraints
-
-```sql
--- UUID columns (excluding PKs) that have no FK constraint
+-- 9a: Nullable booleans
 SELECT c.table_name, c.column_name
 FROM information_schema.columns c
+JOIN information_schema.tables t
+    ON t.table_name = c.table_name AND t.table_schema = c.table_schema
 WHERE c.table_schema = 'public'
-    AND c.data_type = 'uuid'
-    AND c.column_name != 'id'
-    AND c.table_name NOT LIKE 'pg_%'
+    AND c.data_type = 'boolean'
+    AND c.is_nullable = 'YES'
+    AND t.table_type = 'BASE TABLE'
+ORDER BY c.table_name, c.column_name;
+```
+
+```sql
+-- 9b: Nullable timestamps
+SELECT c.table_name, c.column_name
+FROM information_schema.columns c
+JOIN information_schema.tables t
+    ON t.table_name = c.table_name AND t.table_schema = c.table_schema
+WHERE c.table_schema = 'public'
+    AND c.data_type LIKE 'timestamp%'
+    AND c.is_nullable = 'YES'
+    AND t.table_type = 'BASE TABLE'
+ORDER BY c.table_name, c.column_name;
+```
+
+**Expected**: Empty or known exceptions only.
+
+### Audit 10: UUID columns without FK constraints (base tables only)
+
+```sql
+SELECT c.table_name, c.column_name
+FROM information_schema.columns c
+JOIN information_schema.tables t
+    ON t.table_name = c.table_name AND t.table_schema = c.table_schema
+WHERE c.table_schema = 'public'
+    AND c.udt_name = 'uuid'
+    AND c.column_name <> 'id'
+    AND t.table_type = 'BASE TABLE'
     AND NOT EXISTS (
         SELECT 1
         FROM information_schema.table_constraints tc
         JOIN information_schema.key_column_usage kcu
             ON kcu.constraint_name = tc.constraint_name
+            AND kcu.table_schema = tc.table_schema
         WHERE tc.constraint_type = 'FOREIGN KEY'
+            AND kcu.table_schema = 'public'
             AND kcu.table_name = c.table_name
             AND kcu.column_name = c.column_name
     )
 ORDER BY c.table_name, c.column_name;
 ```
 
-**Expected**: Empty. Any rows = UUID column without a declared FK (possible missing constraint).
+**Expected**: Empty.
 
 ### Audit 11: Enum vs. actual table alignment
 
 ```sql
--- artifact_type enum values with no matching _artifact table
+-- 11a: artifact_type enum values with no matching _artifact table (expect virtual page types)
 SELECT unnest(enum_range(NULL::artifact_type))::text AS artifact
 EXCEPT
 SELECT replace(table_name, '_artifact', '')
@@ -410,210 +405,153 @@ WHERE table_schema = 'public' AND table_name LIKE '%\_artifact';
 ```
 
 ```sql
--- _artifact tables with no matching enum value
-SELECT replace(table_name, '_artifact', '') AS artifact
-FROM information_schema.tables
-WHERE table_schema = 'public' AND table_name LIKE '%\_artifact'
+-- 11b: resource_type enum values with no matching _resource table
+SELECT e.enumlabel AS resource_name
+FROM pg_type t JOIN pg_enum e ON e.enumtypid = t.oid
+WHERE t.typname = 'resource_type'
 EXCEPT
-SELECT unnest(enum_range(NULL::artifact_type))::text;
+SELECT replace(table_name, '_resource', '')
+FROM information_schema.tables
+WHERE table_schema = 'public' AND table_name LIKE '%\_resource' AND table_type = 'BASE TABLE';
 ```
 
-**Expected**: First query may return view-type artifacts (home, practice, etc.) that don't have physical tables — note these but they are expected. Second query should be empty.
-
-### Audit 12: Normal views (should not exist)
+```sql
+-- 11c: _resource tables with no matching enum value
+SELECT replace(table_name, '_resource', '') AS resource_name
+FROM information_schema.tables
+WHERE table_schema = 'public' AND table_name LIKE '%\_resource' AND table_type = 'BASE TABLE'
+EXCEPT
+SELECT e.enumlabel FROM pg_type t JOIN pg_enum e ON e.enumtypid = t.oid
+WHERE t.typname = 'resource_type';
+```
 
 ```sql
--- All non-materialized views in public schema (should be empty)
+-- 11d: entry_type enum values with no matching _entry base table
+SELECT e.enumlabel AS entry_name
+FROM pg_type t JOIN pg_enum e ON e.enumtypid = t.oid
+WHERE t.typname = 'entry_type'
+EXCEPT
+SELECT replace(table_name, '_entry', '')
+FROM information_schema.tables
+WHERE table_schema = 'public' AND table_name LIKE '%\_entry' AND table_type = 'BASE TABLE';
+```
+
+```sql
+-- 11e: _entry base tables with no matching enum value
+SELECT replace(table_name, '_entry', '') AS entry_name
+FROM information_schema.tables
+WHERE table_schema = 'public' AND table_name LIKE '%\_entry' AND table_type = 'BASE TABLE'
+EXCEPT
+SELECT e.enumlabel FROM pg_type t JOIN pg_enum e ON e.enumtypid = t.oid
+WHERE t.typname = 'entry_type';
+```
+
+**Expected**: 11a may return virtual page types (expected). 11b-11e should be empty.
+
+### Audit 12: Normal views in raw state
+
+```sql
 SELECT table_name
 FROM information_schema.views
 WHERE table_schema = 'public'
 ORDER BY table_name;
 ```
 
-**Expected**: Empty. Any rows = normal view exists (violates Rule 8).
+**Expected**: Only `hints_entry` and `view_calls_entry`. Any other rows = view incorrectly created in a migration.
 
-### Audit 13: Stored functions beyond utilities
+### Audit 13: Stored functions in raw state
 
 ```sql
--- All user-defined functions in public schema
--- Review manually: only utility functions (uuidv7, etc.) should exist
-SELECT routine_name, routine_type
+SELECT
+    CASE
+        WHEN routine_name LIKE 'api_%' THEN 'api_*'
+        WHEN routine_name LIKE 'socket_%' THEN 'socket_*'
+        WHEN routine_name LIKE 'infrastructure_%' THEN 'infrastructure_*'
+        WHEN routine_name LIKE 'infra_%' THEN 'infra_*'
+        WHEN routine_name LIKE 'test_%' THEN 'test_*'
+        WHEN routine_name LIKE 'utils_%' THEN 'utils_*'
+        ELSE routine_name
+    END AS category,
+    COUNT(*) as cnt
 FROM information_schema.routines
-WHERE routine_schema = 'public'
-    AND routine_type = 'FUNCTION'
-ORDER BY routine_name;
+WHERE routine_schema = 'public' AND routine_type = 'FUNCTION'
+GROUP BY 1 ORDER BY 2 DESC;
 ```
 
-**Expected**: Only utility functions like `uuidv7`. Any business-logic functions = violation of Rule 9.
+**Expected (in raw state)**: `api_*` and `socket_*` functions should exist (they live in migrations currently). `infrastructure_*` and `infra_*` are also in migrations. These are candidates for eventual migration to JIT compilation. Flag the counts for tracking.
 
-### Audit 14: Materialized views in migrations (should not be permanent)
+### Audit 14: Materialized views in raw state
 
 ```sql
--- List all materialized views currently in the database
 SELECT matviewname
 FROM pg_matviews
 WHERE schemaname = 'public'
 ORDER BY matviewname;
 ```
 
-**Note**: MVs are expected to exist at runtime (they are JIT-compiled from SQL files). This query is informational. Cross-reference with `server/app/sql/v4/queries/` to ensure each MV has a corresponding SQL file.
+**Expected**: Only `mv_draft_agent` and `mv_draft_model` (legacy, in migrations). Any others = MV incorrectly in a migration file.
 
-### Audit 15: Missing FK indexes
-
-```sql
--- FK columns without an index (can cause slow joins)
-SELECT
-    tc.table_name,
-    kcu.column_name,
-    tc.constraint_name
-FROM information_schema.table_constraints tc
-JOIN information_schema.key_column_usage kcu
-    ON kcu.constraint_name = tc.constraint_name
-    AND kcu.table_schema = tc.table_schema
-WHERE tc.constraint_type = 'FOREIGN KEY'
-    AND tc.table_schema = 'public'
-    AND NOT EXISTS (
-        SELECT 1
-        FROM pg_indexes pi
-        WHERE pi.schemaname = 'public'
-            AND pi.tablename = tc.table_name
-            AND pi.indexdef LIKE '%' || kcu.column_name || '%'
-    )
-ORDER BY tc.table_name, kcu.column_name;
-```
-
-**Expected**: Empty. Any rows = FK column without an index (performance risk).
-
-### Audit 16: Junction table PK structure
+### Audit 15: FK columns without indexes
 
 ```sql
--- Junction tables (in artifact_resources_relation) whose PK is not a 2-column composite
-WITH expected_junctions AS (
-    SELECT artifact || '_' || resource AS table_name
-    FROM artifact_resources_relation
+WITH fk_cols AS (
+    SELECT DISTINCT kcu.table_name, kcu.column_name
+    FROM information_schema.table_constraints tc
+    JOIN information_schema.key_column_usage kcu
+        ON kcu.constraint_name = tc.constraint_name AND kcu.table_schema = tc.table_schema
+    JOIN information_schema.tables t
+        ON t.table_name = kcu.table_name AND t.table_schema = kcu.table_schema
+    WHERE tc.constraint_type = 'FOREIGN KEY' AND tc.table_schema = 'public' AND t.table_type = 'BASE TABLE'
 )
-SELECT ej.table_name,
-    (SELECT COUNT(*) FROM information_schema.key_column_usage kcu
-     JOIN information_schema.table_constraints tc
-         ON tc.constraint_name = kcu.constraint_name
-     WHERE tc.constraint_type = 'PRIMARY KEY'
-         AND kcu.table_schema = 'public'
-         AND kcu.table_name = ej.table_name) AS pk_column_count
-FROM expected_junctions ej
-WHERE EXISTS (
-    SELECT 1 FROM information_schema.tables t
-    WHERE t.table_schema = 'public' AND t.table_name = ej.table_name
+SELECT fk.table_name, fk.column_name
+FROM fk_cols fk
+WHERE NOT EXISTS (
+    SELECT 1 FROM pg_indexes pi
+    WHERE pi.schemaname = 'public'
+        AND pi.tablename = fk.table_name
+        AND pi.indexdef LIKE '%' || fk.column_name || '%'
 )
-HAVING (SELECT COUNT(*) FROM information_schema.key_column_usage kcu
-     JOIN information_schema.table_constraints tc
-         ON tc.constraint_name = kcu.constraint_name
-     WHERE tc.constraint_type = 'PRIMARY KEY'
-         AND kcu.table_schema = 'public'
-         AND kcu.table_name = ej.table_name) != 2;
-```
-
-**Expected**: Empty. Any rows = junction table with wrong PK structure.
-
-### Audit 17: Connection table PK structure
-
-```sql
--- Connection tables whose PK is not a 2-column composite
-SELECT t.table_name,
-    (SELECT COUNT(*) FROM information_schema.key_column_usage kcu
-     JOIN information_schema.table_constraints tc
-         ON tc.constraint_name = kcu.constraint_name
-     WHERE tc.constraint_type = 'PRIMARY KEY'
-         AND kcu.table_schema = 'public'
-         AND kcu.table_name = t.table_name) AS pk_column_count
-FROM information_schema.tables t
-WHERE t.table_schema = 'public'
-    AND t.table_name LIKE '%\_connection'
-HAVING (SELECT COUNT(*) FROM information_schema.key_column_usage kcu
-     JOIN information_schema.table_constraints tc
-         ON tc.constraint_name = kcu.constraint_name
-     WHERE tc.constraint_type = 'PRIMARY KEY'
-         AND kcu.table_schema = 'public'
-         AND kcu.table_name = t.table_name) != 2;
+ORDER BY fk.table_name, fk.column_name;
 ```
 
 **Expected**: Empty.
 
-### Audit 18: Entry tables not following naming convention
+### Audit 16: ON DELETE CASCADE check for junction tables
 
 ```sql
--- Tables ending in _entry that are not in the entries enum
-SELECT replace(table_name, '_entry', '') AS entry_name
-FROM information_schema.tables
-WHERE table_schema = 'public' AND table_name LIKE '%\_entry'
-EXCEPT
-SELECT unnest(enum_range(NULL::entries))::text;
-```
-
-**Expected**: Empty. Any rows = entry table not registered in enum.
-
-### Audit 19: Resource tables not following naming convention
-
-```sql
--- Tables ending in _resource that are not in the resources enum
-SELECT replace(table_name, '_resource', '') AS resource_name
-FROM information_schema.tables
-WHERE table_schema = 'public' AND table_name LIKE '%\_resource'
-EXCEPT
-SELECT unnest(enum_range(NULL::resources))::text;
-```
-
-**Expected**: Empty.
-
-### Audit 20: ON DELETE CASCADE check for junction tables
-
-```sql
--- Junction FK constraints that are NOT ON DELETE CASCADE
-WITH expected_junctions AS (
-    SELECT artifact || '_' || resource AS table_name
-    FROM artifact_resources_relation
+WITH junction_tables AS (
+    SELECT table_name FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name LIKE '%\_junction' AND table_type = 'BASE TABLE'
 )
-SELECT rc.constraint_name, rc.match_option, rc.update_rule, rc.delete_rule,
-    tc.table_name
+SELECT rc.constraint_name, rc.delete_rule, tc.table_name
 FROM information_schema.referential_constraints rc
 JOIN information_schema.table_constraints tc
-    ON tc.constraint_name = rc.constraint_name
+    ON tc.constraint_name = rc.constraint_name AND tc.table_schema = rc.constraint_schema
 WHERE tc.table_schema = 'public'
-    AND tc.table_name IN (SELECT table_name FROM expected_junctions)
-    AND rc.delete_rule != 'CASCADE'
+    AND tc.table_name IN (SELECT table_name FROM junction_tables)
+    AND rc.delete_rule <> 'CASCADE'
 ORDER BY tc.table_name;
 ```
 
-**Expected**: Empty. Any rows = junction FK missing ON DELETE CASCADE.
+**Expected**: Empty.
 
 ---
 
 ## Running the Audit
 
-### Option A: Full audit via psql
-
-Save this file's SQL blocks into individual `.sql` files or run them inline:
+### Prerequisites
 
 ```bash
-psql postgresql://myuser:mypassword@localhost:5432/mydb -f audit_01.sql
+make restore-db    # Reset to raw migration state (no JIT MVs/SPs)
 ```
 
-### Option B: Single-pass script
+### Execution
 
-Concatenate all audit queries into one script, prefixing each with a `\echo` label:
-
-```sql
-\echo '=== AUDIT 1: Artifact tables with extra columns ==='
--- paste query here
-
-\echo '=== AUDIT 2: Resource tables missing call_id ==='
--- paste query here
-
--- ... etc
+```bash
+psql postgresql://myuser:mypassword@localhost:5432/mydb -f audit.sql
 ```
 
-### Option C: Python runner
-
-Use `execute_sql_typed()` from the service layer to run each query programmatically and collect results into a structured report.
+Or run each query inline with `\echo` labels for a single-pass report.
 
 ---
 
@@ -641,7 +579,7 @@ End with a summary:
 ```
 SUMMARY
 =======
-Total audits: 20
+Total audits: 16
 Passed: {N}
 Failed: {N}
 Warnings: {N} (informational audits like 13, 14)
@@ -652,12 +590,14 @@ Warnings: {N} (informational audits like 13, 14)
 ## Important Notes
 
 1. **Do NOT fix anything**. This is a read-only audit. Report only.
-2. **Some exceptions are known**. Document them but still flag them:
-   - `agent_tools` junction links to `tool_artifact`, not a resource table
-   - `cohort_profiles` links to `profile_artifact`
-   - `cohort_simulations` links to `simulation_artifact`
-   - `department_settings` links to `setting_artifact`
-   - View-type entries in `artifact_type` enum (home, practice, etc.) don't have physical `_artifact` tables
-3. **Run this after any migration** to catch regressions.
-4. **The relation registries are the source of truth** for what SHOULD exist. Discrepancies between registries and physical schema are always errors (in one direction or the other).
-5. **MVs are transient** — their presence at query time depends on whether the server has been started and refreshed them. Their absence is not an error; their presence in migration files IS.
+2. **Run `make restore-db` first**. This gives you the raw migration state without JIT-compiled MVs and stored procedures.
+3. **Some exceptions are known**. Document them but still flag them:
+   - `auth_item_keys_resource` MAY retain `call_id` (binding-type exception)
+   - `agent_tools_junction` links to `tool_artifact`, not a resource table
+   - `cohort_profiles_junction`, `cohort_simulations_junction` link to artifact tables
+   - `department_settings_junction` links to `setting_artifact`
+   - Virtual `artifact_type` enum values (home, practice, etc.) don't have physical `_artifact` tables
+   - `hints_entry` and `view_calls_entry` are known views in raw state
+   - `mv_draft_agent` and `mv_draft_model` are known MVs in migrations (legacy)
+4. **Run this after any migration** to catch regressions.
+5. **The relation registries are the source of truth** for what SHOULD exist. Discrepancies between registries and physical schema are always errors (in one direction or the other).

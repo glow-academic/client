@@ -72,3 +72,72 @@ providers:
 install:
   use_prebuilt_images: false                # true = docker pull from GHCR, false = build from source
   image_tag: "latest"                       # GHCR tag: "latest", "v1.0.0", etc.
+
+# -----------------------------------------------------------------------------
+# Seed Modules (modular seed data selection)
+# -----------------------------------------------------------------------------
+# Each key maps to a folder in database/modules/.
+# Use "all" to load everything in a category, or list specific module names.
+# See database/modules/README.md for available modules.
+modules:
+  # AI Providers (01-providers/)
+  providers:
+    - openai
+    - gemini
+
+  # Models grouped by provider (02-models/{provider}/)
+  models:
+    openai:
+      - gpt-5.1
+      - gpt-5
+      - gpt-5-mini
+      - gpt-5-nano
+      - gpt-4.1
+      - gpt-oss-20b
+      - gpt-audio
+      - gpt-audio-mini
+      - gpt-realtime
+      - gpt-realtime-mini
+      - gpt-image-1
+      - gpt-image-1-mini
+      - sora-2
+      - sora-2-pro
+    gemini:
+      - gemini-2.5-pro
+      - gemini-2.5-flash
+      - gemini-2.5-flash-lite
+      - gemini-2.5-flash-image
+      - gemini-3-pro-preview
+      - gemini-3-pro-image-preview
+      - imagen-4.0-generate-001
+      - imagen-4.0-fast-generate-001
+      - imagen-4.0-ultra-generate-001
+      - veo-3.1-generate-preview
+      - veo-3.1-fast-generate-preview
+
+  # System agents (03-agents/)
+  agents: all
+
+  # MCP tools (04-tools/)
+  tools: all
+
+  # Generic auth providers (05-auth/)
+  auth:
+    - google
+    - microsoft
+
+  # Setup type: loads from 10-setups/{setup}/
+  setup: university
+
+  # Setup-specific modules (10-setups/university/)
+  university:
+    departments: all
+    personas: all
+    documents: all
+    fields: all
+    rubrics: all
+    simulations: all
+    evals: all
+    cohorts: all
+    profiles: all
+    settings: all

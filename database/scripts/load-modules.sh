@@ -1,0 +1,344 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# =============================================================================
+# Load Modular Seed Data
+# =============================================================================
+# Reads a YAML config file and assembles seed SQL from module files.
+# Can either output a combined SQL file or pipe directly to psql.
+#
+# Usage:
+#   ./load-modules.sh                         # Use default install-config.yaml
+#   ./load-modules.sh config.yaml             # Use specific config
+#   ./load-modules.sh config.yaml --output    # Write to file instead of psql
+#   ./load-modules.sh --output                # Default config, write to file
+# =============================================================================
+
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+project_root="$(cd "$script_dir/../.." && pwd)"
+modules_dir="$script_dir/../modules"
+
+# --- Parse args ---------------------------------------------------------------
+config_file=""
+output_mode=false
+
+for arg in "$@"; do
+  case "$arg" in
+    --output) output_mode=true ;;
+    *) config_file="$arg" ;;
+  esac
+done
+
+if [[ -z "$config_file" ]]; then
+  config_file="$project_root/install-config.yaml"
+  if [[ ! -f "$config_file" ]]; then
+    config_file="$project_root/install-config.example.yaml"
+  fi
+fi
+
+if [[ ! -f "$config_file" ]]; then
+  echo "ERROR: Config file not found: $config_file"
+  echo "Usage: $0 [config.yaml] [--output]"
+  exit 1
+fi
+
+echo "Using config: $config_file"
+
+# --- Load .env ----------------------------------------------------------------
+if [[ -f "$script_dir/../.env" ]]; then
+  set -a
+  source "$script_dir/../.env"
+  set +a
+fi
+
+DB_USER=${DB_USER:-myuser}
+DB_PASSWORD=${DB_PASSWORD:-mypassword}
+DB_NAME=${DB_NAME:-mydb}
+DB_HOST=${DB_HOST:-localhost}
+DB_PORT=${DB_PORT:-5432}
+DB_URL="postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
+
+# --- Detect yq or use Python fallback ----------------------------------------
+read_yaml() {
+  local file=$1
+  local path=$2
+  # Try yq first, fall back to Python
+  if command -v yq &>/dev/null; then
+    yq -r "$path // empty" "$file" 2>/dev/null || true
+  else
+    python3 -c "
+import yaml, sys
+with open('$file') as f:
+    data = yaml.safe_load(f)
+path = '$path'.lstrip('.')
+parts = [p for p in path.split('.') if p]
+val = data
+for p in parts:
+    if val is None: sys.exit(0)
+    val = val.get(p) if isinstance(val, dict) else None
+if val is None:
+    sys.exit(0)
+if isinstance(val, list):
+    for item in val:
+        print(item)
+elif isinstance(val, dict):
+    for key in val:
+        print(key)
+elif val == 'all':
+    print('all')
+else:
+    print(val)
+" 2>/dev/null || true
+  fi
+}
+
+# Read a YAML list or "all" keyword
+read_yaml_list() {
+  local file=$1
+  local path=$2
+  read_yaml "$file" "$path"
+}
+
+# Read YAML map keys (for models grouped by provider)
+read_yaml_map_keys() {
+  local file=$1
+  local path=$2
+  read_yaml "$file" "$path"
+}
+
+# Read YAML list under a map key
+read_yaml_map_list() {
+  local file=$1
+  local path=$2
+  local key=$3
+  read_yaml "$file" "${path}.${key}"
+}
+
+# --- Assemble SQL -------------------------------------------------------------
+sql_parts=()
+total_files=0
+
+add_file() {
+  local filepath=$1
+  if [[ -f "$filepath" ]]; then
+    sql_parts+=("$filepath")
+    total_files=$((total_files + 1))
+  else
+    echo "  WARNING: Module file not found: $filepath"
+  fi
+}
+
+add_dir_sorted() {
+  local dir=$1
+  if [[ -d "$dir" ]]; then
+    while IFS= read -r f; do
+      add_file "$f"
+    done < <(find "$dir" -name "*.sql" -maxdepth 1 | sort)
+  fi
+}
+
+echo ""
+echo "=== Assembling seed SQL from modules ==="
+echo ""
+
+# --- 00-base: Always loaded ---------------------------------------------------
+echo "Loading 00-base/ (always included) ..."
+add_dir_sorted "$modules_dir/00-base"
+
+# --- 01-providers -------------------------------------------------------------
+providers=$(read_yaml_list "$config_file" ".modules.providers")
+if [[ -n "$providers" ]]; then
+  echo "Loading 01-providers/ ..."
+  if [[ "$providers" == "all" ]]; then
+    add_dir_sorted "$modules_dir/01-providers"
+  else
+    while IFS= read -r name; do
+      [[ -z "$name" ]] && continue
+      add_file "$modules_dir/01-providers/${name}.sql"
+    done <<< "$providers"
+  fi
+fi
+
+# --- 02-models ----------------------------------------------------------------
+model_providers=$(read_yaml_map_keys "$config_file" ".modules.models")
+if [[ -n "$model_providers" ]]; then
+  echo "Loading 02-models/ ..."
+  if [[ "$model_providers" == "all" ]]; then
+    # Load all models for all providers
+    for provider_dir in "$modules_dir"/02-models/*/; do
+      add_dir_sorted "$provider_dir"
+    done
+  else
+    while IFS= read -r provider; do
+      [[ -z "$provider" ]] && continue
+      model_list=$(read_yaml_map_list "$config_file" ".modules.models" "$provider")
+      if [[ "$model_list" == "all" ]]; then
+        add_dir_sorted "$modules_dir/02-models/$provider"
+      else
+        while IFS= read -r model; do
+          [[ -z "$model" ]] && continue
+          add_file "$modules_dir/02-models/$provider/${model}.sql"
+        done <<< "$model_list"
+      fi
+    done <<< "$model_providers"
+  fi
+fi
+
+# --- 03-agents ----------------------------------------------------------------
+agents=$(read_yaml_list "$config_file" ".modules.agents")
+if [[ -n "$agents" ]]; then
+  echo "Loading 03-agents/ ..."
+  if [[ "$agents" == "all" ]]; then
+    add_dir_sorted "$modules_dir/03-agents"
+  else
+    while IFS= read -r name; do
+      [[ -z "$name" ]] && continue
+      add_file "$modules_dir/03-agents/${name}.sql"
+    done <<< "$agents"
+  fi
+fi
+
+# --- 04-tools ----------------------------------------------------------------
+tools=$(read_yaml_list "$config_file" ".modules.tools")
+if [[ -n "$tools" ]]; then
+  echo "Loading 04-tools/ ..."
+  if [[ "$tools" == "all" ]]; then
+    add_dir_sorted "$modules_dir/04-tools"
+  else
+    while IFS= read -r name; do
+      [[ -z "$name" ]] && continue
+      add_file "$modules_dir/04-tools/${name}.sql"
+    done <<< "$tools"
+  fi
+fi
+
+# --- 05-auth ------------------------------------------------------------------
+auth_list=$(read_yaml_list "$config_file" ".modules.auth")
+if [[ -n "$auth_list" ]]; then
+  echo "Loading 05-auth/ ..."
+  if [[ "$auth_list" == "all" ]]; then
+    add_dir_sorted "$modules_dir/05-auth"
+  else
+    while IFS= read -r name; do
+      [[ -z "$name" ]] && continue
+      add_file "$modules_dir/05-auth/${name}.sql"
+    done <<< "$auth_list"
+  fi
+fi
+
+# --- 10-setups ----------------------------------------------------------------
+setup_type=$(read_yaml "$config_file" ".modules.setup")
+if [[ -n "$setup_type" && "$setup_type" != "null" ]]; then
+  echo "Loading 10-setups/$setup_type/ ..."
+  setup_dir="$modules_dir/10-setups/$setup_type"
+
+  if [[ ! -d "$setup_dir" ]]; then
+    echo "  WARNING: Setup directory not found: $setup_dir"
+  else
+    # Load setup subdirectories in numbered order
+    # Each subfolder is loaded based on YAML config or "all"
+
+    # Helper: load setup category
+    load_setup_category() {
+      local category=$1    # YAML key (e.g., "departments")
+      local subfolder=$2   # directory name (e.g., "01-departments")
+
+      local cat_dir="$setup_dir/$subfolder"
+      [[ ! -d "$cat_dir" ]] && return
+
+      local items
+      items=$(read_yaml_list "$config_file" ".modules.${setup_type}.${category}")
+      if [[ -z "$items" || "$items" == "null" ]]; then
+        return
+      fi
+
+      echo "  Loading $subfolder/ ..."
+      if [[ "$items" == "all" ]]; then
+        add_dir_sorted "$cat_dir"
+      else
+        while IFS= read -r name; do
+          [[ -z "$name" ]] && continue
+          # Try exact name first, then all.sql
+          if [[ -f "$cat_dir/${name}.sql" ]]; then
+            add_file "$cat_dir/${name}.sql"
+          elif [[ -f "$cat_dir/all.sql" ]]; then
+            # Category uses all.sql, just add it once
+            if ! printf '%s\n' "${sql_parts[@]}" | grep -q "$cat_dir/all.sql"; then
+              add_file "$cat_dir/all.sql"
+            fi
+          fi
+        done <<< "$items"
+      fi
+    }
+
+    # Institution auth
+    if [[ -d "$setup_dir/00-auth" ]]; then
+      echo "  Loading 00-auth/ ..."
+      add_dir_sorted "$setup_dir/00-auth"
+    fi
+
+    load_setup_category "departments"  "01-departments"
+    load_setup_category "personas"     "02-personas"
+    load_setup_category "documents"    "03-documents"
+    load_setup_category "fields"       "04-fields"
+    load_setup_category "rubrics"      "05-rubrics"
+    load_setup_category "simulations"  "06-simulations"
+    load_setup_category "evals"        "07-evals"
+    load_setup_category "cohorts"      "08-cohorts"
+    load_setup_category "profiles"     "09-profiles"
+    load_setup_category "settings"     "10-settings"
+  fi
+fi
+
+echo ""
+echo "Assembled $total_files module files"
+
+if [[ ${#sql_parts[@]} -eq 0 ]]; then
+  echo "WARNING: No module files found. Check your config."
+  exit 1
+fi
+
+# --- Output or execute --------------------------------------------------------
+if $output_mode; then
+  # Write combined SQL file
+  timestamp=$(date +%Y%m%d_%H%M%S)
+  output_file="$script_dir/../seeds/seed_modules_${timestamp}.sql"
+  mkdir -p "$(dirname "$output_file")"
+
+  {
+    echo "-- Generated seed file from modular modules"
+    echo "-- Config: $config_file"
+    echo "-- Generated: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+    echo "-- Files: $total_files"
+    echo ""
+    echo "SET session_replication_role = replica;"
+    echo ""
+    for f in "${sql_parts[@]}"; do
+      echo "-- ================================================================"
+      echo "-- File: $(basename "$f")"
+      echo "-- ================================================================"
+      cat "$f"
+      echo ""
+    done
+    echo ""
+    echo "SET session_replication_role = DEFAULT;"
+  } > "$output_file"
+
+  echo ""
+  echo "Written to: $output_file"
+  echo "To load: psql $DB_URL < $output_file"
+else
+  # Pipe directly to psql
+  echo "Loading into database: $DB_NAME ..."
+  {
+    echo "SET session_replication_role = replica;"
+    for f in "${sql_parts[@]}"; do
+      cat "$f"
+      echo ""
+    done
+    echo "SET session_replication_role = DEFAULT;"
+  } | psql "$DB_URL" -v ON_ERROR_STOP=0 --quiet 2>&1 | grep -v "^$" || true
+
+  echo ""
+  echo "=== Seed loading complete ==="
+fi

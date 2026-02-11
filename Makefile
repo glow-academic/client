@@ -409,6 +409,34 @@ export-db:
 		echo "✅ Database export completed"; \
 	fi
 
+# Export modular seed data from live database
+export-modules:
+	@if [ -z "$(ARGS)" ]; then \
+		echo "Exporting all modular seed data..."; \
+		$(VENV_PYTHON) database/scripts/export_modules.py all; \
+	else \
+		echo "Exporting modules: $(ARGS)..."; \
+		$(VENV_PYTHON) database/scripts/export_modules.py $(ARGS); \
+	fi
+
+# Load seed data from modular YAML config
+seed-from-yaml:
+	@if [ -z "$(CONFIG)" ]; then \
+		echo "Loading seed data from default config..."; \
+		cd database/scripts && bash load-modules.sh; \
+	else \
+		echo "Loading seed data from $(CONFIG)..."; \
+		cd database/scripts && bash load-modules.sh $(CONFIG); \
+	fi
+
+# Generate seed SQL file from modular YAML config (without loading)
+seed-file-from-yaml:
+	@if [ -z "$(CONFIG)" ]; then \
+		cd database/scripts && bash load-modules.sh --output; \
+	else \
+		cd database/scripts && bash load-modules.sh $(CONFIG) --output; \
+	fi
+
 # Start database with fresh data (interactive setup)
 fresh-db:
 	@echo "Starting interactive database setup..."

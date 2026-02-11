@@ -23,7 +23,7 @@ from app.utils.sql_helper import load_sql
 
 router = APIRouter()
 
-MV_SQL_PATH = "app/sql/v4/views/artifacts/mv_z_artifact_session_list.sql"
+MV_SQL_PATH = "app/sql/v4/views/artifacts/mv_artifact_session_list.sql"
 
 
 async def get_artifact_session_list_internal(

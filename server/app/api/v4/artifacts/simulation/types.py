@@ -421,49 +421,37 @@ class GetSimulationWebsocketResponse(BaseModel):
 
 
 class ListSimulationApiSimulation(BaseModel):
-    """Simulation item in list response with Python-computed permissions."""
+    """Simulation item in list response with SQL-computed permissions."""
 
     simulation_id: UUID | None = None
     name: str | None = None
     description: str | None = None
-    active: bool | None = None
     department_ids: list[str] | None = None
-    scenario_ids: list[str] | None = None
-    usage_count: int | None = None
-    updated_at: datetime | None = None
-
-    # Python-computed permissions
+    active: bool | None = None
+    practice_simulation: bool | None = None
     can_edit: bool | None = None
     can_delete: bool | None = None
     can_duplicate: bool | None = None
+    scenario_ids: list[str] | None = None
+    num_cohorts: int | None = None
+    cohort_ids: list[str] | None = None
+    updated_at: datetime | None = None
 
 
 class ListSimulationApiScenario(BaseModel):
-    """Scenario in list response."""
+    """Scenario in list response (minimal: only for color dot rendering)."""
 
     scenario_id: UUID | None = None
     name: str | None = None
-    description: str | None = None
-    active: bool | None = None
     persona_ids: list[str] | None = None
-
-
-class ListSimulationApiDepartment(BaseModel):
-    """Department in list response."""
-
-    department_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
 
 
 class ListSimulationApiResponse(BaseModel):
     """Response for listing simulations."""
 
     actor_name: str | None = None
-    user_role: str | None = None
     simulations: list[ListSimulationApiSimulation] | None = None
     scenarios: list[ListSimulationApiScenario] | None = None
-    departments: list[ListSimulationApiDepartment] | None = None
 
 
 # =============================================================================
@@ -740,15 +728,20 @@ class PatchSimulationDraftSqlParams(BaseModel):
 
 
 class ListSimulationSqlSimulation(BaseModel):
-    """Raw simulation from SQL without computed permissions."""
+    """Raw simulation from SQL with SQL-computed permissions."""
 
     simulation_id: UUID | None = None
     name: str | None = None
     description: str | None = None
-    active: bool | None = None
     department_ids: list[str] | None = None
+    active: bool | None = None
+    practice_simulation: bool | None = None
+    can_edit: bool | None = None
+    can_delete: bool | None = None
+    can_duplicate: bool | None = None
     scenario_ids: list[str] | None = None
-    usage_count: int | None = None
+    num_cohorts: int | None = None
+    cohort_ids: list[str] | None = None
     updated_at: datetime | None = None
 
 
@@ -756,8 +749,5 @@ class ListSimulationSqlRow(BaseModel):
     """Raw SQL row for list simulations."""
 
     actor_name: str | None = None
-    user_role: str | None = None
-    user_department_ids: list[UUID] | None = None
     simulations: list[ListSimulationSqlSimulation] | None = None
     scenarios: list[ListSimulationApiScenario] | None = None
-    departments: list[ListSimulationApiDepartment] | None = None
