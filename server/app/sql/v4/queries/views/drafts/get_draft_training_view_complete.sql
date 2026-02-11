@@ -1,9 +1,38 @@
 -- ==========================================================================
--- Query: get_draft_training_bundle_view
+-- Query: get_draft_training_view
 -- Purpose: Fetch draft-level denormalized data from mv_draft_training_bundle
 -- Section: VIEWS/DRAFTS
 -- ==========================================================================
 
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN
+        SELECT oidvectortypes(proargtypes) as sig
+        FROM pg_proc
+        WHERE proname = 'api_get_draft_training_view_v4'
+          AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+    LOOP
+        EXECUTE format('DROP FUNCTION IF EXISTS api_get_draft_training_view_v4(%s)', r.sig);
+    END LOOP;
+END $$;
+
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN
+        SELECT typname
+        FROM pg_type
+        WHERE typname LIKE 'q_get_draft_training_view_v4_%'
+          AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
+    LOOP
+        EXECUTE format('DROP TYPE IF EXISTS types.%I CASCADE', r.typname);
+    END LOOP;
+END $$;
+
+-- Drop old "training_bundle" names if they exist from prior compile
 DO $$
 DECLARE
     r RECORD;
@@ -32,7 +61,7 @@ BEGIN
     END LOOP;
 END $$;
 
-CREATE TYPE types.q_get_draft_training_bundle_view_v4_item AS (
+CREATE TYPE types.q_get_draft_training_view_v4_item AS (
     draft_id uuid,
     created_at timestamptz,
     updated_at timestamptz,
@@ -56,11 +85,11 @@ CREATE TYPE types.q_get_draft_training_bundle_view_v4_item AS (
     objective_ids uuid[]
 );
 
-CREATE OR REPLACE FUNCTION api_get_draft_training_bundle_view_v4(
+CREATE OR REPLACE FUNCTION api_get_draft_training_view_v4(
     draft_ids uuid[]
 )
 RETURNS TABLE (
-    items types.q_get_draft_training_bundle_view_v4_item[]
+    items types.q_get_draft_training_view_v4_item[]
 )
 LANGUAGE sql
 STABLE
@@ -98,10 +127,10 @@ AS $$
                     template_ids,
                     problem_statement_ids,
                     objective_ids
-                )::types.q_get_draft_training_bundle_view_v4_item
+                )::types.q_get_draft_training_view_v4_item
                 ORDER BY updated_at DESC
             ),
-            ARRAY[]::types.q_get_draft_training_bundle_view_v4_item[]
+            ARRAY[]::types.q_get_draft_training_view_v4_item[]
         ) AS items
         FROM mv_data
     )

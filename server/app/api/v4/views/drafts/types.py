@@ -184,7 +184,7 @@ class DraftSimulationViewItem(DraftViewItemBase):
     scenario_time_limit_ids: list[UUID] = Field(default_factory=list)
 
 
-class DraftTrainingBundleViewItem(DraftViewItemBase):
+class DraftTrainingViewItem(DraftViewItemBase):
     department_ids: list[UUID] = Field(default_factory=list)
     persona_ids: list[UUID] = Field(default_factory=list)
     document_ids: list[UUID] = Field(default_factory=list)

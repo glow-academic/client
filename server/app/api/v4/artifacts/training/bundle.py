@@ -32,7 +32,7 @@ from app.api.v4.resources.scenario_time_limits.get import (
     get_scenario_time_limits_internal,
 )
 from app.api.v4.resources.tools.get import get_tools_internal
-from app.api.v4.views.drafts.get import get_draft_training_bundle_internal
+from app.api.v4.views.drafts.get import get_draft_training_internal
 from app.api.v4.views.training.bundle.get import get_training_bundle_view_internal
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
@@ -94,7 +94,7 @@ async def get_training_bundle_internal(
 
     draft_item = None
     if draft_id is not None:
-        draft_items = await get_draft_training_bundle_internal(
+        draft_items = await get_draft_training_internal(
             conn=conn,
             draft_ids=[draft_id],
             bypass_cache=bypass_cache,
