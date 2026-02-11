@@ -9100,16 +9100,19 @@ class GetTrainingStartContextSqlParams(BaseModel):
     p_profile_id: UUID
     p_training_bundle_entry_id: UUID
     p_department_id: UUID
+    p_draft_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.p_profile_id,
             self.p_training_bundle_entry_id,
             self.p_department_id,
+            self.p_draft_id,
         )
 
 class GetTrainingStartContextSqlRow(BaseModel):
 
+    agent_id: UUID | None = None
     agent_exists: bool | None = None
     agent_name: str | None = None
     agent_is_active: bool | None = None
@@ -9140,9 +9143,11 @@ class GetTrainingStartContextApiRequest(BaseModel):
     p_profile_id: UUID
     p_training_bundle_entry_id: UUID
     p_department_id: UUID
+    p_draft_id: UUID | None = None
 
 class GetTrainingStartContextApiResponse(BaseModel):
 
+    agent_id: UUID | None = None
     agent_exists: bool | None = None
     agent_name: str | None = None
     agent_is_active: bool | None = None
@@ -9177,6 +9182,7 @@ class PrepareTrainingGenerationSqlParams(BaseModel):
     p_profile_id: UUID
     p_training_bundle_entry_id: UUID
     p_department_id: UUID
+    p_draft_id: UUID | None = None
     p_resource_types: list[str] | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -9184,6 +9190,7 @@ class PrepareTrainingGenerationSqlParams(BaseModel):
             self.p_profile_id,
             self.p_training_bundle_entry_id,
             self.p_department_id,
+            self.p_draft_id,
             self.p_resource_types,
         )
 
@@ -9210,6 +9217,7 @@ class PrepareTrainingGenerationApiRequest(BaseModel):
     p_profile_id: UUID
     p_training_bundle_entry_id: UUID
     p_department_id: UUID
+    p_draft_id: UUID | None = None
     p_resource_types: list[str] | None = None
 
 class PrepareTrainingGenerationApiResponse(BaseModel):
@@ -9239,6 +9247,7 @@ class PrepareTrainingStartSqlParams(BaseModel):
     p_profile_id: UUID
     p_training_bundle_entry_id: UUID
     p_department_id: UUID
+    p_draft_id: UUID | None = None
     p_infinite_mode: bool | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -9246,6 +9255,7 @@ class PrepareTrainingStartSqlParams(BaseModel):
             self.p_profile_id,
             self.p_training_bundle_entry_id,
             self.p_department_id,
+            self.p_draft_id,
             self.p_infinite_mode,
         )
 
@@ -9260,6 +9270,7 @@ class PrepareTrainingStartApiRequest(BaseModel):
     p_profile_id: UUID
     p_training_bundle_entry_id: UUID
     p_department_id: UUID
+    p_draft_id: UUID | None = None
     p_infinite_mode: bool | None = None
 
 class PrepareTrainingStartApiResponse(BaseModel):
@@ -28105,6 +28116,54 @@ class GetSimulationOverviewViewApiResponse(BaseModel):
 
 
 
+# Generated from: get_training_bundle_view
+
+class GetTrainingBundleViewSqlParams(BaseModel):
+
+    profile_id_filter: UUID
+    training_bundle_entry_id_filter: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id_filter,
+            self.training_bundle_entry_id_filter,
+        )
+
+class GetTrainingBundleViewSqlRow(BaseModel):
+
+    profile_has_access: bool | None = None
+    training_bundle_entry_id: UUID | None = None
+    training_id: UUID | None = None
+    simulation_id: UUID | None = None
+    simulation_name: str | None = None
+    scenario_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    persona_ids: list[UUID] | None = None
+    document_ids: list[UUID] | None = None
+    parameter_field_ids: list[UUID] | None = None
+    scenario_time_limit_ids: list[UUID] | None = None
+
+class GetTrainingBundleViewApiRequest(BaseModel):
+
+    profile_id_filter: UUID
+    training_bundle_entry_id_filter: UUID
+
+class GetTrainingBundleViewApiResponse(BaseModel):
+
+    profile_has_access: bool | None = None
+    training_bundle_entry_id: UUID | None = None
+    training_id: UUID | None = None
+    simulation_id: UUID | None = None
+    simulation_name: str | None = None
+    scenario_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    persona_ids: list[UUID] | None = None
+    document_ids: list[UUID] | None = None
+    parameter_field_ids: list[UUID] | None = None
+    scenario_time_limit_ids: list[UUID] | None = None
+
+
+
 # Generated from: get_training_context_view
 
 class GetTrainingContextViewSqlParams(BaseModel):
@@ -31570,6 +31629,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetSimulationOverviewViewApiRequest",
         "GetSimulationOverviewViewApiResponse",
     ),
+    "app/sql/v4/queries/views/training/bundle/get_training_bundle_view_complete.sql": (
+        "GetTrainingBundleViewSqlParams",
+        "GetTrainingBundleViewSqlRow",
+        "GetTrainingBundleViewApiRequest",
+        "GetTrainingBundleViewApiResponse",
+    ),
     "app/sql/v4/queries/views/training/context/get_training_context_view_complete.sql": (
         "GetTrainingContextViewSqlParams",
         "GetTrainingContextViewSqlRow",
@@ -34476,6 +34541,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/views/simulation/overview/get_simulation_overview_view_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/views/training/bundle/get_training_bundle_view_complete.sql"]
     ) -> SqlString: ...
 
     @overload

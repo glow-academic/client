@@ -29,9 +29,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
+import { api } from "@/lib/api/client";
 import type { ServerToClientEvents } from "@/lib/ws/types";
 import { getPersonaIconComponent } from "@/utils/persona-icons";
-import { Infinity, Info, Table, Timer, User, Users } from "lucide-react";
+import { Info, SlidersHorizontal, Table, Timer, User, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -51,6 +52,20 @@ type StandardsMapping = Record<string, {
   description: string;
   points: number;
 }>;
+type PatchTrainingDraftIn = {
+  body: {
+    input_draft_id?: string | null;
+    expected_version?: number;
+    departments?: { resource_ids?: string[] };
+    personas?: { resource_ids?: string[] };
+    documents?: { resource_ids?: string[] };
+    parameter_fields?: { resource_ids?: string[] };
+  };
+};
+type PatchTrainingDraftOut = {
+  draft_id?: string | null;
+  new_version?: number | null;
+};
 
 const generateGradientFromHex = (hexColor: string): string => {
   // Remove # if present
@@ -74,6 +89,7 @@ const generateGradientFromHex = (hexColor: string): string => {
 
 export interface SimulationCardProps {
   id: string;
+  trainingBundleEntryId?: string | null;
   timeLimit?: number;
   numSessions: number;
   highestScore?: number;
@@ -90,11 +106,12 @@ export interface SimulationCardProps {
   type: "default" | "cohort";
   profile: ProfileItem;
   /** Whether to show infinite mode button (practice only) */
-  showInfiniteMode?: boolean;
+  showCustomizeButton?: boolean;
 }
 
 export default function SimulationCard({
   id,
+  trainingBundleEntryId,
   timeLimit,
   numSessions,
   highestScore,
@@ -109,10 +126,10 @@ export default function SimulationCard({
   passRate,
   type,
   profile,
-  showInfiniteMode = false,
+  showCustomizeButton = false,
 }: SimulationCardProps) {
   const router = useRouter();
-  const { socket, isConnected, artifactAgentIds } = useProfile();
+  const { socket, isConnected } = useProfile();
 
   // Determine if this is practice mode based on type
   const practice = type === "default";
@@ -121,9 +138,6 @@ export default function SimulationCard({
   const [isStarting, setIsStarting] = useState(false);
   const [loadingToastId, setLoadingToastId] = useState<string | number | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Get the training agent ID from profile context (take first from array)
-  const trainingAgentId = artifactAgentIds?.["training"]?.[0] ?? null;
 
   // Cleanup function for timeout and toast
   const cleanup = useCallback(() => {
@@ -199,18 +213,44 @@ export default function SimulationCard({
 
   // Start training function
   const handleStartTraining = useCallback(
-    (infinite: boolean = false) => {
+    async (infinite: boolean = false) => {
       // Validate socket connection
       if (!socket || !isConnected) {
         toast.error("WebSocket not connected. Please refresh the page.");
         return;
       }
 
-      // Validate training agent
-      if (!trainingAgentId) {
-        toast.error(
-          "Training agent not available. Please contact your administrator."
+      if (!trainingBundleEntryId) {
+        toast.error("Training bundle is missing for this simulation.");
+        return;
+      }
+
+      const departmentId = profile?.primary_department_id;
+      if (!departmentId) {
+        toast.error("No primary department found for this profile.");
+        return;
+      }
+
+      let draftId: string | null = null;
+      try {
+        const draftResult: PatchTrainingDraftOut = await api.patch(
+          "/artifacts/training/draft" as never,
+          {
+            body: {
+              input_draft_id: null,
+              expected_version: 0,
+              departments: { resource_ids: [departmentId] },
+            },
+          } as PatchTrainingDraftIn,
         );
+        draftId = draftResult.draft_id || null;
+      } catch {
+        toast.error("Failed to prepare a default draft for this training.");
+        return;
+      }
+
+      if (!draftId) {
+        toast.error("Could not resolve a draft for this training.");
         return;
       }
 
@@ -226,8 +266,9 @@ export default function SimulationCard({
 
       // Build payload
       const payload: Record<string, unknown> = {
-        simulation_id: id,
-        agent_id: trainingAgentId,
+        training_bundle_entry_id: trainingBundleEntryId,
+        department_id: departmentId,
+        draft_id: draftId,
       };
 
       // Add infinite mode flag
@@ -255,8 +296,17 @@ export default function SimulationCard({
         toast.error("Training start timed out. Please try again.");
       }, 30000);
     },
-    [socket, isConnected, trainingAgentId, id, cleanup]
+    [socket, isConnected, trainingBundleEntryId, profile?.primary_department_id, cleanup]
   );
+
+  const handleOpenCustomize = useCallback(() => {
+    if (!trainingBundleEntryId) {
+      toast.error("Training bundle is missing for this simulation.");
+      return;
+    }
+    const basePath = practice ? "/practice" : "/home";
+    router.push(`${basePath}/b/${trainingBundleEntryId}`);
+  }, [practice, router, trainingBundleEntryId]);
 
   // Get persona configuration and icon based on persona data
   const IconComponent =
@@ -490,12 +540,10 @@ export default function SimulationCard({
         </CardContent>
 
         <CardFooter className="pt-0 relative z-10">
-          {type === "default" &&
-            showInfiniteMode &&
-            profile?.role !== "guest" ? (
+          {showCustomizeButton && profile?.role !== "guest" ? (
             <div className="flex gap-2 w-full">
               <Button
-                onClick={() => handleStartTraining(false)}
+                onClick={() => void handleStartTraining(false)}
                 disabled={isStarting}
                 data-testid={`start-simulation-${id}`}
                 variant={gradientClass ? undefined : "default"}
@@ -525,12 +573,12 @@ export default function SimulationCard({
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
-                    onClick={() => handleStartTraining(true)}
+                    onClick={handleOpenCustomize}
                     disabled={isStarting}
                     variant="default"
                     size="icon"
                     className="flex-shrink-0 hover:scale-105 transition-all duration-300"
-                    data-testid={`start-infinite-${id}`}
+                    data-testid={`customize-training-${id}`}
                     style={
                       shouldUsePersonaColor
                         ? {
@@ -541,17 +589,17 @@ export default function SimulationCard({
                         : undefined
                     }
                   >
-                    <Infinity className={`h-4 w-4 text-white`} />
+                    <SlidersHorizontal className="h-4 w-4 text-white" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Infinite Mode</p>
+                  <p>Customize</p>
                 </TooltipContent>
               </Tooltip>
             </div>
           ) : (
             <Button
-              onClick={() => handleStartTraining(false)}
+              onClick={() => void handleStartTraining(false)}
               disabled={isStarting}
               data-testid={`start-simulation-${id}`}
               variant={gradientClass ? undefined : "default"}

@@ -12,6 +12,18 @@ Architecture:
 from uuid import UUID
 
 from pydantic import BaseModel, Field
+from app.api.v4.views.drafts.types import DraftScenarioViewItem
+from app.sql.types import (
+    QGetAgentsV4Item,
+    QGetDepartmentsV4Item,
+    QGetDocumentsV4Item,
+    QGetModelsV4Item,
+    QGetParameterFieldsV4Item,
+    QGetPersonasV4Item,
+    QGetProvidersV4Item,
+    QGetScenarioTimeLimitsV4Item,
+    QGetToolsV4Item,
+)
 
 # =============================================================================
 # Shared types
@@ -256,6 +268,60 @@ class GetTrainingGetResponse(BaseModel):
 
 
 # =============================================================================
+# BUNDLE endpoint types (customize/start flow)
+# =============================================================================
+
+
+class GetTrainingBundleRequest(BaseModel):
+    """Client API request for one training bundle customization payload."""
+
+    training_bundle_entry_id: UUID
+    draft_id: UUID | None = None
+
+
+class TrainingBundleViews(BaseModel):
+    """Draft/views payload for training bundle customization."""
+
+    draft_training_bundle: DraftScenarioViewItem | None = None
+
+
+class TrainingBundleResourceBucket(BaseModel):
+    """Hydrated resource bucket for training bundle customization."""
+
+    departments: list[QGetDepartmentsV4Item] | None = None
+    personas: list[QGetPersonasV4Item] | None = None
+    documents: list[QGetDocumentsV4Item] | None = None
+    parameter_fields: list[QGetParameterFieldsV4Item] | None = None
+    scenario_time_limits: list[QGetScenarioTimeLimitsV4Item] | None = None
+
+
+class TrainingBundleResources(BaseModel):
+    """Current/suggestions resources + config chain resources."""
+
+    current: TrainingBundleResourceBucket | None = None
+    suggestions: TrainingBundleResourceBucket | None = None
+    agents: list[QGetAgentsV4Item] | None = None
+    models: list[QGetModelsV4Item] | None = None
+    providers: list[QGetProvidersV4Item] | None = None
+    tools: list[QGetToolsV4Item] | None = None
+
+
+class GetTrainingBundleResponse(BaseModel):
+    """Client-facing bundle response following persona-style shape."""
+
+    training_bundle_entry_id: UUID
+    training_id: UUID | None = None
+    simulation_id: UUID | None = None
+    simulation_name: str | None = None
+    scenario_id: UUID | None = None
+    profile_has_access: bool = False
+    views: TrainingBundleViews | None = None
+    resources: TrainingBundleResources | None = None
+    resource_agent_ids: dict[str, UUID | None] | None = None
+    group_id: UUID | None = None
+
+
+# =============================================================================
 # Websocket endpoint types (shared internal fetch)
 # =============================================================================
 
@@ -279,6 +345,7 @@ class TrainingWebsocketResources(BaseModel):
     image_ids: list[UUID] | None = None
     has_problem_statement: bool = False
     has_persona: bool = False
+    agent_id: UUID | None = None
     agent_exists: bool = False
     agent_name: str | None = None
     agent_is_active: bool = False

@@ -20,6 +20,7 @@ CREATE OR REPLACE FUNCTION socket_prepare_training_start_v4(
     p_profile_id uuid,
     p_training_bundle_entry_id uuid,
     p_department_id uuid,
+    p_draft_id uuid DEFAULT NULL,
     p_infinite_mode boolean DEFAULT NULL
 )
 RETURNS TABLE (
@@ -48,9 +49,13 @@ DECLARE
     v_rubric_artifact_id uuid;
     v_personas_resource_id uuid;
     v_problem_statements_resource_id uuid;
+    v_selected_department_id uuid;
 
     v_training_bundle_department_id uuid;
     v_config_signature text := 'runtime-v1';
+    v_draft_persona_ids uuid[] := ARRAY[]::uuid[];
+    v_draft_document_ids uuid[] := ARRAY[]::uuid[];
+    v_draft_parameter_field_ids uuid[] := ARRAY[]::uuid[];
 
     v_session_id uuid;
     v_group_id uuid;
@@ -147,11 +152,38 @@ BEGIN
       AND spsj.active = true
     LIMIT 1;
 
+    -- Resolve optional draft overrides (scenario-style draft selections).
+    IF p_draft_id IS NOT NULL THEN
+        SELECT ARRAY_AGG(DISTINCT pdc.personas_id)
+        INTO v_draft_persona_ids
+        FROM personas_drafts_connection pdc
+        WHERE pdc.draft_id = p_draft_id;
+
+        SELECT ARRAY_AGG(DISTINCT ddc.documents_id)
+        INTO v_draft_document_ids
+        FROM documents_drafts_connection ddc
+        WHERE ddc.draft_id = p_draft_id;
+
+        SELECT ARRAY_AGG(DISTINCT pfdc.parameter_fields_id)
+        INTO v_draft_parameter_field_ids
+        FROM parameter_fields_drafts_connection pfdc
+        WHERE pfdc.draft_id = p_draft_id;
+
+        SELECT ddc.departments_id
+        INTO v_selected_department_id
+        FROM departments_drafts_connection ddc
+        WHERE ddc.draft_id = p_draft_id
+        ORDER BY ddc.version DESC NULLS LAST
+        LIMIT 1;
+    END IF;
+
+    v_selected_department_id := COALESCE(v_selected_department_id, p_department_id);
+
     -- Ensure department-scoped bundle exists at runtime.
     SELECT tbd.id INTO v_training_bundle_department_id
     FROM training_bundle_departments_entry tbd
     WHERE tbd.training_bundle_id = p_training_bundle_entry_id
-      AND tbd.departments_id = p_department_id
+      AND tbd.departments_id = v_selected_department_id
       AND tbd.active = true
     ORDER BY tbd.created_at
     LIMIT 1;
@@ -169,7 +201,7 @@ BEGIN
         )
         VALUES (
             p_training_bundle_entry_id,
-            p_department_id,
+            v_selected_department_id,
             v_config_signature,
             NOW(),
             NOW(),
@@ -208,11 +240,23 @@ BEGIN
       AND stlr.scenario_id = v_scenarios_resource_id
     ON CONFLICT (training_bundle_department_id, scenario_time_limits_id) DO NOTHING;
 
-    IF v_personas_resource_id IS NOT NULL THEN
+    IF COALESCE(array_length(v_draft_persona_ids, 1), 0) > 0 OR v_personas_resource_id IS NOT NULL THEN
         INSERT INTO training_bundle_departments_personas_connection (
             training_bundle_department_id, personas_id, created_at, active, generated, mcp
         )
-        VALUES (v_training_bundle_department_id, v_personas_resource_id, NOW(), true, false, false)
+        SELECT
+            v_training_bundle_department_id,
+            pid,
+            NOW(),
+            true,
+            false,
+            false
+        FROM unnest(
+            CASE
+                WHEN COALESCE(array_length(v_draft_persona_ids, 1), 0) > 0 THEN v_draft_persona_ids
+                ELSE ARRAY[v_personas_resource_id]::uuid[]
+            END
+        ) AS pid
         ON CONFLICT (training_bundle_department_id, personas_id) DO NOTHING;
     END IF;
 
@@ -233,17 +277,43 @@ BEGIN
     END IF;
 
     INSERT INTO training_bundle_departments_documents_connection (training_bundle_department_id, documents_id, created_at, active, generated, mcp)
-    SELECT DISTINCT v_training_bundle_department_id, sdj.document_id, NOW(), true, false, false
-    FROM scenario_documents_junction sdj
-    WHERE sdj.scenario_id = v_scenario_artifact_id
-      AND sdj.active = true
+    SELECT DISTINCT
+        v_training_bundle_department_id,
+        doc_id,
+        NOW(),
+        true,
+        false,
+        false
+    FROM (
+        SELECT sdj.document_id AS doc_id
+        FROM scenario_documents_junction sdj
+        WHERE sdj.scenario_id = v_scenario_artifact_id
+          AND sdj.active = true
+          AND COALESCE(array_length(v_draft_document_ids, 1), 0) = 0
+        UNION ALL
+        SELECT unnest(v_draft_document_ids)
+        WHERE COALESCE(array_length(v_draft_document_ids, 1), 0) > 0
+    ) selected_docs
     ON CONFLICT (training_bundle_department_id, documents_id) DO NOTHING;
 
     INSERT INTO training_bundle_departments_parameter_fields_connection (training_bundle_department_id, parameter_fields_id, created_at, active, generated, mcp)
-    SELECT DISTINCT v_training_bundle_department_id, spfj.parameter_field_id, NOW(), true, false, false
-    FROM scenario_parameter_fields_junction spfj
-    WHERE spfj.scenario_id = v_scenario_artifact_id
-      AND spfj.active = true
+    SELECT DISTINCT
+        v_training_bundle_department_id,
+        field_id,
+        NOW(),
+        true,
+        false,
+        false
+    FROM (
+        SELECT spfj.parameter_field_id AS field_id
+        FROM scenario_parameter_fields_junction spfj
+        WHERE spfj.scenario_id = v_scenario_artifact_id
+          AND spfj.active = true
+          AND COALESCE(array_length(v_draft_parameter_field_ids, 1), 0) = 0
+        UNION ALL
+        SELECT unnest(v_draft_parameter_field_ids)
+        WHERE COALESCE(array_length(v_draft_parameter_field_ids, 1), 0) > 0
+    ) selected_fields
     ON CONFLICT (training_bundle_department_id, parameter_fields_id) DO NOTHING;
 
     INSERT INTO training_bundle_departments_objectives_connection (training_bundle_department_id, objectives_id, created_at, active, generated, mcp)
@@ -324,7 +394,7 @@ BEGIN
     END IF;
 
     INSERT INTO simulation_attempts_departments_connection (departments_id, attempt_id, active)
-    VALUES (p_department_id, v_attempt_id, true)
+    VALUES (v_selected_department_id, v_attempt_id, true)
     ON CONFLICT (attempt_id, departments_id) DO NOTHING;
 
     IF v_roles_resource_id IS NOT NULL THEN

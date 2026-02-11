@@ -32,8 +32,8 @@ interface PracticeZoneProps {
   standardGroupsMapping: StandardGroupsMapping;
   standardsMapping: StandardsMapping;
   profile: ProfileItem | null;
-  /** Whether to show infinite mode button on cards */
-  showInfiniteMode?: boolean;
+  /** Whether to show customize button on cards */
+  showCustomizeButton?: boolean;
 }
 
 export default function PracticeZone({
@@ -42,7 +42,7 @@ export default function PracticeZone({
   standardGroupsMapping,
   standardsMapping,
   profile,
-  showInfiniteMode = false,
+  showCustomizeButton = false,
 }: PracticeZoneProps) {
   const [carouselIndex, setCarouselIndex] = useState(0);
 
@@ -130,6 +130,7 @@ export default function PracticeZone({
               <SimulationCard
                 key={simulationId}
                 id={simulationId}
+                trainingBundleEntryId={simulation.training_bundle_entry_id || null}
                 {...(typeof simulation.time_limit === "number" && {
                   timeLimit: simulation.time_limit,
                 })}
@@ -149,7 +150,7 @@ export default function PracticeZone({
                 })}
                 type="default"
                 profile={profile}
-                showInfiniteMode={showInfiniteMode}
+                showCustomizeButton={showCustomizeButton}
               />
             );
           },

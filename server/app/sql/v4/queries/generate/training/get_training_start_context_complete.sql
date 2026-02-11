@@ -18,9 +18,11 @@ END $$;
 CREATE OR REPLACE FUNCTION socket_get_training_start_context_v4(
     p_profile_id uuid,
     p_training_bundle_entry_id uuid,
-    p_department_id uuid
+    p_department_id uuid,
+    p_draft_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
+    agent_id uuid,
     agent_exists boolean,
     agent_name text,
     agent_is_active boolean,
@@ -53,7 +55,8 @@ WITH params AS (
     SELECT
         p_profile_id AS profile_id,
         p_training_bundle_entry_id AS training_bundle_entry_id,
-        p_department_id AS department_id
+        p_department_id AS department_id,
+        p_draft_id AS draft_id
 ),
 scope AS (
     SELECT
@@ -213,12 +216,19 @@ scenario_content AS (
             WHERE spj.scenario_id = s.scenario_artifact_id
               AND spj.active = true
         ) AS has_problem_statement,
-        EXISTS (
-            SELECT 1
-            FROM scenario_personas_junction spj
-            WHERE spj.scenario_id = s.scenario_artifact_id
-              AND spj.active = true
-        ) AS has_persona,
+        CASE
+            WHEN p.draft_id IS NOT NULL THEN EXISTS (
+                SELECT 1
+                FROM personas_drafts_connection pdc
+                WHERE pdc.draft_id = p.draft_id
+            )
+            ELSE EXISTS (
+                SELECT 1
+                FROM scenario_personas_junction spj
+                WHERE spj.scenario_id = s.scenario_artifact_id
+                  AND spj.active = true
+            )
+        END AS has_persona,
         (SELECT psr.problem_statement
          FROM scenario_problem_statements_junction spj
          JOIN problem_statements_resource psr ON psr.id = spj.problem_statement_id
@@ -230,16 +240,31 @@ scenario_content AS (
          JOIN objectives_resource o ON o.id = soj.objective_id
          WHERE soj.scenario_id = s.scenario_artifact_id
            AND soj.active = true) AS objectives,
-        (SELECT jsonb_build_object(
-            'id', pa.id,
-            'name', (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON n.id = pn.name_id WHERE pn.persona_id = pa.id LIMIT 1),
-            'description', (SELECT d.description FROM persona_descriptions_junction pd JOIN descriptions_resource d ON d.id = pd.description_id WHERE pd.persona_id = pa.id LIMIT 1)
-        )
-         FROM scenario_personas_junction spj
-         JOIN persona_artifact pa ON pa.id = spj.persona_id
-         WHERE spj.scenario_id = s.scenario_artifact_id
-           AND spj.active = true
-         LIMIT 1) AS persona,
+        (
+            SELECT jsonb_build_object(
+                'id', pa.id,
+                'name', (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON n.id = pn.name_id WHERE pn.persona_id = pa.id LIMIT 1),
+                'description', (SELECT d.description FROM persona_descriptions_junction pd JOIN descriptions_resource d ON d.id = pd.description_id WHERE pd.persona_id = pa.id LIMIT 1)
+            )
+            FROM persona_artifact pa
+            WHERE pa.id = COALESCE(
+                (
+                    SELECT pdc.personas_id
+                    FROM personas_drafts_connection pdc
+                    WHERE p.draft_id IS NOT NULL
+                      AND pdc.draft_id = p.draft_id
+                    LIMIT 1
+                ),
+                (
+                    SELECT spj.persona_id
+                    FROM scenario_personas_junction spj
+                    WHERE spj.scenario_id = s.scenario_artifact_id
+                      AND spj.active = true
+                    LIMIT 1
+                )
+            )
+            LIMIT 1
+        ) AS persona,
         (SELECT ARRAY_AGG(svj.video_id)
          FROM scenario_videos_junction svj
          WHERE svj.scenario_id = s.scenario_artifact_id
@@ -249,8 +274,10 @@ scenario_content AS (
          WHERE sij.scenario_id = s.scenario_artifact_id
            AND sij.active = true) AS image_ids
     FROM scope s
+    CROSS JOIN params p
 )
 SELECT
+    ad.agent_id,
     COALESCE(ad.agent_exists, FALSE) AS agent_exists,
     ad.agent_name,
     COALESCE(ad.agent_is_active, FALSE) AS agent_is_active,

@@ -86,6 +86,7 @@ async def _training_start_impl(
                 profile_id=profile_id,
                 training_bundle_entry_id=data.training_bundle_entry_id,
                 department_id=data.department_id,
+                draft_id=data.draft_id,
             )
             context_row = training_ws.resources
 
@@ -106,7 +107,7 @@ async def _training_start_impl(
                 simulation_exists=context_row.simulation_exists or False,
                 simulation_is_active=context_row.simulation_is_active or False,
                 simulation_id=context_row.simulation_id,
-                simulation_name=context_row.simulation_name,
+                simulation_name=getattr(context_row, "simulation_name", None),
                 profile_has_access=context_row.profile_has_access or False,
                 has_problem_statement=context_row.has_problem_statement or False,
                 has_persona=context_row.has_persona or False,
@@ -170,6 +171,7 @@ async def _training_start_impl(
                     p_profile_id=profile_id,
                     p_training_bundle_entry_id=data.training_bundle_entry_id,
                     p_department_id=data.department_id,
+                    p_draft_id=data.draft_id,
                     p_resource_types=TRAINING_RESOURCE_TYPES,
                 )
 
@@ -243,6 +245,7 @@ async def _training_start_impl(
                         "simulation_id": str(context_row.simulation_id),
                         "training_bundle_entry_id": str(data.training_bundle_entry_id),
                         "department_id": str(data.department_id),
+                        "draft_id": str(data.draft_id) if data.draft_id else None,
                         # Training-specific field for filtering
                         "scenario_id": str(scenario_id),
                     },
@@ -266,6 +269,7 @@ async def _training_start_impl(
                 p_profile_id=profile_id,
                 p_training_bundle_entry_id=data.training_bundle_entry_id,
                 p_department_id=data.department_id,
+                p_draft_id=data.draft_id,
                 p_infinite_mode=data.infinite,
             )
 

@@ -71,7 +71,6 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import * as React from "react";
 import { toast } from "sonner";
-import { PracticeCustomizeButton } from "@/components/practice/PracticeCustomizeButton";
 import { SingleProfileCertificateButton } from "./SingleProfileCertificateButton";
 
 // Use strong server types directly (union of all history endpoint types)
@@ -1701,10 +1700,7 @@ export default function SimulationHistory({
               />
             </div>
           )}
-          {/* Customize button - show in history toolbar for practice mode */}
-          {showCustomize && (
-            <PracticeCustomizeButton />
-          )}
+          {/* Legacy practice customize button removed; customization is per simulation card */}
           <DataTableViewOptions table={table} />
         </div>
       </div>

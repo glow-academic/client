@@ -65,6 +65,7 @@ async def handle_training_complete(data: dict[str, Any]) -> None:
 
     training_bundle_entry_id_str = data.get("training_bundle_entry_id")
     department_id_str = data.get("department_id")
+    draft_id_str = data.get("draft_id")
 
     if not training_bundle_entry_id_str or not department_id_str:
         logger.error("Training complete missing training bundle context")
@@ -85,6 +86,7 @@ async def handle_training_complete(data: dict[str, Any]) -> None:
         profile_id = uuid.UUID(profile_id_str)
         training_bundle_entry_id = uuid.UUID(training_bundle_entry_id_str)
         department_id = uuid.UUID(department_id_str)
+        draft_id = uuid.UUID(draft_id_str) if draft_id_str else None
 
         async with get_db_connection() as conn:
             # Step 1: Fetch fresh scenario data from DB
@@ -93,6 +95,7 @@ async def handle_training_complete(data: dict[str, Any]) -> None:
                 profile_id=profile_id,
                 training_bundle_entry_id=training_bundle_entry_id,
                 department_id=department_id,
+                draft_id=draft_id,
             )
             context_row = training_ws.resources
 
@@ -115,6 +118,7 @@ async def handle_training_complete(data: dict[str, Any]) -> None:
                 p_profile_id=profile_id,
                 p_training_bundle_entry_id=training_bundle_entry_id,
                 p_department_id=department_id,
+                p_draft_id=draft_id,
             )
 
             prepare_row = cast(

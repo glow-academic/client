@@ -44,6 +44,7 @@ CREATE OR REPLACE FUNCTION socket_prepare_training_generation_v4(
     p_profile_id uuid,
     p_training_bundle_entry_id uuid,
     p_department_id uuid,
+    p_draft_id uuid DEFAULT NULL,
     p_resource_types text[] DEFAULT ARRAY['problem_statements', 'objectives', 'personas']
 )
 RETURNS TABLE (
@@ -354,15 +355,31 @@ current_content AS (
             '[]'::jsonb
         ) as objectives,
         -- Current persona (if exists)
-        (SELECT jsonb_build_object(
-            'id', pa.id::text,
-            'name', (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = pa.id LIMIT 1),
-            'description', (SELECT d.description FROM persona_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.persona_id = pa.id LIMIT 1)
-         )
-         FROM scenario_personas_junction spj
-         JOIN persona_artifact pa ON pa.id = spj.persona_id
-         WHERE spj.scenario_id = rs.scenario_id AND spj.active = true
-         LIMIT 1) as persona
+        (
+            SELECT jsonb_build_object(
+                'id', pa.id::text,
+                'name', (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = pa.id LIMIT 1),
+                'description', (SELECT d.description FROM persona_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.persona_id = pa.id LIMIT 1)
+             )
+            FROM persona_artifact pa
+            WHERE pa.id = COALESCE(
+                (
+                    SELECT pdc.personas_id
+                    FROM personas_drafts_connection pdc
+                    WHERE p_draft_id IS NOT NULL
+                      AND pdc.draft_id = p_draft_id
+                    LIMIT 1
+                ),
+                (
+                    SELECT spj.persona_id
+                    FROM scenario_personas_junction spj
+                    WHERE spj.scenario_id = rs.scenario_id
+                      AND spj.active = true
+                    LIMIT 1
+                )
+            )
+            LIMIT 1
+        ) as persona
     FROM resolved_scenario rs
 ),
 -- Fetch available resources for generation

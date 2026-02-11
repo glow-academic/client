@@ -44,6 +44,7 @@ class TrainingStartPayload(BaseModel):
 
     training_bundle_entry_id: UUID  # Selected bundle from training/get
     department_id: UUID  # Department selected in UI
+    draft_id: UUID  # Required training draft for bundle start
     user_instructions: list[str] | None = None  # Optional generation hints
     infinite: bool | None = None  # Infinite mode - no time limit
 

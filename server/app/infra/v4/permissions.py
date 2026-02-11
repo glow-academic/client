@@ -62,6 +62,12 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 title="Simulation Attempt",
                 redirectTo="/home",
             ),
+            RoutePermission(
+                path="/home/b/[bundleId]",
+                roles=["member", "instructional", "admin", "superadmin"],
+                title="Customize Training",
+                redirectTo="/home",
+            ),
         ],
     ),
     SectionPermission(
@@ -83,7 +89,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 redirectTo="/practice",
             ),
             RoutePermission(
-                path="/practice/custom",
+                path="/practice/b/[bundleId]",
                 roles=["member", "instructional", "admin", "superadmin"],
                 title="Customize Practice",
                 redirectTo="/practice",

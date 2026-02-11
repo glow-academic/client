@@ -240,12 +240,14 @@ async def get_training_websocket(
     profile_id: UUID,
     training_bundle_entry_id: UUID,
     department_id: UUID,
+    draft_id: UUID | None = None,
 ) -> GetTrainingWebsocketResponse:
     """Thin websocket fetch for training start flow."""
     params = GetTrainingStartContextSqlParams(
         p_profile_id=profile_id,
         p_training_bundle_entry_id=training_bundle_entry_id,
         p_department_id=department_id,
+        p_draft_id=draft_id,
     )
 
     row = cast(
@@ -270,6 +272,7 @@ async def get_training_websocket(
             image_ids=list(row.image_ids) if row.image_ids else None,
             has_problem_statement=row.has_problem_statement or False,
             has_persona=row.has_persona or False,
+            agent_id=row.agent_id,
             agent_exists=row.agent_exists or False,
             agent_name=row.agent_name,
             agent_is_active=row.agent_is_active or False,

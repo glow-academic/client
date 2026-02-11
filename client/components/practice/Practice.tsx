@@ -116,7 +116,7 @@ export default function Practice({
               | "admin"
               | "guest",
           }}
-          showInfiniteMode={!isGuest}
+          showCustomizeButton={!isGuest}
         />
       </div>
     </TooltipProvider>
