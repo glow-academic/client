@@ -14211,19 +14211,20 @@ class ArgsOutputsApiResponse(BaseModel):
     id: UUID | None = None
 
 
-# Generated from: get_auth_keys
+# Generated from: get_auth_item_keys
 
 
-class GetAuthKeysSqlParams(BaseModel):
+class GetAuthItemKeysSqlParams(BaseModel):
     ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (self.ids,)
 
 
-class QGetAuthKeysV4Item(BaseModel):
+class QGetAuthItemKeysV4Item(BaseModel):
     id: UUID | None
     auth_id: UUID | None
+    item_id: UUID | None
     key_id: UUID | None
     auth_name: str | None
     key_name: str | None
@@ -14232,22 +14233,22 @@ class QGetAuthKeysV4Item(BaseModel):
     generated: bool | None
 
 
-class GetAuthKeysSqlRow(BaseModel):
-    items: list[QGetAuthKeysV4Item] | None = None
+class GetAuthItemKeysSqlRow(BaseModel):
+    items: list[QGetAuthItemKeysV4Item] | None = None
 
 
-class GetAuthKeysApiRequest(BaseModel):
+class GetAuthItemKeysApiRequest(BaseModel):
     ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 
-class GetAuthKeysApiResponse(BaseModel):
-    items: list[QGetAuthKeysV4Item] | None = None
+class GetAuthItemKeysApiResponse(BaseModel):
+    items: list[QGetAuthItemKeysV4Item] | None = None
 
 
-# Generated from: search_auth_keys
+# Generated from: search_auth_item_keys
 
 
-class SearchAuthKeysSqlParams(BaseModel):
+class SearchAuthItemKeysSqlParams(BaseModel):
     search: str | None = None
     limit_count: int | None = 20
     offset_count: int | None = 0
@@ -14262,49 +14263,52 @@ class SearchAuthKeysSqlParams(BaseModel):
         )
 
 
-class SearchAuthKeysSqlRow(BaseModel):
-    items: list[QGetAuthKeysV4Item] | None = None
+class SearchAuthItemKeysSqlRow(BaseModel):
+    items: list[QGetAuthItemKeysV4Item] | None = None
 
 
-class SearchAuthKeysApiRequest(BaseModel):
+class SearchAuthItemKeysApiRequest(BaseModel):
     search: str | None = None
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 
-class SearchAuthKeysApiResponse(BaseModel):
-    items: list[QGetAuthKeysV4Item] | None = None
+class SearchAuthItemKeysApiResponse(BaseModel):
+    items: list[QGetAuthItemKeysV4Item] | None = None
 
 
-# Generated from: auth_keys
+# Generated from: auth_item_keys
 
 
-class AuthKeysSqlParams(BaseModel):
+class AuthItemKeysSqlParams(BaseModel):
     auth_id: UUID
+    item_id: UUID
     key_id: UUID
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.auth_id,
+            self.item_id,
             self.key_id,
             self.mcp,
         )
 
 
-class AuthKeysSqlRow(BaseModel):
-    auth_keys_id: UUID | None = None
+class AuthItemKeysSqlRow(BaseModel):
+    auth_item_keys_id: UUID | None = None
 
 
-class AuthKeysApiRequest(BaseModel):
+class AuthItemKeysApiRequest(BaseModel):
     auth_id: UUID
+    item_id: UUID
     key_id: UUID
     mcp: bool | None = False
 
 
-class AuthKeysApiResponse(BaseModel):
-    auth_keys_id: UUID | None = None
+class AuthItemKeysApiResponse(BaseModel):
+    auth_item_keys_id: UUID | None = None
 
 
 # Generated from: get_cohorts
@@ -21844,7 +21848,7 @@ class PatchSettingDraftSqlParams(BaseModel):
     profiles: SettingMultiResourceAction | None = None
     auths: SettingMultiResourceAction | None = None
     provider_keys: SettingMultiResourceAction | None = None
-    auth_keys: SettingMultiResourceAction | None = None
+    auth_item_keys: SettingMultiResourceAction | None = None
     roles: SettingMultiResourceAction | None = None
     role_routes: SettingMultiResourceAction | None = None
     expected_version: int | None = 0
@@ -21862,7 +21866,7 @@ class PatchSettingDraftSqlParams(BaseModel):
             self.profiles,
             self.auths,
             self.provider_keys,
-            self.auth_keys,
+            self.auth_item_keys,
             self.roles,
             self.role_routes,
             self.expected_version,
@@ -21886,7 +21890,7 @@ class PatchSettingDraftApiRequest(BaseModel):
     profiles: SettingMultiResourceAction | None = None
     auths: SettingMultiResourceAction | None = None
     provider_keys: SettingMultiResourceAction | None = None
-    auth_keys: SettingMultiResourceAction | None = None
+    auth_item_keys: SettingMultiResourceAction | None = None
     roles: SettingMultiResourceAction | None = None
     role_routes: SettingMultiResourceAction | None = None
     expected_version: int | None = 0
@@ -21913,7 +21917,7 @@ class SaveSettingSqlParams(BaseModel):
     profiles: SettingMultiResourceAction | None = None
     auths: SettingMultiResourceAction | None = None
     provider_keys: SettingMultiResourceAction | None = None
-    auth_keys: SettingMultiResourceAction | None = None
+    auth_item_keys: SettingMultiResourceAction | None = None
     roles: SettingMultiResourceAction | None = None
     role_routes: SettingMultiResourceAction | None = None
 
@@ -21930,7 +21934,7 @@ class SaveSettingSqlParams(BaseModel):
             self.profiles,
             self.auths,
             self.provider_keys,
-            self.auth_keys,
+            self.auth_item_keys,
             self.roles,
             self.role_routes,
         )
@@ -21952,7 +21956,7 @@ class SaveSettingApiRequest(BaseModel):
     profiles: SettingMultiResourceAction | None = None
     auths: SettingMultiResourceAction | None = None
     provider_keys: SettingMultiResourceAction | None = None
-    auth_keys: SettingMultiResourceAction | None = None
+    auth_item_keys: SettingMultiResourceAction | None = None
     roles: SettingMultiResourceAction | None = None
     role_routes: SettingMultiResourceAction | None = None
 
@@ -28567,23 +28571,23 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "ArgsOutputsApiRequest",
         "ArgsOutputsApiResponse",
     ),
-    "app/sql/v4/queries/resources/auth_keys/get_auth_keys_complete.sql": (
-        "GetAuthKeysSqlParams",
-        "GetAuthKeysSqlRow",
-        "GetAuthKeysApiRequest",
-        "GetAuthKeysApiResponse",
+    "app/sql/v4/queries/resources/auth_item_keys/get_auth_item_keys_complete.sql": (
+        "GetAuthItemKeysSqlParams",
+        "GetAuthItemKeysSqlRow",
+        "GetAuthItemKeysApiRequest",
+        "GetAuthItemKeysApiResponse",
     ),
-    "app/sql/v4/queries/resources/auth_keys/search_auth_keys_complete.sql": (
-        "SearchAuthKeysSqlParams",
-        "SearchAuthKeysSqlRow",
-        "SearchAuthKeysApiRequest",
-        "SearchAuthKeysApiResponse",
+    "app/sql/v4/queries/resources/auth_item_keys/search_auth_item_keys_complete.sql": (
+        "SearchAuthItemKeysSqlParams",
+        "SearchAuthItemKeysSqlRow",
+        "SearchAuthItemKeysApiRequest",
+        "SearchAuthItemKeysApiResponse",
     ),
-    "app/sql/v4/queries/resources/auth_keys_complete.sql": (
-        "AuthKeysSqlParams",
-        "AuthKeysSqlRow",
-        "AuthKeysApiRequest",
-        "AuthKeysApiResponse",
+    "app/sql/v4/queries/resources/auth_item_keys_complete.sql": (
+        "AuthItemKeysSqlParams",
+        "AuthItemKeysSqlRow",
+        "AuthItemKeysApiRequest",
+        "AuthItemKeysApiResponse",
     ),
     "app/sql/v4/queries/resources/cohorts/get_cohorts_complete.sql": (
         "GetCohortsSqlParams",
@@ -32224,20 +32228,20 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal[
-            "app/sql/v4/queries/resources/auth_keys/get_auth_keys_complete.sql"
+            "app/sql/v4/queries/resources/auth_item_keys/get_auth_item_keys_complete.sql"
         ],
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
         file_path: Literal[
-            "app/sql/v4/queries/resources/auth_keys/search_auth_keys_complete.sql"
+            "app/sql/v4/queries/resources/auth_item_keys/search_auth_item_keys_complete.sql"
         ],
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/resources/auth_keys_complete.sql"],
+        file_path: Literal["app/sql/v4/queries/resources/auth_item_keys_complete.sql"],
     ) -> SqlString: ...
 
     @overload

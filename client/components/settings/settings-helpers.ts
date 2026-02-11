@@ -25,7 +25,7 @@ export function convertProviderKeysToMapping(
  * Convert auth keys array to mapping dict
  */
 export function convertAuthKeysToMapping(
-  authKeys: GetSettingOut["auth_keys"] | undefined
+  authKeys: GetSettingOut["auth_item_keys"] | undefined
 ): Record<string, Record<string, string>> {
   if (!authKeys) return {};
   const mapping: Record<string, Record<string, string>> = {};

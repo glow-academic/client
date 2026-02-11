@@ -3591,7 +3591,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/auth_keys": {
+    "/api/v4/resources/auth_item_keys": {
         parameters: {
             query?: never;
             header?: never;
@@ -3601,17 +3601,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Auth Keys
-         * @description Create auth_keys resource from auth + key pair.
+         * Create Auth Item Keys
+         * @description Create auth_item_keys resource from auth + item + key tuple.
          */
-        post: operations["create_auth_keys_api_v4_resources_auth_keys_post"];
+        post: operations["create_auth_item_keys_api_v4_resources_auth_item_keys_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/auth_keys/get": {
+    "/api/v4/resources/auth_item_keys/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -3621,17 +3621,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Get Auth Keys
-         * @description Get auth_keys resources by IDs.
+         * Get Auth Item Keys
+         * @description Get auth_item_keys resources by IDs.
          */
-        post: operations["get_auth_keys_api_v4_resources_auth_keys_get_post"];
+        post: operations["get_auth_item_keys_api_v4_resources_auth_item_keys_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/auth_keys/search": {
+    "/api/v4/resources/auth_item_keys/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -3640,8 +3640,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Search Auth Keys */
-        post: operations["search_auth_keys_api_v4_resources_auth_keys_search_post"];
+        /** Search Auth Item Keys */
+        post: operations["search_auth_item_keys_api_v4_resources_auth_item_keys_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11950,6 +11950,34 @@ export interface components {
             /** Link Tool Id */
             link_tool_id?: string | null;
         };
+        /** AuthItemKeysApiRequest */
+        AuthItemKeysApiRequest: {
+            /**
+             * Auth Id
+             * Format: uuid
+             */
+            auth_id: string;
+            /**
+             * Item Id
+             * Format: uuid
+             */
+            item_id: string;
+            /**
+             * Key Id
+             * Format: uuid
+             */
+            key_id: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** AuthItemKeysApiResponse */
+        AuthItemKeysApiResponse: {
+            /** Auth Item Keys Id */
+            auth_item_keys_id?: string | null;
+        };
         /**
          * AuthItemResource
          * @description Auth item resource shape for client/editing.
@@ -12001,29 +12029,6 @@ export interface components {
             current?: components["schemas"]["AuthItemResource"][] | null;
             /** Resources */
             resources?: components["schemas"]["AuthItemResource"][] | null;
-        };
-        /** AuthKeysApiRequest */
-        AuthKeysApiRequest: {
-            /**
-             * Auth Id
-             * Format: uuid
-             */
-            auth_id: string;
-            /**
-             * Key Id
-             * Format: uuid
-             */
-            key_id: string;
-            /**
-             * Mcp
-             * @default false
-             */
-            mcp: boolean | null;
-        };
-        /** AuthKeysApiResponse */
-        AuthKeysApiResponse: {
-            /** Auth Keys Id */
-            auth_keys_id?: string | null;
         };
         /** AuthMultiResourceAction */
         AuthMultiResourceAction: {
@@ -17014,15 +17019,15 @@ export interface components {
             slugs?: components["schemas"]["AuthSlugSection"] | null;
             items?: components["schemas"]["AuthItemSection"] | null;
         };
-        /** GetAuthKeysApiRequest */
-        GetAuthKeysApiRequest: {
+        /** GetAuthItemKeysApiRequest */
+        GetAuthItemKeysApiRequest: {
             /** Ids */
             ids?: string[] | null;
         };
-        /** GetAuthKeysApiResponse */
-        GetAuthKeysApiResponse: {
+        /** GetAuthItemKeysApiResponse */
+        GetAuthItemKeysApiResponse: {
             /** Items */
-            items?: components["schemas"]["QGetAuthKeysV4Item"][] | null;
+            items?: components["schemas"]["QGetAuthItemKeysV4Item"][] | null;
         };
         /** GetAuthListApiRequest */
         GetAuthListApiRequest: Record<string, never>;
@@ -23800,7 +23805,7 @@ export interface components {
             profiles?: components["schemas"]["SettingMultiResourceAction"] | null;
             auths?: components["schemas"]["SettingMultiResourceAction"] | null;
             provider_keys?: components["schemas"]["SettingMultiResourceAction"] | null;
-            auth_keys?: components["schemas"]["SettingMultiResourceAction"] | null;
+            auth_item_keys?: components["schemas"]["SettingMultiResourceAction"] | null;
             roles?: components["schemas"]["SettingMultiResourceAction"] | null;
             role_routes?: components["schemas"]["SettingMultiResourceAction"] | null;
             /**
@@ -25901,12 +25906,14 @@ export interface components {
             /** Generated */
             generated: boolean | null;
         };
-        /** QGetAuthKeysV4Item */
-        QGetAuthKeysV4Item: {
+        /** QGetAuthItemKeysV4Item */
+        QGetAuthItemKeysV4Item: {
             /** Id */
             id: string | null;
             /** Auth Id */
             auth_id: string | null;
+            /** Item Id */
+            item_id: string | null;
             /** Key Id */
             key_id: string | null;
             /** Auth Name */
@@ -29443,7 +29450,7 @@ export interface components {
             profiles: components["schemas"]["SettingMultiResourceAction"];
             auths: components["schemas"]["SettingMultiResourceAction"];
             provider_keys: components["schemas"]["SettingMultiResourceAction"];
-            auth_keys: components["schemas"]["SettingMultiResourceAction"];
+            auth_item_keys: components["schemas"]["SettingMultiResourceAction"];
             roles: components["schemas"]["SettingMultiResourceAction"];
             role_routes: components["schemas"]["SettingMultiResourceAction"];
         };
@@ -30442,8 +30449,8 @@ export interface components {
             /** Items */
             items?: components["schemas"]["QGetArgsOutputsV4Item"][] | null;
         };
-        /** SearchAuthKeysApiRequest */
-        SearchAuthKeysApiRequest: {
+        /** SearchAuthItemKeysApiRequest */
+        SearchAuthItemKeysApiRequest: {
             /** Search */
             search?: string | null;
             /**
@@ -30459,10 +30466,10 @@ export interface components {
             /** Exclude Ids */
             exclude_ids?: string[] | null;
         };
-        /** SearchAuthKeysApiResponse */
-        SearchAuthKeysApiResponse: {
+        /** SearchAuthItemKeysApiResponse */
+        SearchAuthItemKeysApiResponse: {
             /** Items */
-            items?: components["schemas"]["QGetAuthKeysV4Item"][] | null;
+            items?: components["schemas"]["QGetAuthItemKeysV4Item"][] | null;
         };
         /**
          * SearchCohortsApiRequest
@@ -40896,7 +40903,7 @@ export interface operations {
             };
         };
     };
-    create_auth_keys_api_v4_resources_auth_keys_post: {
+    create_auth_item_keys_api_v4_resources_auth_item_keys_post: {
         parameters: {
             query?: never;
             header?: {
@@ -40909,7 +40916,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AuthKeysApiRequest"];
+                "application/json": components["schemas"]["AuthItemKeysApiRequest"];
             };
         };
         responses: {
@@ -40919,7 +40926,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AuthKeysApiResponse"];
+                    "application/json": components["schemas"]["AuthItemKeysApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -40933,7 +40940,7 @@ export interface operations {
             };
         };
     };
-    get_auth_keys_api_v4_resources_auth_keys_get_post: {
+    get_auth_item_keys_api_v4_resources_auth_item_keys_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -40946,7 +40953,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetAuthKeysApiRequest"];
+                "application/json": components["schemas"]["GetAuthItemKeysApiRequest"];
             };
         };
         responses: {
@@ -40956,7 +40963,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetAuthKeysApiResponse"];
+                    "application/json": components["schemas"]["GetAuthItemKeysApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -40970,7 +40977,7 @@ export interface operations {
             };
         };
     };
-    search_auth_keys_api_v4_resources_auth_keys_search_post: {
+    search_auth_item_keys_api_v4_resources_auth_item_keys_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -40983,7 +40990,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["SearchAuthKeysApiRequest"];
+                "application/json": components["schemas"]["SearchAuthItemKeysApiRequest"];
             };
         };
         responses: {
@@ -40993,7 +41000,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SearchAuthKeysApiResponse"];
+                    "application/json": components["schemas"]["SearchAuthItemKeysApiResponse"];
                 };
             };
             /** @description Validation Error */

@@ -37,7 +37,7 @@ class SaveSettingApiRequest(BaseModel):
     profiles: SettingMultiResourceAction
     auths: SettingMultiResourceAction
     provider_keys: SettingMultiResourceAction
-    auth_keys: SettingMultiResourceAction
+    auth_item_keys: SettingMultiResourceAction
     roles: SettingMultiResourceAction
     role_routes: SettingMultiResourceAction
 
@@ -53,7 +53,7 @@ class PatchSettingDraftApiRequest(BaseModel):
     profiles: SettingMultiResourceAction | None = None
     auths: SettingMultiResourceAction | None = None
     provider_keys: SettingMultiResourceAction | None = None
-    auth_keys: SettingMultiResourceAction | None = None
+    auth_item_keys: SettingMultiResourceAction | None = None
     roles: SettingMultiResourceAction | None = None
     role_routes: SettingMultiResourceAction | None = None
     expected_version: int = 0

@@ -24,13 +24,15 @@ from app.api.v4.resources.args_outputs.search import (
 router.include_router(args_outputs_router)
 router.include_router(args_outputs_get_router)
 router.include_router(args_outputs_search_router)
-from app.api.v4.resources.auth_keys.create import router as auth_keys_router
-from app.api.v4.resources.auth_keys.get import router as auth_keys_get_router
-from app.api.v4.resources.auth_keys.search import router as auth_keys_search_router
+from app.api.v4.resources.auth_item_keys.create import router as auth_item_keys_router
+from app.api.v4.resources.auth_item_keys.get import router as auth_item_keys_get_router
+from app.api.v4.resources.auth_item_keys.search import (
+    router as auth_item_keys_search_router,
+)
 
-router.include_router(auth_keys_router)
-router.include_router(auth_keys_get_router)
-router.include_router(auth_keys_search_router)
+router.include_router(auth_item_keys_router)
+router.include_router(auth_item_keys_get_router)
+router.include_router(auth_item_keys_search_router)
 # NOTE: audios removed - converted to audios_entry (migration 328)
 # NOTE: auths removed - non-creatable, sync via artifact save (migration 328)
 # NOTE: cohorts removed - non-creatable, sync via artifact save (migration 328)

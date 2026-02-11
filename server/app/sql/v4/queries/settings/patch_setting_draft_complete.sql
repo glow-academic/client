@@ -48,7 +48,7 @@ CREATE OR REPLACE FUNCTION api_patch_setting_draft_v4(
     profiles types.setting_multi_resource_action DEFAULT NULL,
     auths types.setting_multi_resource_action DEFAULT NULL,
     provider_keys types.setting_multi_resource_action DEFAULT NULL,
-    auth_keys types.setting_multi_resource_action DEFAULT NULL,
+    auth_item_keys types.setting_multi_resource_action DEFAULT NULL,
     roles types.setting_multi_resource_action DEFAULT NULL,
     role_routes types.setting_multi_resource_action DEFAULT NULL,
     expected_version int DEFAULT 0
@@ -75,7 +75,7 @@ DECLARE
     v_profile_ids uuid[] := COALESCE((profiles).resource_ids, ARRAY[]::uuid[]);
     v_auth_ids uuid[] := COALESCE((auths).resource_ids, ARRAY[]::uuid[]);
     v_provider_key_ids uuid[] := COALESCE((provider_keys).resource_ids, ARRAY[]::uuid[]);
-    v_auth_key_ids uuid[] := COALESCE((auth_keys).resource_ids, ARRAY[]::uuid[]);
+    v_auth_item_key_ids uuid[] := COALESCE((auth_item_keys).resource_ids, ARRAY[]::uuid[]);
     v_role_ids uuid[] := COALESCE((roles).resource_ids, ARRAY[]::uuid[]);
     v_role_route_ids uuid[] := COALESCE((role_routes).resource_ids, ARRAY[]::uuid[]);
 BEGIN
@@ -189,10 +189,10 @@ BEGIN
                 ON CONFLICT ON CONSTRAINT providers_draft_pkey DO UPDATE SET version = v_new_version;
             END IF;
 
-            IF COALESCE(array_length(v_auth_key_ids, 1), 0) > 0 THEN
+            IF COALESCE(array_length(v_auth_item_key_ids, 1), 0) > 0 THEN
                 INSERT INTO keys_drafts_connection (draft_id, keys_id, version)
                 SELECT v_draft_id, key_id, v_new_version
-                FROM UNNEST(v_auth_key_ids) as key_id
+                FROM UNNEST(v_auth_item_key_ids) as key_id
                 ON CONFLICT ON CONSTRAINT keys_draft_pkey DO UPDATE SET version = v_new_version;
             END IF;
 
@@ -280,10 +280,10 @@ BEGIN
         ON CONFLICT ON CONSTRAINT providers_draft_pkey DO UPDATE SET version = v_new_version;
     END IF;
 
-    IF COALESCE(array_length(v_auth_key_ids, 1), 0) > 0 THEN
+    IF COALESCE(array_length(v_auth_item_key_ids, 1), 0) > 0 THEN
         INSERT INTO keys_drafts_connection (draft_id, keys_id, version)
         SELECT v_draft_id, key_id, v_new_version
-        FROM UNNEST(v_auth_key_ids) as key_id
+        FROM UNNEST(v_auth_item_key_ids) as key_id
         ON CONFLICT ON CONSTRAINT keys_draft_pkey DO UPDATE SET version = v_new_version;
     END IF;
 

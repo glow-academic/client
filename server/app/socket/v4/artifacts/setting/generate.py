@@ -66,7 +66,7 @@ async def _generate_setting_impl(
                 "departments": result.departments_agent_id,
                 "profiles": result.profiles_agent_id,
                 "auths": result.auths_agent_id,
-                "auth_keys": result.keys_agent_id,
+                "auth_item_keys": result.keys_agent_id,
             }
             agent_id = next(
                 (

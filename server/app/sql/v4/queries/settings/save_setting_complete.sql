@@ -48,7 +48,7 @@ CREATE OR REPLACE FUNCTION api_save_setting_v4(
     profiles types.setting_multi_resource_action DEFAULT NULL,
     auths types.setting_multi_resource_action DEFAULT NULL,
     provider_keys types.setting_multi_resource_action DEFAULT NULL,
-    auth_keys types.setting_multi_resource_action DEFAULT NULL,
+    auth_item_keys types.setting_multi_resource_action DEFAULT NULL,
     roles types.setting_multi_resource_action DEFAULT NULL,
     role_routes types.setting_multi_resource_action DEFAULT NULL
 )
@@ -71,7 +71,7 @@ DECLARE
     v_profile_ids uuid[] := COALESCE((profiles).resource_ids, ARRAY[]::uuid[]);
     v_auth_ids uuid[] := COALESCE((auths).resource_ids, ARRAY[]::uuid[]);
     v_provider_key_ids uuid[] := COALESCE((provider_keys).resource_ids, ARRAY[]::uuid[]);
-    v_auth_key_ids uuid[] := COALESCE((auth_keys).resource_ids, ARRAY[]::uuid[]);
+    v_auth_item_key_ids uuid[] := COALESCE((auth_item_keys).resource_ids, ARRAY[]::uuid[]);
     v_role_ids uuid[] := COALESCE((roles).resource_ids, ARRAY[]::uuid[]);
     v_role_route_ids uuid[] := COALESCE((role_routes).resource_ids, ARRAY[]::uuid[]);
 BEGIN
@@ -118,7 +118,7 @@ BEGIN
         DELETE FROM setting_profiles_junction WHERE setting_id = v_setting_id;
         DELETE FROM setting_auths_junction WHERE settings_id = v_setting_id;
         DELETE FROM setting_provider_keys_junction WHERE setting_id = v_setting_id;
-        DELETE FROM setting_auth_keys_junction WHERE setting_id = v_setting_id;
+        DELETE FROM setting_auth_item_keys_junction WHERE setting_id = v_setting_id;
         DELETE FROM setting_roles_junction WHERE setting_id = v_setting_id;
         DELETE FROM setting_role_routes_junction WHERE setting_id = v_setting_id;
 
@@ -141,7 +141,7 @@ BEGIN
             v_profile_ids AS profile_ids,
             v_auth_ids AS auth_ids,
             v_provider_key_ids AS provider_key_ids,
-            v_auth_key_ids AS auth_key_ids,
+            v_auth_item_key_ids AS auth_item_key_ids,
             v_role_ids AS role_ids,
             v_role_route_ids AS role_route_ids
     ),
@@ -250,13 +250,13 @@ BEGIN
         ON CONFLICT ON CONSTRAINT setting_provider_keys_junction_pkey DO UPDATE SET
             active = true
     ),
-    link_auth_keys AS (
-        INSERT INTO setting_auth_keys_junction (setting_id, auth_keys_id, active, created_at)
-        SELECT x.setting_id, auth_keys_id, true, NOW()
+    link_auth_item_keys AS (
+        INSERT INTO setting_auth_item_keys_junction (setting_id, auth_item_keys_id, active, created_at)
+        SELECT x.setting_id, auth_item_keys_id, true, NOW()
         FROM params x
-        CROSS JOIN UNNEST(x.auth_key_ids) as auth_keys_id
-        WHERE COALESCE(array_length(x.auth_key_ids, 1), 0) > 0
-        ON CONFLICT ON CONSTRAINT setting_auth_keys_junction_pkey DO UPDATE SET
+        CROSS JOIN UNNEST(x.auth_item_key_ids) as auth_item_keys_id
+        WHERE COALESCE(array_length(x.auth_item_key_ids, 1), 0) > 0
+        ON CONFLICT ON CONSTRAINT setting_auth_item_keys_junction_pkey DO UPDATE SET
             active = true
     ),
     sync_provider_key_ids AS (

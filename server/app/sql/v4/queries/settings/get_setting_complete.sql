@@ -928,7 +928,7 @@ provider_mapping_data AS (
     GROUP BY p.id, (SELECT n.name FROM provider_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.provider_id = pr.id LIMIT 1), COALESCE((SELECT d.description FROM provider_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.provider_id = pr.id LIMIT 1), ''), p.active
 ),
 -- Key IDs (selected key IDs for setting)
--- Keys are linked via setting_provider_keys_junction -> provider_keys_resource and setting_auth_keys_junction
+-- Keys are linked via setting_provider_keys_junction -> provider_keys_resource and setting_auth_item_keys_junction
 setting_key_ids_data AS (
     SELECT
         CASE
@@ -945,8 +945,8 @@ setting_key_ids_data AS (
                         GROUP BY pkr.key_id
                     UNION
                     SELECT DISTINCT akr.key_id, MIN(sak.created_at) as created_at
-                    FROM setting_auth_keys_junction sak
-                    JOIN auth_keys_resource akr ON akr.id = sak.auth_keys_id
+                    FROM setting_auth_item_keys_junction sak
+                    JOIN auth_item_keys_resource akr ON akr.id = sak.auth_item_keys_id
                     WHERE sak.setting_id = (SELECT setting_id FROM params)
                       AND sak.active = true
                     GROUP BY akr.key_id
@@ -959,7 +959,7 @@ setting_key_ids_data AS (
     -- Always return at least one row
     LIMIT 1
 ),
--- Key suggestions: linked to settings via setting_provider_keys_junction -> provider_keys_resource or setting_auth_keys_junction
+-- Key suggestions: linked to settings via setting_provider_keys_junction -> provider_keys_resource or setting_auth_item_keys_junction
 key_suggestions_data AS (
     SELECT
         COALESCE(
@@ -974,8 +974,8 @@ key_suggestions_data AS (
                     GROUP BY pkr.key_id
                     UNION
                     SELECT DISTINCT akr.key_id, MAX(sak.created_at) as created_at
-                    FROM setting_auth_keys_junction sak
-                    JOIN auth_keys_resource akr ON akr.id = sak.auth_keys_id
+                    FROM setting_auth_item_keys_junction sak
+                    JOIN auth_item_keys_resource akr ON akr.id = sak.auth_item_keys_id
                     WHERE akr.key_id IS NOT NULL
                       AND sak.active = true
                     GROUP BY akr.key_id

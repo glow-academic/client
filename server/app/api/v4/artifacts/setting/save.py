@@ -72,7 +72,7 @@ async def save_setting(
                 profiles=request.profiles,
                 auths=request.auths,
                 provider_keys=request.provider_keys,
-                auth_keys=request.auth_keys,
+                auth_item_keys=request.auth_item_keys,
                 roles=request.roles,
                 role_routes=request.role_routes,
             )

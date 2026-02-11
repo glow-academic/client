@@ -22,6 +22,7 @@ type KeyOption = {
 type AuthKeyResource = {
   id?: string | null;
   auth_id?: string | null;
+  item_id?: string | null;
   key_id?: string | null;
   auth_name?: string | null;
   key_name?: string | null;
@@ -47,7 +48,7 @@ export interface AuthKeysProps {
     | ((input: {
         auth_id: string;
         key_id: string;
-      }) => Promise<{ auth_keys_id?: string | null }>)
+      }) => Promise<{ auth_item_keys_id?: string | null }>)
     | undefined;
 }
 
@@ -159,7 +160,7 @@ export function AuthKeys({
       creatingRef.current.add(pairKey);
       try {
         const result = await createAuthKeysAction({ auth_id: authId, key_id: keyId });
-        const createdId = result.auth_keys_id ?? null;
+        const createdId = result.auth_item_keys_id ?? null;
         if (!createdId) return;
         setResourcesById((prev) => {
           const next = new Map(prev);

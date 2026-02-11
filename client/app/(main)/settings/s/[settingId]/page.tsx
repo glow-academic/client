@@ -154,27 +154,30 @@ async function getProviderKeys(
   }>;
 }
 
-async function createAuthKeys(input: {
+async function createAuthItemKeys(input: {
   auth_id: string;
+  item_id: string;
   key_id: string;
-}): Promise<{ auth_keys_id?: string | null }> {
+}): Promise<{ auth_item_keys_id?: string | null }> {
   "use server";
-  const result = await api.post("/resources/auth_keys" as any, {
+  const result = await api.post("/resources/auth_item_keys" as any, {
     body: {
       auth_id: input.auth_id,
+      item_id: input.item_id,
       key_id: input.key_id,
       mcp: false,
     },
   });
-  return result as { auth_keys_id?: string | null };
+  return result as { auth_item_keys_id?: string | null };
 }
 
-async function getAuthKeys(
+async function getAuthItemKeys(
   ids: string[]
 ): Promise<
   Array<{
     id?: string | null;
     auth_id?: string | null;
+    item_id?: string | null;
     key_id?: string | null;
     auth_name?: string | null;
     key_name?: string | null;
@@ -183,12 +186,13 @@ async function getAuthKeys(
   }>
 > {
   "use server";
-  const result = await api.post("/resources/auth_keys/get" as any, {
+  const result = await api.post("/resources/auth_item_keys/get" as any, {
     body: { ids },
   });
   return (result as { items?: unknown[] }).items as Array<{
     id?: string | null;
     auth_id?: string | null;
+    item_id?: string | null;
     key_id?: string | null;
     auth_name?: string | null;
     key_name?: string | null;
@@ -257,8 +261,8 @@ export default async function SettingEditPage({
           createColorsAction={createDraftColors}
           createProviderKeysAction={createProviderKeys}
           getProviderKeysAction={getProviderKeys}
-          createAuthKeysAction={createAuthKeys}
-          getAuthKeysAction={getAuthKeys}
+          createAuthKeysAction={createAuthItemKeys}
+          getAuthKeysAction={getAuthItemKeys}
         />
       </div>
     );

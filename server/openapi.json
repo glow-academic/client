@@ -16685,15 +16685,15 @@
         }
       }
     },
-    "/api/v4/resources/auth_keys": {
+    "/api/v4/resources/auth_item_keys": {
       "post": {
         "tags": [
           "v4",
           "resources"
         ],
-        "summary": "Create Auth Keys",
-        "description": "Create auth_keys resource from auth + key pair.",
-        "operationId": "create_auth_keys_api_v4_resources_auth_keys_post",
+        "summary": "Create Auth Item Keys",
+        "description": "Create auth_item_keys resource from auth + item + key tuple.",
+        "operationId": "create_auth_item_keys_api_v4_resources_auth_item_keys_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -16749,7 +16749,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AuthKeysApiRequest"
+                "$ref": "#/components/schemas/AuthItemKeysApiRequest"
               }
             }
           }
@@ -16760,7 +16760,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AuthKeysApiResponse"
+                  "$ref": "#/components/schemas/AuthItemKeysApiResponse"
                 }
               }
             }
@@ -16778,15 +16778,15 @@
         }
       }
     },
-    "/api/v4/resources/auth_keys/get": {
+    "/api/v4/resources/auth_item_keys/get": {
       "post": {
         "tags": [
           "v4",
           "resources"
         ],
-        "summary": "Get Auth Keys",
-        "description": "Get auth_keys resources by IDs.",
-        "operationId": "get_auth_keys_api_v4_resources_auth_keys_get_post",
+        "summary": "Get Auth Item Keys",
+        "description": "Get auth_item_keys resources by IDs.",
+        "operationId": "get_auth_item_keys_api_v4_resources_auth_item_keys_get_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -16842,7 +16842,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/GetAuthKeysApiRequest"
+                "$ref": "#/components/schemas/GetAuthItemKeysApiRequest"
               }
             }
           }
@@ -16853,7 +16853,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GetAuthKeysApiResponse"
+                  "$ref": "#/components/schemas/GetAuthItemKeysApiResponse"
                 }
               }
             }
@@ -16871,14 +16871,14 @@
         }
       }
     },
-    "/api/v4/resources/auth_keys/search": {
+    "/api/v4/resources/auth_item_keys/search": {
       "post": {
         "tags": [
           "v4",
           "resources"
         ],
-        "summary": "Search Auth Keys",
-        "operationId": "search_auth_keys_api_v4_resources_auth_keys_search_post",
+        "summary": "Search Auth Item Keys",
+        "operationId": "search_auth_item_keys_api_v4_resources_auth_item_keys_search_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -16934,7 +16934,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SearchAuthKeysApiRequest"
+                "$ref": "#/components/schemas/SearchAuthItemKeysApiRequest"
               }
             }
           }
@@ -16945,7 +16945,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SearchAuthKeysApiResponse"
+                  "$ref": "#/components/schemas/SearchAuthItemKeysApiResponse"
                 }
               }
             }
@@ -45906,6 +45906,62 @@
         "type": "object",
         "title": "AuthItemAction"
       },
+      "AuthItemKeysApiRequest": {
+        "properties": {
+          "auth_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Auth Id"
+          },
+          "item_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Item Id"
+          },
+          "key_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Key Id"
+          },
+          "mcp": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mcp",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "auth_id",
+          "item_id",
+          "key_id"
+        ],
+        "title": "AuthItemKeysApiRequest"
+      },
+      "AuthItemKeysApiResponse": {
+        "properties": {
+          "auth_item_keys_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Item Keys Id"
+          }
+        },
+        "type": "object",
+        "title": "AuthItemKeysApiResponse"
+      },
       "AuthItemResource": {
         "properties": {
           "auth_item_id": {
@@ -46101,56 +46157,6 @@
         },
         "type": "object",
         "title": "AuthItemSection"
-      },
-      "AuthKeysApiRequest": {
-        "properties": {
-          "auth_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Auth Id"
-          },
-          "key_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Key Id"
-          },
-          "mcp": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Mcp",
-            "default": false
-          }
-        },
-        "type": "object",
-        "required": [
-          "auth_id",
-          "key_id"
-        ],
-        "title": "AuthKeysApiRequest"
-      },
-      "AuthKeysApiResponse": {
-        "properties": {
-          "auth_keys_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Auth Keys Id"
-          }
-        },
-        "type": "object",
-        "title": "AuthKeysApiResponse"
       },
       "AuthMultiResourceAction": {
         "properties": {
@@ -61379,7 +61385,7 @@
         "title": "GetAuthApiResponse",
         "description": "Response model for get auth endpoint."
       },
-      "GetAuthKeysApiRequest": {
+      "GetAuthItemKeysApiRequest": {
         "properties": {
           "ids": {
             "anyOf": [
@@ -61398,15 +61404,15 @@
           }
         },
         "type": "object",
-        "title": "GetAuthKeysApiRequest"
+        "title": "GetAuthItemKeysApiRequest"
       },
-      "GetAuthKeysApiResponse": {
+      "GetAuthItemKeysApiResponse": {
         "properties": {
           "items": {
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/QGetAuthKeysV4Item"
+                  "$ref": "#/components/schemas/QGetAuthItemKeysV4Item"
                 },
                 "type": "array"
               },
@@ -61418,7 +61424,7 @@
           }
         },
         "type": "object",
-        "title": "GetAuthKeysApiResponse"
+        "title": "GetAuthItemKeysApiResponse"
       },
       "GetAuthListApiRequest": {
         "properties": {},
@@ -86039,7 +86045,7 @@
               }
             ]
           },
-          "auth_keys": {
+          "auth_item_keys": {
             "anyOf": [
               {
                 "$ref": "#/components/schemas/SettingMultiResourceAction"
@@ -92618,7 +92624,7 @@
         ],
         "title": "QGetArgsV4Item"
       },
-      "QGetAuthKeysV4Item": {
+      "QGetAuthItemKeysV4Item": {
         "properties": {
           "id": {
             "anyOf": [
@@ -92643,6 +92649,18 @@
               }
             ],
             "title": "Auth Id"
+          },
+          "item_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Item Id"
           },
           "key_id": {
             "anyOf": [
@@ -92716,6 +92734,7 @@
         "required": [
           "id",
           "auth_id",
+          "item_id",
           "key_id",
           "auth_name",
           "key_name",
@@ -92723,7 +92742,7 @@
           "active",
           "generated"
         ],
-        "title": "QGetAuthKeysV4Item"
+        "title": "QGetAuthItemKeysV4Item"
       },
       "QGetCohortsV4Item": {
         "properties": {
@@ -107366,7 +107385,7 @@
           "provider_keys": {
             "$ref": "#/components/schemas/SettingMultiResourceAction"
           },
-          "auth_keys": {
+          "auth_item_keys": {
             "$ref": "#/components/schemas/SettingMultiResourceAction"
           },
           "roles": {
@@ -107386,7 +107405,7 @@
           "profiles",
           "auths",
           "provider_keys",
-          "auth_keys",
+          "auth_item_keys",
           "roles",
           "role_routes"
         ],
@@ -110712,7 +110731,7 @@
         "type": "object",
         "title": "SearchArgsOutputsApiResponse"
       },
-      "SearchAuthKeysApiRequest": {
+      "SearchAuthItemKeysApiRequest": {
         "properties": {
           "search": {
             "anyOf": [
@@ -110766,15 +110785,15 @@
           }
         },
         "type": "object",
-        "title": "SearchAuthKeysApiRequest"
+        "title": "SearchAuthItemKeysApiRequest"
       },
-      "SearchAuthKeysApiResponse": {
+      "SearchAuthItemKeysApiResponse": {
         "properties": {
           "items": {
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/QGetAuthKeysV4Item"
+                  "$ref": "#/components/schemas/QGetAuthItemKeysV4Item"
                 },
                 "type": "array"
               },
@@ -110786,7 +110805,7 @@
           }
         },
         "type": "object",
-        "title": "SearchAuthKeysApiResponse"
+        "title": "SearchAuthItemKeysApiResponse"
       },
       "SearchCohortsApiRequest": {
         "properties": {

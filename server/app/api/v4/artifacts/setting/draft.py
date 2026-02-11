@@ -60,7 +60,7 @@ async def patch_setting_draft(
                 profiles=request.profiles,
                 auths=request.auths,
                 provider_keys=request.provider_keys,
-                auth_keys=request.auth_keys,
+                auth_item_keys=request.auth_item_keys,
                 roles=request.roles,
                 role_routes=request.role_routes,
                 expected_version=request.expected_version,

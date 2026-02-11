@@ -282,7 +282,7 @@ async def get_setting(
                     "departments": ids_result.departments_agent_id,
                     "profiles": ids_result.profiles_agent_id,
                     "auths": ids_result.auths_agent_id,
-                    "auth_keys": ids_result.keys_agent_id,
+                    "auth_item_keys": ids_result.keys_agent_id,
                     "provider_keys": None,
                     "role_routes": None,
                 },

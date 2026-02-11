@@ -116,11 +116,12 @@ export interface SettingProps {
   createAuthKeysAction?: (input: {
     auth_id: string;
     key_id: string;
-  }) => Promise<{ auth_keys_id?: string | null }>;
+  }) => Promise<{ auth_item_keys_id?: string | null }>;
   getAuthKeysAction?: (ids: string[]) => Promise<
     Array<{
       id?: string | null;
       auth_id?: string | null;
+      item_id?: string | null;
       key_id?: string | null;
       auth_name?: string | null;
       key_name?: string | null;
@@ -690,7 +691,7 @@ function SettingComponent({
             profiles: multiAction(formState.profile_ids),
             auths: multiAction(formState.auth_ids),
             provider_keys: multiAction(formState.provider_key_ids),
-            auth_keys: multiAction(formState.key_ids),
+            auth_item_keys: multiAction(formState.key_ids),
             roles: multiAction(formState.role_ids),
             role_routes: multiAction(formState.role_route_ids),
             expected_version: lastSavedVersionRef.current, // ✅ ref, not state dep
@@ -801,7 +802,7 @@ function SettingComponent({
             profiles: multiAction(formState.profile_ids || []),
             auths: multiAction(formState.auth_ids || []),
             provider_keys: multiAction(formState.provider_key_ids || []),
-            auth_keys: multiAction(formState.key_ids || []),
+            auth_item_keys: multiAction(formState.key_ids || []),
             roles: multiAction(formState.role_ids || []),
             role_routes: multiAction(formState.role_route_ids || []),
           },
@@ -858,7 +859,7 @@ function SettingComponent({
     () => ({
       basic: ["names", "descriptions", "departments", "flags"],
       colors: ["colors"],
-      configuration: [], // No generation for auths/provider_keys/auth_keys yet
+      configuration: [], // No generation for auths/provider_keys/auth_item_keys yet
       all: ["names", "descriptions", "colors", "flags", "departments"], // All resources for full-page generation
     }),
     []
