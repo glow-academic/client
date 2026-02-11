@@ -351,8 +351,8 @@ async def _training_start_impl(
             )
 
             # Step 7: Refresh MVs so attempt is immediately visible
-            await conn.execute("REFRESH MATERIALIZED VIEW mv_simulation_attempts")
-            await conn.execute("REFRESH MATERIALIZED VIEW mv_simulation_chats")
+            await conn.execute("REFRESH MATERIALIZED VIEW mv_attempt_list")
+            await conn.execute("REFRESH MATERIALIZED VIEW mv_attempt_chats")
 
             # Step 8: Emit training_started event (after MVs refreshed)
             await sio.emit(

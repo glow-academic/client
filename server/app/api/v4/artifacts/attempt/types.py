@@ -11,7 +11,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.api.v4.views.simulation.attempts.types import AttemptViewItem
+from app.api.v4.views.attempt.list.types import AttemptViewItem
 
 # =============================================================================
 # Attempt detail endpoint types (client-facing)

@@ -415,7 +415,7 @@ BEGIN
     VALUES (v_attempt_id, NOW(), NOW(), 'Chat', v_training_bundle_department_id)
     RETURNING id INTO v_chat_id;
 
-    -- Chat scope now resolves from training_bundle_department_id via mv_simulation_chats.
+    -- Chat scope now resolves from training_bundle_department_id via mv_attempt_chats.
 
     -- Create per-entry config snapshots by resolving agents server-side.
     SELECT id INTO v_session_id

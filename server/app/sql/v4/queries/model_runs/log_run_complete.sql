@@ -43,7 +43,7 @@ run_info AS (
             (SELECT sd.department_id FROM view_runs_entry r2
              JOIN view_simulation_messages_entry m2 ON m2.run_id = r2.id
              LEFT JOIN view_simulation_chats_entry c ON c.id = m2.chat_id
-             LEFT JOIN mv_simulation_chats msc ON msc.chat_id = c.id
+             LEFT JOIN mv_attempt_chats msc ON msc.chat_id = c.id
              LEFT JOIN scenario_scenarios_junction ssj ON ssj.scenarios_id = msc.scenario_id
              JOIN scenario_departments_junction sd ON sd.scenario_id = ssj.scenario_id AND sd.active = true
              WHERE r2.id = x.run_id LIMIT 1),

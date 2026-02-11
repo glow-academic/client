@@ -130,7 +130,7 @@ BEGIN
     END IF;
 
     -- Refresh MV so attempt is immediately visible.
-    REFRESH MATERIALIZED VIEW mv_simulation_attempts;
+    REFRESH MATERIALIZED VIEW mv_attempt_list;
 
     RETURN QUERY SELECT v_attempt_id;
 END;

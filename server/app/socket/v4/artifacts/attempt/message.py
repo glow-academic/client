@@ -230,7 +230,7 @@ async def _attempt_message_impl(
             trace_id = prepare_row.trace_id
 
             # Ensure MV is fresh before building developer context
-            await conn.execute("REFRESH MATERIALIZED VIEW mv_simulation_messages")
+            await conn.execute("REFRESH MATERIALIZED VIEW mv_attempt_messages")
 
             # Step 3: Build model config
             if data.voice_mode and prepare_row.voice_model_name:

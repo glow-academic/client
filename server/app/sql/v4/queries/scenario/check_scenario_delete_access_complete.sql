@@ -88,7 +88,7 @@ usage_check AS (
                 AND ssf.value = true
           )
     ) + (
-        SELECT COUNT(*) FROM mv_simulation_chats msc
+        SELECT COUNT(*) FROM mv_attempt_chats msc
         WHERE msc.scenario_id = (SELECT scenarios_id FROM scenario_resource)
     ) + (
         SELECT COUNT(*)

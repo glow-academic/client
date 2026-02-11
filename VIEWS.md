@@ -106,9 +106,9 @@ Every MV must have a clearly defined grain — the unique key that identifies on
 | pricing | `mv_pricing_run_facts` | `run_id` |
 | pricing | `mv_pricing_daily` | `(date, model_id, agent_id)` |
 | pricing | `mv_pricing_group_summary` | `group_id` |
-| simulation | `mv_simulation_attempts` | `attempt_id` |
-| simulation | `mv_simulation_chats` | `chat_id` |
-| simulation | `mv_simulation_messages` | `message_id` |
+| attempt | `mv_attempt_list` | `attempt_id` |
+| attempt | `mv_attempt_chats` | `chat_id` |
+| attempt | `mv_attempt_messages` | `message_id` |
 | training | `mv_training` | `training_id` |
 | training | `mv_training_bundle` | `bundle_id` |
 | training | `mv_training_context` | `training_id` |
@@ -212,10 +212,10 @@ server/app/sql/v4/views/
 │   ├── create_union_view_message_tree_entry_complete.sql
 │   ├── create_union_view_messages_entry_complete.sql
 │   └── create_union_view_strengths_entry_complete.sql
-├── simulation/
-│   ├── mv_simulation_attempts.sql
-│   ├── mv_simulation_chats.sql
-│   └── mv_simulation_messages.sql
+├── attempt/
+│   ├── mv_attempt_list.sql
+│   ├── mv_attempt_chats.sql
+│   └── mv_attempt_messages.sql
 └── training/
     ├── mv_training.sql
     ├── mv_training_bundle.sql
@@ -250,7 +250,7 @@ This section documents known violations as of the initial audit. Each should be 
 | `mv_benchmark_tests` | `run_rubrics_resource`, `group_rubrics_resource` | Expose rubric IDs, hydrate in Python |
 | `mv_config` | `agents_resource` | Expose agent IDs, hydrate in Python |
 | `mv_pricing_run_facts` | `pricing_resource`, `artifact_units_relation` | Expose pricing IDs, hydrate in Python |
-| `mv_simulation_chats` | `scenario_time_limits_resource` | Expose time_limit ID, hydrate in Python |
+| `mv_attempt_chats` | `scenario_time_limits_resource` | Expose time_limit ID, hydrate in Python |
 | `mv_training_bundle` | `flags_resource` | Expose flag IDs, hydrate in Python |
 | `mv_training_context` | `scenario_positions_resource`, `scenario_time_limits_resource`, `standard_groups_resource` | Expose IDs, hydrate in Python |
 
@@ -270,9 +270,9 @@ This section documents known violations as of the initial audit. Each should be 
 | `create_user_profile_view_complete.sql` | Root-level regular view | Delete or move to shared/ |
 | `create_grade_per_standard_group_view_complete.sql` | Root-level regular view | Delete or move to shared/ |
 | `attempt/` | Contains regular views, not MVs | Delete or migrate to shared/ union views |
-| `simulation/simulation_attempts_view.sql` | Inconsistent naming (not `mv_` prefixed) | Rename to `mv_simulation_attempts.sql` |
-| `simulation/simulation_chats_view.sql` | Inconsistent naming | Rename to `mv_simulation_chats.sql` |
-| `simulation/simulation_messages_view.sql` | Inconsistent naming | Rename to `mv_simulation_messages.sql` |
+| `attempt/mv_attempt_list.sql` | Renamed from `simulation/mv_simulation_attempts.sql` | Done |
+| `attempt/mv_attempt_chats.sql` | Renamed from `simulation/mv_simulation_chats.sql` | Done |
+| `attempt/mv_attempt_messages.sql` | Renamed from `simulation/mv_simulation_messages.sql` | Done |
 | `legacy/create_legacy_simulation_mvs_complete.sql` | Legacy MV file | Delete if MVs are recreated elsewhere |
 
 ---

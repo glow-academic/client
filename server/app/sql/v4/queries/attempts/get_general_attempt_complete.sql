@@ -580,7 +580,7 @@ previous_chats_with_grades AS (
     JOIN simulation_attempts_simulations_connection asc_conn ON asc_conn.attempt_id = ga.id
     JOIN simulation_simulations_junction ssj2 ON ssj2.simulations_id = asc_conn.simulations_id
     JOIN view_simulation_chats_entry gc ON gc.attempt_id = ga.id AND gc.completed = true AND gc.active = true
-    JOIN mv_simulation_chats csc ON csc.chat_id = gc.id
+    JOIN mv_attempt_chats csc ON csc.chat_id = gc.id
     JOIN scenario_scenarios_junction ssj_scj ON ssj_scj.scenarios_id = csc.scenario_id
     JOIN view_simulation_grades_entry gg ON gg.chat_id = gc.id AND gg.active = true
     WHERE gc.attempt_id != x.attempt_id

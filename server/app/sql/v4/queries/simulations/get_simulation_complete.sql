@@ -604,7 +604,7 @@ scenario_statistics AS (
     -- Get chats linked to this scenario via unified chat→scenario connections
     LEFT JOIN (
         SELECT msc.chat_id, ssj2.scenario_id
-        FROM mv_simulation_chats msc
+        FROM mv_attempt_chats msc
         JOIN scenario_scenarios_junction ssj2 ON ssj2.scenarios_id = msc.scenario_id
     ) scj_sc ON (
         scj_sc.scenario_id IN (

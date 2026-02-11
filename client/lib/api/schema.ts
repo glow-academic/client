@@ -19958,12 +19958,6 @@ export interface components {
             simulations?: components["schemas"]["QListSimulationsV4Simulation"][] | null;
             /** Scenarios */
             scenarios?: components["schemas"]["QListSimulationsV4Scenario"][] | null;
-            /** Rubrics */
-            rubrics?: components["schemas"]["QListSimulationsV4Rubric"][] | null;
-            /** Departments */
-            departments?: components["schemas"]["QListSimulationsV4Department"][] | null;
-            /** Cohorts */
-            cohorts?: components["schemas"]["QListSimulationsV4Cohort"][] | null;
             /** Scenario Options */
             scenario_options?: components["schemas"]["QListSimulationsV4Option"][] | null;
             /** Cohort Options */
@@ -19972,8 +19966,6 @@ export interface components {
             department_options?: components["schemas"]["QListSimulationsV4Option"][] | null;
             /** Total Count */
             total_count?: number | null;
-            /** General Agent Id */
-            general_agent_id?: string | null;
         };
         /** GetSlugsApiRequest */
         GetSlugsApiRequest: {
@@ -27326,46 +27318,6 @@ export interface components {
             /** Label */
             label: string | null;
         };
-        /** QListSimulationsV4Cohort */
-        QListSimulationsV4Cohort: {
-            /** Cohort Id */
-            cohort_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-        };
-        /** QListSimulationsV4Department */
-        QListSimulationsV4Department: {
-            /** Department Id */
-            department_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-        };
-        /** QListSimulationsV4Document */
-        QListSimulationsV4Document: {
-            /** Document Id */
-            document_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-        };
-        /** QListSimulationsV4Field */
-        QListSimulationsV4Field: {
-            /** Field Id */
-            field_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Parameter Id */
-            parameter_id: string | null;
-            /** Parameter Name */
-            parameter_name: string | null;
-        };
         /** QListSimulationsV4Option */
         QListSimulationsV4Option: {
             /** Value */
@@ -27379,25 +27331,8 @@ export interface components {
         QListSimulationsV4Persona: {
             /** Persona Id */
             persona_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
             /** Color */
             color: string | null;
-            /** Icon */
-            icon: string | null;
-            /** Image Model */
-            image_model: boolean | null;
-        };
-        /** QListSimulationsV4Rubric */
-        QListSimulationsV4Rubric: {
-            /** Rubric Id */
-            rubric_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
         };
         /** QListSimulationsV4Scenario */
         QListSimulationsV4Scenario: {
@@ -27405,22 +27340,10 @@ export interface components {
             scenario_id: string | null;
             /** Name */
             name: string | null;
-            /** Description */
-            description: string | null;
-            /** Active */
-            active: boolean | null;
             /** Persona Ids */
             persona_ids: string[] | null;
             /** Persona Mapping */
             persona_mapping: components["schemas"]["QListSimulationsV4Persona"][] | null;
-            /** Document Mapping */
-            document_mapping: components["schemas"]["QListSimulationsV4Document"][] | null;
-            /** Parameter Item Mapping */
-            parameter_item_mapping: components["schemas"]["QListSimulationsV4Field"][] | null;
-            /** Parameter Item Ids */
-            parameter_item_ids: string[] | null;
-            /** Document Ids */
-            document_ids: string[] | null;
         };
         /** QListSimulationsV4Simulation */
         QListSimulationsV4Simulation: {
@@ -27432,8 +27355,6 @@ export interface components {
             description: string | null;
             /** Department Ids */
             department_ids: string[] | null;
-            /** Time Limit */
-            time_limit: number | null;
             /** Active */
             active: boolean | null;
             /** Practice Simulation */
@@ -27446,8 +27367,6 @@ export interface components {
             can_duplicate: boolean | null;
             /** Scenario Ids */
             scenario_ids: string[] | null;
-            /** Rubric Id */
-            rubric_id: string | null;
             /** Num Cohorts */
             num_cohorts: number | null;
             /** Cohort Ids */

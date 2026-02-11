@@ -7,7 +7,7 @@
 -- Purpose: Base fact table that all other analytics MVs derive from
 -- Section: ANALYTICS (unified base layer)
 --
--- Dependencies: Uses entry tables + mv_simulation_chats scope (avoids direct chat connection table coupling)
+-- Dependencies: Uses entry tables + mv_attempt_chats scope (avoids direct chat connection table coupling)
 
 DO $$
 DECLARE
@@ -70,7 +70,7 @@ chat_scope AS (
         msc.rubric_id,
         msc.persona_ids,
         msc.document_ids
-    FROM mv_simulation_chats msc
+    FROM mv_attempt_chats msc
 ),
 chat_persona AS (
     SELECT

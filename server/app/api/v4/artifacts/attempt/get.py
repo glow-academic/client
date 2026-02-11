@@ -81,9 +81,9 @@ from app.api.v4.resources.standard_groups.get import get_standard_groups_interna
 from app.api.v4.resources.standards.get import get_standards_internal
 from app.api.v4.resources.templates.get import get_templates_internal
 from app.api.v4.resources.videos.get import get_videos_internal
-from app.api.v4.views.simulation.attempts.get import get_simulation_attempts_internal
-from app.api.v4.views.simulation.chats.get import get_simulation_chats_internal
-from app.api.v4.views.simulation.messages.get import get_simulation_messages_internal
+from app.api.v4.views.attempt.chats.get import get_attempt_chats_internal
+from app.api.v4.views.attempt.list.get import get_attempt_list_internal
+from app.api.v4.views.attempt.messages.get import get_attempt_messages_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -179,7 +179,7 @@ async def get_attempt_internal(
 
         async def fetch_attempt(aid: UUID) -> Any:
             async with pool.acquire() as c:
-                return await get_simulation_attempts_internal(
+                return await get_attempt_list_internal(
                     conn=c,
                     attempt_ids=[aid],
                     bypass_cache=bypass_cache,
@@ -187,7 +187,7 @@ async def get_attempt_internal(
 
         async def fetch_chats(aid: UUID) -> Any:
             async with pool.acquire() as c:
-                return await get_simulation_chats_internal(
+                return await get_attempt_chats_internal(
                     conn=c,
                     attempt_id=aid,
                     bypass_cache=bypass_cache,
@@ -196,7 +196,7 @@ async def get_attempt_internal(
         async def fetch_messages(aid: UUID) -> Any:
             async with pool.acquire() as c:
                 # Hints are always included from MV
-                return await get_simulation_messages_internal(
+                return await get_attempt_messages_internal(
                     conn=c,
                     attempt_id=aid,
                     bypass_cache=bypass_cache,

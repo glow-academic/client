@@ -499,7 +499,7 @@ all_attempt_profiles AS (
 ),
 -- Unified chat→scenario connections
 all_chat_scenarios AS (
-    SELECT chat_id, scenario_id AS scenarios_id FROM mv_simulation_chats
+    SELECT chat_id, scenario_id AS scenarios_id FROM mv_attempt_chats
 ),
 params AS (
     SELECT 
