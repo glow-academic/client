@@ -69,7 +69,11 @@ async def _generate_setting_impl(
                 "auth_keys": result.keys_agent_id,
             }
             agent_id = next(
-                (resource_agent_ids.get(rt) for rt in data.resource_types if rt in resource_agent_ids and resource_agent_ids.get(rt)),
+                (
+                    resource_agent_ids.get(rt)
+                    for rt in data.resource_types
+                    if rt in resource_agent_ids and resource_agent_ids.get(rt)
+                ),
                 None,
             )
             if not agent_id:

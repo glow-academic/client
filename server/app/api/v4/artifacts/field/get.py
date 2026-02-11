@@ -141,7 +141,9 @@ async def get_field_internal(
 
         if field_id is not None:
             if access_result.field_exists is False:
-                raise HTTPException(status_code=404, detail=f"Field {field_id} not found")
+                raise HTTPException(
+                    status_code=404, detail=f"Field {field_id} not found"
+                )
             if not has_access(user_role, user_department_ids, field_department_ids):
                 raise HTTPException(
                     status_code=403,
@@ -154,7 +156,9 @@ async def get_field_internal(
             else access_result.group_id
         )
         effective_draft_version = (
-            draft_item.version if draft_item is not None else access_result.draft_version
+            draft_item.version
+            if draft_item is not None
+            else access_result.draft_version
         )
 
         ids_result = cast(
@@ -250,7 +254,9 @@ async def get_field_internal(
         ]
     )
 
-    can_edit = compute_can_edit(user_role=user_role, field_department_ids=field_department_ids)
+    can_edit = compute_can_edit(
+        user_role=user_role, field_department_ids=field_department_ids
+    )
     disabled_reason = compute_disabled_reason(
         user_role=user_role,
         field_department_ids=field_department_ids,
@@ -310,7 +316,9 @@ async def get_field_internal(
     async def fetch_departments():
         async with pool.acquire() as c:
             return (
-                await get_departments_internal(c, selected_department_ids, bypass_cache),
+                await get_departments_internal(
+                    c, selected_department_ids, bypass_cache
+                ),
                 await search_departments_internal(
                     c,
                     None,
@@ -326,10 +334,14 @@ async def get_field_internal(
     async def fetch_conditional_parameters():
         async with pool.acquire() as c:
             exclude_ids = (
-                [] if (conditional_parameter_show_selected or False) else selected_conditional_parameter_ids
+                []
+                if (conditional_parameter_show_selected or False)
+                else selected_conditional_parameter_ids
             )
             return (
-                await get_parameters_internal(c, selected_conditional_parameter_ids, bypass_cache),
+                await get_parameters_internal(
+                    c, selected_conditional_parameter_ids, bypass_cache
+                ),
                 await search_parameters_internal(
                     c,
                     conditional_parameter_search,
@@ -431,7 +443,9 @@ async def get_field_internal(
     )
 
     if field_id is None and not all_departments:
-        raise HTTPException(status_code=400, detail="No accessible departments found for user")
+        raise HTTPException(
+            status_code=400, detail="No accessible departments found for user"
+        )
 
     selected_agent_ids = list({aid for aid in agent_ids.values() if aid is not None})
 
@@ -657,7 +671,9 @@ async def get_field(
     try:
         profile_id = http_request.state.profile_id
         if not profile_id:
-            raise HTTPException(status_code=401, detail="Profile ID is required. Please sign in again.")
+            raise HTTPException(
+                status_code=401, detail="Profile ID is required. Please sign in again."
+            )
 
         response_data = await get_field_client(
             profile_id=profile_id,

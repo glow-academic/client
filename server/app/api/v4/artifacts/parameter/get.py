@@ -390,7 +390,7 @@ async def get_parameter_internal(
     selected_flag_ids = list(
         {
             *selected_flag_ids,
-            *( [selected_active_flag_id] if selected_active_flag_id else [] ),
+            *([selected_active_flag_id] if selected_active_flag_id else []),
         }
     )
     current_flags = [

@@ -41,4 +41,3 @@ async def test_get_department_detail(
     assert "descriptions" in data
     assert "flags" in data
     assert "settings" in data
-

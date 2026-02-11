@@ -44,14 +44,26 @@ async def test_patch_department_draft_create(
         json={
             "input_draft_id": None,
             "group_id": group_id,
-            "names": {"resource_id": name_id, "create_tool_id": None, "link_tool_id": None},
+            "names": {
+                "resource_id": name_id,
+                "create_tool_id": None,
+                "link_tool_id": None,
+            },
             "descriptions": {
                 "resource_id": desc_id,
                 "create_tool_id": None,
                 "link_tool_id": None,
             },
-            "flags": {"resource_id": None, "create_tool_id": None, "link_tool_id": None},
-            "settings": {"resource_ids": [], "create_tool_id": None, "link_tool_id": None},
+            "flags": {
+                "resource_id": None,
+                "create_tool_id": None,
+                "link_tool_id": None,
+            },
+            "settings": {
+                "resource_ids": [],
+                "create_tool_id": None,
+                "link_tool_id": None,
+            },
             "expected_version": 0,
         },
     )
@@ -61,4 +73,3 @@ async def test_patch_department_draft_create(
     assert out["success"] is True
     assert out.get("draft_id")
     assert out.get("new_version") is not None
-

@@ -23,6 +23,7 @@ from app.api.v4.views.drafts.types import (
     DraftSettingViewItem,
     DraftSimulationViewItem,
     DraftToolViewItem,
+    DraftTrainingBundleViewItem,
     DraftViewItemBase,
 )
 from app.utils.cache.cache_key import cache_key
@@ -356,3 +357,46 @@ async def get_draft_tool_internal(
         DraftToolViewItem,
         bypass_cache,
     )
+
+
+async def get_draft_training_bundle_internal(
+    conn: asyncpg.Connection,
+    draft_ids: list[UUID],
+    bypass_cache: bool = False,
+) -> list[DraftTrainingBundleViewItem]:
+    cache_key_val = cache_key(
+        "views/drafts/training_bundle/get",
+        {"draft_ids": [str(d) for d in draft_ids]},
+    )
+
+    if not bypass_cache:
+        cached = await get_cached(cache_key_val)
+        if cached:
+            return [
+                DraftTrainingBundleViewItem.model_validate(item)
+                for item in cached["items"]
+            ]
+
+    from app.sql import types as sql_types
+
+    params_cls = sql_types.GetDraftTrainingBundleViewSqlParams
+    params = params_cls(draft_ids=draft_ids)
+    result = await execute_sql_typed(
+        conn,
+        f"{_SQL_BASE}/get_draft_training_bundle_view_complete.sql",
+        params=params,
+    )
+
+    items: list[DraftTrainingBundleViewItem] = []
+    if result and result.items:
+        for item in result.items:
+            items.append(_build_item(DraftTrainingBundleViewItem, item))
+
+    await set_cached(
+        cache_key_val,
+        {"items": [item.model_dump(mode="json") for item in items]},
+        ttl=60,
+        tags=["views", "drafts"],
+    )
+
+    return items

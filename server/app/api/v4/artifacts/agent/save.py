@@ -73,7 +73,9 @@ async def save_agent(
             if request.instructions is not None
             else None
         )
-        active_flag_id = request.flags.resource_id if request.flags is not None else None
+        active_flag_id = (
+            request.flags.resource_id if request.flags is not None else None
+        )
         temperature_level_id = (
             request.temperature_levels.resource_id
             if request.temperature_levels is not None
@@ -85,16 +87,16 @@ async def save_agent(
             else None
         )
         department_ids = (
-            request.departments.resource_ids if request.departments is not None else None
+            request.departments.resource_ids
+            if request.departments is not None
+            else None
         )
         tool_ids = request.tools.resource_ids if request.tools is not None else None
         voice_ids = request.voices.resource_ids if request.voices is not None else None
 
         # Validate required section actions
         if not name_id:
-            raise HTTPException(
-                status_code=400, detail="names.resource_id is required"
-            )
+            raise HTTPException(status_code=400, detail="names.resource_id is required")
 
         if not model_id:
             raise HTTPException(

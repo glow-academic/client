@@ -176,7 +176,9 @@ async def get_auth_internal(
             else access_result.group_id
         )
         effective_draft_version = (
-            draft_item.version if draft_item is not None else access_result.draft_version
+            draft_item.version
+            if draft_item is not None
+            else access_result.draft_version
         )
 
         ids_result = cast(
@@ -314,7 +316,9 @@ async def get_auth_internal(
 
     async def fetch_protocols() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
-            selected = await get_protocols_internal(c, selected_protocol_ids, bypass_cache)
+            selected = await get_protocols_internal(
+                c, selected_protocol_ids, bypass_cache
+            )
             suggestions = await search_protocols_internal(
                 c,
                 None,
@@ -437,7 +441,8 @@ async def get_auth_internal(
         [
             cfg
             for cfg in auth_flags
-            if cfg.flag_option_id is not None and cfg.flag_option_id == selected_active_flag_id
+            if cfg.flag_option_id is not None
+            and cfg.flag_option_id == selected_active_flag_id
         ]
         if selected_active_flag_id
         else []
@@ -603,7 +608,9 @@ async def get_auth_client(
             show_ai_generate=data.show_ai_generate_map.get("descriptions", False),
             create_tool_id=data.create_tool_ids_map.get("descriptions"),
             link_tool_id=data.link_tool_ids_map.get("descriptions"),
-            resource=data.descriptions_current[0] if data.descriptions_current else None,
+            resource=data.descriptions_current[0]
+            if data.descriptions_current
+            else None,
             resources=data.descriptions,
         ),
         flags=AuthFlagSection(
@@ -706,7 +713,11 @@ async def get_auth(
             audit_ctx: dict[str, Any] = {
                 "actor": {"name": response_data.actor_name, "id": profile_id}
             }
-            current_name = response_data.names.resource.name if response_data.names and response_data.names.resource else None
+            current_name = (
+                response_data.names.resource.name
+                if response_data.names and response_data.names.resource
+                else None
+            )
             if request.auth_id and current_name:
                 audit_ctx["auth"] = {
                     "name": current_name,

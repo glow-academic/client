@@ -32,7 +32,7 @@ from app.api.v4.resources.scenario_time_limits.get import (
     get_scenario_time_limits_internal,
 )
 from app.api.v4.resources.tools.get import get_tools_internal
-from app.api.v4.views.drafts.get import get_draft_scenario_internal
+from app.api.v4.views.drafts.get import get_draft_training_bundle_internal
 from app.api.v4.views.training.bundle.get import get_training_bundle_view_internal
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
@@ -94,7 +94,7 @@ async def get_training_bundle_internal(
 
     draft_item = None
     if draft_id is not None:
-        draft_items = await get_draft_scenario_internal(
+        draft_items = await get_draft_training_bundle_internal(
             conn=conn,
             draft_ids=[draft_id],
             bypass_cache=bypass_cache,
@@ -145,12 +145,6 @@ async def get_training_bundle_internal(
         list(view_data.parameter_field_ids),
         bypass_cache=bypass_cache,
     )
-    suggestion_scenario_time_limits = await get_scenario_time_limits_internal(
-        conn=conn,
-        simulation_id=view_data.simulation_id,
-        scenario_ids=[view_data.scenario_id] if view_data.scenario_id else [],
-        bypass_cache=bypass_cache,
-    )
 
     # Current selection objects.
     current_departments = _filter_by_ids(
@@ -175,6 +169,7 @@ async def get_training_bundle_internal(
     )
 
     # Config chain resources (agent/model/provider/tools) derived from selected department.
+    # Also resolves simulation_id, scenario_id, simulation_name.
     selected_department_id = None
     if selected_department_ids:
         selected_department_id = selected_department_ids[0]
@@ -186,6 +181,9 @@ async def get_training_bundle_internal(
     config_providers = []
     config_tools = []
     selected_agent_id: UUID | None = None
+    simulation_id: UUID | None = None
+    scenario_id: UUID | None = None
+    suggestion_scenario_time_limits = []
 
     if selected_department_id is not None:
         start_ctx = await get_training_websocket(
@@ -199,6 +197,8 @@ async def get_training_bundle_internal(
         selected_agent_id = start_ctx.resources.agent_id
         model_id = start_ctx.resources.model_id
         provider_id = start_ctx.resources.provider_id
+        simulation_id = start_ctx.resources.simulation_id
+        scenario_id = start_ctx.resources.scenario_id
 
         if selected_agent_id:
             config_agents = await get_agents_internal(
@@ -232,6 +232,26 @@ async def get_training_bundle_internal(
                 bypass_cache=bypass_cache,
             )
 
+        # Scenario time limits from start context (simulation-level)
+        if simulation_id and view_data.scenario_ids:
+            suggestion_scenario_time_limits = await get_scenario_time_limits_internal(
+                conn=conn,
+                simulation_id=simulation_id,
+                scenario_ids=view_data.scenario_ids,
+                bypass_cache=bypass_cache,
+            )
+
+    # Resolve simulation name from simulations resource
+    simulation_name: str | None = None
+    if simulation_id:
+        from app.api.v4.resources.simulations.get import get_simulations_batch_internal
+
+        sim_list = await get_simulations_batch_internal(
+            conn, [simulation_id], bypass_cache=bypass_cache
+        )
+        if sim_list:
+            simulation_name = sim_list[0].title
+
     resource_agent_ids = {
         "departments": selected_agent_id,
         "personas": selected_agent_id,
@@ -243,9 +263,9 @@ async def get_training_bundle_internal(
     return TrainingBundleInternalData(
         training_bundle_entry_id=view_data.training_bundle_entry_id,
         training_id=view_data.training_id,
-        simulation_id=view_data.simulation_id,
-        simulation_name=view_data.simulation_name,
-        scenario_id=view_data.scenario_id,
+        simulation_id=simulation_id,
+        simulation_name=simulation_name,
+        scenario_id=scenario_id,
         profile_has_access=view_data.profile_has_access,
         views=TrainingBundleViews(draft_training_bundle=draft_item),
         resources=TrainingBundleResources(

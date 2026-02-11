@@ -677,26 +677,14 @@ async def get_agent_internal(
         ),
     )
 
-    selected_agent_ids = list(
-        {
-            aid
-            for aid in agent_ids.values()
-            if aid is not None
-        }
-    )
+    selected_agent_ids = list({aid for aid in agent_ids.values() if aid is not None})
     config_agents: list[QGetAgentsV4Item] = []
     if selected_agent_ids:
         async with pool.acquire() as c:
             config_agents = await get_agents_internal(
                 c, selected_agent_ids, bypass_cache
             )
-    provider_ids = list(
-        {
-            m.provider_id
-            for m in models
-            if m.provider_id is not None
-        }
-    )
+    provider_ids = list({m.provider_id for m in models if m.provider_id is not None})
     config_providers: list[QGetProvidersV4Item] = []
     if provider_ids:
         async with pool.acquire() as c:
@@ -797,9 +785,7 @@ async def get_agent_client(
         else None
     )
     reasoning_resource = (
-        current.reasoning_levels[0]
-        if current and current.reasoning_levels
-        else None
+        current.reasoning_levels[0] if current and current.reasoning_levels else None
     )
 
     return GetAgentApiResponse(
@@ -905,9 +891,7 @@ async def get_agent_client(
             show=bool(data.show_flags_map.get("temperature_levels")),
             required=bool(data.required_flags_map.get("temperature_levels")),
             suggestions=data.suggestions_map.get("temperature_levels"),
-            show_ai_generate=bool(
-                data.show_ai_generate_map.get("temperature_levels")
-            ),
+            show_ai_generate=bool(data.show_ai_generate_map.get("temperature_levels")),
             create_tool_id=None,
             link_tool_id=data.link_tool_ids_map.get("temperature_levels"),
             resource=temperature_resource,
@@ -996,9 +980,11 @@ async def get_agent(
             audit_ctx: dict[str, Any] = {
                 "actor": {"name": response_data.actor_name, "id": profile_id}
             }
-            current_name = response_data.names.resource.name if (
-                response_data.names and response_data.names.resource
-            ) else None
+            current_name = (
+                response_data.names.resource.name
+                if (response_data.names and response_data.names.resource)
+                else None
+            )
             if request.agent_id and current_name:
                 audit_ctx["agent"] = {
                     "name": current_name,

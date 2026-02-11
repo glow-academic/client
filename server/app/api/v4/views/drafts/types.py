@@ -184,6 +184,22 @@ class DraftSimulationViewItem(DraftViewItemBase):
     scenario_time_limit_ids: list[UUID] = Field(default_factory=list)
 
 
+class DraftTrainingBundleViewItem(DraftViewItemBase):
+    department_ids: list[UUID] = Field(default_factory=list)
+    persona_ids: list[UUID] = Field(default_factory=list)
+    document_ids: list[UUID] = Field(default_factory=list)
+    parameter_field_ids: list[UUID] = Field(default_factory=list)
+    parameter_ids: list[UUID] = Field(default_factory=list)
+    field_ids: list[UUID] = Field(default_factory=list)
+    question_ids: list[UUID] = Field(default_factory=list)
+    option_ids: list[UUID] = Field(default_factory=list)
+    video_ids: list[UUID] = Field(default_factory=list)
+    image_ids: list[UUID] = Field(default_factory=list)
+    template_ids: list[UUID] = Field(default_factory=list)
+    problem_statement_ids: list[UUID] = Field(default_factory=list)
+    objective_ids: list[UUID] = Field(default_factory=list)
+
+
 class DraftToolViewItem(DraftViewItemBase):
     name_ids: list[UUID] = Field(default_factory=list)
     description_ids: list[UUID] = Field(default_factory=list)

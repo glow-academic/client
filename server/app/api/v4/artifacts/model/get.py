@@ -563,7 +563,9 @@ async def get_model_internal(
         (d for d in descriptions if d.id == selected_description_id), None
     )
     value_resource = next((v for v in values if v.id == selected_value_id), None)
-    provider_resource = next((p for p in providers if p.id == selected_provider_id), None)
+    provider_resource = next(
+        (p for p in providers if p.id == selected_provider_id), None
+    )
 
     department_resources = [
         d for d in departments if d.department_id in selected_department_ids

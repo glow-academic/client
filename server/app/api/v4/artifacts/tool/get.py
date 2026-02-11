@@ -129,7 +129,9 @@ async def get_tool_internal(
             else access_result.group_id
         )
         effective_draft_version = (
-            draft_item.version if draft_item is not None else access_result.draft_version
+            draft_item.version
+            if draft_item is not None
+            else access_result.draft_version
         )
 
         ids_result = cast(
@@ -190,7 +192,9 @@ async def get_tool_internal(
         resource: agent_ids.get(resource) is not None for resource in TOOL_RESOURCES
     }
 
-    can_edit = compute_can_edit(user_role=user_role, active_usage_count=active_usage_count)
+    can_edit = compute_can_edit(
+        user_role=user_role, active_usage_count=active_usage_count
+    )
     disabled_reason = compute_disabled_reason(
         user_role=user_role,
         active_usage_count=active_usage_count,
@@ -312,7 +316,9 @@ async def get_tool_internal(
     flag_resource = next((f for f in flags if f.id == selected_active_flag_id), None)
 
     args_current = [a for a in args_list if a.id in selected_args_ids]
-    args_outputs_current = [ao for ao in args_outputs_list if ao.id in selected_args_outputs_ids]
+    args_outputs_current = [
+        ao for ao in args_outputs_list if ao.id in selected_args_outputs_ids
+    ]
 
     show_flags_map = {
         "names": compute_show_name(ids_result.names_has_tools or False),
@@ -481,7 +487,11 @@ async def get_tool_websocket(
         (getattr(flag, "flag_option_id", None) or getattr(flag, "id", None))
         for flag in (current.flags if current else []) or []
     }
-    all_enriched_flags = (data.resources_payload.resources.flags if data.resources_payload.resources else []) or []
+    all_enriched_flags = (
+        data.resources_payload.resources.flags
+        if data.resources_payload.resources
+        else []
+    ) or []
     selected_enriched_flags = [
         f for f in all_enriched_flags if f.flag_option_id in selected_flag_ids
     ]
@@ -555,7 +565,9 @@ async def get_tool_client(
         ),
         descriptions=ToolDescriptionSection(
             **_section_common("descriptions"),
-            resource=current.descriptions[0] if current and current.descriptions else None,
+            resource=current.descriptions[0]
+            if current and current.descriptions
+            else None,
             resources=all_resources.descriptions if all_resources else [],
         ),
         flags=ToolFlagSection(
@@ -633,7 +645,11 @@ async def get_tool(
             audit_ctx: dict[str, Any] = {
                 "actor": {"name": response_data.actor_name, "id": profile_id}
             }
-            current_name = response_data.names.resource.name if response_data.names and response_data.names.resource else None
+            current_name = (
+                response_data.names.resource.name
+                if response_data.names and response_data.names.resource
+                else None
+            )
             if request.tool_id and current_name:
                 audit_ctx["tool"] = {
                     "name": current_name,

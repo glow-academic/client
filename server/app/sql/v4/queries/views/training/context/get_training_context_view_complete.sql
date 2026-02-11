@@ -34,17 +34,13 @@ END $$;
 
 CREATE TYPE types.q_get_training_context_view_v4_item AS (
     simulation_id uuid,
-    training_bundle_entry_id uuid,
+    training_bundle_entry_ids uuid[],
     scenario_ids uuid[],
     cohort_ids uuid[],
-    color text,
-    icon text,
-    attempt_count int,
-    highest_score_percent numeric,
-    has_passed boolean,
+    persona_ids uuid[],
     standard_group_ids uuid[],
-    rubric_total_points int,
-    rubric_pass_points int
+    standard_ids uuid[],
+    rubric_ids uuid[]
 );
 
 CREATE OR REPLACE FUNCTION api_get_training_context_view_v4(
@@ -80,18 +76,21 @@ user_cohorts AS (
     WHERE pcj.profile_id = (SELECT profile_id FROM params)
       AND pcj.active = true
 ),
-accessible_training_rows AS (
-    SELECT mtc.*
-    FROM mv_training_context mtc
-    JOIN user_cohorts uc ON mtc.cohort_id = ANY(COALESCE(uc.cohort_ids, ARRAY[]::uuid[]))
-    WHERE mtc.practice = (SELECT practice FROM params)
+-- Filter mv_training: practice flag + cohort overlap
+accessible_training AS (
+    SELECT mt.*
+    FROM mv_training mt
+    JOIN user_cohorts uc
+      ON mt.cohort_ids && COALESCE(uc.cohort_ids, ARRAY[]::uuid[])
+    WHERE mt.practice = (SELECT practice FROM params)
 ),
-active_simulation_rows AS (
-    SELECT atr.*
-    FROM accessible_training_rows atr
+-- Check simulation_active flag for each simulation
+active_simulations AS (
+    SELECT DISTINCT sid.simulation_id
+    FROM accessible_training at2
+    CROSS JOIN LATERAL unnest(at2.simulation_ids) sid(simulation_id)
     JOIN simulation_simulations_junction ssj
-      ON ssj.simulations_id = atr.simulation_id
-     AND ssj.active = true
+      ON ssj.simulations_id = sid.simulation_id AND ssj.active = true
     JOIN simulation_artifact sa
       ON sa.id = ssj.simulation_id
     WHERE EXISTS (
@@ -103,67 +102,35 @@ active_simulation_rows AS (
           AND sf.value = true
     )
 ),
+-- Group by simulation: aggregate IDs from all training rows that contain this simulation
 simulation_scope AS (
     SELECT
-        asr.simulation_id,
-        (ARRAY_AGG(asr.default_training_bundle_entry_id ORDER BY asr.training_created_at, asr.training_id)
-            FILTER (WHERE asr.default_training_bundle_entry_id IS NOT NULL))[1] AS training_bundle_entry_id,
-        ARRAY_AGG(DISTINCT sid.scenario_id ORDER BY sid.scenario_id)
-            FILTER (WHERE sid.scenario_id IS NOT NULL) AS scenario_ids,
-        ARRAY_AGG(DISTINCT asr.cohort_id ORDER BY asr.cohort_id) AS cohort_ids,
-        (ARRAY_AGG(asr.color ORDER BY asr.training_created_at, asr.training_id)
-            FILTER (WHERE asr.color IS NOT NULL))[1] AS color,
-        (ARRAY_AGG(asr.icon ORDER BY asr.training_created_at, asr.training_id)
-            FILTER (WHERE asr.icon IS NOT NULL))[1] AS icon,
+        asim.simulation_id,
+        ARRAY_AGG(DISTINCT tbeid.training_bundle_entry_id ORDER BY tbeid.training_bundle_entry_id)
+            FILTER (WHERE tbeid.training_bundle_entry_id IS NOT NULL) AS training_bundle_entry_ids,
+        ARRAY_AGG(DISTINCT scid.scenario_id ORDER BY scid.scenario_id)
+            FILTER (WHERE scid.scenario_id IS NOT NULL) AS scenario_ids,
+        ARRAY_AGG(DISTINCT coid.cohort_id ORDER BY coid.cohort_id)
+            FILTER (WHERE coid.cohort_id IS NOT NULL) AS cohort_ids,
+        ARRAY_AGG(DISTINCT pid.persona_id ORDER BY pid.persona_id)
+            FILTER (WHERE pid.persona_id IS NOT NULL) AS persona_ids,
         ARRAY_AGG(DISTINCT sgid.standard_group_id ORDER BY sgid.standard_group_id)
             FILTER (WHERE sgid.standard_group_id IS NOT NULL) AS standard_group_ids,
         ARRAY_AGG(DISTINCT stid.standard_id ORDER BY stid.standard_id)
             FILTER (WHERE stid.standard_id IS NOT NULL) AS standard_ids,
-        MAX(asr.rubric_total_points)::int AS rubric_total_points,
-        MAX(asr.rubric_pass_points)::int AS rubric_pass_points
-    FROM active_simulation_rows asr
-    LEFT JOIN LATERAL unnest(COALESCE(asr.scenario_ids, ARRAY[]::uuid[])) sid(scenario_id) ON TRUE
-    LEFT JOIN LATERAL unnest(COALESCE(asr.standard_group_ids, ARRAY[]::uuid[])) sgid(standard_group_id) ON TRUE
-    LEFT JOIN LATERAL unnest(COALESCE(asr.standard_ids, ARRAY[]::uuid[])) stid(standard_id) ON TRUE
-    GROUP BY asr.simulation_id
-),
-profile_resource AS (
-    SELECT ppj.profiles_id
-    FROM profile_profiles_junction ppj
-    WHERE ppj.profile_id = (SELECT profile_id FROM params)
-      AND ppj.active = true
-    LIMIT 1
-),
-simulation_stats AS (
-    SELECT
-        af.simulation_id,
-        COUNT(DISTINCT af.attempt_id)::int AS attempt_count,
-        MAX(af.score_percent) AS highest_score_percent,
-        BOOL_OR(COALESCE(af.has_passed, false)) AS has_passed
-    FROM mv_attempt_facts af
-    JOIN profile_resource pr
-      ON pr.profiles_id = af.profile_id
-    WHERE af.is_archived = false
-      AND af.attempt_type = CASE WHEN (SELECT practice FROM params) THEN 'practice' ELSE 'general' END
-    GROUP BY af.simulation_id
-),
-simulation_data_with_stats AS (
-    SELECT
-        ss.simulation_id,
-        ss.training_bundle_entry_id,
-        ss.scenario_ids,
-        ss.cohort_ids,
-        ss.color,
-        ss.icon,
-        COALESCE(st.attempt_count, 0) AS attempt_count,
-        st.highest_score_percent,
-        COALESCE(st.has_passed, false) AS has_passed,
-        ss.standard_group_ids,
-        ss.rubric_total_points,
-        ss.rubric_pass_points,
-        ss.standard_ids
-    FROM simulation_scope ss
-    LEFT JOIN simulation_stats st ON st.simulation_id = ss.simulation_id
+        ARRAY_AGG(DISTINCT rid.rubric_id ORDER BY rid.rubric_id)
+            FILTER (WHERE rid.rubric_id IS NOT NULL) AS rubric_ids
+    FROM active_simulations asim
+    JOIN accessible_training at2
+      ON asim.simulation_id = ANY(at2.simulation_ids)
+    LEFT JOIN LATERAL unnest(at2.training_bundle_entry_ids) tbeid(training_bundle_entry_id) ON TRUE
+    LEFT JOIN LATERAL unnest(at2.scenario_ids) scid(scenario_id) ON TRUE
+    LEFT JOIN LATERAL unnest(at2.cohort_ids) coid(cohort_id) ON TRUE
+    LEFT JOIN LATERAL unnest(at2.persona_ids) pid(persona_id) ON TRUE
+    LEFT JOIN LATERAL unnest(at2.standard_group_ids) sgid(standard_group_id) ON TRUE
+    LEFT JOIN LATERAL unnest(at2.standard_ids) stid(standard_id) ON TRUE
+    LEFT JOIN LATERAL unnest(at2.rubric_ids) rid(rubric_id) ON TRUE
+    GROUP BY asim.simulation_id
 )
 SELECT
     (SELECT actor_name FROM user_profile) AS actor_name,
@@ -172,32 +139,28 @@ SELECT
         (
             SELECT ARRAY_AGG(
                 (
-                    sd.simulation_id,
-                    sd.training_bundle_entry_id,
-                    sd.scenario_ids,
-                    sd.cohort_ids,
-                    sd.color,
-                    sd.icon,
-                    sd.attempt_count,
-                    sd.highest_score_percent,
-                    sd.has_passed,
-                    sd.standard_group_ids,
-                    sd.rubric_total_points,
-                    sd.rubric_pass_points
+                    ss.simulation_id,
+                    ss.training_bundle_entry_ids,
+                    ss.scenario_ids,
+                    ss.cohort_ids,
+                    ss.persona_ids,
+                    ss.standard_group_ids,
+                    ss.standard_ids,
+                    ss.rubric_ids
                 )::types.q_get_training_context_view_v4_item
-                ORDER BY sd.simulation_id
+                ORDER BY ss.simulation_id
             )
-            FROM simulation_data_with_stats sd
-            WHERE sd.scenario_ids IS NOT NULL
-              AND ARRAY_LENGTH(sd.scenario_ids, 1) > 0
+            FROM simulation_scope ss
+            WHERE ss.scenario_ids IS NOT NULL
+              AND ARRAY_LENGTH(ss.scenario_ids, 1) > 0
         ),
         ARRAY[]::types.q_get_training_context_view_v4_item[]
     ) AS items,
     COALESCE(
         (
             SELECT ARRAY_AGG(DISTINCT sgid.standard_group_id ORDER BY sgid.standard_group_id)
-            FROM simulation_data_with_stats sd
-            LEFT JOIN LATERAL unnest(COALESCE(sd.standard_group_ids, ARRAY[]::uuid[])) sgid(standard_group_id) ON TRUE
+            FROM simulation_scope ss
+            CROSS JOIN LATERAL unnest(COALESCE(ss.standard_group_ids, ARRAY[]::uuid[])) sgid(standard_group_id)
             WHERE sgid.standard_group_id IS NOT NULL
         ),
         ARRAY[]::uuid[]
@@ -205,8 +168,8 @@ SELECT
     COALESCE(
         (
             SELECT ARRAY_AGG(DISTINCT stid.standard_id ORDER BY stid.standard_id)
-            FROM simulation_data_with_stats sd
-            LEFT JOIN LATERAL unnest(COALESCE(sd.standard_ids, ARRAY[]::uuid[])) stid(standard_id) ON TRUE
+            FROM simulation_scope ss
+            CROSS JOIN LATERAL unnest(COALESCE(ss.standard_ids, ARRAY[]::uuid[])) stid(standard_id)
             WHERE stid.standard_id IS NOT NULL
         ),
         ARRAY[]::uuid[]

@@ -58,25 +58,23 @@ async def get_training_context_view_internal(
             items.append(
                 TrainingContextViewItem(
                     simulation_id=item.simulation_id,
-                    training_bundle_entry_id=item.training_bundle_entry_id,
-                    scenario_ids=list(item.scenario_ids) if item.scenario_ids else None,
-                    cohort_ids=list(item.cohort_ids) if item.cohort_ids else None,
-                    color=item.color,
-                    icon=item.icon,
-                    attempt_count=item.attempt_count,
-                    highest_score_percent=(
-                        float(item.highest_score_percent)
-                        if item.highest_score_percent is not None
+                    training_bundle_entry_ids=(
+                        list(item.training_bundle_entry_ids)
+                        if item.training_bundle_entry_ids
                         else None
                     ),
-                    has_passed=item.has_passed,
+                    scenario_ids=list(item.scenario_ids) if item.scenario_ids else None,
+                    cohort_ids=list(item.cohort_ids) if item.cohort_ids else None,
+                    persona_ids=(list(item.persona_ids) if item.persona_ids else None),
                     standard_group_ids=(
                         list(item.standard_group_ids)
                         if item.standard_group_ids
                         else None
                     ),
-                    rubric_total_points=item.rubric_total_points,
-                    rubric_pass_points=item.rubric_pass_points,
+                    standard_ids=(
+                        list(item.standard_ids) if item.standard_ids else None
+                    ),
+                    rubric_ids=(list(item.rubric_ids) if item.rubric_ids else None),
                 )
             )
 
@@ -87,7 +85,9 @@ async def get_training_context_view_internal(
         standard_group_ids=list(result.standard_group_ids)
         if result and result.standard_group_ids
         else [],
-        standard_ids=list(result.standard_ids) if result and result.standard_ids else [],
+        standard_ids=list(result.standard_ids)
+        if result and result.standard_ids
+        else [],
     )
 
     await set_cached(

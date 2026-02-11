@@ -552,9 +552,7 @@ async def get_rubric_internal(
         )
 
     # Fetch config resources for websocket generation context.
-    selected_agent_ids = [
-        aid for aid in resource_agent_ids.values() if aid is not None
-    ]
+    selected_agent_ids = [aid for aid in resource_agent_ids.values() if aid is not None]
     selected_agent_ids = list(dict.fromkeys(selected_agent_ids))
     config_agents = []
     config_models = []
@@ -655,7 +653,9 @@ async def get_rubric_internal(
         standards=standards_selected,
         names_current=[name_resource] if name_resource else [],
         descriptions_current=[description_resource] if description_resource else [],
-        flags_current=[f for f in rubric_flags if f.flag_option_id == selected_active_flag_id],
+        flags_current=[
+            f for f in rubric_flags if f.flag_option_id == selected_active_flag_id
+        ],
         departments_current=department_resources or [],
         points_current=[total_points_resource] if total_points_resource else [],
         pass_points_current=[pass_points_resource] if pass_points_resource else [],
@@ -760,7 +760,9 @@ async def get_rubric_client(
             show_ai_generate=data.show_ai_generate_map.get("descriptions", False),
             create_tool_id=data.create_tool_ids_map.get("descriptions"),
             link_tool_id=data.link_tool_ids_map.get("descriptions"),
-            resource=data.descriptions_current[0] if data.descriptions_current else None,
+            resource=data.descriptions_current[0]
+            if data.descriptions_current
+            else None,
             resources=data.descriptions,
         ),
         flags=RubricFlagSection(
@@ -887,9 +889,11 @@ async def get_rubric(
             audit_ctx: dict[str, Any] = {
                 "actor": {"name": response_data.actor_name, "id": profile_id}
             }
-            current_name = response_data.names.resource.name if (
-                response_data.names and response_data.names.resource
-            ) else None
+            current_name = (
+                response_data.names.resource.name
+                if (response_data.names and response_data.names.resource)
+                else None
+            )
             if request.rubric_id and current_name:
                 audit_ctx["rubric"] = {
                     "name": current_name,

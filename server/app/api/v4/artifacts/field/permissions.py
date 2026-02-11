@@ -266,4 +266,3 @@ FIELD_RESOURCES: set[str] = {
 # Multi-resource agent definitions for field
 FIELD_BASIC_RESOURCES: set[str] = {"names", "descriptions", "flags", "departments"}
 FIELD_GENERAL_RESOURCES: set[str] = FIELD_RESOURCES  # All resources
-

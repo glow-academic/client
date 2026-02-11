@@ -12,7 +12,8 @@ Architecture:
 from uuid import UUID
 
 from pydantic import BaseModel, Field
-from app.api.v4.views.drafts.types import DraftScenarioViewItem
+
+from app.api.v4.views.drafts.types import DraftTrainingBundleViewItem
 from app.sql.types import (
     QGetAgentsV4Item,
     QGetDepartmentsV4Item,
@@ -282,7 +283,7 @@ class GetTrainingBundleRequest(BaseModel):
 class TrainingBundleViews(BaseModel):
     """Draft/views payload for training bundle customization."""
 
-    draft_training_bundle: DraftScenarioViewItem | None = None
+    draft_training_bundle: DraftTrainingBundleViewItem | None = None
 
 
 class TrainingBundleResourceBucket(BaseModel):

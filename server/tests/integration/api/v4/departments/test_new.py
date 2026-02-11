@@ -26,4 +26,3 @@ async def test_get_department_new(
     assert "settings" in data
     assert "group_id" in data
     assert "basic_show_ai_generate" in data
-

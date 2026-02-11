@@ -49,14 +49,26 @@ async def test_update_department_via_save(
         json={
             "group_id": group_id,
             "input_department_id": str(dept.department_id),
-            "names": {"resource_id": name_id, "create_tool_id": None, "link_tool_id": None},
+            "names": {
+                "resource_id": name_id,
+                "create_tool_id": None,
+                "link_tool_id": None,
+            },
             "descriptions": {
                 "resource_id": desc_id,
                 "create_tool_id": None,
                 "link_tool_id": None,
             },
-            "flags": {"resource_id": flag_id, "create_tool_id": None, "link_tool_id": None},
-            "settings": {"resource_ids": [], "create_tool_id": None, "link_tool_id": None},
+            "flags": {
+                "resource_id": flag_id,
+                "create_tool_id": None,
+                "link_tool_id": None,
+            },
+            "settings": {
+                "resource_ids": [],
+                "create_tool_id": None,
+                "link_tool_id": None,
+            },
         },
     )
 
@@ -64,4 +76,3 @@ async def test_update_department_via_save(
     out = response.json()
     assert out["success"] is True
     assert out.get("department_id") == str(dept.department_id)
-

@@ -21,6 +21,7 @@ from app.socket.v4.artifacts.generation_common import (
 client_router = APIRouter()
 server_router = APIRouter()
 
+
 async def _generate_auth_impl(
     sid: str,
     data: GenerateAuthPayload,

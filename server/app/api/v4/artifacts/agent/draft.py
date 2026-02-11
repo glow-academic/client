@@ -54,16 +54,12 @@ async def patch_agent_draft(
                 "input_draft_id": request.input_draft_id,
                 "name_id": request.names.resource_id if request.names else None,
                 "description_id": (
-                    request.descriptions.resource_id
-                    if request.descriptions
-                    else None
+                    request.descriptions.resource_id if request.descriptions else None
                 ),
                 "model_id": request.models.resource_id if request.models else None,
                 "prompt_id": request.prompts.resource_id if request.prompts else None,
                 "instructions_id": (
-                    request.instructions.resource_id
-                    if request.instructions
-                    else None
+                    request.instructions.resource_id if request.instructions else None
                 ),
                 "active_flag_id": request.flags.resource_id if request.flags else None,
                 "temperature_level_id": (
@@ -83,9 +79,7 @@ async def patch_agent_draft(
                 "voice_ids": request.voices.resource_ids if request.voices else None,
                 "expected_version": request.expected_version,
             }
-            params = PatchAgentDraftSqlParams(
-                **params_payload, profile_id=profile_id
-            )
+            params = PatchAgentDraftSqlParams(**params_payload, profile_id=profile_id)
             sql_params = params.to_tuple()
 
             result = cast(

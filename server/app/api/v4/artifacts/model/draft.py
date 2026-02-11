@@ -105,7 +105,9 @@ async def patch_model_draft(
             )
 
         if not result.draft_id or result.new_version is None:
-            raise ValueError("Failed to patch model draft — missing draft_id or version")
+            raise ValueError(
+                "Failed to patch model draft — missing draft_id or version"
+            )
 
         api_response = PatchModelDraftApiResponse(
             success=True,

@@ -435,9 +435,7 @@ async def get_department_internal(
         )
 
     # Fetch config resources for websocket generation context.
-    selected_agent_ids = [
-        aid for aid in resource_agent_ids.values() if aid is not None
-    ]
+    selected_agent_ids = [aid for aid in resource_agent_ids.values() if aid is not None]
     selected_agent_ids = list(dict.fromkeys(selected_agent_ids))
     config_agents = []
     config_models = []
@@ -451,13 +449,7 @@ async def get_department_internal(
                 bypass_cache=bypass_cache,
             )
         model_ids = list(
-            dict.fromkeys(
-                [
-                    a.model_id
-                    for a in config_agents
-                    if a.model_id is not None
-                ]
-            )
+            dict.fromkeys([a.model_id for a in config_agents if a.model_id is not None])
         )
         if model_ids:
             async with pool.acquire() as c:
@@ -468,11 +460,7 @@ async def get_department_internal(
                 )
         provider_ids = list(
             dict.fromkeys(
-                [
-                    m.provider_id
-                    for m in config_models
-                    if m.provider_id is not None
-                ]
+                [m.provider_id for m in config_models if m.provider_id is not None]
             )
         )
         if provider_ids:
@@ -531,9 +519,7 @@ async def get_department_internal(
         names_current=[name_resource] if name_resource else [],
         descriptions_current=[description_resource] if description_resource else [],
         flags_current=[
-            f
-            for f in department_flags
-            if f.flag_option_id == selected_active_flag_id
+            f for f in department_flags if f.flag_option_id == selected_active_flag_id
         ],
         settings_current=settings_resources or [],
         config_agents=config_agents,
@@ -630,7 +616,9 @@ async def get_department_client(
             show_ai_generate=data.show_ai_generate_map.get("descriptions", False),
             create_tool_id=data.create_tool_ids_map.get("descriptions"),
             link_tool_id=data.link_tool_ids_map.get("descriptions"),
-            resource=data.descriptions_current[0] if data.descriptions_current else None,
+            resource=data.descriptions_current[0]
+            if data.descriptions_current
+            else None,
             resources=data.descriptions,
         ),
         flags=DepartmentFlagSection(
@@ -716,9 +704,11 @@ async def get_department(
             audit_ctx: dict[str, Any] = {
                 "actor": {"name": response_data.actor_name, "id": profile_id}
             }
-            current_name = response_data.names.resource.name if (
-                response_data.names and response_data.names.resource
-            ) else None
+            current_name = (
+                response_data.names.resource.name
+                if (response_data.names and response_data.names.resource)
+                else None
+            )
             if request.department_id and current_name:
                 audit_ctx["department"] = {
                     "title": current_name,

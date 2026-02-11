@@ -50,7 +50,9 @@ async def handle_auth_error(data: dict[str, Any]) -> None:
 
     resource_type = data.get("resource_type")
     resource_types = [
-        rt for rt in (data.get("resource_types", []) or []) if rt in AUTH_GENERATE_RESOURCE_TYPES
+        rt
+        for rt in (data.get("resource_types", []) or [])
+        if rt in AUTH_GENERATE_RESOURCE_TYPES
     ]
     if resource_type and resource_type not in AUTH_GENERATE_RESOURCE_TYPES:
         resource_type = None

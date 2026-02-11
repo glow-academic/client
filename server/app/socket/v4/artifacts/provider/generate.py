@@ -184,7 +184,9 @@ async def _provider_generate_impl(
             if hasattr(model_resource, "value")
             else model_resource.name
         )
-        base_url = model_resource.endpoint if hasattr(model_resource, "endpoint") else ""
+        base_url = (
+            model_resource.endpoint if hasattr(model_resource, "endpoint") else ""
+        )
         api_key = model_resource.key if hasattr(model_resource, "key") else ""
         temperature = (
             agent_resource.temperature
@@ -363,7 +365,9 @@ async def _provider_generate_impl(
                 )
             for m in rendered_developer_messages:
                 messages.append({"role": "developer", "content": m})
-                await conn.fetchval(create_message_sql, run_id, "developer", m, True, False)
+                await conn.fetchval(
+                    create_message_sql, run_id, "developer", m, True, False
+                )
             if data.user_instructions:
                 for instruction in data.user_instructions:
                     messages.append({"role": "user", "content": instruction})
@@ -376,7 +380,9 @@ async def _provider_generate_impl(
                 {
                     "sid": sid,
                     "artifact_type": "provider",
-                    "resource_type": resource_types[0] if resource_types else "provider",
+                    "resource_type": resource_types[0]
+                    if resource_types
+                    else "provider",
                     "run_id": str(run_id),
                     "group_id": str(group_id) if group_id else None,
                     "message_id": None,

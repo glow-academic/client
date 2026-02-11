@@ -6,20 +6,16 @@ from pydantic import BaseModel, Field
 
 
 class TrainingContextViewItem(BaseModel):
-    """IDs-first training simulation item."""
+    """IDs-first training simulation item — raw IDs only, no computed fields."""
 
     simulation_id: UUID
-    training_bundle_entry_id: UUID | None = None
+    training_bundle_entry_ids: list[UUID] | None = None
     scenario_ids: list[UUID] | None = None
     cohort_ids: list[UUID] | None = None
-    color: str | None = None
-    icon: str | None = None
-    attempt_count: int | None = None
-    highest_score_percent: float | None = None
-    has_passed: bool | None = None
+    persona_ids: list[UUID] | None = None
     standard_group_ids: list[UUID] | None = None
-    rubric_total_points: int | None = None
-    rubric_pass_points: int | None = None
+    standard_ids: list[UUID] | None = None
+    rubric_ids: list[UUID] | None = None
 
 
 class GetTrainingContextViewResponse(BaseModel):

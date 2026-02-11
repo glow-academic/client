@@ -9,7 +9,6 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from app.api.v4.views.training.bundle.types import GetTrainingBundleViewResponse
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import GetTrainingBundleViewSqlParams
 from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = (
@@ -24,7 +23,9 @@ async def get_training_bundle_view_internal(
     profile_id: UUID,
     training_bundle_entry_id: UUID,
 ) -> GetTrainingBundleViewResponse:
-    """Thin DB-backed bundle scope lookup used by training artifacts."""
+    """Thin MV-backed bundle scope lookup used by training artifacts."""
+    from app.sql.types import GetTrainingBundleViewSqlParams
+
     params = GetTrainingBundleViewSqlParams(
         profile_id_filter=profile_id,
         training_bundle_entry_id_filter=training_bundle_entry_id,
@@ -38,14 +39,26 @@ async def get_training_bundle_view_internal(
         profile_has_access=row.profile_has_access or False,
         training_bundle_entry_id=row.training_bundle_entry_id,
         training_id=row.training_id,
-        simulation_id=row.simulation_id,
-        simulation_name=row.simulation_name,
-        scenario_id=row.scenario_id,
+        scenario_ids=list(row.scenario_ids or []),
         department_ids=list(row.department_ids or []),
         persona_ids=list(row.persona_ids or []),
         document_ids=list(row.document_ids or []),
         parameter_field_ids=list(row.parameter_field_ids or []),
-        scenario_time_limit_ids=list(row.scenario_time_limit_ids or []),
+        parameter_ids=list(row.parameter_ids or []),
+        field_ids=list(row.field_ids or []),
+        question_ids=list(row.question_ids or []),
+        option_ids=list(row.option_ids or []),
+        video_ids=list(row.video_ids or []),
+        image_ids=list(row.image_ids or []),
+        template_ids=list(row.template_ids or []),
+        problem_statement_ids=list(row.problem_statement_ids or []),
+        objective_ids=list(row.objective_ids or []),
+        video_enabled=row.video_enabled or False,
+        problem_statement_enabled=row.problem_statement_enabled or False,
+        objectives_enabled=row.objectives_enabled or False,
+        images_enabled=row.images_enabled or False,
+        questions_enabled=row.questions_enabled or False,
+        use_templates=row.use_templates or False,
     )
 
 

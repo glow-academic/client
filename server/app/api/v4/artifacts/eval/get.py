@@ -412,7 +412,9 @@ async def get_eval_internal(
     async def fetch_agents() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
             selected = await get_agents_internal(c, selected_agent_ids, bypass_cache)
-            suggestions = await get_agents_internal(c, agent_suggestion_ids, bypass_cache)
+            suggestions = await get_agents_internal(
+                c, agent_suggestion_ids, bypass_cache
+            )
             return (selected, suggestions)
 
     async def fetch_rubrics() -> tuple[list[Any], list[Any]]:
@@ -680,9 +682,7 @@ async def get_eval_websocket(
         rid for mapping in data.run_rubrics for rid in (mapping.rubric_ids or [])
     } | {rid for mapping in data.group_rubrics for rid in (mapping.rubric_ids or [])}
     if selected_rubric_ids:
-        selected_rubrics = [
-            r for r in data.rubrics if r.id in selected_rubric_ids
-        ]
+        selected_rubrics = [r for r in data.rubrics if r.id in selected_rubric_ids]
 
     return GetEvalWebsocketResponse(
         views=EvalWebsocketViews(draft_eval=None),

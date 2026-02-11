@@ -136,7 +136,9 @@ async def get_provider_internal(
             else access_result.group_id
         )
         effective_draft_version = (
-            draft_item.version if draft_item is not None else access_result.draft_version
+            draft_item.version
+            if draft_item is not None
+            else access_result.draft_version
         )
 
         query2_params = GetProviderIdsSqlParams(
@@ -199,8 +201,7 @@ async def get_provider_internal(
                 break
 
     show_ai_generate_map = {
-        resource: agent_ids.get(resource) is not None
-        for resource in PROVIDER_RESOURCES
+        resource: agent_ids.get(resource) is not None for resource in PROVIDER_RESOURCES
     }
     basic_show_ai_generate = any(
         show_ai_generate_map.get(r, False)
@@ -335,7 +336,9 @@ async def get_provider_internal(
         (d for d in descriptions if d.id == selected_description_id), None
     )
     value_resource = next((v for v in values if v.id == selected_value_id), None)
-    endpoint_resource = next((e for e in endpoints if e.id == selected_endpoint_id), None)
+    endpoint_resource = next(
+        (e for e in endpoints if e.id == selected_endpoint_id), None
+    )
     key_resource = next((k for k in keys if k.id == selected_key_id), None)
     department_resources = [
         d for d in departments if d.department_id in selected_department_ids
@@ -379,7 +382,8 @@ async def get_provider_internal(
         (
             f
             for f in provider_flags
-            if f.flag_option_id is not None and f.flag_option_id == selected_active_flag_id
+            if f.flag_option_id is not None
+            and f.flag_option_id == selected_active_flag_id
         ),
         None,
     )
@@ -523,7 +527,9 @@ async def get_provider_websocket(
         resource_agent_ids=data.agent_ids,
         resources=ProviderWebsocketResources(
             names=[data.name_resource] if data.name_resource else None,
-            descriptions=[data.description_resource] if data.description_resource else None,
+            descriptions=[data.description_resource]
+            if data.description_resource
+            else None,
             flags=data.provider_flags or None,
             departments=data.department_resources or None,
             values=[data.value_resource] if data.value_resource else None,
@@ -666,7 +672,9 @@ async def get_provider(
             audit_ctx: dict[str, Any] = {
                 "actor": {"name": response_data.actor_name, "id": profile_id}
             }
-            current_name = response_data.names.resource.name if response_data.names else None
+            current_name = (
+                response_data.names.resource.name if response_data.names else None
+            )
             if request.provider_id and current_name:
                 audit_ctx["provider"] = {
                     "name": current_name,

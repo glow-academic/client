@@ -76,18 +76,20 @@ user_cohorts AS (
     WHERE pcj.profile_id = (SELECT profile_id FROM params)
       AND pcj.active = true
 ),
-accessible_training_rows AS (
-    SELECT mtc.*
-    FROM mv_training_context mtc
-    JOIN user_cohorts uc ON mtc.cohort_id = ANY(COALESCE(uc.cohort_ids, ARRAY[]::uuid[]))
-    WHERE mtc.practice = (SELECT practice FROM params)
+accessible_training AS (
+    SELECT mt.*
+    FROM mv_training mt
+    JOIN user_cohorts uc
+      ON mt.cohort_ids && COALESCE(uc.cohort_ids, ARRAY[]::uuid[])
+    WHERE mt.practice = (SELECT practice FROM params)
 ),
-active_simulation_rows AS (
-    SELECT atr.*
-    FROM accessible_training_rows atr
+-- Unnest simulation_ids from mv_training, check simulation_active flag
+active_simulations AS (
+    SELECT DISTINCT sid.simulation_id
+    FROM accessible_training at2
+    CROSS JOIN LATERAL unnest(at2.simulation_ids) sid(simulation_id)
     JOIN simulation_simulations_junction ssj
-      ON ssj.simulations_id = atr.simulation_id
-     AND ssj.active = true
+      ON ssj.simulations_id = sid.simulation_id AND ssj.active = true
     JOIN simulation_artifact sa
       ON sa.id = ssj.simulation_id
     WHERE EXISTS (
@@ -99,15 +101,20 @@ active_simulation_rows AS (
           AND sf.value = true
     )
 ),
+-- Group by simulation: aggregate IDs from all training rows that contain this simulation
 simulation_data AS (
     SELECT
-        asr.simulation_id,
-        MAX(asr.total_time_limit_seconds)::int AS time_limit,
-        ARRAY_AGG(DISTINCT sid.scenario_id ORDER BY sid.scenario_id) FILTER (WHERE sid.scenario_id IS NOT NULL) AS scenario_ids,
-        ARRAY_AGG(DISTINCT asr.cohort_id ORDER BY asr.cohort_id) AS cohort_ids
-    FROM active_simulation_rows asr
-    LEFT JOIN LATERAL unnest(COALESCE(asr.scenario_ids, ARRAY[]::uuid[])) sid(scenario_id) ON TRUE
-    GROUP BY asr.simulation_id
+        asim.simulation_id,
+        ARRAY_AGG(DISTINCT scid.scenario_id ORDER BY scid.scenario_id)
+            FILTER (WHERE scid.scenario_id IS NOT NULL) AS scenario_ids,
+        ARRAY_AGG(DISTINCT coid.cohort_id ORDER BY coid.cohort_id)
+            FILTER (WHERE coid.cohort_id IS NOT NULL) AS cohort_ids
+    FROM active_simulations asim
+    JOIN accessible_training at2
+      ON asim.simulation_id = ANY(at2.simulation_ids)
+    LEFT JOIN LATERAL unnest(at2.scenario_ids) scid(scenario_id) ON TRUE
+    LEFT JOIN LATERAL unnest(at2.cohort_ids) coid(cohort_id) ON TRUE
+    GROUP BY asim.simulation_id
 ),
 first_scenario_persona AS (
     SELECT

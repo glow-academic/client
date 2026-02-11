@@ -6,6 +6,7 @@ Three-layer style for training:
 3. get_training_client() - HTTP-facing response formatter
 """
 
+import asyncio
 from dataclasses import dataclass
 from typing import Annotated, Any, cast
 from uuid import UUID
@@ -30,14 +31,19 @@ from app.api.v4.artifacts.training.types import (
     TrainingWebsocketViews,
 )
 from app.api.v4.resources.cohorts.get import get_cohorts_internal
+from app.api.v4.resources.personas.get import get_personas_internal
 from app.api.v4.resources.simulations.get import get_simulations_batch_internal
 from app.api.v4.resources.standard_groups.get import get_standard_groups_internal
 from app.api.v4.resources.standards.get import get_standards_internal
+from app.api.v4.views.analytics.attempts.get import get_attempt_facts_internal
 from app.api.v4.views.training.context.get import get_training_context_view_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import GetTrainingStartContextSqlParams, GetTrainingStartContextSqlRow
+from app.sql.types import (
+    GetTrainingStartContextSqlParams,
+    GetTrainingStartContextSqlRow,
+)
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -51,6 +57,13 @@ SQL_PATH_START_CONTEXT = (
 
 
 @dataclass
+class SimulationStats:
+    attempt_count: int = 0
+    highest_score_percent: float | None = None
+    has_passed: bool = False
+
+
+@dataclass
 class TrainingInternalData:
     actor_name: str | None
     user_role: str | None
@@ -59,93 +72,159 @@ class TrainingInternalData:
     standards: list[StandardMapping] | None
 
 
+async def _get_simulation_stats(
+    conn: asyncpg.Connection,
+    profile_id: UUID,
+    practice: bool,
+    bypass_cache: bool = False,
+) -> dict[UUID, SimulationStats]:
+    """Fetch per-simulation attempt stats from mv_attempt_facts."""
+    attempt_type = "practice" if practice else "general"
+    facts = await get_attempt_facts_internal(
+        conn=conn,
+        profile_id=profile_id,
+        attempt_type=attempt_type,
+        is_archived=False,
+        page_limit=10000,
+        page_offset=0,
+        bypass_cache=bypass_cache,
+    )
+
+    stats: dict[UUID, SimulationStats] = {}
+    for item in facts.items:
+        if not item.simulation_id:
+            continue
+        sim_id = item.simulation_id
+        if sim_id not in stats:
+            stats[sim_id] = SimulationStats()
+        s = stats[sim_id]
+        s.attempt_count += 1
+        if item.score_percent is not None:
+            if (
+                s.highest_score_percent is None
+                or item.score_percent > s.highest_score_percent
+            ):
+                s.highest_score_percent = item.score_percent
+        if item.has_passed:
+            s.has_passed = True
+
+    return stats
+
+
 async def get_training_internal(
     conn: asyncpg.Connection,
     profile_id: UUID,
     practice: bool,
     bypass_cache: bool = False,
 ) -> TrainingInternalData:
-    """Shared internal fetch for training client responses."""
-    result = cast(
-        Any,
-        await get_training_context_view_internal(
-            conn=conn,
-            profile_id=profile_id,
-            practice=practice,
-            bypass_cache=bypass_cache,
-        ),
+    """Shared internal fetch for training client responses.
+
+    Parallel fetches:
+    1. Context view (raw IDs from mv_training)
+    2. Attempt stats (from mv_attempt_facts)
+    Then hydrate with resource internals.
+    """
+    # Pass 1: context view + attempt stats in parallel
+    context_task = get_training_context_view_internal(
+        conn=conn,
+        profile_id=profile_id,
+        practice=practice,
+        bypass_cache=bypass_cache,
     )
+    stats_task = _get_simulation_stats(
+        conn=conn,
+        profile_id=profile_id,
+        practice=practice,
+        bypass_cache=bypass_cache,
+    )
+
+    result, sim_stats = await asyncio.gather(context_task, stats_task)
+    result = cast(Any, result)
 
     user_role = result.user_role if result else None
     view_mode = compute_mode(practice, user_role)
 
-    simulation_ids = (
-        [item.simulation_id for item in result.items if item.simulation_id]
-        if result and result.items
-        else []
-    )
-    simulation_map = {
-        item.simulation_id: item
-        for item in await get_simulations_batch_internal(
-            conn,
-            simulation_ids,
-            bypass_cache=bypass_cache,
-        )
-        if item.simulation_id
-    }
-
+    # Collect all IDs for batch resource fetching
+    simulation_ids: list[UUID] = []
+    all_persona_ids: set[UUID] = set()
     cohort_ids: set[UUID] = set()
+
     if result and result.items:
         for item in result.items:
+            if item.simulation_id:
+                simulation_ids.append(item.simulation_id)
+            if item.persona_ids:
+                all_persona_ids.update(item.persona_ids)
             if item.cohort_ids:
                 cohort_ids.update(item.cohort_ids)
-    cohort_map = {
-        item.cohort_id: item
-        for item in await get_cohorts_internal(
-            conn,
-            list(cohort_ids),
-            bypass_cache=bypass_cache,
-        )
-        if item.cohort_id
-    }
 
     standard_group_ids = (
-        list(result.standard_group_ids)
-        if result and result.standard_group_ids
-        else []
+        list(result.standard_group_ids) if result and result.standard_group_ids else []
     )
-    standard_groups_map = {
-        item.standard_group_id: item
-        for item in await get_standard_groups_internal(
-            conn,
-            standard_group_ids,
-            bypass_cache=bypass_cache,
-        )
-        if item.standard_group_id
-    }
-
     standard_ids = list(result.standard_ids) if result and result.standard_ids else []
-    standards_map = {
-        item.standard_id: item
-        for item in await get_standards_internal(
-            conn,
-            standard_ids,
-            bypass_cache=bypass_cache,
-        )
-        if item.standard_id
-    }
 
+    # Pass 2: batch resource fetches in parallel
+    sim_task = get_simulations_batch_internal(
+        conn, simulation_ids, bypass_cache=bypass_cache
+    )
+    persona_task = get_personas_internal(
+        conn, list(all_persona_ids), bypass_cache=bypass_cache
+    )
+    cohort_task = get_cohorts_internal(
+        conn, list(cohort_ids), bypass_cache=bypass_cache
+    )
+    sg_task = get_standard_groups_internal(
+        conn, standard_group_ids, bypass_cache=bypass_cache
+    )
+    std_task = get_standards_internal(conn, standard_ids, bypass_cache=bypass_cache)
+
+    sim_list, persona_list, cohort_list, sg_list, std_list = await asyncio.gather(
+        sim_task, persona_task, cohort_task, sg_task, std_task
+    )
+
+    simulation_map = {
+        item.simulation_id: item for item in sim_list if item.simulation_id
+    }
+    persona_map = {item.persona_id: item for item in persona_list if item.persona_id}
+    cohort_map = {item.cohort_id: item for item in cohort_list if item.cohort_id}
+    standard_groups_map = {
+        item.standard_group_id: item for item in sg_list if item.standard_group_id
+    }
+    standards_map = {item.standard_id: item for item in std_list if item.standard_id}
+
+    # Build items with hydration + business logic
     items: list[TrainingSimulationOperational] = []
     if result and result.items:
         for item in result.items:
             simulation = simulation_map.get(item.simulation_id)
+            stats = sim_stats.get(item.simulation_id, SimulationStats())
+
+            # Persona color/icon from first persona
+            color: str | None = None
+            icon: str | None = None
+            if item.persona_ids:
+                persona = persona_map.get(item.persona_ids[0])
+                if persona:
+                    color = persona.color
+                    icon = persona.icon
+
+            # Rubric points from standard_groups resource
+            rubric_total_points = 0
+            rubric_pass_points = 0
+            if item.standard_group_ids:
+                for sgid in item.standard_group_ids:
+                    sg = standard_groups_map.get(sgid)
+                    if sg:
+                        rubric_total_points += sg.points or 0
+                        rubric_pass_points += sg.pass_points or 0
+
             pass_pct = compute_pass_pct(
-                item.rubric_total_points,
-                item.rubric_pass_points,
+                rubric_total_points if rubric_total_points > 0 else None,
+                rubric_pass_points if rubric_pass_points > 0 else None,
             )
             status = compute_status(
-                item.has_passed,
-                item.attempt_count,
+                stats.has_passed,
+                stats.attempt_count,
             )
 
             cohort_titles = (
@@ -160,14 +239,21 @@ async def get_training_internal(
             cohort_names_junction = format_cohort_names(cohort_titles)
 
             highest_score = (
-                round(item.highest_score_percent)
-                if item.highest_score_percent is not None
+                round(stats.highest_score_percent)
+                if stats.highest_score_percent is not None
                 else None
             )
 
-            standard_groups = (
+            standard_groups_strs = (
                 [str(sg_id) for sg_id in item.standard_group_ids]
                 if item.standard_group_ids
+                else None
+            )
+
+            # training_bundle_entry_id: use first from array
+            training_bundle_entry_id = (
+                item.training_bundle_entry_ids[0]
+                if item.training_bundle_entry_ids
                 else None
             )
 
@@ -179,23 +265,24 @@ async def get_training_internal(
                         simulation.description if simulation else None
                     ),
                     time_limit=simulation.time_limit if simulation else None,
-                    training_bundle_entry_id=item.training_bundle_entry_id,
+                    training_bundle_entry_id=training_bundle_entry_id,
                     scenario_ids=item.scenario_ids,
                     cohort_ids=item.cohort_ids,
-                    color=item.color,
-                    icon=item.icon,
+                    color=color,
+                    icon=icon,
                     view_mode=view_mode,
-                    num_sessions=item.attempt_count or 0,
+                    num_sessions=stats.attempt_count,
                     highest_score=highest_score,
-                    has_passed=item.has_passed,
+                    has_passed=stats.has_passed,
                     status=status,
                     pass_pct=pass_pct,
                     cohort_names_junction=cohort_names_junction,
-                    standard_groups=standard_groups,
+                    standard_groups=standard_groups_strs,
                     practice_simulation=True if practice else None,
                 )
             )
 
+    # Build standard group/standard mappings
     standard_groups: list[StandardGroupMapping] | None = None
     if standard_group_ids:
         standard_groups = [
