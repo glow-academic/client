@@ -1,7 +1,7 @@
 """Cohort API types - handcrafted types for cohort endpoints.
 
 These types are used for the cohort API endpoints and include
-Python-computed permissions and UI flags.
+SQL-computed permissions and UI flags.
 """
 
 from datetime import datetime
@@ -221,7 +221,7 @@ class CohortWebsocketResources(BaseModel):
 
 
 class ListCohortApiCohort(BaseModel):
-    """Cohort item in list response with Python-computed permissions."""
+    """Cohort item in list response with SQL-computed permissions."""
 
     cohort_id: UUID | None = None
     name: str | None = None
@@ -232,13 +232,11 @@ class ListCohortApiCohort(BaseModel):
     simulation_ids: list[str] | None = None
     usage_count: int | None = None
     num_members: int | None = None
-    updated_at: datetime | None = None
-
-    # Python-computed permissions
     can_edit: bool | None = None
     can_delete: bool | None = None
     can_duplicate: bool | None = None
     can_leave: bool | None = None
+    updated_at: datetime | None = None
 
 
 class ListCohortApiProfile(BaseModel):
@@ -255,20 +253,7 @@ class ListCohortApiSimulation(BaseModel):
     simulation_id: UUID | None = None
     name: str | None = None
     description: str | None = None
-    time_limit: int | None = None
     department_ids: list[str] | None = None
-    scenario_ids: list[str] | None = None
-
-
-class ListCohortApiScenario(BaseModel):
-    """Scenario in list response."""
-
-    scenario_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    active: bool | None = None
-    persona_ids: list[str] | None = None
-    persona_mapping: dict[str, Any] | None = None
 
 
 class ListCohortApiDepartment(BaseModel):
@@ -294,8 +279,6 @@ class ListCohortApiResponse(BaseModel):
     cohorts: list[ListCohortApiCohort] | None = None
     profiles: list[ListCohortApiProfile] | None = None
     simulations: list[ListCohortApiSimulation] | None = None
-    scenarios: list[ListCohortApiScenario] | None = None
-    simulation_scenario_mapping: dict[str, list[str]] | None = None
     departments: list[ListCohortApiDepartment] | None = None
 
 
@@ -559,7 +542,7 @@ class PatchCohortDraftSqlRow(BaseModel):
 
 
 class ListCohortSqlCohort(BaseModel):
-    """Raw cohort from SQL without computed permissions."""
+    """Raw cohort from SQL with SQL-computed permissions."""
 
     cohort_id: UUID | None = None
     name: str | None = None
@@ -570,5 +553,8 @@ class ListCohortSqlCohort(BaseModel):
     simulation_ids: list[str] | None = None
     usage_count: int | None = None
     num_members: int | None = None
-    is_member: bool | None = None
+    can_edit: bool | None = None
+    can_delete: bool | None = None
+    can_duplicate: bool | None = None
+    can_leave: bool | None = None
     updated_at: datetime | None = None

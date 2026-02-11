@@ -32,6 +32,7 @@ interface PracticeZoneProps {
   standardGroupsMapping: StandardGroupsMapping;
   standardsMapping: StandardsMapping;
   profile: ProfileItem | null;
+  createAttempt: (input: { body: { training_bundle_entry_id: string } }) => Promise<{ attempt_id: string }>;
 }
 
 export default function PracticeZone({
@@ -40,6 +41,7 @@ export default function PracticeZone({
   standardGroupsMapping,
   standardsMapping,
   profile,
+  createAttempt,
 }: PracticeZoneProps) {
   const [carouselIndex, setCarouselIndex] = useState(0);
 
@@ -147,6 +149,7 @@ export default function PracticeZone({
                 })}
                 type="default"
                 profile={profile}
+                createAttempt={createAttempt}
               />
             );
           },

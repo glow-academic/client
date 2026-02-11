@@ -25,6 +25,9 @@ type PracticeCardsOut = OutputOf<"/api/v4/artifacts/training/get", "post">;
 // Using /attempt/list for history section
 type PracticeHistoryIn = InputOf<"/api/v4/artifacts/attempt/list", "post">;
 type PracticeHistoryOut = OutputOf<"/api/v4/artifacts/attempt/list", "post">;
+// Using /attempt/create for starting training
+type CreateAttemptIn = InputOf<"/api/v4/artifacts/attempt/create", "post">;
+type CreateAttemptOut = OutputOf<"/api/v4/artifacts/attempt/create", "post">;
 
 // Practice component uses cards data directly (no merge needed)
 type PracticeOut = PracticeCardsOut;
@@ -60,6 +63,13 @@ const getPracticeHistory = async (
     }),
   });
 };
+
+async function createAttemptAction(
+  input: CreateAttemptIn,
+): Promise<CreateAttemptOut> {
+  "use server";
+  return api.post("/artifacts/attempt/create", input);
+}
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
@@ -131,7 +141,7 @@ export default async function PracticePage({
 
   return (
     <div className="space-y-6">
-      <Practice practiceData={practiceData} isGuest={isGuest} />
+      <Practice practiceData={practiceData} isGuest={isGuest} createAttempt={createAttemptAction} />
 
       {/* History section moved out of Practice, fully server-driven - only show for non-guests */}
       {!isGuest && (

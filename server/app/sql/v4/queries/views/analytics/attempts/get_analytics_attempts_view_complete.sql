@@ -1,5 +1,5 @@
 -- ============================================================================
--- Query: get_attempt_facts
+-- Query: get_analytics_attempts_view
 -- Purpose: Fetch paginated attempt-level data from mv_attempt_facts
 -- Section: VIEWS/ANALYTICS/ATTEMPTS
 --
@@ -23,10 +23,10 @@ BEGIN
     FOR r IN
         SELECT oidvectortypes(proargtypes) as sig
         FROM pg_proc
-        WHERE proname = 'api_get_attempt_facts_v4'
+        WHERE proname = 'api_get_analytics_attempts_view_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
-        EXECUTE format('DROP FUNCTION IF EXISTS api_get_attempt_facts_v4(%s)', r.sig);
+        EXECUTE format('DROP FUNCTION IF EXISTS api_get_analytics_attempts_view_v4(%s)', r.sig);
     END LOOP;
 END $$;
 
@@ -41,7 +41,7 @@ BEGIN
     FOR r IN
         SELECT typname
         FROM pg_type
-        WHERE typname LIKE 'q_get_attempt_facts_v4_%'
+        WHERE typname LIKE 'q_get_analytics_attempts_view_v4_%'
           AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
     LOOP
         EXECUTE format('DROP TYPE IF EXISTS types.%I CASCADE', r.typname);
@@ -53,7 +53,7 @@ END $$;
 -- ============================================================================
 
 -- Attempt facts item with all MV columns
-CREATE TYPE types.q_get_attempt_facts_v4_item AS (
+CREATE TYPE types.q_get_analytics_attempts_view_v4_item AS (
     -- Primary key
     attempt_id uuid,
 
@@ -90,7 +90,7 @@ CREATE TYPE types.q_get_attempt_facts_v4_item AS (
 );
 
 -- Filter option type for dropdowns
-CREATE TYPE types.q_get_attempt_facts_v4_option AS (
+CREATE TYPE types.q_get_analytics_attempts_view_v4_option AS (
     value text,
     label text,
     count int
@@ -100,7 +100,7 @@ CREATE TYPE types.q_get_attempt_facts_v4_option AS (
 -- Step 4: Create function
 -- ============================================================================
 
-CREATE OR REPLACE FUNCTION api_get_attempt_facts_v4(
+CREATE OR REPLACE FUNCTION api_get_analytics_attempts_view_v4(
     -- Filters
     profile_id_filter uuid DEFAULT NULL,
     attempt_type_filter text DEFAULT NULL,      -- 'general' | 'practice' | NULL (both)
@@ -121,11 +121,11 @@ CREATE OR REPLACE FUNCTION api_get_attempt_facts_v4(
     page_offset int DEFAULT 0
 )
 RETURNS TABLE (
-    items types.q_get_attempt_facts_v4_item[],
+    items types.q_get_analytics_attempts_view_v4_item[],
     total_count int,
-    simulation_options types.q_get_attempt_facts_v4_option[],
-    scenario_options types.q_get_attempt_facts_v4_option[],
-    profile_options types.q_get_attempt_facts_v4_option[]
+    simulation_options types.q_get_analytics_attempts_view_v4_option[],
+    scenario_options types.q_get_analytics_attempts_view_v4_option[],
+    profile_options types.q_get_analytics_attempts_view_v4_option[]
 )
 LANGUAGE sql
 STABLE
@@ -225,9 +225,9 @@ AS $$
                     rubric_pass_points,
                     scenario_ids,
                     persona_ids
-                )::types.q_get_attempt_facts_v4_item
+                )::types.q_get_analytics_attempts_view_v4_item
             ),
-            ARRAY[]::types.q_get_attempt_facts_v4_item[]
+            ARRAY[]::types.q_get_analytics_attempts_view_v4_item[]
         ) AS items
         FROM sorted
     ),
@@ -245,9 +245,9 @@ AS $$
     simulation_options_agg AS (
         SELECT COALESCE(
             ARRAY_AGG(
-                (value, label, count)::types.q_get_attempt_facts_v4_option
+                (value, label, count)::types.q_get_analytics_attempts_view_v4_option
             ),
-            ARRAY[]::types.q_get_attempt_facts_v4_option[]
+            ARRAY[]::types.q_get_analytics_attempts_view_v4_option[]
         ) AS options
         FROM simulation_options_cte
     ),
@@ -266,9 +266,9 @@ AS $$
     scenario_options_agg AS (
         SELECT COALESCE(
             ARRAY_AGG(
-                (value, label, count)::types.q_get_attempt_facts_v4_option
+                (value, label, count)::types.q_get_analytics_attempts_view_v4_option
             ),
-            ARRAY[]::types.q_get_attempt_facts_v4_option[]
+            ARRAY[]::types.q_get_analytics_attempts_view_v4_option[]
         ) AS options
         FROM scenario_options_cte
     ),
@@ -286,9 +286,9 @@ AS $$
     profile_options_agg AS (
         SELECT COALESCE(
             ARRAY_AGG(
-                (value, label, count)::types.q_get_attempt_facts_v4_option
+                (value, label, count)::types.q_get_analytics_attempts_view_v4_option
             ),
-            ARRAY[]::types.q_get_attempt_facts_v4_option[]
+            ARRAY[]::types.q_get_analytics_attempts_view_v4_option[]
         ) AS options
         FROM profile_options_cte
     )

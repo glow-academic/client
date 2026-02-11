@@ -322,7 +322,7 @@ export default async function BenchmarkPage({
       <Benchmark
         evalsData={evalsData}
         rubricMappings={rubricMappings}
-        createTestAction={createTestAction as never}
+        createTestAction={createTestAction}
       />
 
       {/* History section moved out of Benchmark, fully server-driven */}

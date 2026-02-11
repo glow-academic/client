@@ -21,7 +21,7 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/v4/queries/views/analytics/get_attempt_facts_complete.sql"
+SQL_PATH = "app/sql/v4/queries/views/analytics/attempts/get_analytics_attempts_view_complete.sql"
 
 router = APIRouter()
 
@@ -72,7 +72,7 @@ async def get_attempt_facts_internal(
         GetAttemptFactsResponse with items, total_count, and filter options
     """
     from app.sql.types import (
-        GetAttemptFactsSqlParams,
+        GetAnalyticsAttemptsViewSqlParams,
     )
 
     cache_key_val = cache_key(
@@ -106,7 +106,7 @@ async def get_attempt_facts_internal(
             return GetAttemptFactsResponse.model_validate(cached)
 
     # Execute SQL query
-    params = GetAttemptFactsSqlParams(
+    params = GetAnalyticsAttemptsViewSqlParams(
         profile_id_filter=profile_id,
         attempt_type_filter=attempt_type,
         is_archived_filter=is_archived,

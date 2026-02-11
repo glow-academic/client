@@ -28,7 +28,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { api } from "@/lib/api/client";
+import type { InputOf, OutputOf } from "@/lib/api/types";
 import { getPersonaIconComponent } from "@/utils/persona-icons";
 import { Info, Table, Timer, User, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -71,6 +71,9 @@ const generateGradientFromHex = (hexColor: string): string => {
   return `linear-gradient(135deg, ${lighterHex} 0%, ${hexColor} 100%)`;
 };
 
+type CreateAttemptIn = InputOf<"/api/v4/artifacts/attempt/create", "post">;
+type CreateAttemptOut = OutputOf<"/api/v4/artifacts/attempt/create", "post">;
+
 export interface SimulationCardProps {
   id: string;
   trainingBundleEntryId?: string | null;
@@ -89,6 +92,8 @@ export interface SimulationCardProps {
   /** "default" = practice mode, "cohort" = home mode */
   type: "default" | "cohort";
   profile: ProfileItem;
+  /** Server action to create an attempt (runs on Next.js server, not browser) */
+  createAttempt: (input: CreateAttemptIn) => Promise<CreateAttemptOut>;
 }
 
 export default function SimulationCard({
@@ -108,6 +113,7 @@ export default function SimulationCard({
   passRate,
   type,
   profile,
+  createAttempt,
 }: SimulationCardProps) {
   const router = useRouter();
 
@@ -127,7 +133,7 @@ export default function SimulationCard({
 
       setIsStarting(true);
       try {
-        const result = await api.post("/artifacts/attempt/create", {
+        const result = await createAttempt({
           body: {
             training_bundle_entry_id: trainingBundleEntryId,
           },
@@ -153,7 +159,7 @@ export default function SimulationCard({
         setIsStarting(false);
       }
     },
-    [trainingBundleEntryId, practice, router, id]
+    [trainingBundleEntryId, practice, router, id, createAttempt]
   );
 
   // Get persona configuration and icon based on persona data

@@ -25,6 +25,9 @@ type HomeCardsOut = OutputOf<"/api/v4/artifacts/training/get", "post">;
 // Using /attempt/list for history section
 type HomeHistoryIn = InputOf<"/api/v4/artifacts/attempt/list", "post">;
 type HomeHistoryOut = OutputOf<"/api/v4/artifacts/attempt/list", "post">;
+// Using /attempt/create for starting training
+type CreateAttemptIn = InputOf<"/api/v4/artifacts/attempt/create", "post">;
+type CreateAttemptOut = OutputOf<"/api/v4/artifacts/attempt/create", "post">;
 
 // Home component uses cards data directly (no merge needed)
 type HomeOut = HomeCardsOut;
@@ -60,6 +63,13 @@ const getHomeHistory = async (
     }),
   });
 };
+
+async function createAttemptAction(
+  input: CreateAttemptIn,
+): Promise<CreateAttemptOut> {
+  "use server";
+  return api.post("/artifacts/attempt/create", input);
+}
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
@@ -125,7 +135,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
   return (
     <div className="space-y-6">
-      <Home homeData={homeData} />
+      <Home homeData={homeData} createAttempt={createAttemptAction} />
 
       {/* History section moved out of Home, fully server-driven */}
       <div className="mt-12">

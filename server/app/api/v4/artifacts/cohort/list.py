@@ -1,22 +1,14 @@
 """Cohort list endpoint - v4 API."""
 
 import uuid
-from typing import Annotated, Any, cast
-from uuid import UUID
+from typing import Annotated, Any
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.api.v4.artifacts.cohort.permissions import (
-    compute_can_delete,
-    compute_can_duplicate,
-    compute_can_edit,
-    compute_can_leave,
-)
 from app.api.v4.artifacts.cohort.types import (
     ListCohortApiCohort,
     ListCohortApiResponse,
-    ListCohortSqlCohort,
 )
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
@@ -24,7 +16,6 @@ from app.main import get_db
 from app.sql.types import (
     GetCohortsListApiRequest,
     GetCohortsListSqlParams,
-    GetCohortsListSqlRow,
     load_sql_query,
 )
 from app.utils.cache.cache_key import cache_key
@@ -89,13 +80,10 @@ async def get_cohort_list(
         sql_params = params.to_tuple()
 
         # Execute SQL with typed helper - automatically detects and calls function if present
-        result = cast(
-            GetCohortsListSqlRow,
-            await execute_sql_typed(
-                conn,
-                SQL_PATH,
-                params=params,
-            ),
+        result = await execute_sql_typed(
+            conn,
+            SQL_PATH,
+            params=params,
         )
 
         # Get actor name and user_role from SQL result
@@ -106,46 +94,15 @@ async def get_cohort_list(
         if actor_name:
             audit_set(http_request, actor={"name": actor_name, "id": profile_id})
 
-        # Convert raw SQL cohorts to API cohorts with Python-computed permissions
+        # Convert raw SQL cohorts to API cohorts (permissions already computed in SQL)
         api_cohorts: list[ListCohortApiCohort] = []
         for sql_cohort in result.cohorts or []:
-            # Parse raw cohort data
             if hasattr(sql_cohort, "model_dump"):
-                raw = ListCohortSqlCohort.model_validate(sql_cohort.model_dump())
+                api_cohorts.append(
+                    ListCohortApiCohort.model_validate(sql_cohort.model_dump())
+                )
             else:
-                raw = ListCohortSqlCohort.model_validate(sql_cohort)
-
-            # Parse department_ids (string array from SQL)
-            cohort_department_ids: list[UUID] | None = None
-            if raw.department_ids:
-                cohort_department_ids = [UUID(d) for d in raw.department_ids if d]
-
-            # Compute permissions in Python
-            can_edit = compute_can_edit(user_role, cohort_department_ids)
-            can_delete = compute_can_delete(
-                user_role, cohort_department_ids, raw.usage_count or 0
-            )
-            can_duplicate = compute_can_duplicate(user_role)
-            can_leave = compute_can_leave(raw.is_member or False)
-
-            # Build API cohort with computed permissions
-            api_cohort = ListCohortApiCohort(
-                cohort_id=raw.cohort_id,
-                name=raw.name,
-                description=raw.description,
-                active=raw.active,
-                department_ids=raw.department_ids,
-                profile_ids=raw.profile_ids,
-                simulation_ids=raw.simulation_ids,
-                usage_count=raw.usage_count,
-                num_members=raw.num_members,
-                updated_at=raw.updated_at,
-                can_edit=can_edit,
-                can_delete=can_delete,
-                can_duplicate=can_duplicate,
-                can_leave=can_leave,
-            )
-            api_cohorts.append(api_cohort)
+                api_cohorts.append(ListCohortApiCohort.model_validate(sql_cohort))
 
         def _normalize_list(items: list[Any] | None) -> list[dict[str, Any]] | None:
             if not items:
@@ -158,15 +115,13 @@ async def get_cohort_list(
                     normalized.append(dict(item))
             return normalized
 
-        # Build API response with computed permissions
+        # Build API response
         api_response = ListCohortApiResponse(
             actor_name=actor_name,
             user_role=user_role,
             cohorts=api_cohorts,
             profiles=_normalize_list(result.profiles),
             simulations=_normalize_list(result.simulations),
-            scenarios=_normalize_list(result.scenarios),
-            simulation_scenario_mapping=result.simulation_scenario_mapping,
             departments=_normalize_list(result.departments),
         )
 

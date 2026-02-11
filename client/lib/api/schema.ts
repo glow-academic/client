@@ -21684,7 +21684,7 @@ export interface components {
         };
         /**
          * ListCohortApiCohort
-         * @description Cohort item in list response with Python-computed permissions.
+         * @description Cohort item in list response with SQL-computed permissions.
          */
         ListCohortApiCohort: {
             /** Cohort Id */
@@ -21705,8 +21705,6 @@ export interface components {
             usage_count?: number | null;
             /** Num Members */
             num_members?: number | null;
-            /** Updated At */
-            updated_at?: string | null;
             /** Can Edit */
             can_edit?: boolean | null;
             /** Can Delete */
@@ -21715,6 +21713,8 @@ export interface components {
             can_duplicate?: boolean | null;
             /** Can Leave */
             can_leave?: boolean | null;
+            /** Updated At */
+            updated_at?: string | null;
         };
         /**
          * ListCohortApiDepartment
@@ -21755,34 +21755,8 @@ export interface components {
             profiles?: components["schemas"]["ListCohortApiProfile"][] | null;
             /** Simulations */
             simulations?: components["schemas"]["ListCohortApiSimulation"][] | null;
-            /** Scenarios */
-            scenarios?: components["schemas"]["ListCohortApiScenario"][] | null;
-            /** Simulation Scenario Mapping */
-            simulation_scenario_mapping?: {
-                [key: string]: string[];
-            } | null;
             /** Departments */
             departments?: components["schemas"]["ListCohortApiDepartment"][] | null;
-        };
-        /**
-         * ListCohortApiScenario
-         * @description Scenario in list response.
-         */
-        ListCohortApiScenario: {
-            /** Scenario Id */
-            scenario_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Active */
-            active?: boolean | null;
-            /** Persona Ids */
-            persona_ids?: string[] | null;
-            /** Persona Mapping */
-            persona_mapping?: {
-                [key: string]: unknown;
-            } | null;
         };
         /**
          * ListCohortApiSimulation
@@ -21795,12 +21769,8 @@ export interface components {
             name?: string | null;
             /** Description */
             description?: string | null;
-            /** Time Limit */
-            time_limit?: number | null;
             /** Department Ids */
             department_ids?: string[] | null;
-            /** Scenario Ids */
-            scenario_ids?: string[] | null;
         };
         /** ListDepartmentApiCohort */
         ListDepartmentApiCohort: {
