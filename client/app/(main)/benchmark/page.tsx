@@ -23,8 +23,8 @@ type BenchmarkOverviewIn = InputOf<"/api/v4/artifacts/benchmark/get", "post">;
 type BenchmarkOverviewOut = OutputOf<"/api/v4/artifacts/benchmark/get", "post">;
 type BenchmarkHistoryIn = InputOf<"/api/v4/artifacts/test/list", "post">;
 type BenchmarkHistoryOut = OutputOf<"/api/v4/artifacts/test/list", "post">;
-type CreateTestIn = { body: { eval_id: string; infinite_mode?: boolean } };
-type CreateTestOut = { test_id?: string | null };
+type CreateTestIn = InputOf<"/api/v4/artifacts/test/create", "post">;
+type CreateTestOut = OutputOf<"/api/v4/artifacts/test/create", "post">;
 // For backward compatibility, extract evals list structure from overview
 type EvalsListOut = {
   evals: BenchmarkOverviewOut["evals"];
@@ -84,7 +84,7 @@ async function createTestAction(
   input: CreateTestIn,
 ): Promise<CreateTestOut> {
   "use server";
-  return api.post("/artifacts/test/create" as never, input);
+  return api.post("/artifacts/test/create", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {

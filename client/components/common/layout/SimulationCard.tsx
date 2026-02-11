@@ -127,15 +127,12 @@ export default function SimulationCard({
 
       setIsStarting(true);
       try {
-        const result = await api.post(
-          "/artifacts/attempt/create" as never,
-          {
-            body: {
-              training_bundle_entry_id: trainingBundleEntryId,
-            },
-          } as never,
-        );
-        const attemptId = (result as { attempt_id?: string }).attempt_id;
+        const result = await api.post("/artifacts/attempt/create", {
+          body: {
+            training_bundle_entry_id: trainingBundleEntryId,
+          },
+        });
+        const attemptId = result.attempt_id;
         if (!attemptId) {
           toast.error("Failed to create training attempt.");
           return;
