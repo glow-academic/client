@@ -1,16 +1,14 @@
-"""Scenarios list endpoint - v4 API following DHH principles."""
+"""Scenarios list endpoint - v4 API following DHH principles.
+
+Resource-first: SQL only touches scenario_artifact + scenario's own junctions + resource tables.
+Permissions (can_edit, can_delete, can_duplicate) computed in SQL.
+"""
 
 from typing import Annotated, Any, cast
-from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.api.v4.artifacts.scenario.permissions import (
-    compute_can_delete,
-    compute_can_duplicate,
-    compute_can_edit,
-)
 from app.api.v4.artifacts.scenario.types import (
     GetScenariosListApiRequest,
     GetScenariosListSqlParams,
@@ -96,35 +94,9 @@ async def get_scenario_list(
         if result.actor_name:
             audit_set(http_request, actor={"name": result.actor_name, "id": profile_id})
 
-        # Compute permissions in Python for each scenario
-        user_role = result.user_role
-        scenarios_with_permissions = []
-        for scenario in result.scenarios or []:
-            scenario_dict = (
-                scenario.model_dump()
-                if hasattr(scenario, "model_dump")
-                else dict(scenario)
-            )
-            # num_simulations = count of simulations using this scenario
-            usage_count = scenario_dict.get("num_simulations") or 0
-            department_ids_raw = scenario_dict.get("department_ids") or []
-            department_ids = [
-                UUID(d) if isinstance(d, str) else d for d in department_ids_raw
-            ]
-            scenario_dict["can_edit"] = compute_can_edit(
-                user_role, department_ids, usage_count
-            )
-            scenario_dict["can_delete"] = compute_can_delete(
-                user_role, department_ids, usage_count
-            )
-            scenario_dict["can_duplicate"] = compute_can_duplicate(user_role)
-            scenarios_with_permissions.append(scenario_dict)
-
-        result_dict = result.model_dump()
-        result_dict["scenarios"] = scenarios_with_permissions
-
-        # Convert SQL result to API response
-        api_response = ListScenarioApiResponse.model_validate(result_dict)
+        # Permissions (can_edit, can_delete, can_duplicate) are computed in SQL
+        # Convert SQL result to API response directly
+        api_response = ListScenarioApiResponse.model_validate(result.model_dump())
 
         # Cache response (use mode='json' to serialize UUIDs and other types)
         await set_cached(

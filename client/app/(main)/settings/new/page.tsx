@@ -237,8 +237,8 @@ export default async function NewSettingPage({
         createColorsAction={createDraftColors}
         createProviderKeysAction={createProviderKeys}
         getProviderKeysAction={getProviderKeys}
-        createAuthKeysAction={createAuthItemKeys}
-        getAuthKeysAction={getAuthItemKeys}
+        createAuthItemKeysAction={createAuthItemKeys}
+        getAuthItemKeysAction={getAuthItemKeys}
       />
     </div>
   );

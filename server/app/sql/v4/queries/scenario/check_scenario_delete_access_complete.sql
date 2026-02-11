@@ -63,25 +63,33 @@ scenario_departments AS (
     WHERE sd.scenario_id = (SELECT p_scenario_id FROM params)
       AND sd.active = true
 ),
+-- Get the scenarios_resource.id for this scenario_artifact
+scenario_resource AS (
+    SELECT ssj.scenarios_id
+    FROM scenario_scenarios_junction ssj
+    WHERE ssj.scenario_id = (SELECT p_scenario_id FROM params)
+    LIMIT 1
+),
 usage_check AS (
     SELECT (
+        -- Active simulation links via denormalized simulations_resource.scenario_ids + per-simulation flag check
         SELECT COUNT(*)
-        FROM simulation_scenarios_junction ss
-        WHERE ss.scenario_id = (SELECT p_scenario_id FROM params)
+        FROM simulations_resource sim_r
+        JOIN simulation_simulations_junction ssj_bridge ON ssj_bridge.simulations_id = sim_r.id
+        WHERE (SELECT scenarios_id FROM scenario_resource) = ANY(sim_r.scenario_ids)
           AND EXISTS (
               SELECT 1
               FROM simulation_scenario_flags_junction ssf
               JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id
               JOIN flags_resource f ON sfr.flag_id = f.id
-              WHERE ssf.simulation_id = ss.simulation_id
-                AND sfr.scenario_id = ss.scenario_id
+              WHERE ssf.simulation_id = ssj_bridge.simulation_id
+                AND sfr.scenario_id = (SELECT scenarios_id FROM scenario_resource)
                 AND f.name = 'scenario_active'
                 AND ssf.value = true
           )
     ) + (
         SELECT COUNT(*) FROM mv_simulation_chats msc
-        JOIN scenario_scenarios_junction ssj ON ssj.scenarios_id = msc.scenario_id
-        WHERE ssj.scenario_id = (SELECT p_scenario_id FROM params)
+        WHERE msc.scenario_id = (SELECT scenarios_id FROM scenario_resource)
     ) + (
         SELECT COUNT(*)
         FROM scenario_tree_junction st

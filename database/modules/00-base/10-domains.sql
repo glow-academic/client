@@ -1,0 +1,62 @@
+-- Module: domains
+-- Category: base
+-- Description: domains system data
+-- ============================================================
+
+-- Table: domains_resource
+INSERT INTO public.domains_resource VALUES ('019bbeb4-510b-782f-817d-0077d1d7cef5', 'audios', true, false, false, '2026-01-09 09:45:34.098832-06', false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.domains_resource VALUES ('019bbeb4-510c-7526-82cc-55a0480f1215', 'colors', true, false, false, '2026-01-08 14:52:05.827256-06', true) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.domains_resource VALUES ('019bbeb4-510c-7ef2-9ede-574bcc96b9aa', 'descriptions', true, false, false, '2026-01-08 14:52:05.827256-06', true) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.domains_resource VALUES ('019bbeb4-510d-7167-8c71-f15ede99a090', 'emails', true, false, false, '2026-01-12 21:08:53.44822-06', true) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.domains_resource VALUES ('019bbeb4-510d-72b0-a995-a5531d642b85', 'endpoints', true, false, false, '2026-01-08 18:42:14.163715-06', true) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.domains_resource VALUES ('019bbeb4-510d-7525-8c1a-349828997019', 'examples', true, false, false, '2026-01-08 14:52:05.827256-06', true) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.domains_resource VALUES ('019bbeb4-5111-722e-a5fb-892e598293ac', 'images', true, false, false, '2025-12-29 13:41:03.614243-06', true) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.domains_resource VALUES ('019bbeb4-5111-74d0-9786-60cef5204f41', 'instructions', true, false, false, '2026-01-08 14:52:05.827256-06', true) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.domains_resource VALUES ('019bbeb4-5111-762b-a56e-d0f80b5b3dc2', 'items', true, false, false, '2026-01-08 18:42:14.163715-06', true) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.domains_resource VALUES ('019bbeb4-5111-777c-8185-c318f7219be3', 'keys', true, false, false, '2026-01-08 14:52:05.827256-06', true) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.domains_resource VALUES ('019bbeb4-5111-7f3e-9db1-41fffe130b8c', 'names', true, false, false, '2026-01-08 14:52:05.827256-06', true) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.domains_resource VALUES ('019bbeb4-5112-708a-806d-7d695f766105', 'objectives', true, false, false, '2025-12-29 13:41:03.614243-06', true) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.domains_resource VALUES ('019bbeb4-5112-71e5-8c71-64f004201157', 'options', true, false, false, '2026-01-05 21:14:37.673953-06', true) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.domains_resource VALUES ('019bbeb4-5112-7598-af4d-23b2c7581e1c', 'points', true, false, false, '2026-01-08 14:52:05.827256-06', true) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.domains_resource VALUES ('019bbeb4-5112-7b3a-9110-1ad839c946b2', 'problem_statements', true, false, false, '2025-12-29 13:41:03.614243-06', true) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.domains_resource VALUES ('019bbeb4-5112-7db2-87d9-0f26b04d3ffe', 'prompts', true, false, false, '2026-01-04 14:00:50.761743-06', true) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.domains_resource VALUES ('019bbeb4-5112-7eee-9fad-3bd63f172a5c', 'protocols', true, false, false, '2026-01-08 18:42:14.163715-06', true) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.domains_resource VALUES ('019bbeb4-5113-75c6-a321-30581b6e8b9c', 'questions', true, false, false, '2025-12-29 13:41:03.614243-06', true) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.domains_resource VALUES ('019bbeb4-5113-7921-8e56-c68491eeb0ff', 'request_limits', true, false, false, '2026-01-12 21:08:53.44822-06', true) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.domains_resource VALUES ('019bbeb4-5114-79ea-bfe0-901d3d172d9c', 'scenario_positions', true, false, false, '2026-01-12 20:51:36.016365-06', true) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.domains_resource VALUES ('019bbeb4-5115-7637-981c-4731d894b7c9', 'slugs', true, false, false, '2026-01-08 18:42:14.163715-06', true) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.domains_resource VALUES ('019bbeb4-5115-7781-89d8-cbe428c51618', 'standard_groups', true, false, false, '2025-12-30 18:25:53.748345-06', true) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.domains_resource VALUES ('019bbeb4-5115-7e13-bf7f-0b1ef8e58e7f', 'templates', true, false, false, '2025-12-22 17:03:23.445951-06', true) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.domains_resource VALUES ('019bbeb4-5117-741b-aa3c-9c953d7554f9', 'videos', true, false, false, '2025-12-29 13:41:03.614243-06', true) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.domains_resource VALUES ('019bbeb4-5117-755b-bd86-1217918c1a46', 'voices', true, false, false, '2026-01-12 22:12:23.646486-06', true) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.domains_resource VALUES ('019bd836-3ae2-703b-9d67-f64fab2b69d0', 'simulation_positions', true, false, false, '2026-01-19 15:43:11.312843-06', true) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.domains_resource VALUES ('019bbeb4-510f-7e91-8964-26fc754aaccc', 'group_positions', true, false, false, '2026-01-14 16:50:46.919286-06', true) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.domains_resource VALUES ('019bbeb4-5112-7a00-bd3a-06796620f457', 'pricing', true, false, false, '2026-01-14 16:50:46.919286-06', true) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.domains_resource VALUES ('019bbeb4-5114-7034-9626-af787df74d5d', 'run_positions', true, false, false, '2026-01-14 16:50:46.919286-06', true) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.domains_resource VALUES ('019bbeb4-5117-72d1-b20c-991cc1922f25', 'values', true, false, false, '2026-01-14 16:50:46.919286-06', true) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.domains_resource VALUES ('019bbeb4-5109-7671-b1cc-ed9a018d7c13', 'agents', true, false, false, '2026-01-08 14:52:05.827256-06', false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.domains_resource VALUES ('019bbeb4-510b-7cb0-b8ff-b817a0f2cbf5', 'auths', true, false, false, '2026-01-08 14:52:05.827256-06', false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.domains_resource VALUES ('019bbeb4-510c-7114-addc-b888b25bdb20', 'cohorts', true, false, false, '2026-01-08 14:52:05.827256-06', false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.domains_resource VALUES ('019bbeb4-510c-7daf-9242-deed79a130df', 'departments', true, false, false, '2026-01-08 14:52:05.827256-06', false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.domains_resource VALUES ('019bbeb4-510d-7028-bf31-9136f3e10c9e', 'documents', true, false, false, '2026-01-08 14:52:05.827256-06', false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.domains_resource VALUES ('019bbeb4-510d-73ea-9b1d-959f7f8b5cdb', 'evals', true, false, false, '2026-01-08 14:52:05.827256-06', false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.domains_resource VALUES ('019bbeb4-510d-7790-bb69-2e3f34e2d23b', 'fields', true, false, false, '2025-12-22 17:03:23.445951-06', false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.domains_resource VALUES ('019bbeb4-510d-78c7-8a11-7e2129f665df', 'flags', true, false, false, '2026-01-08 14:52:05.827256-06', false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.domains_resource VALUES ('019bbeb4-5111-70d0-920d-65f36aa57797', 'icons', true, false, false, '2026-01-08 14:52:05.827256-06', false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.domains_resource VALUES ('019bbeb4-5111-7de9-bf6e-964d147895a4', 'models', true, false, false, '2026-01-08 14:52:05.827256-06', false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.domains_resource VALUES ('019bbeb4-5112-7322-9f99-432c193ef502', 'parameters', true, false, false, '2026-01-08 14:52:05.827256-06', false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.domains_resource VALUES ('019bbeb4-5112-745f-9ae9-c8e64ca14d91', 'personas', true, false, false, '2026-01-08 14:52:05.827256-06', false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.domains_resource VALUES ('019bbeb4-5112-7c71-835b-15a300ba3d2a', 'profiles', true, false, false, '2026-01-08 14:52:05.827256-06', false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.domains_resource VALUES ('019bbeb4-5113-7030-b93a-5ab053c805e3', 'providers', true, false, false, '2026-01-08 14:52:05.827256-06', false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.domains_resource VALUES ('019bbeb4-5113-77a6-82d8-be8928536557', 'reasoning_levels', true, false, false, '2026-01-12 22:12:23.642151-06', false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.domains_resource VALUES ('019bbeb4-5113-7d68-9619-8da923c04169', 'rubrics', true, false, false, '2026-01-08 14:52:05.827256-06', false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.domains_resource VALUES ('019bbeb4-5114-7d6f-b639-917c2d4e0b9b', 'scenarios', true, false, false, '2026-01-08 14:52:05.827256-06', false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.domains_resource VALUES ('019bbeb4-5115-7282-b3e6-f07cde27cb35', 'settings', true, false, false, '2026-01-08 14:52:05.827256-06', false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.domains_resource VALUES ('019bbeb4-5115-74f5-9179-657359c788b8', 'simulations', true, false, false, '2026-01-08 14:52:05.827256-06', false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.domains_resource VALUES ('019bbeb4-5115-7a1a-928e-4701bb4a634d', 'temperature_levels', true, false, false, '2026-01-12 22:12:23.644533-06', false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.domains_resource VALUES ('019bbeb4-5116-74af-ad84-68ec66b96bcd', 'thresholds', true, false, false, '2026-01-08 14:52:05.827256-06', false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.domains_resource VALUES ('019bbeb4-5110-7549-b7cc-d1dfa7fadce1', 'groups', true, false, false, '2026-01-14 16:50:46.919286-06', false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.domains_resource VALUES ('019bbeb4-5111-7c8a-b167-11514bc1e2fa', 'modalities', true, false, false, '2026-01-14 16:50:46.919286-06', false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.domains_resource VALUES ('019bbeb4-5113-7474-82ad-730fbdf768cc', 'qualities', true, false, false, '2026-01-14 16:50:46.919286-06', false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.domains_resource VALUES ('019bbeb4-5114-72d4-b96a-9fd8355f0946', 'runs', true, false, false, '2026-01-14 16:50:46.919286-06', false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.domains_resource VALUES ('019bbeb4-5114-7893-8560-ee7cb288b34b', 'scenario_flags', true, false, false, '2026-01-14 16:50:46.919286-06', false) ON CONFLICT (id) DO NOTHING;

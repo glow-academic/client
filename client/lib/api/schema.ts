@@ -22249,10 +22249,6 @@ export interface components {
             name?: string | null;
             /** Description */
             description?: string | null;
-            /** Parameter Id */
-            parameter_id?: string | null;
-            /** Parameter Name */
-            parameter_name?: string | null;
         };
         /**
          * ListScenarioApiObjective
@@ -22293,8 +22289,6 @@ export interface components {
             color?: string | null;
             /** Icon */
             icon?: string | null;
-            /** Image Model */
-            image_model?: boolean | null;
         };
         /**
          * ListScenarioApiResponse
@@ -22328,7 +22322,7 @@ export interface components {
         };
         /**
          * ListScenarioApiScenario
-         * @description Scenario item in list response with Python-computed permissions.
+         * @description Scenario item in list response with SQL-computed permissions.
          */
         ListScenarioApiScenario: {
             /** Scenario Id */
@@ -22349,22 +22343,22 @@ export interface components {
             objective_ids?: string[] | null;
             /** Persona Ids */
             persona_ids?: string[] | null;
-            /** Parameter Item Ids */
-            parameter_item_ids?: string[] | null;
+            /** Field Ids */
+            field_ids?: string[] | null;
             /** Simulation Ids */
             simulation_ids?: string[] | null;
             /** Num Simulations */
             num_simulations?: number | null;
-            /** Cohort Ids */
-            cohort_ids?: string[] | null;
-            /** Updated At */
-            updated_at?: string | null;
             /** Can Edit */
             can_edit?: boolean | null;
             /** Can Delete */
             can_delete?: boolean | null;
             /** Can Duplicate */
             can_duplicate?: boolean | null;
+            /** Cohort Ids */
+            cohort_ids?: string[] | null;
+            /** Updated At */
+            updated_at?: string | null;
         };
         /**
          * ListScenarioApiSimulation
@@ -22377,8 +22371,6 @@ export interface components {
             name?: string | null;
             /** Description */
             description?: string | null;
-            /** Time Limit */
-            time_limit?: number | null;
             /** Department Ids */
             department_ids?: string[] | null;
         };

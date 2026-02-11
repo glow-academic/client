@@ -196,14 +196,13 @@ export function Scenarios({
   const fieldMapping = useMemo(
     () => {
       const data = scenariosData;
-      const map: Record<string, { name: string; description: string; parameter_name: string }> = {};
+      const map: Record<string, { name: string; description: string }> = {};
       if (data?.fields && Array.isArray(data.fields)) {
         data.fields.forEach((f) => {
           if (typeof f === "object" && f !== null && "field_id" in f && f.field_id) {
             map[String(f.field_id)] = {
               name: (typeof f.name === "string" ? f.name : "") || "",
               description: (typeof f.description === "string" ? f.description : "") || "",
-              parameter_name: (typeof f.parameter_name === "string" ? f.parameter_name : "") || "",
             };
           }
         });
@@ -891,11 +890,11 @@ export function Scenarios({
               </>
             )}
             {/* Field badges */}
-            {scenario.parameter_item_ids && scenario.parameter_item_ids.length > 0 && (
+            {scenario.field_ids && scenario.field_ids.length > 0 && (
               <>
                 <span className="text-muted-foreground">•</span>
                 <div className="flex items-center gap-1 flex-wrap">
-                  {scenario.parameter_item_ids.slice(0, 4).map((fieldId) => {
+                  {scenario.field_ids.slice(0, 4).map((fieldId) => {
                     const field = fieldMapping[fieldId];
                     if (!field) return null;
                     return (
@@ -911,9 +910,9 @@ export function Scenarios({
                       </Tooltip>
                     );
                   })}
-                  {scenario.parameter_item_ids.length > 4 && (
+                  {scenario.field_ids.length > 4 && (
                     <span className="text-xs text-muted-foreground">
-                      +{scenario.parameter_item_ids.length - 4} more
+                      +{scenario.field_ids.length - 4} more
                     </span>
                   )}
                 </div>

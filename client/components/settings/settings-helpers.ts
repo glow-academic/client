@@ -22,14 +22,14 @@ export function convertProviderKeysToMapping(
 }
 
 /**
- * Convert auth keys array to mapping dict
+ * Convert auth item keys array to mapping dict
  */
-export function convertAuthKeysToMapping(
-  authKeys: GetSettingOut["auth_item_keys"] | undefined
+export function convertAuthItemKeysToMapping(
+  authItemKeys: GetSettingOut["auth_item_keys"] | undefined
 ): Record<string, Record<string, string>> {
-  if (!authKeys) return {};
+  if (!authItemKeys) return {};
   const mapping: Record<string, Record<string, string>> = {};
-  authKeys.forEach((ak) => {
+  authItemKeys.forEach((ak) => {
     if (!ak.auth_id) return;
     const itemsMapping: Record<string, string> = {};
     (ak.items || []).forEach((item) => {
@@ -76,9 +76,9 @@ export function convertProviderKeysMappingToArray(
 }
 
 /**
- * Convert auth keys mapping dict to array
+ * Convert auth item keys mapping dict to array
  */
-export function convertAuthKeysMappingToArray(
+export function convertAuthItemKeysMappingToArray(
   mapping: Record<string, Record<string, string>>
 ): Array<{
   auth_id: string;

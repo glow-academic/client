@@ -438,7 +438,7 @@ class ScenarioWebsocketResources(BaseModel):
 
 
 class ListScenarioApiScenario(BaseModel):
-    """Scenario item in list response with Python-computed permissions."""
+    """Scenario item in list response with SQL-computed permissions."""
 
     scenario_id: UUID | None = None
     title: str | None = None
@@ -449,16 +449,14 @@ class ListScenarioApiScenario(BaseModel):
     department_ids: list[str] | None = None
     objective_ids: list[str] | None = None
     persona_ids: list[str] | None = None
-    parameter_item_ids: list[str] | None = None
+    field_ids: list[str] | None = None
     simulation_ids: list[str] | None = None
     num_simulations: int | None = None
-    cohort_ids: list[str] | None = None
-    updated_at: datetime | None = None
-
-    # Python-computed permissions
     can_edit: bool | None = None
     can_delete: bool | None = None
     can_duplicate: bool | None = None
+    cohort_ids: list[str] | None = None
+    updated_at: datetime | None = None
 
 
 class ListScenarioApiObjective(BaseModel):
@@ -475,8 +473,6 @@ class ListScenarioApiField(BaseModel):
     field_id: str | None = None
     name: str | None = None
     description: str | None = None
-    parameter_id: str | None = None
-    parameter_name: str | None = None
 
 
 class ListScenarioApiCohort(BaseModel):
@@ -495,7 +491,6 @@ class ListScenarioApiPersona(BaseModel):
     description: str | None = None
     color: str | None = None
     icon: str | None = None
-    image_model: bool | None = None
 
 
 class ListScenarioApiSimulation(BaseModel):
@@ -504,7 +499,6 @@ class ListScenarioApiSimulation(BaseModel):
     simulation_id: str | None = None
     name: str | None = None
     description: str | None = None
-    time_limit: int | None = None
     department_ids: list[str] | None = None
 
 
@@ -669,7 +663,7 @@ class PatchScenarioDraftApiResponse(BaseModel):
 
 
 class ListScenarioSqlScenario(BaseModel):
-    """Raw scenario from SQL without computed permissions."""
+    """Raw scenario from SQL with SQL-computed permissions."""
 
     scenario_id: UUID | None = None
     title: str | None = None
@@ -680,9 +674,12 @@ class ListScenarioSqlScenario(BaseModel):
     department_ids: list[str] | None = None
     objective_ids: list[str] | None = None
     persona_ids: list[str] | None = None
-    parameter_item_ids: list[str] | None = None
+    field_ids: list[str] | None = None
     simulation_ids: list[str] | None = None
     num_simulations: int | None = None
+    can_edit: bool | None = None
+    can_delete: bool | None = None
+    can_duplicate: bool | None = None
     cohort_ids: list[str] | None = None
     updated_at: datetime | None = None
 
@@ -692,7 +689,6 @@ class ListScenarioSqlRow(BaseModel):
 
     actor_name: str | None = None
     user_role: str | None = None
-    user_department_ids: list[UUID] | None = None
     scenarios: list[ListScenarioSqlScenario] | None = None
     objectives: list[ListScenarioApiObjective] | None = None
     fields: list[ListScenarioApiField] | None = None

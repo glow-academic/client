@@ -261,8 +261,8 @@ export default async function SettingEditPage({
           createColorsAction={createDraftColors}
           createProviderKeysAction={createProviderKeys}
           getProviderKeysAction={getProviderKeys}
-          createAuthKeysAction={createAuthItemKeys}
-          getAuthKeysAction={getAuthItemKeys}
+          createAuthItemKeysAction={createAuthItemKeys}
+          getAuthItemKeysAction={getAuthItemKeys}
         />
       </div>
     );

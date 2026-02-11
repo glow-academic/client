@@ -18,7 +18,7 @@ import { StepCard } from "@/components/common/forms/StepCard";
 import type { GenerateRegenerateModalResource } from "@/components/common/GenerateRegenerateModal";
 import { GenerateRegenerateModal } from "@/components/common/GenerateRegenerateModal";
 import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
-import { AuthKeys } from "@/components/resources/AuthKeys";
+import { AuthItemKeys } from "@/components/resources/AuthItemKeys";
 import { Auths } from "@/components/resources/Auths";
 import { Colors } from "@/components/resources/Colors";
 import { Departments } from "@/components/resources/Departments";
@@ -113,11 +113,11 @@ export interface SettingProps {
       generated?: boolean | null;
     }>
   >;
-  createAuthKeysAction?: (input: {
+  createAuthItemKeysAction?: (input: {
     auth_id: string;
     key_id: string;
   }) => Promise<{ auth_item_keys_id?: string | null }>;
-  getAuthKeysAction?: (ids: string[]) => Promise<
+  getAuthItemKeysAction?: (ids: string[]) => Promise<
     Array<{
       id?: string | null;
       auth_id?: string | null;
@@ -141,8 +141,8 @@ function SettingComponent({
   createColorsAction,
   createProviderKeysAction,
   getProviderKeysAction,
-  createAuthKeysAction,
-  getAuthKeysAction,
+  createAuthItemKeysAction,
+  getAuthItemKeysAction,
 }: SettingProps) {
   const router = useRouter();
   const isEditMode = !!settingId;
@@ -278,11 +278,12 @@ function SettingComponent({
       keys_agent_id: settingData.keys_agent_id,
       keys: settingData.keys,
       key_ids: settingData.key_ids,
-      auth_key_resources:
-        ((settingData as Record<string, unknown>)["auth_key_resources"] as
+      auth_item_key_resources:
+        ((settingData as Record<string, unknown>)["auth_item_key_resources"] as
           | Array<{
               id?: string | null;
               auth_id?: string | null;
+              item_id?: string | null;
               key_id?: string | null;
               auth_name?: string | null;
               key_name?: string | null;
@@ -1606,9 +1607,9 @@ function SettingComponent({
                   getProviderKeysAction={getProviderKeysAction}
                 />
 
-                <AuthKeys
-                  auth_key_ids={formState.key_ids ?? []}
-                  auth_key_resources={currentSettingData?.auth_key_resources ?? []}
+                <AuthItemKeys
+                  auth_item_key_ids={formState.key_ids ?? []}
+                  auth_item_key_resources={currentSettingData?.auth_item_key_resources ?? []}
                   auths={currentSettingData?.auths ?? []}
                   keys={currentSettingData?.keys ?? []}
                   selected_auth_ids={formState.auth_ids ?? []}
@@ -1616,9 +1617,9 @@ function SettingComponent({
                   onChange={(ids) =>
                     setFormState((prev) => ({ ...prev, key_ids: ids }))
                   }
-                  show_auth_keys={currentSettingData?.show_auths ?? false}
-                  createAuthKeysAction={createAuthKeysAction}
-                  getAuthKeysAction={getAuthKeysAction}
+                  show_auth_item_keys={currentSettingData?.show_auths ?? false}
+                  createAuthItemKeysAction={createAuthItemKeysAction}
+                  getAuthItemKeysAction={getAuthItemKeysAction}
                 />
               </div>
             </StepCard>
@@ -1656,8 +1657,8 @@ function SettingComponent({
       createColorsAction,
       createProviderKeysAction,
       getProviderKeysAction,
-      createAuthKeysAction,
-      getAuthKeysAction,
+      createAuthItemKeysAction,
+      getAuthItemKeysAction,
       canRegenerate,
       handleOpenStepCardModal,
     ]
@@ -1766,8 +1767,8 @@ export default React.memo(SettingComponent, (prevProps, nextProps) => {
     prevProps.createColorsAction !== nextProps.createColorsAction ||
     prevProps.createProviderKeysAction !== nextProps.createProviderKeysAction ||
     prevProps.getProviderKeysAction !== nextProps.getProviderKeysAction ||
-    prevProps.createAuthKeysAction !== nextProps.createAuthKeysAction ||
-    prevProps.getAuthKeysAction !== nextProps.getAuthKeysAction
+    prevProps.createAuthItemKeysAction !== nextProps.createAuthItemKeysAction ||
+    prevProps.getAuthItemKeysAction !== nextProps.getAuthItemKeysAction
   ) {
     return false; // Function props changed, re-render
   }

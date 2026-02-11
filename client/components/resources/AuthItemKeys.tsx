@@ -19,7 +19,7 @@ type KeyOption = {
   masked_key?: string | null;
 };
 
-type AuthKeyResource = {
+type AuthItemKeyResource = {
   id?: string | null;
   auth_id?: string | null;
   item_id?: string | null;
@@ -30,9 +30,9 @@ type AuthKeyResource = {
   generated?: boolean | null;
 };
 
-export interface AuthKeysProps {
-  auth_key_ids?: string[];
-  auth_key_resources?: AuthKeyResource[];
+export interface AuthItemKeysProps {
+  auth_item_key_ids?: string[];
+  auth_item_key_resources?: AuthItemKeyResource[];
   auths?: AuthOption[];
   keys?: KeyOption[];
   selected_auth_ids?: string[];
@@ -40,11 +40,11 @@ export interface AuthKeysProps {
   onChange: (ids: string[]) => void;
   label?: string;
   description?: string;
-  show_auth_keys?: boolean;
-  getAuthKeysAction?:
-    | ((ids: string[]) => Promise<AuthKeyResource[]>)
+  show_auth_item_keys?: boolean;
+  getAuthItemKeysAction?:
+    | ((ids: string[]) => Promise<AuthItemKeyResource[]>)
     | undefined;
-  createAuthKeysAction?:
+  createAuthItemKeysAction?:
     | ((input: {
         auth_id: string;
         key_id: string;
@@ -52,22 +52,22 @@ export interface AuthKeysProps {
     | undefined;
 }
 
-export function AuthKeys({
-  auth_key_ids,
-  auth_key_resources,
+export function AuthItemKeys({
+  auth_item_key_ids,
+  auth_item_key_resources,
   auths,
   keys,
   selected_auth_ids,
   disabled = false,
   onChange,
-  label = "Auth Keys",
+  label = "Auth Item Keys",
   description = "Select which keys are available for each auth.",
-  show_auth_keys = true,
-  getAuthKeysAction,
-  createAuthKeysAction,
-}: AuthKeysProps) {
-  const selectedIds = useMemo(() => auth_key_ids ?? [], [auth_key_ids]);
-  const [resourcesById, setResourcesById] = useState<Map<string, AuthKeyResource>>(
+  show_auth_item_keys = true,
+  getAuthItemKeysAction,
+  createAuthItemKeysAction,
+}: AuthItemKeysProps) {
+  const selectedIds = useMemo(() => auth_item_key_ids ?? [], [auth_item_key_ids]);
+  const [resourcesById, setResourcesById] = useState<Map<string, AuthItemKeyResource>>(
     new Map()
   );
   const creatingRef = useRef<Set<string>>(new Set());
@@ -94,21 +94,21 @@ export function AuthKeys({
   );
 
   useEffect(() => {
-    if (!auth_key_resources || auth_key_resources.length === 0) return;
+    if (!auth_item_key_resources || auth_item_key_resources.length === 0) return;
     setResourcesById((prev) => {
       const next = new Map(prev);
-      auth_key_resources.forEach((r) => {
+      auth_item_key_resources.forEach((r) => {
         if (r.id) next.set(r.id, r);
       });
       return next;
     });
-  }, [auth_key_resources]);
+  }, [auth_item_key_resources]);
 
   useEffect(() => {
     const missing = selectedIds.filter((id) => !resourcesById.has(id));
-    if (missing.length === 0 || !getAuthKeysAction) return;
+    if (missing.length === 0 || !getAuthItemKeysAction) return;
     let cancelled = false;
-    void getAuthKeysAction(missing).then((items) => {
+    void getAuthItemKeysAction(missing).then((items) => {
       if (cancelled) return;
       setResourcesById((prev) => {
         const next = new Map(prev);
@@ -121,7 +121,7 @@ export function AuthKeys({
     return () => {
       cancelled = true;
     };
-  }, [selectedIds, resourcesById, getAuthKeysAction]);
+  }, [selectedIds, resourcesById, getAuthItemKeysAction]);
 
   const pairToId = useMemo(() => {
     const map = new Map<string, string>();
@@ -156,10 +156,10 @@ export function AuthKeys({
         return;
       }
 
-      if (!createAuthKeysAction || creatingRef.current.has(pairKey)) return;
+      if (!createAuthItemKeysAction || creatingRef.current.has(pairKey)) return;
       creatingRef.current.add(pairKey);
       try {
-        const result = await createAuthKeysAction({ auth_id: authId, key_id: keyId });
+        const result = await createAuthItemKeysAction({ auth_id: authId, key_id: keyId });
         const createdId = result.auth_item_keys_id ?? null;
         if (!createdId) return;
         setResourcesById((prev) => {
@@ -188,13 +188,13 @@ export function AuthKeys({
       emit,
       selectedIds,
       selectedSet,
-      createAuthKeysAction,
+      createAuthItemKeysAction,
       authItems,
       keyItems,
     ]
   );
 
-  if (!show_auth_keys) return null;
+  if (!show_auth_item_keys) return null;
 
   return (
     <div className="space-y-2">
