@@ -1244,3 +1244,72 @@ Frontend implementation note:
 - Regression guard:
   - Keep `current` arrays section-scoped in client contracts (`section.current`), never restore top-level `current`.
   - Avoid passing `*_agent_id` props into resource components; tool routing remains section-driven (`create_tool_id`/`link_tool_id`) and socket-side (`resource_agent_ids`).
+
+---
+
+## 18. Resource-First List Pattern
+
+List endpoints should only touch the artifact's own table + its own junctions + resource tables. No cross-entity artifact tables (e.g., `scenario_artifact`, `field_artifact`).
+
+### Principle
+
+The only artifact table a list SQL touches is `{artifact}_artifact`. Everything else is the artifact's own junctions or resource tables with denormalized data.
+
+### Below-Facing Metadata (artifact's own data)
+
+```
+{artifact}_artifact (root)
+  → {artifact}_names_junction → names_resource (name)
+  → {artifact}_descriptions_junction → descriptions_resource (description)
+  → {artifact}_colors_junction → colors_resource (color)
+  → {artifact}_icons_junction → icons_resource (icon)
+  → {artifact}_flags_junction → flags_resource (active flag)
+  → {artifact}_departments_junction → departments_resource (department_ids)
+  → {artifact}_parameter_fields_junction → parameter_fields_resource → fields_resource (field data)
+```
+
+### Above-Facing Filters (parents that reference this artifact)
+
+Use denormalized arrays on resource tables instead of traversing parent artifact junctions:
+
+```
+{artifact}_artifact
+  → {artifact}_{artifact}s_junction → {artifact}s_resource (bridge to resource layer)
+    → parent_resource WHERE {artifact}s_resource.id = ANY(parent_resource.{artifact}_ids)
+```
+
+Example (persona → scenarios):
+```
+persona_artifact
+  → persona_personas_junction → personas_resource
+    → scenarios_resource WHERE personas_resource.id = ANY(scenarios_resource.persona_ids)
+```
+
+This replaces the old pattern of joining through `scenario_personas_junction` + `scenario_tree_junction` + `scenario_artifact`.
+
+### Filter ID Convention
+
+- Filter IDs are always **resource IDs** (e.g., `scenarios_resource.id`, `fields_resource.id`, `departments_resource.id`), never artifact IDs
+- Filter option names come from denormalized `*_resource.name` / `*_resource.description` columns
+- This eliminates joins to `{entity}_names_junction` / `{entity}_descriptions_junction` for filter options
+
+### Permission Data
+
+- `active_scenario_count` / `total_scenario_links`: computed from denormalized resource data (e.g., `scenarios_resource.persona_ids`)
+- The delete endpoint has its own independent access check SQL — list permission counts are for UI display only
+
+### Denormalization Responsibilities
+
+Save endpoints must keep denormalized arrays in sync:
+- When linking/unlinking a persona to a scenario, the scenario save must update `scenarios_resource.persona_ids`
+- Migration backfill scripts populate denormalized arrays from junction tables
+
+### Reference Implementation
+
+```
+server/app/sql/v4/queries/personas/get_personas_list_complete.sql
+```
+
+Tables touched: `persona_artifact`, `persona_*_junction` (7 junctions), `names_resource`, `descriptions_resource`, `colors_resource`, `icons_resource`, `flags_resource`, `departments_resource`, `parameter_fields_resource`, `fields_resource`, `personas_resource`, `scenarios_resource`
+
+Tables NOT touched: `scenario_artifact`, `field_artifact`, `department_artifact`, `view_persona_edit_state`, `scenario_personas_junction`, `scenario_tree_junction`, `field_fields_junction`, `department_departments_junction`, `department_names_junction`

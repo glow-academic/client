@@ -1,5 +1,5 @@
 <#-- GENERATED FILE: do not edit manually -->
-<#-- Generated at: 2026-02-09T21:00:15.611725 -->
+<#-- Generated at: 2026-02-11T12:37:49.475810 -->
 <#--
   Provider mapping: department_id -> allowed IdP aliases
 
@@ -10,16 +10,10 @@
   Enumerated IdP aliases:
     - auth_google_019b3be4-3117-7aa4-aa34-0041aa51d1d8
     - auth_microsoft_019b3be4-3117-7afc-8d1d-a2815d70f294
-    - default-idp-profile-019b3be4-36ef-7a5f-98ab-ccb879770be0
-    - default-idp-profile-019b3be4-36f0-792c-82d6-126664ed18b6
-    - default-idp-profile-019bdb94-b2b6-7001-afd4-8dea58b2b22d
     - google
     - microsoft
 
   Default-IdP aliases:
-    - default-idp-profile-019b3be4-36ef-7a5f-98ab-ccb879770be0
-    - default-idp-profile-019b3be4-36f0-792c-82d6-126664ed18b6
-    - default-idp-profile-019bdb94-b2b6-7001-afd4-8dea58b2b22d
 -->
 
 <#-- Departments to show in the picker -->

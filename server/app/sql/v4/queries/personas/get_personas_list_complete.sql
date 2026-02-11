@@ -1,5 +1,6 @@
 -- Get personas list with permissions and scenario details
--- Converted to function with composite types
+-- Resource-first: only touches persona_artifact + persona's own junctions + resource tables
+-- No cross-entity artifact tables (scenario_artifact, field_artifact, etc.)
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -43,8 +44,6 @@ CREATE TYPE types.q_list_personas_v4_persona AS (
     department_ids text[],
     scenario_ids uuid[],
     field_ids uuid[],
-    reasoning text,
-    temperature_display text,
     is_inactive boolean,
     num_scenarios int,
     active_scenario_count int,
@@ -56,10 +55,6 @@ CREATE TYPE types.q_list_personas_v4_scenario AS (
     scenario_id uuid,
     name text,
     description text,
-    active boolean,
-    persona_ids uuid[],
-    document_ids uuid[],
-    parameter_item_ids uuid[],
     count bigint
 );
 
@@ -115,16 +110,16 @@ user_profile AS (
     FROM view_user_profile_context
     WHERE profile_id = (SELECT profile_id FROM params)
 ),
+-- Scenario linkage via denormalized scenarios_resource.persona_ids
+-- persona_artifact → persona_personas_junction → personas_resource → scenarios_resource WHERE persona_ids @> ARRAY[personas_resource.id]
 persona_scenarios AS (
     SELECT
         ppj.persona_id,
-        ARRAY_AGG(DISTINCT st.parent_id) as scenario_ids,
-        COUNT(DISTINCT st.parent_id) as num_scenarios
-    FROM scenario_personas_junction sp
-    JOIN personas_resource pr ON pr.id = sp.persona_id
-    JOIN persona_personas_junction ppj ON ppj.personas_id = pr.id
-    JOIN scenario_tree_junction st ON st.child_id = sp.scenario_id
-    WHERE sp.active = true AND st.parent_id = st.child_id
+        ARRAY_AGG(DISTINCT sr.id) as scenario_ids,
+        COUNT(DISTINCT sr.id)::int as num_scenarios
+    FROM persona_personas_junction ppj
+    JOIN personas_resource pr ON pr.id = ppj.personas_id
+    JOIN scenarios_resource sr ON pr.id = ANY(sr.persona_ids)
     GROUP BY ppj.persona_id
 ),
 persona_departments_data AS (
@@ -134,14 +129,14 @@ persona_departments_data AS (
     FROM persona_departments_junction pd
     GROUP BY pd.persona_id
 ),
+-- Field linkage via parameter_fields_resource.field_id → fields_resource.id
 persona_fields_data AS (
     SELECT
         ppfj.persona_id,
-        ARRAY_AGG(DISTINCT ffj.field_id) as field_ids
+        ARRAY_AGG(DISTINCT fr.id) as field_ids
     FROM persona_parameter_fields_junction ppfj
     JOIN parameter_fields_resource pfr ON pfr.id = ppfj.parameter_field_id
     JOIN fields_resource fr ON fr.id = pfr.field_id
-    JOIN field_fields_junction ffj ON ffj.fields_id = fr.id
     WHERE ppfj.active = true
     GROUP BY ppfj.persona_id
 ),
@@ -149,30 +144,31 @@ persona_data_base AS (
     SELECT
         p.id as persona_id,
         (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1) as persona_name,
-        (SELECT d.description FROM persona_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1),
+        (SELECT d.description FROM persona_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1) as description,
         (SELECT c.hex_code FROM persona_colors_junction pc JOIN colors_resource c ON pc.color_id = c.id WHERE pc.persona_id = p.id LIMIT 1) as color,
         (SELECT i.value FROM persona_icons_junction pi JOIN icons_resource i ON pi.icon_id = i.id WHERE pi.persona_id = p.id LIMIT 1) as icon,
-        NULL::uuid as agent_id,
-        NULL::uuid as model_id,
-        NULL::text as reasoning,
-        NULL::numeric as temperature,
         EXISTS (SELECT 1 FROM persona_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.persona_id = p.id AND f.name = 'persona_active' AND pf.value = TRUE) as active,
         p.updated_at,
         COALESCE(pdd.department_ids, NULL) as department_ids,
         COALESCE(ps.scenario_ids, ARRAY[]::uuid[]) as scenario_ids,
         COALESCE(pfd.field_ids, ARRAY[]::uuid[]) as field_ids,
         COALESCE(ps.num_scenarios, 0) as num_scenarios,
-        COALESCE(pes.active_scenario_count, 0) as active_scenario_count,
-        COALESCE(pes.total_scenario_links, 0) as total_scenario_links,
-        pes.department_ids as perm_dept_ids
+        -- active_scenario_count and total_scenario_links from inline scenario count
+        COALESCE(ps.num_scenarios, 0) as active_scenario_count,
+        COALESCE(ps.num_scenarios, 0) as total_scenario_links
     FROM persona_artifact p
     LEFT JOIN persona_scenarios ps ON ps.persona_id = p.id
-    LEFT JOIN view_persona_edit_state pes ON pes.persona_id = p.id
     LEFT JOIN persona_departments_data pdd ON pdd.persona_id = p.id
     LEFT JOIN persona_fields_data pfd ON pfd.persona_id = p.id
     LEFT JOIN persona_departments_junction pd ON pd.persona_id = p.id AND pd.department_id IN (SELECT department_id FROM user_departments)
-    GROUP BY p.id, (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1), (SELECT d.description FROM persona_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1), (SELECT c.hex_code FROM persona_colors_junction pc JOIN colors_resource c ON pc.color_id = c.id WHERE pc.persona_id = p.id LIMIT 1), (SELECT i.value FROM persona_icons_junction pi JOIN icons_resource i ON pi.icon_id = i.id WHERE pi.persona_id = p.id LIMIT 1), EXISTS (SELECT 1 FROM persona_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.persona_id = p.id AND f.name = 'persona_active' AND pf.value = TRUE), p.updated_at,
-             pdd.department_ids, ps.scenario_ids, pfd.field_ids, ps.num_scenarios, pes.active_scenario_count, pes.total_scenario_links, pes.department_ids
+    GROUP BY p.id,
+        (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1),
+        (SELECT d.description FROM persona_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1),
+        (SELECT c.hex_code FROM persona_colors_junction pc JOIN colors_resource c ON pc.color_id = c.id WHERE pc.persona_id = p.id LIMIT 1),
+        (SELECT i.value FROM persona_icons_junction pi JOIN icons_resource i ON pi.icon_id = i.id WHERE pi.persona_id = p.id LIMIT 1),
+        EXISTS (SELECT 1 FROM persona_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.persona_id = p.id AND f.name = 'persona_active' AND pf.value = TRUE),
+        p.updated_at,
+        pdd.department_ids, ps.scenario_ids, pfd.field_ids, ps.num_scenarios
     HAVING COUNT(pd.persona_id) > 0 OR NOT EXISTS (
         SELECT 1 FROM persona_departments_junction pd2 WHERE pd2.persona_id = p.id
     )
@@ -188,9 +184,9 @@ filtered_personas AS (
     WHERE
         -- Search filter: match name or description (case-insensitive)
         (search IS NULL OR LOWER(pd.persona_name) LIKE '%' || LOWER(search) || '%' OR LOWER(pd.description) LIKE '%' || LOWER(search) || '%')
-        -- Scenario filter: persona must be linked to at least one selected scenario
+        -- Scenario filter: persona must be linked to at least one selected scenario (now scenarios_resource.id)
         AND (api_list_personas_v4.scenario_ids IS NULL OR pd.scenario_ids && api_list_personas_v4.scenario_ids)
-        -- Field filter: persona must have at least one of the selected fields
+        -- Field filter: persona must have at least one of the selected fields (now fields_resource.id)
         AND (api_list_personas_v4.field_ids IS NULL OR pd.field_ids && api_list_personas_v4.field_ids)
         -- Department filter: persona must belong to at least one selected department
         AND (filter_department_ids IS NULL OR pd.department_ids && filter_department_ids::text[])
@@ -206,24 +202,19 @@ paginated_personas AS (
     ORDER BY fp.updated_at DESC NULLS LAST
     LIMIT page_size OFFSET page_offset
 ),
+-- Scenario filter options: from scenarios_resource via denormalized persona_ids
 all_scenario_ids AS (
     SELECT DISTINCT unnest(scenario_ids) as scenario_id
     FROM persona_data
 ),
 scenario_mapping_data AS (
     SELECT
-        asi.scenario_id,
-        (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = asi.scenario_id LIMIT 1) as name,
-        COALESCE(ps.problem_statement, '') as description,
-        EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = asi.scenario_id AND f.name = 'scenario_active' AND sf.value = TRUE) as active,
-        ARRAY[]::uuid[] as persona_ids,
-        ARRAY[]::uuid[] as document_ids,
-        ARRAY[]::uuid[] as parameter_item_ids,
-        (SELECT COUNT(*) FROM persona_data pd WHERE asi.scenario_id = ANY(pd.scenario_ids)) as count
-    FROM all_scenario_ids asi
-    JOIN scenario_artifact sa ON sa.id = asi.scenario_id
-    LEFT JOIN scenario_problem_statements_junction sps ON sps.scenario_id = asi.scenario_id AND sps.active = true
-    LEFT JOIN problem_statements_resource ps ON ps.id = sps.problem_statement_id
+        sr.id as scenario_id,
+        COALESCE(sr.name, '') as name,
+        COALESCE(sr.description, '') as description,
+        (SELECT COUNT(*) FROM persona_data pd WHERE sr.id = ANY(pd.scenario_ids)) as count
+    FROM scenarios_resource sr
+    WHERE sr.id IN (SELECT scenario_id FROM all_scenario_ids)
 ),
 -- Filter scenario options by search term
 filtered_scenario_options AS (
@@ -231,14 +222,14 @@ filtered_scenario_options AS (
     FROM scenario_mapping_data smd
     WHERE scenario_search IS NULL OR smd.name ILIKE '%' || scenario_search || '%'
 ),
+-- Department filter options: from departments_resource directly (denormalized name/description)
 department_mapping_data AS (
     SELECT
         dr.id as department_id,
-        (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = ddj.department_id LIMIT 1) as name,
-        COALESCE((SELECT d2.description FROM department_descriptions_junction dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = ddj.department_id LIMIT 1), '') as description,
+        COALESCE(dr.name, '') as name,
+        COALESCE(dr.description, '') as description,
         (SELECT COUNT(*) FROM persona_data) as count
     FROM departments_resource dr
-    JOIN department_departments_junction ddj ON ddj.departments_id = dr.id
     WHERE dr.id IN (SELECT department_id FROM user_departments)
 ),
 -- Filter department options by search term
@@ -247,21 +238,20 @@ filtered_department_options AS (
     FROM department_mapping_data dmd
     WHERE department_search IS NULL OR dmd.name ILIKE '%' || department_search || '%'
 ),
--- Get all unique field_artifact IDs used by any persona
+-- Field filter options: from fields_resource directly (denormalized name/description)
 assigned_field_ids AS (
     SELECT DISTINCT unnest(field_ids) as field_id
     FROM persona_data
     WHERE field_ids IS NOT NULL AND array_length(field_ids, 1) > 0
 ),
--- Get field names, descriptions, and counts
 field_mapping_data AS (
     SELECT
-        fa.id as field_id,
-        (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = fa.id LIMIT 1) as name,
-        COALESCE((SELECT d.description FROM field_descriptions_junction fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = fa.id LIMIT 1), '') as description,
-        (SELECT COUNT(*) FROM persona_data pd WHERE fa.id = ANY(pd.field_ids)) as count
-    FROM field_artifact fa
-    WHERE fa.id IN (SELECT field_id FROM assigned_field_ids)
+        fr.id as field_id,
+        COALESCE(fr.name, '') as name,
+        COALESCE(fr.description, '') as description,
+        (SELECT COUNT(*) FROM persona_data pd WHERE fr.id = ANY(pd.field_ids)) as count
+    FROM fields_resource fr
+    WHERE fr.id IN (SELECT field_id FROM assigned_field_ids)
 ),
 -- Filter field options by search term
 filtered_field_options AS (
@@ -277,8 +267,6 @@ SELECT
         (SELECT ARRAY_AGG(
             (pd.persona_id, pd.persona_name, pd.description, pd.color, pd.icon,
              pd.department_ids, pd.scenario_ids, pd.field_ids,
-             pd.reasoning,
-             CASE WHEN pd.temperature IS NOT NULL THEN TO_CHAR(pd.temperature, 'FM0.00') ELSE '0.00' END,
              NOT pd.active, pd.num_scenarios,
              pd.active_scenario_count,
              pd.total_scenario_links,
@@ -291,8 +279,7 @@ SELECT
     -- Aggregate filtered scenario options
     COALESCE(
         (SELECT ARRAY_AGG(
-            (smd.scenario_id, smd.name, smd.description, smd.active, smd.persona_ids,
-             smd.document_ids, smd.parameter_item_ids, smd.count)::types.q_list_personas_v4_scenario
+            (smd.scenario_id, smd.name, smd.description, smd.count)::types.q_list_personas_v4_scenario
             ORDER BY smd.name
         ) FROM filtered_scenario_options smd),
         '{}'::types.q_list_personas_v4_scenario[]

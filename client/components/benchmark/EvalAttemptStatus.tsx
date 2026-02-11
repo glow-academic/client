@@ -19,7 +19,8 @@ import {
 } from "@/components/ui/table";
 import { useProfile } from "@/contexts/profile-context";
 import type { OutputOf } from "@/lib/api/types";
-import { AlertCircle, CheckCircle2, Clock, Play, Square, PlaySquare } from "lucide-react";
+import { AlertCircle, CheckCircle2, Clock, Play, Square, PlaySquare, Settings } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -36,6 +37,7 @@ export default function EvalAttemptStatus({
   attemptId,
   attemptData,
 }: EvalAttemptStatusProps) {
+  const router = useRouter();
   const { socket, isConnected, profile } = useProfile();
   const [runs, setRuns] = useState<RunItem[]>(attemptData.runs || []);
   const [startingRunIds, setStartingRunIds] = useState<Set<string>>(new Set());
@@ -418,32 +420,48 @@ export default function EvalAttemptStatus({
                         : "-"}
                     </TableCell>
                     <TableCell>
-                      {run.status === "not_started" && run.run_id && (
-                        <Button
-                          onClick={() => handleStartRun(run.run_id!)}
-                          variant="outline"
-                          size="sm"
-                          disabled={
-                            !isConnected || startingRunIds.has(run.run_id)
-                          }
-                        >
-                          <Play className="h-3 w-3 mr-1" />
-                          {startingRunIds.has(run.run_id) ? "Starting..." : "Start"}
-                        </Button>
-                      )}
-                      {run.status === "in_progress" && run.run_id && (
-                        <Button
-                          onClick={() => handleStopRun(run.run_id!)}
-                          variant="destructive"
-                          size="sm"
-                          disabled={
-                            !isConnected || stoppingRunIds.has(run.run_id)
-                          }
-                        >
-                          <Square className="h-3 w-3 mr-1" />
-                          {stoppingRunIds.has(run.run_id) ? "Stopping..." : "Stop"}
-                        </Button>
-                      )}
+                      <div className="flex items-center gap-1">
+                        {run.status === "not_started" && run.run_id && (
+                          <Button
+                            onClick={() => handleStartRun(run.run_id!)}
+                            variant="outline"
+                            size="sm"
+                            disabled={
+                              !isConnected || startingRunIds.has(run.run_id)
+                            }
+                          >
+                            <Play className="h-3 w-3 mr-1" />
+                            {startingRunIds.has(run.run_id) ? "Starting..." : "Start"}
+                          </Button>
+                        )}
+                        {run.status === "in_progress" && run.run_id && (
+                          <Button
+                            onClick={() => handleStopRun(run.run_id!)}
+                            variant="destructive"
+                            size="sm"
+                            disabled={
+                              !isConnected || stoppingRunIds.has(run.run_id)
+                            }
+                          >
+                            <Square className="h-3 w-3 mr-1" />
+                            {stoppingRunIds.has(run.run_id) ? "Stopping..." : "Stop"}
+                          </Button>
+                        )}
+                        {(run as RunItem & { benchmark_bundle_entry_id?: string | null }).benchmark_bundle_entry_id && (
+                          <Button
+                            onClick={() =>
+                              router.push(
+                                `/benchmark/t/${attemptId}/${(run as RunItem & { benchmark_bundle_entry_id: string }).benchmark_bundle_entry_id}`
+                              )
+                            }
+                            variant="ghost"
+                            size="sm"
+                          >
+                            <Settings className="h-3 w-3 mr-1" />
+                            Customize
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))

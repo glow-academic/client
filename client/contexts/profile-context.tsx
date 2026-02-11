@@ -128,8 +128,8 @@ interface ProfileContextType {
     profile_id?: string | null;
   }) => void;
 
-  // Artifact agent IDs for generation capability (from profile context SSR)
-  artifactAgentIds: Record<string, string[]>;
+  // Artifact generation capability flags (from profile context SSR)
+  artifactHasGeneration: Record<string, boolean>;
 }
 
 export const ProfileContext = createContext<ProfileContextType | null>(null);
@@ -482,7 +482,7 @@ export function ProfileProviderClient({
     emitCreatePracticeScenario,
 
     // Artifact agent IDs for generation capability (from profile context SSR)
-    artifactAgentIds: initial?.artifact_agent_ids ?? {},
+    artifactHasGeneration: initial?.artifact_has_generation ?? {},
   };
 
   return (

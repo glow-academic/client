@@ -49,9 +49,9 @@ from app.utils.sql_helper import execute_sql_typed
 
 
 class GetProfileContextApiResponse(BaseGetProfileContextApiResponse):
-    """Extended profile context response with artifact_agent_ids."""
+    """Extended profile context response with artifact_has_generation."""
 
-    artifact_agent_ids: dict[str, list[UUID]] | None = None
+    artifact_has_generation: dict[str, bool] | None = None
 
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -480,12 +480,12 @@ async def get_profile_context(
         }
         theme_tokens = derive_theme_tokens(theme_primitives)
 
-        # Build artifact_agent_ids map - return all qualifying agents per artifact
-        artifact_agent_ids_map: dict[str, list[UUID]] = {}
+        # Build artifact_has_generation map - boolean per artifact type
+        artifact_has_generation_map: dict[str, bool] = {}
         if access_result.artifact_agent_ids:
             for item in access_result.artifact_agent_ids:
-                if item.artifact and item.agent_ids:
-                    artifact_agent_ids_map[item.artifact] = list(item.agent_ids)
+                if item.artifact and item.has_generation:
+                    artifact_has_generation_map[item.artifact] = True
 
         # Set audit context
         if access_result.actor_name and profile_id:
@@ -562,7 +562,7 @@ async def get_profile_context(
             settings_tokens=theme_tokens,
             actor_name=access_result.actor_name,
             session_id=access_result.session_id,
-            artifact_agent_ids=artifact_agent_ids_map,
+            artifact_has_generation=artifact_has_generation_map,
         )
 
         return api_response

@@ -22,6 +22,7 @@ class TestRunItem(BaseModel):
     invocation_id: str
     run_id: str | None = None
     group_id: str | None = None
+    benchmark_bundle_entry_id: str | None = None
     model_name: str | None = None
     agent_name: str | None = None
     status: str = "not_started"

@@ -3354,6 +3354,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/artifacts/benchmark/bundle/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Benchmark Bundle Get
+         * @description Get hydrated resources for benchmark bundle customization.
+         */
+        post: operations["benchmark_bundle_get_api_v4_artifacts_benchmark_bundle_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/artifacts/test/get": {
         parameters: {
             query?: never;
@@ -3425,6 +3445,26 @@ export interface paths {
         put?: never;
         /** Get Docs */
         post: operations["get_docs_api_v4_artifacts_test_docs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/artifacts/test/create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Test
+         * @description Create a new benchmark test via REST.
+         */
+        post: operations["create_test_api_v4_artifacts_test_create_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7140,6 +7180,26 @@ export interface paths {
          * @description Refresh mv_benchmark_invocations concurrently.
          */
         post: operations["refresh_benchmark_invocations_api_v4_views_benchmark_invocations_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/views/benchmark/bundle/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Benchmark Bundle View
+         * @description Get thin bundle scope for a single benchmark bundle entry.
+         */
+        post: operations["get_benchmark_bundle_view_api_v4_views_benchmark_bundle_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -12130,6 +12190,204 @@ export interface components {
              */
             status: string;
         };
+        /** BenchmarkBundleDepartmentSection */
+        BenchmarkBundleDepartmentSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Current */
+            current?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
+        };
+        /** BenchmarkBundleInstructionSection */
+        BenchmarkBundleInstructionSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Current */
+            current?: components["schemas"]["QGetInstructionsV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetInstructionsV4Item"][] | null;
+        };
+        /** BenchmarkBundleKeySection */
+        BenchmarkBundleKeySection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Current */
+            current?: components["schemas"]["QGetKeysV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetKeysV4Item"][] | null;
+        };
+        /** BenchmarkBundleModelSection */
+        BenchmarkBundleModelSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Current */
+            current?: components["schemas"]["QGetModelsV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetModelsV4Item"][] | null;
+        };
+        /** BenchmarkBundlePromptSection */
+        BenchmarkBundlePromptSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Current */
+            current?: components["schemas"]["QGetPromptsV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetPromptsV4Item"][] | null;
+        };
+        /** BenchmarkBundleReasoningLevelSection */
+        BenchmarkBundleReasoningLevelSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Current */
+            current?: components["schemas"]["QGetReasoningLevelsV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetReasoningLevelsV4Item"][] | null;
+        };
+        /** BenchmarkBundleTemperatureLevelSection */
+        BenchmarkBundleTemperatureLevelSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Current */
+            current?: components["schemas"]["QGetTemperatureLevelsV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetTemperatureLevelsV4Item"][] | null;
+        };
+        /** BenchmarkBundleToolSection */
+        BenchmarkBundleToolSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Current */
+            current?: components["schemas"]["QGetToolsV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetToolsV4Item"][] | null;
+        };
+        /** BenchmarkBundleVoiceSection */
+        BenchmarkBundleVoiceSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Current */
+            current?: components["schemas"]["QGetVoicesV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetVoicesV4Item"][] | null;
+        };
         /**
          * BenchmarkChatInfo
          * @description Info about a benchmark chat (test instance).
@@ -13523,6 +13781,27 @@ export interface components {
             success: boolean;
             /** Message */
             message: string;
+        };
+        /** CreateTestRequest */
+        CreateTestRequest: {
+            /**
+             * Eval Id
+             * Format: uuid
+             */
+            eval_id: string;
+            /**
+             * Infinite Mode
+             * @default false
+             */
+            infinite_mode: boolean;
+        };
+        /** CreateTestResponse */
+        CreateTestResponse: {
+            /**
+             * Test Id
+             * Format: uuid
+             */
+            test_id: string;
         };
         /**
          * DailyMetricsItem
@@ -16800,6 +17079,79 @@ export interface components {
             total_count: number;
         };
         /**
+         * GetBenchmarkBundleRequest
+         * @description Client API request for one benchmark bundle customization payload.
+         */
+        GetBenchmarkBundleRequest: {
+            /**
+             * Benchmark Bundle Entry Id
+             * Format: uuid
+             */
+            benchmark_bundle_entry_id: string;
+            /** Draft Id */
+            draft_id?: string | null;
+        };
+        /**
+         * GetBenchmarkBundleResponse
+         * @description Client-facing bundle response — section-first pattern.
+         */
+        GetBenchmarkBundleResponse: {
+            /**
+             * Benchmark Bundle Entry Id
+             * Format: uuid
+             */
+            benchmark_bundle_entry_id: string;
+            /** Benchmark Id */
+            benchmark_id?: string | null;
+            /**
+             * Profile Has Access
+             * @default false
+             */
+            profile_has_access: boolean;
+            departments?: components["schemas"]["BenchmarkBundleDepartmentSection"] | null;
+            models?: components["schemas"]["BenchmarkBundleModelSection"] | null;
+            prompts?: components["schemas"]["BenchmarkBundlePromptSection"] | null;
+            instructions?: components["schemas"]["BenchmarkBundleInstructionSection"] | null;
+            voices?: components["schemas"]["BenchmarkBundleVoiceSection"] | null;
+            temperature_levels?: components["schemas"]["BenchmarkBundleTemperatureLevelSection"] | null;
+            reasoning_levels?: components["schemas"]["BenchmarkBundleReasoningLevelSection"] | null;
+            tools?: components["schemas"]["BenchmarkBundleToolSection"] | null;
+            keys?: components["schemas"]["BenchmarkBundleKeySection"] | null;
+        };
+        /**
+         * GetBenchmarkBundleViewResponse
+         * @description Thin MV-backed view response for a single benchmark bundle.
+         */
+        GetBenchmarkBundleViewResponse: {
+            /**
+             * Profile Has Access
+             * @default false
+             */
+            profile_has_access: boolean;
+            /** Benchmark Bundle Entry Id */
+            benchmark_bundle_entry_id?: string | null;
+            /** Benchmark Id */
+            benchmark_id?: string | null;
+            /** Department Ids */
+            department_ids?: string[];
+            /** Model Ids */
+            model_ids?: string[];
+            /** Prompt Ids */
+            prompt_ids?: string[];
+            /** Instruction Ids */
+            instruction_ids?: string[];
+            /** Voice Ids */
+            voice_ids?: string[];
+            /** Temperature Level Ids */
+            temperature_level_ids?: string[];
+            /** Reasoning Level Ids */
+            reasoning_level_ids?: string[];
+            /** Tool Ids */
+            tool_ids?: string[];
+            /** Key Ids */
+            key_ids?: string[];
+        };
+        /**
          * GetBenchmarkEvalSummaryRequest
          * @description Request for getting benchmark eval summary.
          */
@@ -18531,7 +18883,7 @@ export interface components {
         };
         /**
          * GetProfileContextApiResponse
-         * @description Extended profile context response with artifact_agent_ids.
+         * @description Extended profile context response with artifact_has_generation.
          */
         GetProfileContextApiResponse: {
             /** Is Authorized */
@@ -18643,9 +18995,9 @@ export interface components {
             actor_name?: string | null;
             /** Session Id */
             session_id?: string | null;
-            /** Artifact Agent Ids */
-            artifact_agent_ids?: {
-                [key: string]: string[];
+            /** Artifact Has Generation */
+            artifact_has_generation?: {
+                [key: string]: boolean;
             } | null;
         };
         /**
@@ -21757,12 +22109,8 @@ export interface components {
             department_ids?: string[] | null;
             /** Scenario Ids */
             scenario_ids?: string[] | null;
-            /** Parameter Field Ids */
-            parameter_field_ids?: string[] | null;
-            /** Reasoning */
-            reasoning?: string | null;
-            /** Temperature Display */
-            temperature_display?: string | null;
+            /** Field Ids */
+            field_ids?: string[] | null;
             /** Is Inactive */
             is_inactive?: boolean | null;
             /** Num Scenarios */
@@ -21805,14 +22153,6 @@ export interface components {
             name?: string | null;
             /** Description */
             description?: string | null;
-            /** Active */
-            active?: boolean | null;
-            /** Persona Ids */
-            persona_ids?: string[] | null;
-            /** Document Ids */
-            document_ids?: string[] | null;
-            /** Parameter Item Ids */
-            parameter_item_ids?: string[] | null;
             /** Count */
             count?: number | null;
         };
@@ -32207,6 +32547,8 @@ export interface components {
             run_id?: string | null;
             /** Group Id */
             group_id?: string | null;
+            /** Benchmark Bundle Entry Id */
+            benchmark_bundle_entry_id?: string | null;
             /** Model Name */
             model_name?: string | null;
             /** Agent Name */
@@ -40112,6 +40454,43 @@ export interface operations {
             };
         };
     };
+    benchmark_bundle_get_api_v4_artifacts_benchmark_bundle_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetBenchmarkBundleRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetBenchmarkBundleResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_test_artifact_api_v4_artifacts_test_get_post: {
         parameters: {
             query?: never;
@@ -40245,6 +40624,43 @@ export interface operations {
                     "application/json": {
                         [key: string]: unknown;
                     };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_test_api_v4_artifacts_test_create_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTestRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateTestResponse"];
                 };
             };
             /** @description Validation Error */
@@ -47117,6 +47533,41 @@ export interface operations {
                     "application/json": {
                         [key: string]: boolean;
                     };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_benchmark_bundle_view_api_v4_views_benchmark_bundle_get_post: {
+        parameters: {
+            query: {
+                benchmark_bundle_entry_id: string;
+            };
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetBenchmarkBundleViewResponse"];
                 };
             };
             /** @description Validation Error */

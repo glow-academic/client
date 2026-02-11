@@ -100,8 +100,7 @@ export default function Cohorts({
   const [isGenerating, setIsGenerating] = useState(false);
 
   // Handle opening the generate modal
-  const handleOpenGenerateModal = useCallback((agentId?: string) => {
-    if (!agentId) return;
+  const handleOpenGenerateModal = useCallback(() => {
     const resources: GenerateRegenerateModalResource[] = [
       { id: "names", label: "Name", active: true },
       { id: "descriptions", label: "Description", active: true },
@@ -117,23 +116,12 @@ export default function Cohorts({
 
   // Listen for full-page-generate event
   useEffect(() => {
-    const handleFullPageGenerate = (
-      event: CustomEvent<{ agentId?: string }>
-    ) => {
-      const agentId = event.detail?.agentId;
-      if (agentId) {
-        handleOpenGenerateModal(agentId);
-      }
+    const handleFullPageGenerate = () => {
+      handleOpenGenerateModal();
     };
-    window.addEventListener(
-      "full-page-generate",
-      handleFullPageGenerate as EventListener
-    );
+    window.addEventListener("full-page-generate", handleFullPageGenerate);
     return () =>
-      window.removeEventListener(
-        "full-page-generate",
-        handleFullPageGenerate as EventListener
-      );
+      window.removeEventListener("full-page-generate", handleFullPageGenerate);
   }, [handleOpenGenerateModal]);
 
   // Handle modal generate (create new cohort + generate)

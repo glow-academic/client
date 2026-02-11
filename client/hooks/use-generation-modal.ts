@@ -60,23 +60,12 @@ export function useGenerationModal<RT extends string>(config: {
 
   // Listen for full-page-generate event from layout
   useEffect(() => {
-    const handleFullPageGenerate = (
-      event: CustomEvent<{ agentId?: string }>
-    ) => {
-      const agentId = event.detail?.agentId;
-      if (agentId) {
-        handleOpenStepCardModal("all", "generate");
-      }
+    const handleFullPageGenerate = () => {
+      handleOpenStepCardModal("all", "generate");
     };
-    window.addEventListener(
-      "full-page-generate",
-      handleFullPageGenerate as EventListener
-    );
+    window.addEventListener("full-page-generate", handleFullPageGenerate);
     return () =>
-      window.removeEventListener(
-        "full-page-generate",
-        handleFullPageGenerate as EventListener
-      );
+      window.removeEventListener("full-page-generate", handleFullPageGenerate);
   }, [handleOpenStepCardModal]);
 
   return {

@@ -1057,23 +1057,15 @@ function EvalComponent({
 
   // Listen for full-page-generate event from layout
   useEffect(() => {
-    const handleFullPageGenerate = (
-      _event: CustomEvent<{ agentId?: string }>
-    ) => {
+    const handleFullPageGenerate = () => {
       if (hasAnyAiGenerate) {
         handleOpenStepCardModal("all", "generate");
       }
     };
-    window.addEventListener(
-      "full-page-generate",
-      handleFullPageGenerate as EventListener
-    );
+    window.addEventListener("full-page-generate", handleFullPageGenerate);
     return () =>
-      window.removeEventListener(
-        "full-page-generate",
-        handleFullPageGenerate as EventListener
-      );
-  }, [handleOpenStepCardModal]);
+      window.removeEventListener("full-page-generate", handleFullPageGenerate);
+  }, [handleOpenStepCardModal, hasAnyAiGenerate]);
 
   // Submit handler
   const handleSubmit = useCallback(

@@ -1,0 +1,138 @@
+-- Materialized View: mv_benchmark_bundle
+-- Benchmark-bundle-level denormalized context for bundle customization page.
+--
+-- Grain: One row per benchmark_bundle_entry.id
+-- All resource IDs from benchmark_bundle_*_connection tables (9 resources).
+
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN
+        SELECT indexname
+        FROM pg_indexes
+        WHERE schemaname = 'public'
+          AND tablename = 'mv_benchmark_bundle'
+    LOOP
+        EXECUTE format('DROP INDEX IF EXISTS %I', r.indexname);
+    END LOOP;
+END $$;
+
+DROP MATERIALIZED VIEW IF EXISTS mv_benchmark_bundle CASCADE;
+
+CREATE MATERIALIZED VIEW mv_benchmark_bundle AS
+WITH
+department_agg AS (
+    SELECT
+        bbdc.benchmark_bundle_id,
+        ARRAY_AGG(DISTINCT bbdc.departments_id ORDER BY bbdc.departments_id) AS department_ids
+    FROM benchmark_bundle_departments_connection bbdc
+    WHERE bbdc.active = true
+    GROUP BY bbdc.benchmark_bundle_id
+),
+model_agg AS (
+    SELECT
+        bbmc.benchmark_bundle_id,
+        ARRAY_AGG(DISTINCT bbmc.models_id ORDER BY bbmc.models_id) AS model_ids
+    FROM benchmark_bundle_models_connection bbmc
+    WHERE bbmc.active = true
+    GROUP BY bbmc.benchmark_bundle_id
+),
+prompt_agg AS (
+    SELECT
+        bbpc.benchmark_bundle_id,
+        ARRAY_AGG(DISTINCT bbpc.prompts_id ORDER BY bbpc.prompts_id) AS prompt_ids
+    FROM benchmark_bundle_prompts_connection bbpc
+    WHERE bbpc.active = true
+    GROUP BY bbpc.benchmark_bundle_id
+),
+instruction_agg AS (
+    SELECT
+        bbic.benchmark_bundle_id,
+        ARRAY_AGG(DISTINCT bbic.instructions_id ORDER BY bbic.instructions_id) AS instruction_ids
+    FROM benchmark_bundle_instructions_connection bbic
+    WHERE bbic.active = true
+    GROUP BY bbic.benchmark_bundle_id
+),
+voice_agg AS (
+    SELECT
+        bbvc.benchmark_bundle_id,
+        ARRAY_AGG(DISTINCT bbvc.voices_id ORDER BY bbvc.voices_id) AS voice_ids
+    FROM benchmark_bundle_voices_connection bbvc
+    WHERE bbvc.active = true
+    GROUP BY bbvc.benchmark_bundle_id
+),
+temperature_level_agg AS (
+    SELECT
+        bbtlc.benchmark_bundle_id,
+        ARRAY_AGG(DISTINCT bbtlc.temperature_levels_id ORDER BY bbtlc.temperature_levels_id) AS temperature_level_ids
+    FROM benchmark_bundle_temperature_levels_connection bbtlc
+    WHERE bbtlc.active = true
+    GROUP BY bbtlc.benchmark_bundle_id
+),
+reasoning_level_agg AS (
+    SELECT
+        bbrlc.benchmark_bundle_id,
+        ARRAY_AGG(DISTINCT bbrlc.reasoning_levels_id ORDER BY bbrlc.reasoning_levels_id) AS reasoning_level_ids
+    FROM benchmark_bundle_reasoning_levels_connection bbrlc
+    WHERE bbrlc.active = true
+    GROUP BY bbrlc.benchmark_bundle_id
+),
+tool_agg AS (
+    SELECT
+        bbtc.benchmark_bundle_id,
+        ARRAY_AGG(DISTINCT bbtc.tools_id ORDER BY bbtc.tools_id) AS tool_ids
+    FROM benchmark_bundle_tools_connection bbtc
+    WHERE bbtc.active = true
+    GROUP BY bbtc.benchmark_bundle_id
+),
+key_agg AS (
+    SELECT
+        bbkc.benchmark_bundle_id,
+        ARRAY_AGG(DISTINCT bbkc.keys_id ORDER BY bbkc.keys_id) AS key_ids
+    FROM benchmark_bundle_keys_connection bbkc
+    WHERE bbkc.active = true
+    GROUP BY bbkc.benchmark_bundle_id
+)
+SELECT
+    bbe.id AS benchmark_bundle_entry_id,
+    bbe.benchmark_id,
+
+    -- Bundle-level resource ID arrays (9 resources)
+    COALESCE(dep.department_ids, ARRAY[]::uuid[]) AS department_ids,
+    COALESCE(mdl.model_ids, ARRAY[]::uuid[]) AS model_ids,
+    COALESCE(pmt.prompt_ids, ARRAY[]::uuid[]) AS prompt_ids,
+    COALESCE(ins.instruction_ids, ARRAY[]::uuid[]) AS instruction_ids,
+    COALESCE(vce.voice_ids, ARRAY[]::uuid[]) AS voice_ids,
+    COALESCE(tmp.temperature_level_ids, ARRAY[]::uuid[]) AS temperature_level_ids,
+    COALESCE(rsn.reasoning_level_ids, ARRAY[]::uuid[]) AS reasoning_level_ids,
+    COALESCE(tol.tool_ids, ARRAY[]::uuid[]) AS tool_ids,
+    COALESCE(ky.key_ids, ARRAY[]::uuid[]) AS key_ids,
+
+    bbe.created_at,
+    bbe.updated_at,
+    bbe.active
+
+FROM benchmark_bundle_entry bbe
+LEFT JOIN department_agg dep ON dep.benchmark_bundle_id = bbe.id
+LEFT JOIN model_agg mdl ON mdl.benchmark_bundle_id = bbe.id
+LEFT JOIN prompt_agg pmt ON pmt.benchmark_bundle_id = bbe.id
+LEFT JOIN instruction_agg ins ON ins.benchmark_bundle_id = bbe.id
+LEFT JOIN voice_agg vce ON vce.benchmark_bundle_id = bbe.id
+LEFT JOIN temperature_level_agg tmp ON tmp.benchmark_bundle_id = bbe.id
+LEFT JOIN reasoning_level_agg rsn ON rsn.benchmark_bundle_id = bbe.id
+LEFT JOIN tool_agg tol ON tol.benchmark_bundle_id = bbe.id
+LEFT JOIN key_agg ky ON ky.benchmark_bundle_id = bbe.id
+WHERE bbe.active = true
+WITH NO DATA;
+
+CREATE UNIQUE INDEX mv_benchmark_bundle_pk
+    ON mv_benchmark_bundle (benchmark_bundle_entry_id);
+
+CREATE INDEX mv_benchmark_bundle_benchmark_id_idx
+    ON mv_benchmark_bundle (benchmark_id);
+
+CREATE INDEX mv_benchmark_bundle_department_ids_gin_idx
+    ON mv_benchmark_bundle USING GIN (department_ids);
+
+REFRESH MATERIALIZED VIEW mv_benchmark_bundle;

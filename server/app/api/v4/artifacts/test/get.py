@@ -100,6 +100,8 @@ async def get_test_artifact(
 
         # Resolve run_ids → model/agent name_ids
         run_name_map: dict[UUID, tuple[UUID | None, UUID | None]] = {}
+        # Resolve run_ids → benchmark_bundle_entry_id
+        run_bundle_map: dict[UUID, UUID] = {}
         if all_run_ids:
             async with pool.acquire() as c:
                 rows = await c.fetch(
@@ -125,6 +127,19 @@ async def get_test_artifact(
                         eval_name_ids.add(model_nid)
                     if agent_nid:
                         eval_name_ids.add(agent_nid)
+
+                # Resolve run_ids → benchmark_bundle_entry_id
+                bundle_rows = await c.fetch(
+                    """
+                    SELECT bbrc.runs_id, bbrc.benchmark_bundle_id
+                    FROM benchmark_bundle_runs_connection bbrc
+                    WHERE bbrc.runs_id = ANY($1::uuid[])
+                      AND bbrc.active = true
+                    """,
+                    all_run_ids,
+                )
+                for brow in bundle_rows:
+                    run_bundle_map[brow["runs_id"]] = brow["benchmark_bundle_id"]
 
         # Batch resolve names, descriptions, rubrics
         async with pool.acquire() as c:
@@ -188,12 +203,17 @@ async def get_test_artifact(
             else:
                 not_started_count += 1
 
+            bundle_entry_id = run_bundle_map.get(first_run_id) if first_run_id else None
+
             runs.append(
                 TestRunItem(
                     chat_id=str(invocation.invocation_id),
                     invocation_id=str(invocation.invocation_id),
                     run_id=str(first_run_id) if first_run_id else None,
                     group_id=str(first_group_id) if first_group_id else None,
+                    benchmark_bundle_entry_id=(
+                        str(bundle_entry_id) if bundle_entry_id else None
+                    ),
                     model_name=model_name,
                     agent_name=agent_name,
                     status=invocation_status,

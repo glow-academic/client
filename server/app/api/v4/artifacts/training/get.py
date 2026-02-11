@@ -1,13 +1,11 @@
-"""Training get endpoint and shared training fetch helpers.
+"""Training get endpoint — dashboard-style parallel view fetches.
 
-Three-layer style for training:
-1. get_training_internal() - shared internal data fetch/hydration for client
+Two functions:
+1. get_training_internal() - pool-based parallel fetch → GetTrainingGetResponse
 2. get_training_websocket() - thin websocket payload for training socket handlers
-3. get_training_client() - HTTP-facing response formatter
 """
 
 import asyncio
-from dataclasses import dataclass
 from typing import Annotated, Any, cast
 from uuid import UUID
 
@@ -15,9 +13,11 @@ import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.artifacts.training.permissions import (
+    compute_completion_pct,
     compute_mode,
     compute_pass_pct,
     compute_status,
+    compute_status_instructional,
     format_cohort_names,
 )
 from app.api.v4.artifacts.training.types import (
@@ -36,10 +36,15 @@ from app.api.v4.resources.simulations.get import get_simulations_batch_internal
 from app.api.v4.resources.standard_groups.get import get_standard_groups_internal
 from app.api.v4.resources.standards.get import get_standards_internal
 from app.api.v4.views.analytics.attempts.get import get_attempt_facts_internal
+from app.api.v4.views.analytics.attempts.types import (
+    AttemptFactsItem,
+    GetAttemptFactsResponse,
+)
 from app.api.v4.views.training.context.get import get_training_context_view_internal
+from app.api.v4.views.training.context.types import GetTrainingContextViewResponse
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db
+from app.main import get_db, get_pool
 from app.sql.types import (
     GetTrainingStartContextSqlParams,
     GetTrainingStartContextSqlRow,
@@ -56,132 +61,278 @@ SQL_PATH_START_CONTEXT = (
 )
 
 
-@dataclass
-class SimulationStats:
-    attempt_count: int = 0
-    highest_score_percent: float | None = None
-    has_passed: bool = False
+# =============================================================================
+# Helpers
+# =============================================================================
 
 
-@dataclass
-class TrainingInternalData:
-    actor_name: str | None
-    user_role: str | None
-    items: list[TrainingSimulationOperational]
-    standard_groups: list[StandardGroupMapping] | None
-    standards: list[StandardMapping] | None
+async def _fetch_cohort_member_profiles(
+    pool: asyncpg.Pool,
+    cohort_ids: list[UUID],
+) -> dict[UUID, set[UUID]]:
+    """Returns {cohort_id: set(profile_ids)} for member counting."""
+    if not cohort_ids:
+        return {}
+    async with pool.acquire() as c:
+        rows = await c.fetch(
+            "SELECT id, cohort_ids FROM profiles_resource"
+            " WHERE active = true AND cohort_ids && $1::uuid[]",
+            cohort_ids,
+        )
+    result: dict[UUID, set[UUID]] = {cid: set() for cid in cohort_ids}
+    for row in rows:
+        for cid in row["cohort_ids"]:
+            if cid in result:
+                result[cid].add(row["id"])
+    return result
 
 
-async def _get_simulation_stats(
-    conn: asyncpg.Connection,
-    profile_id: UUID,
-    practice: bool,
-    bypass_cache: bool = False,
-) -> dict[UUID, SimulationStats]:
-    """Fetch per-simulation attempt stats from mv_attempt_facts."""
-    attempt_type = "practice" if practice else "general"
-    facts = await get_attempt_facts_internal(
-        conn=conn,
-        profile_id=profile_id,
-        attempt_type=attempt_type,
-        is_archived=False,
-        page_limit=10000,
-        page_offset=0,
-        bypass_cache=bypass_cache,
-    )
+def _aggregate_personal_stats(
+    items: list[AttemptFactsItem],
+) -> dict[UUID, dict[str, Any]]:
+    """Aggregate personal attempt facts by simulation_id.
 
-    stats: dict[UUID, SimulationStats] = {}
-    for item in facts.items:
+    Returns {simulation_id: {attempt_count, highest_score_percent, has_passed}}.
+    """
+    stats: dict[UUID, dict[str, Any]] = {}
+    for item in items:
         if not item.simulation_id:
             continue
         sim_id = item.simulation_id
         if sim_id not in stats:
-            stats[sim_id] = SimulationStats()
+            stats[sim_id] = {
+                "attempt_count": 0,
+                "highest_score_percent": None,
+                "has_passed": False,
+            }
         s = stats[sim_id]
-        s.attempt_count += 1
+        s["attempt_count"] += 1
         if item.score_percent is not None:
             if (
-                s.highest_score_percent is None
-                or item.score_percent > s.highest_score_percent
+                s["highest_score_percent"] is None
+                or item.score_percent > s["highest_score_percent"]
             ):
-                s.highest_score_percent = item.score_percent
+                s["highest_score_percent"] = item.score_percent
         if item.has_passed:
-            s.has_passed = True
-
+            s["has_passed"] = True
     return stats
 
 
+def _aggregate_instructional_stats(
+    facts_items: list[AttemptFactsItem],
+    cohort_member_profiles: dict[UUID, set[UUID]],
+    simulation_cohort_map: dict[UUID, list[UUID]],
+) -> dict[UUID, dict[str, Any]]:
+    """Per-simulation instructional stats: passed/in_progress/not_started counts.
+
+    Groups by (simulation_id, profile_id) — takes best attempt per profile.
+    Then computes counts relative to total cohort members.
+    """
+    # Best attempt per (simulation_id, profile_id)
+    best: dict[tuple[UUID, UUID], dict[str, Any]] = {}
+    for item in facts_items:
+        if not item.simulation_id or not item.profile_id:
+            continue
+        key = (item.simulation_id, item.profile_id)
+        if key not in best:
+            best[key] = {"has_passed": False, "has_attempted": True}
+        if item.has_passed:
+            best[key]["has_passed"] = True
+
+    result: dict[UUID, dict[str, Any]] = {}
+    for sim_id, cohort_ids in simulation_cohort_map.items():
+        # Union of all member profiles across simulation's cohorts
+        all_members: set[UUID] = set()
+        for cid in cohort_ids:
+            all_members |= cohort_member_profiles.get(cid, set())
+        total_members = len(all_members)
+
+        passed_count = 0
+        in_progress_count = 0
+        for pid in all_members:
+            attempt = best.get((sim_id, pid))
+            if attempt:
+                if attempt["has_passed"]:
+                    passed_count += 1
+                else:
+                    in_progress_count += 1
+
+        not_started_count = total_members - passed_count - in_progress_count
+        completion_pct = compute_completion_pct(
+            passed_count, in_progress_count, total_members
+        )
+        status = compute_status_instructional(
+            passed_count, in_progress_count, total_members
+        )
+
+        result[sim_id] = {
+            "passed_count": passed_count,
+            "in_progress_count": in_progress_count,
+            "not_started_count": not_started_count,
+            "completion_pct": completion_pct,
+            "status": status,
+            "total_members": total_members,
+        }
+    return result
+
+
+# =============================================================================
+# Main internal fetch
+# =============================================================================
+
+
 async def get_training_internal(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     profile_id: UUID,
     practice: bool,
     bypass_cache: bool = False,
-) -> TrainingInternalData:
-    """Shared internal fetch for training client responses.
+) -> GetTrainingGetResponse:
+    """Dashboard-style parallel fetch for training operational data.
 
-    Parallel fetches:
-    1. Context view (raw IDs from mv_training)
-    2. Attempt stats (from mv_attempt_facts)
-    Then hydrate with resource internals.
+    Phase 1: Two parallel view fetches (always)
+      - get_training_context_view_internal → mv_training (card defs + user_role)
+      - get_attempt_facts_internal(profile_id=user) → mv_attempt_facts (personal stats)
+
+    Phase 2: Conditional + resource hydration (parallel, after Phase 1)
+      - Resource hydration (simulations, personas, cohorts, standard_groups, standards)
+      - [if instructional] cohort-wide attempt facts + cohort member counts
+
+    Phase 3: Stitch + business logic (Python)
     """
-    # Pass 1: context view + attempt stats in parallel
-    context_task = get_training_context_view_internal(
-        conn=conn,
-        profile_id=profile_id,
-        practice=practice,
-        bypass_cache=bypass_cache,
-    )
-    stats_task = _get_simulation_stats(
-        conn=conn,
-        profile_id=profile_id,
-        practice=practice,
-        bypass_cache=bypass_cache,
+    attempt_type = "practice" if practice else "general"
+
+    # --- Phase 1: Two parallel view fetches ---
+    async def fetch_context() -> GetTrainingContextViewResponse:
+        async with pool.acquire() as c:
+            return await get_training_context_view_internal(
+                conn=c,
+                profile_id=profile_id,
+                practice=practice,
+                bypass_cache=bypass_cache,
+            )
+
+    async def fetch_personal_stats() -> GetAttemptFactsResponse:
+        async with pool.acquire() as c:
+            return await get_attempt_facts_internal(
+                conn=c,
+                profile_id=profile_id,
+                attempt_type=attempt_type,
+                is_archived=False,
+                page_limit=10000,
+                page_offset=0,
+                bypass_cache=bypass_cache,
+            )
+
+    context, personal_facts = await asyncio.gather(
+        fetch_context(), fetch_personal_stats()
     )
 
-    result, sim_stats = await asyncio.gather(context_task, stats_task)
-    result = cast(Any, result)
-
-    user_role = result.user_role if result else None
+    user_role = context.user_role if context else None
     view_mode = compute_mode(practice, user_role)
+    is_instructional = view_mode == "instructional"
 
-    # Collect all IDs for batch resource fetching
+    # Collect IDs for batch resource fetching
     simulation_ids: list[UUID] = []
     all_persona_ids: set[UUID] = set()
-    cohort_ids: set[UUID] = set()
+    all_cohort_ids: set[UUID] = set()
+    simulation_cohort_map: dict[UUID, list[UUID]] = {}
 
-    if result and result.items:
-        for item in result.items:
+    if context and context.items:
+        for item in context.items:
             if item.simulation_id:
                 simulation_ids.append(item.simulation_id)
             if item.persona_ids:
                 all_persona_ids.update(item.persona_ids)
             if item.cohort_ids:
-                cohort_ids.update(item.cohort_ids)
+                all_cohort_ids.update(item.cohort_ids)
+                if item.simulation_id:
+                    simulation_cohort_map[item.simulation_id] = list(item.cohort_ids)
 
     standard_group_ids = (
-        list(result.standard_group_ids) if result and result.standard_group_ids else []
+        list(context.standard_group_ids)
+        if context and context.standard_group_ids
+        else []
     )
-    standard_ids = list(result.standard_ids) if result and result.standard_ids else []
-
-    # Pass 2: batch resource fetches in parallel
-    sim_task = get_simulations_batch_internal(
-        conn, simulation_ids, bypass_cache=bypass_cache
-    )
-    persona_task = get_personas_internal(
-        conn, list(all_persona_ids), bypass_cache=bypass_cache
-    )
-    cohort_task = get_cohorts_internal(
-        conn, list(cohort_ids), bypass_cache=bypass_cache
-    )
-    sg_task = get_standard_groups_internal(
-        conn, standard_group_ids, bypass_cache=bypass_cache
-    )
-    std_task = get_standards_internal(conn, standard_ids, bypass_cache=bypass_cache)
-
-    sim_list, persona_list, cohort_list, sg_list, std_list = await asyncio.gather(
-        sim_task, persona_task, cohort_task, sg_task, std_task
+    standard_ids = (
+        list(context.standard_ids) if context and context.standard_ids else []
     )
 
+    cohort_ids_list = list(all_cohort_ids)
+
+    # --- Phase 2: Parallel resource hydration + conditional instructional data ---
+    async def fetch_simulations() -> list:
+        async with pool.acquire() as c:
+            return await get_simulations_batch_internal(
+                c, simulation_ids, bypass_cache=bypass_cache
+            )
+
+    async def fetch_personas() -> list:
+        async with pool.acquire() as c:
+            return await get_personas_internal(
+                c, list(all_persona_ids), bypass_cache=bypass_cache
+            )
+
+    async def fetch_cohorts() -> list:
+        async with pool.acquire() as c:
+            return await get_cohorts_internal(
+                c, cohort_ids_list, bypass_cache=bypass_cache
+            )
+
+    async def fetch_standard_groups() -> list:
+        async with pool.acquire() as c:
+            return await get_standard_groups_internal(
+                c, standard_group_ids, bypass_cache=bypass_cache
+            )
+
+    async def fetch_standards() -> list:
+        async with pool.acquire() as c:
+            return await get_standards_internal(
+                c, standard_ids, bypass_cache=bypass_cache
+            )
+
+    async def fetch_cohort_attempt_facts() -> list:
+        async with pool.acquire() as c:
+            result = await get_attempt_facts_internal(
+                conn=c,
+                profile_id=None,
+                attempt_type=attempt_type,
+                cohort_ids=cohort_ids_list,
+                is_archived=False,
+                page_limit=10000,
+                page_offset=0,
+                bypass_cache=bypass_cache,
+            )
+            return result.items
+
+    async def fetch_cohort_members() -> dict[UUID, set[UUID]]:
+        return await _fetch_cohort_member_profiles(pool, cohort_ids_list)
+
+    tasks: list[Any] = [
+        fetch_simulations(),
+        fetch_personas(),
+        fetch_cohorts(),
+        fetch_standard_groups(),
+        fetch_standards(),
+    ]
+    if is_instructional:
+        tasks.append(fetch_cohort_attempt_facts())
+        tasks.append(fetch_cohort_members())
+
+    results = await asyncio.gather(*tasks)
+
+    sim_list = results[0]
+    persona_list = results[1]
+    cohort_list = results[2]
+    sg_list = results[3]
+    std_list = results[4]
+
+    cohort_facts_items: list[AttemptFactsItem] | None = None
+    cohort_member_profiles: dict[UUID, set[UUID]] | None = None
+    if is_instructional:
+        cohort_facts_items = results[5]
+        cohort_member_profiles = results[6]
+
+    # Build lookup maps
     simulation_map = {
         item.simulation_id: item for item in sim_list if item.simulation_id
     }
@@ -192,12 +343,28 @@ async def get_training_internal(
     }
     standards_map = {item.standard_id: item for item in std_list if item.standard_id}
 
-    # Build items with hydration + business logic
+    # Aggregate stats
+    personal_stats = _aggregate_personal_stats(personal_facts.items)
+
+    instructional_stats: dict[UUID, dict[str, Any]] | None = None
+    if (
+        is_instructional
+        and cohort_facts_items is not None
+        and cohort_member_profiles is not None
+    ):
+        instructional_stats = _aggregate_instructional_stats(
+            cohort_facts_items, cohort_member_profiles, simulation_cohort_map
+        )
+
+    # --- Phase 3: Stitch + business logic ---
     items: list[TrainingSimulationOperational] = []
-    if result and result.items:
-        for item in result.items:
+    if context and context.items:
+        for item in context.items:
             simulation = simulation_map.get(item.simulation_id)
-            stats = sim_stats.get(item.simulation_id, SimulationStats())
+            ps = personal_stats.get(item.simulation_id, {})
+            attempt_count = ps.get("attempt_count", 0)
+            highest_score_percent = ps.get("highest_score_percent")
+            has_passed = ps.get("has_passed", False)
 
             # Persona color/icon from first persona
             color: str | None = None
@@ -222,10 +389,6 @@ async def get_training_internal(
                 rubric_total_points if rubric_total_points > 0 else None,
                 rubric_pass_points if rubric_pass_points > 0 else None,
             )
-            status = compute_status(
-                stats.has_passed,
-                stats.attempt_count,
-            )
 
             cohort_titles = (
                 [
@@ -239,8 +402,8 @@ async def get_training_internal(
             cohort_names_junction = format_cohort_names(cohort_titles)
 
             highest_score = (
-                round(stats.highest_score_percent)
-                if stats.highest_score_percent is not None
+                round(highest_score_percent)
+                if highest_score_percent is not None
                 else None
             )
 
@@ -250,12 +413,26 @@ async def get_training_internal(
                 else None
             )
 
-            # training_bundle_entry_id: use first from array
             training_bundle_entry_id = (
                 item.training_bundle_entry_ids[0]
                 if item.training_bundle_entry_ids
                 else None
             )
+
+            # Mode-specific stats
+            if is_instructional and instructional_stats is not None:
+                ist = instructional_stats.get(item.simulation_id, {})
+                status = ist.get("status", "not-started")
+                completion_pct = ist.get("completion_pct", 0)
+                passed_count = ist.get("passed_count", 0)
+                in_progress_count = ist.get("in_progress_count", 0)
+                not_started_count = ist.get("not_started_count", 0)
+            else:
+                status = compute_status(has_passed, attempt_count)
+                completion_pct = None
+                passed_count = None
+                in_progress_count = None
+                not_started_count = None
 
             items.append(
                 TrainingSimulationOperational(
@@ -271,14 +448,18 @@ async def get_training_internal(
                     color=color,
                     icon=icon,
                     view_mode=view_mode,
-                    num_sessions=stats.attempt_count,
+                    num_sessions=attempt_count,
                     highest_score=highest_score,
-                    has_passed=stats.has_passed,
+                    has_passed=has_passed,
                     status=status,
                     pass_pct=pass_pct,
                     cohort_names_junction=cohort_names_junction,
                     standard_groups=standard_groups_strs,
                     practice_simulation=True if practice else None,
+                    completion_pct=completion_pct,
+                    passed_count=passed_count,
+                    in_progress_count=in_progress_count,
+                    not_started_count=not_started_count,
                 )
             )
 
@@ -313,13 +494,17 @@ async def get_training_internal(
             if st and st.standard_id
         ]
 
-    return TrainingInternalData(
-        actor_name=result.actor_name if result else None,
-        user_role=user_role,
+    return GetTrainingGetResponse(
+        actor_name=context.actor_name if context else None,
         items=items,
         standard_groups=standard_groups,
         standards=standards,
     )
+
+
+# =============================================================================
+# Websocket fetch (unchanged — separate concern)
+# =============================================================================
 
 
 async def get_training_websocket(
@@ -378,26 +563,9 @@ async def get_training_websocket(
     )
 
 
-async def get_training_client(
-    conn: asyncpg.Connection,
-    profile_id: UUID,
-    practice: bool,
-    bypass_cache: bool = False,
-) -> GetTrainingGetResponse:
-    """HTTP-facing training response builder."""
-    data = await get_training_internal(
-        conn=conn,
-        profile_id=profile_id,
-        practice=practice,
-        bypass_cache=bypass_cache,
-    )
-
-    return GetTrainingGetResponse(
-        actor_name=data.actor_name,
-        items=data.items,
-        standard_groups=data.standard_groups,
-        standards=data.standards,
-    )
+# =============================================================================
+# Route handler
+# =============================================================================
 
 
 @router.post(
@@ -439,8 +607,12 @@ async def training_get(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        api_response = await get_training_client(
-            conn=conn,
+        pool = get_pool()
+        if not pool:
+            raise RuntimeError("Database pool not initialized")
+
+        api_response = await get_training_internal(
+            pool=pool,
             profile_id=profile_id,
             practice=practice,
             bypass_cache=bypass_cache,

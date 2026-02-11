@@ -1525,6 +1525,36 @@ class GetArtifactSessionDetailApiResponse(BaseModel):
     groups: list[QGetArtifactSessionDetailV4Group] | None = None
 
 
+# Generated from: create_test
+
+
+class CreateTestSqlParams(BaseModel):
+    p_profile_id: UUID
+    p_eval_id: UUID
+    p_infinite_mode: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_profile_id,
+            self.p_eval_id,
+            self.p_infinite_mode,
+        )
+
+
+class CreateTestSqlRow(BaseModel):
+    test_id: UUID | None = None
+
+
+class CreateTestApiRequest(BaseModel):
+    p_profile_id: UUID
+    p_eval_id: UUID
+    p_infinite_mode: bool | None = False
+
+
+class CreateTestApiResponse(BaseModel):
+    test_id: UUID | None = None
+
+
 # Generated from: bulk_archive_attempts
 
 
@@ -11971,8 +12001,6 @@ class QListPersonasV4Persona(BaseModel):
     department_ids: list[str] | None
     scenario_ids: list[UUID] | None
     field_ids: list[UUID] | None
-    reasoning: str | None
-    temperature_display: str | None
     is_inactive: bool | None
     num_scenarios: int | None
     active_scenario_count: int | None
@@ -11984,10 +12012,6 @@ class QListPersonasV4Scenario(BaseModel):
     scenario_id: UUID | None
     name: str | None
     description: str | None
-    active: bool | None
-    persona_ids: list[UUID] | None
-    document_ids: list[UUID] | None
-    parameter_item_ids: list[UUID] | None
     count: int | None
 
 
@@ -12827,7 +12851,7 @@ class GetProfileContextAccessSqlParams(BaseModel):
 
 class QGetProfileContextAccessV4ArtifactAgent(BaseModel):
     artifact: str | None
-    agent_ids: list[UUID] | None
+    has_generation: bool | None
 
 
 class GetProfileContextAccessSqlRow(BaseModel):
@@ -25479,6 +25503,55 @@ class GetSimulationScenarioCountsApiResponse(BaseModel):
     items: list[QGetSimulationScenarioCountsV4Item] | None = None
 
 
+# Generated from: get_benchmark_bundle_view
+
+
+class GetBenchmarkBundleViewSqlParams(BaseModel):
+    profile_id_filter: UUID
+    benchmark_bundle_entry_id_filter: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id_filter,
+            self.benchmark_bundle_entry_id_filter,
+        )
+
+
+class GetBenchmarkBundleViewSqlRow(BaseModel):
+    profile_has_access: bool | None = None
+    benchmark_bundle_entry_id: UUID | None = None
+    benchmark_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    model_ids: list[UUID] | None = None
+    prompt_ids: list[UUID] | None = None
+    instruction_ids: list[UUID] | None = None
+    voice_ids: list[UUID] | None = None
+    temperature_level_ids: list[UUID] | None = None
+    reasoning_level_ids: list[UUID] | None = None
+    tool_ids: list[UUID] | None = None
+    key_ids: list[UUID] | None = None
+
+
+class GetBenchmarkBundleViewApiRequest(BaseModel):
+    profile_id_filter: UUID
+    benchmark_bundle_entry_id_filter: UUID
+
+
+class GetBenchmarkBundleViewApiResponse(BaseModel):
+    profile_has_access: bool | None = None
+    benchmark_bundle_entry_id: UUID | None = None
+    benchmark_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    model_ids: list[UUID] | None = None
+    prompt_ids: list[UUID] | None = None
+    instruction_ids: list[UUID] | None = None
+    voice_ids: list[UUID] | None = None
+    temperature_level_ids: list[UUID] | None = None
+    reasoning_level_ids: list[UUID] | None = None
+    tool_ids: list[UUID] | None = None
+    key_ids: list[UUID] | None = None
+
+
 # Generated from: get_config_view
 
 
@@ -26963,6 +27036,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetArtifactSessionDetailSqlRow",
         "GetArtifactSessionDetailApiRequest",
         "GetArtifactSessionDetailApiResponse",
+    ),
+    "app/sql/v4/queries/artifacts/test/create_test_complete.sql": (
+        "CreateTestSqlParams",
+        "CreateTestSqlRow",
+        "CreateTestApiRequest",
+        "CreateTestApiResponse",
     ),
     "app/sql/v4/queries/attempts/bulk_archive_attempts_complete.sql": (
         "BulkArchiveAttemptsSqlParams",
@@ -30048,6 +30127,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetSimulationScenarioCountsApiRequest",
         "GetSimulationScenarioCountsApiResponse",
     ),
+    "app/sql/v4/queries/views/benchmark/bundle/get_benchmark_bundle_view_complete.sql": (
+        "GetBenchmarkBundleViewSqlParams",
+        "GetBenchmarkBundleViewSqlRow",
+        "GetBenchmarkBundleViewApiRequest",
+        "GetBenchmarkBundleViewApiResponse",
+    ),
     "app/sql/v4/queries/views/config/get_config_view_complete.sql": (
         "GetConfigViewSqlParams",
         "GetConfigViewSqlRow",
@@ -30478,6 +30563,13 @@ if TYPE_CHECKING:
     def load_sql_query(
         file_path: Literal[
             "app/sql/v4/queries/artifacts/session/get_artifact_session_detail_complete.sql"
+        ],
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal[
+            "app/sql/v4/queries/artifacts/test/create_test_complete.sql"
         ],
     ) -> SqlString: ...
 
@@ -33802,6 +33894,13 @@ if TYPE_CHECKING:
     def load_sql_query(
         file_path: Literal[
             "app/sql/v4/queries/views/analytics/simulation_scenario_counts/get_simulation_scenario_counts_complete.sql"
+        ],
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal[
+            "app/sql/v4/queries/views/benchmark/bundle/get_benchmark_bundle_view_complete.sql"
         ],
     ) -> SqlString: ...
 

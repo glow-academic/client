@@ -5,7 +5,7 @@
  * 01/XX/2025
  */
 "use client";
-import type { EvalsListOut } from "@/app/(main)/benchmark/page";
+import type { CreateTestIn, CreateTestOut, EvalsListOut } from "@/app/(main)/benchmark/page";
 import { useRouter } from "next/navigation";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -31,11 +31,13 @@ type RubricMapping = {
 export interface BenchmarkProps {
   evalsData: EvalsListOut;
   rubricMappings?: Record<string, RubricMapping>; // keyed by rubric_id
+  createTestAction?: (input: CreateTestIn) => Promise<CreateTestOut>;
 }
 
 export default function Benchmark({
   evalsData,
   rubricMappings,
+  createTestAction,
 }: BenchmarkProps) {
   const router = useRouter();
 
@@ -188,6 +190,47 @@ export default function Benchmark({
           return;
         }
 
+        // Use REST endpoint if available
+        if (createTestAction) {
+          const toastId = toast.loading(
+            infiniteMode ? "Starting infinite mode eval..." : "Starting eval...",
+            { dismissible: true }
+          );
+          setLoadingToastId(toastId);
+          if (setStartingEvalId) {
+            setStartingEvalId(evalId);
+          }
+
+          try {
+            const result = await createTestAction({
+              body: { eval_id: evalId, infinite_mode: infiniteMode },
+            });
+
+            toast.dismiss(toastId);
+            setLoadingToastId(null);
+            if (setStartingEvalId) {
+              setStartingEvalId(null);
+            }
+
+            if (result.test_id) {
+              toast.success("Eval started successfully.");
+              router.refresh();
+              router.push(`/benchmark/t/${result.test_id}`);
+            } else {
+              toast.error("Failed to start eval. Please try again.");
+            }
+          } catch {
+            toast.dismiss(toastId);
+            toast.error("Failed to start eval. Please try again.");
+            setLoadingToastId(null);
+            if (setStartingEvalId) {
+              setStartingEvalId(null);
+            }
+          }
+          return;
+        }
+
+        // Fallback to WebSocket
         if (!isConnected) {
           toast.error(
             "WebSocket not connected. Please wait for connection or refresh the page."
@@ -248,6 +291,8 @@ export default function Benchmark({
       socket,
       loadingToastId,
       setStartingEvalId,
+      createTestAction,
+      router,
     ]
   );
 

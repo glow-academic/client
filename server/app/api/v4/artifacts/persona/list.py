@@ -145,8 +145,6 @@ async def get_persona_list(
                     department_ids=persona.department_ids,
                     scenario_ids=persona.scenario_ids,
                     field_ids=persona.field_ids,
-                    reasoning=persona.reasoning,
-                    temperature_display=persona.temperature_display,
                     is_inactive=persona.is_inactive,
                     num_scenarios=persona.num_scenarios,
                     can_edit=can_edit_val,
@@ -162,10 +160,6 @@ async def get_persona_list(
                 scenario_id=s.scenario_id,
                 name=s.name,
                 description=s.description,
-                active=s.active,
-                persona_ids=s.persona_ids,
-                document_ids=s.document_ids,
-                parameter_item_ids=s.parameter_item_ids,
                 count=s.count,
             )
             for s in (result.scenarios or [])

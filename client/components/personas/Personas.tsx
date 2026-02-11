@@ -122,8 +122,7 @@ export default function Personas({
   const [isGenerating, setIsGenerating] = useState(false);
 
   // Handle opening the generate modal
-  const handleOpenGenerateModal = useCallback((agentId?: string) => {
-    if (!agentId) return;
+  const handleOpenGenerateModal = useCallback(() => {
     const resources: GenerateRegenerateModalResource[] = [
       { id: "names", label: "Name", active: true },
       { id: "descriptions", label: "Description", active: true },
@@ -142,23 +141,12 @@ export default function Personas({
 
   // Listen for full-page-generate event
   useEffect(() => {
-    const handleFullPageGenerate = (
-      event: CustomEvent<{ agentId?: string }>
-    ) => {
-      const agentId = event.detail?.agentId;
-      if (agentId) {
-        handleOpenGenerateModal(agentId);
-      }
+    const handleFullPageGenerate = () => {
+      handleOpenGenerateModal();
     };
-    window.addEventListener(
-      "full-page-generate",
-      handleFullPageGenerate as EventListener
-    );
+    window.addEventListener("full-page-generate", handleFullPageGenerate);
     return () =>
-      window.removeEventListener(
-        "full-page-generate",
-        handleFullPageGenerate as EventListener
-      );
+      window.removeEventListener("full-page-generate", handleFullPageGenerate);
   }, [handleOpenGenerateModal]);
 
   // Handle modal generate (create new persona + generate)
@@ -515,32 +503,6 @@ export default function Personas({
           return value.some((v) => rowIds.includes(v));
         },
       },
-      {
-        accessorKey: "reasoning",
-        header: "Reasoning",
-        cell: ({ row }) => {
-          const persona = row.original;
-          return (
-            <div className="text-sm">
-              {persona.reasoning ? (
-                <span className="capitalize">{persona.reasoning}</span>
-              ) : (
-                <span className="text-muted-foreground">None</span>
-              )}
-            </div>
-          );
-        },
-      },
-      // Display column for Temperature - shows actual value
-      {
-        id: "temperature_display",
-        accessorKey: "temperature",
-        header: "Temperature",
-        cell: ({ row }) => {
-          const persona = row.original;
-          return <div className="text-sm">{persona.temperature_display}</div>;
-        },
-      },
       // Hidden faceting column for Fields (array of IDs)
       {
         id: "fieldIds",
@@ -736,31 +698,11 @@ export default function Personas({
                   {persona.name || "Unnamed Persona"}
                 </CardTitle>
               </div>
-              <div className="mt-1 space-y-2">
-                <div className="flex flex-wrap items-center gap-2">
-                  {persona.reasoning && (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Badge
-                          variant="outline"
-                          className="text-xs cursor-help"
-                        >
-                          <Brain className="h-3 w-3 mr-1" />
-                          {persona.reasoning}
-                        </Badge>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Reasoning Level</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  )}
+              {persona.is_inactive && (
+                <div className="mt-1">
+                  <Badge variant="secondary">Inactive</Badge>
                 </div>
-                {persona.is_inactive && (
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary">Inactive</Badge>
-                  </div>
-                )}
-              </div>
+              )}
             </div>
             <div className="flex flex-wrap gap-2 items-center">
               {persona.can_edit ? (

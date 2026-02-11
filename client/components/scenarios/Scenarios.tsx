@@ -584,8 +584,7 @@ export function Scenarios({
   }, [updateScenariosParams]);
 
   // Listen for full-page-generate event
-  const handleOpenGenerateModal = useCallback((agentId?: string) => {
-    if (!agentId) return;
+  const handleOpenGenerateModal = useCallback(() => {
     const resources: GenerateRegenerateModalResource[] = [
       { id: "names", label: "Name", active: true },
       { id: "descriptions", label: "Description", active: true },
@@ -608,23 +607,12 @@ export function Scenarios({
   }, []);
 
   useEffect(() => {
-    const handleFullPageGenerate = (
-      event: CustomEvent<{ agentId?: string }>
-    ) => {
-      const agentId = event.detail?.agentId;
-      if (agentId) {
-        handleOpenGenerateModal(agentId);
-      }
+    const handleFullPageGenerate = () => {
+      handleOpenGenerateModal();
     };
-    window.addEventListener(
-      "full-page-generate",
-      handleFullPageGenerate as EventListener
-    );
+    window.addEventListener("full-page-generate", handleFullPageGenerate);
     return () =>
-      window.removeEventListener(
-        "full-page-generate",
-        handleFullPageGenerate as EventListener
-      );
+      window.removeEventListener("full-page-generate", handleFullPageGenerate);
   }, [handleOpenGenerateModal]);
 
   // Handle modal generate (create new scenario + generate)

@@ -281,9 +281,7 @@ class ListPersonaApiPersona(BaseModel):
     icon: str | None = None
     department_ids: list[str] | None = None
     scenario_ids: list[UUID] | None = None
-    parameter_field_ids: list[UUID] | None = None
-    reasoning: str | None = None
-    temperature_display: str | None = None
+    field_ids: list[UUID] | None = None
     is_inactive: bool | None = None
     num_scenarios: int | None = None
     # Computed in Python
@@ -299,10 +297,6 @@ class ListPersonaApiScenario(BaseModel):
     scenario_id: UUID | None = None
     name: str | None = None
     description: str | None = None
-    active: bool | None = None
-    persona_ids: list[UUID] | None = None
-    document_ids: list[UUID] | None = None
-    parameter_item_ids: list[UUID] | None = None
     count: int | None = None
 
 

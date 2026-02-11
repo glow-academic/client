@@ -1066,24 +1066,12 @@ function SettingComponent({
 
   // Listen for full-page-generate event from layout
   useEffect(() => {
-    const handleFullPageGenerate = (
-      event: CustomEvent<{ agentId?: string }>
-    ) => {
-      const agentId = event.detail?.agentId;
-      if (agentId) {
-        // Open modal instead of directly generating
-        handleOpenStepCardModal("all", "generate");
-      }
+    const handleFullPageGenerate = () => {
+      handleOpenStepCardModal("all", "generate");
     };
-    window.addEventListener(
-      "full-page-generate",
-      handleFullPageGenerate as EventListener
-    );
+    window.addEventListener("full-page-generate", handleFullPageGenerate);
     return () =>
-      window.removeEventListener(
-        "full-page-generate",
-        handleFullPageGenerate as EventListener
-      );
+      window.removeEventListener("full-page-generate", handleFullPageGenerate);
   }, [handleOpenStepCardModal]);
 
   // Steps configuration for GenericForm

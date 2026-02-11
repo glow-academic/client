@@ -30,17 +30,25 @@ default_settings AS (
       )
     LIMIT 1
 ),
+-- Map auth_artifact.id -> auths_resource.id via auth_auths_junction
+auth_resource_mapping AS (
+    SELECT aaj.auths_id as auths_resource_id
+    FROM auth_auths_junction aaj
+    WHERE aaj.auth_id = api_get_auth_items_v4.auth_id
+    LIMIT 1
+),
 -- Try department-specific settings first
 dept_encrypted_items AS (
     SELECT DISTINCT ON (i.name) i.name, kr.key as value, i.encrypted
     FROM auth_items_junction ai_j
     JOIN items_resource i ON i.id = ai_j.item_id
+    JOIN auth_resource_mapping arm ON true
     JOIN setting_auth_keys_junction sak ON sak.active = true
     JOIN dept_settings ds ON sak.setting_id = ds.settings_id
     JOIN auth_keys_resource akr ON akr.id = sak.auth_keys_id AND akr.active = true
     JOIN keys_resource kr ON kr.id = akr.key_id AND kr.active
     WHERE ai_j.auth_id = api_get_auth_items_v4.auth_id AND i.encrypted = true
-      AND akr.auth_id = ai_j.auth_id
+      AND akr.auth_id = arm.auths_resource_id
     ORDER BY i.name, kr.created_at DESC
 ),
 -- Fall back to default settings if department-specific has no keys
@@ -48,16 +56,17 @@ default_encrypted_items AS (
     SELECT DISTINCT ON (i.name) i.name, kr.key as value, i.encrypted
     FROM auth_items_junction ai_j
     JOIN items_resource i ON i.id = ai_j.item_id
+    JOIN auth_resource_mapping arm ON true
     JOIN setting_auth_keys_junction sak ON sak.active = true
     JOIN default_settings ds ON sak.setting_id = ds.settings_id
     JOIN auth_keys_resource akr ON akr.id = sak.auth_keys_id AND akr.active = true
     JOIN keys_resource kr ON kr.id = akr.key_id AND kr.active
-    WHERE ai_j.auth_id = api_get_auth_items_v4.auth_id 
+    WHERE ai_j.auth_id = api_get_auth_items_v4.auth_id
       AND i.encrypted = true
-      AND akr.auth_id = ai_j.auth_id
+      AND akr.auth_id = arm.auths_resource_id
       -- Only use default if department-specific didn't have this key
       AND NOT EXISTS (
-          SELECT 1 FROM dept_encrypted_items dei 
+          SELECT 1 FROM dept_encrypted_items dei
           WHERE dei.name = i.name
       )
     ORDER BY i.name, kr.created_at DESC

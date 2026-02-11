@@ -1,8 +1,21 @@
 """Types for benchmark artifact."""
 
+from uuid import UUID
+
 from pydantic import BaseModel, Field
 
 from app.api.v4.artifacts.types import FilterOption
+from app.sql.types import (
+    QGetDepartmentsV4Item,
+    QGetInstructionsV4Item,
+    QGetKeysV4Item,
+    QGetModelsV4Item,
+    QGetPromptsV4Item,
+    QGetReasoningLevelsV4Item,
+    QGetTemperatureLevelsV4Item,
+    QGetToolsV4Item,
+    QGetVoicesV4Item,
+)
 
 
 class BenchmarkRequest(BaseModel):
@@ -101,3 +114,93 @@ class BenchmarkResponse(BaseModel):
     agent_options: list[FilterOption] = Field(default_factory=list)
     date_range_earliest: str | None = None
     date_range_latest: str | None = None
+
+
+# =============================================================================
+# BUNDLE endpoint types (customize flow) — Section-first pattern
+# =============================================================================
+
+
+class GetBenchmarkBundleRequest(BaseModel):
+    """Client API request for one benchmark bundle customization payload."""
+
+    benchmark_bundle_entry_id: UUID
+    draft_id: UUID | None = None
+
+
+# --- Section types (one per resource) ---
+
+
+class BaseBenchmarkBundleSection(BaseModel):
+    """Common metadata fields for all benchmark bundle resource sections."""
+
+    show: bool = False
+    required: bool = False
+    show_ai_generate: bool = False
+
+
+class BenchmarkBundleDepartmentSection(BaseBenchmarkBundleSection):
+    current: list[QGetDepartmentsV4Item] | None = None
+    resources: list[QGetDepartmentsV4Item] | None = None
+
+
+class BenchmarkBundleModelSection(BaseBenchmarkBundleSection):
+    current: list[QGetModelsV4Item] | None = None
+    resources: list[QGetModelsV4Item] | None = None
+
+
+class BenchmarkBundlePromptSection(BaseBenchmarkBundleSection):
+    current: list[QGetPromptsV4Item] | None = None
+    resources: list[QGetPromptsV4Item] | None = None
+
+
+class BenchmarkBundleInstructionSection(BaseBenchmarkBundleSection):
+    current: list[QGetInstructionsV4Item] | None = None
+    resources: list[QGetInstructionsV4Item] | None = None
+
+
+class BenchmarkBundleVoiceSection(BaseBenchmarkBundleSection):
+    current: list[QGetVoicesV4Item] | None = None
+    resources: list[QGetVoicesV4Item] | None = None
+
+
+class BenchmarkBundleTemperatureLevelSection(BaseBenchmarkBundleSection):
+    current: list[QGetTemperatureLevelsV4Item] | None = None
+    resources: list[QGetTemperatureLevelsV4Item] | None = None
+
+
+class BenchmarkBundleReasoningLevelSection(BaseBenchmarkBundleSection):
+    current: list[QGetReasoningLevelsV4Item] | None = None
+    resources: list[QGetReasoningLevelsV4Item] | None = None
+
+
+class BenchmarkBundleToolSection(BaseBenchmarkBundleSection):
+    current: list[QGetToolsV4Item] | None = None
+    resources: list[QGetToolsV4Item] | None = None
+
+
+class BenchmarkBundleKeySection(BaseBenchmarkBundleSection):
+    current: list[QGetKeysV4Item] | None = None
+    resources: list[QGetKeysV4Item] | None = None
+
+
+# --- GET response (section-first) ---
+
+
+class GetBenchmarkBundleResponse(BaseModel):
+    """Client-facing bundle response — section-first pattern."""
+
+    benchmark_bundle_entry_id: UUID
+    benchmark_id: UUID | None = None
+    profile_has_access: bool = False
+
+    # 9 section-first resources
+    departments: BenchmarkBundleDepartmentSection | None = None
+    models: BenchmarkBundleModelSection | None = None
+    prompts: BenchmarkBundlePromptSection | None = None
+    instructions: BenchmarkBundleInstructionSection | None = None
+    voices: BenchmarkBundleVoiceSection | None = None
+    temperature_levels: BenchmarkBundleTemperatureLevelSection | None = None
+    reasoning_levels: BenchmarkBundleReasoningLevelSection | None = None
+    tools: BenchmarkBundleToolSection | None = None
+    keys: BenchmarkBundleKeySection | None = None

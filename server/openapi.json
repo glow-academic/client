@@ -15567,6 +15567,100 @@
         }
       }
     },
+    "/api/v4/artifacts/benchmark/bundle/get": {
+      "post": {
+        "tags": [
+          "v4",
+          "artifacts",
+          "benchmark"
+        ],
+        "summary": "Benchmark Bundle Get",
+        "description": "Get hydrated resources for benchmark bundle customization.",
+        "operationId": "benchmark_bundle_get_api_v4_artifacts_benchmark_bundle_get_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetBenchmarkBundleRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetBenchmarkBundleResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v4/artifacts/test/get": {
       "post": {
         "tags": [
@@ -15921,6 +16015,101 @@
                   "type": "object",
                   "additionalProperties": true,
                   "title": "Response Get Docs Api V4 Artifacts Test Docs Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v4/artifacts/test/create": {
+      "post": {
+        "tags": [
+          "v4",
+          "artifacts",
+          "artifacts",
+          "test"
+        ],
+        "summary": "Create Test",
+        "description": "Create a new benchmark test via REST.",
+        "operationId": "create_test_api_v4_artifacts_test_create_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTestRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateTestResponse"
                 }
               }
             }
@@ -33335,6 +33524,104 @@
         }
       }
     },
+    "/api/v4/views/benchmark/bundle/get": {
+      "post": {
+        "tags": [
+          "v4",
+          "views",
+          "views",
+          "benchmark",
+          "views",
+          "benchmark",
+          "bundle"
+        ],
+        "summary": "Get Benchmark Bundle View",
+        "description": "Get thin bundle scope for a single benchmark bundle entry.",
+        "operationId": "get_benchmark_bundle_view_api_v4_views_benchmark_bundle_get_post",
+        "parameters": [
+          {
+            "name": "benchmark_bundle_entry_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Benchmark Bundle Entry Id"
+            }
+          },
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetBenchmarkBundleViewResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v4/views/benchmark/attempt-facts/get": {
       "post": {
         "tags": [
@@ -46360,6 +46647,447 @@
         "title": "BenchmarkAttemptFactsItem",
         "description": "Single attempt from mv_benchmark_attempt_facts."
       },
+      "BenchmarkBundleDepartmentSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "current": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetDepartmentsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current"
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetDepartmentsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "BenchmarkBundleDepartmentSection"
+      },
+      "BenchmarkBundleInstructionSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "current": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetInstructionsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current"
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetInstructionsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "BenchmarkBundleInstructionSection"
+      },
+      "BenchmarkBundleKeySection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "current": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetKeysV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current"
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetKeysV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "BenchmarkBundleKeySection"
+      },
+      "BenchmarkBundleModelSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "current": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetModelsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current"
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetModelsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "BenchmarkBundleModelSection"
+      },
+      "BenchmarkBundlePromptSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "current": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPromptsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current"
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPromptsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "BenchmarkBundlePromptSection"
+      },
+      "BenchmarkBundleReasoningLevelSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "current": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetReasoningLevelsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current"
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetReasoningLevelsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "BenchmarkBundleReasoningLevelSection"
+      },
+      "BenchmarkBundleTemperatureLevelSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "current": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetTemperatureLevelsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current"
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetTemperatureLevelsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "BenchmarkBundleTemperatureLevelSection"
+      },
+      "BenchmarkBundleToolSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "current": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetToolsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current"
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetToolsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "BenchmarkBundleToolSection"
+      },
+      "BenchmarkBundleVoiceSection": {
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": false
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "show_ai_generate": {
+            "type": "boolean",
+            "title": "Show Ai Generate",
+            "default": false
+          },
+          "current": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetVoicesV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current"
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetVoicesV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resources"
+          }
+        },
+        "type": "object",
+        "title": "BenchmarkBundleVoiceSection"
+      },
       "BenchmarkChatInfo": {
         "properties": {
           "chat_id": {
@@ -51014,6 +51742,39 @@
           "message"
         ],
         "title": "CreateProblemResponse"
+      },
+      "CreateTestRequest": {
+        "properties": {
+          "eval_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Eval Id"
+          },
+          "infinite_mode": {
+            "type": "boolean",
+            "title": "Infinite Mode",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "eval_id"
+        ],
+        "title": "CreateTestRequest"
+      },
+      "CreateTestResponse": {
+        "properties": {
+          "test_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Test Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "test_id"
+        ],
+        "title": "CreateTestResponse"
       },
       "DailyMetricsItem": {
         "properties": {
@@ -60784,6 +61545,263 @@
         "title": "GetBenchmarkAttemptFactsResponse",
         "description": "Response with benchmark attempt facts."
       },
+      "GetBenchmarkBundleRequest": {
+        "properties": {
+          "benchmark_bundle_entry_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Benchmark Bundle Entry Id"
+          },
+          "draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "benchmark_bundle_entry_id"
+        ],
+        "title": "GetBenchmarkBundleRequest",
+        "description": "Client API request for one benchmark bundle customization payload."
+      },
+      "GetBenchmarkBundleResponse": {
+        "properties": {
+          "benchmark_bundle_entry_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Benchmark Bundle Entry Id"
+          },
+          "benchmark_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Benchmark Id"
+          },
+          "profile_has_access": {
+            "type": "boolean",
+            "title": "Profile Has Access",
+            "default": false
+          },
+          "departments": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BenchmarkBundleDepartmentSection"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "models": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BenchmarkBundleModelSection"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "prompts": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BenchmarkBundlePromptSection"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "instructions": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BenchmarkBundleInstructionSection"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "voices": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BenchmarkBundleVoiceSection"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "temperature_levels": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BenchmarkBundleTemperatureLevelSection"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reasoning_levels": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BenchmarkBundleReasoningLevelSection"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "tools": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BenchmarkBundleToolSection"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "keys": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BenchmarkBundleKeySection"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "benchmark_bundle_entry_id"
+        ],
+        "title": "GetBenchmarkBundleResponse",
+        "description": "Client-facing bundle response \u2014 section-first pattern."
+      },
+      "GetBenchmarkBundleViewResponse": {
+        "properties": {
+          "profile_has_access": {
+            "type": "boolean",
+            "title": "Profile Has Access",
+            "default": false
+          },
+          "benchmark_bundle_entry_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Benchmark Bundle Entry Id"
+          },
+          "benchmark_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Benchmark Id"
+          },
+          "department_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Department Ids"
+          },
+          "model_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Model Ids"
+          },
+          "prompt_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Prompt Ids"
+          },
+          "instruction_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Instruction Ids"
+          },
+          "voice_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Voice Ids"
+          },
+          "temperature_level_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Temperature Level Ids"
+          },
+          "reasoning_level_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Reasoning Level Ids"
+          },
+          "tool_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Tool Ids"
+          },
+          "key_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Key Ids"
+          }
+        },
+        "type": "object",
+        "title": "GetBenchmarkBundleViewResponse",
+        "description": "Thin MV-backed view response for a single benchmark bundle."
+      },
       "GetBenchmarkEvalSummaryRequest": {
         "properties": {
           "rubric_id": {
@@ -67477,15 +68495,11 @@
             ],
             "title": "Session Id"
           },
-          "artifact_agent_ids": {
+          "artifact_has_generation": {
             "anyOf": [
               {
                 "additionalProperties": {
-                  "items": {
-                    "type": "string",
-                    "format": "uuid"
-                  },
-                  "type": "array"
+                  "type": "boolean"
                 },
                 "type": "object"
               },
@@ -67493,12 +68507,12 @@
                 "type": "null"
               }
             ],
-            "title": "Artifact Agent Ids"
+            "title": "Artifact Has Generation"
           }
         },
         "type": "object",
         "title": "GetProfileContextApiResponse",
-        "description": "Extended profile context response with artifact_agent_ids."
+        "description": "Extended profile context response with artifact_has_generation."
       },
       "GetProfileMetricsRequest": {
         "properties": {
@@ -78706,7 +79720,7 @@
             ],
             "title": "Scenario Ids"
           },
-          "parameter_field_ids": {
+          "field_ids": {
             "anyOf": [
               {
                 "items": {
@@ -78719,29 +79733,7 @@
                 "type": "null"
               }
             ],
-            "title": "Parameter Field Ids"
-          },
-          "reasoning": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Reasoning"
-          },
-          "temperature_display": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Temperature Display"
+            "title": "Field Ids"
           },
           "is_inactive": {
             "anyOf": [
@@ -78935,62 +79927,6 @@
               }
             ],
             "title": "Description"
-          },
-          "active": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Active"
-          },
-          "persona_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Ids"
-          },
-          "document_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Document Ids"
-          },
-          "parameter_item_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Item Ids"
           },
           "count": {
             "anyOf": [
@@ -116708,6 +117644,17 @@
               }
             ],
             "title": "Group Id"
+          },
+          "benchmark_bundle_entry_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Benchmark Bundle Entry Id"
           },
           "model_name": {
             "anyOf": [

@@ -3,8 +3,8 @@
  * Button component for triggering full page generation
  * Shows next to DraftPicker when generation is available
  *
- * Uses artifact_agent_ids from profile context (SSR) to determine visibility.
- * Passes agentId via event.detail to child components.
+ * Uses artifact_has_generation from profile context (SSR) to determine visibility.
+ * Dispatches a simple event that page components listen to.
  */
 
 "use client";
@@ -18,7 +18,7 @@ import { useCallback, useMemo } from "react";
 
 export function FullPageGenerateButton() {
   const pathname = usePathname();
-  const { artifactAgentIds } = useProfile();
+  const { artifactHasGeneration } = useProfile();
 
   // Compute artifactType from URL (same logic as layout-client)
   const urlPathSegment = useMemo(() => {
@@ -34,20 +34,13 @@ export function FullPageGenerateButton() {
       : null;
   }, [urlPathSegment]);
 
-  // Get agentId for current artifact type (take first from array)
-  const agentId = artifactType ? artifactAgentIds[artifactType]?.[0] ?? null : null;
+  const hasGeneration = artifactType ? artifactHasGeneration[artifactType] ?? false : false;
 
   const handleGenerate = useCallback(() => {
-    // Dispatch custom event with agentId that page components can listen to
-    window.dispatchEvent(
-      new CustomEvent("full-page-generate", {
-        detail: { agentId },
-      })
-    );
-  }, [agentId]);
+    window.dispatchEvent(new CustomEvent("full-page-generate"));
+  }, []);
 
-  // Don't show button if no agentId for this artifact type
-  if (!agentId) {
+  if (!hasGeneration) {
     return null;
   }
 
