@@ -43,7 +43,7 @@ SELECT
     -- Profile linkage (simulation or benchmark)
     COALESCE(spj.profile_id, bpj.profile_id) AS profile_id
 FROM (
-    SELECT f.id, f.grade_id, f.total, f.total_points, f.pass_points,
+    SELECT f.id, f.grade_id, f.total, g.total_points, g.pass_points,
            f.created_at, f.updated_at, f.call_id, f.active,
            CASE WHEN a.practice IS TRUE THEN 'practice'::text ELSE 'general'::text END AS type
     FROM simulation_feedbacks_entry f
