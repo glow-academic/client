@@ -16,7 +16,7 @@ import {
 } from "@/lib/search-params/analytics-defaults";
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { loadBenchmarkSearchParams } from "./searchParams";
+import { loadBenchmarkSearchParams } from "@/lib/search-params/benchmark";
 
 /** ---- Strong types from OpenAPI ---- */
 type BenchmarkOverviewIn = InputOf<"/api/v4/artifacts/benchmark/get", "post">;

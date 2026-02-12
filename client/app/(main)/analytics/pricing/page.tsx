@@ -16,7 +16,7 @@ import {
   resolveAnalyticsFilters,
 } from "@/lib/search-params/analytics-defaults";
 import type { Metadata } from "next";
-import { loadPricingSearchParams } from "./searchParams";
+import { loadPricingSearchParams } from "@/lib/search-params/pricing";
 
 /** ---- Strong types from OpenAPI ---- */
 type PricingIn = InputOf<"/api/v4/artifacts/pricing/get", "post">;

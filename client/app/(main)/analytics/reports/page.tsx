@@ -16,7 +16,7 @@ import {
 } from "@/lib/search-params/analytics-defaults";
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { loadReportsSearchParams } from "./searchParams";
+import { loadReportsSearchParams } from "@/lib/search-params/reports";
 
 /** ---- Strong types from OpenAPI ---- */
 type ReportsIn = InputOf<"/api/v4/artifacts/reports/get", "post">;

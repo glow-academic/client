@@ -16,7 +16,7 @@ import {
 } from "@/lib/search-params/analytics-defaults";
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { loadPracticeSearchParams } from "./searchParams";
+import { loadPracticeSearchParams } from "@/lib/search-params/practice";
 
 /** ---- Strong types from OpenAPI ---- */
 // Using /training/get for simulation cards (enhanced with stats)

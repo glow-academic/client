@@ -44,7 +44,7 @@ from app.utils.sql_helper import execute_sql_typed
 
 SQL_ACCESS_PATH = "app/sql/v4/queries/profile/get_profile_context_access_complete.sql"
 SQL_SETTINGS_THEME_PATH = (
-    "app/sql/v4/queries/resources/settings/get_settings_theme_complete.sql"
+    "app/sql/v4/queries/settings/get_settings_theme_data_complete.sql"
 )
 
 router = APIRouter()

@@ -14,7 +14,7 @@ import {
 } from "@/lib/search-params/analytics-defaults";
 import type { Metadata } from "next";
 import { cache } from "react";
-import { loadHealthSearchParams } from "./searchParams";
+import { loadHealthSearchParams } from "@/lib/search-params/health";
 
 /** ---- Strong types from OpenAPI ---- */
 type HealthBundleIn = InputOf<"/api/v4/views/analytics/health/get", "post">;

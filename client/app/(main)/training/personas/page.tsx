@@ -10,7 +10,7 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 
-import { loadPersonasSearchParams } from "./searchParams";
+import { loadPersonasSearchParams } from "@/lib/search-params/personas";
 
 /** ---- Strong types from OpenAPI ---- */
 type PersonasListOut = OutputOf<"/api/v4/artifacts/personas/list", "post">;

@@ -10,7 +10,7 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 
-import { loadSimulationsListSearchParams } from "./listSearchParams";
+import { loadSimulationsListSearchParams } from "@/lib/search-params/simulations";
 
 /** ---- Strong types from OpenAPI ---- */
 type SimulationsListOut = OutputOf<"/api/v4/artifacts/simulations/list", "post">;

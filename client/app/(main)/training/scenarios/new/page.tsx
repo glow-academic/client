@@ -13,7 +13,7 @@ import {
   csvToArray,
   extractFieldShowSelectedByParam,
   loadScenarioSearchParams,
-} from "../searchParams";
+} from "@/lib/search-params/scenarios";
 
 /** ---- Strong types from OpenAPI ---- */
 type GetScenarioIn = InputOf<"/api/v4/artifacts/scenarios/get", "post">;

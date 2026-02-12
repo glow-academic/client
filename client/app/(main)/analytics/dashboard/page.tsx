@@ -16,7 +16,7 @@ import {
 } from "@/lib/search-params/analytics-defaults";
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { loadDashboardSearchParams } from "./searchParams";
+import { loadDashboardSearchParams } from "@/lib/search-params/dashboard";
 
 /** ---- Strong types from OpenAPI ---- */
 type DashboardIn = InputOf<"/api/v4/artifacts/dashboard/get", "post">;

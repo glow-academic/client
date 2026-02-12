@@ -93,28 +93,25 @@ async def get_rubrics_batch_internal(
 
 async def get_rubrics_internal(
     conn: asyncpg.Connection,
-    simulation_id: UUID | None,
+    ids: list[UUID] | None = None,
     bypass_cache: bool = False,
 ) -> list[QGetRubricsV4Item]:
-    """Internal function for parallel fetching from simulation endpoint.
+    """Internal function for parallel fetching rubrics by IDs.
 
     Args:
         conn: Database connection
-        simulation_id: Simulation ID to fetch rubrics for (None returns all rubrics)
+        ids: List of rubric IDs to fetch (empty/None returns all rubrics)
         bypass_cache: Whether to bypass cache
 
     Returns:
         List of rubric items
     """
-    # Use sentinel UUID when simulation_id is None to fetch all rubrics
-    effective_simulation_id = simulation_id or UUID(
-        "00000000-0000-0000-0000-000000000000"
-    )
+    effective_ids = ids or []
 
     # Generate cache key
     cache_key_val = cache_key(
         "rubrics/get",
-        {"simulation_id": str(effective_simulation_id)},
+        {"ids": sorted([str(id) for id in effective_ids])},
     )
 
     # Try cache (unless bypassed)
@@ -127,7 +124,7 @@ async def get_rubrics_internal(
             ]
 
     # Execute SQL
-    params = GetRubricsSqlParams(simulation_id=effective_simulation_id)
+    params = GetRubricsSqlParams(ids=effective_ids)
     result = cast(
         GetRubricsSqlRow,
         await execute_sql_typed(
@@ -183,7 +180,7 @@ async def get_rubrics(
 
         items = await get_rubrics_internal(
             conn=conn,
-            simulation_id=request.simulation_id,
+            ids=request.ids if hasattr(request, "ids") else [],
             bypass_cache=bypass_cache,
         )
 

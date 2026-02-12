@@ -10,7 +10,7 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 
-import { loadCohortsListSearchParams } from "./listSearchParams";
+import { loadCohortsListSearchParams } from "@/lib/search-params/cohorts";
 
 /** ---- Strong types from OpenAPI ---- */
 type CohortsListOut = OutputOf<"/api/v4/artifacts/cohorts/list", "post">;

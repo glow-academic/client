@@ -14,7 +14,7 @@ import {
   resolveAnalyticsFilters,
 } from "@/lib/search-params/analytics-defaults";
 import type { Metadata } from "next";
-import { loadLeaderboardSearchParams } from "./searchParams";
+import { loadLeaderboardSearchParams } from "@/lib/search-params/leaderboard";
 
 /** ---- Strong types from OpenAPI ---- */
 type LeaderboardIn = InputOf<"/api/v4/artifacts/leaderboard/get", "post">;

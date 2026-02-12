@@ -19,7 +19,7 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/v4/queries/resources/documents/get_document_html_complete.sql"
+SQL_PATH = "app/sql/v4/queries/documents/get_document_html_data_complete.sql"
 
 router = APIRouter()
 

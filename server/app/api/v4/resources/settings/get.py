@@ -16,7 +16,7 @@ from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
 # Load SQL with types at module level
-SQL_PATH = "app/sql/v4/queries/resources/settings/get_settings_complete.sql"
+SQL_PATH = "app/sql/v4/queries/settings/get_settings_resource_data_complete.sql"
 
 
 router = APIRouter()

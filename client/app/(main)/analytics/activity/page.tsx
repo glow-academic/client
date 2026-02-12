@@ -11,7 +11,7 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { loadActivitySearchParams } from "./searchParams";
+import { loadActivitySearchParams } from "@/lib/search-params/activity";
 
 /** ---- Strong types from OpenAPI ---- */
 type ActivityBundleIn = InputOf<"/api/v4/artifacts/activity/get", "post">;

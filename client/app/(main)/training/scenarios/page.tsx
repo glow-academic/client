@@ -10,7 +10,7 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 
-import { loadScenariosListSearchParams } from "./listSearchParams";
+import { loadScenariosListSearchParams } from "@/lib/search-params/scenarios-list";
 
 /** ---- Strong types from OpenAPI ---- */
 type ScenariosListOut = OutputOf<"/api/v4/artifacts/scenarios/list", "post">;
