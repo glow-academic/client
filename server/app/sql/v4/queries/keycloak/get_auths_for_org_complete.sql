@@ -1,13 +1,13 @@
 -- Get auths for a specific department (org-scoped IdPs)
--- Converted to PostgreSQL function
--- Drop function if exists (handles signature variations)
+-- Resource-first path: departments_resource.setting_ids -> settings_resource.auth_ids -> auths_resource
+-- Returns auth_artifact.id as `id` (stable, used in Keycloak aliases and providers.ftl)
 DO $$
 DECLARE
     r RECORD;
 BEGIN
-    FOR r IN 
-        SELECT oidvectortypes(proargtypes) as sig 
-        FROM pg_proc 
+    FOR r IN
+        SELECT oidvectortypes(proargtypes) as sig
+        FROM pg_proc
         WHERE proname = 'infra_get_auths_for_org_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
@@ -15,7 +15,6 @@ BEGIN
     END LOOP;
 END $$;
 
--- Recreate function
 CREATE OR REPLACE FUNCTION infra_get_auths_for_org_v4(
     department_id uuid
 )
@@ -28,33 +27,18 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-    WITH dept_settings AS (
-        -- Get department-specific settings
-        SELECT DISTINCT s.id as settings_id
-        FROM setting_artifact s
-        JOIN department_settings_junction ds ON ds.settings_id = s.id AND ds.active = true
-        WHERE ds.department_id = infra_get_auths_for_org_v4.department_id
-          AND EXISTS (SELECT 1 FROM setting_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = true)
-    ),
-    settings_auths AS (
-        -- Get auths linked to department settings
-        SELECT DISTINCT ar.id, aaj.auth_id
-        FROM auths_resource ar
-        JOIN auth_auths_junction aaj ON aaj.auths_id = ar.id
-        JOIN setting_auths_junction sa ON sa.auth_id = ar.id AND sa.active = true
-        JOIN dept_settings ds ON sa.settings_id = ds.settings_id
-        WHERE EXISTS (SELECT 1 FROM auth_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.auth_id = aaj.auth_id AND f.name = 'auth_active' AND af.value = true)
-          AND ds.settings_id IS NOT NULL
-    )
-    -- Return providers for department settings (org-scoped)
     SELECT DISTINCT
         aaj.auth_id as id,
-        (SELECT s.value FROM auth_slugs_junction as_j JOIN slugs_resource s ON s.id = as_j.slug_id WHERE as_j.auth_id = aaj.auth_id LIMIT 1) as slug,
-        (SELECT p.value FROM auth_protocols_junction ap JOIN protocols_resource p ON p.id = ap.protocol_id WHERE ap.auth_id = aaj.auth_id LIMIT 1) as provider_id,
-        (SELECT n.name FROM auth_names_junction an JOIN names_resource n ON an.name_id = n.id WHERE an.auth_id = aaj.auth_id LIMIT 1) as name
-    FROM auths_resource ar
+        ar.slug,
+        ar.protocol as provider_id,
+        ar.name
+    FROM departments_resource dr
+    JOIN department_departments_junction ddj ON ddj.departments_id = dr.id
+    CROSS JOIN LATERAL UNNEST(dr.setting_ids) AS s_id
+    JOIN settings_resource sr ON sr.id = s_id AND sr.active = true
+    CROSS JOIN LATERAL UNNEST(sr.auth_ids) AS a_id
+    JOIN auths_resource ar ON ar.id = a_id AND ar.active = true
     JOIN auth_auths_junction aaj ON aaj.auths_id = ar.id
-    WHERE EXISTS (SELECT 1 FROM auth_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.auth_id = aaj.auth_id AND f.name = 'auth_active' AND af.value = true)
-      AND EXISTS (SELECT 1 FROM settings_auths sa WHERE sa.id = ar.id)
-    ORDER BY slug
+    WHERE ddj.department_id = infra_get_auths_for_org_v4.department_id
+    ORDER BY ar.slug
 $$;

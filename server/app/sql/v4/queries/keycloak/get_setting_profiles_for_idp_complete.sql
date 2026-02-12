@@ -1,6 +1,6 @@
 -- Get setting profiles for default-idp sync and theme mapping
 -- Returns profiles linked to active settings, with department scope when applicable
--- Converted to PostgreSQL function
+-- Resource-first: departments_resource.setting_ids -> setting_settings_junction -> setting_profiles_junction
 DO $$
 DECLARE
     r RECORD;
@@ -26,33 +26,28 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-    WITH active_settings AS (
-        SELECT s.id
-        FROM setting_artifact s
-        WHERE EXISTS (
-            SELECT 1
-            FROM setting_flags_junction sf
-            JOIN flags_resource f ON sf.flag_id = f.id
-            WHERE sf.setting_id = s.id
-              AND f.name = 'setting_active'
-              AND sf.value = true
-        )
-    ),
-    dept_settings AS (
-        SELECT ds.department_id, ds.settings_id
-        FROM department_settings_junction ds
-        JOIN active_settings s ON s.id = ds.settings_id
-        WHERE ds.active = true
+    WITH dept_settings AS (
+        -- Department settings via resource-first: departments_resource.setting_ids -> settings_resource -> setting_settings_junction
+        SELECT
+            ddj.department_id,
+            ssj.setting_id as artifact_id
+        FROM departments_resource dr
+        JOIN department_departments_junction ddj ON ddj.departments_id = dr.id
+        CROSS JOIN LATERAL UNNEST(dr.setting_ids) AS s_id
+        JOIN settings_resource sr ON sr.id = s_id AND sr.active = true
+        JOIN setting_settings_junction ssj ON ssj.settings_id = s_id
+        WHERE dr.active = true
     ),
     default_settings AS (
-        SELECT s.id as settings_id
-        FROM active_settings s
-        WHERE NOT EXISTS (
-            SELECT 1
-            FROM department_settings_junction ds
-            WHERE ds.settings_id = s.id
-              AND ds.active = true
-        )
+        -- Default settings: active setting artifacts not linked to any department
+        SELECT ssj.setting_id as artifact_id
+        FROM settings_resource sr
+        JOIN setting_settings_junction ssj ON ssj.settings_id = sr.id
+        WHERE sr.active = true
+          AND NOT EXISTS (
+              SELECT 1 FROM departments_resource dr
+              WHERE sr.id = ANY(dr.setting_ids)
+          )
     ),
     settings_profiles AS (
         SELECT sp.setting_id, sp.profile_id
@@ -84,6 +79,7 @@ AS $$
         JOIN profile_profiles_junction ppj ON ppj.profiles_id = pr.id
         WHERE pr.active = true
     )
+    -- Department-scoped profiles
     SELECT
         sp.profile_id,
         pd.profile_name,
@@ -91,9 +87,10 @@ AS $$
         sp.setting_id,
         ds.department_id
     FROM settings_profiles sp
-    JOIN dept_settings ds ON ds.settings_id = sp.setting_id
+    JOIN dept_settings ds ON ds.artifact_id = sp.setting_id
     JOIN profile_details pd ON pd.profile_id = sp.profile_id
     UNION ALL
+    -- Default (non-department) profiles
     SELECT
         sp.profile_id,
         pd.profile_name,
@@ -101,6 +98,6 @@ AS $$
         sp.setting_id,
         NULL::uuid as department_id
     FROM settings_profiles sp
-    JOIN default_settings ds ON ds.settings_id = sp.setting_id
+    JOIN default_settings ds ON ds.artifact_id = sp.setting_id
     JOIN profile_details pd ON pd.profile_id = sp.profile_id
 $$;

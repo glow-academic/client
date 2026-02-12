@@ -1536,7 +1536,7 @@ export interface paths {
         put?: never;
         /**
          * Get Model List
-         * @description Get models list (flat structure with provider info).
+         * @description Get models list with permissions and provider details.
          */
         post: operations["get_model_list_api_v4_artifacts_models_list_post"];
         delete?: never;
@@ -3525,6 +3525,66 @@ export interface paths {
          * @description Search args resources.
          */
         post: operations["search_args_api_v4_resources_args_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/arg_positions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Arg Positions
+         * @description Create arg_positions resource (upsert by tool+arg).
+         */
+        post: operations["create_arg_positions_api_v4_resources_arg_positions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/arg_positions/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Arg Positions
+         * @description Get arg_positions resources by IDs.
+         */
+        post: operations["get_arg_positions_api_v4_resources_arg_positions_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/arg_positions/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Arg Positions
+         * @description Search arg_positions resources.
+         */
+        post: operations["search_arg_positions_api_v4_resources_arg_positions_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7482,14 +7542,7 @@ export interface paths {
         put?: never;
         /**
          * Get Profile Context
-         * @description Get consolidated profile context (profile, departments, cohorts, breadcrumbs).
-         *
-         *     Uses 2-pass architecture:
-         *     - Pass 1: Light query returning IDs for access check
-         *     - Pass 2: Parallel fetching of full resources
-         *
-         *     NOTE: Theme derivation stays in Python because it requires complex color math utilities
-         *     (hex_to_oklch, ensure_contrast, shade, tint) that are not available in PostgreSQL.
+         * @description HTTP-facing profile context endpoint.
          */
         post: operations["get_profile_context_api_v4_auth_context_post"];
         delete?: never;
@@ -10780,6 +10833,41 @@ export interface components {
              */
             updated_count: number;
         };
+        /** ArgPositionsApiRequest */
+        ArgPositionsApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Tool Id
+             * Format: uuid
+             */
+            tool_id: string;
+            /**
+             * Args Id
+             * Format: uuid
+             */
+            args_id: string;
+            /** Value */
+            value: number;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** ArgPositionsApiResponse */
+        ArgPositionsApiResponse: {
+            /** Id */
+            id?: string | null;
+        };
         /** ArgsApiRequest */
         ArgsApiRequest: {
             /**
@@ -10805,11 +10893,6 @@ export interface components {
             required: boolean | null;
             /** Default Value */
             default_value?: string | null;
-            /**
-             * Position Value
-             * @default 0
-             */
-            position_value: number | null;
             /**
              * Mcp
              * @default false
@@ -12989,8 +13072,6 @@ export interface components {
         BulkDeleteStaffApiResponse: {
             /** Deleted Count */
             deleted_count?: number | null;
-            /** Actor Name */
-            actor_name?: string | null;
         };
         /**
          * ChatData
@@ -13831,8 +13912,6 @@ export interface components {
             profile_id?: string | null;
             /** Created */
             created?: boolean | null;
-            /** Actor Name */
-            actor_name?: string | null;
             /** Session Id */
             session_id?: string | null;
         };
@@ -14414,16 +14493,10 @@ export interface components {
         };
         /** DeleteSettingApiResponse */
         DeleteSettingApiResponse: {
-            /** Setting Exists */
-            setting_exists?: boolean | null;
-            /** Setting Id */
-            setting_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Deleted */
-            deleted?: boolean | null;
-            /** Actor Name */
-            actor_name?: string | null;
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
         };
         /** DeleteSimulationApiRequest */
         DeleteSimulationApiRequest: {
@@ -15256,12 +15329,15 @@ export interface components {
         };
         /** DuplicateSettingApiResponse */
         DuplicateSettingApiResponse: {
-            /** New Setting Id */
-            new_setting_id?: string | null;
-            /** Original Name */
-            original_name?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
+            /** Success */
+            success: boolean;
+            /**
+             * Setting Id
+             * Format: uuid
+             */
+            setting_id: string;
+            /** Message */
+            message: string;
         };
         /** DuplicateSimulationApiRequest */
         DuplicateSimulationApiRequest: {
@@ -16624,13 +16700,33 @@ export interface components {
             voices?: components["schemas"]["AgentVoiceSection"] | null;
         };
         /** GetAgentsListApiRequest */
-        GetAgentsListApiRequest: Record<string, never>;
-        /** GetAgentsListApiResponse */
-        GetAgentsListApiResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Agents */
-            agents?: components["schemas"]["QListAgentsV4Agent"][] | null;
+        GetAgentsListApiRequest: {
+            /** Search */
+            search?: string | null;
+            /** Filter Department Ids */
+            filter_department_ids?: string[] | null;
+            /** Department Search */
+            department_search?: string | null;
+            /**
+             * Page Size
+             * @default 12
+             */
+            page_size: number | null;
+            /**
+             * Page Offset
+             * @default 0
+             */
+            page_offset: number | null;
+        };
+        /** GetArgPositionsApiRequest */
+        GetArgPositionsApiRequest: {
+            /** Ids */
+            ids?: string[] | null;
+        };
+        /** GetArgPositionsApiResponse */
+        GetArgPositionsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetArgPositionsV4Item"][] | null;
         };
         /** GetArgsApiRequest */
         GetArgsApiRequest: {
@@ -17095,7 +17191,24 @@ export interface components {
             items?: components["schemas"]["QGetAuthItemKeysV4Item"][] | null;
         };
         /** GetAuthListApiRequest */
-        GetAuthListApiRequest: Record<string, never>;
+        GetAuthListApiRequest: {
+            /** Search */
+            search?: string | null;
+            /** Filter Department Ids */
+            filter_department_ids?: string[] | null;
+            /** Department Search */
+            department_search?: string | null;
+            /**
+             * Page Size
+             * @default 1000
+             */
+            page_size: number | null;
+            /**
+             * Page Offset
+             * @default 0
+             */
+            page_offset: number | null;
+        };
         /**
          * GetBenchmarkAttemptFactsRequest
          * @description Request for getting benchmark attempt facts.
@@ -17649,7 +17762,22 @@ export interface components {
             items?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
         };
         /** GetDepartmentsListApiRequest */
-        GetDepartmentsListApiRequest: Record<string, never>;
+        GetDepartmentsListApiRequest: {
+            /** User Role */
+            user_role?: string | null;
+            /** Search */
+            search?: string | null;
+            /**
+             * Page Size
+             * @default 12
+             */
+            page_size: number | null;
+            /**
+             * Page Offset
+             * @default 0
+             */
+            page_offset: number | null;
+        };
         /** GetDescriptionsApiRequest */
         GetDescriptionsApiRequest: {
             /** Ids */
@@ -17742,10 +17870,6 @@ export interface components {
         };
         /** GetDocumentsListApiResponse */
         GetDocumentsListApiResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
-            /** User Role */
-            user_role?: string | null;
             /** Documents */
             documents?: components["schemas"]["QListDocumentsV4Document"][] | null;
             /** Scenario Option Ids */
@@ -18514,7 +18638,28 @@ export interface components {
             items?: components["schemas"]["QGetParametersV4Item"][] | null;
         };
         /** GetParametersListApiRequest */
-        GetParametersListApiRequest: Record<string, never>;
+        GetParametersListApiRequest: {
+            /** Search */
+            search?: string | null;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+            /** Filter Department Ids */
+            filter_department_ids?: string[] | null;
+            /** Scenario Search */
+            scenario_search?: string | null;
+            /** Department Search */
+            department_search?: string | null;
+            /**
+             * Page Size
+             * @default 12
+             */
+            page_size: number | null;
+            /**
+             * Page Offset
+             * @default 0
+             */
+            page_offset: number | null;
+        };
         /**
          * GetPersonaApiRequest
          * @description Request model for get persona endpoint.
@@ -19037,7 +19182,7 @@ export interface components {
         };
         /**
          * GetProfileContextApiResponse
-         * @description Extended profile context response with artifact_has_generation.
+         * @description Extended profile context response with generated artifact map.
          */
         GetProfileContextApiResponse: {
             /** Is Authorized */
@@ -19422,23 +19567,27 @@ export interface components {
             items?: components["schemas"]["QGetRubricsV4Item"][] | null;
         };
         /** GetRubricsListApiRequest */
-        GetRubricsListApiRequest: Record<string, never>;
-        /** GetRubricsListApiResponse */
-        GetRubricsListApiResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Rubrics */
-            rubrics?: components["schemas"]["QGetRubricsListV4Rubric"][] | null;
-            /** Standard Groups */
-            standard_groups?: components["schemas"]["QGetRubricsListV4StandardGroup"][] | null;
-            /** Standards */
-            standards?: components["schemas"]["QGetRubricsListV4Standard"][] | null;
-            /** Departments */
-            departments?: components["schemas"]["QGetRubricsListV4Department"][] | null;
-            /** Simulations */
-            simulations?: components["schemas"]["QGetRubricsListV4Simulation"][] | null;
-            /** Simulation Options */
-            simulation_options?: components["schemas"]["QGetRubricsListV4Simulation"][] | null;
+        GetRubricsListApiRequest: {
+            /** Search */
+            search?: string | null;
+            /** Filter Department Ids */
+            filter_department_ids?: string[] | null;
+            /** Filter Simulation Ids */
+            filter_simulation_ids?: string[] | null;
+            /** Department Search */
+            department_search?: string | null;
+            /** Simulation Search */
+            simulation_search?: string | null;
+            /**
+             * Page Size
+             * @default 1000
+             */
+            page_size: number | null;
+            /**
+             * Page Offset
+             * @default 0
+             */
+            page_offset: number | null;
         };
         /** GetRunPositionsApiRequest */
         GetRunPositionsApiRequest: {
@@ -19809,8 +19958,6 @@ export interface components {
         };
         /** GetSettingApiResponse */
         GetSettingApiResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
             /** Setting Exists */
             setting_exists?: boolean | null;
             /** Can Edit */
@@ -19979,15 +20126,6 @@ export interface components {
         };
         /** GetSettingsListApiRequest */
         GetSettingsListApiRequest: Record<string, never>;
-        /** GetSettingsListApiResponse */
-        GetSettingsListApiResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Settings */
-            settings?: components["schemas"]["QGetSettingsListV4Setting"][] | null;
-            /** Keys */
-            keys?: components["schemas"]["QGetSettingsListV4Key"][] | null;
-        };
         /**
          * GetSimulationPositionsApiRequest
          * @description Request for getting simulation positions by simulation IDs.
@@ -20110,37 +20248,29 @@ export interface components {
             items?: components["schemas"]["QGetSlugsV4Item"][] | null;
         };
         /** GetStaffListApiRequest */
-        GetStaffListApiRequest: Record<string, never>;
-        /** GetStaffListApiResponse */
-        GetStaffListApiResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Current User Role */
-            current_user_role?: string | null;
-            /** Staff */
-            staff?: components["schemas"]["QListStaffV4Staff"][] | null;
-            /** Cohorts */
-            cohorts?: components["schemas"]["QListStaffV4Cohort"][] | null;
-            /** Departments */
-            departments?: components["schemas"]["QListStaffV4Department"][] | null;
-            /** Trend Data Active */
-            trend_data_active?: components["schemas"]["QListStaffV4TrendData"][] | null;
-            /** Trend Data Admin */
-            trend_data_admin?: components["schemas"]["QListStaffV4TrendData"][] | null;
-            /** Trend Data Instructional */
-            trend_data_instructional?: components["schemas"]["QListStaffV4TrendData"][] | null;
-            /** Trend Data Member */
-            trend_data_member?: components["schemas"]["QListStaffV4TrendData"][] | null;
-            /** Trend Data Total Requests */
-            trend_data_total_requests?: components["schemas"]["QListStaffV4TrendData"][] | null;
-            /** Valid Department Ids */
-            valid_department_ids?: string[] | null;
-            /** Role Options */
-            role_options?: string[] | null;
-            /** Cohort Options */
-            cohort_options?: string[] | null;
-            /** Last Active Options */
-            last_active_options?: string[] | null;
+        GetStaffListApiRequest: {
+            /** Search */
+            search?: string | null;
+            /** Cohort Ids */
+            cohort_ids?: string[] | null;
+            /** Filter Department Ids */
+            filter_department_ids?: string[] | null;
+            /** Role Filter */
+            role_filter?: string | null;
+            /** Cohort Search */
+            cohort_search?: string | null;
+            /** Department Search */
+            department_search?: string | null;
+            /**
+             * Page Size
+             * @default 12
+             */
+            page_size: number | null;
+            /**
+             * Page Offset
+             * @default 0
+             */
+            page_offset: number | null;
         };
         /** GetStaffSearchApiRequest */
         GetStaffSearchApiRequest: {
@@ -20158,8 +20288,6 @@ export interface components {
         };
         /** GetStaffSearchApiResponse */
         GetStaffSearchApiResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
             /** Staff */
             staff?: components["schemas"]["QSearchStaffV4Staff"][] | null;
             /** Cohorts */
@@ -20353,12 +20481,15 @@ export interface components {
             basic_show_ai_generate?: boolean | null;
             /** Args Show Ai Generate */
             args_show_ai_generate?: boolean | null;
+            /** Arg Positions Show Ai Generate */
+            arg_positions_show_ai_generate?: boolean | null;
             /** Args Outputs Show Ai Generate */
             args_outputs_show_ai_generate?: boolean | null;
             names?: components["schemas"]["ToolNameSection"] | null;
             descriptions?: components["schemas"]["ToolDescriptionSection"] | null;
             flags?: components["schemas"]["ToolFlagSection"] | null;
             args?: components["schemas"]["ToolArgSection"] | null;
+            arg_positions?: components["schemas"]["ToolArgPositionSection"] | null;
             args_outputs?: components["schemas"]["ToolArgOutputSection"] | null;
         };
         /** GetToolsApiRequest */
@@ -20370,6 +20501,21 @@ export interface components {
         GetToolsApiResponse: {
             /** Items */
             items?: components["schemas"]["QGetToolsV4Item"][] | null;
+        };
+        /** GetToolsListApiRequest */
+        GetToolsListApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Page Size
+             * @default 12
+             */
+            page_size: number | null;
+            /**
+             * Page Offset
+             * @default 0
+             */
+            page_offset: number | null;
         };
         /**
          * GetTrainingBundleRequest
@@ -21769,6 +21915,84 @@ export interface components {
             profile_metrics?: components["schemas"]["ProfileMetricsItem"][];
         };
         /**
+         * ListAgentApiAgent
+         * @description Agent type for list endpoint with computed permissions.
+         */
+        ListAgentApiAgent: {
+            /** Agent Id */
+            agent_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Reasoning */
+            reasoning?: string | null;
+            /** Temperature */
+            temperature?: number | null;
+            /** Model Id */
+            model_id?: string | null;
+            /** Model Name */
+            model_name?: string | null;
+            /** Model Description */
+            model_description?: string | null;
+            /** Role */
+            role?: string | null;
+            /** Updated At */
+            updated_at?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Can Edit */
+            can_edit?: boolean | null;
+            /** Can Duplicate */
+            can_duplicate?: boolean | null;
+            /** Can Delete */
+            can_delete?: boolean | null;
+        };
+        /**
+         * ListAgentApiDepartment
+         * @description Department filter option for list endpoint.
+         */
+        ListAgentApiDepartment: {
+            /** Department Id */
+            department_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Count */
+            count?: number | null;
+        };
+        /**
+         * ListAgentApiModel
+         * @description Model filter option for list endpoint.
+         */
+        ListAgentApiModel: {
+            /** Model Id */
+            model_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Count */
+            count?: number | null;
+        };
+        /**
+         * ListAgentApiResponse
+         * @description Response model for list agent endpoint.
+         */
+        ListAgentApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Agents */
+            agents?: components["schemas"]["ListAgentApiAgent"][] | null;
+            /** Departments */
+            departments?: components["schemas"]["ListAgentApiDepartment"][] | null;
+            /** Models */
+            models?: components["schemas"]["ListAgentApiModel"][] | null;
+            /** Total Count */
+            total_count?: number | null;
+        };
+        /**
          * ListAuthApiAuth
          * @description Auth type for list endpoint with computed permissions.
          */
@@ -21779,12 +22003,10 @@ export interface components {
             name?: string | null;
             /** Description */
             description?: string | null;
-            /** Protocol Count */
-            protocol_count?: number | null;
-            /** Slug Count */
-            slug_count?: number | null;
             /** Item Count */
             item_count?: number | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
             /** Is Inactive */
             is_inactive?: boolean | null;
             /** Can Edit */
@@ -21795,6 +22017,20 @@ export interface components {
             can_delete?: boolean | null;
         };
         /**
+         * ListAuthApiDepartment
+         * @description Department filter option for list endpoint.
+         */
+        ListAuthApiDepartment: {
+            /** Department Id */
+            department_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Count */
+            count?: number | null;
+        };
+        /**
          * ListAuthApiResponse
          * @description Response model for list auth endpoint with computed permissions.
          */
@@ -21803,6 +22039,8 @@ export interface components {
             actor_name?: string | null;
             /** Auths */
             auths?: components["schemas"]["ListAuthApiAuth"][] | null;
+            /** Departments */
+            departments?: components["schemas"]["ListAuthApiDepartment"][] | null;
             /** Total Count */
             total_count?: number | null;
         };
@@ -21896,17 +22134,6 @@ export interface components {
             /** Department Ids */
             department_ids?: string[] | null;
         };
-        /** ListDepartmentApiCohort */
-        ListDepartmentApiCohort: {
-            /** Cohort Id */
-            cohort_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Count */
-            count?: number | null;
-        };
         /** ListDepartmentApiDepartment */
         ListDepartmentApiDepartment: {
             /** Department Id */
@@ -21928,25 +22155,12 @@ export interface components {
             /** Updated At */
             updated_at?: string | null;
         };
-        /** ListDepartmentApiProfile */
-        ListDepartmentApiProfile: {
-            /** Profile Id */
-            profile_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Count */
-            count?: number | null;
-        };
         /** ListDepartmentApiResponse */
         ListDepartmentApiResponse: {
             /** Actor Name */
             actor_name?: string | null;
             /** Departments */
             departments?: components["schemas"]["ListDepartmentApiDepartment"][] | null;
-            /** Cohorts */
-            cohorts?: components["schemas"]["ListDepartmentApiCohort"][] | null;
-            /** Profiles */
-            profiles?: components["schemas"]["ListDepartmentApiProfile"][] | null;
             /** Total Count */
             total_count?: number | null;
         };
@@ -22079,8 +22293,6 @@ export interface components {
             description?: string | null;
             /** Department Ids */
             department_ids?: string[] | null;
-            /** Agent Ids */
-            agent_ids?: string[] | null;
             /** Is Inactive */
             is_inactive?: boolean | null;
             /** Is Dynamic */
@@ -22150,6 +22362,8 @@ export interface components {
             department_ids?: string[] | null;
             /** Conditional Parameter Ids */
             conditional_parameter_ids?: string[] | null;
+            /** Persona Ids */
+            persona_ids?: string[] | null;
             /** Is Inactive */
             is_inactive?: boolean | null;
             /** Can Edit */
@@ -22161,6 +22375,17 @@ export interface components {
             /** Updated At */
             updated_at?: string | null;
         };
+        /** ListFieldApiPersona */
+        ListFieldApiPersona: {
+            /** Persona Id */
+            persona_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Count */
+            count?: number | null;
+        };
         /** ListFieldApiResponse */
         ListFieldApiResponse: {
             /** Actor Name */
@@ -22169,23 +22394,111 @@ export interface components {
             fields?: components["schemas"]["ListFieldApiField"][] | null;
             /** Conditional Parameters */
             conditional_parameters?: components["schemas"]["ListFieldApiConditionalParameter"][] | null;
+            /** Personas */
+            personas?: components["schemas"]["ListFieldApiPersona"][] | null;
             /** Departments */
             departments?: components["schemas"]["ListFieldApiDepartment"][] | null;
             /** Total Count */
             total_count?: number | null;
         };
-        /** ListModelsApiRequest */
-        ListModelsApiRequest: Record<string, never>;
-        /** ListModelsApiResponse */
-        ListModelsApiResponse: {
+        /**
+         * ListModelApiDepartment
+         * @description Department filter option for list endpoint.
+         */
+        ListModelApiDepartment: {
+            /** Department Id */
+            department_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Count */
+            count?: number | null;
+        };
+        /**
+         * ListModelApiModel
+         * @description Model type for list endpoint with computed permissions.
+         */
+        ListModelApiModel: {
+            /** Model Id */
+            model_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Provider Id */
+            provider_id?: string | null;
+            /** Provider Name */
+            provider_name?: string | null;
+            /** Base Url */
+            base_url?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Is Inactive */
+            is_inactive?: boolean | null;
+            /** Active */
+            active?: boolean | null;
+            /** Image Model */
+            image_model?: boolean | null;
+            /** Can Edit */
+            can_edit?: boolean | null;
+            /** Can Duplicate */
+            can_duplicate?: boolean | null;
+            /** Can Delete */
+            can_delete?: boolean | null;
+            /** Updated At */
+            updated_at?: string | null;
+        };
+        /**
+         * ListModelApiProvider
+         * @description Provider filter option for list endpoint.
+         */
+        ListModelApiProvider: {
+            /** Provider Id */
+            provider_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Count */
+            count?: number | null;
+        };
+        /**
+         * ListModelApiResponse
+         * @description Response model for list model endpoint with computed permissions.
+         */
+        ListModelApiResponse: {
             /** Actor Name */
             actor_name?: string | null;
             /** Models */
-            models?: components["schemas"]["QListModelsV4Model"][] | null;
-            /** Provider Options */
-            provider_options?: components["schemas"]["QListModelsV4ProviderOption"][] | null;
-            /** Status Options */
-            status_options?: components["schemas"]["QListModelsV4StatusOption"][] | null;
+            models?: components["schemas"]["ListModelApiModel"][] | null;
+            /** Providers */
+            providers?: components["schemas"]["ListModelApiProvider"][] | null;
+            /** Departments */
+            departments?: components["schemas"]["ListModelApiDepartment"][] | null;
+            /** Total Count */
+            total_count?: number | null;
+        };
+        /** ListModelsApiRequest */
+        ListModelsApiRequest: {
+            /** Search */
+            search?: string | null;
+            /** Filter Provider Ids */
+            filter_provider_ids?: string[] | null;
+            /** Filter Department Ids */
+            filter_department_ids?: string[] | null;
+            /** Provider Search */
+            provider_search?: string | null;
+            /** Department Search */
+            department_search?: string | null;
+            /**
+             * Page Size
+             * @default 1000
+             */
+            page_size: number | null;
+            /**
+             * Page Offset
+             * @default 0
+             */
+            page_offset: number | null;
         };
         /** ListParameterApiDepartment */
         ListParameterApiDepartment: {
@@ -22237,14 +22550,6 @@ export interface components {
             scenarios?: components["schemas"]["ListParameterApiScenario"][] | null;
             /** Departments */
             departments?: components["schemas"]["ListParameterApiDepartment"][] | null;
-            /** Scenario Options */
-            scenario_options?: {
-                [key: string]: string;
-            }[] | null;
-            /** Document Options */
-            document_options?: {
-                [key: string]: string;
-            }[] | null;
             /** Total Count */
             total_count?: number | null;
         };
@@ -22256,10 +22561,6 @@ export interface components {
             name?: string | null;
             /** Description */
             description?: string | null;
-            /** Active */
-            active?: boolean | null;
-            /** Parameter Item Ids */
-            parameter_item_ids?: string[] | null;
             /** Count */
             count?: number | null;
         };
@@ -22357,6 +22658,28 @@ export interface components {
             /** Count */
             count?: number | null;
         };
+        /** ListProviderApiDepartment */
+        ListProviderApiDepartment: {
+            /** Department Id */
+            department_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Count */
+            count?: number | null;
+        };
+        /** ListProviderApiModel */
+        ListProviderApiModel: {
+            /** Model Id */
+            model_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Count */
+            count?: number | null;
+        };
         /**
          * ListProviderApiProvider
          * @description Provider type for list endpoint with computed permissions.
@@ -22374,8 +22697,12 @@ export interface components {
             active?: boolean | null;
             /** Updated At */
             updated_at?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
             /** Model Usage Count */
             model_usage_count?: number | null;
+            /** Model Ids */
+            model_ids?: string[] | null;
             /** Can Edit */
             can_edit?: boolean | null;
             /** Can Delete */
@@ -22385,10 +22712,14 @@ export interface components {
         };
         /** ListProviderApiProviderOption */
         ListProviderApiProviderOption: {
-            /** Value */
-            value?: string | null;
-            /** Label */
-            label?: string | null;
+            /** Provider Id */
+            provider_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Count */
+            count?: number | null;
         };
         /** ListProviderApiResponse */
         ListProviderApiResponse: {
@@ -22398,6 +22729,10 @@ export interface components {
             providers?: components["schemas"]["ListProviderApiProvider"][] | null;
             /** Provider Options */
             provider_options?: components["schemas"]["ListProviderApiProviderOption"][] | null;
+            /** Departments */
+            departments?: components["schemas"]["ListProviderApiDepartment"][] | null;
+            /** Models */
+            models?: components["schemas"]["ListProviderApiModel"][] | null;
             /** Status Options */
             status_options?: components["schemas"]["ListProviderApiStatusOption"][] | null;
             /** Total Count */
@@ -22409,6 +22744,104 @@ export interface components {
             value?: string | null;
             /** Label */
             label?: string | null;
+        };
+        /** ListRubricApiDepartment */
+        ListRubricApiDepartment: {
+            /** Department Id */
+            department_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Count */
+            count?: number | null;
+        };
+        /** ListRubricApiResponse */
+        ListRubricApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Rubrics */
+            rubrics?: components["schemas"]["ListRubricApiRubric"][] | null;
+            /** Standard Groups */
+            standard_groups?: components["schemas"]["ListRubricApiStandardGroup"][] | null;
+            /** Standards */
+            standards?: components["schemas"]["ListRubricApiStandard"][] | null;
+            /** Departments */
+            departments?: components["schemas"]["ListRubricApiDepartment"][] | null;
+            /** Simulation Options */
+            simulation_options?: components["schemas"]["ListRubricApiSimulationOption"][] | null;
+            /** Total Count */
+            total_count?: number | null;
+        };
+        /** ListRubricApiRubric */
+        ListRubricApiRubric: {
+            /** Rubric Id */
+            rubric_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Points */
+            points?: number | null;
+            /** Pass Points */
+            pass_points?: number | null;
+            /** Pass Percentage */
+            pass_percentage?: number | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Simulation Ids */
+            simulation_ids?: string[] | null;
+            /** Active Simulation Count */
+            active_simulation_count?: number | null;
+            /** Total Simulation Links */
+            total_simulation_links?: number | null;
+            /** Can Edit */
+            can_edit?: boolean | null;
+            /** Can Delete */
+            can_delete?: boolean | null;
+            /** Can Duplicate */
+            can_duplicate?: boolean | null;
+            /** Standard Group Ids */
+            standard_group_ids?: string[] | null;
+        };
+        /** ListRubricApiSimulationOption */
+        ListRubricApiSimulationOption: {
+            /** Simulation Id */
+            simulation_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Count */
+            count?: number | null;
+        };
+        /** ListRubricApiStandard */
+        ListRubricApiStandard: {
+            /** Standard Id */
+            standard_id?: string | null;
+            /** Standard Group Id */
+            standard_group_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Points */
+            points?: number | null;
+        };
+        /** ListRubricApiStandardGroup */
+        ListRubricApiStandardGroup: {
+            /** Standard Group Id */
+            standard_group_id?: string | null;
+            /** Rubric Id */
+            rubric_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Points */
+            points?: number | null;
+            /** Pass Points */
+            pass_points?: number | null;
         };
         /**
          * ListScenarioApiCohort
@@ -22570,6 +23003,53 @@ export interface components {
             /** Department Ids */
             department_ids?: string[] | null;
         };
+        /** ListSettingApiKey */
+        ListSettingApiKey: {
+            /** Key Id */
+            key_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Key Masked */
+            key_masked?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Active */
+            active?: boolean | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+        };
+        /** ListSettingApiResponse */
+        ListSettingApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** User Role */
+            user_role?: string | null;
+            /** Settings */
+            settings?: components["schemas"]["ListSettingApiSetting"][] | null;
+            /** Keys */
+            keys?: components["schemas"]["ListSettingApiKey"][] | null;
+        };
+        /** ListSettingApiSetting */
+        ListSettingApiSetting: {
+            /** Settings Id */
+            settings_id?: string | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Active */
+            active?: boolean | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Can Edit */
+            can_edit?: boolean | null;
+            /** Can Delete */
+            can_delete?: boolean | null;
+            /** Can Duplicate */
+            can_duplicate?: boolean | null;
+        };
         /**
          * ListSimulationApiOption
          * @description Option for facet filtering.
@@ -22657,6 +23137,116 @@ export interface components {
             cohort_ids?: string[] | null;
             /** Updated At */
             updated_at?: string | null;
+        };
+        /**
+         * ListStaffApiCohort
+         * @description Cohort type for list endpoint filter options.
+         */
+        ListStaffApiCohort: {
+            /** Cohort Id */
+            cohort_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Count */
+            count?: number | null;
+        };
+        /**
+         * ListStaffApiDepartment
+         * @description Department type for list endpoint filter options.
+         */
+        ListStaffApiDepartment: {
+            /** Department Id */
+            department_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Count */
+            count?: number | null;
+        };
+        /**
+         * ListStaffApiResponse
+         * @description Response model for staff list endpoint with computed permissions.
+         */
+        ListStaffApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Staff */
+            staff?: components["schemas"]["ListStaffApiStaff"][] | null;
+            /** Cohorts */
+            cohorts?: components["schemas"]["ListStaffApiCohort"][] | null;
+            /** Departments */
+            departments?: components["schemas"]["ListStaffApiDepartment"][] | null;
+            /** Trend Data Active */
+            trend_data_active?: components["schemas"]["ListStaffApiTrendData"][] | null;
+            /** Trend Data Admin */
+            trend_data_admin?: components["schemas"]["ListStaffApiTrendData"][] | null;
+            /** Trend Data Instructional */
+            trend_data_instructional?: components["schemas"]["ListStaffApiTrendData"][] | null;
+            /** Trend Data Member */
+            trend_data_member?: components["schemas"]["ListStaffApiTrendData"][] | null;
+            /** Trend Data Total Requests */
+            trend_data_total_requests?: components["schemas"]["ListStaffApiTrendData"][] | null;
+            /** Role Options */
+            role_options?: string[] | null;
+            /** Last Active Options */
+            last_active_options?: string[] | null;
+            /** Total Count */
+            total_count?: number | null;
+        };
+        /**
+         * ListStaffApiStaff
+         * @description Staff member type for list endpoint with computed permissions.
+         */
+        ListStaffApiStaff: {
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Emails */
+            emails?: string[] | null;
+            /** Primary Email */
+            primary_email?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Role */
+            role?: string | null;
+            /** Initials */
+            initials?: string | null;
+            /** Active */
+            active?: boolean | null;
+            /** Last Active */
+            last_active?: string | null;
+            /** Cohort Ids */
+            cohort_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Primary Department Id */
+            primary_department_id?: string | null;
+            /** Requests Per Day */
+            requests_per_day?: number | null;
+            /** Total Requests */
+            total_requests?: number | null;
+            /** Requests In Last Day */
+            requests_in_last_day?: number | null;
+            /** Can Edit */
+            can_edit?: boolean | null;
+            /** Can Duplicate */
+            can_duplicate?: boolean | null;
+            /** Can Delete */
+            can_delete?: boolean | null;
+        };
+        /**
+         * ListStaffApiTrendData
+         * @description Trend data point for staff analytics charts.
+         */
+        ListStaffApiTrendData: {
+            /** Date */
+            date?: string | null;
+            /** Value */
+            value?: number | null;
+            /** Count */
+            count?: number | null;
         };
         /** ListToolApiResponse */
         ListToolApiResponse: {
@@ -24209,6 +24799,7 @@ export interface components {
             descriptions?: components["schemas"]["ToolResourceAction"] | null;
             flags?: components["schemas"]["ToolResourceAction"] | null;
             args?: components["schemas"]["ToolMultiResourceAction"] | null;
+            arg_positions?: components["schemas"]["ToolMultiResourceAction"] | null;
             args_outputs?: components["schemas"]["ToolMultiResourceAction"] | null;
         };
         /** PatchToolDraftApiResponse */
@@ -25434,8 +26025,6 @@ export interface components {
             headers?: string[] | null;
             /** Rows */
             rows?: components["schemas"]["QProcessCsvV4ProcessedRow"][] | null;
-            /** Actor Name */
-            actor_name?: string | null;
         };
         /** ProcessDocumentCsvApiRequest */
         ProcessDocumentCsvApiRequest: {
@@ -25452,8 +26041,6 @@ export interface components {
             headers?: string[] | null;
             /** Rows */
             rows?: components["schemas"]["QProcessDocumentCsvV4ProcessedRow"][] | null;
-            /** Actor Name */
-            actor_name?: string | null;
         };
         /** ProfileCohortSection */
         ProfileCohortSection: {
@@ -26208,6 +26795,17 @@ export interface components {
             /** Generated */
             generated: boolean | null;
         };
+        /** QGetArgPositionsV4Item */
+        QGetArgPositionsV4Item: {
+            /** Id */
+            id: string | null;
+            /** Args Id */
+            args_id: string | null;
+            /** Value */
+            value: number | null;
+            /** Generated */
+            generated: boolean | null;
+        };
         /** QGetArgsOutputsV4Item */
         QGetArgsOutputsV4Item: {
             /** Id */
@@ -26235,8 +26833,6 @@ export interface components {
             required: boolean | null;
             /** Default Value */
             default_value: string | null;
-            /** Position */
-            position: number | null;
             /** Generated */
             generated: boolean | null;
         };
@@ -26989,85 +27585,6 @@ export interface components {
             /** Pass Points */
             pass_points: number | null;
         };
-        /** QGetRubricsListV4Department */
-        QGetRubricsListV4Department: {
-            /** Department Id */
-            department_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-        };
-        /** QGetRubricsListV4Rubric */
-        QGetRubricsListV4Rubric: {
-            /** Rubric Id */
-            rubric_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Points */
-            points: number | null;
-            /** Pass Points */
-            pass_points: number | null;
-            /** Pass Percentage */
-            pass_percentage: number | null;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Simulation Ids */
-            simulation_ids: string[] | null;
-            /** Active Simulation Count */
-            active_simulation_count: number | null;
-            /** Total Simulation Links */
-            total_simulation_links: number | null;
-            /** Can Edit */
-            can_edit: boolean | null;
-            /** Can Delete */
-            can_delete: boolean | null;
-            /** Can Duplicate */
-            can_duplicate: boolean | null;
-            /** Standard Group Ids */
-            standard_group_ids: string[] | null;
-        };
-        /** QGetRubricsListV4Simulation */
-        QGetRubricsListV4Simulation: {
-            /** Simulation Id */
-            simulation_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Time Limit */
-            time_limit: number | null;
-        };
-        /** QGetRubricsListV4Standard */
-        QGetRubricsListV4Standard: {
-            /** Standard Id */
-            standard_id: string | null;
-            /** Standard Group Id */
-            standard_group_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Points */
-            points: number | null;
-        };
-        /** QGetRubricsListV4StandardGroup */
-        QGetRubricsListV4StandardGroup: {
-            /** Standard Group Id */
-            standard_group_id: string | null;
-            /** Rubric Id */
-            rubric_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Points */
-            points: number | null;
-            /** Pass Points */
-            pass_points: number | null;
-        };
         /** QGetRubricsV4Item */
         QGetRubricsV4Item: {
             /** Id */
@@ -27358,36 +27875,6 @@ export interface components {
             /** Generated */
             generated: boolean | null;
         };
-        /** QGetSettingsListV4Key */
-        QGetSettingsListV4Key: {
-            /** Key Id */
-            key_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Key Masked */
-            key_masked: string | null;
-            /** Description */
-            description: string | null;
-            /** Active */
-            active: boolean | null;
-            /** Department Ids */
-            department_ids: string[] | null;
-        };
-        /** QGetSettingsListV4Setting */
-        QGetSettingsListV4Setting: {
-            /** Settings Id */
-            settings_id: string | null;
-            /** Created At */
-            created_at: string | null;
-            /** Active */
-            active: boolean | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Department Ids */
-            department_ids: string[] | null;
-        };
         /**
          * QGetSettingsV4Provider
          * @description Provider item in settings.
@@ -27527,39 +28014,6 @@ export interface components {
             /** Generated */
             generated: boolean | null;
         };
-        /** QListAgentsV4Agent */
-        QListAgentsV4Agent: {
-            /** Agent Id */
-            agent_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Reasoning */
-            reasoning: string | null;
-            /** Temperature */
-            temperature: number | null;
-            /** Model Id */
-            model_id: string | null;
-            /** Role */
-            role: string | null;
-            /** Updated At */
-            updated_at: string | null;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Can Edit */
-            can_edit: boolean | null;
-            /** Can Duplicate */
-            can_duplicate: boolean | null;
-            /** Can Delete */
-            can_delete: boolean | null;
-            /** Model Name */
-            model_name: string | null;
-            /** Model Description */
-            model_description: string | null;
-            /** Actor Name */
-            actor_name: string | null;
-        };
         /** QListDocumentsV4Document */
         QListDocumentsV4Document: {
             /** Document Id */
@@ -27587,109 +28041,6 @@ export interface components {
         QListDocumentsV4OptionId: {
             /** Id */
             id: string | null;
-            /** Count */
-            count: number | null;
-        };
-        /** QListModelsV4Model */
-        QListModelsV4Model: {
-            /** Model Id */
-            model_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Active */
-            active: boolean | null;
-            /** Image Model */
-            image_model: boolean | null;
-            /** Updated At */
-            updated_at: string | null;
-            /** Provider */
-            provider: string | null;
-            /** Provider Id */
-            provider_id: string | null;
-            /** Provider Name */
-            provider_name: string | null;
-            /** Base Url */
-            base_url: string | null;
-            /** Can Edit */
-            can_edit: boolean | null;
-            /** Can Delete */
-            can_delete: boolean | null;
-        };
-        /** QListModelsV4ProviderOption */
-        QListModelsV4ProviderOption: {
-            /** Value */
-            value: string | null;
-            /** Label */
-            label: string | null;
-        };
-        /** QListModelsV4StatusOption */
-        QListModelsV4StatusOption: {
-            /** Value */
-            value: string | null;
-            /** Label */
-            label: string | null;
-        };
-        /** QListStaffV4Cohort */
-        QListStaffV4Cohort: {
-            /** Cohort Id */
-            cohort_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-        };
-        /** QListStaffV4Department */
-        QListStaffV4Department: {
-            /** Department Id */
-            department_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-        };
-        /** QListStaffV4Staff */
-        QListStaffV4Staff: {
-            /** Profile Id */
-            profile_id: string | null;
-            /** Emails */
-            emails: string[] | null;
-            /** Primary Email */
-            primary_email: string | null;
-            /** Name */
-            name: string | null;
-            /** Role */
-            role: string | null;
-            /** Initials */
-            initials: string | null;
-            /** Active */
-            active: boolean | null;
-            /** Last Active */
-            last_active: string | null;
-            /** Cohort Ids */
-            cohort_ids: string[] | null;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Primary Department Id */
-            primary_department_id: string | null;
-            /** Requests Per Day */
-            requests_per_day: number | null;
-            /** Total Requests */
-            total_requests: number | null;
-            /** Requests In Last Day */
-            requests_in_last_day: number | null;
-            /** Can Edit */
-            can_edit: boolean | null;
-            /** Can Delete */
-            can_delete: boolean | null;
-        };
-        /** QListStaffV4TrendData */
-        QListStaffV4TrendData: {
-            /** Date */
-            date: string | null;
-            /** Value */
-            value: number | null;
             /** Count */
             count: number | null;
         };
@@ -29596,8 +29947,6 @@ export interface components {
         SaveSettingApiResponse: {
             /** Setting Id */
             setting_id?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
         };
         /**
          * SaveSimulationApiRequest
@@ -29645,6 +29994,7 @@ export interface components {
             descriptions: components["schemas"]["ToolResourceAction"];
             flags: components["schemas"]["ToolResourceAction"];
             args: components["schemas"]["ToolMultiResourceAction"];
+            arg_positions: components["schemas"]["ToolMultiResourceAction"];
             args_outputs: components["schemas"]["ToolMultiResourceAction"];
         };
         /** SaveToolApiResponse */
@@ -30534,6 +30884,30 @@ export interface components {
             current?: components["schemas"]["ScenarioVideo"][] | null;
             /** Resources */
             resources?: components["schemas"]["ScenarioVideo"][] | null;
+        };
+        /** SearchArgPositionsApiRequest */
+        SearchArgPositionsApiRequest: {
+            /** Tool Id */
+            tool_id?: string | null;
+            /** Args Ids */
+            args_ids?: string[] | null;
+            /**
+             * Limit Count
+             * @default 100
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchArgPositionsApiResponse */
+        SearchArgPositionsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetArgPositionsV4Item"][] | null;
         };
         /** SearchArgsApiRequest */
         SearchArgsApiRequest: {
@@ -32901,6 +33275,34 @@ export interface components {
             /** Resources */
             resources?: components["schemas"]["QGetArgsOutputsV4Item"][] | null;
         };
+        /** ToolArgPositionSection */
+        ToolArgPositionSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["QGetArgPositionsV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetArgPositionsV4Item"][] | null;
+        };
         /** ToolArgSection */
         ToolArgSection: {
             /**
@@ -33041,6 +33443,8 @@ export interface components {
             flag_resource?: components["schemas"]["QGetFlagsV4Item"] | null;
             /** Args Resources */
             args_resources?: components["schemas"]["QGetArgsV4Item"][] | null;
+            /** Arg Position Resources */
+            arg_position_resources?: components["schemas"]["QGetArgPositionsV4Item"][] | null;
             /** Args Outputs Resources */
             args_outputs_resources?: components["schemas"]["QGetArgsOutputsV4Item"][] | null;
         };
@@ -33861,8 +34265,6 @@ export interface components {
             created_count?: number | null;
             /** Updated Count */
             updated_count?: number | null;
-            /** Actor Name */
-            actor_name?: string | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -34473,8 +34875,6 @@ export interface components {
         app__sql__types__SaveDocumentApiResponse: {
             /** Document Id */
             document_id?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
         };
     };
     responses: never;
@@ -36492,7 +36892,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetRubricsListApiResponse"];
+                    "application/json": components["schemas"]["ListRubricApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -36712,7 +37112,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetSettingsListApiResponse"];
+                    "application/json": components["schemas"]["ListSettingApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -37006,7 +37406,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetAgentsListApiResponse"];
+                    "application/json": components["schemas"]["ListAgentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -37263,7 +37663,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ListModelsApiResponse"];
+                    "application/json": components["schemas"]["ListModelApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -38291,7 +38691,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetStaffListApiResponse"];
+                    "application/json": components["schemas"]["ListStaffApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -38904,7 +39304,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetToolsListApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -40959,6 +41363,117 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchArgsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_arg_positions_api_v4_resources_arg_positions_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ArgPositionsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArgPositionsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_arg_positions_api_v4_resources_arg_positions_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetArgPositionsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetArgPositionsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_arg_positions_api_v4_resources_arg_positions_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchArgPositionsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchArgPositionsApiResponse"];
                 };
             };
             /** @description Validation Error */

@@ -18,8 +18,6 @@ from app.api.v4.artifacts.simulation.types import (
     QGetScenariosV4Item,
 )
 from app.api.v4.auth.context import get_profile_context_internal
-from app.api.v4.resources.personas.get import get_personas_internal
-from app.api.v4.resources.scenarios.get import get_scenarios_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -130,6 +128,10 @@ async def get_simulation_list(
                     pass
 
         # 2. Fetch scenarios via cached resource function
+        # Deferred import to avoid circular import:
+        # resources/scenarios/get → artifacts/simulation/types → __init__ → list → resources/scenarios/get
+        from app.api.v4.resources.scenarios.get import get_scenarios_internal
+
         scenarios_data: list[QGetScenariosV4Item] = []
         if scenario_id_set:
             pool = get_pool()
@@ -146,6 +148,8 @@ async def get_simulation_list(
                 persona_id_set.add(pid)
 
         # 4. Fetch personas via cached resource function
+        from app.api.v4.resources.personas.get import get_personas_internal
+
         persona_map: dict[UUID, str] = {}
         if persona_id_set:
             pool = get_pool()
