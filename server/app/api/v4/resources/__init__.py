@@ -6,6 +6,10 @@ router = APIRouter(prefix="/resources", tags=["resources"])
 
 # Include all resource routers
 # NOTE: agents removed - non-creatable, sync via artifact save (migration 328)
+# GET endpoint available for agent two-pass architecture
+from app.api.v4.resources.agents.get import router as agents_get_router
+
+router.include_router(agents_get_router)
 # NOTE: analyses removed - converted to entry table (migration 305)
 from app.api.v4.resources.args.create import router as args_router
 from app.api.v4.resources.args.get import router as args_get_router
@@ -259,6 +263,10 @@ from app.api.v4.resources.problem_statements.get import (
 router.include_router(problem_statements_router)
 router.include_router(problem_statements_get_router)
 # NOTE: profiles removed - non-creatable, sync via artifact save (migration 328)
+# GET endpoint available for profile context two-pass architecture
+from app.api.v4.resources.profiles.get import router as profiles_get_router
+
+router.include_router(profiles_get_router)
 from app.api.v4.resources.prompts.create import router as prompts_router
 from app.api.v4.resources.prompts.get import router as prompts_get_router
 
@@ -275,6 +283,10 @@ router.include_router(protocols_router)
 router.include_router(protocols_get_router)
 router.include_router(protocols_search_router)
 # NOTE: providers removed - non-creatable, sync via artifact save (migration 328)
+# GET endpoint available for provider two-pass architecture
+from app.api.v4.resources.providers.get import router as providers_get_router
+
+router.include_router(providers_get_router)
 # NOTE: regenerates removed entirely (migration 442)
 # NOTE: qualities removed - non-creatable (migration 328)
 # GET/Search endpoints available for model two-pass architecture
@@ -343,11 +355,11 @@ from app.api.v4.resources.scenario_flags.search import (
 
 router.include_router(scenario_flags_get_router)
 router.include_router(scenario_flags_search_router)
-from app.api.v4.resources.setting_role_routes.create import (
-    router as setting_role_routes_router,
+from app.api.v4.resources.role_routes.create import (
+    router as role_routes_router,
 )
 
-router.include_router(setting_role_routes_router)
+router.include_router(role_routes_router)
 from app.api.v4.resources.scenario_personas.create import (
     router as scenario_personas_router,
 )
@@ -441,6 +453,10 @@ from app.api.v4.resources.standard_groups.create import router as standard_group
 
 router.include_router(standard_groups_router)
 # NOTE: standards removed - non-creatable (migration 328)
+# GET endpoint available for simulations two-pass architecture
+from app.api.v4.resources.standards.get import router as standards_get_router
+
+router.include_router(standards_get_router)
 # NOTE: strengths removed - converted to entry table (migration 305)
 # NOTE: temperature_levels removed - non-creatable (migration 328)
 # GET/Search endpoints available for agent two-pass architecture

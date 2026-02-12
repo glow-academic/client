@@ -1316,12 +1316,100 @@ async def export_setup_scenarios(conn: asyncpg.Connection) -> None:
         print(f"    {slug}.sql ({count} inserts)")
 
 
+async def export_setup_documents(conn: asyncpg.Connection) -> None:
+    """Export documents linked to Purdue CS or with no department."""
+    print("  Exporting 03-documents/ ...")
+    out_dir = MODULES_DIR / "10-setups" / "university" / "03-documents"
+    if out_dir.exists():
+        for old in out_dir.glob("*.sql"):
+            old.unlink()
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    rows = await conn.fetch("""
+        SELECT da.id, nr.name
+        FROM document_artifact da
+        JOIN document_names_junction dnj ON dnj.document_id = da.id
+        JOIN names_resource nr ON nr.id = dnj.name_id
+        WHERE NOT EXISTS (
+            SELECT 1 FROM document_departments_junction ddj WHERE ddj.document_id = da.id
+        )
+        OR EXISTS (
+            SELECT 1 FROM document_departments_junction ddj
+            JOIN department_departments_junction dddj ON dddj.departments_id = ddj.department_id
+            JOIN department_names_junction dnj2 ON dnj2.department_id = dddj.department_id
+            JOIN names_resource dnr ON dnr.id = dnj2.name_id
+            WHERE ddj.document_id = da.id AND dnr.name = 'Purdue CS'
+        )
+        ORDER BY nr.name
+    """)
+    artifacts = [(str(r["id"]), r["name"]) for r in rows]
+    junctions = await get_junction_tables(conn, "document")
+
+    for art_id, art_name in artifacts:
+        slug = to_slug(art_name).replace(",", "")
+        output_path = out_dir / f"{slug}.sql"
+        header = (
+            f"-- Module: {art_name}\n"
+            f"-- Category: document\n"
+            f"-- Description: {art_name} document\n"
+            f"-- ============================================================\n\n"
+        )
+        count = await write_artifact_module(
+            conn, "document", art_id, junctions, output_path, header
+        )
+        print(f"    {slug}.sql ({count} inserts)")
+
+
+async def export_setup_fields(conn: asyncpg.Connection) -> None:
+    """Export fields linked to Purdue CS or with no department."""
+    print("  Exporting 04-fields/ ...")
+    out_dir = MODULES_DIR / "10-setups" / "university" / "04-fields"
+    if out_dir.exists():
+        for old in out_dir.glob("*.sql"):
+            old.unlink()
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    rows = await conn.fetch("""
+        SELECT fa.id, nr.name
+        FROM field_artifact fa
+        JOIN field_names_junction fnj ON fnj.field_id = fa.id
+        JOIN names_resource nr ON nr.id = fnj.name_id
+        WHERE NOT EXISTS (
+            SELECT 1 FROM field_departments_junction fdj WHERE fdj.field_id = fa.id
+        )
+        OR EXISTS (
+            SELECT 1 FROM field_departments_junction fdj
+            JOIN department_departments_junction ddj ON ddj.departments_id = fdj.department_id
+            JOIN department_names_junction dnj ON dnj.department_id = ddj.department_id
+            JOIN names_resource dnr ON dnr.id = dnj.name_id
+            WHERE fdj.field_id = fa.id AND dnr.name = 'Purdue CS'
+        )
+        ORDER BY nr.name
+    """)
+    artifacts = [(str(r["id"]), r["name"]) for r in rows]
+    junctions = await get_junction_tables(conn, "field")
+
+    for art_id, art_name in artifacts:
+        slug = to_slug(art_name).replace(",", "")
+        output_path = out_dir / f"{slug}.sql"
+        header = (
+            f"-- Module: {art_name}\n"
+            f"-- Category: field\n"
+            f"-- Description: {art_name} field\n"
+            f"-- ============================================================\n\n"
+        )
+        count = await write_artifact_module(
+            conn, "field", art_id, junctions, output_path, header
+        )
+        print(f"    {slug}.sql ({count} inserts)")
+
+
 async def export_setup(conn: asyncpg.Connection) -> None:
     print("Exporting 10-setups/university/ ...")
     await export_setup_departments(conn)
     await export_setup_per_artifact(conn, "persona", "02-personas", "persona")
-    await export_setup_all_in_one(conn, "document", "03-documents")
-    await export_setup_per_artifact(conn, "field", "04-fields", "field")
+    await export_setup_documents(conn)
+    await export_setup_fields(conn)
     await export_setup_per_artifact(conn, "parameter", "05-parameters", "parameter")
     await export_rubrics(conn)
     await export_setup_simulations(conn)

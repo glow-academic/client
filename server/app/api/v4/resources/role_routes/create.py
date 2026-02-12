@@ -1,4 +1,4 @@
-"""setting_role_routes endpoint - v4 API following DHH principles."""
+"""role_routes endpoint - v4 API following DHH principles."""
 
 from typing import Annotated, Any, cast
 
@@ -26,7 +26,7 @@ router = APIRouter()
 
 
 @router.post(
-    "/setting_role_routes",
+    "/role_routes",
     response_model=RoleRoutesApiResponse,
     dependencies=[
         audit_activity(
@@ -35,7 +35,7 @@ router = APIRouter()
         )
     ],
 )
-async def create_setting_role_routes(
+async def create_role_routes(
     request: RoleRoutesApiRequest,
     http_request: Request,
     response: Response,
@@ -102,7 +102,7 @@ async def create_setting_role_routes(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="create_setting_role_routes",
+            operation="create_role_routes",
             sql_query=sql_query,
             sql_params=sql_params,
             request=http_request,

@@ -516,8 +516,8 @@ Resources with docs.py:   {N}/78
 3. **The `resource_outputs_relation` table with `creatable = true`** is the source of truth for which resources are creatable.
 4. **Known exceptions**:
    - `FlagsLegacy.tsx` — Legacy component, acceptable alongside `Flags.tsx`
-   - `setting_role_routes` folder — Naming mismatch with `role_routes` enum value (error to report)
-   - `Audios.tsx` — No corresponding `audios_resource` table (orphan, error to report)
+   - `document_uploads` — Not a standalone resource (junction-like, no `id` column). Skip API folder and UI component.
+   - `regenerates` — Not a standalone resource (internal tracking). Skip UI component.
 5. **`link_tool_id` is a top-level concern**. It belongs on the artifact layer (e.g., `Persona.tsx` orchestrates which tool links which resource), not on individual resource components.
 6. **`create_tool_id` is a resource-level concern**. It belongs on the resource component, enabling AI-assisted creation of that specific resource.
 7. **Run this after adding any new resource** to ensure all three layers (DB, API, UI) are in sync.
