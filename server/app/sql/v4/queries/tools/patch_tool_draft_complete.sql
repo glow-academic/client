@@ -44,6 +44,7 @@ CREATE OR REPLACE FUNCTION api_patch_tool_draft_v4(
     descriptions types.tool_resource_action DEFAULT NULL,
     flags types.tool_resource_action DEFAULT NULL,
     args types.tool_multi_resource_action DEFAULT NULL,
+    arg_positions types.tool_multi_resource_action DEFAULT NULL,
     args_outputs types.tool_multi_resource_action DEFAULT NULL,
     expected_version int DEFAULT 0
 )
@@ -65,6 +66,7 @@ DECLARE
     v_description_id uuid;
     v_active_flag_id uuid;
     v_args_ids uuid[];
+    v_arg_position_ids uuid[];
     v_args_outputs_ids uuid[];
     v_run_id uuid;
     v_call_id uuid;
@@ -73,6 +75,7 @@ BEGIN
     v_description_id := (descriptions).resource_id;
     v_active_flag_id := (flags).resource_id;
     v_args_ids := COALESCE((args).resource_ids, ARRAY[]::uuid[]);
+    v_arg_position_ids := COALESCE((arg_positions).resource_ids, ARRAY[]::uuid[]);
     v_args_outputs_ids := COALESCE((args_outputs).resource_ids, ARRAY[]::uuid[]);
 
     SELECT ppj.profiles_id INTO v_profiles_resource_id
@@ -109,6 +112,15 @@ BEGIN
             WHERE NOT EXISTS (SELECT 1 FROM args_outputs_resource WHERE id = args_outputs_id)
         ) THEN
             RAISE EXCEPTION 'One or more args_outputs resources not found';
+        END IF;
+    END IF;
+
+    IF COALESCE(array_length(v_arg_position_ids, 1), 0) > 0 THEN
+        IF EXISTS (
+            SELECT 1 FROM UNNEST(v_arg_position_ids) AS arg_positions_id
+            WHERE NOT EXISTS (SELECT 1 FROM arg_positions_resource WHERE id = arg_positions_id)
+        ) THEN
+            RAISE EXCEPTION 'One or more arg_positions resources not found';
         END IF;
     END IF;
 
@@ -188,6 +200,7 @@ BEGIN
     DELETE FROM descriptions_drafts_connection WHERE descriptions_drafts_connection.draft_id = v_draft_id;
     DELETE FROM flags_drafts_connection WHERE flags_drafts_connection.draft_id = v_draft_id;
     DELETE FROM args_drafts_connection WHERE args_drafts_connection.draft_id = v_draft_id;
+    DELETE FROM arg_positions_drafts_connection WHERE arg_positions_drafts_connection.draft_id = v_draft_id;
     DELETE FROM args_outputs_drafts_connection WHERE args_outputs_drafts_connection.draft_id = v_draft_id;
 
     IF v_name_id IS NOT NULL THEN
@@ -213,6 +226,17 @@ BEGIN
         SELECT v_draft_id, args_id, v_new_version, false, false
         FROM UNNEST(v_args_ids) AS args_id
         ON CONFLICT ON CONSTRAINT args_draft_pkey DO UPDATE SET version = v_new_version;
+    END IF;
+
+    IF COALESCE(array_length(v_arg_position_ids, 1), 0) > 0 THEN
+        INSERT INTO arg_positions_drafts_connection (
+            draft_id, arg_positions_id, version, generated, mcp, active
+        )
+        SELECT v_draft_id, arg_positions_id, v_new_version, false, false, true
+        FROM UNNEST(v_arg_position_ids) AS arg_positions_id
+        ON CONFLICT ON CONSTRAINT arg_positions_draft_pkey DO UPDATE
+        SET version = v_new_version,
+            active = true;
     END IF;
 
     IF COALESCE(array_length(v_args_outputs_ids, 1), 0) > 0 THEN
@@ -295,6 +319,25 @@ BEGIN
                 INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((args).link_tool_id, v_call_id);
                 INSERT INTO args_calls_connection (args_id, call_id)
                 SELECT args_id, v_call_id FROM UNNEST(v_args_ids) AS args_id;
+            END IF;
+        END IF;
+
+        IF COALESCE(array_length(v_arg_position_ids, 1), 0) > 0 THEN
+            IF (arg_positions).create_tool_id IS NOT NULL THEN
+                v_call_id := uuidv7();
+                INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+                VALUES (v_call_id, 'tool_draft_create_arg_positions_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+                INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((arg_positions).create_tool_id, v_call_id);
+                INSERT INTO arg_positions_calls_connection (arg_positions_id, call_id)
+                SELECT arg_positions_id, v_call_id FROM UNNEST(v_arg_position_ids) AS arg_positions_id;
+            END IF;
+            IF (arg_positions).link_tool_id IS NOT NULL THEN
+                v_call_id := uuidv7();
+                INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+                VALUES (v_call_id, 'tool_draft_link_arg_positions_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+                INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((arg_positions).link_tool_id, v_call_id);
+                INSERT INTO arg_positions_calls_connection (arg_positions_id, call_id)
+                SELECT arg_positions_id, v_call_id FROM UNNEST(v_arg_position_ids) AS arg_positions_id;
             END IF;
         END IF;
 
