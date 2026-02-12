@@ -5,10 +5,8 @@
 -- Drop and recreate composite type for candidate agents
 DO $$
 BEGIN
-    -- Drop the type if it exists (CASCADE will drop dependent functions)
     DROP TYPE IF EXISTS tool_candidate_agent CASCADE;
 
-    -- Recreate with fields for create/link tool IDs
     CREATE TYPE tool_candidate_agent AS (
         agent_id uuid,
         agent_name text,
@@ -21,7 +19,6 @@ BEGIN
     );
 END $$;
 
--- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
     r RECORD;
@@ -36,7 +33,6 @@ BEGIN
     END LOOP;
 END $$;
 
--- Create function
 CREATE OR REPLACE FUNCTION api_get_tool_ids_v4(
     profile_id uuid,
     tool_id uuid DEFAULT NULL,
@@ -45,29 +41,27 @@ CREATE OR REPLACE FUNCTION api_get_tool_ids_v4(
     user_department_ids uuid[] DEFAULT ARRAY[]::uuid[]
 )
 RETURNS TABLE (
-    -- Single-select resource IDs (from draft or tool junction)
     name_id uuid,
     description_id uuid,
     active_flag_id uuid,
 
-    -- Multi-select resource IDs
     args_ids uuid[],
+    arg_position_ids uuid[],
     args_outputs_ids uuid[],
 
-    -- Candidate agents (for Python-side agent scoring)
     candidate_agents tool_candidate_agent[],
 
-    -- Tools existence (for Python to compute show_* flags)
     names_has_tools boolean,
     descriptions_has_tools boolean,
     args_has_tools boolean,
+    arg_positions_has_tools boolean,
     args_outputs_has_tools boolean,
 
-    -- Domain IDs (for domain-based generation)
     name_domain_id uuid,
     description_domain_id uuid,
     flag_domain_id uuid,
     args_domain_id uuid,
+    arg_positions_domain_id uuid,
     args_outputs_domain_id uuid
 )
 LANGUAGE sql
@@ -77,36 +71,51 @@ WITH params AS (
     SELECT
         tool_id AS tool_id,
         profile_id AS profile_id,
+        draft_id AS draft_id,
         group_id AS group_id,
         user_department_ids AS user_department_ids
 ),
--- Single-select resource IDs (canonical only)
 name_resource_data AS (
     SELECT
-        (SELECT tn.name_id FROM tool_names_junction tn WHERE tn.tool_id = (SELECT tool_id FROM params) AND tn.active = true LIMIT 1) as name_id
+        COALESCE(
+            (SELECT nd.names_id FROM names_drafts_connection nd WHERE nd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT tn.name_id FROM tool_names_junction tn WHERE tn.tool_id = (SELECT tool_id FROM params) AND tn.active = true LIMIT 1)
+        ) as name_id
     FROM params
 ),
 description_resource_data AS (
     SELECT
-        (SELECT td.description_id FROM tool_descriptions_junction td WHERE td.tool_id = (SELECT tool_id FROM params) AND td.active = true LIMIT 1) as description_id
+        COALESCE(
+            (SELECT dd.descriptions_id FROM descriptions_drafts_connection dd WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT td.description_id FROM tool_descriptions_junction td WHERE td.tool_id = (SELECT tool_id FROM params) AND td.active = true LIMIT 1)
+        ) as description_id
     FROM params
 ),
 flag_resource_data AS (
     SELECT
-        (SELECT tf.flag_id
-         FROM tool_flags_junction tf
-         JOIN flags_resource f ON tf.flag_id = f.id
-         WHERE tf.tool_id = (SELECT tool_id FROM params)
-           AND tf.active = true
-           AND f.name = 'tool_active'
-           AND tf.value = TRUE
-         LIMIT 1) as active_flag_id
+        COALESCE(
+            (SELECT fd.flags_id FROM flags_drafts_connection fd WHERE fd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT tf.flag_id
+             FROM tool_flags_junction tf
+             JOIN flags_resource f ON tf.flag_id = f.id
+             WHERE tf.tool_id = (SELECT tool_id FROM params)
+               AND tf.active = true
+               AND f.name = 'tool_active'
+               AND tf.value = TRUE
+             LIMIT 1)
+        ) as active_flag_id
     FROM params
 ),
--- Multi-select resource IDs
 args_ids_data AS (
     SELECT
         CASE
+            WHEN (SELECT draft_id FROM params) IS NOT NULL THEN COALESCE(
+                (SELECT ARRAY_AGG(ad.args_id ORDER BY ad.created_at)
+                 FROM args_drafts_connection ad
+                 WHERE ad.draft_id = (SELECT draft_id FROM params)
+                   AND ad.active = true),
+                ARRAY[]::uuid[]
+            )
             WHEN (SELECT tool_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
                 (SELECT ARRAY_AGG(ta.args_id ORDER BY ta.created_at)
@@ -118,9 +127,38 @@ args_ids_data AS (
     FROM params
     LIMIT 1
 ),
+arg_position_ids_data AS (
+    SELECT
+        CASE
+            WHEN (SELECT draft_id FROM params) IS NOT NULL THEN COALESCE(
+                (SELECT ARRAY_AGG(apd.arg_positions_id ORDER BY apd.created_at)
+                 FROM arg_positions_drafts_connection apd
+                 WHERE apd.draft_id = (SELECT draft_id FROM params)
+                   AND apd.active = true),
+                ARRAY[]::uuid[]
+            )
+            WHEN (SELECT tool_id FROM params) IS NULL THEN ARRAY[]::uuid[]
+            ELSE COALESCE(
+                (SELECT ARRAY_AGG(tap.arg_positions_id ORDER BY tap.created_at)
+                 FROM tool_arg_positions_junction tap
+                 WHERE tap.tool_id = (SELECT tool_id FROM params)
+                   AND tap.active = true),
+                ARRAY[]::uuid[]
+            )
+        END as arg_position_ids
+    FROM params
+    LIMIT 1
+),
 args_outputs_ids_data AS (
     SELECT
         CASE
+            WHEN (SELECT draft_id FROM params) IS NOT NULL THEN COALESCE(
+                (SELECT ARRAY_AGG(dao.args_outputs_id ORDER BY dao.created_at)
+                 FROM args_outputs_drafts_connection dao
+                 WHERE dao.draft_id = (SELECT draft_id FROM params)
+                   AND dao.active = true),
+                ARRAY[]::uuid[]
+            )
             WHEN (SELECT tool_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
                 (SELECT ARRAY_AGG(tao.args_outputs_id ORDER BY tao.created_at)
@@ -132,7 +170,6 @@ args_outputs_ids_data AS (
     FROM params
     LIMIT 1
 ),
--- Candidate agents data (for Python-side agent scoring)
 agent_resource_tools AS (
     SELECT
         a.id as agent_id,
@@ -198,51 +235,49 @@ candidate_agents_data AS (
       )
     GROUP BY a.id, n.name, a.updated_at, af_mcp.value, ata.tool_resources, ata.create_tool_ids, ata.link_tool_ids
 ),
--- Tools existence check
 tools_existence_check AS (
     SELECT
-        EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'names'::resource_type AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as names_has_tools,
-        EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'descriptions'::resource_type AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as descriptions_has_tools,
-        EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'args'::resource_type AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as args_has_tools,
-        EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'args_outputs'::resource_type AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as args_outputs_has_tools
+        EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'names'::resource_type AND rt.active = true AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as names_has_tools,
+        EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'descriptions'::resource_type AND rt.active = true AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as descriptions_has_tools,
+        EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'args'::resource_type AND rt.active = true AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as args_has_tools,
+        EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'arg_positions'::resource_type AND rt.active = true AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as arg_positions_has_tools,
+        EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'args_outputs'::resource_type AND rt.active = true AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as args_outputs_has_tools
     FROM params x
 ),
--- Domain IDs from domains_resource table
 domain_ids_data AS (
     SELECT
         (SELECT id FROM domains_resource WHERE resource = 'names'::resource_type AND active = true LIMIT 1) as name_domain_id,
         (SELECT id FROM domains_resource WHERE resource = 'descriptions'::resource_type AND active = true LIMIT 1) as description_domain_id,
         (SELECT id FROM domains_resource WHERE resource = 'flags'::resource_type AND active = true LIMIT 1) as flag_domain_id,
         (SELECT id FROM domains_resource WHERE resource = 'args'::resource_type AND active = true LIMIT 1) as args_domain_id,
+        (SELECT id FROM domains_resource WHERE resource = 'arg_positions'::resource_type AND active = true LIMIT 1) as arg_positions_domain_id,
         (SELECT id FROM domains_resource WHERE resource = 'args_outputs'::resource_type AND active = true LIMIT 1) as args_outputs_domain_id
 )
 SELECT
-    -- Single-select resource IDs
     (SELECT name_id FROM name_resource_data) as name_id,
     (SELECT description_id FROM description_resource_data) as description_id,
     (SELECT active_flag_id FROM flag_resource_data) as active_flag_id,
 
-    -- Multi-select resource IDs
     (SELECT args_ids FROM args_ids_data) as args_ids,
+    (SELECT arg_position_ids FROM arg_position_ids_data) as arg_position_ids,
     (SELECT args_outputs_ids FROM args_outputs_ids_data) as args_outputs_ids,
 
-    -- Candidate agents (for Python-side agent scoring)
     (SELECT COALESCE(
         ARRAY_AGG(ROW(ca.agent_id, ca.agent_name, ca.tool_resources, ca.create_tool_ids, ca.link_tool_ids, ca.department_ids, ca.updated_at, ca.is_mcp)::tool_candidate_agent),
         ARRAY[]::tool_candidate_agent[]
     ) FROM candidate_agents_data ca) as candidate_agents,
 
-    -- Tools existence
     tec.names_has_tools,
     tec.descriptions_has_tools,
     tec.args_has_tools,
+    tec.arg_positions_has_tools,
     tec.args_outputs_has_tools,
 
-    -- Domain IDs
     did.name_domain_id,
     did.description_domain_id,
     did.flag_domain_id,
     did.args_domain_id,
+    did.arg_positions_domain_id,
     did.args_outputs_domain_id
 FROM params x
 CROSS JOIN tools_existence_check tec
