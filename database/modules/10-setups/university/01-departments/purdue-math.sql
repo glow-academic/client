@@ -5,9 +5,10 @@
 
 
 -- Resource rows
-INSERT INTO public.departments_resource (created_at, active, generated, mcp, id, name, description, department_ids, setting_ids) VALUES ('2025-10-31T16:50:58.307484+00:00', true, false, false, '019bb25e-e624-744f-a6b0-21686815b719', 'Purdue Math', 'MA', '{}', '{019b3be4-3c61-770e-83a6-566851df3dd4}') ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.departments_resource (created_at, active, generated, mcp, id, name, description, department_ids, setting_ids) VALUES ('2025-10-31T16:50:58.307484+00:00', true, false, false, '019bb25e-e624-744f-a6b0-21686815b719', 'Purdue Math', 'MA', '{}', '{019bb25e-e615-795d-bb66-8e09457dbcc6}') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019b995c-8eac-7855-99de-fb5313b0868d', 'MA', '2025-10-31T16:50:58.307484+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019b995c-8ea9-7b0e-b2ec-9d6d19475f94', 'Purdue Math', '2025-10-31T16:50:58.307484+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.settings_resource (created_at, active, generated, mcp, id, name, description, department_ids, agent_ids, provider_key_ids, auth_ids) VALUES ('2025-12-12T13:26:55.664826+00:00', true, false, false, '019bb25e-e615-795d-bb66-8e09457dbcc6', 'Purdue Math Settings', 'Department-specific settings for Purdue Math', '{}', '{}', '{}', '{019bb25e-e5e2-73eb-9313-57d774b30875}') ON CONFLICT (id) DO NOTHING;
 
 -- Artifact
 -- department_artifact
@@ -23,4 +24,4 @@ INSERT INTO public.department_flags_junction (department_id, flag_id, value, cre
 -- department_names_junction
 INSERT INTO public.department_names_junction (department_id, name_id, created_at, generated, mcp, active) VALUES ('019b3be4-3247-7d4f-9974-77e974f7949c', '019b995c-8ea9-7b0e-b2ec-9d6d19475f94', '2025-10-31T16:50:58.307484+00:00', false, false, true) ON CONFLICT (department_id, name_id) DO NOTHING;
 -- department_settings_junction
-INSERT INTO public.department_settings_junction (active, created_at, department_id, settings_id, generated, mcp) VALUES (true, '2025-12-12T13:26:55.664826+00:00', '019b3be4-3247-7d4f-9974-77e974f7949c', '019b3be4-3c61-770e-83a6-566851df3dd4', false, false) ON CONFLICT (department_id, settings_id) DO NOTHING;
+INSERT INTO public.department_settings_junction (active, created_at, department_id, settings_id, generated, mcp) VALUES (true, '2025-12-12T13:26:55.664826+00:00', '019b3be4-3247-7d4f-9974-77e974f7949c', '019bb25e-e615-795d-bb66-8e09457dbcc6', false, false) ON CONFLICT (department_id, settings_id) DO NOTHING;

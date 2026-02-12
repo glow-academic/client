@@ -1,5 +1,5 @@
 -- Module: TA Rubric
--- Category: rubric
+-- Category: rubric (university)
 -- Description: TA Rubric rubric
 -- ============================================================
 

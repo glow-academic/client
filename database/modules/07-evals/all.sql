@@ -1,6 +1,6 @@
 -- Module: all evals
--- Category: setup/university
--- Description: All eval artifacts for university setup
+-- Category: evals
+-- Description: All eval artifacts
 -- ============================================================
 
 -- Resource rows

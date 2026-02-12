@@ -4,7 +4,7 @@
 -- ============================================================
 
 -- Simulation resource rows
-INSERT INTO public.departments_resource (created_at, active, generated, mcp, id, name, description, department_ids, setting_ids) VALUES ('2025-10-08T14:16:28.317660+00:00', true, false, false, '019bb25e-e624-73da-8cef-166028a1065a', 'Purdue CS', 'Innovative base of knowledge in the emerging field of computing', '{}', '{019b3be4-3c61-76ff-befb-69b082df2acd}') ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.departments_resource (created_at, active, generated, mcp, id, name, description, department_ids, setting_ids) VALUES ('2025-10-08T14:16:28.317660+00:00', true, false, false, '019bb25e-e624-73da-8cef-166028a1065a', 'Purdue CS', 'Innovative base of knowledge in the emerging field of computing', '{}', '{019bb25e-e615-7952-a7d4-4fdee85d18cc}') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019b995c-8e96-772d-a275-211f1ba37a98', 'New to Purdue', '2025-08-12T16:33:53.782000+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019b995c-8e93-7fbf-a9f3-fec4c508f4aa', 'Advanced Level (New)', '2025-08-12T16:35:30.399000+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.simulations_resource (created_at, active, generated, mcp, id, name, description, department_ids, scenario_ids) VALUES ('2025-08-12T16:35:30.399000+00:00', true, false, false, '019bb25e-e62c-788f-a2eb-4dacd499474a', 'Advanced Level (New)', 'New to Purdue', '{}', '{}') ON CONFLICT (id) DO NOTHING;

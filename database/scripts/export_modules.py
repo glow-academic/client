@@ -699,7 +699,19 @@ async def export_agents(conn: asyncpg.Connection) -> None:
     agents_dir = MODULES_DIR / "03-agents"
     agents_dir.mkdir(parents=True, exist_ok=True)
 
-    artifacts = await get_artifacts_with_names(conn, "agent")
+    rows = await conn.fetch("""
+        SELECT a.id, nr.name
+        FROM agent_artifact a
+        JOIN agent_names_junction nj ON a.id = nj.agent_id
+        JOIN names_resource nr ON nj.name_id = nr.id
+        WHERE EXISTS (
+            SELECT 1 FROM agent_flags_junction af
+            JOIN flags_resource f ON f.id = af.flag_id
+            WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true
+        )
+        ORDER BY nr.name
+    """)
+    artifacts = [(str(r["id"]), r["name"]) for r in rows]
     junctions = await get_junction_tables(conn, "agent")
 
     for art_id, art_name in artifacts:
@@ -817,13 +829,33 @@ async def export_setup_per_artifact(
     artifact_type: str,
     subfolder: str,
     category: str,
+    *,
+    active_flag: str | None = None,
 ) -> None:
-    """Export one file per artifact (departments, personas, rubrics)."""
+    """Export one file per artifact (departments, personas, rubrics).
+
+    If active_flag is set, only export artifacts where that flag is true.
+    """
     print(f"  Exporting {subfolder}/ ...")
     out_dir = MODULES_DIR / "10-setups" / "university" / subfolder
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    artifacts = await get_artifacts_with_names(conn, artifact_type)
+    if active_flag:
+        rows = await conn.fetch(f"""
+            SELECT a.id, nr.name
+            FROM {artifact_type}_artifact a
+            JOIN {artifact_type}_names_junction nj ON a.id = nj.{artifact_type}_id
+            JOIN names_resource nr ON nj.name_id = nr.id
+            WHERE EXISTS (
+                SELECT 1 FROM {artifact_type}_flags_junction af
+                JOIN flags_resource f ON f.id = af.flag_id
+                WHERE af.{artifact_type}_id = a.id AND f.name = $1 AND af.value = true
+            )
+            ORDER BY nr.name
+        """, active_flag)
+        artifacts = [(str(r["id"]), r["name"]) for r in rows]
+    else:
+        artifacts = await get_artifacts_with_names(conn, artifact_type)
     junctions = await get_junction_tables(conn, artifact_type)
 
     for art_id, art_name in artifacts:
@@ -897,6 +929,107 @@ async def export_setup_all_in_one(
         if line.startswith("INSERT INTO")
     )
     print(f"    {filename}.sql ({count} inserts)")
+
+
+async def export_rubrics(conn: asyncpg.Connection) -> None:
+    """Export rubrics split by simulation/video flags.
+
+    - simulation_rubric=true OR video_rubric=true → 10-setups/university/05-rubrics/
+    - otherwise → 06-rubrics/ (module root)
+    """
+    print("  Exporting 06-rubrics/ (split base/university) ...")
+
+    base_dir = MODULES_DIR / "06-rubrics"
+    univ_dir = MODULES_DIR / "10-setups" / "university" / "05-rubrics"
+    # Clean stale files before writing
+    for d in (base_dir, univ_dir):
+        if d.exists():
+            for old in d.glob("*.sql"):
+                old.unlink()
+    base_dir.mkdir(parents=True, exist_ok=True)
+    univ_dir.mkdir(parents=True, exist_ok=True)
+
+    # Query rubric artifacts with their flags
+    rows = await conn.fetch("""
+        SELECT ra.id, nr.name,
+               COALESCE(rr.simulation_rubric, false) as simulation_rubric,
+               COALESCE(rr.video_rubric, false) as video_rubric
+        FROM rubric_artifact ra
+        JOIN rubric_names_junction rnj ON rnj.rubric_id = ra.id
+        JOIN names_resource nr ON nr.id = rnj.name_id
+        JOIN rubric_rubrics_junction rrj ON rrj.rubric_id = ra.id
+        JOIN rubrics_resource rr ON rr.id = rrj.rubrics_id
+        ORDER BY nr.name
+    """)
+
+    junctions = await get_junction_tables(conn, "rubric")
+
+    for r in rows:
+        art_id = str(r["id"])
+        art_name = r["name"]
+        slug = to_slug(art_name).replace(",", "")
+
+        is_university = r["simulation_rubric"] or r["video_rubric"]
+        out_dir = univ_dir if is_university else base_dir
+        section = "university" if is_university else "base"
+
+        output_path = out_dir / f"{slug}.sql"
+        header = (
+            f"-- Module: {art_name}\n"
+            f"-- Category: rubric ({section})\n"
+            f"-- Description: {art_name} rubric\n"
+            f"-- ============================================================\n\n"
+        )
+        count = await write_artifact_module(
+            conn, "rubric", art_id, junctions, output_path, header
+        )
+        print(f"    {output_path.relative_to(MODULES_DIR)} ({count} inserts)")
+
+
+async def export_evals(conn: asyncpg.Connection) -> None:
+    """Export all evals into 07-evals/ at module root."""
+    print("  Exporting 07-evals/ ...")
+    out_dir = MODULES_DIR / "07-evals"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    output_path = out_dir / "all.sql"
+
+    rows = await conn.fetch("SELECT id FROM public.eval_artifact ORDER BY created_at")
+    junctions = await get_junction_tables(conn, "eval")
+
+    seen: set[tuple[str, str]] = set()
+    with open(output_path, "w") as f:
+        f.write("-- Module: all evals\n")
+        f.write("-- Category: evals\n")
+        f.write("-- Description: All eval artifacts\n")
+        f.write("-- ============================================================\n")
+
+        if not rows:
+            f.write("\n-- (no rows)\n")
+            print("    all.sql (0 inserts)")
+            return
+
+        f.write("\n-- Resource rows\n")
+        for r in rows:
+            await export_resource_rows_for_artifact(
+                conn, "eval", str(r["id"]), junctions, f, seen
+            )
+
+        f.write("\n-- Artifacts\n")
+        for r in rows:
+            await export_artifact_row(conn, "eval", str(r["id"]), f)
+
+        f.write("\n-- Junctions\n")
+        for r in rows:
+            await export_junction_rows_for_artifact(
+                conn, "eval", str(r["id"]), junctions, f
+            )
+
+    count = sum(
+        1
+        for line in output_path.read_text().splitlines()
+        if line.startswith("INSERT INTO")
+    )
+    print(f"    all.sql ({count} inserts)")
 
 
 async def _get_scenario_artifact_ids_for_simulation(
@@ -1014,13 +1147,13 @@ async def export_setup(conn: asyncpg.Connection, *, include_auth: bool = True) -
     print("Exporting 10-setups/university/ ...")
     if include_auth:
         await export_auth(conn)
-    await export_setup_per_artifact(conn, "department", "01-departments", "department")
+    await export_setup_per_artifact(conn, "department", "01-departments", "department", active_flag="department_active")
     await export_setup_per_artifact(conn, "persona", "02-personas", "persona")
     await export_setup_all_in_one(conn, "document", "03-documents")
     await export_setup_all_in_one(conn, "field", "04-fields")
-    await export_setup_per_artifact(conn, "rubric", "05-rubrics", "rubric")
+    await export_rubrics(conn)
+    await export_evals(conn)
     await export_setup_simulations(conn)
-    await export_setup_all_in_one(conn, "eval", "07-evals")
     await export_setup_all_in_one(conn, "cohort", "08-cohorts")
     await export_setup_all_in_one(conn, "profile", "09-profiles")
     await export_setup_all_in_one(conn, "setting", "10-settings")

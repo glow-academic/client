@@ -155,6 +155,7 @@ Choose one action per resource type:
 {% endfor %}
 {% endif %}
 ', true, '2026-01-30T03:00:52.718855+00:00', false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.models_resource (created_at, value, active, generated, mcp, id, name, description, department_ids, provider_id, temperature_level_ids, reasoning_level_ids, quality_ids, voice_ids, modality_ids) VALUES ('2025-08-12T12:52:09.591583+00:00', 'gpt-5', true, false, false, '019bb25e-e5ff-7781-b262-7c33d17dec4f', 'gpt-5', 'GPT-5 is OpenAI''s latest language model with advanced reasoning and multimodal capabilities.', '{}', '019bb2af-b2a7-7d85-a61a-0dc4fd93b3c6', '{019c441a-0e9f-700c-a8c5-11434dc2ea95}', '{019bb58e-0ae0-75ee-a5d0-83b15b64064e,019bb58e-0ae0-76b9-a047-a56cab0551df,019bb58e-0ae0-7674-8f88-3d599e46389c,019bb58e-0ae0-75a8-88aa-df5679daaa42,019bb58e-0ae0-7632-b146-b0bdb933c00d}', '{}', '{}', '{019bbce5-e606-77f1-abf8-78df7462af03,019bbce5-e609-750d-90c6-cb39f1266e18,019bbce5-e609-7efe-8549-87dd267f086a,019bbce5-e606-77f1-abf8-78df7462af03,019bbce5-e609-7efe-8549-87dd267f086a}') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019bb544-1328-7380-8dce-3092e322e289', 'Simulation', '2026-01-13T02:51:36.094810+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.prompts_resource (created_at, system_prompt, name, description, active, id, generated, mcp) VALUES ('2026-01-30T03:00:52.718855+00:00', 'You are a simulation generation agent responsible for creating and managing simulation resources for AI-powered training simulations.
 
@@ -205,7 +206,7 @@ INSERT INTO public.agent_flags_junction (agent_id, flag_id, value, created_at, g
 -- agent_instructions_junction
 INSERT INTO public.agent_instructions_junction (agent_id, instruction_id, created_at, generated, mcp, active) VALUES ('dddddddd-dddd-dddd-dddd-dddddddddddd', '019c0cd8-ad7e-785c-a3d5-6999d78c5b2c', '2026-01-30T03:00:52.718855+00:00', false, false, true) ON CONFLICT (agent_id, instruction_id) DO NOTHING;
 -- agent_models_junction
-INSERT INTO public.agent_models_junction (agent_id, model_id, created_at, generated, mcp, active) VALUES ('dddddddd-dddd-dddd-dddd-dddddddddddd', '019b3be4-36d1-7723-9b2e-5ea00d22ad62', '2026-01-23T16:46:46.036849+00:00', false, false, true) ON CONFLICT (agent_id, model_id) DO NOTHING;
+INSERT INTO public.agent_models_junction (agent_id, model_id, created_at, generated, mcp, active) VALUES ('dddddddd-dddd-dddd-dddd-dddddddddddd', '019bb25e-e5ff-7781-b262-7c33d17dec4f', '2026-01-23T16:46:46.036849+00:00', false, false, true) ON CONFLICT (agent_id, model_id) DO NOTHING;
 -- agent_names_junction
 INSERT INTO public.agent_names_junction (agent_id, name_id, created_at, generated, mcp, active) VALUES ('dddddddd-dddd-dddd-dddd-dddddddddddd', '019bb544-1328-7380-8dce-3092e322e289', '2026-01-13T02:51:36.094810+00:00', false, false, true) ON CONFLICT (agent_id, name_id) DO NOTHING;
 -- agent_prompts_junction
