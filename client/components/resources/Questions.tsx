@@ -51,7 +51,6 @@ export interface QuestionsProps {
   }>; // Selected question resources (each includes generated field)
   show_questions?: boolean; // Whether to show this resource picker
   create_tool_id?: string | null; // Tool ID for AI generation/creation
-  link_tool_id?: string | null; // Tool ID for AI link suggestions
   questions_required?: boolean; // Whether this resource is required
   question_suggestions?: string[]; // Array of suggested question IDs (UUIDs) - consistent with other suggestions
   questions?: Array<{
@@ -112,7 +111,6 @@ export function Questions({
   question_resources: _question_resources,
   show_questions = false,
   create_tool_id,
-  link_tool_id,
   questions_required,
   question_suggestions,
   questions,

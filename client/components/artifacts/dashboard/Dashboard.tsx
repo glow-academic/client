@@ -15,7 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useFilterOptions } from "@/contexts/filter-options-context";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { HistorySkeleton } from "@/components/common/history/SimulationHistory";
+import { HistorySkeleton } from "@/components/artifacts/attempt/history/SimulationHistory";
 import ScenarioPerformance from "./footer/ScenarioPerformance";
 import ScenarioStats from "./footer/ScenarioStats";
 import SimulationComposition from "./footer/SimulationComposition";

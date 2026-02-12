@@ -22,8 +22,8 @@ import {
   type StepStatus,
 } from "@/components/common/forms/GenericForm";
 import { StepCard } from "@/components/common/forms/StepCard";
-import { GenerateRegenerateModal } from "@/components/common/GenerateRegenerateModal";
-import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
+import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
+import { ReadOnlyBanner } from "@/components/common/forms/ReadOnlyBanner";
 import { Colors } from "@/components/resources/Colors";
 import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
@@ -1192,7 +1192,6 @@ function PersonaComponent({
                   onAccept={() => clearAiResource("name_resource")}
                   onReject={() => clearAiResource("name_resource")}
                   create_tool_id={s?.names?.create_tool_id ?? null}
-                  link_tool_id={s?.names?.link_tool_id ?? null}
                 />
               }
               resetFields={["name", "description", "department_ids", "active"]}
@@ -1251,7 +1250,6 @@ function PersonaComponent({
                   onAccept={() => clearAiResource("description_resource")}
                   onReject={() => clearAiResource("description_resource")}
                   create_tool_id={s?.descriptions?.create_tool_id ?? null}
-                  link_tool_id={s?.descriptions?.link_tool_id ?? null}
                 />
                 <Departments
                   department_ids={formState.department_ids ?? []}
@@ -1273,7 +1271,6 @@ function PersonaComponent({
                   }
                   onAccept={() => clearAiResource("department_resources")}
                   onReject={() => clearAiResource("department_resources")}
-                  link_tool_id={s?.departments?.link_tool_id ?? null}
                 />
                 <Flags
                   flags={s?.flags?.resources ?? []}
@@ -1297,7 +1294,6 @@ function PersonaComponent({
                   }
                   onAccept={() => clearAiResource("flag_resource")}
                   onReject={() => clearAiResource("flag_resource")}
-                  link_tool_id={s?.flags?.link_tool_id ?? null}
                 />
               </div>
             </StepCard>
@@ -1379,7 +1375,6 @@ function PersonaComponent({
                   aiParameterResources={aiFormData.parameter_resources ?? null}
                   onAccept={() => clearAiResource("parameter_resources")}
                   onReject={() => clearAiResource("parameter_resources")}
-                  link_tool_id={s?.parameters?.link_tool_id ?? null}
                 />
                 <ParameterFields
                   parameter_field_ids={formState.parameter_field_ids}
@@ -1415,7 +1410,6 @@ function PersonaComponent({
                   onAccept={() => clearAiResource("parameter_field_resources")}
                   onReject={() => clearAiResource("parameter_field_resources")}
                   create_tool_id={s?.parameter_fields?.create_tool_id ?? null}
-                  link_tool_id={s?.parameter_fields?.link_tool_id ?? null}
                 />
               </div>
             </StepCard>
@@ -1500,7 +1494,6 @@ function PersonaComponent({
                 onAccept={() => clearAiResource("color_resource")}
                 onReject={() => clearAiResource("color_resource")}
                 create_tool_id={s?.colors?.create_tool_id ?? null}
-                link_tool_id={s?.colors?.link_tool_id ?? null}
               />
             </StepCard>
           );
@@ -1580,7 +1573,6 @@ function PersonaComponent({
                 aiResource={aiFormData.icon_resource}
                 onAccept={() => clearAiResource("icon_resource")}
                 onReject={() => clearAiResource("icon_resource")}
-                link_tool_id={s?.icons?.link_tool_id ?? null}
               />
             </StepCard>
           );
@@ -1655,7 +1647,6 @@ function PersonaComponent({
                 onAccept={() => clearAiResource("instructions_resource")}
                 onReject={() => clearAiResource("instructions_resource")}
                 create_tool_id={s?.instructions?.create_tool_id ?? null}
-                link_tool_id={s?.instructions?.link_tool_id ?? null}
               />
               <Examples
                 example_ids={formState.example_ids ?? []}
@@ -1708,7 +1699,6 @@ function PersonaComponent({
                 onAccept={() => clearAiResource("example_resources")}
                 onReject={() => clearAiResource("example_resources")}
                 create_tool_id={s?.examples?.create_tool_id ?? null}
-                link_tool_id={s?.examples?.link_tool_id ?? null}
               />
             </StepCard>
           );

@@ -6,8 +6,8 @@
 "use client";
 
 import { createFeedback } from "@/app/(main)/layout-server";
-import HintDisplay from "@/components/common/chat/HintDisplay";
-import Markdown from "@/components/common/chat/markdown/Markdown";
+import HintDisplay from "@/components/artifacts/attempt/chat/HintDisplay";
+import Markdown from "@/components/artifacts/attempt/chat/markdown/Markdown";
 import ReportProblem from "@/components/common/layout/ReportProblem";
 import { Button } from "@/components/ui/button";
 import { LoadingDots } from "@/components/ui/loading-dots";

@@ -53,7 +53,6 @@ export interface PointsProps {
   showSelectedFilter?: boolean;
   group_id?: string | null; // Group ID for linking resources
   create_tool_id?: string | null; // Tool ID for AI generation/creation
-  link_tool_id?: string | null; // Tool ID for AI link suggestions
   createPointsAction?:
     | ((input: CreateDraftPointsIn) => Promise<CreateDraftPointsOut>)
     | undefined;
@@ -95,7 +94,6 @@ export function Points({
   showSelectedFilter = false,
   group_id,
   create_tool_id,
-  link_tool_id,
   createPointsAction,
   // Legacy props for backward compatibility
   pointsResource,

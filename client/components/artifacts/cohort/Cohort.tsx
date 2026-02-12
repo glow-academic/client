@@ -18,8 +18,8 @@ import {
 } from "@/components/common/forms/GenericForm";
 import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
 import { StepCard } from "@/components/common/forms/StepCard";
-import { GenerateRegenerateModal } from "@/components/common/GenerateRegenerateModal";
-import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
+import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
+import { ReadOnlyBanner } from "@/components/common/forms/ReadOnlyBanner";
 import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
 import { Flags, type FlagConfig } from "@/components/resources/Flags";

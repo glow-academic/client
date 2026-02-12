@@ -61,7 +61,6 @@ export interface TemperatureLevelsProps {
   onSearchChange?: (term: string) => void;
   showSlider?: boolean; // Whether to show slider for visual feedback
   group_id?: string | null; // Group ID for linking resources
-  link_tool_id?: string | null; // Tool ID for AI link suggestions
   // AI diff view props
   aiTemperatureLevelResources?: Array<{
     temperature_level_id?: string | null;
@@ -94,7 +93,6 @@ export function TemperatureLevels({
   onSearchChange,
   showSlider = false,
   group_id,
-  link_tool_id,
   // AI diff view props
   aiTemperatureLevelResources,
   onAccept,
@@ -202,7 +200,7 @@ export function TemperatureLevels({
             {label}
             {required && <span className="text-destructive">*</span>}
           </Label>
-          {onGenerate && showAiGenerate && link_tool_id && (
+          {onGenerate && showAiGenerate && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

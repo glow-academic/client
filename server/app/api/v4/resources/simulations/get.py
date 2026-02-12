@@ -41,7 +41,6 @@ class GetSimulationV4Item(BaseModel):
     simulation_id: UUID | None = None
     name: str | None = None
     description: str | None = None
-    time_limit: int | None = None
     generated: bool | None = None
 
 

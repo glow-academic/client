@@ -47,7 +47,6 @@ export interface NamesProps {
   hideDescription?: boolean; // Hide the "Click to edit" description text (useful when parent provides description)
   group_id?: string | null; // Group ID for linking resources
   create_tool_id?: string | null; // Tool ID for AI generation/creation
-  link_tool_id?: string | null; // Tool ID for AI link suggestions
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   createNamesAction?:
     | ((input: CreateDraftNamesIn) => Promise<CreateDraftNamesOut>)
@@ -88,7 +87,6 @@ export function Names({
   hideDescription = false,
   group_id,
   create_tool_id,
-  link_tool_id,
   showAiGenerate = false,
   createNamesAction,
   isAutosaveEnabled = true,

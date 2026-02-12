@@ -17,8 +17,8 @@ import {
 } from "@/components/common/forms/GenericForm";
 import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
 import { StepCard } from "@/components/common/forms/StepCard";
-import { GenerateRegenerateModal } from "@/components/common/GenerateRegenerateModal";
-import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
+import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
+import { ReadOnlyBanner } from "@/components/common/forms/ReadOnlyBanner";
 import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
 import { Fields } from "@/components/resources/Fields";
@@ -1002,7 +1002,6 @@ function DocumentComponent({
                     documentDetail?.names?.show_ai_generate ?? false
                   }
                   create_tool_id={documentDetail?.names?.create_tool_id ?? null}
-                  link_tool_id={documentDetail?.names?.link_tool_id ?? null}
                   createNamesAction={createNamesAction}
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["names"]}
@@ -1071,9 +1070,6 @@ function DocumentComponent({
                   create_tool_id={
                     documentDetail?.descriptions?.create_tool_id ?? null
                   }
-                  link_tool_id={
-                    documentDetail?.descriptions?.link_tool_id ?? null
-                  }
                   createDescriptionsAction={createDescriptionsAction}
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["descriptions"]}
@@ -1103,9 +1099,6 @@ function DocumentComponent({
                   showAiGenerate={
                     documentDetail?.departments?.show_ai_generate ?? false
                   }
-                  link_tool_id={
-                    documentDetail?.departments?.link_tool_id ?? null
-                  }
                 />
 
                 {/* Active Switch - using Flags resource component */}
@@ -1128,7 +1121,6 @@ function DocumentComponent({
                   showAiGenerate={
                     documentDetail?.flags?.show_ai_generate ?? false
                   }
-                  link_tool_id={documentDetail?.flags?.link_tool_id ?? null}
                 />
               </div>
             </StepCard>
@@ -1199,7 +1191,6 @@ function DocumentComponent({
                 showAiGenerate={
                   documentDetail?.fields?.show_ai_generate ?? false
                 }
-                link_tool_id={documentDetail?.fields?.link_tool_id ?? null}
                 searchTerm={fieldSearchTerm}
                 showSelectedFilter={fieldShowSelected}
               />
@@ -1254,7 +1245,6 @@ function DocumentComponent({
                   documentDetail?.uploads?.show_ai_generate ?? false
                 }
                 create_tool_id={documentDetail?.uploads?.create_tool_id ?? null}
-                link_tool_id={documentDetail?.uploads?.link_tool_id ?? null}
                 createUploadsAction={createUploadsAction}
                 searchTerm={uploadSearchTerm}
                 registerFlush={registerFlushCallbacks["uploads"]}
@@ -1308,7 +1298,6 @@ function DocumentComponent({
                   documentDetail?.images?.show_ai_generate ?? false
                 }
                 create_tool_id={documentDetail?.images?.create_tool_id ?? null}
-                link_tool_id={documentDetail?.images?.link_tool_id ?? null}
                 createImagesAction={createImagesAction}
                 registerFlush={registerFlushCallbacks["images"]}
               />
@@ -1361,7 +1350,6 @@ function DocumentComponent({
                   documentDetail?.texts?.show_ai_generate ?? false
                 }
                 create_tool_id={documentDetail?.texts?.create_tool_id ?? null}
-                link_tool_id={documentDetail?.texts?.link_tool_id ?? null}
                 createTextsAction={createTextsAction}
               />
             </StepCard>

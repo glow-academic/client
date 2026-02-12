@@ -1,6 +1,7 @@
 -- Search texts resources with optional context
+-- Query texts_resource + texts_texts_connection only (no texts_entry join)
 -- Parameters: search (text), limit_count (int), offset_count (int), exclude_ids (uuid[])
--- Returns: items (array of text resources)
+-- Returns: items (array of text resources with text_id from connection)
 
 -- Drop function if exists (handles signature variations)
 DO $$
@@ -17,7 +18,7 @@ BEGIN
     END LOOP;
 END $$;
 
--- Create function
+-- Create function - query texts_resource + connection only
 CREATE OR REPLACE FUNCTION api_search_texts_v4(
     search text DEFAULT NULL,
     limit_count int DEFAULT 20,
@@ -34,7 +35,7 @@ SELECT COALESCE(
     ARRAY_AGG(
         (
             sub.texts_id,
-            sub.content,
+            sub.text_id,
             sub.generated
         )::types.q_get_texts_v4_item
         ORDER BY sub.created_at DESC
@@ -44,15 +45,13 @@ SELECT COALESCE(
 FROM (
     SELECT
         tr.id as texts_id,
-        COALESCE(te.content, '') as content,
+        ttc.text_id,
         COALESCE(tr.generated, false) as generated,
         tr.created_at
     FROM texts_resource tr
     LEFT JOIN texts_texts_connection ttc ON ttc.texts_id = tr.id AND ttc.active = true
-    LEFT JOIN texts_entry te ON te.id = ttc.text_id
     WHERE tr.active = true
       AND (exclude_ids IS NULL OR NOT (tr.id = ANY(exclude_ids)))
-      AND (search IS NULL OR search = '' OR LOWER(te.content) LIKE '%' || LOWER(search) || '%')
     ORDER BY tr.created_at DESC
     LIMIT limit_count
     OFFSET offset_count

@@ -10,8 +10,8 @@ import {
 } from "@/components/common/forms/GenericForm";
 import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
 import { StepCard } from "@/components/common/forms/StepCard";
-import { GenerateRegenerateModal } from "@/components/common/GenerateRegenerateModal";
-import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
+import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
+import { ReadOnlyBanner } from "@/components/common/forms/ReadOnlyBanner";
 import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
 import { Endpoints } from "@/components/resources/Endpoints";
@@ -505,7 +505,6 @@ export default function Provider({
               disabled={disabled}
               group_id={groupId}
               create_tool_id={s?.names?.create_tool_id}
-              link_tool_id={s?.names?.link_tool_id}
               showAiGenerate={s?.names?.show_ai_generate}
               createNamesAction={createNamesAction}
               registerFlush={(
@@ -528,7 +527,6 @@ export default function Provider({
               disabled={disabled}
               group_id={groupId}
               create_tool_id={s?.descriptions?.create_tool_id}
-              link_tool_id={s?.descriptions?.link_tool_id}
               showAiGenerate={s?.descriptions?.show_ai_generate}
               createDescriptionsAction={createDescriptionsAction}
               registerFlush={(
@@ -613,7 +611,6 @@ export default function Provider({
             disabled={disabled}
             group_id={groupId}
             create_tool_id={s?.values?.create_tool_id}
-            link_tool_id={s?.values?.link_tool_id}
             showAiGenerate={s?.values?.show_ai_generate}
             createValuesAction={createValuesAction}
             registerFlush={(
@@ -652,7 +649,6 @@ export default function Provider({
             disabled={disabled}
             group_id={groupId}
             create_tool_id={s?.endpoints?.create_tool_id}
-            link_tool_id={s?.endpoints?.link_tool_id}
             showAiGenerate={s?.endpoints?.show_ai_generate}
             onChange={(ids: string[]) =>
               setFormState((prev) => ({ ...prev, endpoint_id: ids[0] ?? null }))

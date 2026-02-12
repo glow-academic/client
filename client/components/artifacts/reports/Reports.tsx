@@ -11,7 +11,7 @@ import { toast } from "sonner";
 
 import type { ReportsOut } from "@/app/(main)/analytics/reports/page";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
-import { EXPORT_METRICS } from "@/components/common/forms/export-metrics";
+import { EXPORT_METRICS } from "@/components/artifacts/reports/export-metrics";
 import { DataTableColumnHeader } from "@/components/common/table/DataTableColumnHeader";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";

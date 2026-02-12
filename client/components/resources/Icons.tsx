@@ -56,7 +56,6 @@ export interface IconsProps {
   showSelectedFilter?: boolean; // Whether to filter to show only selected
   onShowSelectedChange?: (value: boolean) => void; // Callback when show selected filter changes
   group_id?: string | null; // Group ID for linking resources
-  link_tool_id?: string | null; // Tool ID for AI link suggestions (selection-only resource)
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
@@ -94,7 +93,6 @@ export function Icons({
   showSelectedFilter = false,
   onShowSelectedChange,
   group_id,
-  link_tool_id,
   showAiGenerate = false,
   onGenerate,
   isGenerating = false,

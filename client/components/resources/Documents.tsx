@@ -9,7 +9,7 @@
 
 import DocumentViewer, {
   type DocumentItem as DocumentViewerItem,
-} from "@/components/common/chat/viewers/DocumentViewer";
+} from "@/components/artifacts/attempt/chat/viewers/DocumentViewer";
 import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { Button } from "@/components/ui/button";
 import {
@@ -73,7 +73,6 @@ export interface DocumentsProps {
   description?: string;
   group_id?: string | null; // Group ID for linking resources
   create_tool_id?: string | null; // Tool ID for AI generation/creation
-  link_tool_id?: string | null; // Tool ID for AI link suggestions
   createDocumentsAction?:
     | ((input: CreateDraftDocumentsIn) => Promise<CreateDraftDocumentsOut>)
     | undefined;
@@ -109,7 +108,6 @@ export function Documents({
   description,
   group_id,
   create_tool_id,
-  link_tool_id,
   createDocumentsAction,
   onGenerate,
   isGenerating = false,

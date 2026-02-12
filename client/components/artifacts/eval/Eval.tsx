@@ -20,9 +20,9 @@ import {
   type StepStatus,
 } from "@/components/common/forms/GenericForm";
 import { StepCard } from "@/components/common/forms/StepCard";
-import type { GenerateRegenerateModalResource } from "@/components/common/GenerateRegenerateModal";
-import { GenerateRegenerateModal } from "@/components/common/GenerateRegenerateModal";
-import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
+import type { GenerateRegenerateModalResource } from "@/components/common/forms/GenerateRegenerateModal";
+import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
+import { ReadOnlyBanner } from "@/components/common/forms/ReadOnlyBanner";
 import { Agents } from "@/components/resources/Agents";
 import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
@@ -185,25 +185,21 @@ function buildGroupRubricPayload(
 
 function buildSingleAction(
   resource_id: string | null,
-  create_tool_id?: string | null,
-  link_tool_id?: string | null
+  create_tool_id?: string | null
 ) {
   return {
     resource_id,
     create_tool_id: create_tool_id ?? null,
-    link_tool_id: link_tool_id ?? null,
   };
 }
 
 function buildMultiAction(
   resource_ids: string[],
-  create_tool_id?: string | null,
-  link_tool_id?: string | null
+  create_tool_id?: string | null
 ) {
   return {
     resource_ids: resource_ids.length > 0 ? resource_ids : null,
     create_tool_id: create_tool_id ?? null,
-    link_tool_id: link_tool_id ?? null,
   };
 }
 
@@ -527,13 +523,11 @@ function EvalComponent({
             group_id: s?.group_id ?? null,
             names: buildSingleAction(
               formState.name_id,
-              s?.names?.create_tool_id ?? null,
-              s?.names?.link_tool_id ?? null
+              s?.names?.create_tool_id ?? null
             ),
             descriptions: buildSingleAction(
               formState.description_id,
-              s?.descriptions?.create_tool_id ?? null,
-              s?.descriptions?.link_tool_id ?? null
+              s?.descriptions?.create_tool_id ?? null
             ),
             flags: buildMultiAction(
               [
@@ -541,18 +535,15 @@ function EvalComponent({
                 formState.dynamic_flag_id,
                 formState.groups_flag_id,
               ].filter(Boolean) as string[],
-              null,
-              s?.active_flags?.link_tool_id ?? null
+              null
             ),
             departments: buildMultiAction(
               formState.department_ids,
-              null,
-              s?.departments?.link_tool_id ?? null
+              null
             ),
             agents: buildMultiAction(
               formState.agent_ids,
-              null,
-              s?.agents?.link_tool_id ?? null
+              null
             ),
             runs: buildMultiAction(formState.model_run_ids),
             groups: buildMultiAction(formState.group_ids),
@@ -1122,13 +1113,11 @@ function EvalComponent({
             input_eval_id: isEditMode && evalId ? evalId : null,
             names: buildSingleAction(
               formState.name_id,
-              s?.names?.create_tool_id ?? null,
-              s?.names?.link_tool_id ?? null
+              s?.names?.create_tool_id ?? null
             ),
             descriptions: buildSingleAction(
               formState.description_id,
-              s?.descriptions?.create_tool_id ?? null,
-              s?.descriptions?.link_tool_id ?? null
+              s?.descriptions?.create_tool_id ?? null
             ),
             flags: buildMultiAction(
               [
@@ -1136,18 +1125,15 @@ function EvalComponent({
                 formState.dynamic_flag_id,
                 formState.groups_flag_id,
               ].filter(Boolean) as string[],
-              null,
-              s?.active_flags?.link_tool_id ?? null
+              null
             ),
             departments: buildMultiAction(
               formState.department_ids,
-              null,
-              s?.departments?.link_tool_id ?? null
+              null
             ),
             agents: buildMultiAction(
               formState.agent_ids,
-              null,
-              s?.agents?.link_tool_id ?? null
+              null
             ),
             runs: buildMultiAction(formState.model_run_ids),
             groups: buildMultiAction(formState.group_ids),

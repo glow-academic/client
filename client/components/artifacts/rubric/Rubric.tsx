@@ -14,8 +14,8 @@ import {
 } from "@/components/common/forms/GenericForm";
 import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
 import { StepCard } from "@/components/common/forms/StepCard";
-import { GenerateRegenerateModal } from "@/components/common/GenerateRegenerateModal";
-import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
+import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
+import { ReadOnlyBanner } from "@/components/common/forms/ReadOnlyBanner";
 import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
 import { Flags } from "@/components/resources/Flags";
@@ -711,7 +711,6 @@ function RubricComponent({
                 group_id={s?.group_id ?? null}
                 showAiGenerate={s?.names?.show_ai_generate ?? false}
                 create_tool_id={s?.names?.create_tool_id ?? null}
-                link_tool_id={s?.names?.link_tool_id ?? null}
                 createNamesAction={createNamesAction}
                 isAutosaveEnabled={isAutosaveEnabled}
                 registerFlush={registerFlushCallbacks["names"]}
@@ -758,7 +757,6 @@ function RubricComponent({
                 group_id={s?.group_id ?? null}
                 showAiGenerate={s?.descriptions?.show_ai_generate ?? false}
                 create_tool_id={s?.descriptions?.create_tool_id ?? null}
-                link_tool_id={s?.descriptions?.link_tool_id ?? null}
                 createDescriptionsAction={createDescriptionsAction}
                 isAutosaveEnabled={isAutosaveEnabled}
                 registerFlush={registerFlushCallbacks["descriptions"]}
@@ -779,7 +777,6 @@ function RubricComponent({
                 required={s?.departments?.required ?? false}
                 group_id={s?.group_id ?? null}
                 showAiGenerate={s?.departments?.show_ai_generate ?? false}
-                link_tool_id={s?.departments?.link_tool_id ?? null}
                 isAutosaveEnabled={isAutosaveEnabled}
                 registerFlush={registerFlushCallbacks["departments"]}
               />
@@ -797,7 +794,6 @@ function RubricComponent({
                 isGenerating={isGenerating("flags")}
                 group_id={s?.group_id ?? null}
                 showAiGenerate={s?.flags?.show_ai_generate ?? false}
-                link_tool_id={s?.flags?.link_tool_id ?? null}
               />
             </div>
           </StepCard>
@@ -862,7 +858,6 @@ function RubricComponent({
                 group_id={s?.group_id ?? null}
                 showAiGenerate={s?.points?.show_ai_generate ?? false}
                 create_tool_id={s?.points?.create_tool_id ?? null}
-                link_tool_id={s?.points?.link_tool_id ?? null}
                 createPointsAction={createPointsAction}
                 isAutosaveEnabled={isAutosaveEnabled}
               />
@@ -896,7 +891,6 @@ function RubricComponent({
                 group_id={s?.group_id ?? null}
                 showAiGenerate={s?.pass_points?.show_ai_generate ?? false}
                 create_tool_id={s?.pass_points?.create_tool_id ?? null}
-                link_tool_id={s?.pass_points?.link_tool_id ?? null}
                 createPointsAction={createPointsAction}
                 isAutosaveEnabled={isAutosaveEnabled}
               />
@@ -949,7 +943,6 @@ function RubricComponent({
               group_id={s?.group_id ?? null}
               showAiGenerate={s?.standard_groups?.show_ai_generate ?? false}
               create_tool_id={s?.standard_groups?.create_tool_id ?? null}
-              link_tool_id={s?.standard_groups?.link_tool_id ?? null}
               createStandardGroupsAction={createStandardGroupsAction}
               isAutosaveEnabled={isAutosaveEnabled}
               registerFlush={registerFlushCallbacks["standard_groups"]}
@@ -1000,7 +993,6 @@ function RubricComponent({
             required={s?.standards?.required ?? false}
             group_id={s?.group_id ?? null}
             showAiGenerate={s?.standards?.show_ai_generate ?? false}
-            link_tool_id={s?.standards?.link_tool_id ?? null}
           />
         </StepCard>
       );

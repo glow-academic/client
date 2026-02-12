@@ -170,7 +170,6 @@ export interface DescriptionsProps {
   helpText?: string;
   group_id?: string | null; // Group ID for linking resources
   create_tool_id?: string | null; // Tool ID for AI generation/creation
-  link_tool_id?: string | null; // Tool ID for AI link suggestions
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   createDescriptionsAction?:
     | ((
@@ -216,7 +215,6 @@ export function Descriptions({
   helpText,
   group_id,
   create_tool_id,
-  link_tool_id,
   showAiGenerate = false,
   createDescriptionsAction,
   searchTerm,

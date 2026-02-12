@@ -24,7 +24,7 @@ import type {
   DuplicateSimulationOut,
   SimulationsListOut,
 } from "@/app/(main)/training/simulations/page";
-import { GenerateRegenerateModal, type GenerateRegenerateModalResource } from "@/components/common/GenerateRegenerateModal";
+import { GenerateRegenerateModal, type GenerateRegenerateModalResource } from "@/components/common/forms/GenerateRegenerateModal";
 import { useProfile } from "@/contexts/profile-context";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";

@@ -57,7 +57,6 @@ export interface RoleRoutesProps {
   required?: boolean;
   description?: string;
   group_id?: string | null;
-  link_tool_id?: string | null; // Tool ID for AI link suggestions
   showAiGenerate?: boolean;
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
@@ -82,7 +81,6 @@ export function RoleRoutes({
   required = false,
   description,
   group_id,
-  link_tool_id,
   showAiGenerate: _showAiGenerate = false,
   onGenerate: _onGenerate,
   isGenerating: _isGenerating = false,

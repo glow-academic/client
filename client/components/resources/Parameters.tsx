@@ -59,7 +59,6 @@ export interface ParametersProps {
   placeholder?: string;
   description?: string;
   group_id?: string | null; // Group ID for linking resources
-  link_tool_id?: string | null; // Tool ID for AI link suggestions
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   createParametersAction?:
     | ((input: CreateDraftParametersIn) => Promise<CreateDraftParametersOut>)
@@ -95,7 +94,6 @@ export function Parameters({
   placeholder: _placeholder = "Select parameters...",
   description,
   group_id,
-  link_tool_id,
   showAiGenerate = false,
   createParametersAction,
   onGenerate,

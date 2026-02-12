@@ -1,7 +1,7 @@
 -- Get texts resources by IDs (batch)
--- Simple data fetching - no business logic, no active flag check
--- Parameters: p_ids (uuid[]) - using p_ids to avoid shadowing texts_id field
--- Returns: items (array of text resources)
+-- Simple data fetching - query texts_resource + texts_texts_connection only
+-- Parameters: p_ids (uuid[])
+-- Returns: items (array of text resources with text_id from connection)
 
 -- Drop function if exists (handles signature variations)
 DO $$
@@ -48,14 +48,14 @@ BEGIN
     END LOOP;
 END $$;
 
--- Create composite type for text item
+-- Create composite type for text item (text_id from connection, no content)
 CREATE TYPE types.q_get_texts_v4_item AS (
     texts_id uuid,
-    content text,
+    text_id uuid,
     generated boolean
 );
 
--- Create function
+-- Create function - query texts_resource + texts_texts_connection only
 CREATE OR REPLACE FUNCTION api_get_texts_v4(
     p_ids uuid[] DEFAULT ARRAY[]::uuid[]
 )
@@ -69,7 +69,7 @@ SELECT COALESCE(
     ARRAY_AGG(
         (
             tr.id,
-            COALESCE(te.content, ''),
+            ttc.text_id,
             COALESCE(tr.generated, false)
         )::types.q_get_texts_v4_item
         ORDER BY array_position(p_ids, tr.id)
@@ -78,6 +78,5 @@ SELECT COALESCE(
 ) as items
 FROM texts_resource tr
 LEFT JOIN texts_texts_connection ttc ON ttc.texts_id = tr.id AND ttc.active = true
-LEFT JOIN texts_entry te ON te.id = ttc.text_id
 WHERE tr.id = ANY(p_ids);
 $$;

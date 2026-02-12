@@ -7,7 +7,7 @@
 
 "use client";
 
-import ImageViewer from "@/components/common/chat/viewers/ImageViewer";
+import ImageViewer from "@/components/artifacts/attempt/chat/viewers/ImageViewer";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -50,7 +50,6 @@ export interface ImagesProps {
   }>; // Selected image resources (each includes generated field)
   show_images?: boolean; // Whether to show this resource picker
   create_tool_id?: string | null; // Tool ID for AI generation/creation
-  link_tool_id?: string | null; // Tool ID for AI link suggestions
   images_required?: boolean; // Whether this resource is required
   image_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
   images?: Array<{
@@ -105,7 +104,6 @@ export function Images({
   image_resources,
   show_images = false,
   create_tool_id,
-  link_tool_id,
   images_required,
   image_suggestions,
   images,

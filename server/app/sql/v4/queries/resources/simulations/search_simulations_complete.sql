@@ -1,6 +1,6 @@
 -- Search simulations with suggest_source pattern
 -- Returns simulation details with search and filtering
--- CLEAN PATTERN: Query simulations_resource directly with denormalized name/description
+-- CLEAN PATTERN: Query simulations_resource directly (no time_limit computation)
 -- Uses draft_id for suggest_source='draft' (efficient drafts_connection lookup)
 
 -- Drop function if exists (handles signature variations)
@@ -34,7 +34,7 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (q.id, q.name, q.description, q.time_limit, q.generated)::types.q_get_simulations_v4_item
+        (q.id, q.name, q.description, q.generated)::types.q_get_simulations_v4_item
         ORDER BY q.name
     ),
     ARRAY[]::types.q_get_simulations_v4_item[]
@@ -44,28 +44,6 @@ FROM (
         s.id,
         s.name,
         COALESCE(s.description, '') as description,
-        -- Time limit computed from scenario_time_limits via artifact connection
-        COALESCE(
-            (SELECT SUM(stlr.time_limit_seconds)
-             FROM simulation_simulations_junction ssj
-             JOIN simulation_scenario_time_limits_junction sstl ON sstl.simulation_id = ssj.simulation_id
-             JOIN scenario_time_limits_resource stlr ON stlr.id = sstl.scenario_time_limit_id
-             JOIN simulation_scenarios_junction ss ON ss.simulation_id = sstl.simulation_id AND ss.scenario_id = stlr.scenario_id
-             WHERE ssj.simulations_id = s.id
-               AND sstl.active = true
-               AND stlr.active = true
-               AND EXISTS (
-                   SELECT 1 FROM simulation_scenario_flags_junction ssf
-                   JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id
-                   JOIN flags_resource f ON sfr.flag_id = f.id
-                   WHERE ssf.simulation_id = ss.simulation_id
-                     AND sfr.scenario_id = ss.scenario_id
-                     AND f.name = 'scenario_active'
-                     AND ssf.value = true
-               )
-            ),
-            0
-        )::bigint as time_limit,
         COALESCE(s.generated, false) as generated
     FROM simulations_resource s
     WHERE s.active = true

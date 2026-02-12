@@ -14,8 +14,8 @@ import {
 } from "@/components/common/forms/GenericForm";
 import { StepCard } from "@/components/common/forms/StepCard";
 import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
-import { GenerateRegenerateModal } from "@/components/common/GenerateRegenerateModal";
-import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
+import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
+import { ReadOnlyBanner } from "@/components/common/forms/ReadOnlyBanner";
 import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
 import { Flags } from "@/components/resources/Flags";
@@ -715,7 +715,6 @@ function FieldComponent({
                 required={stableFieldData?.names?.required ?? false}
                 showAiGenerate={stableFieldData?.names?.show_ai_generate ?? false}
                 create_tool_id={stableFieldData?.names?.create_tool_id ?? null}
-                link_tool_id={stableFieldData?.names?.link_tool_id ?? null}
                 onGenerate={() => handleGenerateResources(["names"])}
                 isGenerating={isGenerating("names")}
                 createNamesAction={createNamesAction}
@@ -761,7 +760,6 @@ function FieldComponent({
                 create_tool_id={
                   stableFieldData?.descriptions?.create_tool_id ?? null
                 }
-                link_tool_id={stableFieldData?.descriptions?.link_tool_id ?? null}
                 onGenerate={() => handleGenerateResources(["descriptions"])}
                 isGenerating={isGenerating("descriptions")}
                 createDescriptionsAction={createDescriptionsAction}
@@ -790,7 +788,6 @@ function FieldComponent({
                 }
                 required={stableFieldData?.departments?.required ?? false}
                 group_id={stableFieldData?.group_id ?? null}
-                link_tool_id={stableFieldData?.departments?.link_tool_id ?? null}
                 showAiGenerate={
                   stableFieldData?.departments?.show_ai_generate ?? false
                 }
@@ -810,7 +807,6 @@ function FieldComponent({
                 onChange={(active_flag_id) =>
                   setFormState((prev) => ({ ...prev, active_flag_id }))
                 }
-                link_tool_id={stableFieldData?.flags?.link_tool_id ?? null}
                 showAiGenerate={stableFieldData?.flags?.show_ai_generate ?? false}
                 onGenerate={() => handleGenerateResources(["flags"])}
                 isGenerating={isGenerating("flags")}
@@ -890,9 +886,6 @@ function FieldComponent({
             }
             required={stableFieldData?.conditional_parameters?.required ?? false}
             group_id={stableFieldData?.group_id ?? null}
-            link_tool_id={
-              stableFieldData?.conditional_parameters?.link_tool_id ?? null
-            }
             showAiGenerate={
               stableFieldData?.conditional_parameters?.show_ai_generate ?? false
             }

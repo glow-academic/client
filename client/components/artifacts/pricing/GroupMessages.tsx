@@ -8,7 +8,7 @@
 "use client";
 
 import type { PricingGroupDetailOut } from "@/app/(main)/analytics/pricing/g/[groupId]/page";
-import Markdown from "@/components/common/chat/markdown/Markdown";
+import Markdown from "@/components/artifacts/attempt/chat/markdown/Markdown";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";

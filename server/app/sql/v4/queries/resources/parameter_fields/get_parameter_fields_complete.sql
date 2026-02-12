@@ -1,5 +1,6 @@
 -- Get parameter fields resources by IDs
 -- CLEAN PATTERN: Query parameter_fields_resource with join to fields_resource for name/description
+-- Uses denormalized conditional_parameter_id on parameter_fields_resource
 -- Parameters: ids (uuid[])
 -- Returns: items (array of parameter field resources with parameter_id)
 
@@ -59,7 +60,7 @@ CREATE TYPE types.q_get_parameter_fields_v4_item AS (
     conditional_parameter_id uuid
 );
 
--- Create function - query parameter_fields_resource with join to fields_resource
+-- Create function - query parameter_fields_resource with join to fields_resource only
 CREATE OR REPLACE FUNCTION api_get_parameter_fields_v4(
     ids uuid[] DEFAULT ARRAY[]::uuid[]
 )
@@ -78,7 +79,7 @@ SELECT COALESCE(
             f.name,
             COALESCE(f.description, ''),
             COALESCE(pfr.generated, false),
-            cp_lookup.conditional_parameter_id
+            pfr.conditional_parameter_id
         )::types.q_get_parameter_fields_v4_item
         ORDER BY array_position(ids, pfr.id)
     ),
@@ -86,12 +87,6 @@ SELECT COALESCE(
 ) as items
 FROM parameter_fields_resource pfr
 JOIN fields_resource f ON f.id = pfr.field_id
-LEFT JOIN (
-    SELECT fcpj.field_id, cpr.parameter_id as conditional_parameter_id
-    FROM field_conditional_parameters_junction fcpj
-    JOIN conditional_parameters_resource cpr ON cpr.id = fcpj.conditional_parameter_id
-    WHERE fcpj.active = true AND cpr.active = true
-) cp_lookup ON cp_lookup.field_id = pfr.field_id
 WHERE pfr.id = ANY(ids)
   AND pfr.active = true
   AND f.active = true;

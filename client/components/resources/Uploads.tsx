@@ -60,7 +60,6 @@ export interface UploadsProps {
   description?: string;
   group_id?: string | null; // Group ID for linking resources
   create_tool_id?: string | null; // Tool ID for AI generation/creation
-  link_tool_id?: string | null; // Tool ID for AI link suggestions
   createUploadsAction?:
     | ((input: CreateDraftUploadsIn) => Promise<CreateDraftUploadsOut>)
     | undefined;
@@ -98,7 +97,6 @@ export function Uploads({
   description,
   group_id,
   create_tool_id,
-  link_tool_id,
   createUploadsAction,
   onGenerate,
   isGenerating = false,

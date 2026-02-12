@@ -50,7 +50,6 @@ export interface ProfilesProps {
   placeholder?: string;
   description?: string;
   group_id?: string | null; // Group ID for linking resources
-  link_tool_id?: string | null; // Tool ID for AI link suggestions
   onGenerate?: () => void | Promise<void>;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   isGenerating?: boolean;
@@ -77,7 +76,6 @@ export function Profiles({
   placeholder = "Select profiles...",
   description,
   group_id,
-  link_tool_id,
   onGenerate,
   showAiGenerate = false,
   isGenerating = false,
@@ -172,7 +170,7 @@ export function Profiles({
               </span>
             )}
           </Label>
-          {onGenerate && showAiGenerate && link_tool_id && (
+          {onGenerate && showAiGenerate && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

@@ -51,7 +51,6 @@ export interface VideosProps {
   }>; // Selected video resources (each includes generated field)
   show_videos?: boolean; // Whether to show this resource picker
   create_tool_id?: string | null; // Tool ID for AI generation/creation
-  link_tool_id?: string | null; // Tool ID for AI link suggestions
   videos_required?: boolean; // Whether this resource is required
   video_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
   videos?: Array<{
@@ -106,7 +105,6 @@ export function Videos({
   video_resources,
   show_videos = false,
   create_tool_id,
-  link_tool_id,
   videos_required,
   video_suggestions,
   videos,

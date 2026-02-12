@@ -76,7 +76,6 @@ export interface KeysProps {
   placeholder?: string;
   group_id?: string | null; // Group ID for linking resources
   create_tool_id?: string | null; // Tool ID for AI generation/creation
-  link_tool_id?: string | null; // Tool ID for AI link suggestions
   createKeysAction?:
     | ((input: CreateDraftKeysIn) => Promise<CreateDraftKeysOut>)
     | undefined;
@@ -111,7 +110,6 @@ export function Keys({
   placeholder = "Select a key...",
   group_id,
   create_tool_id,
-  link_tool_id,
   createKeysAction,
   // AI diff view props
   aiKeyResources,

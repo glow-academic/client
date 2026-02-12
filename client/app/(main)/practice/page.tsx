@@ -5,7 +5,7 @@
  * 06/08/2025
  */
 
-import SimulationHistory from "@/components/common/history/SimulationHistory";
+import SimulationHistory from "@/components/artifacts/attempt/history/SimulationHistory";
 import Practice from "@/components/artifacts/attempt/Practice";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";

@@ -1,5 +1,5 @@
 -- Get documents resources by IDs (batch)
--- CLEAN PATTERN: Query documents_resource directly with denormalized name/description/upload_id
+-- CLEAN PATTERN: Query documents_resource only (no view_uploads_entry join)
 -- Parameters: p_ids (uuid[])
 -- Returns: items (array of document resources)
 
@@ -48,19 +48,17 @@ BEGIN
     END LOOP;
 END $$;
 
--- Create composite type for document item
+-- Create composite type for document item (no file_path/mime_type from view)
 CREATE TYPE types.q_get_documents_v4_item AS (
     document_id uuid,
     name text,
     description text,
-    file_path text,
-    mime_type text,
     generated boolean,
     upload_id uuid,
     html boolean
 );
 
--- Create function - query documents_resource directly with upload join
+-- Create function - query documents_resource only
 CREATE OR REPLACE FUNCTION api_get_documents_v4(
     p_ids uuid[] DEFAULT ARRAY[]::uuid[]
 )
@@ -76,8 +74,6 @@ SELECT COALESCE(
             d.id,
             d.name,
             COALESCE(d.description, ''),
-            COALESCE(u.file_path, ''),
-            COALESCE(u.mime_type, ''),
             COALESCE(d.generated, false),
             d.upload_id,
             COALESCE(d.html, false)
@@ -87,7 +83,6 @@ SELECT COALESCE(
     ARRAY[]::types.q_get_documents_v4_item[]
 ) as items
 FROM documents_resource d
-LEFT JOIN view_uploads_entry u ON u.id = d.upload_id
 WHERE d.id = ANY(p_ids)
   AND d.active = true
   AND d.name IS NOT NULL

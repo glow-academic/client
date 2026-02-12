@@ -1,5 +1,5 @@
 -- Search documents resources with optional context
--- CLEAN PATTERN: Query documents_resource directly with denormalized name/description/upload_id
+-- CLEAN PATTERN: Query documents_resource only (no view_uploads_entry join)
 -- Uses draft_id for suggest_source='draft' (efficient drafts_connection lookup)
 -- Parameters: search (text), limit_count (int), offset_count (int), user_department_ids (uuid[]), draft_id (uuid), suggest_source (text), exclude_ids (uuid[])
 -- Returns: items (array of document resources)
@@ -37,7 +37,7 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (q.document_id, q.name, q.description, q.file_path, q.mime_type, q.generated, q.upload_id, q.html)::types.q_get_documents_v4_item
+        (q.document_id, q.name, q.description, q.generated, q.upload_id, q.html)::types.q_get_documents_v4_item
         ORDER BY q.name
     ),
     ARRAY[]::types.q_get_documents_v4_item[]
@@ -47,13 +47,10 @@ FROM (
         d.id AS document_id,
         d.name,
         COALESCE(d.description, '') AS description,
-        COALESCE(u.file_path, '') AS file_path,
-        COALESCE(u.mime_type, '') AS mime_type,
         COALESCE(d.generated, false) AS generated,
         d.upload_id,
         COALESCE(d.html, false) AS html
     FROM documents_resource d
-    LEFT JOIN view_uploads_entry u ON u.id = d.upload_id
     WHERE d.active = true
       AND d.name IS NOT NULL
       AND d.name != ''

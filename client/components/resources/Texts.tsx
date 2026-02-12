@@ -36,7 +36,6 @@ export interface TextsProps {
   text_resources?: TextItem[];
   show_texts?: boolean;
   create_tool_id?: string | null;
-  link_tool_id?: string | null;
   text_suggestions?: string[];
   texts?: TextItem[];
   disabled?: boolean;
@@ -63,7 +62,6 @@ export function Texts({
   text_resources = [],
   show_texts = true,
   create_tool_id,
-  link_tool_id: _linkToolId,
   text_suggestions: _textSuggestions = [],
   texts = [],
   disabled = false,

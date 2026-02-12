@@ -25,8 +25,8 @@ import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { StepCard } from "@/components/common/forms/StepCard";
-import { GenerateRegenerateModal } from "@/components/common/GenerateRegenerateModal";
-import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
+import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
+import { ReadOnlyBanner } from "@/components/common/forms/ReadOnlyBanner";
 import { Cohorts, type CohortsProps } from "@/components/resources/Cohorts";
 import {
   Departments,
@@ -545,42 +545,36 @@ function ProfileComponent({
         | {
             resource_id?: string | null;
             create_tool_id?: string | null;
-            link_tool_id?: string | null;
           }
         | undefined;
       const flagsAction = resourceActions["flags"] as
         | {
             resource_id?: string | null;
             create_tool_id?: string | null;
-            link_tool_id?: string | null;
           }
         | undefined;
       const requestLimitsAction = resourceActions["request_limits"] as
         | {
             resource_id?: string | null;
             create_tool_id?: string | null;
-            link_tool_id?: string | null;
           }
         | undefined;
       const departmentsAction = resourceActions["departments"] as
         | {
             resource_ids?: string[] | null;
             create_tool_id?: string | null;
-            link_tool_id?: string | null;
           }
         | undefined;
       const emailsAction = resourceActions["emails"] as
         | {
             resource_ids?: string[] | null;
             create_tool_id?: string | null;
-            link_tool_id?: string | null;
           }
         | undefined;
       const cohortsAction = resourceActions["cohorts"] as
         | {
             resource_ids?: string[] | null;
             create_tool_id?: string | null;
-            link_tool_id?: string | null;
           }
         | undefined;
 
@@ -596,18 +590,15 @@ function ProfileComponent({
         names: {
           resource_id: namesAction?.resource_id ?? current.name_id,
           create_tool_id: namesAction?.create_tool_id ?? null,
-          link_tool_id: namesAction?.link_tool_id ?? null,
         },
         flags: {
           resource_id: flagsAction?.resource_id ?? current.active_flag_id,
           create_tool_id: flagsAction?.create_tool_id ?? null,
-          link_tool_id: flagsAction?.link_tool_id ?? null,
         },
         request_limits: {
           resource_id:
             requestLimitsAction?.resource_id ?? current.request_limit_id,
           create_tool_id: requestLimitsAction?.create_tool_id ?? null,
-          link_tool_id: requestLimitsAction?.link_tool_id ?? null,
         },
         departments: {
           resource_ids: orderDepartmentsByPrimary(
@@ -615,7 +606,6 @@ function ProfileComponent({
             current.primary_department_id
           ),
           create_tool_id: departmentsAction?.create_tool_id ?? null,
-          link_tool_id: departmentsAction?.link_tool_id ?? null,
         },
         emails: {
           resource_ids: orderEmailsByPrimary(
@@ -623,12 +613,10 @@ function ProfileComponent({
             current.primary_email_index ?? 0
           ),
           create_tool_id: emailsAction?.create_tool_id ?? null,
-          link_tool_id: emailsAction?.link_tool_id ?? null,
         },
         cohorts: {
           resource_ids: cohortsAction?.resource_ids ?? current.cohort_ids ?? [],
           create_tool_id: cohortsAction?.create_tool_id ?? null,
-          link_tool_id: cohortsAction?.link_tool_id ?? null,
         },
         role: current.role || null,
         expected_version: expectedVersion,

@@ -11,7 +11,7 @@ import { useMemo } from "react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { Skeleton } from "@/components/ui/skeleton";
-import { HistorySkeleton } from "@/components/common/history/SimulationHistory";
+import { HistorySkeleton } from "@/components/artifacts/attempt/history/SimulationHistory";
 import PracticeZone, { PracticeZoneSkeleton } from "./PracticeZone";
 
 export interface PracticeProps {

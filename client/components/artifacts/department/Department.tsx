@@ -14,8 +14,8 @@ import {
 } from "@/components/common/forms/GenericForm";
 import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
 import { StepCard } from "@/components/common/forms/StepCard";
-import { GenerateRegenerateModal } from "@/components/common/GenerateRegenerateModal";
-import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
+import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
+import { ReadOnlyBanner } from "@/components/common/forms/ReadOnlyBanner";
 import { Descriptions } from "@/components/resources/Descriptions";
 import { Flags } from "@/components/resources/Flags";
 import { Names } from "@/components/resources/Names";
@@ -524,7 +524,6 @@ function DepartmentComponent({
             group_id={s?.group_id ?? null}
             showAiGenerate={s?.names?.show_ai_generate ?? false}
             create_tool_id={s?.names?.create_tool_id ?? null}
-            link_tool_id={s?.names?.link_tool_id ?? null}
             createNamesAction={createNamesAction}
             isAutosaveEnabled={isAutosaveEnabled}
             registerFlush={registerFlushCallbacks["names"]}
@@ -562,7 +561,6 @@ function DepartmentComponent({
             group_id={s?.group_id ?? null}
             showAiGenerate={s?.descriptions?.show_ai_generate ?? false}
             create_tool_id={s?.descriptions?.create_tool_id ?? null}
-            link_tool_id={s?.descriptions?.link_tool_id ?? null}
             createDescriptionsAction={createDescriptionsAction}
             isAutosaveEnabled={isAutosaveEnabled}
             registerFlush={registerFlushCallbacks["descriptions"]}
@@ -581,7 +579,6 @@ function DepartmentComponent({
             isGenerating={isGenerating("flags")}
             group_id={s?.group_id ?? null}
             showAiGenerate={s?.flags?.show_ai_generate ?? false}
-            link_tool_id={s?.flags?.link_tool_id ?? null}
           />
 
           <Settings
@@ -599,7 +596,6 @@ function DepartmentComponent({
             required={s?.settings?.required ?? false}
             group_id={s?.group_id ?? null}
             showAiGenerate={s?.settings?.show_ai_generate ?? false}
-            link_tool_id={s?.settings?.link_tool_id ?? null}
           />
         </div>
       </StepCard>

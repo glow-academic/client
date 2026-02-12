@@ -59,7 +59,6 @@ export interface ScenariosProps {
   description?: string;
   searchTerm?: string;
   group_id?: string | null; // Group ID for linking resources
-  link_tool_id?: string | null; // Tool ID for AI link suggestions
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
@@ -88,7 +87,6 @@ export function Scenarios({
   placeholder = "Select scenarios...",
   description,
   group_id,
-  link_tool_id,
   onGenerate,
   isGenerating = false,
   showAiGenerate = false,
@@ -233,7 +231,7 @@ export function Scenarios({
               </span>
             )}
           </Label>
-          {onGenerate && showAiGenerate && link_tool_id && (
+          {onGenerate && showAiGenerate && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

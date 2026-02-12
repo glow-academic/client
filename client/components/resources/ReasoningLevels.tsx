@@ -55,7 +55,6 @@ export interface ReasoningLevelsProps {
   searchTerm?: string;
   onSearchChange?: (term: string) => void;
   group_id?: string | null; // Group ID for linking resources
-  link_tool_id?: string | null; // Tool ID for AI link suggestions
   // AI diff view props
   aiReasoningLevelResources?: Array<{
     reasoning_level_id?: string | null;
@@ -85,7 +84,6 @@ export function ReasoningLevels({
   searchTerm,
   onSearchChange,
   group_id,
-  link_tool_id,
   // AI diff view props
   aiReasoningLevelResources,
   onAccept,
@@ -163,7 +161,7 @@ export function ReasoningLevels({
             {label}
             {required && <span className="text-destructive">*</span>}
           </Label>
-          {onGenerate && showAiGenerate && link_tool_id && (
+          {onGenerate && showAiGenerate && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

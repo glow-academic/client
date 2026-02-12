@@ -5,7 +5,7 @@
  * 06/08/2025
  */
 
-import { AttemptChat } from "@/components/common/chat/setups/AttemptChat";
+import { AttemptChat } from "@/components/artifacts/attempt/chat/setups/AttemptChat";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";

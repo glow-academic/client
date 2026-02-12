@@ -1,7 +1,7 @@
 -- Search uploads resources with optional context
--- CLEAN PATTERN: Query via view_uploads_entry for combined resource+entry data
+-- Query uploads_resource + uploads_uploads_connection only (no view_uploads_entry)
 -- Parameters: search (text), limit_count (int), offset_count (int), exclude_ids (uuid[])
--- Returns: items (array of upload resources with file details)
+-- Returns: items (array of upload resources with upload_id from connection)
 
 -- Drop function if exists (handles signature variations)
 DO $$
@@ -18,7 +18,7 @@ BEGIN
     END LOOP;
 END $$;
 
--- Create function
+-- Create function - query uploads_resource + connection only
 CREATE OR REPLACE FUNCTION api_search_uploads_v4(
     search text DEFAULT NULL,
     limit_count int DEFAULT 20,
@@ -33,22 +33,22 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (q.id, q.upload_id, q.file_path, q.mime_type, q.size, q.generated)::types.q_get_uploads_v4_item
-        ORDER BY q.file_path
+        (q.uploads_id, q.upload_id, q.generated)::types.q_get_uploads_v4_item
+        ORDER BY q.created_at DESC
     ),
     ARRAY[]::types.q_get_uploads_v4_item[]
 ) as items
 FROM (
-    SELECT v.id, v.upload_id, v.file_path, v.mime_type, v.size, COALESCE(v.generated, false) AS generated
-    FROM view_uploads_entry v
-    WHERE v.active = true
-      AND v.file_path IS NOT NULL
-      AND v.file_path != ''
-      -- Search filter (match on file_path)
-      AND (search IS NULL OR search = '' OR LOWER(v.file_path) LIKE '%' || LOWER(search) || '%')
-      -- Exclude filter
-      AND (exclude_ids IS NULL OR NOT (v.id = ANY(exclude_ids)))
-    ORDER BY v.file_path
+    SELECT
+        ur.id AS uploads_id,
+        uuc.upload_id,
+        COALESCE(ur.generated, false) AS generated,
+        ur.created_at
+    FROM uploads_resource ur
+    LEFT JOIN uploads_uploads_connection uuc ON uuc.uploads_id = ur.id AND uuc.active = true
+    WHERE ur.active = true
+      AND (exclude_ids IS NULL OR NOT (ur.id = ANY(exclude_ids)))
+    ORDER BY ur.created_at DESC
     LIMIT limit_count
     OFFSET offset_count
 ) q;

@@ -86,7 +86,6 @@ export interface PersonasProps {
   description?: string;
   group_id?: string | null; // Group ID for linking resources
   create_tool_id?: string | null; // Tool ID for AI generation/creation
-  link_tool_id?: string | null; // Tool ID for AI link suggestions
   createPersonasAction?:
     | ((input: CreateDraftPersonasIn) => Promise<CreateDraftPersonasOut>)
     | undefined;
@@ -122,7 +121,6 @@ export function Personas({
   description,
   group_id,
   create_tool_id,
-  link_tool_id,
   createPersonasAction,
   onGenerate,
   showAiGenerate = false,

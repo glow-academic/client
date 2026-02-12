@@ -26,9 +26,9 @@ import {
 import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { StepCard } from "@/components/common/forms/StepCard";
-import { GenerateRegenerateModal } from "@/components/common/GenerateRegenerateModal";
+import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
 import { ProviderCardGrid } from "@/components/artifacts/model/ProviderCardGrid";
-import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
+import { ReadOnlyBanner } from "@/components/common/forms/ReadOnlyBanner";
 import { Descriptions } from "@/components/resources/Descriptions";
 import { Flags } from "@/components/resources/Flags";
 import { Modalities } from "@/components/resources/Modalities";
@@ -1287,7 +1287,6 @@ function ModelComponent({
                   hideDescription={true}
                   group_id={s?.group_id ?? null}
                   create_tool_id={s?.names?.create_tool_id ?? null}
-                  link_tool_id={s?.names?.link_tool_id ?? null}
                   showAiGenerate={s?.names?.show_ai_generate ?? false}
                   createNamesAction={createNamesAction}
                   isAutosaveEnabled={isAutosaveEnabled}
@@ -1345,7 +1344,6 @@ function ModelComponent({
                   required={s?.descriptions?.required ?? false}
                   group_id={s?.group_id ?? null}
                   create_tool_id={s?.descriptions?.create_tool_id ?? null}
-                  link_tool_id={s?.descriptions?.link_tool_id ?? null}
                   showAiGenerate={s?.descriptions?.show_ai_generate ?? false}
                   createDescriptionsAction={createDescriptionsAction}
                   isAutosaveEnabled={isAutosaveEnabled}
@@ -1389,7 +1387,6 @@ function ModelComponent({
                   description="Unique identifier for this model (used in API calls)"
                   group_id={s?.group_id ?? null}
                   create_tool_id={s?.values?.create_tool_id ?? null}
-                  link_tool_id={s?.values?.link_tool_id ?? null}
                   showAiGenerate={s?.values?.show_ai_generate ?? false}
                   createValuesAction={createValuesAction}
                   isAutosaveEnabled={isAutosaveEnabled}
@@ -1446,7 +1443,6 @@ function ModelComponent({
                     setFormState((prev) => ({ ...prev, active_flag_id: id }))
                   }
                   group_id={s?.group_id ?? null}
-                  link_tool_id={s?.flags?.link_tool_id ?? null}
                   showAiGenerate={s?.flags?.show_ai_generate ?? false}
                 />
 
@@ -1465,7 +1461,6 @@ function ModelComponent({
                     }));
                   }}
                   group_id={s?.group_id ?? null}
-                  link_tool_id={s?.flags?.link_tool_id ?? null}
                   showAiGenerate={s?.flags?.show_ai_generate ?? false}
                 />
 
@@ -1486,7 +1481,6 @@ function ModelComponent({
                     }));
                   }}
                   group_id={s?.group_id ?? null}
-                  link_tool_id={s?.flags?.link_tool_id ?? null}
                   showAiGenerate={s?.flags?.show_ai_generate ?? false}
                 />
 
@@ -1505,7 +1499,6 @@ function ModelComponent({
                     }));
                   }}
                   group_id={s?.group_id ?? null}
-                  link_tool_id={s?.flags?.link_tool_id ?? null}
                   showAiGenerate={s?.flags?.show_ai_generate ?? false}
                 />
 
@@ -1524,7 +1517,6 @@ function ModelComponent({
                     }));
                   }}
                   group_id={s?.group_id ?? null}
-                  link_tool_id={s?.flags?.link_tool_id ?? null}
                   showAiGenerate={s?.flags?.show_ai_generate ?? false}
                 />
 
@@ -1545,7 +1537,6 @@ function ModelComponent({
                     }));
                   }}
                   group_id={s?.group_id ?? null}
-                  link_tool_id={s?.flags?.link_tool_id ?? null}
                   showAiGenerate={s?.flags?.show_ai_generate ?? false}
                 />
 
@@ -1564,7 +1555,6 @@ function ModelComponent({
                     }));
                   }}
                   group_id={s?.group_id ?? null}
-                  link_tool_id={s?.flags?.link_tool_id ?? null}
                   showAiGenerate={s?.flags?.show_ai_generate ?? false}
                 />
               </div>
@@ -1676,7 +1666,6 @@ function ModelComponent({
                 placeholder="Select modalities"
                 required={s?.modalities?.required ?? true}
                 group_id={s?.group_id ?? null}
-                link_tool_id={s?.modalities?.link_tool_id ?? null}
                 showAiGenerate={s?.modalities?.show_ai_generate ?? false}
                 onGenerate={handleGenerateModalities}
               />
@@ -1762,7 +1751,6 @@ function ModelComponent({
                 placeholder="Select temperature levels"
                 required={s?.temperature_levels?.required ?? false}
                 group_id={s?.group_id ?? null}
-                link_tool_id={s?.temperature_levels?.link_tool_id ?? null}
                 showAiGenerate={
                   s?.temperature_levels?.show_ai_generate ?? false
                 }
@@ -1832,7 +1820,6 @@ function ModelComponent({
                 placeholder="Select pricing configurations"
                 required={s?.pricing?.required ?? false}
                 group_id={s?.group_id ?? null}
-                link_tool_id={s?.pricing?.link_tool_id ?? null}
                 showAiGenerate={s?.pricing?.show_ai_generate ?? false}
                 createPricingAction={createPricingAction}
                 onGenerate={handleGeneratePricing}
@@ -1918,7 +1905,6 @@ function ModelComponent({
                 placeholder="Select reasoning levels"
                 required={s?.reasoning_levels?.required ?? false}
                 group_id={s?.group_id ?? null}
-                link_tool_id={s?.reasoning_levels?.link_tool_id ?? null}
                 showAiGenerate={
                   s?.reasoning_levels?.show_ai_generate ?? false
                 }
@@ -1978,7 +1964,6 @@ function ModelComponent({
                 placeholder="Select voices"
                 required={s?.voices?.required ?? false}
                 group_id={s?.group_id ?? null}
-                link_tool_id={s?.voices?.link_tool_id ?? null}
                 createVoicesAction={createVoicesAction}
                 onGenerate={handleGenerateVoices}
                 isAutosaveEnabled={isAutosaveEnabled}
@@ -2046,7 +2031,6 @@ function ModelComponent({
                 placeholder="Select quality levels"
                 required={s?.qualities?.required ?? false}
                 group_id={s?.group_id ?? null}
-                link_tool_id={s?.qualities?.link_tool_id ?? null}
                 showAiGenerate={s?.qualities?.show_ai_generate ?? false}
                 onGenerate={handleGenerateQualities}
               />

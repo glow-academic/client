@@ -10,8 +10,8 @@ import {
 } from "@/components/common/forms/GenericForm";
 import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
 import { StepCard } from "@/components/common/forms/StepCard";
-import { GenerateRegenerateModal } from "@/components/common/GenerateRegenerateModal";
-import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
+import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
+import { ReadOnlyBanner } from "@/components/common/forms/ReadOnlyBanner";
 import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
 import { Fields } from "@/components/resources/Fields";
@@ -97,7 +97,6 @@ type ParameterSectionData = {
     required?: boolean | null;
     show_ai_generate?: boolean | null;
     create_tool_id?: string | null;
-    link_tool_id?: string | null;
   } | null;
   descriptions?: {
     resource?: { id?: string | null; description?: string | null; generated?: boolean | null } | null;
@@ -107,7 +106,6 @@ type ParameterSectionData = {
     required?: boolean | null;
     show_ai_generate?: boolean | null;
     create_tool_id?: string | null;
-    link_tool_id?: string | null;
   } | null;
   flags?: {
     current?: Array<{
@@ -129,7 +127,6 @@ type ParameterSectionData = {
     required?: boolean | null;
     show_ai_generate?: boolean | null;
     create_tool_id?: string | null;
-    link_tool_id?: string | null;
   } | null;
   departments?: {
     current?: Array<{ department_id?: string | null; name?: string | null; description?: string | null; generated?: boolean | null }> | null;
@@ -138,7 +135,6 @@ type ParameterSectionData = {
     show?: boolean | null;
     required?: boolean | null;
     show_ai_generate?: boolean | null;
-    link_tool_id?: string | null;
   } | null;
   fields?: {
     current?: Array<{ field_id?: string | null; name?: string | null; description?: string | null; generated?: boolean | null }> | null;
@@ -147,7 +143,6 @@ type ParameterSectionData = {
     show?: boolean | null;
     required?: boolean | null;
     show_ai_generate?: boolean | null;
-    link_tool_id?: string | null;
   } | null;
 };
 
@@ -371,7 +366,6 @@ function ParameterComponent({
         flags: {
           resource_ids: effectiveFlags.length > 0 ? effectiveFlags : null,
           create_tool_id: null,
-          link_tool_id: flagsChanged ? (s?.flags?.link_tool_id ?? null) : null,
         },
         expected_version: expectedVersion,
       };
@@ -622,7 +616,6 @@ function ParameterComponent({
           flags: {
             resource_ids: effectiveFlags.length > 0 ? effectiveFlags : null,
             create_tool_id: null,
-            link_tool_id: flagChanged ? (s.flags?.link_tool_id ?? null) : null,
           },
         } as unknown,
       } as SaveParameterIn);
@@ -850,7 +843,6 @@ function ParameterComponent({
                   group_id={s?.group_id ?? null}
                   showAiGenerate={s?.names?.show_ai_generate ?? false}
                   create_tool_id={s?.names?.create_tool_id ?? null}
-                  link_tool_id={s?.names?.link_tool_id ?? null}
                   createNamesAction={createNamesAction}
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["names"]}
@@ -892,7 +884,6 @@ function ParameterComponent({
                   group_id={s?.group_id ?? null}
                   showAiGenerate={s?.descriptions?.show_ai_generate ?? false}
                   create_tool_id={s?.descriptions?.create_tool_id ?? null}
-                  link_tool_id={s?.descriptions?.link_tool_id ?? null}
                   createDescriptionsAction={createDescriptionsAction}
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["descriptions"]}
@@ -913,7 +904,6 @@ function ParameterComponent({
                   required={s?.departments?.required ?? false}
                   group_id={s?.group_id ?? null}
                   showAiGenerate={s?.departments?.show_ai_generate ?? false}
-                  link_tool_id={s?.departments?.link_tool_id ?? null}
                 />
 
                 <Flags
@@ -940,7 +930,6 @@ function ParameterComponent({
                   isGenerating={isGenerating("flags")}
                   group_id={s?.group_id ?? null}
                   showAiGenerate={s?.flags?.show_ai_generate ?? false}
-                  link_tool_id={s?.flags?.link_tool_id ?? null}
                 />
               </div>
             </StepCard>
@@ -1098,7 +1087,6 @@ function ParameterComponent({
                 label="Fields"
                 required={s?.fields?.required ?? false}
                 group_id={s?.group_id ?? null}
-                link_tool_id={s?.fields?.link_tool_id ?? null}
                 showAiGenerate={s?.fields?.show_ai_generate ?? false}
                 onGenerate={() => handleGenerateResources(["fields"])}
                 isGenerating={isGenerating("fields")}

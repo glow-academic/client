@@ -69,7 +69,6 @@ export interface RequestLimitsProps {
   description?: string;
   group_id?: string | null; // Group ID for linking resources
   create_tool_id?: string | null; // Tool ID for AI generation/creation
-  link_tool_id?: string | null; // Tool ID for AI link suggestions
   createRequestLimitsAction?:
     | ((
         input: CreateDraftRequestLimitsIn
@@ -114,7 +113,6 @@ export function RequestLimits({
   description,
   group_id,
   create_tool_id,
-  link_tool_id,
   createRequestLimitsAction,
   onRequestLimitResourceCreated,
   // Legacy props for backward compatibility

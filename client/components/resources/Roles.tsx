@@ -66,7 +66,6 @@ export interface RolesProps {
       color_hex: string;
     }
   ) => void;
-  link_tool_id?: string | null; // Tool ID for AI link suggestions
   showAiGenerate?: boolean;
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
@@ -246,7 +245,6 @@ export function Roles({
   showSelectedFilter = false,
   emptyMessage = "No roles found. Try adjusting your search.",
   onRoleResourceChange,
-  link_tool_id,
   showAiGenerate: _showAiGenerate = false,
   onGenerate: _onGenerate,
   isGenerating: _isGenerating = false,

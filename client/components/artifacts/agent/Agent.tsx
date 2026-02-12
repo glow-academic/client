@@ -24,8 +24,8 @@ import {
 } from "@/components/common/forms/GenericForm";
 import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
 import { StepCard } from "@/components/common/forms/StepCard";
-import { GenerateRegenerateModal } from "@/components/common/GenerateRegenerateModal";
-import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
+import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
+import { ReadOnlyBanner } from "@/components/common/forms/ReadOnlyBanner";
 import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
 import { Flags } from "@/components/resources/Flags";
@@ -1508,7 +1508,6 @@ export default function Agent({
                           onGenerate={handleGenerateFlags}
                           isGenerating={isGenerating("flags")}
                           group_id={sectionData?.group_id ?? null}
-                          link_tool_id={flagsSection?.link_tool_id ?? null}
                           showAiGenerate={!!sectionData?.flags?.show_ai_generate}
                         />
                       </div>
@@ -1579,7 +1578,6 @@ export default function Agent({
                         description="Select the tools this agent can use. Tools define what operations the agent can perform."
                         required={toolsSection?.required ?? false}
                         group_id={sectionData?.group_id ?? null}
-                        link_tool_id={toolsSection?.link_tool_id ?? null}
                         showAiGenerate={!!sectionData?.tools?.show_ai_generate}
                         searchTerm={toolSearch}
                         onSearchChange={(term) =>
@@ -1668,7 +1666,6 @@ export default function Agent({
                         onShowSelectedChange={(value) =>
                           setStepFormData({ modelShowSelected: value })
                         }
-                        link_tool_id={modelsSection?.link_tool_id ?? null}
                       />
                     </StepCard>
                   );
@@ -1736,9 +1733,6 @@ export default function Agent({
                         isGenerating={isGenerating("temperature_levels")}
                         showSlider={true}
                         group_id={sectionData?.group_id ?? null}
-                        link_tool_id={
-                          temperatureLevelsSection?.link_tool_id ?? null
-                        }
                         showAiGenerate={
                           !!sectionData?.temperature_levels?.show_ai_generate
                         }
@@ -1796,9 +1790,6 @@ export default function Agent({
                         onGenerate={handleGenerateReasoningLevels}
                         isGenerating={isGenerating("reasoning_levels")}
                         group_id={sectionData?.group_id ?? null}
-                        link_tool_id={
-                          reasoningLevelsSection?.link_tool_id ?? null
-                        }
                         showAiGenerate={
                           !!sectionData?.reasoning_levels?.show_ai_generate
                         }
@@ -1848,7 +1839,6 @@ export default function Agent({
                         }
                         group_id={sectionData?.group_id ?? null}
                         create_tool_id={voicesSection?.create_tool_id ?? null}
-                        link_tool_id={voicesSection?.link_tool_id ?? null}
                         createVoicesAction={createVoicesAction}
                         registerFlush={registerFlushCallbacks["voices"]}
                       />
@@ -1903,7 +1893,6 @@ export default function Agent({
                         }
                         group_id={sectionData?.group_id ?? null}
                         create_tool_id={promptsSection?.create_tool_id ?? null}
-                        link_tool_id={promptsSection?.link_tool_id ?? null}
                         createPromptsAction={createPromptsAction}
                         registerFlush={registerFlushCallbacks["prompts"]}
                       />

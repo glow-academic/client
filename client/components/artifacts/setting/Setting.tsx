@@ -15,9 +15,9 @@ import {
   type StepStatus,
 } from "@/components/common/forms/GenericForm";
 import { StepCard } from "@/components/common/forms/StepCard";
-import type { GenerateRegenerateModalResource } from "@/components/common/GenerateRegenerateModal";
-import { GenerateRegenerateModal } from "@/components/common/GenerateRegenerateModal";
-import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
+import type { GenerateRegenerateModalResource } from "@/components/common/forms/GenerateRegenerateModal";
+import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
+import { ReadOnlyBanner } from "@/components/common/forms/ReadOnlyBanner";
 import { AuthItemKeys } from "@/components/resources/AuthItemKeys";
 import { Auths } from "@/components/resources/Auths";
 import { Colors } from "@/components/resources/Colors";
@@ -67,7 +67,6 @@ function singleAction(resourceId: string | null) {
   return {
     resource_id: resourceId,
     create_tool_id: null,
-    link_tool_id: null,
   };
 }
 
@@ -75,7 +74,6 @@ function multiAction(resourceIds: string[]) {
   return {
     resource_ids: resourceIds.length > 0 ? resourceIds : null,
     create_tool_id: null,
-    link_tool_id: null,
   };
 }
 

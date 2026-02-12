@@ -165,7 +165,6 @@ export interface PromptsProps {
   onSearchChange?: (term: string) => void;
   group_id?: string | null; // Group ID for linking resources
   create_tool_id?: string | null; // Tool ID for AI generation/creation
-  link_tool_id?: string | null; // Tool ID for AI link suggestions
   createPromptsAction?:
     | ((input: CreateDraftPromptsIn) => Promise<CreateDraftPromptsOut>)
     | undefined;
@@ -214,7 +213,6 @@ export function Prompts({
   onSearchChange,
   group_id,
   create_tool_id,
-  link_tool_id,
   createPromptsAction,
   // Legacy props for backward compatibility
   promptResource,
@@ -427,7 +425,14 @@ export function Prompts({
 
   // Dynamically import markdown renderer to avoid SSR issues
   const MarkdownRenderer = dynamic(
-    () => import("@/components/common/chat/markdown/MarkdownRenderer"),
+    () =>
+      import(
+        "@/components/artifacts/attempt/chat/markdown/Markdown"
+      ).then((mod) => ({
+        default: ({ content }: { content: string }) => (
+          <mod.default>{content}</mod.default>
+        ),
+      })),
     {
       ssr: false,
       loading: () => (

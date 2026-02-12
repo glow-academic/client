@@ -57,7 +57,6 @@ export interface ArgsOutputsProps {
     | undefined;
   group_id?: string | null; // Group ID for resource creation
   create_tool_id?: string | null; // Tool ID for AI generation/creation
-  link_tool_id?: string | null; // Tool ID for AI link suggestions
   // Component handles args_outputs changes internally and calls createArgsOutputsAction
   // No onChange callback needed - component manages its own state like SchemaOutput
   /** When false, skip automatic resource creation (manual save mode) */
@@ -81,7 +80,6 @@ export function ArgsOutputs({
   createArgsOutputsAction,
   group_id,
   create_tool_id,
-  link_tool_id: _link_tool_id,
   isAutosaveEnabled = true,
   registerFlush,
   // AI diff view props

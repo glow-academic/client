@@ -53,7 +53,6 @@ export interface CohortsProps {
   showSelectedFilter?: boolean;
   emptyMessage?: string;
   group_id?: string | null;
-  link_tool_id?: string | null; // Tool ID for AI link suggestions
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
@@ -84,7 +83,6 @@ export function Cohorts({
   showSelectedFilter = false,
   emptyMessage = "No cohorts found.",
   group_id,
-  link_tool_id,
   onGenerate,
   isGenerating = false,
   showAiGenerate = false,
@@ -207,7 +205,7 @@ export function Cohorts({
               </span>
             )}
           </Label>
-          {onGenerate && showAiGenerate && link_tool_id && (
+          {onGenerate && showAiGenerate && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

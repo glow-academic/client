@@ -97,7 +97,6 @@ export interface ScenarioPersonasProps {
   description?: string;
   group_id?: string | null;
   create_tool_id?: string | null; // Tool ID for AI generation/creation
-  link_tool_id?: string | null; // Tool ID for AI link suggestions
   createScenarioPersonasAction?:
     | ((
         input: CreateDraftScenarioPersonasIn
@@ -140,7 +139,6 @@ export function ScenarioPersonas({
   description,
   group_id,
   create_tool_id,
-  link_tool_id,
   createScenarioPersonasAction,
   onPersonaIdsChange,
   onGenerate,

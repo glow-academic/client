@@ -57,7 +57,6 @@ export interface EndpointsProps {
   onSearchChange?: (term: string) => void;
   group_id?: string | null; // Group ID for linking resources
   create_tool_id?: string | null; // Tool ID for AI generation/creation
-  link_tool_id?: string | null; // Tool ID for AI link suggestions
   createEndpointsAction?:
     | ((input: CreateDraftEndpointsIn) => Promise<CreateDraftEndpointsOut>)
     | undefined;
@@ -91,7 +90,6 @@ export function Endpoints({
   onSearchChange,
   group_id,
   create_tool_id,
-  link_tool_id,
   createEndpointsAction,
   onGenerate,
   isGenerating = false,

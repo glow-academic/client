@@ -14,8 +14,8 @@ import {
 } from "@/components/common/forms/GenericForm";
 import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
 import { StepCard } from "@/components/common/forms/StepCard";
-import { GenerateRegenerateModal } from "@/components/common/GenerateRegenerateModal";
-import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
+import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
+import { ReadOnlyBanner } from "@/components/common/forms/ReadOnlyBanner";
 import { Descriptions } from "@/components/resources/Descriptions";
 import { Flags } from "@/components/resources/Flags";
 import { Names } from "@/components/resources/Names";
@@ -349,7 +349,6 @@ function AuthComponent({
             ? ((formStateRef.current["items"] as AuthFormState["items"]) ?? [])
             : null,
         create_tool_id: s?.items?.create_tool_id ?? null,
-        link_tool_id: s?.items?.link_tool_id ?? null,
       },
       expected_version: expectedVersion,
     }),
@@ -549,7 +548,6 @@ function AuthComponent({
                 ? effectiveFormState.items
                 : null,
             create_tool_id: s.items?.create_tool_id ?? null,
-            link_tool_id: s.items?.link_tool_id ?? null,
           },
         },
       });
@@ -716,7 +714,6 @@ function AuthComponent({
                   group_id={s?.group_id ?? null}
                   showAiGenerate={s?.names?.show_ai_generate ?? false}
                   create_tool_id={s?.names?.create_tool_id ?? null}
-                  link_tool_id={s?.names?.link_tool_id ?? null}
                   createNamesAction={createNamesAction}
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["names"]}
@@ -763,7 +760,6 @@ function AuthComponent({
                   group_id={s?.group_id ?? null}
                   showAiGenerate={s?.descriptions?.show_ai_generate ?? false}
                   create_tool_id={s?.descriptions?.create_tool_id ?? null}
-                  link_tool_id={s?.descriptions?.link_tool_id ?? null}
                   createDescriptionsAction={createDescriptionsAction}
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["descriptions"]}
@@ -782,7 +778,6 @@ function AuthComponent({
                   isGenerating={isGenerating("flags")}
                   group_id={s?.group_id ?? null}
                   showAiGenerate={s?.flags?.show_ai_generate ?? false}
-                  link_tool_id={s?.flags?.link_tool_id ?? null}
                 />
               </div>
             </StepCard>
@@ -828,7 +823,6 @@ function AuthComponent({
                 group_id={s?.group_id ?? null}
                 showAiGenerate={s?.protocols?.show_ai_generate ?? false}
                 create_tool_id={s?.protocols?.create_tool_id ?? null}
-                link_tool_id={s?.protocols?.link_tool_id ?? null}
                 createProtocolsAction={createProtocolsAction}
               />
             </StepCard>
@@ -874,7 +868,6 @@ function AuthComponent({
                 group_id={s?.group_id ?? null}
                 showAiGenerate={s?.slugs?.show_ai_generate ?? false}
                 create_tool_id={s?.slugs?.create_tool_id ?? null}
-                link_tool_id={s?.slugs?.link_tool_id ?? null}
                 createSlugsAction={createSlugsAction}
               />
             </StepCard>

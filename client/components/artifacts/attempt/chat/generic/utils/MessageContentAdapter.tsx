@@ -5,7 +5,7 @@
  */
 "use client";
 
-import Markdown from "@/components/common/chat/markdown/Markdown";
+import Markdown from "@/components/artifacts/attempt/chat/markdown/Markdown";
 
 // Feedback entry type (matches API schema)
 export interface FeedbackEntryForAdapter {

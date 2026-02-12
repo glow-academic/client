@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import type { GenerateRegenerateModalResource } from "@/components/common/GenerateRegenerateModal";
+import type { GenerateRegenerateModalResource } from "@/components/common/forms/GenerateRegenerateModal";
 
 /**
  * Manages generate/regenerate modal state and handlers.

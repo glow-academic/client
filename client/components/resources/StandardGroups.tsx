@@ -80,7 +80,6 @@ export interface StandardGroupsProps {
   showSelectedFilter?: boolean;
   group_id?: string | null; // Group ID for linking resources
   create_tool_id?: string | null; // Tool ID for AI generation/creation
-  link_tool_id?: string | null; // Tool ID for AI link suggestions
   createStandardGroupsAction?:
     | ((
         input: CreateDraftStandardGroupsIn
@@ -117,7 +116,6 @@ export function StandardGroups({
   showSelectedFilter = false,
   group_id,
   create_tool_id,
-  link_tool_id,
   createStandardGroupsAction,
   onGenerate,
   isGenerating = false,

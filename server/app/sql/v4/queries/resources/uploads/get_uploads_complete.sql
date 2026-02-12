@@ -1,7 +1,7 @@
 -- Get uploads resources by IDs
--- Simple data fetching - no business logic
+-- Simple data fetching from uploads_resource + uploads_uploads_connection only
 -- Parameters: ids (uuid[])
--- Returns: items (array of upload resources with file details)
+-- Returns: items (array of upload resources with upload_id from connection)
 
 -- Drop function if exists (handles signature variations)
 DO $$
@@ -33,17 +33,14 @@ BEGIN
     END LOOP;
 END $$;
 
--- Create composite type for upload item (includes file details via view_uploads_entry)
+-- Create composite type for upload item (upload_id from connection, no file details)
 CREATE TYPE types.q_get_uploads_v4_item AS (
     uploads_id uuid,
     upload_id uuid,
-    file_path text,
-    mime_type text,
-    size bigint,
     generated boolean
 );
 
--- Create function
+-- Create function - query uploads_resource + uploads_uploads_connection only
 CREATE OR REPLACE FUNCTION api_get_uploads_v4(
     ids uuid[] DEFAULT ARRAY[]::uuid[]
 )
@@ -55,12 +52,13 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (v.id, v.upload_id, v.file_path, v.mime_type, v.size, COALESCE(v.generated, false))::types.q_get_uploads_v4_item
-        ORDER BY array_position(ids, v.id)
+        (ur.id, uuc.upload_id, COALESCE(ur.generated, false))::types.q_get_uploads_v4_item
+        ORDER BY array_position(ids, ur.id)
     ),
     ARRAY[]::types.q_get_uploads_v4_item[]
 ) as items
-FROM view_uploads_entry v
-WHERE v.id = ANY(ids)
-  AND v.active = true;
+FROM uploads_resource ur
+LEFT JOIN uploads_uploads_connection uuc ON uuc.uploads_id = ur.id AND uuc.active = true
+WHERE ur.id = ANY(ids)
+  AND ur.active = true;
 $$;

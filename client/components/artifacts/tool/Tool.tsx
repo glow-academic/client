@@ -16,9 +16,9 @@ import {
 } from "@/components/common/forms/GenericForm";
 import { StepCard } from "@/components/common/forms/StepCard";
 import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
-import type { GenerateRegenerateModalResource } from "@/components/common/GenerateRegenerateModal";
-import { GenerateRegenerateModal } from "@/components/common/GenerateRegenerateModal";
-import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
+import type { GenerateRegenerateModalResource } from "@/components/common/forms/GenerateRegenerateModal";
+import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
+import { ReadOnlyBanner } from "@/components/common/forms/ReadOnlyBanner";
 import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { Args } from "@/components/resources/Args";
 import { ArgPositions } from "@/components/resources/ArgPositions";
@@ -82,7 +82,6 @@ type ToolDataWithArgPositions = ToolData & {
     required?: boolean | null;
     show_ai_generate?: boolean | null;
     create_tool_id?: string | null;
-    link_tool_id?: string | null;
   } | null;
 };
 
@@ -204,11 +203,8 @@ function ToolComponent({
       arg_positions_show_ai_generate: s.arg_positions?.show_ai_generate ?? false,
       args_outputs_show_ai_generate: s.args_outputs?.show_ai_generate ?? false,
       args_create_tool_id: s.args?.create_tool_id ?? null,
-      args_link_tool_id: s.args?.link_tool_id ?? null,
       arg_positions_create_tool_id: s.arg_positions?.create_tool_id ?? null,
-      arg_positions_link_tool_id: s.arg_positions?.link_tool_id ?? null,
       args_outputs_create_tool_id: s.args_outputs?.create_tool_id ?? null,
-      args_outputs_link_tool_id: s.args_outputs?.link_tool_id ?? null,
       names: s.names,
       descriptions: s.descriptions,
       flags: s.flags,
@@ -554,32 +550,26 @@ function ToolComponent({
             names: {
               resource_id: currentFields?.names?.resource?.id ?? null,
               create_tool_id: currentFields?.names?.create_tool_id ?? null,
-              link_tool_id: currentFields?.names?.link_tool_id ?? null,
             },
             descriptions: {
               resource_id: currentFields?.descriptions?.resource?.id ?? null,
               create_tool_id: currentFields?.descriptions?.create_tool_id ?? null,
-              link_tool_id: currentFields?.descriptions?.link_tool_id ?? null,
             },
             flags: {
               resource_id: currentFields?.flags?.current?.flag_option_id ?? null,
               create_tool_id: currentFields?.flags?.create_tool_id ?? null,
-              link_tool_id: currentFields?.flags?.link_tool_id ?? null,
             },
             args: {
               resource_ids: formState.args_ids,
               create_tool_id: currentFields?.args?.create_tool_id ?? null,
-              link_tool_id: currentFields?.args?.link_tool_id ?? null,
             },
             arg_positions: {
               resource_ids: formState.arg_position_ids,
               create_tool_id: currentFields?.arg_positions?.create_tool_id ?? null,
-              link_tool_id: currentFields?.arg_positions?.link_tool_id ?? null,
             },
             args_outputs: {
               resource_ids: formState.args_outputs_ids,
               create_tool_id: currentFields?.args_outputs?.create_tool_id ?? null,
-              link_tool_id: currentFields?.args_outputs?.link_tool_id ?? null,
             },
             expected_version: lastSavedVersionRef.current,
           },
@@ -885,32 +875,26 @@ function ToolComponent({
             names: {
               resource_id: nameId,
               create_tool_id: toolData?.names?.create_tool_id ?? null,
-              link_tool_id: toolData?.names?.link_tool_id ?? null,
             },
             descriptions: {
               resource_id: toolData?.descriptions?.resource?.id ?? null,
               create_tool_id: toolData?.descriptions?.create_tool_id ?? null,
-              link_tool_id: toolData?.descriptions?.link_tool_id ?? null,
             },
             flags: {
               resource_id: toolData?.flags?.current?.flag_option_id ?? null,
               create_tool_id: toolData?.flags?.create_tool_id ?? null,
-              link_tool_id: toolData?.flags?.link_tool_id ?? null,
             },
             args: {
               resource_ids: formState.args_ids,
               create_tool_id: toolData?.args?.create_tool_id ?? null,
-              link_tool_id: toolData?.args?.link_tool_id ?? null,
             },
             arg_positions: {
               resource_ids: formState.arg_position_ids,
               create_tool_id: toolDataAny?.arg_positions?.create_tool_id ?? null,
-              link_tool_id: toolDataAny?.arg_positions?.link_tool_id ?? null,
             },
             args_outputs: {
               resource_ids: formState.args_outputs_ids,
               create_tool_id: toolData?.args_outputs?.create_tool_id ?? null,
-              link_tool_id: toolData?.args_outputs?.link_tool_id ?? null,
             },
           },
         } as SaveToolIn);
@@ -940,17 +924,12 @@ function ToolComponent({
       toolData?.group_id,
       toolData?.names?.resource?.id,
       toolData?.names?.create_tool_id,
-      toolData?.names?.link_tool_id,
       toolData?.descriptions?.resource?.id,
       toolData?.descriptions?.create_tool_id,
-      toolData?.descriptions?.link_tool_id,
       toolData?.flags,
       toolData?.args?.create_tool_id,
-      toolData?.args?.link_tool_id,
       toolDataAny?.arg_positions?.create_tool_id,
-      toolDataAny?.arg_positions?.link_tool_id,
       toolData?.args_outputs?.create_tool_id,
-      toolData?.args_outputs?.link_tool_id,
     ]
   );
 

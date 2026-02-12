@@ -1,6 +1,6 @@
 import SimulationCard, {
   SimulationCardSkeleton,
-} from "@/components/common/layout/SimulationCard";
+} from "@/components/artifacts/attempt/SimulationCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useCallback, useState } from "react";

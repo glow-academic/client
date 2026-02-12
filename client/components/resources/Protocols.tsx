@@ -52,7 +52,6 @@ export interface ProtocolsProps {
   description?: string;
   group_id?: string | null; // Group ID for linking resources
   create_tool_id?: string | null; // Tool ID for AI generation/creation
-  link_tool_id?: string | null; // Tool ID for AI link suggestions
   createProtocolsAction?:
     | ((input: CreateDraftProtocolsIn) => Promise<CreateDraftProtocolsOut>)
     | undefined;
@@ -84,7 +83,6 @@ export function Protocols({
   description,
   group_id,
   create_tool_id,
-  link_tool_id,
   createProtocolsAction,
   onGenerate,
   isGenerating = false,

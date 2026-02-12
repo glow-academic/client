@@ -52,7 +52,6 @@ export interface ModalitiesProps {
   searchTerm?: string;
   onSearchChange?: (term: string) => void;
   group_id?: string | null; // Group ID for linking resources
-  link_tool_id?: string | null; // Tool ID for AI link suggestions
   onGenerate?: () => void | Promise<void>;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   isGenerating?: boolean;
@@ -81,7 +80,6 @@ export function Modalities({
   searchTerm,
   onSearchChange,
   group_id,
-  link_tool_id,
   onGenerate,
   showAiGenerate = false,
   isGenerating = false,
@@ -188,7 +186,7 @@ export function Modalities({
               </span>
             )}
           </Label>
-          {onGenerate && showAiGenerate && link_tool_id && (
+          {onGenerate && showAiGenerate && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
