@@ -1036,6 +1036,42 @@ async def export_base_profiles(conn: asyncpg.Connection) -> None:
         print(f"    {slug}.sql ({count} inserts)")
 
 
+async def export_base_settings(conn: asyncpg.Connection) -> None:
+    """Export settings not linked to any department to 09-settings/."""
+    print("Exporting 09-settings/ ...")
+    out_dir = MODULES_DIR / "09-settings"
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    rows = await conn.fetch("""
+        SELECT sa.id, nr.name
+        FROM setting_artifact sa
+        JOIN setting_names_junction snj ON snj.setting_id = sa.id
+        JOIN names_resource nr ON nr.id = snj.name_id
+        WHERE NOT EXISTS (
+            SELECT 1 FROM setting_settings_junction ssj
+            JOIN departments_resource dr ON ssj.settings_id = ANY(dr.setting_ids)
+            WHERE ssj.setting_id = sa.id
+        )
+        ORDER BY nr.name
+    """)
+    artifacts = [(str(r["id"]), r["name"]) for r in rows]
+    junctions = await get_junction_tables(conn, "setting")
+
+    for art_id, art_name in artifacts:
+        slug = to_slug(art_name)
+        output_path = out_dir / f"{slug}.sql"
+        header = (
+            f"-- Module: {art_name}\n"
+            f"-- Category: setting\n"
+            f"-- Description: {art_name} base setting\n"
+            f"-- ============================================================\n\n"
+        )
+        count = await write_artifact_module(
+            conn, "setting", art_id, junctions, output_path, header
+        )
+        print(f"    {slug}.sql ({count} inserts)")
+
+
 async def _get_scenario_artifact_ids_for_simulation(
     conn: asyncpg.Connection, sim_id: str
 ) -> list[str]:
@@ -1194,6 +1230,7 @@ async def main() -> None:
             "rubrics": export_rubrics,
             "evals": export_evals,
             "profiles": export_base_profiles,
+            "settings": export_base_settings,
             "setup": export_setup,
         }
 
@@ -1216,6 +1253,8 @@ async def main() -> None:
             await export_evals(conn)
             print()
             await export_base_profiles(conn)
+            print()
+            await export_base_settings(conn)
             print()
             await export_setup(conn)
             print()
