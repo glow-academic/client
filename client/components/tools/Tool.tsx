@@ -802,6 +802,14 @@ function ToolComponent({
       }
 
       if (
+        toolData?.arg_positions?.required &&
+        formState.arg_position_ids.length === 0
+      ) {
+        toast.error("Arg positions are required");
+        throw new Error("Arg positions are required");
+      }
+
+      if (
         toolData?.args_outputs?.required &&
         formState.args_outputs_ids.length === 0
       ) {
@@ -861,6 +869,11 @@ function ToolComponent({
               create_tool_id: toolData?.args?.create_tool_id ?? null,
               link_tool_id: toolData?.args?.link_tool_id ?? null,
             },
+            arg_positions: {
+              resource_ids: formState.arg_position_ids,
+              create_tool_id: toolData?.arg_positions?.create_tool_id ?? null,
+              link_tool_id: toolData?.arg_positions?.link_tool_id ?? null,
+            },
             args_outputs: {
               resource_ids: formState.args_outputs_ids,
               create_tool_id: toolData?.args_outputs?.create_tool_id ?? null,
@@ -889,6 +902,7 @@ function ToolComponent({
       saveToolAction,
       router,
       toolData?.args?.required,
+      toolData?.arg_positions?.required,
       toolData?.args_outputs?.required,
       toolData?.group_id,
       toolData?.names?.resource?.id,
@@ -900,6 +914,8 @@ function ToolComponent({
       toolData?.flags,
       toolData?.args?.create_tool_id,
       toolData?.args?.link_tool_id,
+      toolData?.arg_positions?.create_tool_id,
+      toolData?.arg_positions?.link_tool_id,
       toolData?.args_outputs?.create_tool_id,
       toolData?.args_outputs?.link_tool_id,
     ]
@@ -925,6 +941,11 @@ function ToolComponent({
           if (!hasName || !hasDescription) return "pending";
           return hasArgsOutputs ? "completed" : "active";
         }
+        case "arg_positions": {
+          const hasArgPositions = (formState.arg_position_ids?.length ?? 0) > 0;
+          if (!hasName || !hasDescription) return "pending";
+          return hasArgPositions ? "completed" : "active";
+        }
         default:
           return "pending";
       }
@@ -936,8 +957,9 @@ function ToolComponent({
   const stepResources: Record<string, ToolResourceType[]> = useMemo(
     () => ({
       args: ["args"],
+      arg_positions: ["arg_positions"],
       args_outputs: ["args_outputs"],
-      all: ["args", "args_outputs"], // All resources for full-page generation
+      all: ["args", "arg_positions", "args_outputs"],
     }),
     []
   );
@@ -946,6 +968,7 @@ function ToolComponent({
   const resourceLabels: Partial<Record<ToolResourceType, string>> = useMemo(
     () => ({
       args: "Args",
+      arg_positions: "Arg Positions",
       args_outputs: "Args Outputs",
     }),
     []
@@ -1018,6 +1041,18 @@ function ToolComponent({
         resetFields: ["args_ids"],
       },
       {
+        id: "arg_positions",
+        title: "Arg Positions",
+        description: "Arrange argument ordering for this tool.",
+        filters: [
+          {
+            key: "argPositionsShowSelected",
+            label: "Show selected",
+          },
+        ],
+        resetFields: ["arg_position_ids"],
+      },
+      {
         id: "args_outputs",
         title: "Args Outputs",
         description: "Select and edit args outputs for this tool.",
@@ -1037,8 +1072,10 @@ function ToolComponent({
     () => [
       "draftId",
       "argsSearch",
+      "argPositionsSearch",
       "argsOutputsSearch",
       "argsShowSelected",
+      "argPositionsShowSelected",
       "argsOutputsShowSelected",
     ],
     []
@@ -1050,6 +1087,8 @@ function ToolComponent({
         return "Basic information reset";
       case "args":
         return "Args reset";
+      case "arg_positions":
+        return "Arg positions reset";
       case "args_outputs":
         return "Args outputs reset";
       default:
@@ -1075,6 +1114,11 @@ function ToolComponent({
           return {
             ...prev,
             args_outputs_ids: [],
+          };
+        case "arg_positions":
+          return {
+            ...prev,
+            arg_position_ids: [],
           };
         default:
           return prev;
