@@ -50,6 +50,7 @@ from app.api.v4.artifacts.profile.types import (
     ProfileWebsocketResources,
     ProfileWebsocketViews,
 )
+from app.api.v4.auth.context import get_profile_context_internal
 from app.api.v4.permissions import select_agents_for_artifact
 from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.cohorts.get import get_cohorts_internal
@@ -178,6 +179,20 @@ async def get_profile_internal(
             if draft_items:
                 draft_item = draft_items[0]
 
+    # Fetch user context for permissions
+    async with pool.acquire() as context_conn:
+        resolved_context = await get_profile_context_internal(
+            conn=context_conn,
+            profile_id=profile_id,
+            department_id_cookie=None,
+            bypass_cache=bypass_cache,
+        )
+    user_role = resolved_context.user_role
+    actor_name = resolved_context.actor_name
+    user_department_ids = [
+        d.department_id for d in resolved_context.departments if d.department_id
+    ]
+
     async with pool.acquire() as conn:
         query1_params = GetProfileAccessSqlParams(
             profile_id=profile_id,
@@ -191,8 +206,6 @@ async def get_profile_internal(
         )
 
         # Extract user context from Query 1
-        user_role = access_result.user_role
-        user_department_ids = access_result.user_department_ids or []
         target_department_ids = access_result.target_department_ids or []
         target_is_self = access_result.target_is_self or False
         resolved_target_id = access_result.resolved_target_profile_id
@@ -608,7 +621,7 @@ async def get_profile_internal(
 
     return ProfileInternalData(
         # Access/context
-        actor_name=access_result.actor_name,
+        actor_name=actor_name,
         profile_exists=access_result.profile_exists,
         can_edit=can_edit,
         disabled_reason=disabled_reason,

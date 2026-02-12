@@ -13,12 +13,13 @@ from app.api.v4.artifacts.session.types import (
     GetSessionDetailRequest,
     GetSessionDetailResponse,
 )
+from app.api.v4.auth.context import get_profile_context_internal
 from app.api.v4.views.artifacts.session_detail.get import (
     get_artifact_session_detail_internal,
 )
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db
+from app.main import get_db, get_pool
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -53,6 +54,20 @@ async def get_session(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        # Fetch user context for audit logging
+        pool = get_pool()
+        if pool:
+            async with pool.acquire() as context_conn:
+                resolved_context = await get_profile_context_internal(
+                    conn=context_conn,
+                    profile_id=profile_id,
+                    department_id_cookie=None,
+                    bypass_cache=False,
+                )
+                actor_name = resolved_context.actor_name
+        else:
+            actor_name = None
+
         # Check for cached response
         body_dict = request.model_dump(mode="json")
         body_dict["profile_id"] = str(profile_id)
@@ -82,13 +97,11 @@ async def get_session(
             )
 
         # Set audit context
-        if view_result.actor_name:
-            audit_set(
-                http_request, actor={"name": view_result.actor_name, "id": profile_id}
-            )
+        if actor_name:
+            audit_set(http_request, actor={"name": actor_name, "id": profile_id})
 
         api_response = GetSessionDetailResponse(
-            actor_name=view_result.actor_name,
+            actor_name=actor_name,
             session_exists=view_result.session_exists,
             session_id=view_result.session_id,
             profile_id=view_result.profile_id,

@@ -10,9 +10,10 @@ from app.api.v4.artifacts.profile.types import (
     DuplicateProfileApiRequest,
     DuplicateProfileApiResponse,
 )
+from app.api.v4.auth.context import get_profile_context_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db
+from app.main import get_db, get_pool
 from app.sql.types import (
     CheckProfileDuplicateAccessSqlParams,
     CheckProfileDuplicateAccessSqlRow,
@@ -63,6 +64,22 @@ async def duplicate_profile(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        # Fetch user context for permissions and audit logging
+        pool = get_pool()
+        if pool:
+            async with pool.acquire() as context_conn:
+                resolved_context = await get_profile_context_internal(
+                    conn=context_conn,
+                    profile_id=profile_id,
+                    department_id_cookie=None,
+                    bypass_cache=False,
+                )
+                actor_name = resolved_context.actor_name
+                user_role = resolved_context.user_role
+        else:
+            actor_name = None
+            user_role = None
+
         # Permission check: get user role
         access_params = CheckProfileDuplicateAccessSqlParams(
             profile_id=profile_id,
@@ -82,7 +99,7 @@ async def duplicate_profile(
                 detail="Unable to verify user permissions.",
             )
 
-        can_duplicate = compute_can_duplicate(user_role=access_result.user_role)
+        can_duplicate = compute_can_duplicate(user_role=user_role)
 
         if not can_duplicate:
             raise HTTPException(
@@ -110,10 +127,10 @@ async def duplicate_profile(
 
             original_name = result.original_name or "Unknown"
 
-            if result.actor_name:
+            if actor_name:
                 audit_set(
                     http_request,
-                    actor={"name": result.actor_name, "id": profile_id},
+                    actor={"name": actor_name, "id": profile_id},
                     profile={
                         "name": original_name,
                         "id": str(request.target_profile_id),

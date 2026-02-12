@@ -70,6 +70,7 @@ from app.api.v4.artifacts.simulation.types import (
     SimulationWebsocketResources,
     SimulationWebsocketViews,
 )
+from app.api.v4.auth.context import get_profile_context_internal
 from app.api.v4.permissions import select_agents_for_artifact
 from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.departments.get import get_departments_internal
@@ -208,6 +209,20 @@ async def get_simulation_internal(
             if draft_items:
                 draft_item = draft_items[0]
 
+    # Fetch user context for permissions
+    async with pool.acquire() as context_conn:
+        resolved_context = await get_profile_context_internal(
+            conn=context_conn,
+            profile_id=profile_id,
+            department_id_cookie=None,
+            bypass_cache=bypass_cache,
+        )
+    user_role = resolved_context.user_role
+    actor_name = resolved_context.actor_name
+    user_department_ids = [
+        d.department_id for d in resolved_context.departments if d.department_id
+    ]
+
     async with pool.acquire() as conn:
         # === QUERY 1: Access Check ===
         query1_params = GetSimulationAccessSqlParams(
@@ -221,8 +236,6 @@ async def get_simulation_internal(
             await execute_sql_typed(conn, QUERY1_SQL_PATH, params=query1_params),
         )
 
-        user_role = access_result.user_role
-        user_department_ids = access_result.user_department_ids or []
         simulation_department_ids = access_result.simulation_department_ids or []
         cohort_usage_count = access_result.cohort_usage_count or 0
 
@@ -731,7 +744,7 @@ async def get_simulation_internal(
             )
 
     return SimulationInternalData(
-        actor_name=access_result.actor_name,
+        actor_name=actor_name,
         simulation_exists=access_result.simulation_exists,
         can_edit=can_edit,
         disabled_reason=disabled_reason,

@@ -11,8 +11,9 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import Response
 
+from app.api.v4.auth.context import get_profile_context_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
-from app.main import get_db
+from app.main import get_db, get_pool
 from app.sql.types import (
     GetCertificateDataApiRequest,
     GetCertificateDataSqlParams,
@@ -54,6 +55,20 @@ async def export_certificate(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        # Fetch user context for audit logging
+        pool = get_pool()
+        if pool:
+            async with pool.acquire() as context_conn:
+                resolved_context = await get_profile_context_internal(
+                    conn=context_conn,
+                    profile_id=profile_id,
+                    department_id_cookie=None,
+                    bypass_cache=False,
+                )
+                actor_name = resolved_context.actor_name
+        else:
+            actor_name = None
+
         # Convert API request to SQL params (add profile_id from header)
         params = GetCertificateDataSqlParams(
             **request.model_dump(), profile_id=profile_id
@@ -76,7 +91,6 @@ async def export_certificate(
 
         # Parse JSON response
         profile_name = result.profile_name
-        actor_name = result.actor_name
 
         # Set audit context
         if actor_name:

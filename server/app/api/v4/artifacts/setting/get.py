@@ -23,9 +23,10 @@ from app.api.v4.artifacts.setting.permissions import (
     has_access,
 )
 from app.api.v4.artifacts.setting.types import GetSettingApiRequest
+from app.api.v4.auth.context import get_profile_context_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db
+from app.main import get_db, get_pool
 from app.sql.types import (
     GetSettingAccessSqlParams,
     GetSettingAccessSqlRow,
@@ -150,6 +151,28 @@ async def get_setting(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        # Fetch user context for permissions and audit logging
+        pool = get_pool()
+        if pool:
+            async with pool.acquire() as context_conn:
+                resolved_context = await get_profile_context_internal(
+                    conn=context_conn,
+                    profile_id=profile_id,
+                    department_id_cookie=None,
+                    bypass_cache=False,
+                )
+                actor_name = resolved_context.actor_name
+                user_role = resolved_context.user_role
+                user_department_ids = [
+                    d.department_id
+                    for d in resolved_context.departments
+                    if d.department_id
+                ]
+        else:
+            actor_name = None
+            user_role = None
+            user_department_ids = []
+
         # Extract search and filter params from API request
         color_search = request.color_search
         draft_id = request.draft_id
@@ -169,8 +192,6 @@ async def get_setting(
             await execute_sql_typed(conn, ACCESS_SQL_PATH, params=access_params),
         )
 
-        user_role = access_result.user_role
-        user_department_ids = access_result.user_department_ids or []
         setting_department_ids = access_result.setting_department_ids or []
 
         if settings_id is not None:
@@ -222,8 +243,8 @@ async def get_setting(
         )
 
         # Set audit context
-        if access_result.actor_name:
-            audit_ctx = {"actor": {"name": access_result.actor_name, "id": profile_id}}
+        if actor_name:
+            audit_ctx = {"actor": {"name": actor_name, "id": profile_id}}
             # Only add setting to audit context if settings_id was provided (detail mode)
             if (
                 settings_id
@@ -249,7 +270,7 @@ async def get_setting(
         payload = config_result.model_dump()
         payload.update(
             {
-                "actor_name": access_result.actor_name,
+                "actor_name": actor_name,
                 "setting_exists": access_result.setting_exists,
                 "can_edit": can_edit,
                 "disabled_reason": disabled_reason,

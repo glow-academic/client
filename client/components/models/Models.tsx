@@ -90,23 +90,20 @@ export default function Models({
   // Use server-provided facet options directly (no client-side computation)
   const providerOptions = useMemo(
     () =>
-      (modelsData?.provider_options || [])
-        .map((opt) => ({
-          value: opt["value"] as string,
-          label: opt["label"] as string,
+      (modelsData?.providers || [])
+        .map((p) => ({
+          value: p.provider_id as string,
+          label: p.name as string,
         }))
         .filter((opt) => opt.value && opt.label),
-    [modelsData?.provider_options]
+    [modelsData?.providers]
   );
   const statusOptions = useMemo(
-    () =>
-      (modelsData?.status_options || [])
-        .map((opt) => ({
-          value: opt["value"] as string,
-          label: opt["label"] as string,
-        }))
-        .filter((opt) => opt.value && opt.label),
-    [modelsData?.status_options]
+    () => [
+      { value: "true", label: "Active" },
+      { value: "false", label: "Inactive" },
+    ],
+    []
   );
 
   // Table state
@@ -137,7 +134,7 @@ export default function Models({
         cell: () => null,
         enableHiding: true,
         enableSorting: false,
-        accessorFn: (row) => row.provider,
+        accessorFn: (row) => row.provider_id,
         filterFn: (row, _id, value: string[]) => {
           const provider = String(row.getValue("provider"));
           return value.includes(provider);
@@ -333,11 +330,7 @@ export default function Models({
         </div>
         <div className="mt-2">
           <Badge variant="outline" className="text-xs">
-            {model.provider === "openai"
-              ? "OpenAI"
-              : model.provider === "gemini"
-                ? "Gemini"
-                : "Custom"}
+            {model.provider_name || "Custom"}
           </Badge>
         </div>
       </CardHeader>

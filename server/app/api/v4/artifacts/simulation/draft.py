@@ -14,9 +14,10 @@ from app.api.v4.artifacts.simulation.types import (
     PatchSimulationDraftApiResponse,
     PatchSimulationDraftSqlParams,
 )
+from app.api.v4.auth.context import get_profile_context_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db
+from app.main import get_db, get_pool
 from app.sql.types import (
     CheckSimulationDuplicateAccessSqlParams,
     CheckSimulationDuplicateAccessSqlRow,
@@ -67,6 +68,20 @@ async def patch_simulation_draft(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        # Fetch user context for permissions and audit logging
+        pool = get_pool()
+        if pool:
+            async with pool.acquire() as context_conn:
+                resolved_context = await get_profile_context_internal(
+                    conn=context_conn,
+                    profile_id=profile_id,
+                    department_id_cookie=None,
+                    bypass_cache=False,
+                )
+                user_role = resolved_context.user_role
+        else:
+            user_role = None
+
         access_params = CheckSimulationDuplicateAccessSqlParams(profile_id=profile_id)
         access_result = cast(
             CheckSimulationDuplicateAccessSqlRow,
@@ -78,7 +93,7 @@ async def patch_simulation_draft(
         )
 
         # Check draft permission using Python
-        if not compute_can_draft(access_result.user_role if access_result else None):
+        if not compute_can_draft(user_role if access_result else None):
             raise HTTPException(
                 status_code=403,
                 detail="You don't have permission to create or modify drafts.",

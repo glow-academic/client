@@ -226,6 +226,18 @@ def compute_voices_required() -> bool:
 # ========== List Endpoint Permission Functions ==========
 
 
+def compute_list_can_edit(
+    user_role: str | None,
+    agent_department_ids: list[str] | None,
+) -> bool:
+    """Compute can_edit for list view.
+
+    Business logic:
+    - Only admins and superadmins can edit agents
+    """
+    return user_role in ("admin", "superadmin")
+
+
 def compute_can_delete(user_role: str | None, usage_count: int) -> bool:
     """Compute can_delete permission.
 

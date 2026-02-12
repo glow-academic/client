@@ -16,8 +16,8 @@ from app.api.v4.artifacts.tool.permissions import (
     compute_disabled_reason,
     compute_flag_required,
     compute_name_required,
-    compute_show_args,
     compute_show_arg_positions,
+    compute_show_args,
     compute_show_args_outputs,
     compute_show_description,
     compute_show_flag,
@@ -28,8 +28,8 @@ from app.api.v4.artifacts.tool.types import (
     GetToolApiRequest,
     GetToolApiResponse,
     GetToolWebsocketResponse,
-    ToolArgPositionSection,
     ToolArgOutputSection,
+    ToolArgPositionSection,
     ToolArgSection,
     ToolDescriptionSection,
     ToolFlagConfig,
@@ -41,12 +41,13 @@ from app.api.v4.artifacts.tool.types import (
     ToolWebsocketResources,
     ToolWebsocketViews,
 )
+from app.api.v4.auth.context import get_profile_context_internal
 from app.api.v4.permissions import select_agents_for_artifact
 from app.api.v4.resources.agents.get import get_agents_internal
-from app.api.v4.resources.args.get import get_args_internal
-from app.api.v4.resources.args.search import search_args_internal
 from app.api.v4.resources.arg_positions.get import get_arg_positions_internal
 from app.api.v4.resources.arg_positions.search import search_arg_positions_internal
+from app.api.v4.resources.args.get import get_args_internal
+from app.api.v4.resources.args.search import search_args_internal
 from app.api.v4.resources.args_outputs.get import get_args_outputs_internal
 from app.api.v4.resources.args_outputs.search import search_args_outputs_internal
 from app.api.v4.resources.descriptions.get import get_descriptions_internal
@@ -59,7 +60,6 @@ from app.api.v4.resources.names.search import search_names_internal
 from app.api.v4.resources.providers.get import get_providers_internal
 from app.api.v4.resources.tools.get import get_tools_internal
 from app.api.v4.types import CandidateAgent
-from app.api.v4.auth.context import get_profile_context_internal
 from app.api.v4.views.drafts.get import get_draft_tool_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
@@ -375,7 +375,9 @@ async def get_tool_internal(
         [a for a in args_list if a.id in selected_args_ids],
         key=_args_sort_key,
     )
-    arg_positions_current = [ap for ap in arg_positions if ap.id in selected_arg_position_ids]
+    arg_positions_current = [
+        ap for ap in arg_positions if ap.id in selected_arg_position_ids
+    ]
     args_outputs_current = [
         ao for ao in args_outputs_list if ao.id in selected_args_outputs_ids
     ]

@@ -11,10 +11,8 @@ This script:
 3. Re-inserts it in the correct position
 """
 
-import os
 import re
 import subprocess
-import sys
 from pathlib import Path
 
 BASE = Path("/Users/ashoksaravanan/Coding/glow/server/app/sql/v4/queries")
@@ -28,7 +26,8 @@ def get_git_content(filepath: Path) -> str:
     rel_path = filepath.relative_to(REPO_ROOT)
     result = subprocess.run(
         ["git", "-C", str(REPO_ROOT), "show", f"HEAD:{rel_path}"],
-        capture_output=True, text=True
+        capture_output=True,
+        text=True,
     )
     if result.returncode != 0:
         raise RuntimeError(f"git show failed for {rel_path}: {result.stderr}")
@@ -38,20 +37,24 @@ def get_git_content(filepath: Path) -> str:
 def extract_user_departments_cte(content: str) -> str | None:
     """Extract the user_departments CTE block from content."""
     # Find the CTE definition
-    match = re.search(r'(--[^\n]*\n\s*)?user_departments\s+AS\s*\(', content, re.IGNORECASE)
+    match = re.search(
+        r"(--[^\n]*\n\s*)?user_departments\s+AS\s*\(", content, re.IGNORECASE
+    )
     if not match:
         return None
 
     start = match.start()
 
     # Find matching closing paren
-    paren_pos = content.index('(', match.start() + (len(match.group(1)) if match.group(1) else 0))
+    paren_pos = content.index(
+        "(", match.start() + (len(match.group(1)) if match.group(1) else 0)
+    )
     depth = 0
     i = paren_pos
     while i < len(content):
-        if content[i] == '(':
+        if content[i] == "(":
             depth += 1
-        elif content[i] == ')':
+        elif content[i] == ")":
             depth -= 1
             if depth == 0:
                 end = i + 1
@@ -71,25 +74,25 @@ def find_insertion_point(content: str) -> int | None:
     """
     # Look for the end of the params CTE (most common first CTE)
     # Pattern: params AS (\n...\n),
-    match = re.search(r'params\s+AS\s*\(', content, re.IGNORECASE)
+    match = re.search(r"params\s+AS\s*\(", content, re.IGNORECASE)
     if not match:
         return None
 
     # Find matching closing paren
-    paren_pos = content.index('(', match.start())
+    paren_pos = content.index("(", match.start())
     depth = 0
     i = paren_pos
     while i < len(content):
-        if content[i] == '(':
+        if content[i] == "(":
             depth += 1
-        elif content[i] == ')':
+        elif content[i] == ")":
             depth -= 1
             if depth == 0:
                 # Found end of params CTE
                 end = i + 1
                 # Skip the trailing comma
                 rest = content[end:]
-                comma_match = re.match(r'\s*,', rest)
+                comma_match = re.match(r"\s*,", rest)
                 if comma_match:
                     end += comma_match.end()
                 return end
@@ -103,11 +106,11 @@ def process_file(filepath: Path) -> bool:
     current = filepath.read_text()
 
     # Check if CTE already exists
-    if re.search(r'user_departments\s+AS\s*\(', current, re.IGNORECASE):
+    if re.search(r"user_departments\s+AS\s*\(", current, re.IGNORECASE):
         return False
 
     # Check if file references user_departments
-    if 'user_departments' not in current:
+    if "user_departments" not in current:
         return False
 
     # Get original from git
@@ -120,13 +123,17 @@ def process_file(filepath: Path) -> bool:
     # Extract the CTE from original
     cte_block = extract_user_departments_cte(original)
     if not cte_block:
-        stats["errors"].append((filepath.relative_to(BASE), "No user_departments CTE found in git HEAD"))
+        stats["errors"].append(
+            (filepath.relative_to(BASE), "No user_departments CTE found in git HEAD")
+        )
         return False
 
     # Find insertion point in current file
     insert_pos = find_insertion_point(current)
     if insert_pos is None:
-        stats["errors"].append((filepath.relative_to(BASE), "Could not find insertion point (params CTE)"))
+        stats["errors"].append(
+            (filepath.relative_to(BASE), "Could not find insertion point (params CTE)")
+        )
         return False
 
     # Insert the CTE
@@ -141,8 +148,8 @@ def main():
     broken_files = []
     for sql_file in sorted(BASE.rglob("*.sql")):
         content = sql_file.read_text()
-        has_cte = bool(re.search(r'user_departments\s+AS\s*\(', content, re.IGNORECASE))
-        has_ref = 'user_departments' in content
+        has_cte = bool(re.search(r"user_departments\s+AS\s*\(", content, re.IGNORECASE))
+        has_ref = "user_departments" in content
         if has_ref and not has_cte:
             broken_files.append(sql_file)
 
@@ -162,7 +169,7 @@ def main():
             stats["errors"].append((rel_path, str(e)))
             print(f"  ERROR:    {rel_path}: {e}")
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"Restored: {stats['restored']}")
     print(f"Skipped:  {stats['skipped']}")
     print(f"Errors:   {len(stats['errors'])}")
@@ -176,8 +183,8 @@ def main():
     remaining = []
     for sql_file in sorted(BASE.rglob("*.sql")):
         content = sql_file.read_text()
-        has_cte = bool(re.search(r'user_departments\s+AS\s*\(', content, re.IGNORECASE))
-        has_ref = 'user_departments' in content
+        has_cte = bool(re.search(r"user_departments\s+AS\s*\(", content, re.IGNORECASE))
+        has_ref = "user_departments" in content
         if has_ref and not has_cte:
             remaining.append(sql_file.relative_to(BASE))
 
@@ -186,7 +193,7 @@ def main():
         for p in remaining:
             print(f"  {p}")
     else:
-        print(f"\n✅ All user_departments CTEs restored!")
+        print("\n✅ All user_departments CTEs restored!")
 
 
 if __name__ == "__main__":

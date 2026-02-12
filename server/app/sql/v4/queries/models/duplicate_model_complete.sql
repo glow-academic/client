@@ -63,14 +63,12 @@ new_name_resource AS (
     ON CONFLICT (name) DO UPDATE SET created_at = EXCLUDED.created_at
     RETURNING id as name_id, name
 ),
--- Insert description INTO descriptions_resource table
-new_description_resource AS (
-    INSERT INTO descriptions_resource (description, created_at)
-    SELECT description || ' Copy', NOW()
-    FROM source_model
-    WHERE description IS NOT NULL AND description != ''
-    ON CONFLICT (description) DO UPDATE SET created_at = EXCLUDED.created_at
-    RETURNING id as description_id, description
+-- Get existing description_id from junction and link (instead of creating new)
+original_description_id AS (
+    SELECT md.description_id
+    FROM model_descriptions_junction md
+    WHERE md.model_id = (SELECT model_id FROM params)
+    LIMIT 1
 ),
 new_model_group AS (
     INSERT INTO groups_entry (id, created_at, updated_at)
@@ -151,15 +149,16 @@ link_model_name AS (
     CROSS JOIN new_name_resource nnr
     ON CONFLICT (model_id, name_id) DO NOTHING
 ),
--- Link model to description
+-- Link model to existing description
 link_model_description AS (
     INSERT INTO model_descriptions_junction (model_id, description_id, created_at)
-    SELECT 
+    SELECT
         dm.id,
-        ndr.description_id,
+        od.description_id,
         NOW()
     FROM duplicated_model dm
-    CROSS JOIN new_description_resource ndr
+    CROSS JOIN original_description_id od
+    WHERE od.description_id IS NOT NULL
     ON CONFLICT (model_id, description_id) DO NOTHING
 ),
 -- Link model to provider (via model_providers_junction)

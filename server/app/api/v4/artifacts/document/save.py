@@ -83,7 +83,9 @@ async def save_document(
                 actor_name = resolved_context.actor_name
                 user_role = resolved_context.user_role
                 user_department_ids = [
-                    d.department_id for d in resolved_context.departments if d.department_id
+                    d.department_id
+                    for d in resolved_context.departments
+                    if d.department_id
                 ]
         else:
             actor_name = None

@@ -13,9 +13,10 @@ from app.api.v4.artifacts.scenario.types import (
     DeleteScenarioApiRequest,
     DeleteScenarioApiResponse,
 )
+from app.api.v4.auth.context import get_profile_context_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db
+from app.main import get_db, get_pool
 from app.sql.types import (
     CheckScenarioDeleteAccessSqlParams,
     CheckScenarioDeleteAccessSqlRow,
@@ -67,6 +68,28 @@ async def delete_scenario(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        # Fetch user context for permissions and audit logging
+        pool = get_pool()
+        if pool:
+            async with pool.acquire() as context_conn:
+                resolved_context = await get_profile_context_internal(
+                    conn=context_conn,
+                    profile_id=profile_id,
+                    department_id_cookie=None,
+                    bypass_cache=False,
+                )
+                actor_name = resolved_context.actor_name
+                user_role = resolved_context.user_role
+                user_department_ids = [
+                    d.department_id
+                    for d in resolved_context.departments
+                    if d.department_id
+                ]
+        else:
+            actor_name = None
+            user_role = None
+            user_department_ids = []
+
         # Permission check
         access_params = CheckScenarioDeleteAccessSqlParams(
             profile_id=profile_id,
@@ -94,8 +117,8 @@ async def delete_scenario(
             )
 
         if not has_access(
-            access_result.user_role,
-            access_result.user_department_ids or [],
+            user_role,
+            user_department_ids,
             access_result.scenario_department_ids or [],
         ):
             raise HTTPException(
@@ -105,7 +128,7 @@ async def delete_scenario(
 
         usage_count = access_result.usage_count or 0
         if not compute_can_delete(
-            access_result.user_role, access_result.scenario_department_ids, usage_count
+            user_role, access_result.scenario_department_ids, usage_count
         ):
             raise HTTPException(
                 status_code=403,
@@ -136,7 +159,6 @@ async def delete_scenario(
             )
 
         scenario_name = result.name
-        actor_name = result.actor_name
 
         # Set audit context with data from SQL query
         if actor_name:

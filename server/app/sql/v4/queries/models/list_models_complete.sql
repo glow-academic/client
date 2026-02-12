@@ -1,15 +1,15 @@
 -- List all models with provider info and usage counts
--- Converted to function with composite types
--- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
+-- Resource-first: only touches model_artifact + model's own junctions + resource tables
+-- No cross-entity artifact tables (provider_artifact, etc.)
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
 DECLARE
     r RECORD;
 BEGIN
-    FOR r IN 
-        SELECT oidvectortypes(proargtypes) as sig 
-        FROM pg_proc 
+    FOR r IN
+        SELECT oidvectortypes(proargtypes) as sig
+        FROM pg_proc
         WHERE proname = 'api_list_models_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
@@ -24,9 +24,9 @@ DO $$
 DECLARE
     r RECORD;
 BEGIN
-    FOR r IN 
-        SELECT typname 
-        FROM pg_type 
+    FOR r IN
+        SELECT typname
+        FROM pg_type
         WHERE typname LIKE 'q_list_models_v4_%'
           AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
     LOOP
@@ -39,74 +39,76 @@ CREATE TYPE types.q_list_models_v4_model AS (
     model_id uuid,
     name text,
     description text,
-    active boolean,
+    is_inactive boolean,
     image_model boolean,
     updated_at timestamptz,
-    provider text,
     provider_id uuid,
-    provider_name text,
-    base_url text,
-    can_edit boolean,
-    can_delete boolean
+    department_ids text[],
+    agents_usage_count bigint
 );
 
-CREATE TYPE types.q_list_models_v4_provider_option AS (
-    value text,
-    label text
-);
-
-CREATE TYPE types.q_list_models_v4_status_option AS (
-    value text,
-    label text
+-- Filter option types simplified: id + count only (names hydrated in Python from cache)
+CREATE TYPE types.q_list_models_v4_option_id AS (
+    id uuid,
+    count bigint
 );
 
 -- 4) Recreate function
-CREATE OR REPLACE FUNCTION api_list_models_v4(profile_id uuid)
+CREATE OR REPLACE FUNCTION api_list_models_v4(
+    profile_id uuid,
+    search text DEFAULT NULL,
+    filter_provider_ids uuid[] DEFAULT NULL,
+    filter_department_ids uuid[] DEFAULT NULL,
+    provider_search text DEFAULT NULL,
+    department_search text DEFAULT NULL,
+    page_size int DEFAULT 1000,
+    page_offset int DEFAULT 0
+)
 RETURNS TABLE (
     models types.q_list_models_v4_model[],
-    provider_options types.q_list_models_v4_provider_option[],
-    status_options types.q_list_models_v4_status_option[]
+    provider_option_ids types.q_list_models_v4_option_id[],
+    department_option_ids types.q_list_models_v4_option_id[],
+    total_count bigint
 )
 LANGUAGE sql
 STABLE
 AS $$
+-- User context (actor_name, user_role) comes from get_profile_context_internal() in Python
 WITH params AS (
     SELECT profile_id AS profile_id
 ),
--- User context: actor_name comes from get_profile_context_internal() in Python
-user_profile AS (
-    SELECT COALESCE(r.role, 'member'::profile_type) as role,
-           ''::text as actor_name
-    FROM profile_roles_junction prj
-    JOIN roles_resource r ON prj.role_id = r.id
-    WHERE prj.profile_id = (SELECT profile_id FROM params)
-    LIMIT 1
+user_departments AS (
+    SELECT department_id
+    FROM params x
+    JOIN profile_departments_junction ON profile_departments_junction.profile_id = x.profile_id AND profile_departments_junction.active = true
 ),
--- Pre-aggregate simulation usage counts for all models
--- Domain-based agent lookup removed - return empty result
-simulation_usage AS (
-    SELECT 
-        am.model_id,
-        COUNT(*) as usage_count
-    FROM (
-        SELECT NULL::uuid as agent_id WHERE false
-    ) combined_agents
-    JOIN agents_resource a ON a.id = combined_agents.agent_id AND EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
-    JOIN agent_models_junction am ON am.agent_id = a.id
-    GROUP BY am.model_id
+-- Pre-aggregate department IDs per model
+model_departments_data AS (
+    SELECT
+        md.model_id,
+        ARRAY_AGG(md.department_id::text ORDER BY md.created_at) as department_ids
+    FROM model_departments_junction md
+    GROUP BY md.model_id
 ),
--- Pre-aggregate agent usage counts for all models
+-- Provider ID per model
+model_providers_data AS (
+    SELECT
+        mpj.model_id,
+        mpj.providers_id as provider_id
+    FROM model_providers_junction mpj
+    WHERE mpj.active = true
+),
+-- Agent usage count per model (via agent_models_junction, NOT agent_artifact.model_id)
 agent_usage AS (
-    SELECT 
+    SELECT
         am.model_id,
-        COUNT(*) as usage_count
-    FROM agent_artifact a
-    JOIN agent_models_junction am ON am.agent_id = a.id
+        COUNT(*)::bigint as usage_count
+    FROM agent_models_junction am
     GROUP BY am.model_id
 ),
 -- Determine if model is an image model (has 'image' output modality)
 image_model_check AS (
-    SELECT 
+    SELECT
         mm.model_id,
         CASE WHEN COUNT(*) > 0 THEN true ELSE false END as image_model
     FROM model_modalities_junction mm
@@ -114,79 +116,107 @@ image_model_check AS (
     WHERE mr.modality = 'image' AND mr.is_input = false AND mm.active = true
     GROUP BY mm.model_id
 ),
-models_with_usage AS (
-    SELECT 
+model_data_base AS (
+    SELECT
         m.id as model_id,
-        (SELECT n.name FROM model_names_junction mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1),
-        (SELECT d.description FROM model_descriptions_junction md JOIN descriptions_resource d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1),
+        (SELECT n.name FROM model_names_junction mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1) as model_name,
+        (SELECT d.description FROM model_descriptions_junction md JOIN descriptions_resource d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1) as description,
         EXISTS (SELECT 1 FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = m.id AND f.name = 'model_active' AND mf.value = TRUE) as active,
         COALESCE(imc.image_model, false) as image_model,
         m.updated_at,
-        (SELECT n.name FROM model_providers_junction mpj JOIN providers_resource pr ON pr.id = mpj.providers_id JOIN provider_providers_junction ppj ON ppj.providers_id = pr.id JOIN provider_names_junction pn ON pn.provider_id = ppj.provider_id JOIN names_resource n ON n.id = pn.name_id WHERE mpj.model_id = m.id AND mpj.active = true LIMIT 1) as provider,
-        (SELECT mpj.providers_id FROM model_providers_junction mpj WHERE mpj.model_id = m.id AND mpj.active = true LIMIT 1) as provider_id,
-        (SELECT n.name FROM model_providers_junction mpj JOIN providers_resource pr ON pr.id = mpj.providers_id JOIN provider_providers_junction ppj ON ppj.providers_id = pr.id JOIN provider_names_junction pn ON pn.provider_id = ppj.provider_id JOIN names_resource n ON n.id = pn.name_id WHERE mpj.model_id = m.id AND mpj.active = true LIMIT 1) as provider_name,
-        COALESCE((SELECT pr.endpoint FROM model_providers_junction mpj JOIN providers_resource pr ON pr.id = mpj.providers_id WHERE mpj.model_id = m.id AND mpj.active = true LIMIT 1), '') as base_url,
-        COALESCE(su.usage_count, 0) as simulation_usage_count,
-        COALESCE(au.usage_count, 0) as agent_usage_count
+        mpd.provider_id,
+        COALESCE(mdd.department_ids, NULL) as department_ids,
+        COALESCE(au.usage_count, 0)::bigint as agents_usage_count
     FROM model_artifact m
-    LEFT JOIN simulation_usage su ON su.model_id = m.id
+    LEFT JOIN model_departments_data mdd ON mdd.model_id = m.id
+    LEFT JOIN model_providers_data mpd ON mpd.model_id = m.id
     LEFT JOIN agent_usage au ON au.model_id = m.id
     LEFT JOIN image_model_check imc ON imc.model_id = m.id
+    LEFT JOIN model_departments_junction md ON md.model_id = m.id AND md.department_id IN (SELECT department_id FROM user_departments)
+    GROUP BY m.id,
+        (SELECT n.name FROM model_names_junction mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1),
+        (SELECT d.description FROM model_descriptions_junction md JOIN descriptions_resource d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1),
+        EXISTS (SELECT 1 FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = m.id AND f.name = 'model_active' AND mf.value = TRUE),
+        imc.image_model, m.updated_at, mpd.provider_id, mdd.department_ids, au.usage_count
+    HAVING COUNT(md.model_id) > 0 OR NOT EXISTS (
+        SELECT 1 FROM model_departments_junction md2 WHERE md2.model_id = m.id
+    )
 ),
-provider_options_data AS (
-    -- Get provider options FROM providers_resource resource table
-    SELECT DISTINCT
-        p.id::text as value,
-        n.name as label
-    FROM providers_resource p
-    JOIN provider_providers_junction ppj ON ppj.providers_id = p.id
-    JOIN provider_artifact pr ON pr.id = ppj.provider_id
-    JOIN provider_names_junction pn ON pn.provider_id = pr.id
-    JOIN names_resource n ON n.id = pn.name_id
-    WHERE p.active = true
-    ORDER BY n.name
+model_data AS (
+    SELECT mdb.*
+    FROM model_data_base mdb
 ),
-models_aggregated AS (
+-- Apply server-side filters
+filtered_models AS (
+    SELECT md.*
+    FROM model_data md
+    WHERE
+        -- Search filter: match name or description (case-insensitive)
+        (search IS NULL OR LOWER(md.model_name) LIKE '%' || LOWER(search) || '%' OR LOWER(md.description) LIKE '%' || LOWER(search) || '%')
+        -- Provider filter: model must have one of the selected providers
+        AND (filter_provider_ids IS NULL OR md.provider_id = ANY(filter_provider_ids))
+        -- Department filter: model must belong to at least one selected department
+        AND (filter_department_ids IS NULL OR md.department_ids && filter_department_ids::text[])
+),
+-- Count total filtered results (before pagination)
+filtered_count AS (
+    SELECT COUNT(*)::bigint as total_count FROM filtered_models
+),
+-- Paginate filtered results
+paginated_models AS (
+    SELECT fm.*
+    FROM filtered_models fm
+    ORDER BY fm.updated_at DESC NULLS LAST
+    LIMIT page_size OFFSET page_offset
+),
+-- Filter option IDs with counts (names hydrated in Python from cached *_internal() functions)
+all_provider_ids AS (
+    SELECT DISTINCT provider_id
+    FROM model_data
+    WHERE provider_id IS NOT NULL
+),
+provider_option_data AS (
     SELECT
-        COALESCE(
-            ARRAY_AGG(
-                (mwu.model_id, mwu.name, mwu.description, mwu.active, mwu.image_model, mwu.updated_at,
-                 mwu.provider, mwu.provider_id, mwu.provider_name, mwu.base_url,
-                 CASE 
-                     WHEN up.role IN ('admin'::profile_type, 'superadmin'::profile_type) THEN true
-                     ELSE false
-                 END,
-                 CASE 
-                     WHEN (mwu.simulation_usage_count + mwu.agent_usage_count) = 0 THEN true
-                     ELSE false
-                 END
-                )::types.q_list_models_v4_model
-                ORDER BY mwu.updated_at DESC
-            ),
-            '{}'::types.q_list_models_v4_model[]
-        ) as models
-    FROM models_with_usage mwu
-    CROSS JOIN user_profile up
-    GROUP BY up.role
+        pr.id,
+        (SELECT COUNT(*) FROM model_data md WHERE md.provider_id = pr.id) as count
+    FROM providers_resource pr
+    WHERE pr.id IN (SELECT provider_id FROM all_provider_ids)
 ),
-provider_options_aggregated AS (
-    SELECT 
-        COALESCE(
-            ARRAY_AGG(
-                (value, label)::types.q_list_models_v4_provider_option
-                ORDER BY label
-            ),
-            '{}'::types.q_list_models_v4_provider_option[]
-        ) as provider_options
-    FROM provider_options_data
+department_option_data AS (
+    SELECT
+        dr.id,
+        (SELECT COUNT(*) FROM model_data) as count
+    FROM departments_resource dr
+    WHERE dr.id IN (SELECT department_id FROM user_departments)
 )
 SELECT
-    ma.models,
-    poa.provider_options,
-    ARRAY[
-        ('true', 'Active')::types.q_list_models_v4_status_option,
-        ('false', 'Inactive')::types.q_list_models_v4_status_option
-    ] as status_options
-FROM models_aggregated ma
-CROSS JOIN provider_options_aggregated poa
+    -- Aggregate paginated models
+    COALESCE(
+        (SELECT ARRAY_AGG(
+            (pm.model_id, pm.model_name, pm.description,
+             NOT pm.active, pm.image_model, pm.updated_at,
+             pm.provider_id, pm.department_ids,
+             pm.agents_usage_count
+            )::types.q_list_models_v4_model
+            ORDER BY pm.updated_at DESC NULLS LAST
+        ) FROM paginated_models pm),
+        '{}'::types.q_list_models_v4_model[]
+    ) as models,
+    -- Provider option IDs with counts (names hydrated in Python)
+    COALESCE(
+        (SELECT ARRAY_AGG(
+            (pod.id, pod.count)::types.q_list_models_v4_option_id
+        ) FROM provider_option_data pod),
+        '{}'::types.q_list_models_v4_option_id[]
+    ) as provider_option_ids,
+    -- Department option IDs with counts (names hydrated in Python)
+    COALESCE(
+        (SELECT ARRAY_AGG(
+            (dod.id, dod.count)::types.q_list_models_v4_option_id
+        ) FROM department_option_data dod),
+        '{}'::types.q_list_models_v4_option_id[]
+    ) as department_option_ids,
+    -- Total count of filtered models (before pagination)
+    (SELECT total_count FROM filtered_count) as total_count
+FROM params
 $$;

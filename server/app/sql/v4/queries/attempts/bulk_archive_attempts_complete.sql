@@ -10,9 +10,9 @@ DO $$
 DECLARE
     r RECORD;
 BEGIN
-    FOR r IN 
-        SELECT oidvectortypes(proargtypes) as sig 
-        FROM pg_proc 
+    FOR r IN
+        SELECT oidvectortypes(proargtypes) as sig
+        FROM pg_proc
         WHERE proname = 'api_bulk_archive_attempts_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
@@ -65,7 +65,7 @@ BEGIN
     IF v_use_attempt_ids_mode THEN
         -- attempt_ids mode: Archive specific attempts
         WITH update_attempts AS (
-            UPDATE attempts_entry
+            UPDATE simulation_attempts_entry
             SET archived = api_bulk_archive_attempts_v4.archived
             WHERE id = ANY(attempt_ids)
               AND archived != api_bulk_archive_attempts_v4.archived
@@ -76,23 +76,22 @@ BEGIN
 
         -- Get profile IDs to invalidate from attempt_ids
         SELECT COALESCE(
-            ARRAY_AGG(DISTINCT sa.profile_id::text) FILTER (WHERE sa.profile_id IS NOT NULL),
+            ARRAY_AGG(DISTINCT mal.profile_id::text) FILTER (WHERE mal.profile_id IS NOT NULL),
             ARRAY[]::text[]
         ) INTO v_profile_ids
-        FROM view_attempts_entry
-        WHERE id = ANY(attempt_ids);
+        FROM mv_attempt_list mal
+        WHERE mal.attempt_id = ANY(attempt_ids);
     ELSE
-        -- filter mode: Use the existing filter-based logic from bulk_archive_attempts_by_filters.sql
-        -- This is a complex query, so we'll execute it as a subquery
-        WITH 
+        -- filter mode: Use the existing filter-based logic
+        WITH
         roles_param AS (
             SELECT roles AS roles_array
         ),
         history_viewer_role AS (
-            SELECT 
-                CASE 
+            SELECT
+                CASE
                     WHEN profile_id::text IS NULL OR profile_id::text = '' THEN
-                        CASE 
+                        CASE
                             WHEN 'superadmin'::profile_type = ANY(roles) THEN 'superadmin'::text
                             WHEN 'admin'::profile_type = ANY(roles) THEN 'admin'::text
                             WHEN 'instructional'::profile_type = ANY(roles) THEN 'instructional'::text
@@ -116,41 +115,41 @@ BEGIN
         history_attempts AS (
             SELECT DISTINCT
                 sa.id AS attempt_id,
-                sa.simulation_id,
+                mal.simulation_id,
                 sa.created_at AS attempt_date,
                 sa.archived AS is_archived,
                 sa.infinite_mode,
-                sa.profile_id,
-                (SELECT n.name FROM simulation_names_junction simn JOIN names_resource n ON simn.name_id = n.id WHERE simn.simulation_id = sim.id LIMIT 1) AS simulation_name,
-                sim.practice_simulation,
+                mal.profile_id,
+                (SELECT n.name FROM simulation_names_junction simn JOIN names_resource n ON simn.name_id = n.id WHERE simn.simulation_id = mal.simulation_id LIMIT 1) AS simulation_name,
+                mal.practice,
                 COALESCE(sdd.department_ids, NULL) as department_ids
-            FROM view_attempts_entry sa
-            JOIN simulation_artifact sim ON sim.id = sa.simulation_id
-            JOIN profile_artifact p_attempt ON p_attempt.id = sa.profile_id
+            FROM simulation_attempts_entry sa
+            JOIN mv_attempt_list mal ON mal.attempt_id = sa.id
+            JOIN profile_artifact p_attempt ON p_attempt.id = mal.profile_id
             CROSS JOIN history_viewer_role hvr
             LEFT JOIN (
-                SELECT 
+                SELECT
                     sd.simulation_id,
                     ARRAY_AGG(sd.department_id::text ORDER BY sd.created_at) as department_ids
                 FROM simulation_departments_junction sd
                 WHERE sd.active = true
                 GROUP BY sd.simulation_id
-            ) sdd ON sdd.simulation_id = sim.id
+            ) sdd ON sdd.simulation_id = mal.simulation_id
             WHERE (start_date IS NULL OR start_date = '' OR sa.created_at >= (NULLIF(start_date, '')::timestamptz))
               AND (end_date IS NULL OR end_date = '' OR sa.created_at <= (NULLIF(end_date, '')::timestamptz))
               AND (
-                (cardinality(simulation_filters) = 0) AND sim.practice_simulation = FALSE
+                (cardinality(simulation_filters) = 0) AND mal.practice = FALSE
                 OR
                 (cardinality(simulation_filters) > 0 AND (
-                  ('general' = ANY(simulation_filters) AND sim.practice_simulation = FALSE) OR
-                  ('practice' = ANY(simulation_filters) AND sim.practice_simulation = TRUE) OR
+                  ('general' = ANY(simulation_filters) AND mal.practice = FALSE) OR
+                  ('practice' = ANY(simulation_filters) AND mal.practice = TRUE) OR
                   ('archived' = ANY(simulation_filters) AND sa.archived = TRUE)
                 ))
               )
               AND (
                 cardinality(simulation_filters) = 0 OR 'archived' = ANY(simulation_filters) OR sa.archived = FALSE
               )
-              AND ((profile_id::text IS NULL OR profile_id::text = '') OR sa.profile_id = profile_id)
+              AND ((profile_id::text IS NULL OR profile_id::text = '') OR mal.profile_id = profile_id)
               AND (cardinality(department_ids) = 0 OR sdd.department_ids IS NULL OR sdd.department_ids && department_ids::text[])
               AND (
                 hvr.role = 'superadmin'::profile_type OR
@@ -186,42 +185,41 @@ BEGIN
         history_attempts_with_filters AS (
             SELECT haf.*
             FROM history_attempts_filtered haf
-            WHERE 
+            WHERE
                 (cardinality(profile_ids_filter) = 0 OR haf.profile_id = ANY(profile_ids_filter))
                 AND (cardinality(simulation_ids) = 0 OR haf.simulation_id = ANY(simulation_ids))
                 AND (infinite_mode IS NULL OR haf.infinite_mode = infinite_mode)
         ),
         attempt_scenario_ids AS (
             SELECT DISTINCT
-                sc.attempt_id,
-                ARRAY_AGG(DISTINCT sc.scenario_id) FILTER (WHERE sc.scenario_id IS NOT NULL) AS scenario_ids
-            FROM view_chats_entry sc
-            WHERE sc.attempt_id IN (SELECT attempt_id FROM history_attempts_with_filters)
-            GROUP BY sc.attempt_id
+                mc.attempt_id,
+                ARRAY_AGG(DISTINCT mc.scenario_id) FILTER (WHERE mc.scenario_id IS NOT NULL) AS scenario_ids
+            FROM mv_attempt_chats mc
+            WHERE mc.attempt_id IN (SELECT attempt_id FROM history_attempts_with_filters)
+            GROUP BY mc.attempt_id
         ),
         history_attempts_final AS (
             SELECT haf.*
             FROM history_attempts_with_filters haf
             LEFT JOIN attempt_scenario_ids asi ON asi.attempt_id = haf.attempt_id
-            WHERE 
+            WHERE
                 (cardinality(scenario_ids) = 0 OR asi.scenario_ids IS NULL OR asi.scenario_ids && scenario_ids)
         ),
         history_personas AS (
             SELECT
-                sc.attempt_id,
+                mc.attempt_id,
                 array_agg(DISTINCT sp.persona_id) FILTER (WHERE sp.persona_id IS NOT NULL) AS persona_ids
-            FROM view_chats_entry sc
-            JOIN scenarios_resource scn ON scn.id = sc.scenario_id
-            LEFT JOIN scenario_personas_junction sp ON sp.scenario_id = scn.id AND sp.active = TRUE
-            WHERE sc.attempt_id IN (SELECT attempt_id FROM history_attempts_final)
-            GROUP BY sc.attempt_id
+            FROM mv_attempt_chats mc
+            LEFT JOIN scenario_personas_junction sp ON sp.scenario_id = mc.scenario_id AND sp.active = TRUE
+            WHERE mc.attempt_id IN (SELECT attempt_id FROM history_attempts_final)
+            GROUP BY mc.attempt_id
         ),
         final_filtered_attempts AS (
             SELECT haf.attempt_id
             FROM history_attempts_final haf
             LEFT JOIN profile_artifact p ON p.id = haf.profile_id
             LEFT JOIN history_personas hp ON hp.attempt_id = haf.attempt_id
-            WHERE 
+            WHERE
                 (search IS NULL OR search = '' OR
                  LOWER(COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '')) LIKE '%' || LOWER(search) || '%' OR
                  LOWER(haf.simulation_name) LIKE '%' || LOWER(search) || '%' OR
@@ -233,7 +231,7 @@ BEGIN
                  ))
         ),
         filter_update AS (
-            UPDATE attempts_entry
+            UPDATE simulation_attempts_entry
             SET archived = api_bulk_archive_attempts_v4.archived
             WHERE id IN (SELECT attempt_id FROM final_filtered_attempts)
               AND archived != api_bulk_archive_attempts_v4.archived

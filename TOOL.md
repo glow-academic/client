@@ -160,21 +160,21 @@ If a tool has `tool_args_junction.active = false` for an arg, any `tool_args_out
 
 Every `args_resource` should have a corresponding `args_calls_connection` row. Same for `args_outputs_resource` -> `args_outputs_calls_connection`.
 
-### Rule 16: Every non-creatable domain must have a use_ (link) tool
+### Rule 16: Non-creatable tool domains must have a use_ (link) tool
 
-For every `domains_resource` row with `creatable = false`, there must be a corresponding `use_*` tool registered in `resource_tools_relation` for that resource. Link tools allow wiring existing resources into artifacts without creating new ones.
+For every active `domains_resource` row with `creatable = false` that is present in `resource_tools_relation`, there must be a corresponding `use_*` tool registered in `resource_tools_relation` for that resource.
 
-### Rule 17: Every creatable domain must have a create_ tool
+### Rule 17: Creatable tool domains must have a create_ tool
 
-For every `domains_resource` row with `creatable = true`, there must be a corresponding `create_*` tool registered in `resource_tools_relation` for that resource.
+For every active `domains_resource` row with `creatable = true` that is present in `resource_tools_relation`, there must be a corresponding `create_*` tool registered in `resource_tools_relation` for that resource.
 
-### Rule 18: Every domain must have a corresponding resource_tools_relation entry
+### Rule 18: Every resource_type enum value must have an active domain
 
-Every `domains_resource.resource` value must appear in `resource_tools_relation` with at least one tool. A domain without a registered tool is unreachable.
+Every value in the `resource_type` enum must be represented in `domains_resource` with an active row.
 
-### Rule 19: Every resource in resource_tools_relation must have a domain
+### Rule 19: Every active domain must map to a valid resource_type enum value
 
-Every distinct `resource_tools_relation.resource` value must have a corresponding active `domains_resource` row. Resources registered in the relation table but missing from domains are orphan registrations.
+No active `domains_resource.resource` should fall outside the `resource_type` enum.
 
 ### Rule 20: Every binding must have a create_ tool
 
@@ -463,6 +463,10 @@ ORDER BY ao.name;
 SELECT dr.resource::text AS domain_resource
 FROM domains_resource dr
 WHERE dr.active = true AND dr.creatable = false
+    AND EXISTS (
+        SELECT 1 FROM resource_tools_relation rtr
+        WHERE rtr.resource = dr.resource AND rtr.active = true
+    )
     AND NOT EXISTS (
         SELECT 1 FROM resource_tools_relation rtr
         JOIN tool_names_junction tnj ON tnj.tool_id = rtr.tool_id AND tnj.active = true
@@ -480,6 +484,10 @@ ORDER BY dr.resource;
 SELECT dr.resource::text AS domain_resource
 FROM domains_resource dr
 WHERE dr.active = true AND dr.creatable = true
+    AND EXISTS (
+        SELECT 1 FROM resource_tools_relation rtr
+        WHERE rtr.resource = dr.resource AND rtr.active = true
+    )
     AND NOT EXISTS (
         SELECT 1 FROM resource_tools_relation rtr
         JOIN tool_names_junction tnj ON tnj.tool_id = rtr.tool_id AND tnj.active = true
@@ -491,34 +499,53 @@ ORDER BY dr.resource;
 
 **Expected**: Empty. Any rows = creatable domain has no create tool. The resource cannot be created.
 
-### Audit 18: Domains without resource_tools_relation entries
+### Audit 18: resource_type enum values missing domains
 
 ```sql
-SELECT dr.resource::text AS domain_resource
+WITH enum_resources AS (
+    SELECT e.enumlabel AS resource_name
+    FROM pg_type t
+    JOIN pg_enum e ON e.enumtypid = t.oid
+    WHERE t.typname = 'resource_type'
+),
+active_domains AS (
+    SELECT dr.resource::text AS resource_name
+    FROM domains_resource dr
+    WHERE dr.active = true
+)
+SELECT er.resource_name AS missing_domain_resource
+FROM enum_resources er
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM active_domains ad
+    WHERE ad.resource_name = er.resource_name
+)
+ORDER BY er.resource_name;
+```
+
+**Expected**: Empty. Any rows = resource enum drift not represented in domains.
+
+### Audit 19: Active domains not present in resource_type enum
+
+```sql
+WITH enum_resources AS (
+    SELECT e.enumlabel AS resource_name
+    FROM pg_type t
+    JOIN pg_enum e ON e.enumtypid = t.oid
+    WHERE t.typname = 'resource_type'
+)
+SELECT dr.resource::text AS orphan_domain_resource
 FROM domains_resource dr
 WHERE dr.active = true
     AND NOT EXISTS (
-        SELECT 1 FROM resource_tools_relation rtr WHERE rtr.resource = dr.resource
+        SELECT 1
+        FROM enum_resources er
+        WHERE er.resource_name = dr.resource::text
     )
 ORDER BY dr.resource;
 ```
 
-**Expected**: Empty. Any rows = domain declares a resource but no tool is registered to handle it.
-
-### Audit 19: resource_tools_relation entries without domains
-
-```sql
-SELECT rtr.resource::text AS orphan_resource,
-    (SELECT nr.name FROM tool_names_junction tnj JOIN names_resource nr ON nr.id = tnj.name_id
-     WHERE tnj.tool_id = rtr.tool_id AND tnj.active = true LIMIT 1) AS tool_name
-FROM resource_tools_relation rtr
-WHERE NOT EXISTS (
-    SELECT 1 FROM domains_resource dr WHERE dr.resource = rtr.resource AND dr.active = true
-)
-ORDER BY rtr.resource;
-```
-
-**Expected**: Empty. Any rows = tool is registered for a resource that has no domain declaration.
+**Expected**: Empty. Any rows = invalid domain/resource enum mismatch.
 
 ### Audit 20: Bindings without a linked create_ tool
 

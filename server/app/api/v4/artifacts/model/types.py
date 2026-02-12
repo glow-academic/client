@@ -314,7 +314,7 @@ class GetModelWebsocketResponse(BaseModel):
 
 
 # =============================================================================
-# LIST Endpoint Types (unchanged)
+# LIST Endpoint Types
 # =============================================================================
 
 
@@ -324,15 +324,34 @@ class ListModelApiModel(BaseModel):
     model_id: UUID | None = None
     name: str | None = None
     description: str | None = None
-    value: str | None = None
+    provider_id: UUID | None = None
     provider_name: str | None = None
+    base_url: str | None = None
     department_ids: list[str] | None = None
     is_inactive: bool | None = None
-    # Computed in Python
+    active: bool | None = None
+    image_model: bool | None = None
     can_edit: bool | None = None
     can_duplicate: bool | None = None
     can_delete: bool | None = None
     updated_at: datetime | None = None
+
+
+class ListModelApiProvider(BaseModel):
+    """Provider filter option for list endpoint."""
+
+    provider_id: UUID | None = None
+    name: str | None = None
+    count: int | None = None
+
+
+class ListModelApiDepartment(BaseModel):
+    """Department filter option for list endpoint."""
+
+    department_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    count: int | None = None
 
 
 class ListModelApiResponse(BaseModel):
@@ -340,7 +359,8 @@ class ListModelApiResponse(BaseModel):
 
     actor_name: str | None = None
     models: list[ListModelApiModel] | None = None
-    departments: list[dict] | None = None
+    providers: list[ListModelApiProvider] | None = None
+    departments: list[ListModelApiDepartment] | None = None
     total_count: int | None = None
 
 

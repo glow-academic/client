@@ -14,11 +14,13 @@ from app.api.v4.resources.simulations.get import GetSimulationsBatchV4Item
 from app.api.v4.resources.tools.get import QGetToolsV4Item
 from app.sql.types import (
     GetProfileContextAccessSqlRow,
-    GetProfileContextApiResponse as BaseGetProfileContextApiResponse,
     GetSettingsThemeSqlRow,
     QGetProfileContextV4Draft,
     QGetProfileContextV4RoleResource,
     QGetProfileContextV4ThemeTokens,
+)
+from app.sql.types import (
+    GetProfileContextApiResponse as BaseGetProfileContextApiResponse,
 )
 
 

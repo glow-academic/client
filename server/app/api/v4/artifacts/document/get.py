@@ -53,6 +53,7 @@ from app.api.v4.artifacts.document.types import (
     GetDocumentApiResponse,
     GetDocumentWebsocketResponse,
 )
+from app.api.v4.auth.context import get_profile_context_internal
 from app.api.v4.permissions import select_agents_for_artifact
 from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.departments.get import get_departments_internal
@@ -75,7 +76,6 @@ from app.api.v4.resources.tools.get import get_tools_internal
 from app.api.v4.resources.uploads.get import get_uploads_internal
 from app.api.v4.resources.uploads.search import search_uploads_internal
 from app.api.v4.types import CandidateAgent
-from app.api.v4.auth.context import get_profile_context_internal
 from app.api.v4.views.drafts.get import get_draft_document_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error

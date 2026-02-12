@@ -14,9 +14,10 @@ from app.api.v4.artifacts.profile.types import (
     PatchProfileDraftSqlParams,
     PatchProfileDraftSqlRow,
 )
+from app.api.v4.auth.context import get_profile_context_internal
 from app.infra.v4.activity.audit import audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db
+from app.main import get_db, get_pool
 from app.sql.types import (
     CheckProfileDuplicateAccessSqlParams,
     CheckProfileDuplicateAccessSqlRow,
@@ -58,6 +59,20 @@ async def patch_profile_draft(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        # Fetch user context for permissions and audit logging
+        pool = get_pool()
+        if pool:
+            async with pool.acquire() as context_conn:
+                resolved_context = await get_profile_context_internal(
+                    conn=context_conn,
+                    profile_id=profile_id,
+                    department_id_cookie=None,
+                    bypass_cache=False,
+                )
+                user_role = resolved_context.user_role
+        else:
+            user_role = None
+
         # Permission check: get user role
         access_params = CheckProfileDuplicateAccessSqlParams(
             profile_id=profile_id,
@@ -77,7 +92,7 @@ async def patch_profile_draft(
                 detail="Unable to verify user permissions.",
             )
 
-        can_draft_result = compute_can_draft(user_role=access_result.user_role)
+        can_draft_result = compute_can_draft(user_role=user_role)
 
         if not can_draft_result:
             raise HTTPException(

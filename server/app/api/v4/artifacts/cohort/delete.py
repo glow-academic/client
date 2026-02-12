@@ -5,9 +5,10 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.auth.context import get_profile_context_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db
+from app.main import get_db, get_pool
 from app.sql.types import (
     DeleteCohortApiRequest,
     DeleteCohortApiResponse,
@@ -55,6 +56,20 @@ async def delete_cohort(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        # Fetch user context for audit logging
+        pool = get_pool()
+        if pool:
+            async with pool.acquire() as context_conn:
+                resolved_context = await get_profile_context_internal(
+                    conn=context_conn,
+                    profile_id=profile_id,
+                    department_id_cookie=None,
+                    bypass_cache=False,
+                )
+                actor_name = resolved_context.actor_name
+        else:
+            actor_name = None
+
         # Convert API request to SQL params (add profile_id from header)
         params = DeleteCohortSqlParams(**request.model_dump(), profile_id=profile_id)
         sql_params = params.to_tuple()
@@ -76,10 +91,10 @@ async def delete_cohort(
             )
 
         # Set audit context with data from SQL query
-        if result.actor_name:
+        if actor_name:
             audit_set(
                 http_request,
-                actor={"name": result.actor_name, "id": profile_id},
+                actor={"name": actor_name, "id": profile_id},
                 cohort={
                     "name": result.title or "Unknown",
                     "id": str(request.cohort_id),

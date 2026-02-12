@@ -10,9 +10,10 @@ from app.api.v4.artifacts.profile.types import (
     DeleteProfileApiRequest,
     DeleteProfileApiResponse,
 )
+from app.api.v4.auth.context import get_profile_context_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db
+from app.main import get_db, get_pool
 from app.sql.types import (
     CheckProfileDeleteAccessSqlParams,
     CheckProfileDeleteAccessSqlRow,
@@ -61,6 +62,22 @@ async def delete_profile(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        # Fetch user context for permissions and audit logging
+        pool = get_pool()
+        if pool:
+            async with pool.acquire() as context_conn:
+                resolved_context = await get_profile_context_internal(
+                    conn=context_conn,
+                    profile_id=current_profile_id,
+                    department_id_cookie=None,
+                    bypass_cache=False,
+                )
+                actor_name = resolved_context.actor_name
+                user_role = resolved_context.user_role
+        else:
+            actor_name = None
+            user_role = None
+
         # Permission check: get user role and target profile info
         access_params = CheckProfileDeleteAccessSqlParams(
             profile_id=current_profile_id,
@@ -82,7 +99,7 @@ async def delete_profile(
             )
 
         can_delete = compute_can_delete(
-            user_role=access_result.user_role,
+            user_role=user_role,
             target_is_self=access_result.target_is_self or False,
         )
 
@@ -118,10 +135,10 @@ async def delete_profile(
 
             profile_name = access_result.profile_name or result.name or "Unknown"
 
-            if result.actor_name:
+            if actor_name:
                 audit_set(
                     http_request,
-                    actor={"name": result.actor_name, "id": current_profile_id},
+                    actor={"name": actor_name, "id": current_profile_id},
                     profile={
                         "name": profile_name,
                         "id": str(result.profile_id),

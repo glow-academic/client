@@ -49,6 +49,7 @@ from app.api.v4.artifacts.parameter.types import (
     ParameterWebsocketResources,
     ParameterWebsocketViews,
 )
+from app.api.v4.auth.context import get_profile_context_internal
 from app.api.v4.permissions import select_agents_for_artifact
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.departments.search import search_departments_internal
@@ -106,6 +107,20 @@ async def get_parameter_internal(
             if draft_items:
                 draft_item = draft_items[0]
 
+    # Fetch user context for permissions
+    async with pool.acquire() as context_conn:
+        resolved_context = await get_profile_context_internal(
+            conn=context_conn,
+            profile_id=profile_id,
+            department_id_cookie=None,
+            bypass_cache=bypass_cache,
+        )
+    user_role = resolved_context.user_role
+    actor_name = resolved_context.actor_name
+    user_department_ids = [
+        d.department_id for d in resolved_context.departments if d.department_id
+    ]
+
     async with pool.acquire() as conn:
         query1_params = GetParameterAccessSqlParams(
             profile_id=profile_id,
@@ -118,8 +133,6 @@ async def get_parameter_internal(
             await execute_sql_typed(conn, QUERY1_SQL_PATH, params=query1_params),
         )
 
-        user_role = access_result.user_role
-        user_department_ids = access_result.user_department_ids or []
         parameter_department_ids = access_result.parameter_department_ids or []
         active_scenario_count = access_result.active_scenario_count or 0
 
@@ -442,7 +455,7 @@ async def get_parameter_internal(
     }
 
     return ParameterInternalData(
-        actor_name=access_result.actor_name,
+        actor_name=actor_name,
         parameter_exists=access_result.parameter_exists,
         can_edit=can_edit,
         disabled_reason=disabled_reason,

@@ -6,7 +6,7 @@
 --
 -- This MV is INDEPENDENT - it does not depend on any other MVs.
 -- Section: ACTIVITY
--- Source: feedbacks_entry + simulation/benchmark joins
+-- Source: simulation_feedbacks_entry + benchmark_feedbacks_entry + simulation/benchmark joins
 
 DO $$
 DECLARE
@@ -42,7 +42,20 @@ SELECT
     bc.test_id AS benchmark_test_id,
     -- Profile linkage (simulation or benchmark)
     COALESCE(spj.profile_id, bpj.profile_id) AS profile_id
-FROM feedbacks_entry fe
+FROM (
+    SELECT f.id, f.grade_id, f.total, f.total_points, f.pass_points,
+           f.created_at, f.updated_at, f.call_id, f.active,
+           CASE WHEN a.practice IS TRUE THEN 'practice'::text ELSE 'general'::text END AS type
+    FROM simulation_feedbacks_entry f
+    LEFT JOIN simulation_grades_entry g ON g.id = f.grade_id
+    LEFT JOIN simulation_chats_entry c ON c.id = g.chat_id
+    LEFT JOIN simulation_attempts_entry a ON a.id = c.attempt_id
+    UNION ALL
+    SELECT id, grade_id, total, total_points, pass_points,
+           created_at, updated_at, call_id, active,
+           'benchmark'::text AS type
+    FROM benchmark_feedbacks_entry
+) fe
 -- Simulation joins (general/practice)
 LEFT JOIN simulation_grades_entry sg
     ON fe.type IN ('general', 'practice')

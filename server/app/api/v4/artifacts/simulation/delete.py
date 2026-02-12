@@ -12,9 +12,10 @@ from app.api.v4.artifacts.simulation.permissions import (
     compute_can_delete,
     has_access,
 )
+from app.api.v4.auth.context import get_profile_context_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db
+from app.main import get_db, get_pool
 from app.sql.types import (
     CheckSimulationDeleteAccessSqlParams,
     CheckSimulationDeleteAccessSqlRow,
@@ -72,6 +73,20 @@ async def delete_simulation(
                 status_code=401,
                 detail="Profile ID is required. Please sign in again.",
             )
+
+        # Fetch user context for audit logging
+        pool = get_pool()
+        if pool:
+            async with pool.acquire() as context_conn:
+                resolved_context = await get_profile_context_internal(
+                    conn=context_conn,
+                    profile_id=profile_id,
+                    department_id_cookie=None,
+                    bypass_cache=False,
+                )
+                actor_name = resolved_context.actor_name
+        else:
+            actor_name = None
 
         # Pass 1: Check access using access query
         access_params = CheckSimulationDeleteAccessSqlParams(
@@ -159,7 +174,6 @@ async def delete_simulation(
             )
 
         simulation_name = result.title or "Unknown"
-        actor_name = result.actor_name
 
         # Set audit context with data from SQL query
         if actor_name:

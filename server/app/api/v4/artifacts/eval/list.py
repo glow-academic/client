@@ -179,7 +179,7 @@ async def get_eval_list(
             evals=evals_with_permissions,
             departments=departments,
             total_count=result.total_count,
-            user_role=result.user_role,
+            user_role=user_role,
         )
 
         # Cache response (use mode='json' to serialize UUIDs and other types)

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import datetime as dt
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -286,3 +287,53 @@ class PatchAgentDraftApiResponse(BaseModel):
     draft_id: UUID
     new_version: int
     message: str
+
+
+# ========== List Endpoint Types ==========
+
+
+class ListAgentApiAgent(BaseModel):
+    """Agent type for list endpoint with computed permissions."""
+
+    agent_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    reasoning: str | None = None
+    temperature: float | None = None
+    model_id: UUID | None = None
+    model_name: str | None = None
+    model_description: str | None = None
+    role: str | None = None
+    updated_at: dt.datetime | None = None
+    department_ids: list[str] | None = None
+    can_edit: bool | None = None
+    can_duplicate: bool | None = None
+    can_delete: bool | None = None
+
+
+class ListAgentApiDepartment(BaseModel):
+    """Department filter option for list endpoint."""
+
+    department_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    count: int | None = None
+
+
+class ListAgentApiModel(BaseModel):
+    """Model filter option for list endpoint."""
+
+    model_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    count: int | None = None
+
+
+class ListAgentApiResponse(BaseModel):
+    """Response model for list agent endpoint."""
+
+    actor_name: str | None = None
+    agents: list[ListAgentApiAgent] | None = None
+    departments: list[ListAgentApiDepartment] | None = None
+    models: list[ListAgentApiModel] | None = None
+    total_count: int | None = None

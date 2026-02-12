@@ -52,7 +52,7 @@ personas_usage_check AS (
 ),
 agents_usage_check AS (
     SELECT COUNT(*)::bigint as usage_count
-    FROM agent_artifact
+    FROM agent_models_junction
     WHERE model_id = (SELECT model_id FROM params)
 ),
 model_info AS (

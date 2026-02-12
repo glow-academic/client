@@ -54,7 +54,7 @@ latest_grade AS (
             sfsr.rubric_id
         ) AS rubric_id,
         scg.created_at
-    FROM grades_entry scg
+    FROM simulation_grades_entry scg
     JOIN simulation_chats_entry c ON c.id = scg.chat_id
     LEFT JOIN chat_scenario_info csi ON csi.chat_id = c.id
     LEFT JOIN scenario_rubrics_resource srr ON srr.scenario_id = csi.scenario_id
@@ -85,7 +85,7 @@ SELECT
          ELSE NULL
     END AS score_percent
 FROM latest_grade lg
-JOIN feedbacks_entry fe ON fe.grade_id = lg.grade_id
+JOIN simulation_feedbacks_entry fe ON fe.grade_id = lg.grade_id
 JOIN feedbacks_standards_connection fsc ON fsc.feedbacks_id = fe.id
 JOIN standards_resource s ON s.id = fsc.standard_id
 JOIN rubric_standard_groups_junction rsg ON rsg.rubric_id = lg.rubric_id AND rsg.active = true

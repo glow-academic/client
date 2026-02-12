@@ -7,6 +7,8 @@ from tests.seed_helpers import get_superadmin_alias  # type: ignore
 from tests.sql.types import (
     CreateTestProfileSqlParams,
     CreateTestProfileSqlRow,
+    GetFirstDepartmentSqlRow,
+    GetFirstModelSqlRow,
 )
 
 from app.utils.sql_helper import execute_sql_typed
@@ -17,7 +19,7 @@ pytestmark = pytest.mark.asyncio
 async def test_list_agents(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
-    """Test getting agents list with model mapping."""
+    """Test getting agents list with model and department info."""
     await get_superadmin_alias(db)
 
     # v4 routes get profile_id from router dependency, not request body
@@ -31,20 +33,20 @@ async def test_list_agents(
 
     assert data is not None
     assert "agents" in data
-    assert "model_mapping" in data
-    assert "department_mapping" in data
+    assert "models" in data
+    assert "departments" in data
+    assert "total_count" in data
     assert isinstance(data["agents"], list)
     assert len(data["agents"]) >= 0
 
-    # If there are agents, verify model mapping is populated
+    # If there are agents, verify model info is hydrated directly on agent
     if data["agents"]:
         for agent in data["agents"]:
             assert "agent_id" in agent
             assert "name" in agent
             assert "model_id" in agent
-            # Verify model mapping exists for agent's model
             if agent["model_id"]:
-                assert agent["model_id"] in data["model_mapping"]
+                assert "model_name" in agent
 
 
 async def test_list_agents_empty(
@@ -65,8 +67,9 @@ async def test_list_agents_empty(
     # Agents are system-wide, should have seed data
     assert data is not None
     assert "agents" in data
-    assert "model_mapping" in data
-    assert "department_mapping" in data
+    assert "models" in data
+    assert "departments" in data
+    assert "total_count" in data
 
 
 async def test_list_agents_permissions_superadmin(
@@ -89,13 +92,13 @@ async def test_list_agents_permissions_superadmin(
     for agent in data["agents"]:
         assert agent["can_edit"] is True
         assert agent["can_duplicate"] is True
-        # can_delete depends on default_agent and department_agents links
+        # can_delete depends on department_link_count
 
 
 async def test_list_agents_permissions_non_superadmin(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
-    """Test non-superadmin does not have edit/delete permissions but can duplicate."""
+    """Test non-superadmin does not have edit/delete/duplicate permissions."""
     # Create a non-superadmin profile using SQL file
     profile_result = await execute_sql_typed(
         conn=db,
@@ -123,10 +126,10 @@ async def test_list_agents_permissions_non_superadmin(
     data = response.json()
 
     assert data is not None
-    # TA should not have edit or delete permissions, but can duplicate
+    # Member should not have edit, delete, or duplicate permissions
     for agent in data["agents"]:
         assert agent["can_edit"] is False
-        assert agent["can_duplicate"] is True
+        assert agent["can_duplicate"] is False
         assert agent["can_delete"] is False
 
 
@@ -147,16 +150,12 @@ async def test_list_agents_optimization(
 
     assert data is not None
 
-    # Verify each agent has a model_id and it's in the mapping
+    # Verify each agent has model info hydrated directly
     for agent in data["agents"]:
-        if agent["model_id"]:  # Some agents might not have a model
-            model_info = data["model_mapping"].get(agent["model_id"])
-            assert model_info is not None
-            assert "name" in model_info
-            assert model_info["name"] is not None
+        if agent["model_id"]:
+            assert agent["model_name"] is not None
             # Description might be empty string, but should exist
-            assert "description" in model_info
-            assert model_info["description"] is not None
+            assert "model_description" in agent
 
 
 async def test_list_agents_can_delete_default(
@@ -362,7 +361,7 @@ async def test_list_agents_can_delete_allowed(
 async def test_list_agents_can_duplicate(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
-    """Test that all agents can be duplicated regardless of status."""
+    """Test that superadmin agents can be duplicated."""
     await get_superadmin_alias(db)
 
     # v4 routes get profile_id from router dependency, not request body
@@ -374,6 +373,6 @@ async def test_list_agents_can_duplicate(
     assert response.status_code == 200
     data = response.json()
 
-    # All agents should have can_duplicate = true
+    # Superadmin should have can_duplicate = true for all agents
     for agent in data["agents"]:
         assert agent["can_duplicate"] is True

@@ -43,6 +43,7 @@ from app.api.v4.artifacts.provider.types import (
     ProviderWebsocketResources,
     ProviderWebsocketViews,
 )
+from app.api.v4.auth.context import get_profile_context_internal
 from app.api.v4.permissions import select_agents_for_artifact
 from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.departments.get import get_departments_internal
@@ -61,7 +62,6 @@ from app.api.v4.resources.tools.get import get_tools_internal
 from app.api.v4.resources.values.get import get_values_internal
 from app.api.v4.resources.values.search import search_values_internal
 from app.api.v4.types import CandidateAgent
-from app.api.v4.auth.context import get_profile_context_internal
 from app.api.v4.views.drafts.get import get_draft_provider_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error

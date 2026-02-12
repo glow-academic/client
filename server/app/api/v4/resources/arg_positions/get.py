@@ -55,7 +55,9 @@ async def get_arg_positions_internal(
         await execute_sql_typed(conn, SQL_PATH, params=params),
     )
 
-    items: list[QGetArgPositionsV4Item] = result.items if result and result.items else []
+    items: list[QGetArgPositionsV4Item] = (
+        result.items if result and result.items else []
+    )
 
     await set_cached(
         cache_key_val,

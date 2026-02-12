@@ -67,9 +67,6 @@ SELECT * FROM runs_entry;
 CREATE OR REPLACE VIEW view_sessions_entry AS
 SELECT * FROM sessions_entry;
 
-CREATE OR REPLACE VIEW view_attempts_entry AS
-SELECT * FROM attempts_entry;
-
 CREATE OR REPLACE VIEW view_logins_entry AS
 SELECT * FROM logins_entry;
 

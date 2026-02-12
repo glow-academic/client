@@ -19,7 +19,10 @@ from app.api.v4.auth.permissions import (
     convert_simulation,
     derive_theme_tokens,
 )
-from app.api.v4.auth.types import GetProfileContextApiResponse, ProfileContextInternalData
+from app.api.v4.auth.types import (
+    GetProfileContextApiResponse,
+    ProfileContextInternalData,
+)
 from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.cohorts.get import get_cohorts_internal
 from app.api.v4.resources.departments.get import get_departments_internal
@@ -136,7 +139,9 @@ async def get_profile_context_internal(
             theme_params = GetSettingsThemeSqlParams(settings_id_param=settings_id)
             return cast(
                 GetSettingsThemeSqlRow | None,
-                await execute_sql_typed(c, SQL_SETTINGS_THEME_PATH, params=theme_params),
+                await execute_sql_typed(
+                    c, SQL_SETTINGS_THEME_PATH, params=theme_params
+                ),
             )
 
     async def fetch_drafts():
@@ -207,7 +212,9 @@ async def get_profile_context_internal(
 
     if settings_agent_ids:
         async with pool.acquire() as c:
-            settings_agents = await get_agents_internal(c, settings_agent_ids, bypass_cache)
+            settings_agents = await get_agents_internal(
+                c, settings_agent_ids, bypass_cache
+            )
         tool_ids: list[UUID] = []
         for agent in settings_agents:
             if agent.tool_ids:

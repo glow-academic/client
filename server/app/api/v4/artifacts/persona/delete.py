@@ -10,9 +10,10 @@ from app.api.v4.artifacts.persona.types import (
     DeletePersonaApiRequest,
     DeletePersonaApiResponse,
 )
+from app.api.v4.auth.context import get_profile_context_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db
+from app.main import get_db, get_pool
 from app.sql.types import (
     CheckPersonaDeleteAccessSqlParams,
     CheckPersonaDeleteAccessSqlRow,
@@ -63,6 +64,22 @@ async def delete_persona(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        # Fetch user context for permissions and audit logging
+        pool = get_pool()
+        if pool:
+            async with pool.acquire() as context_conn:
+                resolved_context = await get_profile_context_internal(
+                    conn=context_conn,
+                    profile_id=profile_id,
+                    department_id_cookie=None,
+                    bypass_cache=False,
+                )
+                actor_name = resolved_context.actor_name
+                user_role = resolved_context.user_role
+        else:
+            actor_name = None
+            user_role = None
+
         # Permission check: get user role and persona info using typed SQL
         access_params = CheckPersonaDeleteAccessSqlParams(
             profile_id=profile_id,
@@ -84,7 +101,7 @@ async def delete_persona(
             )
 
         can_delete = compute_can_delete(
-            user_role=access_result.user_role,
+            user_role=user_role,
             persona_department_ids=access_result.persona_department_ids,
             total_scenario_links=access_result.total_scenario_links or 0,
         )
@@ -125,10 +142,10 @@ async def delete_persona(
             persona_name = result.name or "Unknown"
 
             # Set audit context with data from SQL query
-            if result.actor_name:
+            if actor_name:
                 audit_set(
                     http_request,
-                    actor={"name": result.actor_name, "id": profile_id},
+                    actor={"name": actor_name, "id": profile_id},
                     persona={"name": persona_name, "id": str(request.persona_id)},
                 )
 

@@ -10,9 +10,10 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.auth.context import get_profile_context_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db
+from app.main import get_db, get_pool
 from app.sql.types import (
     GetPerSimulationMetricsSqlParams,
     GetPerSimulationMetricsSqlRow,
@@ -129,6 +130,20 @@ async def export_report(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        # Fetch user context for audit logging
+        pool = get_pool()
+        if pool:
+            async with pool.acquire() as context_conn:
+                resolved_context = await get_profile_context_internal(
+                    conn=context_conn,
+                    profile_id=profile_id,
+                    department_id_cookie=None,
+                    bypass_cache=False,
+                )
+                actor_name = resolved_context.actor_name
+        else:
+            actor_name = None
+
         # Use bundle request (inherits from GetReportsBundleApiRequest)
         bundle_request = GetReportsBundleApiRequest(
             **request.model_dump(exclude={"metrics", "brightspace_format"})
@@ -154,10 +169,8 @@ async def export_report(
             )
 
         # Set audit context
-        if bundle_result.actor_name:
-            audit_set(
-                http_request, actor={"name": bundle_result.actor_name, "id": profile_id}
-            )
+        if actor_name:
+            audit_set(http_request, actor={"name": actor_name, "id": profile_id})
 
         # Convert bundle result to API response
         bundle_response = GetReportsBundleApiResponse.model_validate(

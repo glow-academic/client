@@ -189,15 +189,33 @@ class ListProviderApiProvider(BaseModel):
     value: str | None = None
     active: bool | None = None
     updated_at: datetime | None = None
+    department_ids: list[UUID] | None = None
     model_usage_count: int | None = None
+    model_ids: list[UUID] | None = None
     can_edit: bool | None = None
     can_delete: bool | None = None
     can_duplicate: bool | None = None
 
 
 class ListProviderApiProviderOption(BaseModel):
-    value: str | None = None
-    label: str | None = None
+    provider_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    count: int | None = None
+
+
+class ListProviderApiDepartment(BaseModel):
+    department_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    count: int | None = None
+
+
+class ListProviderApiModel(BaseModel):
+    model_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    count: int | None = None
 
 
 class ListProviderApiStatusOption(BaseModel):
@@ -209,6 +227,8 @@ class ListProviderApiResponse(BaseModel):
     actor_name: str | None = None
     providers: list[ListProviderApiProvider] | None = None
     provider_options: list[ListProviderApiProviderOption] | None = None
+    departments: list[ListProviderApiDepartment] | None = None
+    models: list[ListProviderApiModel] | None = None
     status_options: list[ListProviderApiStatusOption] | None = None
     total_count: int | None = None
 
