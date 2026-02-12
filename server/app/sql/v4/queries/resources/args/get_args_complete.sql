@@ -56,7 +56,6 @@ CREATE TYPE types.q_get_args_v4_item AS (
     field_type text,
     required boolean,
     default_value text,
-    position integer,
     generated boolean
 );
 
@@ -72,7 +71,7 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (a.id, a.name, a.description, a.field_type, a.required, a.default_value, a.position, COALESCE(a.generated, false))::types.q_get_args_v4_item
+        (a.id, a.name, a.description, a.field_type, a.required, a.default_value, COALESCE(a.generated, false))::types.q_get_args_v4_item
         ORDER BY array_position(ids, a.id)
     ),
     ARRAY[]::types.q_get_args_v4_item[]

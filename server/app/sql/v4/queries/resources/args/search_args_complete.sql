@@ -34,13 +34,13 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (q.id, q.name, q.description, q.field_type, q.required, q.default_value, q.position, q.generated)::types.q_get_args_v4_item
+        (q.id, q.name, q.description, q.field_type, q.required, q.default_value, q.generated)::types.q_get_args_v4_item
         ORDER BY q.name
     ),
     ARRAY[]::types.q_get_args_v4_item[]
 ) as items
 FROM (
-    SELECT a.id, a.name, a.description, a.field_type, a.required, a.default_value, a.position, COALESCE(a.generated, false) AS generated
+    SELECT a.id, a.name, a.description, a.field_type, a.required, a.default_value, COALESCE(a.generated, false) AS generated
     FROM args_resource a
     WHERE a.active = true
       AND a.name IS NOT NULL

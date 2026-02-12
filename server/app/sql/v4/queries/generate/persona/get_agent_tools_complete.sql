@@ -81,7 +81,7 @@ LEFT JOIN (
                     END,
                     'required', ar.required
                 )
-                ORDER BY ar.position
+                ORDER BY ar.name
             ) FILTER (WHERE ar.name IS NOT NULL),
             '{}'::jsonb
         ) as arguments,
@@ -89,7 +89,7 @@ LEFT JOIN (
             jsonb_object_agg(
                 ar.name,
                 ar.description
-                ORDER BY ar.position
+                ORDER BY ar.name
             ) FILTER (WHERE ar.name IS NOT NULL AND ar.description != ''),
             '{}'::jsonb
         ) as argument_descriptions,
@@ -116,7 +116,7 @@ LEFT JOIN (
                         END
                     ELSE ar.default_value::jsonb
                 END
-                ORDER BY ar.position
+                ORDER BY ar.name
             ) FILTER (WHERE ar.name IS NOT NULL AND ar.default_value != ''),
             '{}'::jsonb
         ) as argument_defaults

@@ -1,6 +1,6 @@
 -- Create args resource
 -- Get or create operation (returns existing ID if name already exists)
--- Parameters: agent_id (uuid, required, first), group_id (uuid, required, second), mcp (boolean, optional, third), name (text), description (text), field_type (text), required (boolean), default_value (text), position_value (integer)
+-- Parameters: agent_id (uuid, required, first), group_id (uuid, required, second), mcp (boolean, optional, third), name (text), description (text), field_type (text), required (boolean), default_value (text)
 -- Returns: id (uuid) - unique resource id
 
 -- Drop function if exists (handles signature variations)
@@ -26,7 +26,6 @@ CREATE OR REPLACE FUNCTION api_create_args_v4(
     field_type text DEFAULT 'string',
     required boolean DEFAULT false,
     default_value text DEFAULT '',
-    position_value integer DEFAULT 0,
     mcp boolean DEFAULT false
 )
 RETURNS TABLE (
@@ -112,7 +111,7 @@ BEGIN
     
     -- INSERT INTO args_resource table (always insert, never update)
     INSERT INTO args_resource(
-        id, name, description, field_type, required, default_value, position, 
+        id, name, description, field_type, required, default_value,
         active, generated, mcp, call_id, created_at
     )
     VALUES (
@@ -122,7 +121,6 @@ BEGIN
         api_create_args_v4.field_type,
         api_create_args_v4.required,
         api_create_args_v4.default_value,
-        api_create_args_v4.position_value,
         true, 
         true, 
         mcp, 

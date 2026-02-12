@@ -36,9 +36,9 @@ AS $$
         ar.name as field_name,
         ar.field_type::text,
         ar.required,
-        ar.position,
+        0::integer as "position",
         NULL::uuid as item_schema_id
     FROM args_resource ar
     WHERE ar.id = $1
-    ORDER BY ar.position, ar.name;
+    ORDER BY ar.name;
 $$;

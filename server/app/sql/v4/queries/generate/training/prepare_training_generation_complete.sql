@@ -226,7 +226,7 @@ tool_schema_data AS (
                     END,
                     'required', ar.required
                 )
-                ORDER BY ar.position
+                ORDER BY ar.name
             ) FILTER (WHERE ar.name IS NOT NULL),
             '{}'::jsonb
         ) as arguments,
@@ -234,7 +234,7 @@ tool_schema_data AS (
             jsonb_object_agg(
                 ar.name,
                 ar.description
-                ORDER BY ar.position
+                ORDER BY ar.name
             ) FILTER (WHERE ar.name IS NOT NULL AND ar.description != ''),
             '{}'::jsonb
         ) as argument_descriptions,
@@ -261,7 +261,7 @@ tool_schema_data AS (
                         END
                     ELSE ar.default_value::jsonb
                 END
-                ORDER BY ar.position
+                ORDER BY ar.name
             ) FILTER (WHERE ar.name IS NOT NULL AND ar.default_value != ''),
             '{}'::jsonb
         ) as argument_defaults

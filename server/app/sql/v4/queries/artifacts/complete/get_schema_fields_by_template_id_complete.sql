@@ -35,5 +35,5 @@ AS $$
     FROM args_outputs_resource ao
     JOIN args_resource ar ON ar.id = ao.args_id
     WHERE ao.id = template_id
-    ORDER BY ar.position;
+    ORDER BY ar.name;
 $$;

@@ -215,7 +215,7 @@ BEGIN
                         END,
                         'required', ar.required
                     )
-                    ORDER BY ar.position
+                    ORDER BY ar.name
                 ) FILTER (WHERE ar.name IS NOT NULL),
                 '{}'::jsonb
             ) as arguments,
@@ -223,7 +223,7 @@ BEGIN
                 jsonb_object_agg(
                     ar.name,
                     ar.description
-                    ORDER BY ar.position
+                    ORDER BY ar.name
                 ) FILTER (WHERE ar.name IS NOT NULL AND ar.description != ''),
                 '{}'::jsonb
             ) as argument_descriptions,
@@ -250,7 +250,7 @@ BEGIN
                             END
                         ELSE ar.default_value::jsonb
                     END
-                    ORDER BY ar.position
+                    ORDER BY ar.name
                 ) FILTER (WHERE ar.name IS NOT NULL AND ar.default_value != ''),
                 '{}'::jsonb
             ) as argument_defaults

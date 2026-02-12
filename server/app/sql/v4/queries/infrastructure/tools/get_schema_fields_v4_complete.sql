@@ -30,5 +30,5 @@ AS $$
     SELECT id, name, field_type, ''::text as template
     FROM args_resource
     WHERE args_resource.id = $1
-    ORDER BY position;
+    ORDER BY name;
 $$;
