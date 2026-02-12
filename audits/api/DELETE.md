@@ -1,0 +1,343 @@
+# DELETE Audit — Artifact Delete Endpoint Integrity Check
+
+You are an artifact DELETE endpoint auditor for the GLOW project. Your job is to verify that every artifact's `delete.py` endpoint follows the canonical delete pattern defined below. You do NOT fix anything. You REPORT errors, inconsistencies, and missing pieces.
+
+The source of truth is the **persona** delete implementation. Every artifact delete must match this pattern or document an approved deviation.
+
+---
+
+## The Delete Pattern
+
+| Layer | Location | Purpose |
+|-------|----------|---------|
+| **Access Check SQL** | `server/app/sql/v4/queries/{artifact}s/check_{artifact}_delete_access_complete.sql` | Pre-delete permission data: department_ids + usage counts |
+| **Delete SQL** | `server/app/sql/v4/queries/{artifact}s/delete_{artifact}_complete.sql` | Deletes artifact row; CASCADE handles junction cleanup |
+| **Python Handler** | `server/app/api/v4/artifacts/{artifact}/delete.py` | Permission check, usage validation, transaction, audit |
+| **Permissions** | `server/app/api/v4/artifacts/{artifact}/permissions.py` | `compute_can_delete()` |
+
+Reference: `server/app/api/v4/artifacts/persona/delete.py`, `persona/permissions.py`
+
+---
+
+## The Rules
+
+### Rule 1: Let CASCADE handle junction cleanup
+
+Delete SQL simply deletes the row from `{artifact}_artifact`. All junction table rows are cleaned up by PostgreSQL CASCADE foreign key constraints. The delete SQL must NOT manually delete junction rows.
+
+```sql
+DELETE FROM {artifact}_artifact WHERE id = p_{artifact}_id
+RETURNING id, ...;
+```
+
+Reference: `delete_persona_complete.sql`
+
+### Rule 2: Two-phase permission check
+
+Delete endpoints must perform a two-phase permission check:
+
+1. **SQL phase**: Execute `check_{artifact}_delete_access_complete.sql` to get `department_ids` and `total_usage_links`
+2. **Python phase**: Call `compute_can_delete(user_role, artifact_department_ids, total_usage_links)` with the SQL results + user context
+
+```python
+# Phase 1: SQL access check
+access = await execute_sql_typed(conn, SQL_PATH_ACCESS, params=access_params)
+
+# Phase 2: Python permission check
+can_delete = compute_can_delete(
+    user_role=profile_context.user_role,
+    artifact_department_ids=access.department_ids,
+    total_usage_links=access.total_scenario_links,
+)
+if not can_delete:
+    raise HTTPException(status_code=403, detail="Cannot delete")
+```
+
+Reference: `server/app/api/v4/artifacts/persona/delete.py`, `permissions.py`
+
+### Rule 3: Usage check includes ALL links (active AND inactive)
+
+The access check SQL must count ALL historical links, not just active ones. Any historical usage link blocks deletion. This prevents orphaning references in downstream artifacts.
+
+```sql
+-- Count ALL links, not just active
+SELECT COUNT(*) as total_scenario_links
+FROM scenario_personas_junction
+WHERE persona_artifact_id = p_persona_id;
+-- No WHERE active = true filter
+```
+
+Reference: `check_persona_delete_access_complete.sql`
+
+### Rule 4: Python validates usage before delete
+
+The Python handler must check `usage_count > 0` and raise a `ValueError` (400) before attempting the delete. This is a separate check from the permission check:
+
+```python
+if access.total_scenario_links > 0:
+    raise ValueError(f"Cannot delete: {artifact} is used by {access.total_scenario_links} scenarios")
+```
+
+Reference: `server/app/api/v4/artifacts/persona/delete.py`
+
+### Rule 5: Delete SQL returns metadata
+
+The delete SQL must return:
+
+- `deleted: bool` — whether the row was actually deleted
+- `name: str` — the artifact's name (for audit context)
+- `usage_count: int` — usage count (for validation)
+
+```sql
+RETURNING
+    true AS deleted,
+    (SELECT nr.name FROM {artifact}_names_junction nj
+     JOIN names_resource nr ON nj.names_resource_id = nr.id
+     WHERE nj.{artifact}_id = p_{artifact}_id AND nj.active = true
+     LIMIT 1) AS name;
+```
+
+Reference: `delete_persona_complete.sql`
+
+### Rule 6: Superadmin exceptions for default artifacts
+
+Default artifacts (those with no department associations) are only deletable by superadmin users. The `compute_can_delete()` function must enforce this:
+
+```python
+def compute_can_delete(user_role, artifact_department_ids, total_usage_links):
+    if total_usage_links > 0:
+        return False
+    if not artifact_department_ids:  # default artifact
+        return user_role == "superadmin"
+    return user_role in ("admin", "instructional", "superadmin")
+```
+
+Reference: `server/app/api/v4/artifacts/persona/permissions.py`
+
+### Rule 7: Transaction wrapper
+
+Delete mutations must be wrapped in a transaction:
+
+```python
+async with pool.acquire() as conn:
+    async with conn.transaction():
+        # access check
+        # usage validation
+        # permission check
+        # delete SQL
+```
+
+### Rule 8: Cache invalidation after commit
+
+After the transaction commits, invalidate relevant cache tags:
+
+```python
+await invalidate_tags(["{artifact}s"])
+```
+
+### Rule 9: Audit context with deleted artifact name
+
+Delete endpoints must set audit context including the deleted artifact's name (from SQL result):
+
+```python
+@audit_activity("{{ actor.name }} deleted {artifact} '{{ {artifact}.name }}'")
+async def delete_{artifact}(http_request: Request, body: Delete{Artifact}ApiRequest):
+    # ...
+    audit_set({
+        "actor": {"name": actor_name},
+        "{artifact}": {"name": result.name},
+    })
+```
+
+Reference: `server/app/api/v4/artifacts/persona/delete.py`
+
+### Rule 10: Simple request shape
+
+Delete requests only need the artifact ID:
+
+```python
+class Delete{Artifact}ApiRequest(BaseModel):
+    {artifact}_id: UUID
+```
+
+---
+
+## MUST NOT Rules
+
+1. **MUST NOT** manually delete junction rows — CASCADE handles it
+2. **MUST NOT** only check active links for usage — must count ALL links (active + inactive)
+3. **MUST NOT** skip usage validation before delete
+4. **MUST NOT** allow non-superadmin to delete default (no-department) artifacts
+5. **MUST NOT** skip transaction wrapper
+6. **MUST NOT** skip audit context — must include deleted artifact name
+
+---
+
+## Audit Checks
+
+### Audit 1: Delete endpoint existence
+
+```bash
+for artifact_dir in server/app/api/v4/artifacts/*/; do
+  artifact=$(basename "$artifact_dir")
+  [ ! -f "${artifact_dir}delete.py" ] && echo "MISSING DELETE ENDPOINT: $artifact"
+done
+```
+
+**Expected**: All artifacts that support deletion should have `delete.py`.
+
+### Audit 2: Access check SQL exists
+
+```bash
+for artifact_dir in server/app/api/v4/artifacts/*/; do
+  artifact=$(basename "$artifact_dir")
+  [ ! -f "${artifact_dir}delete.py" ] && continue
+  found=$(find server/app/sql/v4/queries/ -name "check_${artifact}_delete_access*" 2>/dev/null | head -1)
+  [ -z "$found" ] && echo "MISSING DELETE ACCESS SQL: $artifact"
+done
+```
+
+**Expected**: Empty.
+
+### Audit 3: Delete SQL exists
+
+```bash
+for artifact_dir in server/app/api/v4/artifacts/*/; do
+  artifact=$(basename "$artifact_dir")
+  [ ! -f "${artifact_dir}delete.py" ] && continue
+  found=$(find server/app/sql/v4/queries/ -name "delete_${artifact}_complete*" 2>/dev/null | head -1)
+  [ -z "$found" ] && echo "MISSING DELETE SQL: $artifact"
+done
+```
+
+**Expected**: Empty.
+
+### Audit 4: Transaction usage
+
+```bash
+for artifact_dir in server/app/api/v4/artifacts/*/; do
+  artifact=$(basename "$artifact_dir")
+  file="${artifact_dir}delete.py"
+  [ ! -f "$file" ] && continue
+  grep -q "conn.transaction" "$file" || echo "NO TRANSACTION: $artifact"
+done
+```
+
+**Expected**: Empty.
+
+### Audit 5: Cache invalidation
+
+```bash
+for artifact_dir in server/app/api/v4/artifacts/*/; do
+  artifact=$(basename "$artifact_dir")
+  file="${artifact_dir}delete.py"
+  [ ! -f "$file" ] && continue
+  grep -q "invalidate_tags" "$file" || echo "NO CACHE INVALIDATION: $artifact"
+done
+```
+
+**Expected**: Empty.
+
+### Audit 6: Audit context
+
+```bash
+for artifact_dir in server/app/api/v4/artifacts/*/; do
+  artifact=$(basename "$artifact_dir")
+  file="${artifact_dir}delete.py"
+  [ ! -f "$file" ] && continue
+  grep -q "audit_activity\|audit_set" "$file" || echo "NO AUDIT CONTEXT: $artifact"
+done
+```
+
+**Expected**: Empty.
+
+### Audit 7: Permission function exists
+
+```bash
+for artifact_dir in server/app/api/v4/artifacts/*/; do
+  artifact=$(basename "$artifact_dir")
+  file="${artifact_dir}permissions.py"
+  [ ! -f "$file" ] && continue
+  grep -q "compute_can_delete" "$file" || echo "MISSING compute_can_delete: $artifact"
+done
+```
+
+**Expected**: Empty.
+
+### Audit 8: Delete SQL does not manually delete junctions
+
+```bash
+for sql_file in server/app/sql/v4/queries/*/delete_*_complete.sql; do
+  artifact=$(basename "$(dirname "$sql_file")")
+  # Check for manual junction deletion (should rely on CASCADE)
+  grep -i "DELETE FROM.*junction" "$sql_file" && echo "MANUAL JUNCTION DELETE: $artifact ($sql_file)"
+done
+```
+
+**Expected**: Empty. CASCADE should handle junction cleanup.
+
+---
+
+## Running the Audit
+
+### Prerequisites
+
+```bash
+make sql-compile
+```
+
+### Execution
+
+Run each audit check in order from the project root.
+
+---
+
+## Report Format
+
+For each audit that returns results, report:
+
+```
+AUDIT {N}: {Title}
+RULE VIOLATED: Rule {N}
+ITEMS FOUND: {count}
+DETAILS:
+  - {artifact}: {description of violation}
+  - ...
+```
+
+For audits that return no results:
+
+```
+AUDIT {N}: {Title} — PASS
+```
+
+End with a summary:
+
+```
+SUMMARY
+=======
+Total audits: 8
+Passed: {N}
+Failed: {N}
+
+DELETE COVERAGE
+===============
+Artifacts with delete.py: {N}
+Access check SQL: {N}
+Delete SQL: {N}
+Transaction usage: {N}
+Cache invalidation: {N}
+Audit context: {N}
+Permission function: {N}
+CASCADE-only cleanup: {N}
+```
+
+---
+
+## Important Notes
+
+1. **Do NOT fix anything.** This is a read-only audit. Report only.
+2. **The persona delete is the gold standard.** Reference: `server/app/api/v4/artifacts/persona/delete.py`.
+3. **CASCADE is the rule.** Delete SQL must not manually clean up junctions. If CASCADE is not set up on junction FKs, that's a migration/schema bug, not a delete endpoint bug (report it separately via the RELATION audit).
+4. **Usage counts are ALL-time.** Any historical link (active or inactive) blocks deletion. This is intentional to prevent orphaning references.
+5. **Default artifacts**: Artifacts with no department associations are system defaults and require superadmin to delete.
