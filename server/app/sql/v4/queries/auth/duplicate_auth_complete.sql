@@ -70,14 +70,12 @@ name_resource AS (
     ON CONFLICT (name) DO UPDATE SET created_at = EXCLUDED.created_at
     RETURNING id as name_id
 ),
--- Insert description INTO descriptions_resource table and get ID
-description_resource AS (
-    INSERT INTO descriptions_resource (description, created_at)
-    SELECT description, NOW()
-    FROM source_auth
-    WHERE description IS NOT NULL AND description != ''
-    ON CONFLICT (description) DO UPDATE SET created_at = EXCLUDED.created_at
-    RETURNING id as description_id
+-- Get existing description_id from junction (link, don't create new)
+original_description_id AS (
+    SELECT ad.description_id
+    FROM auth_descriptions_junction ad
+    WHERE ad.auth_id = (SELECT id FROM source_auth)
+    LIMIT 1
 ),
 -- Insert or get protocol for new auth
 protocol_resource AS (
@@ -137,15 +135,15 @@ link_auth_name AS (
     CROSS JOIN name_resource nr
     ON CONFLICT (auth_id, name_id) DO NOTHING
 ),
--- Link auth to description
+-- Link auth to description (link existing description_id)
 link_auth_description AS (
     INSERT INTO auth_descriptions_junction (auth_id, description_id, created_at)
-    SELECT 
+    SELECT
         na.auth_id,
-        dr.description_id,
+        odi.description_id,
         NOW()
     FROM new_auth na
-    CROSS JOIN description_resource dr
+    CROSS JOIN original_description_id odi
     ON CONFLICT (auth_id, description_id) DO NOTHING
 ),
 -- Link auth active flag

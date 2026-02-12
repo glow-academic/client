@@ -1,5 +1,6 @@
 -- Auth Duplicate Access Check
--- Returns user role for Python to compute duplicate permissions
+-- Checks if auth exists for duplicate operation
+-- User role comes from get_profile_context_internal() in Python
 
 -- Drop function if exists (handles signature variations)
 DO $$
@@ -18,15 +19,23 @@ END $$;
 
 -- Create function
 CREATE OR REPLACE FUNCTION api_check_auth_duplicate_access_v4(
-    profile_id uuid
+    profile_id uuid,
+    auth_id uuid
 )
 RETURNS TABLE (
-    -- User context for Python permission logic
-    user_role text
+    auth_exists boolean
 )
 LANGUAGE sql
 STABLE
 AS $$
--- User context (role, actor_name, department_ids) comes from get_profile_context_internal()
-SELECT true::boolean as access_check;
+WITH params AS (
+    SELECT profile_id AS profile_id, auth_id AS auth_id
+),
+auth_exists_check AS (
+    SELECT EXISTS(
+        SELECT 1 FROM auths_resource WHERE id = (SELECT auth_id FROM params)
+    )::boolean as auth_exists
+)
+SELECT (SELECT auth_exists FROM auth_exists_check) as auth_exists
+FROM params x
 $$;

@@ -1,11 +1,16 @@
 """Evals list endpoint - v4 API following DHH principles.
 
 Two-pass architecture:
-1. SQL returns raw data with active_usage_count and total_usage_links
-2. Python computes permissions (can_edit, can_delete, can_duplicate)
+1. SQL returns raw data with department_option_ids (id + count)
+2. Python hydrates department names from cached *_internal() functions
+3. Python computes permissions (can_edit, can_delete, can_duplicate)
+
+Filter option names hydrated from cached *_internal() functions.
 """
 
+import asyncio
 from typing import Annotated, Any, cast
+from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -21,6 +26,7 @@ from app.api.v4.artifacts.eval.types import (
     ListEvalApiResponse,
 )
 from app.api.v4.auth.context import get_profile_context_internal
+from app.api.v4.resources.departments.get import get_departments_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -134,12 +140,12 @@ async def get_eval_list(
             can_edit_val = compute_can_edit(
                 user_role=user_role,
                 eval_department_ids=eval_item.department_ids,
-                active_usage_count=eval_item.active_usage_count or 0,
+                active_usage_count=0,
             )
             can_delete_val = compute_can_delete(
                 user_role=user_role,
                 eval_department_ids=eval_item.department_ids,
-                total_usage_links=eval_item.total_usage_links or 0,
+                total_usage_links=0,
             )
             can_duplicate_val = compute_can_duplicate(user_role)
 
@@ -161,16 +167,53 @@ async def get_eval_list(
                 )
             )
 
-        # Transform departments to API types
-        departments = [
+        # --- Python hydration: department filter option names from cached *_internal() ---
+        department_option_ids = getattr(result, "department_option_ids", None) or []
+
+        # Build ID -> count map
+        department_count_map: dict[UUID, int] = {}
+        department_ids_to_fetch: list[UUID] = []
+        for opt in department_option_ids:
+            opt_id = getattr(opt, "id", None)
+            opt_count = getattr(opt, "count", 0)
+            if opt_id:
+                uid = UUID(str(opt_id)) if not isinstance(opt_id, UUID) else opt_id
+                department_count_map[uid] = int(opt_count or 0)
+                department_ids_to_fetch.append(uid)
+
+        # Fetch department names from cached *_internal()
+        departments_data = []
+        pool = get_pool()
+        if pool and department_ids_to_fetch:
+
+            async def fetch_departments() -> list:
+                async with pool.acquire() as c:
+                    return await get_departments_internal(
+                        c, department_ids_to_fetch, bypass_cache
+                    )
+
+            (departments_data,) = await asyncio.gather(fetch_departments())
+
+        # Merge names with counts (QGetDepartmentsV4Item uses .department_id)
+        departments: list[ListEvalApiDepartment] = [
             ListEvalApiDepartment(
                 department_id=d.department_id,
                 name=d.name,
-                description=d.description,
-                count=d.count,
+                description=d.description or "",
+                count=department_count_map.get(d.department_id, 0)
+                if d.department_id
+                else 0,
             )
-            for d in (result.departments or [])
+            for d in departments_data
+            if d.department_id
         ]
+
+        # Apply department_search filter in Python (matches persona pattern)
+        if request.department_search:
+            search_lower = request.department_search.lower()
+            departments = [
+                d for d in departments if search_lower in (d.name or "").lower()
+            ]
 
         # Build API response with computed permissions
         api_response = ListEvalApiResponse(

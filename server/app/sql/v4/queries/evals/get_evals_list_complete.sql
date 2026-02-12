@@ -42,15 +42,11 @@ CREATE TYPE types.q_list_evals_v4_eval AS (
     use_groups boolean,
     num_runs int,
     num_groups int,
-    active_usage_count int,
-    total_usage_links int,
     updated_at timestamptz
 );
 
-CREATE TYPE types.q_list_evals_v4_department AS (
-    department_id uuid,
-    name text,
-    description text,
+CREATE TYPE types.q_list_evals_v4_option_id AS (
+    id uuid,
     count bigint
 );
 
@@ -65,8 +61,8 @@ CREATE OR REPLACE FUNCTION api_list_evals_v4(
 )
 RETURNS TABLE (
     evals types.q_list_evals_v4_eval[],
-    departments types.q_list_evals_v4_department[],
-    total_count int
+    department_option_ids types.q_list_evals_v4_option_id[],
+    total_count bigint
 )
 LANGUAGE sql
 STABLE
@@ -142,7 +138,7 @@ filtered_evals AS (
 ),
 -- Count total
 total AS (
-    SELECT COUNT(*)::int as count FROM filtered_evals
+    SELECT COUNT(*) as count FROM filtered_evals
 ),
 -- Paginate
 paginated_evals AS (
@@ -163,11 +159,9 @@ eval_objects AS (
                 COALESCE((SELECT ARRAY_AGG(ed.department_id::text) FROM eval_departments_junction ed WHERE ed.eval_id = pe.id AND ed.active = true), ARRAY[]::text[]),
                 NOT COALESCE((SELECT ef.value FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = pe.id AND f.name = 'eval_active' LIMIT 1), false),
                 COALESCE((SELECT ef.value FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = pe.id AND f.name = 'dynamic' LIMIT 1), false),
-                COALESCE((SELECT ef.value FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = pe.id AND f.name = '' LIMIT 1), false),
+                COALESCE((SELECT ef.value FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = pe.id AND f.name = 'use_groups' LIMIT 1), false),
                 COALESCE((SELECT COUNT(*)::int FROM eval_runs_junction er WHERE er.eval_id = pe.id AND er.active = true), 0),
                 COALESCE((SELECT COUNT(*)::int FROM eval_groups_junction eg WHERE eg.eval_id = pe.id AND eg.active = true), 0),
-                0,
-                0,
                 pe.updated_at
             )::types.q_list_evals_v4_eval
             ORDER BY pe.updated_at DESC
@@ -176,34 +170,26 @@ eval_objects AS (
     ) as evals
     FROM paginated_evals pe
 ),
--- Build department filter options
-department_filter_data AS (
+-- Build department filter option IDs (names hydrated in Python via get_departments_internal)
+department_option_data AS (
     SELECT COALESCE(
         ARRAY_AGG(
-            (d.department_id, d.name, d.description, d.count)::types.q_list_evals_v4_department
-            ORDER BY d.name
+            (d.department_id, d.count)::types.q_list_evals_v4_option_id
         ),
-        '{}'::types.q_list_evals_v4_department[]
-    ) as departments
+        '{}'::types.q_list_evals_v4_option_id[]
+    ) as department_option_ids
     FROM (
-        SELECT DISTINCT
-            dr.id as department_id,
-            (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = dr.id LIMIT 1) as name,
-            COALESCE((SELECT d.description FROM department_descriptions_junction dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.department_id = dr.id LIMIT 1), '') as description,
+        SELECT
+            ed.department_id,
             COUNT(DISTINCT ae.id) as count
         FROM accessible_evals ae
         JOIN eval_departments_junction ed ON ed.eval_id = ae.id AND ed.active = true
-        JOIN departments_resource dr ON dr.id = ed.department_id
-        WHERE (
-            (SELECT department_search FROM params) IS NULL
-            OR LOWER((SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = dr.id LIMIT 1)) LIKE '%' || LOWER((SELECT department_search FROM params)) || '%'
-        )
-        GROUP BY dr.id
+        GROUP BY ed.department_id
     ) d
 )
 SELECT
     (SELECT evals FROM eval_objects) as evals,
-    (SELECT departments FROM department_filter_data) as departments,
+    (SELECT department_option_ids FROM department_option_data) as department_option_ids,
     (SELECT count FROM total) as total_count
 FROM user_profile up;
 $$;

@@ -1,19 +1,32 @@
-"""Auth list endpoint.
+"""Auth list endpoint - v4 API following DHH principles.
 
-Currently uses SQL-computed permissions (can_edit, can_delete, can_duplicate).
-Future: modify list SQL to return user_role separately and compute in Python.
+Two-pass architecture:
+1. SQL returns raw data with department_ids
+2. Python computes permissions (can_edit, can_delete, can_duplicate)
+
+Filter option names hydrated from cached *_internal() functions.
+Search filtering applied in Python for option names.
 """
 
+import asyncio
 from typing import Annotated, Any, cast
+from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.artifacts.auth.permissions import (
+    compute_can_delete,
+    compute_can_duplicate,
+    compute_can_edit,
+)
 from app.api.v4.artifacts.auth.types import (
     ListAuthApiAuth,
+    ListAuthApiDepartment,
     ListAuthApiResponse,
 )
 from app.api.v4.auth.context import get_profile_context_internal
+from app.api.v4.resources.departments.get import get_departments_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -72,7 +85,7 @@ async def get_auth_list(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for audit logging
+        # Fetch user context for audit logging and permissions
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -83,12 +96,23 @@ async def get_auth_list(
                     bypass_cache=bypass_cache,
                 )
                 actor_name = resolved_context.actor_name
+                user_role = resolved_context.user_role
         else:
             actor_name = None
+            user_role = None
 
-        params = GetAuthListSqlParams(**request.model_dump(), profile_id=profile_id)
+        # Convert API request to SQL params
+        params = GetAuthListSqlParams(
+            profile_id=profile_id,
+            search=request.search,
+            filter_department_ids=request.filter_department_ids,
+            department_search=request.department_search,
+            page_size=request.page_size,
+            page_offset=request.page_offset,
+        )
         sql_params = params.to_tuple()
 
+        # Execute query with typed helper
         result = cast(
             GetAuthListSqlRow,
             await execute_sql_typed(
@@ -102,27 +126,81 @@ async def get_auth_list(
         if actor_name:
             audit_set(http_request, actor={"name": actor_name, "id": profile_id})
 
-        # Transform SQL result to handcrafted types
-        # Note: permissions are currently computed in SQL
+        # Compute permissions for each auth in Python
         auths_list: list[ListAuthApiAuth] = []
         for auth in result.auths or []:
+            can_edit_val = compute_can_edit(user_role=user_role)
+            can_delete_val = compute_can_delete(user_role=user_role)
+            can_duplicate_val = compute_can_duplicate(user_role=user_role)
+
             auths_list.append(
                 ListAuthApiAuth(
                     auth_id=auth.auth_id,
                     name=auth.name,
                     description=auth.description,
-                    is_inactive=not auth.active if auth.active is not None else None,
                     item_count=auth.num_items,
-                    can_edit=auth.can_edit,
-                    can_duplicate=auth.can_duplicate,
-                    can_delete=auth.can_delete,
+                    department_ids=auth.department_ids,
+                    is_inactive=auth.is_inactive,
+                    can_edit=can_edit_val,
+                    can_duplicate=can_duplicate_val,
+                    can_delete=can_delete_val,
                 )
             )
+
+        # --- Python hydration: filter option names from cached *_internal() ---
+        department_option_ids = getattr(result, "department_option_ids", None) or []
+
+        # Build ID -> count map
+        department_count_map: dict[UUID, int] = {}
+        department_ids_to_fetch: list[UUID] = []
+        for opt in department_option_ids:
+            opt_id = getattr(opt, "id", None)
+            opt_count = getattr(opt, "count", 0)
+            if opt_id:
+                uid = UUID(str(opt_id)) if not isinstance(opt_id, UUID) else opt_id
+                department_count_map[uid] = int(opt_count or 0)
+                department_ids_to_fetch.append(uid)
+
+        # Parallel fetch names from cached *_internal() functions
+        departments_data = []
+
+        pool = get_pool()
+        if pool and department_ids_to_fetch:
+
+            async def fetch_departments() -> list:
+                if not department_ids_to_fetch:
+                    return []
+                async with pool.acquire() as c:
+                    return await get_departments_internal(
+                        c, department_ids_to_fetch, bypass_cache
+                    )
+
+            (departments_data,) = await asyncio.gather(fetch_departments())
+
+        # Merge names with counts, apply search filtering in Python
+        department_search = request.department_search
+        departments: list[ListAuthApiDepartment] = [
+            ListAuthApiDepartment(
+                department_id=d.department_id,
+                name=d.name,
+                description=d.description or "",
+                count=department_count_map.get(d.department_id, 0)
+                if d.department_id
+                else 0,
+            )
+            for d in departments_data
+            if d.department_id
+            and (
+                department_search is None
+                or department_search.lower() in (d.name or "").lower()
+            )
+        ]
 
         api_response = ListAuthApiResponse(
             actor_name=actor_name,
             auths=auths_list,
-            total_count=len(auths_list),
+            departments=departments,
+            total_count=result.total_count,
         )
 
         # Cache response

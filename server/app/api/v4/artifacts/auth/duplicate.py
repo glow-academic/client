@@ -81,9 +81,10 @@ async def duplicate_auth(
             actor_name = None
             user_role = None
 
-        # Permission check: get user role using typed SQL
+        # Permission check: verify auth exists using typed SQL
         access_params = CheckAuthDuplicateAccessSqlParams(
             profile_id=profile_id,
+            auth_id=request.auth_id,
         )
         access_result = cast(
             CheckAuthDuplicateAccessSqlRow,
@@ -98,6 +99,12 @@ async def duplicate_auth(
             raise HTTPException(
                 status_code=401,
                 detail="Unable to verify user permissions.",
+            )
+
+        if access_result.auth_exists is False:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Auth {request.auth_id} not found",
             )
 
         can_duplicate = compute_can_duplicate(user_role=user_role)

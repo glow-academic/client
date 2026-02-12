@@ -27,16 +27,16 @@ async def test_list_departments(
     assert "departments" in data
     assert isinstance(data["departments"], list)
     assert len(data["departments"]) >= 0
+    assert "total_count" in data
 
     # If there are departments, verify structure
     if data["departments"]:
         for dept in data["departments"]:
             assert "department_id" in dept
-            assert "title" in dept
+            assert "name" in dept
             assert "description" in dept
-            assert "active" in dept
+            assert "is_inactive" in dept
             assert "updated_at" in dept
-            assert "total_price_spent" in dept
             assert "staff_count" in dept
             assert "can_edit" in dept
             assert "can_delete" in dept
@@ -61,3 +61,45 @@ async def test_list_departments_empty(
     assert data is not None
     assert "departments" in data
     assert isinstance(data["departments"], list)
+    assert "total_count" in data
+
+
+async def test_list_departments_with_search(
+    client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test departments list with search filter."""
+    await get_superadmin_alias(db)
+
+    response = await client.post(
+        "/api/v4/artifacts/departments/list",
+        json={"search": "nonexistent_department_xyz"},
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+
+    assert data is not None
+    assert "departments" in data
+    assert isinstance(data["departments"], list)
+    assert data["total_count"] == 0
+
+
+async def test_list_departments_with_pagination(
+    client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test departments list with pagination."""
+    await get_superadmin_alias(db)
+
+    response = await client.post(
+        "/api/v4/artifacts/departments/list",
+        json={"page_size": 1, "page_offset": 0},
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+
+    assert data is not None
+    assert "departments" in data
+    assert isinstance(data["departments"], list)
+    assert len(data["departments"]) <= 1
+    assert "total_count" in data

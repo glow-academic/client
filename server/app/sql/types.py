@@ -1817,23 +1817,25 @@ class CheckAuthDeleteAccessApiResponse(BaseModel):
 class CheckAuthDuplicateAccessSqlParams(BaseModel):
 
     profile_id: UUID
+    auth_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
+            self.auth_id,
         )
 
 class CheckAuthDuplicateAccessSqlRow(BaseModel):
 
-    user_role: str | None = None
+    auth_exists: bool | None = None
 
 class CheckAuthDuplicateAccessApiRequest(BaseModel):
 
-    pass
+    auth_id: UUID
 
 class CheckAuthDuplicateAccessApiResponse(BaseModel):
 
-    user_role: str | None = None
+    auth_exists: bool | None = None
 
 
 
@@ -2204,10 +2206,20 @@ class GetAuthIdsApiResponse(BaseModel):
 class GetAuthListSqlParams(BaseModel):
 
     profile_id: UUID
+    search: str | None = None
+    filter_department_ids: list[UUID] | None = None
+    department_search: str | None = None
+    page_size: int | None = 1000
+    page_offset: int | None = 0
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
+            self.search,
+            self.filter_department_ids,
+            self.department_search,
+            self.page_size,
+            self.page_offset,
         )
 
 class QGetAuthListV4AuthItem(BaseModel):
@@ -2221,25 +2233,39 @@ class QGetAuthListV4Auth(BaseModel):
     auth_id: UUID | None
     name: str | None
     description: str | None
-    active: bool | None
+    is_inactive: bool | None
     updated_at: datetime | None
     num_items: int | None
     sample_items: list[QGetAuthListV4AuthItem] | None
-    can_edit: bool | None
-    can_delete: bool | None
-    can_duplicate: bool | None
+    department_ids: list[str] | None
+
+
+
+
+class QGetAuthListV4OptionId(BaseModel):
+
+    id: UUID | None
+    count: int | None
 
 class GetAuthListSqlRow(BaseModel):
 
     auths: list[QGetAuthListV4Auth] | None = None
+    department_option_ids: list[QGetAuthListV4OptionId] | None = None
+    total_count: int | None = None
 
 class GetAuthListApiRequest(BaseModel):
 
-    pass
+    search: str | None = None
+    filter_department_ids: list[UUID] | None = None
+    department_search: str | None = None
+    page_size: int | None = 1000
+    page_offset: int | None = 0
 
 class GetAuthListApiResponse(BaseModel):
 
     auths: list[QGetAuthListV4Auth] | None = None
+    department_option_ids: list[QGetAuthListV4OptionId] | None = None
+    total_count: int | None = None
 
 
 
@@ -3391,6 +3417,54 @@ class GetDepartmentIdsApiResponse(BaseModel):
     description_domain_id: UUID | None = None
     flag_domain_id: UUID | None = None
     settings_domain_id: UUID | None = None
+
+
+
+# Generated from: get_departments_list
+
+class GetDepartmentsListSqlParams(BaseModel):
+
+    profile_id: UUID
+    user_role: str | None = None
+    search: str | None = None
+    page_size: int | None = 12
+    page_offset: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.user_role,
+            self.search,
+            self.page_size,
+            self.page_offset,
+        )
+
+class QListDepartmentsV4Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+    is_inactive: bool | None
+    updated_at: datetime | None
+    staff_count: int | None
+    total_usage: int | None
+
+class GetDepartmentsListSqlRow(BaseModel):
+
+    departments: list[QListDepartmentsV4Department] | None = None
+    total_count: int | None = None
+
+class GetDepartmentsListApiRequest(BaseModel):
+
+    user_role: str | None = None
+    search: str | None = None
+    page_size: int | None = 12
+    page_offset: int | None = 0
+
+class GetDepartmentsListApiResponse(BaseModel):
+
+    departments: list[QListDepartmentsV4Department] | None = None
+    total_count: int | None = None
 
 
 
@@ -4858,16 +4932,6 @@ class GetEvalsListSqlParams(BaseModel):
             self.page_offset,
         )
 
-class QListEvalsV4Department(BaseModel):
-
-    department_id: UUID | None
-    name: str | None
-    description: str | None
-    count: int | None
-
-
-
-
 class QListEvalsV4Eval(BaseModel):
 
     eval_id: UUID | None
@@ -4879,14 +4943,20 @@ class QListEvalsV4Eval(BaseModel):
     use_groups: bool | None
     num_runs: int | None
     num_groups: int | None
-    active_usage_count: int | None
-    total_usage_links: int | None
     updated_at: datetime | None
+
+
+
+
+class QListEvalsV4OptionId(BaseModel):
+
+    id: UUID | None
+    count: int | None
 
 class GetEvalsListSqlRow(BaseModel):
 
     evals: list[QListEvalsV4Eval] | None = None
-    departments: list[QListEvalsV4Department] | None = None
+    department_option_ids: list[QListEvalsV4OptionId] | None = None
     total_count: int | None = None
 
 class GetEvalsListApiRequest(BaseModel):
@@ -4900,7 +4970,7 @@ class GetEvalsListApiRequest(BaseModel):
 class GetEvalsListApiResponse(BaseModel):
 
     evals: list[QListEvalsV4Eval] | None = None
-    departments: list[QListEvalsV4Department] | None = None
+    department_option_ids: list[QListEvalsV4OptionId] | None = None
     total_count: int | None = None
 
 
@@ -23187,6 +23257,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetDepartmentIdsApiRequest",
         "GetDepartmentIdsApiResponse",
     ),
+    "app/sql/v4/queries/departments/get_departments_list_complete.sql": (
+        "GetDepartmentsListSqlParams",
+        "GetDepartmentsListSqlRow",
+        "GetDepartmentsListApiRequest",
+        "GetDepartmentsListApiResponse",
+    ),
     "app/sql/v4/queries/departments/patch_department_draft_complete.sql": (
         "PatchDepartmentDraftSqlParams",
         "PatchDepartmentDraftSqlRow",
@@ -26291,6 +26367,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/departments/get_department_ids_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/departments/get_departments_list_complete.sql"]
     ) -> SqlString: ...
 
     @overload

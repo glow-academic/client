@@ -271,22 +271,7 @@ class ListDepartmentApiDepartment(BaseModel):
     updated_at: datetime | None = None
 
 
-class ListDepartmentApiCohort(BaseModel):
-    cohort_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    count: int | None = None
-
-
-class ListDepartmentApiProfile(BaseModel):
-    profile_id: UUID | None = None
-    name: str | None = None
-    count: int | None = None
-
-
 class ListDepartmentApiResponse(BaseModel):
     actor_name: str | None = None
     departments: list[ListDepartmentApiDepartment] | None = None
-    cohorts: list[ListDepartmentApiCohort] | None = None
-    profiles: list[ListDepartmentApiProfile] | None = None
     total_count: int | None = None

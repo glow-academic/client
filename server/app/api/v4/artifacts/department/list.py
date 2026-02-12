@@ -1,7 +1,10 @@
 """Department list endpoint - v4 API following DHH principles.
 
-Uses existing list SQL which computes permissions in SQL.
-Maps results to handcrafted response types.
+Two-pass architecture:
+1. SQL returns raw data with total_usage
+2. Python computes permissions (can_edit, can_delete, can_duplicate)
+
+No cross-entity hydration needed — department names come directly from SQL.
 """
 
 from typing import Annotated, Any, cast
@@ -9,10 +12,13 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.artifacts.department.permissions import (
+    compute_can_delete,
+    compute_can_duplicate,
+    compute_can_edit,
+)
 from app.api.v4.artifacts.department.types import (
-    ListDepartmentApiCohort,
     ListDepartmentApiDepartment,
-    ListDepartmentApiProfile,
     ListDepartmentApiResponse,
 )
 from app.api.v4.auth.context import get_profile_context_internal
@@ -80,7 +86,7 @@ async def get_department_list(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for audit logging
+        # Fetch user context for audit logging and permissions
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -91,16 +97,22 @@ async def get_department_list(
                     bypass_cache=bypass_cache,
                 )
                 actor_name = resolved_context.actor_name
+                user_role = resolved_context.user_role
         else:
             actor_name = None
+            user_role = None
 
-        # Convert API request to SQL params
+        # Convert API request to SQL params (add profile_id + user_role from context)
         params = GetDepartmentsListSqlParams(
-            **request.model_dump(), profile_id=profile_id
+            profile_id=profile_id,
+            user_role=user_role or "member",
+            search=request.search,
+            page_size=request.page_size,
+            page_offset=request.page_offset,
         )
         sql_params = params.to_tuple()
 
-        # Execute query
+        # Execute query with typed helper
         result = cast(
             GetDepartmentsListSqlRow,
             await execute_sql_typed(
@@ -114,45 +126,30 @@ async def get_department_list(
         if actor_name:
             audit_set(http_request, actor={"name": actor_name, "id": profile_id})
 
-        # Map SQL results to handcrafted types
+        # Compute permissions for each department in Python
         departments = [
             ListDepartmentApiDepartment(
                 department_id=d.department_id,
-                name=d.title,
+                name=d.name,
                 description=d.description,
                 staff_count=d.staff_count,
-                is_inactive=not d.active if d.active is not None else None,
-                can_edit=d.can_edit,
-                can_duplicate=d.can_duplicate,
-                can_delete=d.can_delete,
+                is_inactive=d.is_inactive,
+                can_edit=compute_can_edit(
+                    user_role=user_role, usage_count=d.total_usage or 0
+                ),
+                can_duplicate=compute_can_duplicate(user_role=user_role),
+                can_delete=compute_can_delete(
+                    user_role=user_role, total_usage=d.total_usage or 0
+                ),
                 updated_at=d.updated_at,
             )
             for d in (result.departments or [])
         ]
 
-        cohorts = [
-            ListDepartmentApiCohort(
-                cohort_id=c.cohort_id,
-                name=c.name,
-                description=c.description,
-            )
-            for c in (result.cohorts or [])
-        ]
-
-        profiles = [
-            ListDepartmentApiProfile(
-                profile_id=p.profile_id,
-                name=p.name,
-            )
-            for p in (result.profiles or [])
-        ]
-
         api_response = ListDepartmentApiResponse(
             actor_name=actor_name,
             departments=departments,
-            cohorts=cohorts,
-            profiles=profiles,
-            total_count=len(departments),
+            total_count=result.total_count,
         )
 
         # Cache response

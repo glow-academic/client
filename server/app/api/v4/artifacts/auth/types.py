@@ -392,13 +392,21 @@ class ListAuthApiAuth(BaseModel):
     auth_id: UUID | None = None
     name: str | None = None
     description: str | None = None
-    protocol_count: int | None = None
-    slug_count: int | None = None
     item_count: int | None = None
+    department_ids: list[str] | None = None
     is_inactive: bool | None = None
     can_edit: bool | None = None
     can_duplicate: bool | None = None
     can_delete: bool | None = None
+
+
+class ListAuthApiDepartment(BaseModel):
+    """Department filter option for list endpoint."""
+
+    department_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    count: int | None = None
 
 
 class ListAuthApiResponse(BaseModel):
@@ -406,4 +414,5 @@ class ListAuthApiResponse(BaseModel):
 
     actor_name: str | None = None
     auths: list[ListAuthApiAuth] | None = None
+    departments: list[ListAuthApiDepartment] | None = None
     total_count: int | None = None
