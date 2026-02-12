@@ -16,12 +16,12 @@ LANGUAGE sql
 STABLE
 AS $$
     SELECT
-        paj.profile_id,
+        paj.profiles_id,
         ae.last_active,
         ae.created_at
     FROM view_activity_entry ae
-    JOIN profile_activity_junction paj ON paj.activity_id = ae.id
-    WHERE paj.profile_id = input_profile_id
+    JOIN profiles_activity_connection paj ON paj.activity_id = ae.id
+    WHERE paj.profiles_id = input_profile_id
     ORDER BY ae.created_at DESC
     LIMIT 1;
 $$;

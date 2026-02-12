@@ -45,7 +45,7 @@ SELECT
 
     -- Context IDs (from first/most common values)
     MODE() WITHIN GROUP (ORDER BY rpf.session_id) AS session_id,
-    MODE() WITHIN GROUP (ORDER BY rpf.profile_id) AS profile_id,
+    MODE() WITHIN GROUP (ORDER BY rpf.profiles_id) AS profile_id,
     -- Use mode() to get most common agent/model in the group
     MODE() WITHIN GROUP (ORDER BY rpf.agent_id) AS primary_agent_id,
     MODE() WITHIN GROUP (ORDER BY rpf.model_id) AS primary_model_id,

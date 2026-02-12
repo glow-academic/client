@@ -1567,6 +1567,80 @@ class MarkCallCompletedApiResponse(BaseModel):
 
 
 
+# Generated from: get_artifact_session_detail
+
+class GetArtifactSessionDetailSqlParams(BaseModel):
+
+    p_session_id: UUID
+    p_profile_id: UUID
+    p_audit_limit: int | None = 50
+    p_audit_offset: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_session_id,
+            self.p_profile_id,
+            self.p_audit_limit,
+            self.p_audit_offset,
+        )
+
+class QGetArtifactSessionDetailV4Audit(BaseModel):
+
+    id: UUID | None
+    created_at: datetime | None
+    message: str | None
+    endpoint: str | None
+    error: bool | None
+
+
+
+
+class QGetArtifactSessionDetailV4Group(BaseModel):
+
+    group_id: UUID | None
+    group_name: str | None
+    trace_id: str | None
+    first_run_at: datetime | None
+    last_run_at: datetime | None
+    run_count: int | None
+    total_tokens: int | None
+    total_cost: float | None
+
+class GetArtifactSessionDetailSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    session_exists: bool | None = None
+    session_id: UUID | None = None
+    profile_id: UUID | None = None
+    profile_name: str | None = None
+    session_created_at: datetime | None = None
+    active: bool | None = None
+    audit_total_count: int | None = None
+    audits: list[QGetArtifactSessionDetailV4Audit] | None = None
+    groups: list[QGetArtifactSessionDetailV4Group] | None = None
+
+class GetArtifactSessionDetailApiRequest(BaseModel):
+
+    p_session_id: UUID
+    p_profile_id: UUID
+    p_audit_limit: int | None = 50
+    p_audit_offset: int | None = 0
+
+class GetArtifactSessionDetailApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    session_exists: bool | None = None
+    session_id: UUID | None = None
+    profile_id: UUID | None = None
+    profile_name: str | None = None
+    session_created_at: datetime | None = None
+    active: bool | None = None
+    audit_total_count: int | None = None
+    audits: list[QGetArtifactSessionDetailV4Audit] | None = None
+    groups: list[QGetArtifactSessionDetailV4Group] | None = None
+
+
+
 # Generated from: create_test
 
 class CreateTestSqlParams(BaseModel):
@@ -7238,6 +7312,94 @@ class PrepareTestRunApiResponse(BaseModel):
     original_conversation: Any | None = None
     current_run: int | None = None
     total_runs: int | None = None
+
+
+
+# Generated from: get_text_run_context_for_existing_run
+
+class GetTextRunContextForExistingRunSqlParams(BaseModel):
+
+    run_id: UUID
+    agent_id: UUID
+    message_ids: list[UUID] | None = None
+    group_id: UUID | None = None
+    resources: list[IPersonaResourceV4] | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        # Convert resources composite array to tuples for asyncpg
+        resources_tuples = [
+            (conn.resource_type, conn.resource_ids)
+            for conn in (self.resources or [])
+        ]
+        return (
+            self.run_id,
+            self.agent_id,
+            self.message_ids,
+            self.group_id,
+            resources_tuples,
+        )
+
+class GetTextRunContextForExistingRunSqlRow(BaseModel):
+
+    agent_id: str | None = None
+    agent_name: str | None = None
+    agent_role: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: datetime | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
+    developer_instruction_templates: list[str] | None = None
+    context: Any | None = None
+    department_name: str | None = None
+    upload_id: UUID | None = None
+    file_path: str | None = None
+    mime_type: str | None = None
+
+class GetTextRunContextForExistingRunApiRequest(BaseModel):
+
+    run_id: UUID
+    agent_id: UUID
+    message_ids: list[UUID] | None = None
+    group_id: UUID | None = None
+    resources: list[IPersonaResourceV4] | None = None
+
+class GetTextRunContextForExistingRunApiResponse(BaseModel):
+
+    agent_id: str | None = None
+    agent_name: str | None = None
+    agent_role: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: datetime | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
+    developer_instruction_templates: list[str] | None = None
+    context: Any | None = None
+    department_name: str | None = None
+    upload_id: UUID | None = None
+    file_path: str | None = None
+    mime_type: str | None = None
 
 
 
@@ -19679,6 +19841,39 @@ class UpdateStandardDescriptionsApiResponse(BaseModel):
 
 
 
+# Generated from: check_scenario_delete_access
+
+class CheckScenarioDeleteAccessSqlParams(BaseModel):
+
+    profile_id: UUID
+    scenario_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.scenario_id,
+        )
+
+class CheckScenarioDeleteAccessSqlRow(BaseModel):
+
+    scenario_exists: bool | None = None
+    scenario_name: str | None = None
+    usage_count: int | None = None
+    scenario_department_ids: list[UUID] | None = None
+
+class CheckScenarioDeleteAccessApiRequest(BaseModel):
+
+    scenario_id: UUID
+
+class CheckScenarioDeleteAccessApiResponse(BaseModel):
+
+    scenario_exists: bool | None = None
+    scenario_name: str | None = None
+    usage_count: int | None = None
+    scenario_department_ids: list[UUID] | None = None
+
+
+
 # Generated from: check_scenario_duplicate_access
 
 class CheckScenarioDuplicateAccessSqlParams(BaseModel):
@@ -22570,6 +22765,187 @@ class BulkDeleteStaffApiRequest(BaseModel):
 class BulkDeleteStaffApiResponse(BaseModel):
 
     deleted_count: int | None = None
+
+
+
+# Generated from: get_staff_list
+
+class GetStaffListSqlParams(BaseModel):
+
+    profile_id: UUID
+    search: str | None = None
+    cohort_ids: list[UUID] | None = None
+    filter_department_ids: list[UUID] | None = None
+    role_filter: str | None = None
+    cohort_search: str | None = None
+    department_search: str | None = None
+    page_size: int | None = 12
+    page_offset: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.search,
+            self.cohort_ids,
+            self.filter_department_ids,
+            self.role_filter,
+            self.cohort_search,
+            self.department_search,
+            self.page_size,
+            self.page_offset,
+        )
+
+class QListStaffV4OptionId(BaseModel):
+
+    id: UUID | None
+    count: int | None
+
+
+
+
+class QListStaffV4Staff(BaseModel):
+
+    profile_id: UUID | None
+    emails: list[str] | None
+    primary_email: str | None
+    name: str | None
+    role: str | None
+    initials: str | None
+    active: bool | None
+    last_active: datetime | None
+    cohort_ids: list[str] | None
+    department_ids: list[str] | None
+    primary_department_id: str | None
+    requests_per_day: int | None
+    total_requests: int | None
+    requests_in_last_day: int | None
+    target_is_self: bool | None
+    total_cohort_links: int | None
+
+
+
+
+class QListStaffV4TrendData(BaseModel):
+
+    date: str | None
+    value: float | None
+    count: int | None
+
+class GetStaffListSqlRow(BaseModel):
+
+    staff: list[QListStaffV4Staff] | None = None
+    cohort_option_ids: list[QListStaffV4OptionId] | None = None
+    department_option_ids: list[QListStaffV4OptionId] | None = None
+    trend_data_active: list[QListStaffV4TrendData] | None = None
+    trend_data_admin: list[QListStaffV4TrendData] | None = None
+    trend_data_instructional: list[QListStaffV4TrendData] | None = None
+    trend_data_member: list[QListStaffV4TrendData] | None = None
+    trend_data_total_requests: list[QListStaffV4TrendData] | None = None
+    role_options: list[str] | None = None
+    last_active_options: list[str] | None = None
+    total_count: int | None = None
+
+class GetStaffListApiRequest(BaseModel):
+
+    search: str | None = None
+    cohort_ids: list[UUID] | None = None
+    filter_department_ids: list[UUID] | None = None
+    role_filter: str | None = None
+    cohort_search: str | None = None
+    department_search: str | None = None
+    page_size: int | None = 12
+    page_offset: int | None = 0
+
+class GetStaffListApiResponse(BaseModel):
+
+    staff: list[QListStaffV4Staff] | None = None
+    cohort_option_ids: list[QListStaffV4OptionId] | None = None
+    department_option_ids: list[QListStaffV4OptionId] | None = None
+    trend_data_active: list[QListStaffV4TrendData] | None = None
+    trend_data_admin: list[QListStaffV4TrendData] | None = None
+    trend_data_instructional: list[QListStaffV4TrendData] | None = None
+    trend_data_member: list[QListStaffV4TrendData] | None = None
+    trend_data_total_requests: list[QListStaffV4TrendData] | None = None
+    role_options: list[str] | None = None
+    last_active_options: list[str] | None = None
+    total_count: int | None = None
+
+
+
+# Generated from: get_staff_search
+
+class GetStaffSearchSqlParams(BaseModel):
+
+    query: str
+    profile_id: UUID
+    cohort_ids: list[UUID]
+    department_ids: list[UUID]
+    limit_count: int | None = 200
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.query,
+            self.profile_id,
+            self.cohort_ids,
+            self.department_ids,
+            self.limit_count,
+        )
+
+class QSearchStaffV4Cohort(BaseModel):
+
+    cohort_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QSearchStaffV4Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QSearchStaffV4Staff(BaseModel):
+
+    profile_id: UUID | None
+    emails: list[str] | None
+    primary_email: str | None
+    name: str | None
+    role: str | None
+    initials: str | None
+    active: bool | None
+    last_active: datetime | None
+    cohort_ids: list[str] | None
+    department_ids: list[str] | None
+    primary_department_id: str | None
+    requests_per_day: int | None
+    total_requests: int | None
+    requests_in_last_day: int | None
+    can_edit: bool | None
+    can_delete: bool | None
+
+class GetStaffSearchSqlRow(BaseModel):
+
+    staff: list[QSearchStaffV4Staff] | None = None
+    cohorts: list[QSearchStaffV4Cohort] | None = None
+    departments: list[QSearchStaffV4Department] | None = None
+
+class GetStaffSearchApiRequest(BaseModel):
+
+    query: str
+    cohort_ids: list[UUID]
+    department_ids: list[UUID]
+    limit_count: int | None = 200
+
+class GetStaffSearchApiResponse(BaseModel):
+
+    staff: list[QSearchStaffV4Staff] | None = None
+    cohorts: list[QSearchStaffV4Cohort] | None = None
+    departments: list[QSearchStaffV4Department] | None = None
 
 
 
@@ -25839,6 +26215,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "MarkCallCompletedApiRequest",
         "MarkCallCompletedApiResponse",
     ),
+    "app/sql/v4/queries/artifacts/session/get_artifact_session_detail_complete.sql": (
+        "GetArtifactSessionDetailSqlParams",
+        "GetArtifactSessionDetailSqlRow",
+        "GetArtifactSessionDetailApiRequest",
+        "GetArtifactSessionDetailApiResponse",
+    ),
     "app/sql/v4/queries/artifacts/test/create_test_complete.sql": (
         "CreateTestSqlParams",
         "CreateTestSqlRow",
@@ -26486,6 +26868,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "PrepareTestRunSqlRow",
         "PrepareTestRunApiRequest",
         "PrepareTestRunApiResponse",
+    ),
+    "app/sql/v4/queries/generate/text/get_text_run_context_for_existing_run_complete.sql": (
+        "GetTextRunContextForExistingRunSqlParams",
+        "GetTextRunContextForExistingRunSqlRow",
+        "GetTextRunContextForExistingRunApiRequest",
+        "GetTextRunContextForExistingRunApiResponse",
     ),
     "app/sql/v4/queries/generate/text/text_tool_progress_update_complete.sql": (
         "TextToolProgressUpdateSqlParams",
@@ -28389,6 +28777,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "UpdateStandardDescriptionsApiRequest",
         "UpdateStandardDescriptionsApiResponse",
     ),
+    "app/sql/v4/queries/scenario/check_scenario_delete_access_complete.sql": (
+        "CheckScenarioDeleteAccessSqlParams",
+        "CheckScenarioDeleteAccessSqlRow",
+        "CheckScenarioDeleteAccessApiRequest",
+        "CheckScenarioDeleteAccessApiResponse",
+    ),
     "app/sql/v4/queries/scenario/check_scenario_duplicate_access_complete.sql": (
         "CheckScenarioDuplicateAccessSqlParams",
         "CheckScenarioDuplicateAccessSqlRow",
@@ -28652,6 +29046,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "BulkDeleteStaffSqlRow",
         "BulkDeleteStaffApiRequest",
         "BulkDeleteStaffApiResponse",
+    ),
+    "app/sql/v4/queries/staff/get_staff_list_complete.sql": (
+        "GetStaffListSqlParams",
+        "GetStaffListSqlRow",
+        "GetStaffListApiRequest",
+        "GetStaffListApiResponse",
+    ),
+    "app/sql/v4/queries/staff/get_staff_search_complete.sql": (
+        "GetStaffSearchSqlParams",
+        "GetStaffSearchSqlRow",
+        "GetStaffSearchApiRequest",
+        "GetStaffSearchApiResponse",
     ),
     "app/sql/v4/queries/staff/process_csv_complete.sql": (
         "ProcessCsvSqlParams",
@@ -29243,6 +29649,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/artifacts/session/get_artifact_session_detail_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/artifacts/test/create_test_complete.sql"]
     ) -> SqlString: ...
 
@@ -29779,6 +30190,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/generate/test/prepare_test_run_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/text/get_text_run_context_for_existing_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -31368,6 +31784,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/scenario/check_scenario_delete_access_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/scenario/check_scenario_duplicate_access_complete.sql"]
     ) -> SqlString: ...
 
@@ -31584,6 +32005,16 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/staff/bulk_delete_staff_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/staff/get_staff_list_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/staff/get_staff_search_complete.sql"]
     ) -> SqlString: ...
 
     @overload

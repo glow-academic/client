@@ -203,8 +203,8 @@ staff_rows AS (
     LEFT JOIN emails_resource e ON pe.email_id = e.id
     LEFT JOIN profile_cohorts_junction pc ON pc.profile_id = p.id
     LEFT JOIN profile_departments_agg pda ON pda.profile_id = p.id
-    LEFT JOIN profile_total_runs ptr ON ptr.profile_id = p.id
-    LEFT JOIN recent_runs rr ON rr.profile_id = p.id
+    LEFT JOIN profile_total_runs ptr ON ptr.profiles_id = p.id
+    LEFT JOIN recent_runs rr ON rr.profiles_id = p.id
     LEFT JOIN profile_request_limits_junction prl ON prl.profile_id = p.id AND prl.active = true
     LEFT JOIN request_limits_resource rl ON prl.request_limit_id = rl.id
     LEFT JOIN LATERAL (

@@ -93,11 +93,9 @@ usage_check AS (
     ) as usage_count
 )
 SELECT
-    up.actor_name::text,
     (SELECT scenario_exists FROM scenario_exists_check),
     snd.scenario_name::text,
     (SELECT usage_count FROM usage_check) as usage_count,
-    up.user_role::text,
     sd.department_ids as scenario_department_ids
 FROM user_profile up
 CROSS JOIN scenario_departments sd

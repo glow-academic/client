@@ -1,5 +1,6 @@
 -- Create scenario tree edge for test setup
 -- Returns edge data for verification
+-- Now updates scenarios_resource instead of inserting into scenario_tree_junction
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_scenario_tree_edge_v4(uuid);
 
@@ -13,14 +14,21 @@ RETURNS TABLE (
     active boolean,
     created_at timestamptz
 )
-LANGUAGE sql
+LANGUAGE plpgsql
 VOLATILE
 AS $$
-    INSERT INTO scenario_tree_junction(parent_id, child_id, active)
-    VALUES (
-        test_create_scenario_tree_edge_v4.input_scenario_id,
-        test_create_scenario_tree_edge_v4.input_scenario_id,
-        true
-    )
-    RETURNING parent_id, child_id, active, created_at;
+BEGIN
+    -- Self-reference means root: set is_root = TRUE, parent_id = NULL
+    UPDATE scenarios_resource
+    SET is_root = TRUE,
+        parent_id = NULL
+    WHERE id = input_scenario_id;
+
+    RETURN QUERY
+    SELECT
+        input_scenario_id,
+        input_scenario_id,
+        TRUE,
+        NOW()::timestamptz;
+END;
 $$;

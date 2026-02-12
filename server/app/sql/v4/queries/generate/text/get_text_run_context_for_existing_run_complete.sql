@@ -135,7 +135,7 @@ runs_today AS (
     FROM view_runs_entry mr
     JOIN profiles_runs_connection prj2 ON prj2.run_id = mr.id
     CROSS JOIN run_profile rp
-    WHERE prj2.profile_id = rp.profiles_id
+    WHERE prj2.profiles_id = rp.profiles_id
       AND mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
 ),
 -- Get profile's primary department for department name resolution

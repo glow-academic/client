@@ -52,7 +52,7 @@ SELECT
     -- Aggregated counts
     COUNT(*)::int AS run_count,
     COUNT(DISTINCT rpf.group_id)::int AS group_count,
-    COUNT(DISTINCT rpf.profile_id)::int AS unique_profiles,
+    COUNT(DISTINCT rpf.profiles_id)::int AS unique_profiles,
     COUNT(DISTINCT rpf.session_id)::int AS unique_sessions,
 
     -- Token aggregates
