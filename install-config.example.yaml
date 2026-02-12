@@ -147,17 +147,34 @@ modules:
     - google
     - microsoft
 
+  # Base rubrics (06-rubrics/) — rubrics without simulation/video flags
+  rubrics: all
+
+  # Evals (07-evals/)
+  evals: all
+
+  # Base profiles (08-profiles/) — default admin roles (no department)
+  profiles: all
+
+  # Base settings (09-settings/) — default settings (no department)
+  settings: all
+
   # Setup type: loads from 10-setups/{setup}/
   setup: university
+
+  # Organization modules (10-setups/organization/)
+  organization:
+    departments:
+      - general
 
   # Setup-specific modules (10-setups/university/)
   university:
     departments:
-      - general
       - purdue-cs
     personas: all
     documents: all
     fields: all
+    parameters: all
     rubrics:
       - ta-rubric
     simulations:
@@ -167,7 +184,6 @@ modules:
       - aggressive-practice
       - general-practice
       - video-practice
-    evals: all
-    cohorts: all
-    profiles: all
-    settings: all
+    scenarios: all
+    cohorts:
+      - practice-cohort

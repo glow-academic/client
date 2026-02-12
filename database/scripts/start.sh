@@ -544,9 +544,13 @@ if [[ "$MIGRATE_DB" == true ]]; then
         echo "🔄 Applying migration: $(basename "$migration_file")"
         if psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1 -f "$migration_file"; then
           echo "✅ Migration applied successfully: $(basename "$migration_file")"
-          
+
           # Step 3: Create backup with migration number prefix
           create_backup "$migration_num"
+
+          # Step 4: Auto-update schema.sql
+          echo "📄 Updating schema.sql..."
+          bash "${script_dir}/export-db.sh" schema
         else
           echo "❌ Migration failed: $(basename "$migration_file")"
           exit 1

@@ -69,7 +69,6 @@ BASE_RESOURCE_TABLES = {
     "domains_resource",
     "slugs_resource",
     "texts_resource",
-    "templates_resource",
     "args_resource",
     "args_outputs_resource",
     "request_limits_resource",
@@ -539,6 +538,9 @@ async def write_artifact_module(
 async def export_base(conn: asyncpg.Connection) -> None:
     print("Exporting 00-base/ ...")
     base_dir = MODULES_DIR / "00-base"
+    if base_dir.exists():
+        for old in base_dir.glob("*.sql"):
+            old.unlink()
     base_dir.mkdir(parents=True, exist_ok=True)
 
     # Relation tables
@@ -566,14 +568,13 @@ async def export_base(conn: asyncpg.Connection) -> None:
         ("10-domains", "domains", ["domains_resource"]),
         ("11-slugs", "slugs", ["slugs_resource"]),
         ("12-texts", "texts", ["texts_resource"]),
-        ("13-templates", "templates", ["templates_resource"]),
-        ("14-args", "args", ["args_resource", "args_outputs_resource"]),
-        ("15-request-limits", "request-limits", ["request_limits_resource"]),
-        ("16-voices", "voices", ["voices_resource"]),
-        ("17-values", "values", ["values_resource"]),
-        ("18-reasoning-levels", "reasoning-levels", ["reasoning_levels_resource"]),
+        ("13-args", "args", ["args_resource", "args_outputs_resource"]),
+        ("14-request-limits", "request-limits", ["request_limits_resource"]),
+        ("15-voices", "voices", ["voices_resource"]),
+        ("16-values", "values", ["values_resource"]),
+        ("17-reasoning-levels", "reasoning-levels", ["reasoning_levels_resource"]),
         (
-            "19-temperature-levels",
+            "18-temperature-levels",
             "temperature-levels",
             ["temperature_levels_resource"],
         ),

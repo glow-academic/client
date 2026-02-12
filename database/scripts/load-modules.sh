@@ -8,10 +8,11 @@ set -euo pipefail
 # Can either output a combined SQL file or pipe directly to psql.
 #
 # Usage:
-#   ./load-modules.sh                         # Use default install-config.yaml
-#   ./load-modules.sh config.yaml             # Use specific config
-#   ./load-modules.sh config.yaml --output    # Write to file instead of psql
-#   ./load-modules.sh --output                # Default config, write to file
+#   ./load-modules.sh                              # Use default install-config.yaml
+#   ./load-modules.sh config.yaml                  # Use specific config
+#   ./load-modules.sh config.yaml --output         # Write to timestamped file
+#   ./load-modules.sh config.yaml --output out.sql # Write to specific file
+#   ./load-modules.sh --output                     # Default config, timestamped file
 # =============================================================================
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -21,12 +22,21 @@ modules_dir="$script_dir/../modules"
 # --- Parse args ---------------------------------------------------------------
 config_file=""
 output_mode=false
+output_file=""
 
-for arg in "$@"; do
-  case "$arg" in
-    --output) output_mode=true ;;
-    *) config_file="$arg" ;;
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --output)
+      output_mode=true
+      # Check if next arg is a file path (not another flag)
+      if [[ -n "${2:-}" && "${2:0:1}" != "-" ]]; then
+        output_file="$2"
+        shift
+      fi
+      ;;
+    *) config_file="$1" ;;
   esac
+  shift
 done
 
 if [[ -z "$config_file" ]]; then
@@ -38,7 +48,7 @@ fi
 
 if [[ ! -f "$config_file" ]]; then
   echo "ERROR: Config file not found: $config_file"
-  echo "Usage: $0 [config.yaml] [--output]"
+  echo "Usage: $0 [config.yaml] [--output [file.sql]]"
   exit 1
 fi
 
@@ -137,6 +147,101 @@ add_dir_sorted() {
   fi
 }
 
+# Helper: load a root-level per-artifact module (06-rubrics, 07-evals, etc.)
+load_root_module() {
+  local yaml_key=$1     # e.g., "rubrics"
+  local folder=$2       # e.g., "06-rubrics"
+
+  local items
+  items=$(read_yaml_list "$config_file" ".modules.${yaml_key}")
+  if [[ -z "$items" || "$items" == "null" ]]; then
+    return
+  fi
+
+  echo "Loading ${folder}/ ..."
+  local mod_dir="$modules_dir/$folder"
+  if [[ "$items" == "all" ]]; then
+    add_dir_sorted "$mod_dir"
+  else
+    while IFS= read -r name; do
+      [[ -z "$name" ]] && continue
+      add_file "$mod_dir/${name}.sql"
+    done <<< "$items"
+  fi
+}
+
+# Helper: load categories for a setup type (organization or university)
+load_setup_categories() {
+  local setup_name=$1  # "organization" or "university"
+  local setup_dir="$modules_dir/10-setups/$setup_name"
+
+  # Check if this section exists in the YAML at all
+  local section_check
+  section_check=$(read_yaml "$config_file" ".modules.${setup_name}")
+  if [[ -z "$section_check" || "$section_check" == "null" ]]; then
+    return
+  fi
+
+  if [[ ! -d "$setup_dir" ]]; then
+    echo "  WARNING: Setup directory not found: $setup_dir"
+    return
+  fi
+
+  echo "Loading 10-setups/$setup_name/ ..."
+
+  # Institution auth (if present)
+  if [[ -d "$setup_dir/00-auth" ]]; then
+    echo "  Loading 00-auth/ ..."
+    add_dir_sorted "$setup_dir/00-auth"
+  fi
+
+  # Load each category using the YAML key → directory mapping
+  local category subfolder
+  local categories=(
+    "departments:01-departments"
+    "personas:02-personas"
+    "documents:03-documents"
+    "fields:04-fields"
+    "parameters:05-parameters"
+    "rubrics:05-rubrics"
+    "simulations:06-simulations"
+    "scenarios:07-scenarios"
+    "cohorts:08-cohorts"
+  )
+
+  for pair in "${categories[@]}"; do
+    category="${pair%%:*}"
+    subfolder="${pair##*:}"
+
+    local cat_dir="$setup_dir/$subfolder"
+    [[ ! -d "$cat_dir" ]] && continue
+
+    local items
+    items=$(read_yaml_list "$config_file" ".modules.${setup_name}.${category}")
+    if [[ -z "$items" || "$items" == "null" ]]; then
+      continue
+    fi
+
+    echo "  Loading $subfolder/ ..."
+    if [[ "$items" == "all" ]]; then
+      add_dir_sorted "$cat_dir"
+    else
+      while IFS= read -r name; do
+        [[ -z "$name" ]] && continue
+        # Try exact name first, then all.sql
+        if [[ -f "$cat_dir/${name}.sql" ]]; then
+          add_file "$cat_dir/${name}.sql"
+        elif [[ -f "$cat_dir/all.sql" ]]; then
+          # Category uses all.sql, just add it once
+          if ! printf '%s\n' "${sql_parts[@]}" | grep -q "$cat_dir/all.sql"; then
+            add_file "$cat_dir/all.sql"
+          fi
+        fi
+      done <<< "$items"
+    fi
+  done
+}
+
 echo ""
 echo "=== Assembling seed SQL from modules ==="
 echo ""
@@ -226,69 +331,24 @@ if [[ -n "$auth_list" ]]; then
   fi
 fi
 
-# --- 10-setups ----------------------------------------------------------------
-setup_type=$(read_yaml "$config_file" ".modules.setup")
-if [[ -n "$setup_type" && "$setup_type" != "null" ]]; then
-  echo "Loading 10-setups/$setup_type/ ..."
-  setup_dir="$modules_dir/10-setups/$setup_type"
+# --- 06-rubrics ---------------------------------------------------------------
+load_root_module "rubrics" "06-rubrics"
 
-  if [[ ! -d "$setup_dir" ]]; then
-    echo "  WARNING: Setup directory not found: $setup_dir"
-  else
-    # Load setup subdirectories in numbered order
-    # Each subfolder is loaded based on YAML config or "all"
+# --- 07-evals ----------------------------------------------------------------
+load_root_module "evals" "07-evals"
 
-    # Helper: load setup category
-    load_setup_category() {
-      local category=$1    # YAML key (e.g., "departments")
-      local subfolder=$2   # directory name (e.g., "01-departments")
+# --- 08-profiles --------------------------------------------------------------
+load_root_module "profiles" "08-profiles"
 
-      local cat_dir="$setup_dir/$subfolder"
-      [[ ! -d "$cat_dir" ]] && return
+# --- 09-settings --------------------------------------------------------------
+load_root_module "settings" "09-settings"
 
-      local items
-      items=$(read_yaml_list "$config_file" ".modules.${setup_type}.${category}")
-      if [[ -z "$items" || "$items" == "null" ]]; then
-        return
-      fi
+# --- 10-setups: Organization --------------------------------------------------
+load_setup_categories "organization"
 
-      echo "  Loading $subfolder/ ..."
-      if [[ "$items" == "all" ]]; then
-        add_dir_sorted "$cat_dir"
-      else
-        while IFS= read -r name; do
-          [[ -z "$name" ]] && continue
-          # Try exact name first, then all.sql
-          if [[ -f "$cat_dir/${name}.sql" ]]; then
-            add_file "$cat_dir/${name}.sql"
-          elif [[ -f "$cat_dir/all.sql" ]]; then
-            # Category uses all.sql, just add it once
-            if ! printf '%s\n' "${sql_parts[@]}" | grep -q "$cat_dir/all.sql"; then
-              add_file "$cat_dir/all.sql"
-            fi
-          fi
-        done <<< "$items"
-      fi
-    }
-
-    # Institution auth
-    if [[ -d "$setup_dir/00-auth" ]]; then
-      echo "  Loading 00-auth/ ..."
-      add_dir_sorted "$setup_dir/00-auth"
-    fi
-
-    load_setup_category "departments"  "01-departments"
-    load_setup_category "personas"     "02-personas"
-    load_setup_category "documents"    "03-documents"
-    load_setup_category "fields"       "04-fields"
-    load_setup_category "rubrics"      "05-rubrics"
-    load_setup_category "simulations"  "06-simulations"
-    load_setup_category "evals"        "07-evals"
-    load_setup_category "cohorts"      "08-cohorts"
-    load_setup_category "profiles"     "09-profiles"
-    load_setup_category "settings"     "10-settings"
-  fi
-fi
+# --- 10-setups: University ----------------------------------------------------
+# Only load university if the config declares it
+load_setup_categories "university"
 
 echo ""
 echo "Assembled $total_files module files"
@@ -300,9 +360,11 @@ fi
 
 # --- Output or execute --------------------------------------------------------
 if $output_mode; then
-  # Write combined SQL file
-  timestamp=$(date +%Y%m%d_%H%M%S)
-  output_file="$script_dir/../seeds/seed_modules_${timestamp}.sql"
+  # Determine output file path
+  if [[ -z "$output_file" ]]; then
+    timestamp=$(date +%Y%m%d_%H%M%S)
+    output_file="$script_dir/../seeds/seed_modules_${timestamp}.sql"
+  fi
   mkdir -p "$(dirname "$output_file")"
 
   {
@@ -326,7 +388,6 @@ if $output_mode; then
 
   echo ""
   echo "Written to: $output_file"
-  echo "To load: psql $DB_URL < $output_file"
 else
   # Pipe directly to psql
   echo "Loading into database: $DB_NAME ..."

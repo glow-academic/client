@@ -1,4 +1,4 @@
-.PHONY: help setup install clean format lint typecheck run run-test test test-unit test-integration test-cov cleanup generate-tests generate-test-schema stop stop-keycloak install-client install-e2e restore-db migrate-db migrate-db-all connect-db fresh-db export-db typecheck-client build-client openapi-gen gen-client-types sql-compile sql-format watch-sql-types configure
+.PHONY: help setup install clean format lint typecheck run run-test test test-unit test-integration test-cov cleanup generate-tests generate-test-schema stop stop-keycloak install-client install-e2e restore-db migrate-db migrate-db-all connect-db fresh-db export-schema export-modules build-test-seed typecheck-client build-client openapi-gen gen-client-types sql-compile sql-format watch-sql-types configure
 
 # Default Python interpreter
 PYTHON := python3.11
@@ -395,19 +395,17 @@ connect-db:
 	@cd database && yarn connect
 	@echo "✅ Connected to database"
 
-# Export database (schema, base, university, or organization)
-export-db:
-	@if [ -z "$(ARGS)" ]; then \
-		echo "Exporting all database files (schema, base, university)..."; \
-		(cd database/scripts && bash export-db.sh schema); \
-		(cd database/scripts && bash export-db.sh base); \
-		(cd database/scripts && bash export-db.sh university); \
-		echo "✅ Database export completed (schema, base, university)"; \
-	else \
-		echo "Exporting database: $(ARGS)..."; \
-		cd database/scripts && bash export-db.sh $(ARGS); \
-		echo "✅ Database export completed"; \
-	fi
+# Export database schema only
+export-schema:
+	@echo "Exporting database schema..."
+	@cd database/scripts && bash export-db.sh schema
+	@echo "✅ Schema export completed"
+
+# Build test seed from modules
+build-test-seed:
+	@echo "Building test seed from modules..."
+	@bash database/scripts/load-modules.sh database/configs/test.yaml --output database/test-seed.sql
+	@echo "✅ Test seed built at database/test-seed.sql"
 
 # Export modular seed data from live database
 export-modules:
@@ -482,7 +480,9 @@ help:
 	@echo "  sql-format     - Check for unused SQL files"
 	@echo "  connect-db     - Connect to database"
 	@echo "  fresh-db       - Interactive setup for fresh database"
-	@echo "  export-db      - Export database (schema|base|university|organization)"
+	@echo "  export-schema  - Export database schema (DDL only)"
+	@echo "  export-modules - Export modular seed data from live database"
+	@echo "  build-test-seed - Build test seed SQL from modules"
 	@echo ""
 	@echo "Services:"
 	@echo "  run          - Start all services in foreground (Ctrl+C to stop)"

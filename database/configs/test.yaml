@@ -1,0 +1,29 @@
+# =============================================================================
+# Test Configuration — loads ALL modules for integration tests
+# =============================================================================
+modules:
+  providers: all
+  models: all
+  agents: all
+  tools: all
+  auth: all
+  rubrics: all
+  evals: all
+  profiles: all
+  settings: all
+
+  setup: university
+
+  organization:
+    departments: all
+
+  university:
+    departments: all
+    personas: all
+    documents: all
+    fields: all
+    parameters: all
+    rubrics: all
+    simulations: all
+    scenarios: all
+    cohorts: all

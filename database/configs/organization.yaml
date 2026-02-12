@@ -1,0 +1,18 @@
+# =============================================================================
+# Organization Configuration — base setup with General department only
+# =============================================================================
+modules:
+  providers: all
+  models: all
+  agents: all
+  tools: all
+  auth: all
+  rubrics: all
+  evals: all
+  profiles: all
+  settings: all
+
+  setup: organization
+
+  organization:
+    departments: all

@@ -51,32 +51,25 @@ _test_db_url: str | None = None
 async def initialize_test_db() -> AsyncGenerator[None, None]:
     """Spin up disposable Postgres via init_db_pool and tear it down.
 
-    This initializes the test container and applies the schema, base, and university data.
+    This initializes the test container, applies the schema, and loads seed data.
     Individual tests create their own connections to avoid event loop issues.
     """
     global _test_db_url
 
     database_dir = Path(__file__).parent.parent.parent / "database"
     schema_file = database_dir / "schema.sql"
-    base_file = database_dir / "base.sql"
-    university_file = database_dir / "university.sql"
+    seed_file = database_dir / "test-seed.sql"
 
     if not schema_file.exists():
         raise FileNotFoundError(
             f"Schema file not found: {schema_file}\n"
-            "Please run 'make export-db schema' to generate it."
+            "Please run 'make export-schema' to generate it."
         )
 
-    if not base_file.exists():
+    if not seed_file.exists():
         raise FileNotFoundError(
-            f"Base file not found: {base_file}\n"
-            "Please run 'make export-db base' to generate it."
-        )
-
-    if not university_file.exists():
-        raise FileNotFoundError(
-            f"University file not found: {university_file}\n"
-            "Please run 'make export-db university' to generate it."
+            f"Test seed file not found: {seed_file}\n"
+            "Please run 'make build-test-seed' to generate it."
         )
 
     await init_db_pool()
@@ -87,28 +80,21 @@ async def initialize_test_db() -> AsyncGenerator[None, None]:
     if _test_db_url is None:
         raise RuntimeError("Test database URL not available")
 
-    # Load base.sql and university.sql after schema is applied
+    # Load test-seed.sql after schema is applied
     pool = get_pool()
     if pool is None:
         raise RuntimeError("Database pool not available")
 
-    async def load_sql_file(file_path: Path, file_name: str) -> None:
-        """Load and execute a SQL file, filtering out pg_dump meta-commands."""
-        sql_content = file_path.read_text()
-        # Filter out pg_dump meta-commands (lines starting with \) that can't be executed via asyncpg
-        # These are psql meta-commands, not SQL
-        filtered_sql = "\n".join(
-            line
-            for line in sql_content.split("\n")
-            if not line.strip().startswith("\\")
-        )
-        async with pool.acquire() as conn:
-            await conn.execute(filtered_sql)
-        print(f"🗄️  Test {file_name} applied to disposable database")
-
-    # Load base.sql and university.sql
-    await load_sql_file(base_file, "base.sql")
-    await load_sql_file(university_file, "university.sql")
+    sql_content = seed_file.read_text()
+    # Filter out pg_dump/psql meta-commands (lines starting with \)
+    filtered_sql = "\n".join(
+        line
+        for line in sql_content.split("\n")
+        if not line.strip().startswith("\\")
+    )
+    async with pool.acquire() as conn:
+        await conn.execute(filtered_sql)
+    print("🗄️  Test seed data applied to disposable database")
 
     try:
         yield
