@@ -24,16 +24,11 @@ CREATE OR REPLACE FUNCTION api_get_profile_access_v4(
     draft_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
-    -- Basic metadata
-    actor_name text,
     profile_exists boolean,
     draft_version int,
     group_id uuid,
     resolved_target_profile_id uuid,
 
-    -- User context for Python permission logic
-    user_role text,
-    user_department_ids uuid[],
 
     -- Target profile state for Python permission logic
     target_role text,
@@ -70,20 +65,14 @@ resolve_target_profile_id AS (
             ELSE NULL::uuid
         END as resolved_target_profile_id
 ),
--- Get user profile info
+-- User context: actor_name comes from get_profile_context_internal() in Python
 user_profile AS (
-    SELECT role, actor_name
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
-),
--- Get user's departments
-user_departments AS (
-    SELECT COALESCE(
-        ARRAY_AGG(DISTINCT pd.department_id) FILTER (WHERE pd.department_id IS NOT NULL),
-        ARRAY[]::uuid[]
-    ) as department_ids
-    FROM params x
-    LEFT JOIN profile_departments_junction pd ON pd.profile_id = x.profile_id AND pd.active = true
+    SELECT COALESCE(r.role, 'member'::profile_type) as role,
+           ''::text as actor_name
+    FROM profile_roles_junction prj
+    JOIN roles_resource r ON prj.role_id = r.id
+    WHERE prj.profile_id = (SELECT profile_id FROM params)
+    LIMIT 1
 ),
 -- Get target profile role (from draft or junction)
 target_role_data AS (
@@ -186,15 +175,12 @@ roles_data AS (
 )
 SELECT
     -- Basic metadata
-    up.actor_name::text as actor_name,
     (SELECT profile_exists FROM profile_exists_check) as profile_exists,
     (SELECT draft_version FROM draft_version_data) as draft_version,
     gid.group_id,
     (SELECT resolved_target_profile_id FROM resolve_target_profile_id) as resolved_target_profile_id,
 
     -- User context for Python permission logic
-    up.role::text as user_role,
-    ud.department_ids as user_department_ids,
 
     -- Target profile state for Python permission logic
     (SELECT role FROM target_role_data) as target_role,
@@ -206,6 +192,6 @@ SELECT
     COALESCE((SELECT roles FROM roles_data), '{}'::types.q_get_profile_v4_role_resource[]) as roles
 FROM params x
 CROSS JOIN user_profile up
-CROSS JOIN user_departments ud
 CROSS JOIN group_id_data gid;
 $$;
+

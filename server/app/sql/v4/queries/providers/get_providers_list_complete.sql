@@ -58,8 +58,6 @@ CREATE TYPE types.q_list_providers_v4_status_option AS (
 -- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_list_providers_v4(profile_id uuid)
 RETURNS TABLE (
-    actor_name text,
-    user_role text,
     providers types.q_list_providers_v4_provider[],
     provider_options types.q_list_providers_v4_provider_option[],
     status_options types.q_list_providers_v4_status_option[]
@@ -67,13 +65,9 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
+-- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 WITH params AS (
     SELECT profile_id AS profile_id
-),
-user_profile AS (
-    SELECT role, actor_name
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
 ),
 provider_data AS (
     SELECT
@@ -131,15 +125,14 @@ provider_options_agg AS (
     WHERE p.active = true
 )
 SELECT
-    up.actor_name::text as actor_name,
-    up.role::text as user_role,
     pa.providers,
     poa.provider_options,
     ARRAY[
         ('true', 'Active')::types.q_list_providers_v4_status_option,
         ('false', 'Inactive')::types.q_list_providers_v4_status_option
     ]::types.q_list_providers_v4_status_option[] as status_options
-FROM user_profile up
+FROM params
 CROSS JOIN providers_agg pa
 CROSS JOIN provider_options_agg poa
 $$;
+

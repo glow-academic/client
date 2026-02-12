@@ -27,21 +27,16 @@ CREATE OR REPLACE FUNCTION api_bulk_delete_staff_v4(
     profile_id uuid  -- current user's profile_id for audit
 )
 RETURNS TABLE (
-    deleted_count integer,
-    actor_name text
+    deleted_count integer
 )
 LANGUAGE sql
 VOLATILE
 AS $$
+-- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 WITH params AS (
     SELECT 
         profile_ids AS profile_ids,
         profile_id AS profile_id
-),
-user_profile AS (
-    SELECT COALESCE(NULLIF(actor_name, ''), 'System') as actor_name
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
 ),
 deletable_profiles AS (
     -- Get list of profiles that can be deleted
@@ -61,8 +56,6 @@ profile_delete AS (
 )
 -- Return deletion count and actor_name
 SELECT 
-    COALESCE((SELECT COUNT(*) FROM profile_delete), 0)::int as deleted_count,
-    up.actor_name::text as actor_name
+    COALESCE((SELECT COUNT(*) FROM profile_delete), 0)::int as deleted_count
 FROM deletable_profiles dp
-CROSS JOIN user_profile up
 $$;

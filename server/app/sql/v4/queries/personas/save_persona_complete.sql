@@ -56,16 +56,15 @@ CREATE OR REPLACE FUNCTION api_save_persona_v4(
     parameters types.persona_multi_resource_action DEFAULT NULL
 )
 RETURNS TABLE (
-    persona_id uuid,
-    actor_name text
+    persona_id uuid
 )
 LANGUAGE plpgsql
 VOLATILE
 AS $$
+-- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 #variable_conflict use_column
 DECLARE
     v_persona_id uuid;
-    v_actor_name text;
     v_profile_id uuid;
     v_input_persona_id uuid;
     is_create boolean;
@@ -382,25 +381,11 @@ BEGIN
             v_instructions_id AS instructions_id,
             v_active_flag_id AS active_flag_id,
             v_department_ids AS department_ids,
-            v_profile_id AS profile_id,
-            v_example_ids AS example_ids,
             v_parameter_field_ids AS parameter_field_ids,
+            v_example_ids AS example_ids,
             v_parameter_ids AS parameter_ids
     ),
-    user_profile AS (
-        SELECT role, actor_name
-        FROM view_user_profile_context
-        WHERE profile_id = (SELECT profile_id FROM params)
-    ),
     -- Permission validation is now handled in Python (permissions.py)
-    -- See compute_can_create and compute_can_save functions
-    actor_profile AS (
-        SELECT
-            x.profile_id,
-            up.actor_name
-        FROM params x
-        CROSS JOIN user_profile up
-    ),
     -- Link persona to name
     link_persona_name AS (
         INSERT INTO persona_names_junction (persona_id, name_id, created_at)
@@ -575,9 +560,8 @@ BEGIN
         CROSS JOIN create_new_resource cnr
     )
     SELECT
-        x.persona_id AS persona_id,
-        ap.actor_name AS actor_name
-    FROM params x
-    CROSS JOIN actor_profile ap;
+        x.persona_id AS persona_id
+    FROM params x;
 END;
 $$;
+

@@ -46,8 +46,7 @@ CREATE OR REPLACE FUNCTION api_save_department_v4(
     settings types.department_multi_resource_action DEFAULT NULL
 )
 RETURNS TABLE (
-    department_id uuid,
-    actor_name text
+    department_id uuid
 )
 LANGUAGE plpgsql
 VOLATILE
@@ -63,7 +62,6 @@ DECLARE
     v_active_flag_id uuid := (flags).resource_id;
     v_settings_ids uuid[] := COALESCE((settings).resource_ids, ARRAY[]::uuid[]);
 
-    v_actor_name text;
     v_run_id uuid;
     v_call_id uuid;
     v_default_department_active_flag_id uuid;
@@ -230,14 +228,9 @@ BEGIN
         END IF;
     END IF;
 
-    SELECT COALESCE(NULLIF(actor_name, ''), 'System')
-    INTO v_actor_name
-    FROM view_user_profile_context
-    WHERE profile_id = v_profile_id
-    LIMIT 1;
-
     RETURN QUERY
-    SELECT v_department_id, v_actor_name;
+    SELECT v_department_id;
 END;
 $$;
+
 

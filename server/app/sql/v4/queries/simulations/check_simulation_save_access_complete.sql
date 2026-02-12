@@ -22,10 +22,7 @@ CREATE OR REPLACE FUNCTION api_check_simulation_save_access_v4(
     draft_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
-    actor_name text,
     simulation_exists boolean,
-    user_role text,
-    user_department_ids uuid[],
     simulation_department_ids uuid[],
     cohort_usage_count int,
     draft_department_ids uuid[]
@@ -39,20 +36,14 @@ WITH params AS (
         simulation_id AS p_simulation_id,
         draft_id AS p_draft_id
 ),
--- Get user profile info
+-- User context: actor_name comes from get_profile_context_internal() in Python
 user_profile AS (
-    SELECT
-        vp.actor_name,
-        vp.role::text as user_role
-    FROM view_user_profile_context vp
-    WHERE vp.profile_id = (SELECT p_profile_id FROM params)
-),
--- Get user's department IDs
-user_departments AS (
-    SELECT ARRAY_AGG(pd.department_id) as department_ids
-    FROM profile_departments_junction pd
-    WHERE pd.profile_id = (SELECT p_profile_id FROM params)
-      AND pd.active = true
+    SELECT COALESCE(r.role, 'member'::profile_type) as role,
+           ''::text as actor_name
+    FROM profile_roles_junction prj
+    JOIN roles_resource r ON prj.role_id = r.id
+    WHERE prj.profile_id = (SELECT profile_id FROM params)
+    LIMIT 1
 ),
 -- Check if simulation exists (only if simulation_id provided)
 simulation_exists_check AS (
@@ -83,16 +74,13 @@ draft_departments AS (
     WHERE dd.draft_id = (SELECT p_draft_id FROM params)
 )
 SELECT
-    up.actor_name::text,
     (SELECT simulation_exists FROM simulation_exists_check),
-    up.user_role::text,
-    ud.department_ids as user_department_ids,
     sd.department_ids as simulation_department_ids,
     COALESCE(cu.usage_count, 0)::int as cohort_usage_count,
     drd.department_ids as draft_department_ids
 FROM user_profile up
-CROSS JOIN user_departments ud
 CROSS JOIN simulation_departments sd
 CROSS JOIN cohort_usage cu
 CROSS JOIN draft_departments drd;
 $$;
+

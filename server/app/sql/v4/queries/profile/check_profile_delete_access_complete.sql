@@ -22,8 +22,6 @@ CREATE OR REPLACE FUNCTION api_check_profile_delete_access_v4(
     target_profile_id uuid
 )
 RETURNS TABLE (
-    -- User context for Python permission logic
-    user_role text,
     -- Target profile state for Python permission logic
     target_department_ids text[],
     target_is_self boolean,
@@ -32,16 +30,11 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
+-- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 WITH params AS (
     SELECT
         profile_id AS profile_id,
         target_profile_id AS target_profile_id
-),
--- Get user profile info
-user_profile AS (
-    SELECT role
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
 ),
 -- Get target profile departments
 target_departments_data AS (
@@ -61,10 +54,9 @@ profile_name_data AS (
     LIMIT 1
 )
 SELECT
-    up.role::text as user_role,
     (SELECT department_ids FROM target_departments_data) as target_department_ids,
     ((SELECT profile_id FROM params) = (SELECT target_profile_id FROM params)) as target_is_self,
     (SELECT name FROM profile_name_data) as profile_name
 FROM params x
-CROSS JOIN user_profile up;
 $$;
+

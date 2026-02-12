@@ -50,8 +50,7 @@ CREATE OR REPLACE FUNCTION api_save_cohort_v4(
     simulation_position_values int[] DEFAULT NULL
 )
 RETURNS TABLE (
-    cohort_id uuid,
-    actor_name text
+    cohort_id uuid
 )
 LANGUAGE plpgsql
 VOLATILE
@@ -70,8 +69,6 @@ DECLARE
     v_simulation_position_values int[] := COALESCE(simulation_position_values, ARRAY[]::int[]);
 
     v_cohort_id uuid;
-    v_user_role text;
-    v_actor_name text;
     v_object_department_ids text[];
     v_user_department_ids text[];
     is_create boolean;
@@ -83,17 +80,6 @@ BEGIN
     IF v_group_id IS NULL THEN
         RAISE EXCEPTION 'group_id is required';
     END IF;
-
-    IF v_name_id IS NULL THEN
-        RAISE EXCEPTION 'Name resource is required';
-    END IF;
-
-    SELECT role, actor_name
-    INTO v_user_role, v_actor_name
-    FROM view_user_profile_context
-    WHERE view_user_profile_context.profile_id = v_profile_id
-    LIMIT 1;
-
     IF v_user_role IS NULL THEN
         RAISE EXCEPTION 'User context not found for profile: %', v_profile_id;
     END IF;
@@ -398,3 +384,4 @@ BEGIN
     SELECT v_cohort_id, v_actor_name;
 END;
 $$;
+

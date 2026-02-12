@@ -24,9 +24,6 @@ CREATE OR REPLACE FUNCTION api_check_model_save_access_v4(
     model_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
-    -- User context for Python permission logic
-    user_role text,
-    user_department_ids text[],
     -- Model state for Python permission logic (NULL for create mode)
     model_department_ids text[],
     active_persona_count bigint
@@ -34,22 +31,11 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
+-- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 WITH params AS (
     SELECT
         profile_id AS profile_id,
         model_id AS model_id
-),
--- Get user profile info
-user_profile AS (
-    SELECT role
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
-),
--- Get user's departments
-user_departments AS (
-    SELECT COALESCE(ARRAY_AGG(pd.department_id::text ORDER BY pd.created_at), ARRAY[]::text[]) as department_ids
-    FROM params x
-    LEFT JOIN profile_departments_junction pd ON pd.profile_id = x.profile_id AND pd.active = true
 ),
 -- Get model departments (for update mode)
 model_departments_data AS (
@@ -67,11 +53,8 @@ model_persona_count AS (
     SELECT 0::bigint as active_persona_count
 )
 SELECT
-    up.role::text as user_role,
-    ud.department_ids as user_department_ids,
     (SELECT department_ids FROM model_departments_data) as model_department_ids,
     COALESCE((SELECT active_persona_count FROM model_persona_count), 0)::bigint as active_persona_count
 FROM params x
-CROSS JOIN user_profile up
-CROSS JOIN user_departments ud;
 $$;
+

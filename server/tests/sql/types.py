@@ -1753,35 +1753,6 @@ class CreateProfileEmailApiResponse(BaseModel):
 # Generated from: create_test_profile
 
 
-# Generated from: get_profile_activity_latest
-
-class GetProfileActivityLatestSqlParams(BaseModel):
-
-    input_profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.input_profile_id,
-        )
-
-class GetProfileActivityLatestSqlRow(BaseModel):
-
-    profile_id: UUID | None = None
-    last_active: datetime | None = None
-    created_at: datetime | None = None
-
-class GetProfileActivityLatestApiRequest(BaseModel):
-
-    input_profile_id: UUID
-
-class GetProfileActivityLatestApiResponse(BaseModel):
-
-    profile_id: UUID | None = None
-    last_active: datetime | None = None
-    created_at: datetime | None = None
-
-
-
 # Generated from: get_profile_by_id
 
 class GetProfileByIdSqlParams(BaseModel):
@@ -2329,37 +2300,6 @@ class CreateScenarioProblemStatementApiResponse(BaseModel):
 
 
 
-# Generated from: create_scenario_tree_edge
-
-class CreateScenarioTreeEdgeSqlParams(BaseModel):
-
-    input_scenario_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.input_scenario_id,
-        )
-
-class CreateScenarioTreeEdgeSqlRow(BaseModel):
-
-    parent_id: UUID | None = None
-    child_id: UUID | None = None
-    active: bool | None = None
-    created_at: datetime | None = None
-
-class CreateScenarioTreeEdgeApiRequest(BaseModel):
-
-    input_scenario_id: UUID
-
-class CreateScenarioTreeEdgeApiResponse(BaseModel):
-
-    parent_id: UUID | None = None
-    child_id: UUID | None = None
-    active: bool | None = None
-    created_at: datetime | None = None
-
-
-
 # Generated from: create_simulation_scenario_link
 
 class CreateSimulationScenarioLinkSqlParams(BaseModel):
@@ -2575,37 +2515,6 @@ class GetScenarioProblemStatementsApiResponse(BaseModel):
 
     scenario_id: UUID | None = None
     problem_statement: str | None = None
-    active: bool | None = None
-    created_at: datetime | None = None
-
-
-
-# Generated from: get_scenario_tree_edge
-
-class GetScenarioTreeEdgeSqlParams(BaseModel):
-
-    input_scenario_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.input_scenario_id,
-        )
-
-class GetScenarioTreeEdgeSqlRow(BaseModel):
-
-    parent_id: UUID | None = None
-    child_id: UUID | None = None
-    active: bool | None = None
-    created_at: datetime | None = None
-
-class GetScenarioTreeEdgeApiRequest(BaseModel):
-
-    input_scenario_id: UUID
-
-class GetScenarioTreeEdgeApiResponse(BaseModel):
-
-    parent_id: UUID | None = None
-    child_id: UUID | None = None
     active: bool | None = None
     created_at: datetime | None = None
 
@@ -3029,79 +2938,6 @@ class GetSuperadminAliasApiResponse(BaseModel):
     profile_id: UUID | None = None
     email: str | None = None
     actor_name: str | None = None
-
-
-
-# Generated from: test_get_activity_by_message_and_endpoint_v4_complete
-
-class TestGetActivityByMessageAndEndpointV4CompleteSqlParams(BaseModel):
-
-    p_message: str
-    p_endpoint: str
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_message,
-            self.p_endpoint,
-        )
-
-class TestGetActivityByMessageAndEndpointV4CompleteSqlRow(BaseModel):
-
-    id: UUID | None = None
-    message: str | None = None
-    endpoint: str | None = None
-    profile_id: UUID | None = None
-    error: bool | None = None
-    created_at: datetime | None = None
-
-class TestGetActivityByMessageAndEndpointV4CompleteApiRequest(BaseModel):
-
-    p_message: str
-    p_endpoint: str
-
-class TestGetActivityByMessageAndEndpointV4CompleteApiResponse(BaseModel):
-
-    id: UUID | None = None
-    message: str | None = None
-    endpoint: str | None = None
-    profile_id: UUID | None = None
-    error: bool | None = None
-    created_at: datetime | None = None
-
-
-
-# Generated from: test_get_activity_by_message_v4_complete
-
-class TestGetActivityByMessageV4CompleteSqlParams(BaseModel):
-
-    p_message: str
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_message,
-        )
-
-class TestGetActivityByMessageV4CompleteSqlRow(BaseModel):
-
-    id: UUID | None = None
-    message: str | None = None
-    endpoint: str | None = None
-    profile_id: UUID | None = None
-    error: bool | None = None
-    created_at: datetime | None = None
-
-class TestGetActivityByMessageV4CompleteApiRequest(BaseModel):
-
-    p_message: str
-
-class TestGetActivityByMessageV4CompleteApiResponse(BaseModel):
-
-    id: UUID | None = None
-    message: str | None = None
-    endpoint: str | None = None
-    profile_id: UUID | None = None
-    error: bool | None = None
-    created_at: datetime | None = None
 
 
 
@@ -4015,12 +3851,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "CreateTestProfileApiRequest",
         "CreateTestProfileApiResponse",
     ),
-    "tests/sql/v4/integration/queries/api/profile/test_get_profile_activity_latest_v4_complete.sql": (
-        "GetProfileActivityLatestSqlParams",
-        "GetProfileActivityLatestSqlRow",
-        "GetProfileActivityLatestApiRequest",
-        "GetProfileActivityLatestApiResponse",
-    ),
     "tests/sql/v4/integration/queries/api/profile/test_get_profile_by_id_v4_complete.sql": (
         "GetProfileByIdSqlParams",
         "GetProfileByIdSqlRow",
@@ -4111,12 +3941,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "CreateScenarioProblemStatementApiRequest",
         "CreateScenarioProblemStatementApiResponse",
     ),
-    "tests/sql/v4/integration/queries/api/scenarios/test_create_scenario_tree_edge_v4_complete.sql": (
-        "CreateScenarioTreeEdgeSqlParams",
-        "CreateScenarioTreeEdgeSqlRow",
-        "CreateScenarioTreeEdgeApiRequest",
-        "CreateScenarioTreeEdgeApiResponse",
-    ),
     "tests/sql/v4/integration/queries/api/scenarios/test_create_simulation_scenario_link_v4_complete.sql": (
         "CreateSimulationScenarioLinkSqlParams",
         "CreateSimulationScenarioLinkSqlRow",
@@ -4158,12 +3982,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetScenarioProblemStatementsSqlRow",
         "GetScenarioProblemStatementsApiRequest",
         "GetScenarioProblemStatementsApiResponse",
-    ),
-    "tests/sql/v4/integration/queries/api/scenarios/test_get_scenario_tree_edge_v4_complete.sql": (
-        "GetScenarioTreeEdgeSqlParams",
-        "GetScenarioTreeEdgeSqlRow",
-        "GetScenarioTreeEdgeApiRequest",
-        "GetScenarioTreeEdgeApiResponse",
     ),
     "tests/sql/v4/integration/queries/api/simulations/test_create_simulation_department_link_v4_complete.sql": (
         "CreateSimulationDepartmentLinkSqlParams",
@@ -4254,18 +4072,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetSuperadminAliasSqlRow",
         "GetSuperadminAliasApiRequest",
         "GetSuperadminAliasApiResponse",
-    ),
-    "tests/sql/v4/integration/queries/infra/activity/test_get_activity_by_message_and_endpoint_v4_complete.sql": (
-        "TestGetActivityByMessageAndEndpointV4CompleteSqlParams",
-        "TestGetActivityByMessageAndEndpointV4CompleteSqlRow",
-        "TestGetActivityByMessageAndEndpointV4CompleteApiRequest",
-        "TestGetActivityByMessageAndEndpointV4CompleteApiResponse",
-    ),
-    "tests/sql/v4/integration/queries/infra/activity/test_get_activity_by_message_v4_complete.sql": (
-        "TestGetActivityByMessageV4CompleteSqlParams",
-        "TestGetActivityByMessageV4CompleteSqlRow",
-        "TestGetActivityByMessageV4CompleteApiRequest",
-        "TestGetActivityByMessageV4CompleteApiResponse",
     ),
     "tests/sql/v4/integration/queries/socket/helpers/test_create_test_attempt_v4_complete.sql": (
         "TestCreateTestAttemptV4CompleteSqlParams",
@@ -4712,11 +4518,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/queries/api/profile/test_get_profile_activity_latest_v4_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["tests/sql/v4/integration/queries/api/profile/test_get_profile_by_id_v4_complete.sql"]
     ) -> SqlString: ...
 
@@ -4792,11 +4593,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/queries/api/scenarios/test_create_scenario_tree_edge_v4_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["tests/sql/v4/integration/queries/api/scenarios/test_create_simulation_scenario_link_v4_complete.sql"]
     ) -> SqlString: ...
 
@@ -4828,11 +4624,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["tests/sql/v4/integration/queries/api/scenarios/test_get_scenario_problem_statements_v4_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/queries/api/scenarios/test_get_scenario_tree_edge_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -4908,16 +4699,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["tests/sql/v4/integration/queries/helpers/test_get_superadmin_alias_v4_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/queries/infra/activity/test_get_activity_by_message_and_endpoint_v4_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/queries/infra/activity/test_get_activity_by_message_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload

@@ -75,7 +75,6 @@ CREATE OR REPLACE FUNCTION api_search_staff_v4(
     limit_count integer DEFAULT 200
 )
 RETURNS TABLE (
-    actor_name text,
     staff types.q_search_staff_v4_staff[],
     cohorts types.q_search_staff_v4_cohort[],
     departments types.q_search_staff_v4_department[]
@@ -91,15 +90,14 @@ WITH params AS (
         COALESCE(department_ids, ARRAY[]::uuid[]) AS department_ids,
         COALESCE(limit_count, 200) AS limit_count
 ),
+-- User context: actor_name comes from get_profile_context_internal() in Python
 user_profile AS (
-    SELECT role, COALESCE(NULLIF(actor_name, ''), 'System') as actor_name
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
-),
-user_departments AS (
-    SELECT department_id
-    FROM params x
-    JOIN profile_departments_junction ON profile_departments_junction.profile_id = x.profile_id AND profile_departments_junction.active = true
+    SELECT COALESCE(r.role, 'member'::profile_type) as role,
+           ''::text as actor_name
+    FROM profile_roles_junction prj
+    JOIN roles_resource r ON prj.role_id = r.id
+    WHERE prj.profile_id = (SELECT profile_id FROM params)
+    LIMIT 1
 ),
 profile_cohorts_junction AS (
     SELECT
@@ -269,7 +267,6 @@ staff_rows AS (
     LIMIT (SELECT limit_count FROM params)
 )
 SELECT 
-    up.actor_name::text as actor_name,
     COALESCE(
         (SELECT ARRAY_AGG(
             (sr.profile_id, sr.emails, sr.primary_email, sr.name, sr.role, sr.initials, sr.active, sr.last_active, sr.cohort_ids, sr.department_ids, sr.primary_department_id, sr.requests_per_day, sr.total_requests, sr.requests_in_last_day, false, false)::types.q_search_staff_v4_staff
@@ -296,3 +293,4 @@ SELECT
     ) as departments
 FROM user_profile up
 $$;
+

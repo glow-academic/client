@@ -68,7 +68,6 @@ CREATE OR REPLACE FUNCTION api_list_simulations_v4(
     page_offset int DEFAULT 0
 )
 RETURNS TABLE (
-    actor_name text,
     simulations types.q_list_simulations_v4_simulation[],
     scenario_options types.q_list_simulations_v4_option[],
     cohort_options types.q_list_simulations_v4_option[],
@@ -86,10 +85,14 @@ user_departments AS (
     FROM params x
     JOIN profile_departments_junction ON profile_departments_junction.profile_id = x.profile_id AND profile_departments_junction.active = true
 ),
+-- User context: actor_name comes from get_profile_context_internal() in Python
 user_profile AS (
-    SELECT role, actor_name
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
+    SELECT COALESCE(r.role, 'member'::profile_type) as role,
+           ''::text as actor_name
+    FROM profile_roles_junction prj
+    JOIN roles_resource r ON prj.role_id = r.id
+    WHERE prj.profile_id = (SELECT profile_id FROM params)
+    LIMIT 1
 ),
 -- Scenarios per simulation via denormalized simulations_resource.scenario_ids
 -- simulation_artifact -> simulation_simulations_junction -> simulations_resource.scenario_ids -> scenarios_resource
@@ -227,7 +230,6 @@ all_department_ids_options AS (
     WHERE department_ids IS NOT NULL
 )
 SELECT
-    up.actor_name::text as actor_name,
     -- Aggregate simulations (from paginated set)
     COALESCE(
         (SELECT ARRAY_AGG(
@@ -278,3 +280,4 @@ SELECT
     (SELECT total FROM filtered_count) as total_count
 FROM user_profile up
 $$;
+

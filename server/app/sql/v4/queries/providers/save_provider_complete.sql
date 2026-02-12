@@ -49,15 +49,13 @@ CREATE OR REPLACE FUNCTION api_save_provider_v4(
     keys types.provider_resource_action DEFAULT NULL
 )
 RETURNS TABLE (
-    provider_id uuid,
-    actor_name text
+    provider_id uuid
 )
 LANGUAGE plpgsql
 VOLATILE
 AS $$
 DECLARE
     v_provider_id uuid;
-    v_actor_name text;
     v_name_id uuid;
     v_description_id uuid;
     v_active_flag_id uuid;
@@ -69,10 +67,6 @@ DECLARE
     v_run_id uuid;
     v_call_id uuid;
 BEGIN
-    SELECT up.actor_name INTO v_actor_name
-    FROM view_user_profile_context up
-    WHERE up.profile_id = api_save_provider_v4.profile_id;
-
     v_name_id := (names).resource_id;
     v_description_id := (descriptions).resource_id;
     v_active_flag_id := (flags).resource_id;
@@ -358,7 +352,7 @@ BEGIN
 
     RETURN QUERY
     SELECT
-        v_provider_id AS provider_id,
-        v_actor_name AS actor_name;
+        v_provider_id AS provider_id;
 END;
 $$;
+

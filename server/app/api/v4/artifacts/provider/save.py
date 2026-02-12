@@ -17,9 +17,10 @@ from app.api.v4.artifacts.provider.types import (
     SaveProviderSqlParams,
     SaveProviderSqlRow,
 )
+from app.api.v4.auth.context import get_profile_context_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db
+from app.main import get_db, get_pool
 from app.sql.types import (
     CheckProviderSaveAccessSqlParams,
     CheckProviderSaveAccessSqlRow,
@@ -69,6 +70,26 @@ async def save_provider(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        # Fetch user context for permissions and audit logging
+        pool = get_pool()
+        if pool:
+            async with pool.acquire() as context_conn:
+                resolved_context = await get_profile_context_internal(
+                    conn=context_conn,
+                    profile_id=profile_id,
+                    department_id_cookie=None,
+                    bypass_cache=False,
+                )
+                actor_name = resolved_context.actor_name
+                user_role = resolved_context.user_role
+                user_department_ids = [
+                    d.department_id for d in resolved_context.departments if d.department_id
+                ]
+        else:
+            actor_name = None
+            user_role = None
+            user_department_ids = []
+
         # Permission check: get user role and provider info using typed SQL
         access_params = CheckProviderSaveAccessSqlParams(
             profile_id=profile_id,
@@ -92,13 +113,13 @@ async def save_provider(
         # Permission logic: create vs update mode
         if not request.input_provider_id:
             can_save_result = compute_can_create(
-                user_role=access_result.user_role,
+                user_role=user_role,
                 department_ids=request.departments.resource_ids,  # Validated in SQL
             )
         else:
             can_save_result = compute_can_save(
-                user_role=access_result.user_role,
-                user_department_ids=access_result.user_department_ids,
+                user_role=user_role,
+                user_department_ids=user_department_ids,
                 provider_department_ids=access_result.provider_department_ids,
                 model_usage_count=access_result.model_usage_count or 0,
             )
@@ -131,8 +152,8 @@ async def save_provider(
                     raise ValueError("Failed to create provider")
 
             # Set audit context with data from SQL query
-            if result.actor_name:
-                audit_ctx = {"actor": {"name": result.actor_name, "id": profile_id}}
+            if actor_name:
+                audit_ctx = {"actor": {"name": actor_name, "id": profile_id}}
                 if request.input_provider_id:
                     audit_ctx["provider"] = {
                         "name": "Provider",

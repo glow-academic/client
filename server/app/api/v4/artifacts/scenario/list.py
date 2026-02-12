@@ -25,6 +25,7 @@ from app.api.v4.artifacts.scenario.types import (
     ListScenarioApiSimulation,
     ListScenarioSqlRow,
 )
+from app.api.v4.auth.context import get_profile_context_internal
 from app.api.v4.resources.cohorts.get import get_cohorts_internal
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.fields.get import get_fields_internal
@@ -90,6 +91,20 @@ async def get_scenario_list(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        # Fetch user context for audit logging
+        pool = get_pool()
+        if pool:
+            async with pool.acquire() as context_conn:
+                resolved_context = await get_profile_context_internal(
+                    conn=context_conn,
+                    profile_id=profile_id,
+                    department_id_cookie=None,
+                    bypass_cache=bypass_cache,
+                )
+                actor_name = resolved_context.actor_name
+        else:
+            actor_name = None
+
         # Convert API request to SQL params (add profile_id from header)
         params = GetScenariosListSqlParams(
             **request.model_dump(), profile_id=profile_id
@@ -107,8 +122,8 @@ async def get_scenario_list(
         )
 
         # Set audit context
-        if result.actor_name:
-            audit_set(http_request, actor={"name": result.actor_name, "id": profile_id})
+        if actor_name:
+            audit_set(http_request, actor={"name": actor_name, "id": profile_id})
 
         # --- Python hydration: 6-way parallel fetch from cached *_internal() ---
         # 1. Collect unique IDs from paginated scenarios
@@ -297,7 +312,7 @@ async def get_scenario_list(
 
         # Build API response
         api_response = ListScenarioApiResponse(
-            actor_name=result.actor_name,
+            actor_name=actor_name,
             scenarios=result.scenarios,
             objectives=api_objectives,
             fields=api_fields,

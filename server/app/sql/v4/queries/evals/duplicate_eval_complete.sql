@@ -22,20 +22,15 @@ CREATE OR REPLACE FUNCTION api_duplicate_eval_v4(
 )
 RETURNS TABLE (
     new_eval_id uuid,
-    original_name text,
-    actor_name text
+    original_name text
 )
 LANGUAGE sql
 VOLATILE
 AS $$
+-- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 WITH params AS (
     SELECT eval_id AS eval_id,
            profile_id AS profile_id
-),
-user_profile AS (
-    SELECT actor_name
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
 ),
 original_eval AS (
     SELECT 
@@ -166,6 +161,6 @@ copy_agents AS (
 )
 SELECT 
     (SELECT id FROM new_eval LIMIT 1) as new_eval_id,
-    (SELECT name FROM original_eval LIMIT 1) as original_name,
-    (SELECT actor_name FROM user_profile LIMIT 1) as actor_name
+    (SELECT name FROM original_eval LIMIT 1) as original_name
 $$;
+

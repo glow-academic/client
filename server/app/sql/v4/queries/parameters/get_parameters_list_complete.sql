@@ -72,8 +72,6 @@ CREATE OR REPLACE FUNCTION api_list_parameters_v4(
     page_offset int DEFAULT 0
 )
 RETURNS TABLE (
-    actor_name text,
-    user_role text,
     parameters types.q_list_parameters_v4_parameter[],
     scenario_option_ids types.q_list_parameters_v4_option_id[],
     department_option_ids types.q_list_parameters_v4_option_id[],
@@ -82,6 +80,7 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
+-- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 WITH params AS (
     SELECT profile_id AS profile_id
 ),
@@ -89,11 +88,6 @@ user_departments AS (
     SELECT pd.department_id
     FROM params x
     JOIN profile_departments_junction pd ON pd.profile_id = x.profile_id AND pd.active = true
-),
-user_profile AS (
-    SELECT role, COALESCE(NULLIF(actor_name, ''), 'System') as actor_name
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
 ),
 -- Scenario linkage via denormalized scenarios_resource.parameter_ids
 -- parameter_artifact → parameter_parameters_junction → parameters_resource → scenarios_resource WHERE parameter_ids @> ARRAY[parameters_resource.id]
@@ -249,8 +243,6 @@ department_option_data AS (
     WHERE dr.id IN (SELECT department_id FROM user_departments)
 )
 SELECT
-    up.actor_name::text as actor_name,
-    up.role::text as user_role,
     -- Aggregate paginated parameters
     COALESCE(
         (SELECT ARRAY_AGG(
@@ -278,5 +270,6 @@ SELECT
     ) as department_option_ids,
     -- Total count of filtered parameters (before pagination)
     (SELECT total_count FROM filtered_count) as total_count
-FROM user_profile up
+FROM params
 $$;
+

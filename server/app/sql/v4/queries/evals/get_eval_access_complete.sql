@@ -24,15 +24,10 @@ CREATE OR REPLACE FUNCTION api_get_eval_access_v4(
     draft_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
-    -- Basic metadata
-    actor_name text,
     eval_exists boolean,
     draft_version int,
     group_id uuid,
 
-    -- User context for Python permission logic
-    user_role text,
-    user_department_ids uuid[],
 
     -- Eval state for Python permission logic
     eval_department_ids uuid[],
@@ -41,6 +36,7 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
+-- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 WITH params AS (
     SELECT
         eval_id AS eval_id,
@@ -54,21 +50,6 @@ eval_exists_check AS (
             WHEN (SELECT eval_id FROM params) IS NULL THEN NULL::boolean
             ELSE EXISTS(SELECT 1 FROM eval_artifact WHERE id = (SELECT eval_id FROM params))::boolean
         END as eval_exists
-),
--- Get user profile info
-user_profile AS (
-    SELECT role, actor_name
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
-),
--- Get user's departments
-user_departments AS (
-    SELECT COALESCE(
-        ARRAY_AGG(DISTINCT pd.department_id) FILTER (WHERE pd.department_id IS NOT NULL),
-        ARRAY[]::uuid[]
-    ) as department_ids
-    FROM params x
-    LEFT JOIN profile_departments_junction pd ON pd.profile_id = x.profile_id AND pd.active = true
 ),
 -- Get group_id from draft or eval
 draft_group_data AS (
@@ -108,20 +89,16 @@ eval_usage_state AS (
 )
 SELECT
     -- Basic metadata
-    up.actor_name::text as actor_name,
     (SELECT eval_exists FROM eval_exists_check) as eval_exists,
     (SELECT draft_version FROM draft_version_data) as draft_version,
     dgd.group_id,
 
     -- User context for Python permission logic
-    up.role::text as user_role,
-    ud.department_ids as user_department_ids,
 
     -- Eval state for Python permission logic
     COALESCE((SELECT department_ids FROM eval_departments_data), ARRAY[]::uuid[]) as eval_department_ids,
     COALESCE((SELECT active_usage_count FROM eval_usage_state), 0) as active_usage_count
 FROM params x
-CROSS JOIN user_profile up
-CROSS JOIN user_departments ud
 CROSS JOIN draft_group_data dgd;
 $$;
+

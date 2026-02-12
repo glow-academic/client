@@ -22,24 +22,17 @@ CREATE OR REPLACE FUNCTION api_check_tool_save_access_v4(
     tool_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
-    -- User context for Python permission logic
-    user_role text,
     -- Tool state for Python permission logic (0 for create mode)
     active_usage_count bigint
 )
 LANGUAGE sql
 STABLE
 AS $$
+-- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 WITH params AS (
     SELECT
         profile_id AS profile_id,
         tool_id AS tool_id
-),
--- Get user profile info
-user_profile AS (
-    SELECT role
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
 ),
 -- Get tool active usage count (agents using this tool)
 tool_usage_data AS (
@@ -57,8 +50,7 @@ tool_usage_data AS (
     WHERE x.tool_id IS NOT NULL
 )
 SELECT
-    up.role::text as user_role,
     COALESCE((SELECT active_usage_count FROM tool_usage_data), 0)::bigint as active_usage_count
 FROM params x
-CROSS JOIN user_profile up;
 $$;
+

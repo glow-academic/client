@@ -60,8 +60,6 @@ CREATE OR REPLACE FUNCTION api_list_fields_v4(
     profile_id uuid
 )
 RETURNS TABLE (
-    actor_name text,
-    user_role text,
     fields types.q_list_fields_v4_field[],
     parameter_option_ids types.q_list_fields_v4_option_id[],
     persona_option_ids types.q_list_fields_v4_option_id[],
@@ -79,10 +77,14 @@ user_departments AS (
     FROM params x
     JOIN profile_departments_junction pd ON pd.profile_id = x.profile_id AND pd.active = true
 ),
+-- User context: actor_name comes from get_profile_context_internal() in Python
 user_profile AS (
-    SELECT role, COALESCE(NULLIF(actor_name, ''), 'System') as actor_name
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
+    SELECT COALESCE(r.role, 'member'::profile_type) as role,
+           ''::text as actor_name
+    FROM profile_roles_junction prj
+    JOIN roles_resource r ON prj.role_id = r.id
+    WHERE prj.profile_id = (SELECT profile_id FROM params)
+    LIMIT 1
 ),
 field_parameters_agg AS (
     SELECT
@@ -196,8 +198,6 @@ department_option_data AS (
     WHERE dr.id IN (SELECT department_id FROM user_departments)
 )
 SELECT
-    up.actor_name,
-    up.role::text as user_role,
     -- Aggregate fields
     COALESCE(
         (SELECT ARRAY_AGG(
@@ -229,5 +229,5 @@ SELECT
     ) as department_option_ids,
     -- Total count
     (SELECT COUNT(*) FROM fields_data)::bigint as total_count
-FROM user_profile up
 $$;
+

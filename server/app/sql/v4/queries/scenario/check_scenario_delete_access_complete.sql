@@ -20,12 +20,9 @@ CREATE OR REPLACE FUNCTION api_check_scenario_delete_access_v4(
     scenario_id uuid
 )
 RETURNS TABLE (
-    actor_name text,
     scenario_exists boolean,
     scenario_name text,
     usage_count bigint,
-    user_role text,
-    user_department_ids uuid[],
     scenario_department_ids uuid[]
 )
 LANGUAGE sql
@@ -34,16 +31,14 @@ AS $$
 WITH params AS (
     SELECT profile_id AS p_profile_id, scenario_id AS p_scenario_id
 ),
+-- User context: actor_name comes from get_profile_context_internal() in Python
 user_profile AS (
-    SELECT vp.actor_name, vp.role::text as user_role
-    FROM view_user_profile_context vp
-    WHERE vp.profile_id = (SELECT p_profile_id FROM params)
-),
-user_departments AS (
-    SELECT ARRAY_AGG(pd.department_id) as department_ids
-    FROM profile_departments_junction pd
-    WHERE pd.profile_id = (SELECT p_profile_id FROM params)
-      AND pd.active = true
+    SELECT COALESCE(r.role, 'member'::profile_type) as role,
+           ''::text as actor_name
+    FROM profile_roles_junction prj
+    JOIN roles_resource r ON prj.role_id = r.id
+    WHERE prj.profile_id = (SELECT profile_id FROM params)
+    LIMIT 1
 ),
 scenario_exists_check AS (
     SELECT EXISTS(
@@ -104,10 +99,9 @@ SELECT
     snd.scenario_name::text,
     (SELECT usage_count FROM usage_check) as usage_count,
     up.user_role::text,
-    ud.department_ids as user_department_ids,
     sd.department_ids as scenario_department_ids
 FROM user_profile up
-CROSS JOIN user_departments ud
 CROSS JOIN scenario_departments sd
 CROSS JOIN scenario_name_data snd;
 $$;
+

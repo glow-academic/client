@@ -22,8 +22,6 @@ CREATE OR REPLACE FUNCTION api_check_model_delete_access_v4(
     model_id uuid
 )
 RETURNS TABLE (
-    -- User context for Python permission logic
-    user_role text,
     -- Model state for Python permission logic
     model_department_ids text[],
     total_persona_links bigint,
@@ -32,16 +30,11 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
+-- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 WITH params AS (
     SELECT
         profile_id AS profile_id,
         model_id AS model_id
-),
--- Get user profile info
-user_profile AS (
-    SELECT role
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
 ),
 -- Get model departments
 model_departments_data AS (
@@ -64,10 +57,9 @@ agent_links AS (
     LEFT JOIN agent_models_junction am ON am.model_id = x.model_id
 )
 SELECT
-    up.role::text as user_role,
     (SELECT department_ids FROM model_departments_data) as model_department_ids,
     (SELECT total_links FROM persona_links) as total_persona_links,
     (SELECT total_links FROM agent_links) as agents_usage_count
 FROM params x
-CROSS JOIN user_profile up;
 $$;
+

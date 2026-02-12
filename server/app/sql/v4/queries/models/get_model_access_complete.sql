@@ -24,15 +24,10 @@ CREATE OR REPLACE FUNCTION api_get_model_access_v4(
     draft_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
-    -- Basic metadata
-    actor_name text,
     model_exists boolean,
     draft_version int,
     group_id uuid,
 
-    -- User context for Python permission logic
-    user_role text,
-    user_department_ids uuid[],
 
     -- Model state for Python permission logic
     model_department_ids uuid[],
@@ -41,6 +36,7 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
+-- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 WITH params AS (
     SELECT
         model_id AS model_id,
@@ -54,21 +50,6 @@ model_exists_check AS (
             WHEN (SELECT model_id FROM params) IS NULL THEN NULL::boolean
             ELSE EXISTS(SELECT 1 FROM model_artifact WHERE id = (SELECT model_id FROM params))::boolean
         END as model_exists
-),
--- Get user profile info
-user_profile AS (
-    SELECT role, actor_name
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
-),
--- Get user's departments
-user_departments AS (
-    SELECT COALESCE(
-        ARRAY_AGG(DISTINCT pd.department_id) FILTER (WHERE pd.department_id IS NOT NULL),
-        ARRAY[]::uuid[]
-    ) as department_ids
-    FROM params x
-    LEFT JOIN profile_departments_junction pd ON pd.profile_id = x.profile_id AND pd.active = true
 ),
 -- Resolve canonical model group context (draft override handled in Python service layer)
 model_group_data AS (
@@ -105,20 +86,16 @@ model_persona_count AS (
 )
 SELECT
     -- Basic metadata
-    up.actor_name::text as actor_name,
     (SELECT model_exists FROM model_exists_check) as model_exists,
     (SELECT draft_version FROM draft_version_data) as draft_version,
     mgd.group_id,
 
     -- User context for Python permission logic
-    up.role::text as user_role,
-    ud.department_ids as user_department_ids,
 
     -- Model state for Python permission logic
     COALESCE((SELECT department_ids FROM model_departments_data), ARRAY[]::uuid[]) as model_department_ids,
     COALESCE((SELECT active_persona_count FROM model_persona_count), 0) as active_persona_count
 FROM params x
-CROSS JOIN user_profile up
-CROSS JOIN user_departments ud
 CROSS JOIN model_group_data mgd;
 $$;
+

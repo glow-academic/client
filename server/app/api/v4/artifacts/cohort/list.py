@@ -18,6 +18,7 @@ from app.api.v4.artifacts.cohort.types import (
     ListCohortApiResponse,
     ListCohortApiSimulation,
 )
+from app.api.v4.auth.context import get_profile_context_internal
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.simulations.get import get_simulations_batch_internal
@@ -84,6 +85,22 @@ async def get_cohort_list(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        # Fetch user context for audit logging
+        pool = get_pool()
+        if pool:
+            async with pool.acquire() as context_conn:
+                resolved_context = await get_profile_context_internal(
+                    conn=context_conn,
+                    profile_id=profile_id,
+                    department_id_cookie=None,
+                    bypass_cache=bypass_cache,
+                )
+                actor_name = resolved_context.actor_name
+                user_role = resolved_context.user_role
+        else:
+            actor_name = None
+            user_role = "member"
+
         # Convert API request to SQL params (add profile_id from header)
         params = GetCohortsListSqlParams(
             **request.model_dump(), profile_id=uuid.UUID(profile_id)
@@ -97,9 +114,7 @@ async def get_cohort_list(
             params=params,
         )
 
-        # Get actor name and user_role from SQL result
-        actor_name = result.actor_name
-        user_role = getattr(result, "user_role", "member") or "member"
+        # actor_name and user_role already fetched from context above
 
         # Set audit context
         if actor_name:

@@ -22,8 +22,6 @@ CREATE OR REPLACE FUNCTION api_check_document_delete_access_v4(
     document_id uuid
 )
 RETURNS TABLE (
-    -- User context for Python permission logic
-    user_role text,
     -- Document state for Python permission logic
     document_department_ids text[],
     total_scenario_links bigint
@@ -31,16 +29,11 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
+-- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 WITH params AS (
     SELECT
         profile_id AS profile_id,
         document_id AS document_id
-),
--- Get user profile info
-user_profile AS (
-    SELECT role
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
 ),
 -- Get document departments
 document_departments_data AS (
@@ -60,9 +53,8 @@ scenario_links AS (
     LEFT JOIN scenario_documents_junction sd ON sd.document_id = x.document_id
 )
 SELECT
-    up.role::text as user_role,
     (SELECT department_ids FROM document_departments_data) as document_department_ids,
     (SELECT total_links FROM scenario_links) as total_scenario_links
 FROM params x
-CROSS JOIN user_profile up;
 $$;
+

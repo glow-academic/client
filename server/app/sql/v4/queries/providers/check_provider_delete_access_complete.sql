@@ -22,7 +22,6 @@ CREATE OR REPLACE FUNCTION api_check_provider_delete_access_v4(
     provider_id uuid
 )
 RETURNS TABLE (
-    user_role text,
     provider_department_ids uuid[],
     model_usage_count int,
     provider_name text
@@ -30,15 +29,11 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
+-- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 WITH params AS (
     SELECT
         profile_id AS profile_id,
         provider_id AS provider_id
-),
-user_profile AS (
-    SELECT role
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
 ),
 provider_departments AS (
     SELECT COALESCE(
@@ -67,10 +62,9 @@ provider_name_data AS (
     LIMIT 1
 )
 SELECT
-    up.role::text as user_role,
     COALESCE((SELECT department_ids FROM provider_departments), ARRAY[]::uuid[]) as provider_department_ids,
     (SELECT model_usage_count FROM model_usage) as model_usage_count,
     (SELECT name FROM provider_name_data) as provider_name
 FROM params x
-CROSS JOIN user_profile up;
 $$;
+

@@ -48,16 +48,15 @@ CREATE OR REPLACE FUNCTION api_save_parameter_v4(
     fields types.parameter_multi_resource_action DEFAULT NULL
 )
 RETURNS TABLE (
-    parameter_id uuid,
-    actor_name text
+    parameter_id uuid
 )
 LANGUAGE plpgsql
 VOLATILE
 AS $$
+-- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 #variable_conflict use_column
 DECLARE
     v_parameter_id uuid;
-    v_actor_name text;
     v_group_id uuid;
     v_profile_id uuid;
     v_input_parameter_id uuid;
@@ -298,18 +297,6 @@ BEGIN
             v_scenario_parameter AS scenario_parameter,
             v_video_parameter AS video_parameter
     ),
-    user_profile AS (
-        SELECT role, actor_name
-        FROM view_user_profile_context
-        WHERE profile_id = (SELECT profile_id FROM params)
-    ),
-    actor_profile AS (
-        SELECT
-            x.profile_id,
-            up.actor_name
-        FROM params x
-        CROSS JOIN user_profile up
-    ),
     link_parameter_name AS (
         INSERT INTO parameter_names_junction (parameter_id, name_id, created_at)
         SELECT x.parameter_id, x.name_id, NOW()
@@ -430,9 +417,8 @@ BEGIN
         CROSS JOIN create_new_resource cnr
     )
     SELECT
-        x.parameter_id AS parameter_id,
-        ap.actor_name AS actor_name
-    FROM params x
-    CROSS JOIN actor_profile ap;
+        x.parameter_id AS parameter_id
+    FROM params x;
 END;
 $$;
+

@@ -53,32 +53,37 @@ CREATE OR REPLACE FUNCTION api_save_setting_v4(
     role_routes types.setting_multi_resource_action DEFAULT NULL
 )
 RETURNS TABLE (
-    setting_id uuid,
-    actor_name text
+    setting_id uuid
 )
 LANGUAGE plpgsql
 VOLATILE
 AS $$
 DECLARE
     v_setting_id uuid;
-    v_actor_name text;
     is_create boolean;
-    v_name_id uuid := (names).resource_id;
-    v_description_id uuid := (descriptions).resource_id;
-    v_active_flag_id uuid := (flags).resource_id;
-    v_color_ids uuid[] := COALESCE((colors).resource_ids, ARRAY[]::uuid[]);
-    v_department_ids uuid[] := COALESCE((departments).resource_ids, ARRAY[]::uuid[]);
-    v_profile_ids uuid[] := COALESCE((profiles).resource_ids, ARRAY[]::uuid[]);
-    v_auth_ids uuid[] := COALESCE((auths).resource_ids, ARRAY[]::uuid[]);
-    v_provider_key_ids uuid[] := COALESCE((provider_keys).resource_ids, ARRAY[]::uuid[]);
-    v_auth_item_key_ids uuid[] := COALESCE((auth_item_keys).resource_ids, ARRAY[]::uuid[]);
-    v_role_ids uuid[] := COALESCE((roles).resource_ids, ARRAY[]::uuid[]);
-    v_role_route_ids uuid[] := COALESCE((role_routes).resource_ids, ARRAY[]::uuid[]);
+    v_name_id uuid;
+    v_description_id uuid;
+    v_active_flag_id uuid;
+    v_color_ids uuid[];
+    v_department_ids uuid[];
+    v_profile_ids uuid[];
+    v_auth_ids uuid[];
+    v_provider_key_ids uuid[];
+    v_auth_item_key_ids uuid[];
+    v_role_ids uuid[];
+    v_role_route_ids uuid[];
 BEGIN
-    SELECT up.actor_name INTO v_actor_name
-    FROM view_user_profile_context up
-    WHERE up.profile_id = api_save_setting_v4.profile_id;
-
+    v_name_id := (names).resource_id;
+    v_description_id := (descriptions).resource_id;
+    v_active_flag_id := (flags).resource_id;
+    v_color_ids := COALESCE((colors).resource_ids, ARRAY[]::uuid[]);
+    v_department_ids := COALESCE((departments).resource_ids, ARRAY[]::uuid[]);
+    v_profile_ids := COALESCE((profiles).resource_ids, ARRAY[]::uuid[]);
+    v_auth_ids := COALESCE((auths).resource_ids, ARRAY[]::uuid[]);
+    v_provider_key_ids := COALESCE((provider_keys).resource_ids, ARRAY[]::uuid[]);
+    v_auth_item_key_ids := COALESCE((auth_item_keys).resource_ids, ARRAY[]::uuid[]);
+    v_role_ids := COALESCE((roles).resource_ids, ARRAY[]::uuid[]);
+    v_role_route_ids := COALESCE((role_routes).resource_ids, ARRAY[]::uuid[]);
     is_create := (input_setting_id IS NULL);
 
     IF v_name_id IS NULL THEN
@@ -145,20 +150,10 @@ BEGIN
             v_role_ids AS role_ids,
             v_role_route_ids AS role_route_ids
     ),
-    user_profile AS (
-        SELECT role
-        FROM view_user_profile_context
-        WHERE profile_id = (SELECT profile_id FROM params)
-    ),
     object_current_departments AS (
         SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
         FROM department_settings_junction
         WHERE department_settings_junction.settings_id = (SELECT p.setting_id FROM params p LIMIT 1) AND active = true
-    ),
-    user_departments AS (
-        SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
-        FROM profile_departments_junction
-        WHERE profile_departments_junction.profile_id = (SELECT p.profile_id FROM params p LIMIT 1) AND active = true
     ),
     validate_permissions AS (
         SELECT
@@ -301,6 +296,7 @@ BEGIN
     SELECT 1;
 
     RETURN QUERY
-    SELECT v_setting_id, v_actor_name;
+    SELECT v_setting_id;
 END;
 $$;
+

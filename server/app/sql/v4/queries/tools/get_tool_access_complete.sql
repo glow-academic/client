@@ -24,14 +24,10 @@ CREATE OR REPLACE FUNCTION api_get_tool_access_v4(
     draft_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
-    -- Basic metadata
-    actor_name text,
     tool_exists boolean,
     draft_version int,
     group_id uuid,
 
-    -- User context for Python permission logic
-    user_role text,
 
     -- Tool state for Python permission logic
     active_usage_count int
@@ -39,6 +35,7 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
+-- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 WITH params AS (
     SELECT
         tool_id AS tool_id,
@@ -52,12 +49,6 @@ tool_exists_check AS (
             WHEN (SELECT tool_id FROM params) IS NULL THEN NULL::boolean
             ELSE EXISTS(SELECT 1 FROM tool_artifact WHERE id = (SELECT tool_id FROM params))::boolean
         END as tool_exists
-),
--- Get user profile info
-user_profile AS (
-    SELECT role, actor_name
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
 ),
 -- Resolve canonical tool group context (draft override handled in Python service layer)
 tool_group_data AS (
@@ -94,17 +85,15 @@ tool_usage_data AS (
 )
 SELECT
     -- Basic metadata
-    up.actor_name::text as actor_name,
     (SELECT tool_exists FROM tool_exists_check) as tool_exists,
     (SELECT draft_version FROM draft_version_data) as draft_version,
     tgd.group_id,
 
     -- User context for Python permission logic
-    up.role::text as user_role,
 
     -- Tool state for Python permission logic
     COALESCE((SELECT active_usage_count FROM tool_usage_data), 0) as active_usage_count
 FROM params x
-CROSS JOIN user_profile up
 CROSS JOIN tool_group_data tgd;
 $$;
+

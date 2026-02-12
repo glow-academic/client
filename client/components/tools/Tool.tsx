@@ -47,18 +47,44 @@ type CreateDraftArgsOutputsOut = OutputOf<
   "/api/v4/resources/args_outputs",
   "post"
 >;
-type CreateDraftArgPositionsIn = InputOf<
-  "/api/v4/resources/arg_positions",
-  "post"
->;
-type CreateDraftArgPositionsOut = OutputOf<
-  "/api/v4/resources/arg_positions",
-  "post"
->;
+type CreateDraftArgPositionsIn = {
+  body: {
+    agent_id: string;
+    group_id: string;
+    tool_id: string;
+    args_id: string;
+    value: number;
+    mcp: boolean;
+  };
+};
+type CreateDraftArgPositionsOut = {
+  id?: string | null;
+};
 type PatchToolDraftIn = InputOf<"/api/v4/artifacts/tools/draft", "patch">;
 type PatchToolDraftOut = OutputOf<"/api/v4/artifacts/tools/draft", "patch">;
 
 type ToolData = OutputOf<"/api/v4/artifacts/tools/get", "post">;
+type ToolDataWithArgPositions = ToolData & {
+  arg_positions?: {
+    current?: Array<{
+      id?: string | null;
+      args_id?: string | null;
+      value?: number | null;
+      generated?: boolean | null;
+    }> | null;
+    resources?: Array<{
+      id?: string | null;
+      args_id?: string | null;
+      value?: number | null;
+      generated?: boolean | null;
+    }> | null;
+    suggestions?: string[] | null;
+    required?: boolean | null;
+    show_ai_generate?: boolean | null;
+    create_tool_id?: string | null;
+    link_tool_id?: string | null;
+  } | null;
+};
 
 // Resource types for tools
 type ToolResourceType = "args" | "arg_positions" | "args_outputs";
@@ -142,22 +168,23 @@ function ToolComponent({
   React.useEffect(() => {
     toolDataRef.current = toolData;
   }, [toolData]);
+  const toolDataAny = toolData as ToolDataWithArgPositions | undefined;
 
   // Memoize toolData fields used in renderStep
   const stableToolDataFields = React.useMemo(() => {
-    if (!toolData) return null;
-    const s = toolData;
+    if (!toolDataAny) return null;
+    const s = toolDataAny;
     const currentArgsIds = (s.args?.current ?? [])
-      .map((a) => a.id)
-      .filter((id): id is string => !!id);
+      .map((a: any) => a.id)
+      .filter((id: unknown): id is string => !!id && typeof id === "string");
     const currentArgsOutputsIds = (s.args_outputs?.current ?? [])
-      .map((a) => a.id)
-      .filter((id): id is string => !!id);
+      .map((a: any) => a.id)
+      .filter((id: unknown): id is string => !!id && typeof id === "string");
     const currentArgPositionIds = (s.arg_positions?.current ?? [])
-      .map((a) => a.id)
-      .filter((id): id is string => !!id);
+      .map((a: any) => a.id)
+      .filter((id: unknown): id is string => !!id && typeof id === "string");
     return {
-      group_id: toolData.group_id,
+      group_id: toolDataAny.group_id,
       args_ids: currentArgsIds,
       arg_position_ids: currentArgPositionIds,
       args_outputs_ids: currentArgsOutputsIds,
@@ -176,11 +203,17 @@ function ToolComponent({
       args_show_ai_generate: s.args?.show_ai_generate ?? false,
       arg_positions_show_ai_generate: s.arg_positions?.show_ai_generate ?? false,
       args_outputs_show_ai_generate: s.args_outputs?.show_ai_generate ?? false,
+      args_create_tool_id: s.args?.create_tool_id ?? null,
+      args_link_tool_id: s.args?.link_tool_id ?? null,
+      arg_positions_create_tool_id: s.arg_positions?.create_tool_id ?? null,
+      arg_positions_link_tool_id: s.arg_positions?.link_tool_id ?? null,
+      args_outputs_create_tool_id: s.args_outputs?.create_tool_id ?? null,
+      args_outputs_link_tool_id: s.args_outputs?.link_tool_id ?? null,
       names: s.names,
       descriptions: s.descriptions,
       flags: s.flags,
     };
-  }, [toolData]);
+  }, [toolDataAny]);
 
   // Helper to check if a resource type can be regenerated
   const canRegenerate = useCallback(
@@ -196,9 +229,7 @@ function ToolComponent({
             (r) => r.generated
           );
         case "arg_positions":
-          return stableToolDataFields.arg_positions_resources.some(
-            (r) => r.generated
-          );
+          return stableToolDataFields.arg_positions_resources.some((r: any) => r.generated);
         default:
           return false;
       }
@@ -227,24 +258,24 @@ function ToolComponent({
 
   const argPositionsItems = useMemo(() => {
     return (
-      stableToolDataFields?.arg_positions
+      (stableToolDataFields?.arg_positions as any[] | undefined)
         ?.filter(
-          (ap): ap is NonNullable<typeof ap> =>
+          (ap: any): ap is NonNullable<typeof ap> =>
             !!ap && !!ap.id && !!ap.args_id && ap.value !== null && ap.value !== undefined
         )
-        .map((ap) => ({
+        .map((ap: any) => ({
           id: ap.id!,
           args_id: ap.args_id!,
           value: ap.value!,
           generated: ap.generated ?? false,
         }))
-        .sort((a, b) => a.value - b.value) ?? []
+        .sort((a: any, b: any) => a.value - b.value) ?? []
     );
   }, [stableToolDataFields?.arg_positions]);
 
   const argPositionByArgId = useMemo(() => {
     const map = new Map<string, { id: string; value: number }>();
-    argPositionsItems.forEach((item) => {
+    argPositionsItems.forEach((item: any) => {
       map.set(item.args_id, { id: item.id, value: item.value });
     });
     return map;
@@ -285,7 +316,9 @@ function ToolComponent({
   }, [argsOutputsItems]);
 
   const getInitialFormState = useCallback(() => {
-    const data = toolDataRef.current;
+    const data = toolDataRef.current as
+      | (ToolData & { arg_positions?: any })
+      | undefined;
     if (!data) {
       return {
         name: "",
@@ -304,8 +337,8 @@ function ToolComponent({
         .map((a) => a.id)
         .filter((id): id is string => !!id),
       arg_position_ids: (data.arg_positions?.current ?? [])
-        .map((a) => a.id)
-        .filter((id): id is string => !!id),
+        .map((a: any) => a.id)
+        .filter((id: unknown): id is string => !!id && typeof id === "string"),
       args_outputs_ids: (data.args_outputs?.current ?? [])
         .map((a) => a.id)
         .filter((id): id is string => !!id),
@@ -392,11 +425,11 @@ function ToolComponent({
   const argPositionsIdsStr = React.useMemo(
     () =>
       JSON.stringify(
-        (toolData?.arg_positions?.current ?? [])
-          .map((a) => a.id)
+        (toolDataAny?.arg_positions?.current ?? [])
+          .map((a: any) => a.id)
           .filter(Boolean)
       ),
-    [toolData?.arg_positions]
+    [toolDataAny?.arg_positions]
   );
 
   // Update form state when server data changes
@@ -513,7 +546,7 @@ function ToolComponent({
     const timer = setTimeout(async () => {
       try {
         if (!patchToolDraftActionRef.current) return;
-        const currentFields = toolDataRef.current;
+        const currentFields = toolDataRef.current as ToolDataWithArgPositions | undefined;
         const result = await patchToolDraftActionRef.current({
           body: {
             input_draft_id: draftId || null,
@@ -550,7 +583,7 @@ function ToolComponent({
             },
             expected_version: lastSavedVersionRef.current,
           },
-        });
+        } as PatchToolDraftIn);
 
         lastPatchedKeyRef.current = draftPatchKey;
 
@@ -802,7 +835,7 @@ function ToolComponent({
       }
 
       if (
-        toolData?.arg_positions?.required &&
+        toolDataAny?.arg_positions?.required &&
         formState.arg_position_ids.length === 0
       ) {
         toast.error("Arg positions are required");
@@ -871,8 +904,8 @@ function ToolComponent({
             },
             arg_positions: {
               resource_ids: formState.arg_position_ids,
-              create_tool_id: toolData?.arg_positions?.create_tool_id ?? null,
-              link_tool_id: toolData?.arg_positions?.link_tool_id ?? null,
+              create_tool_id: toolDataAny?.arg_positions?.create_tool_id ?? null,
+              link_tool_id: toolDataAny?.arg_positions?.link_tool_id ?? null,
             },
             args_outputs: {
               resource_ids: formState.args_outputs_ids,
@@ -880,7 +913,7 @@ function ToolComponent({
               link_tool_id: toolData?.args_outputs?.link_tool_id ?? null,
             },
           },
-        });
+        } as SaveToolIn);
         toast.success(
           `Tool ${isEditMode ? "updated" : "created"} successfully!`
         );
@@ -902,7 +935,7 @@ function ToolComponent({
       saveToolAction,
       router,
       toolData?.args?.required,
-      toolData?.arg_positions?.required,
+      toolDataAny?.arg_positions?.required,
       toolData?.args_outputs?.required,
       toolData?.group_id,
       toolData?.names?.resource?.id,
@@ -914,8 +947,8 @@ function ToolComponent({
       toolData?.flags,
       toolData?.args?.create_tool_id,
       toolData?.args?.link_tool_id,
-      toolData?.arg_positions?.create_tool_id,
-      toolData?.arg_positions?.link_tool_id,
+      toolDataAny?.arg_positions?.create_tool_id,
+      toolDataAny?.arg_positions?.link_tool_id,
       toolData?.args_outputs?.create_tool_id,
       toolData?.args_outputs?.link_tool_id,
     ]
@@ -1359,8 +1392,7 @@ function ToolComponent({
                           f.id !== null &&
                           f.name !== null &&
                           f.field_type !== null &&
-                          f.required !== null &&
-                          f.position !== null
+                          f.required !== null
                       )
                       .map((f) => ({
                         args_id: f.id!,
@@ -1369,13 +1401,146 @@ function ToolComponent({
                         field_type: f.field_type!,
                         required: f.required!,
                         default_value: f.default_value ?? "",
-                        position: f.position!,
                         generated: f.generated ?? false,
                       }))
                   }
                   disabled={disabled}
                   {...(createArgsAction ? { createArgsAction } : {})}
                   group_id={currentToolData?.group_id ?? null}
+                  create_tool_id={currentToolData?.args_create_tool_id ?? null}
+                />
+              </div>
+            </StepCard>
+          );
+        }
+
+        case "arg_positions": {
+          const argPositionsSearch =
+            (formData["argPositionsSearch"] as string | undefined) ?? "";
+          const argPositionsShowSelected =
+            (formData["argPositionsShowSelected"] as boolean | null | undefined) ??
+            false;
+          const normalizedArgPositionsSearch =
+            argPositionsSearch.trim().toLowerCase();
+
+          let filteredArgsForPositions = argsItems.filter((item) =>
+            formState.args_ids.includes(item.id)
+          );
+
+          if (argPositionsShowSelected) {
+            const selectedPositionIds = new Set(formState.arg_position_ids);
+            filteredArgsForPositions = filteredArgsForPositions.filter((item) => {
+              const argPosition = argPositionByArgId.get(item.id);
+              return argPosition ? selectedPositionIds.has(argPosition.id) : false;
+            });
+          }
+
+          if (normalizedArgPositionsSearch) {
+            filteredArgsForPositions = filteredArgsForPositions.filter((item) => {
+              const searchable = `${item.name} ${item.description}`.toLowerCase();
+              return searchable.includes(normalizedArgPositionsSearch);
+            });
+          }
+
+          const argPositionsSuggestions =
+            currentToolData?.arg_positions_suggestions ?? [];
+
+          return (
+            <StepCard
+              stepStatus={stepStatus}
+              stepNumber={stepNumber}
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              isReadonly={disabled}
+              isEditMode={isEditMode}
+              resetFields={["arg_position_ids"]}
+              {...(onReset ? { onReset } : {})}
+              resetLabel="Reset"
+              searchTerm={argPositionsSearch}
+              onSearchChange={(term) =>
+                setFormData({ argPositionsSearch: term || null })
+              }
+              searchPlaceholder="Search arg positions..."
+              {...(filters ? { filters } : {})}
+              actions={
+                stepResources["arg_positions"] &&
+                stepResources["arg_positions"].length > 0 &&
+                currentToolData?.arg_positions_show_ai_generate ? (
+                  <StepCardAiButton
+                    stepId="arg_positions"
+                    resourceTypes={stepResources["arg_positions"] ?? []}
+                    canRegenerate={(rt) => canRegenerate(rt as ToolResourceType)}
+                    isGenerating={(rt) => isGenerating(rt as ToolResourceType)}
+                    onOpenModal={handleOpenStepCardModal}
+                    disabled={disabled}
+                  />
+                ) : undefined
+              }
+            >
+              <div className="space-y-6">
+                <SelectableGrid
+                  items={filteredArgsForPositions}
+                  selectedId={null}
+                  selectedIds={formState.args_ids ?? []}
+                  onSelect={() => {}}
+                  getId={(item) => item.id}
+                  renderItem={(item) => {
+                    const ap = argPositionByArgId.get(item.id);
+                    const isSuggested = ap ? argPositionsSuggestions.includes(ap.id) : false;
+                    return (
+                      <div
+                        className={cn(
+                          "relative flex flex-col gap-2 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
+                          isSuggested && "ring-2 ring-primary/40"
+                        )}
+                      >
+                        <div className="space-y-1">
+                          <div className="text-sm font-semibold leading-tight">
+                            {item.name}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Position: {(ap?.value ?? 0) + 1}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }}
+                  emptyMessage={
+                    normalizedArgPositionsSearch
+                      ? "No args match your search."
+                      : "No selected args available for positions."
+                  }
+                  disabled
+                />
+
+                <ArgPositions
+                  args_ids={formState.args_ids ?? []}
+                  args_resources={(currentToolData?.args ?? []).map((arg) => ({
+                    id: arg.id,
+                    name: arg.name,
+                  }))}
+                  arg_position_ids={formState.arg_position_ids ?? []}
+                  arg_position_resources={((currentToolData?.arg_positions ?? []) as any[]).map(
+                    (ap: any) => ({
+                      id: ap.id,
+                      args_id: ap.args_id,
+                      value: ap.value,
+                      generated: ap.generated ?? false,
+                    })
+                  )}
+                  disabled={disabled}
+                  group_id={currentToolData?.group_id ?? null}
+                  tool_id={toolId ?? null}
+                  create_tool_id={currentToolData?.arg_positions_create_tool_id ?? null}
+                  onPositionIdsChange={(ids) =>
+                    setFormState((prev) => ({
+                      ...prev,
+                      arg_position_ids: ids,
+                    }))
+                  }
+                  {...(createArgPositionsAction
+                    ? { createArgPositionsAction }
+                    : {})}
                 />
               </div>
             </StepCard>
@@ -1555,8 +1720,7 @@ function ToolComponent({
                           f.id !== null &&
                           f.name !== null &&
                           f.field_type !== null &&
-                          f.required !== null &&
-                          f.position !== null
+                          f.required !== null
                       )
                       .map((f) => ({
                         args_id: f.id!,
@@ -1565,7 +1729,6 @@ function ToolComponent({
                         field_type: f.field_type!,
                         required: f.required!,
                         default_value: f.default_value ?? "",
-                        position: f.position!,
                         generated: f.generated ?? false,
                       }))
                   }
@@ -1590,12 +1753,15 @@ function ToolComponent({
       disabled,
       isEditMode,
       createArgsAction,
+      createArgPositionsAction,
       createArgsOutputsAction,
       stepResources,
       canRegenerate,
       handleOpenStepCardModal,
       isGenerating,
       argsItems,
+      argPositionsItems,
+      argPositionByArgId,
       argsOutputsItems,
       argsNameById,
       argsOutputsById,
@@ -1658,17 +1824,26 @@ function ToolComponent({
 
 // Memoize component to prevent re-renders when only prop references change
 export default React.memo(ToolComponent, (prevProps, nextProps) => {
+  const prevToolDataAny = prevProps.toolData as ToolDataWithArgPositions | undefined;
+  const nextToolDataAny = nextProps.toolData as ToolDataWithArgPositions | undefined;
+
   // Compare toolData by selected section resource IDs, not object reference
   const prevIds = {
     name: prevProps.toolData?.names?.resource?.name,
     description: prevProps.toolData?.descriptions?.resource?.description,
     args_ids: prevProps.toolData?.args?.current?.map((a) => a.id),
+    arg_position_ids: prevToolDataAny?.arg_positions?.current?.map(
+      (a: { id?: string | null }) => a.id
+    ),
     args_outputs_ids: prevProps.toolData?.args_outputs?.current?.map((a) => a.id),
   };
   const nextIds = {
     name: nextProps.toolData?.names?.resource?.name,
     description: nextProps.toolData?.descriptions?.resource?.description,
     args_ids: nextProps.toolData?.args?.current?.map((a) => a.id),
+    arg_position_ids: nextToolDataAny?.arg_positions?.current?.map(
+      (a: { id?: string | null }) => a.id
+    ),
     args_outputs_ids: nextProps.toolData?.args_outputs?.current?.map((a) => a.id),
   };
 
@@ -1685,6 +1860,7 @@ export default React.memo(ToolComponent, (prevProps, nextProps) => {
     prevProps.saveToolAction !== nextProps.saveToolAction ||
     prevProps.patchToolDraftAction !== nextProps.patchToolDraftAction ||
     prevProps.createArgsAction !== nextProps.createArgsAction ||
+    prevProps.createArgPositionsAction !== nextProps.createArgPositionsAction ||
     prevProps.createArgsOutputsAction !== nextProps.createArgsOutputsAction
   ) {
     return false; // Function props changed, re-render

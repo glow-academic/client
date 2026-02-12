@@ -27,18 +27,13 @@ CREATE OR REPLACE FUNCTION api_insert_document_v4(
     field_ids uuid[] DEFAULT ARRAY[]::uuid[]
 )
 RETURNS TABLE (
-    document_id text,
-    actor_name text
+    document_id text
 )
 LANGUAGE sql
 VOLATILE
 AS $$
-WITH user_profile AS (
-    SELECT actor_name
-    FROM view_user_profile_context vpc
-    WHERE vpc.profile_id = profile_id
-),
--- Insert name INTO names_resource table and get ID
+-- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
+WITH -- Insert name INTO names_resource table and get ID
 name_resource AS (
     INSERT INTO names_resource (name, created_at)
     SELECT name, NOW()
@@ -159,6 +154,5 @@ insert_parameters AS (
     RETURNING document_id
 )
 SELECT
-    document_id::text as document_id,
-    (SELECT actor_name FROM user_profile LIMIT 1) as actor_name
+    document_id::text as document_id
 $$;

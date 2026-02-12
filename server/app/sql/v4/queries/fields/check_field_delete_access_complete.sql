@@ -22,8 +22,6 @@ CREATE OR REPLACE FUNCTION api_check_field_delete_access_v4(
     field_id uuid
 )
 RETURNS TABLE (
-    -- User context for Python permission logic
-    user_role text,
     -- Field state for Python permission logic
     field_department_ids text[],
     total_parameter_links bigint
@@ -31,16 +29,11 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
+-- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 WITH params AS (
     SELECT
         profile_id AS profile_id,
         field_id AS field_id
-),
--- Get user profile info
-user_profile AS (
-    SELECT role
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
 ),
 -- Get field departments
 field_departments_data AS (
@@ -58,9 +51,8 @@ parameter_links AS (
     LEFT JOIN field_conditional_parameters_junction fcpj ON fcpj.field_id = x.field_id AND fcpj.active = true
 )
 SELECT
-    up.role::text as user_role,
     (SELECT department_ids FROM field_departments_data) as field_department_ids,
     (SELECT total_links FROM parameter_links) as total_parameter_links
 FROM params x
-CROSS JOIN user_profile up;
 $$;
+

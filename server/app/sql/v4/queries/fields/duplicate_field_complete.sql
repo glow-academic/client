@@ -22,21 +22,16 @@ CREATE OR REPLACE FUNCTION api_duplicate_field_v4(
 )
 RETURNS TABLE (
     new_field_id uuid,
-    original_name text,
-    actor_name text
+    original_name text
 )
 LANGUAGE sql
 VOLATILE
 AS $$
+-- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 WITH params AS (
     SELECT
         field_id AS field_id,
         profile_id AS profile_id
-),
-user_profile AS (
-    SELECT actor_name
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
 ),
 original_field AS (
     SELECT
@@ -162,6 +157,6 @@ copy_conditional_parameters AS (
 )
 SELECT
     (SELECT field_id FROM new_field LIMIT 1) as new_field_id,
-    (SELECT name FROM original_field LIMIT 1) as original_name,
-    (SELECT actor_name FROM user_profile LIMIT 1) as actor_name
+    (SELECT name FROM original_field LIMIT 1) as original_name
 $$;
+

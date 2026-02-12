@@ -17,9 +17,10 @@ from app.api.v4.artifacts.rubric.types import (
     SaveRubricSqlParams,
     SaveRubricSqlRow,
 )
+from app.api.v4.auth.context import get_profile_context_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db
+from app.main import get_db, get_pool
 from app.sql.types import (
     CheckRubricSaveAccessSqlParams,
     CheckRubricSaveAccessSqlRow,
@@ -68,6 +69,26 @@ async def save_rubric(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        # Fetch user context for permissions and audit logging
+        pool = get_pool()
+        if pool:
+            async with pool.acquire() as context_conn:
+                resolved_context = await get_profile_context_internal(
+                    conn=context_conn,
+                    profile_id=profile_id,
+                    department_id_cookie=None,
+                    bypass_cache=False,
+                )
+                actor_name = resolved_context.actor_name
+                user_role = resolved_context.user_role
+                user_department_ids = [
+                    d.department_id for d in resolved_context.departments if d.department_id
+                ]
+        else:
+            actor_name = None
+            user_role = None
+            user_department_ids = []
+
         # Permission check: get user role and rubric info using typed SQL
         access_params = CheckRubricSaveAccessSqlParams(
             profile_id=profile_id,
@@ -91,13 +112,13 @@ async def save_rubric(
         # Permission logic: create vs update mode
         if not request.input_rubric_id:
             can_save_result = compute_can_create(
-                user_role=access_result.user_role,
+                user_role=user_role,
                 department_ids=None,
             )
         else:
             can_save_result = compute_can_save(
-                user_role=access_result.user_role,
-                user_department_ids=access_result.user_department_ids,
+                user_role=user_role,
+                user_department_ids=user_department_ids,
                 rubric_department_ids=access_result.rubric_department_ids,
                 active_simulation_count=access_result.active_simulation_count or 0,
             )
@@ -128,8 +149,8 @@ async def save_rubric(
                     raise ValueError("Failed to create rubric")
 
             # Set audit context
-            if result.actor_name:
-                audit_ctx = {"actor": {"name": result.actor_name, "id": profile_id}}
+            if actor_name:
+                audit_ctx = {"actor": {"name": actor_name, "id": profile_id}}
                 if request.input_rubric_id:
                     audit_ctx["rubric"] = {
                         "name": getattr(request, "name", "Rubric"),

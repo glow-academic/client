@@ -65,8 +65,6 @@ CREATE OR REPLACE FUNCTION api_list_evals_v4(
     page_offset int DEFAULT 0
 )
 RETURNS TABLE (
-    actor_name text,
-    user_role text,
     evals types.q_list_evals_v4_eval[],
     departments types.q_list_evals_v4_department[],
     total_count int
@@ -83,10 +81,14 @@ WITH params AS (
         page_size AS page_size,
         page_offset AS page_offset
 ),
+-- User context: actor_name comes from get_profile_context_internal() in Python
 user_profile AS (
-    SELECT role, actor_name
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
+    SELECT COALESCE(r.role, 'member'::profile_type) as role,
+           ''::text as actor_name
+    FROM profile_roles_junction prj
+    JOIN roles_resource r ON prj.role_id = r.id
+    WHERE prj.profile_id = (SELECT profile_id FROM params)
+    LIMIT 1
 ),
 user_departments AS (
     SELECT DISTINCT pd.department_id
@@ -202,10 +204,9 @@ department_filter_data AS (
     ) d
 )
 SELECT
-    up.actor_name::text as actor_name,
-    up.role::text as user_role,
     (SELECT evals FROM eval_objects) as evals,
     (SELECT departments FROM department_filter_data) as departments,
     (SELECT count FROM total) as total_count
 FROM user_profile up;
 $$;
+

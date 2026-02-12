@@ -22,24 +22,17 @@ CREATE OR REPLACE FUNCTION api_check_tool_delete_access_v4(
     tool_id uuid
 )
 RETURNS TABLE (
-    -- User context for Python permission logic
-    user_role text,
     -- Tool state for Python permission logic
     usage_count bigint
 )
 LANGUAGE sql
 STABLE
 AS $$
+-- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 WITH params AS (
     SELECT
         profile_id AS profile_id,
         tool_id AS tool_id
-),
--- Get user profile info
-user_profile AS (
-    SELECT role
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
 ),
 -- Count total usage (agents, calls, resources linked to this tool)
 tool_usage AS (
@@ -57,8 +50,7 @@ tool_usage AS (
     FROM params x
 )
 SELECT
-    up.role::text as user_role,
     (SELECT usage_count FROM tool_usage) as usage_count
 FROM params x
-CROSS JOIN user_profile up;
 $$;
+

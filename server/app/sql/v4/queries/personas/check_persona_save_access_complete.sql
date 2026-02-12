@@ -24,9 +24,6 @@ CREATE OR REPLACE FUNCTION api_check_persona_save_access_v4(
     persona_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
-    -- User context for Python permission logic
-    user_role text,
-    user_department_ids text[],
     -- Persona state for Python permission logic (NULL for create mode)
     persona_department_ids text[],
     active_scenario_count bigint
@@ -34,33 +31,19 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
+-- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 WITH params AS (
     SELECT
         profile_id AS profile_id,
         persona_id AS persona_id
-),
--- Get user profile info
-user_profile AS (
-    SELECT role
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
-),
--- Get user's departments
-user_departments AS (
-    SELECT COALESCE(ARRAY_AGG(pd.department_id::text ORDER BY pd.created_at), ARRAY[]::text[]) as department_ids
-    FROM params x
-    LEFT JOIN profile_departments_junction pd ON pd.profile_id = x.profile_id AND pd.active = true
 ),
 -- Get persona edit state (for update mode)
 persona_edit_state AS (
     SELECT * FROM view_persona_edit_state WHERE persona_id = (SELECT persona_id FROM params)
 )
 SELECT
-    up.role::text as user_role,
-    ud.department_ids as user_department_ids,
     (SELECT department_ids FROM persona_edit_state) as persona_department_ids,
     COALESCE((SELECT active_scenario_count FROM persona_edit_state), 0)::bigint as active_scenario_count
 FROM params x
-CROSS JOIN user_profile up
-CROSS JOIN user_departments ud;
 $$;
+

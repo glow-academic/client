@@ -57,8 +57,7 @@ CREATE OR REPLACE FUNCTION api_save_simulation_v4(
     scenario_personas types.simulation_multi_resource_action DEFAULT NULL
 )
 RETURNS TABLE (
-    simulation_id uuid,
-    actor_name text
+    simulation_id uuid
 )
 LANGUAGE plpgsql
 VOLATILE
@@ -85,7 +84,6 @@ DECLARE
     -- Call tracking
     v_run_id uuid;
     v_call_id uuid;
-    v_actor_name text;
 BEGIN
     v_profile_id := profile_id;
     v_input_simulation_id := input_simulation_id;
@@ -481,11 +479,7 @@ BEGIN
     WHERE j.simulations_id = r.id
       AND j.simulation_id = v_simulation_id;
 
-    SELECT up.actor_name INTO v_actor_name
-    FROM view_user_profile_context up
-    WHERE up.profile_id = v_profile_id
-    LIMIT 1;
-
-    RETURN QUERY SELECT v_simulation_id, v_actor_name;
+    RETURN QUERY SELECT v_simulation_id;
 END;
 $$;
+

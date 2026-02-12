@@ -26,6 +26,19 @@ type CreateDraftArgsOutputsOut = OutputOf<
   "/api/v4/resources/args_outputs",
   "post"
 >;
+type CreateDraftArgPositionsIn = {
+  body: {
+    agent_id: string;
+    group_id: string;
+    tool_id: string;
+    args_id: string;
+    value: number;
+    mcp: boolean;
+  };
+};
+type CreateDraftArgPositionsOut = {
+  id?: string | null;
+};
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for new pages.
@@ -78,6 +91,16 @@ async function createDraftArgsOutputs(
   return api.post("/resources/args_outputs", input);
 }
 
+async function createDraftArgPositions(
+  input: CreateDraftArgPositionsIn
+): Promise<CreateDraftArgPositionsOut> {
+  "use server";
+  return api.post(
+    "/resources/arg_positions" as never,
+    input as never
+  ) as Promise<CreateDraftArgPositionsOut>;
+}
+
 /** ---- Server renders client with typed data and actions ---- */
 export default async function NewToolPage({
   searchParams,
@@ -126,6 +149,7 @@ export default async function NewToolPage({
         saveToolAction={saveTool}
         patchToolDraftAction={patchToolDraft}
         createArgsAction={createDraftArgs}
+        createArgPositionsAction={createDraftArgPositions}
         createArgsOutputsAction={createDraftArgsOutputs}
       />
     </div>

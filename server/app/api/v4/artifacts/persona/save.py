@@ -70,7 +70,7 @@ async def save_persona(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for audit logging
+        # Fetch user context for permissions and audit logging
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -81,8 +81,14 @@ async def save_persona(
                     bypass_cache=False,
                 )
                 actor_name = resolved_context.actor_name
+                user_role = resolved_context.user_role
+                user_department_ids = [
+                    d.department_id for d in resolved_context.departments if d.department_id
+                ]
         else:
             actor_name = None
+            user_role = None
+            user_department_ids = []
 
         # Permission check: get user role and persona info using typed SQL
         access_params = CheckPersonaSaveAccessSqlParams(
@@ -111,14 +117,14 @@ async def save_persona(
             # The actual department validation happens in save SQL based on draft contents
             # Here we just do role check - department validation is deferred
             can_save_result = compute_can_create(
-                user_role=access_result.user_role,
+                user_role=user_role,
                 department_ids=None,  # Will be validated when saving from draft
             )
         else:
             # Update mode: full permission check including user department membership
             can_save_result = compute_can_save(
-                user_role=access_result.user_role,
-                user_department_ids=access_result.user_department_ids,
+                user_role=user_role,
+                user_department_ids=user_department_ids,
                 persona_department_ids=access_result.persona_department_ids,
                 active_scenario_count=access_result.active_scenario_count or 0,
             )

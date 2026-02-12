@@ -106,7 +106,6 @@ CREATE OR REPLACE FUNCTION api_get_rubric_v4(
 )
 RETURNS TABLE (
     -- Required fields (first 5)
-    actor_name text,
     rubric_exists boolean,
     can_edit boolean,
     disabled_reason text,
@@ -217,15 +216,14 @@ draft_version_data AS (
     WHERE TRUE
     LIMIT 1
 ),
+-- User context: actor_name comes from get_profile_context_internal() in Python
 user_profile AS (
-    SELECT role, actor_name
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
-),
-user_departments AS (
-    SELECT DISTINCT pd.department_id
-    FROM params x
-    JOIN profile_departments_junction pd ON pd.profile_id = x.profile_id AND pd.active = true
+    SELECT COALESCE(r.role, 'member'::profile_type) as role,
+           ''::text as actor_name
+    FROM profile_roles_junction prj
+    JOIN roles_resource r ON prj.role_id = r.id
+    WHERE prj.profile_id = (SELECT profile_id FROM params)
+    LIMIT 1
 ),
 -- Conditional: Get rubric department data only if rubric_id provided
 rubric_departments_data AS (
@@ -1774,7 +1772,6 @@ standards_all_aggregated AS (
 )
 SELECT
     -- Required fields (first 5)
-    up.actor_name::text as actor_name,
     (SELECT rubric_exists FROM rubric_exists_check) as rubric_exists,
     perm_final.can_edit,
     perm_final.disabled_reason,
@@ -1944,3 +1941,4 @@ CROSS JOIN departments_agg depta
 CROSS JOIN flags_agg fa
 CROSS JOIN points_agg pa
 $$;
+

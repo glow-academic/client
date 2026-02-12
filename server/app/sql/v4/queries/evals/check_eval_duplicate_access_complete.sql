@@ -21,12 +21,12 @@ CREATE OR REPLACE FUNCTION api_check_eval_duplicate_access_v4(
     profile_id uuid
 )
 RETURNS TABLE (
-    user_role text
+    -- User context (role, actor_name, department_ids) comes from get_profile_context_internal()
+    access_check boolean
 )
 LANGUAGE sql
 STABLE
 AS $$
-SELECT role::text as user_role
-FROM view_user_profile_context
-WHERE profile_id = api_check_eval_duplicate_access_v4.profile_id;
+-- User context (role, actor_name, department_ids) comes from get_profile_context_internal()
+SELECT true::boolean as access_check;
 $$;

@@ -89,7 +89,6 @@ CREATE OR REPLACE FUNCTION api_get_document_v4(
 )
 RETURNS TABLE (
     -- Required fields (first 5)
-    actor_name text,
     document_exists boolean,
     can_edit boolean,
     disabled_reason text,
@@ -190,10 +189,14 @@ draft_version_data AS (
     WHERE TRUE
     LIMIT 1
 ),
+-- User context: actor_name comes from get_profile_context_internal() in Python
 user_profile AS (
-    SELECT role, actor_name
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
+    SELECT COALESCE(r.role, 'member'::profile_type) as role,
+           ''::text as actor_name
+    FROM profile_roles_junction prj
+    JOIN roles_resource r ON prj.role_id = r.id
+    WHERE prj.profile_id = (SELECT profile_id FROM params)
+    LIMIT 1
 ),
 user_departments AS (
     SELECT DISTINCT pd.department_id
@@ -1414,7 +1417,6 @@ permissions_final AS (
 )
 SELECT
     -- Required fields (first 5)
-    up.actor_name::text as actor_name,
     (SELECT document_exists FROM document_exists_check) as document_exists,
     perm_final.can_edit,
     perm_final.disabled_reason,
@@ -1598,3 +1600,4 @@ CROSS JOIN upload_ids_data uid
 CROSS JOIN upload_suggestions_data usd
 CROSS JOIN field_suggestions_data fsd
 $$;
+

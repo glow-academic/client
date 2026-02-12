@@ -58,15 +58,13 @@ CREATE OR REPLACE FUNCTION api_save_model_v4(
     voices types.model_multi_resource_action DEFAULT NULL
 )
 RETURNS TABLE (
-    model_id uuid,
-    actor_name text
+    model_id uuid
 )
 LANGUAGE plpgsql
 VOLATILE
 AS $$
 DECLARE
     v_model_id uuid;
-    v_actor_name text;
     is_create boolean;
 
     -- Extracted resource IDs
@@ -560,12 +558,7 @@ BEGIN
     WHERE j.models_id = r.id
       AND j.model_id = v_model_id;
 
-    -- Get actor name
-    SELECT up.actor_name INTO v_actor_name
-    FROM view_user_profile_context up
-    WHERE up.profile_id = profile_id
-    LIMIT 1;
-
-    RETURN QUERY SELECT v_model_id, v_actor_name;
+    RETURN QUERY SELECT v_model_id;
 END;
 $$;
+

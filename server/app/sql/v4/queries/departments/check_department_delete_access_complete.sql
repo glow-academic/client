@@ -22,24 +22,17 @@ CREATE OR REPLACE FUNCTION api_check_department_delete_access_v4(
     department_id uuid
 )
 RETURNS TABLE (
-    -- User context for Python permission logic
-    user_role text,
     -- Department state for Python permission logic
     total_usage bigint
 )
 LANGUAGE sql
 STABLE
 AS $$
+-- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 WITH params AS (
     SELECT
         profile_id AS profile_id,
         department_id AS department_id
-),
--- Get user profile info
-user_profile AS (
-    SELECT role
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
 ),
 -- Count total usage across all entity types
 usage_summary AS (
@@ -52,8 +45,7 @@ usage_summary AS (
     )::bigint as total_usage
 )
 SELECT
-    up.role::text as user_role,
     (SELECT total_usage FROM usage_summary) as total_usage
 FROM params x
-CROSS JOIN user_profile up;
 $$;
+

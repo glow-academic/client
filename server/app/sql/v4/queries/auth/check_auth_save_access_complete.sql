@@ -23,33 +23,16 @@ CREATE OR REPLACE FUNCTION api_check_auth_save_access_v4(
     auth_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
-    -- User context for Python permission logic
-    user_role text,
-    user_department_ids uuid[],
     auth_exists boolean
 )
 LANGUAGE sql
 STABLE
 AS $$
+-- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 WITH params AS (
     SELECT
         profile_id AS profile_id,
         auth_id AS auth_id
-),
--- Get user profile info
-user_profile AS (
-    SELECT role
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
-),
--- Get user's departments
-user_departments AS (
-    SELECT COALESCE(
-        ARRAY_AGG(DISTINCT pd.department_id) FILTER (WHERE pd.department_id IS NOT NULL),
-        ARRAY[]::uuid[]
-    ) as department_ids
-    FROM params x
-    LEFT JOIN profile_departments_junction pd ON pd.profile_id = x.profile_id AND pd.active = true
 ),
 -- Check if auth exists (for update mode)
 auth_exists_check AS (
@@ -60,10 +43,7 @@ auth_exists_check AS (
         END as auth_exists
 )
 SELECT
-    up.role::text as user_role,
-    ud.department_ids as user_department_ids,
     (SELECT auth_exists FROM auth_exists_check) as auth_exists
 FROM params x
-CROSS JOIN user_profile up
-CROSS JOIN user_departments ud;
 $$;
+

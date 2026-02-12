@@ -56,7 +56,6 @@ CREATE TYPE types.q_get_settings_list_v4_key AS (
 -- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_get_settings_list_v4(profile_id uuid)
 RETURNS TABLE (
-    actor_name text,
     settings types.q_get_settings_list_v4_setting[],
     keys types.q_get_settings_list_v4_key[]
 )
@@ -66,12 +65,6 @@ AS $$
 WITH params AS (
     SELECT profile_id AS profile_id
 ),
-actor_profile AS (
-    SELECT 
-        COALESCE(COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), ''), 'System') as actor_name
-    FROM params x
-    JOIN profile_artifact p ON p.id = x.profile_id
-),
 settings_departments_data AS (
     SELECT 
         ds.settings_id,
@@ -80,15 +73,19 @@ settings_departments_data AS (
     WHERE ds.active = true
     GROUP BY ds.settings_id
 ),
-user_departments AS (
-    SELECT department_id
-    FROM params x
-    JOIN profile_departments_junction ON profile_departments_junction.profile_id = x.profile_id AND profile_departments_junction.active = true
-),
+-- User context: actor_name comes from get_profile_context_internal() in Python
 user_profile AS (
-    SELECT role
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
+    SELECT COALESCE(r.role, 'member'::profile_type) as role,
+           ''::text as actor_name
+    FROM profile_roles_junction prj
+    JOIN roles_resource r ON prj.role_id = r.id
+    WHERE prj.profile_id = (SELECT profile_id FROM params)
+    LIMIT 1
+),
+user_departments AS (
+    SELECT DISTINCT pd.department_id
+    FROM params x
+    JOIN profile_departments_junction pd ON pd.profile_id = x.profile_id AND pd.active = true
 ),
 -- Get department_ids via setting_provider_keys_junction -> provider_keys_resource -> settings -> department_settings_junction
 key_departments_data AS (
@@ -137,8 +134,7 @@ settings_keys_data AS (
         OR NOT EXISTS (SELECT 1 FROM key_departments_data kdd2 WHERE kdd2.key_id = kr.id)
         OR up.role = 'superadmin'
 )
-SELECT 
-    ap.actor_name::text as actor_name,
+SELECT
     COALESCE(
         ARRAY_AGG(
             (s.id, s.created_at, EXISTS (SELECT 1 FROM setting_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = TRUE), (SELECT n.name FROM setting_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.setting_id = s.id LIMIT 1), (SELECT d.description FROM setting_descriptions_junction sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.setting_id = s.id LIMIT 1),
@@ -150,9 +146,8 @@ SELECT
     ) as settings,
     COALESCE(skd.keys, '{}'::types.q_get_settings_list_v4_key[]) as keys
 FROM setting_artifact s
-CROSS JOIN actor_profile ap
 LEFT JOIN settings_departments_data sdd ON sdd.settings_id = s.id
 LEFT JOIN settings_keys_data skd ON true
 WHERE EXISTS (SELECT 1 FROM setting_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = true)  -- Only return active settings
-GROUP BY ap.actor_name, skd.keys
+GROUP BY skd.keys
 $$;

@@ -54,15 +54,13 @@ CREATE OR REPLACE FUNCTION api_save_rubric_v4(
     standards types.rubric_multi_resource_action DEFAULT NULL
 )
 RETURNS TABLE (
-    rubric_id uuid,
-    actor_name text
+    rubric_id uuid
 )
 LANGUAGE plpgsql
 VOLATILE
 AS $$
 DECLARE
     v_rubric_id uuid;
-    v_actor_name text;
     v_profile_id uuid;
     v_group_id uuid;
     v_input_rubric_id uuid;
@@ -446,12 +444,7 @@ BEGIN
     WHERE j.rubrics_id = r.id
       AND j.rubric_id = v_rubric_id;
 
-    SELECT up.actor_name
-    INTO v_actor_name
-    FROM view_user_profile_context up
-    WHERE up.profile_id = v_profile_id
-    LIMIT 1;
-
-    RETURN QUERY SELECT v_rubric_id, v_actor_name;
+    RETURN QUERY SELECT v_rubric_id;
 END;
 $$;
+

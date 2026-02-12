@@ -131,9 +131,14 @@ For each `args_id`, no two `args_outputs_resource` rows should have the same `na
 
 `args_resource.field_type` must be one of the known types: `string`, `number`, `boolean`, `array`, `uuid`, `object`.
 
-### Rule 10: Every tool must have domain entries for its standard resources
+### Rule 10: Resource tools must map to exactly one matching domain
 
-Every tool should have `tool_domains_junction` entries pointing to `domains_resource` rows for at least: `names`, `descriptions`, `flags`, `args`, `args_outputs`.
+For every tool registered in `resource_tools_relation`:
+- it must target exactly one active `resource_tools_relation.resource`
+- it must have exactly one active `tool_domains_junction` domain
+- that domain's `domains_resource.resource` must match the tool's target resource
+
+Entry-oriented tools are validated via bindings and `entry_tools_relation` (Rules 20/21), not via metadata domains.
 
 ### Rule 11: Bindings must reference valid entry types
 
@@ -318,29 +323,57 @@ ORDER BY ar.name;
 
 **Expected**: Empty. Any rows = unknown field_type (review if intentional).
 
-### Audit 10: Tools missing standard domain entries
+### Audit 10: Resource tools without a single matching domain
 
 ```sql
-WITH required_domains AS (
-    SELECT unnest(ARRAY['names', 'descriptions', 'flags', 'args', 'args_outputs']) AS resource_name
+WITH resource_tools AS (
+    SELECT
+        rtr.tool_id,
+        ARRAY_AGG(DISTINCT rtr.resource::text ORDER BY rtr.resource::text) AS resources,
+        COUNT(DISTINCT rtr.resource) AS resource_count
+    FROM resource_tools_relation rtr
+    WHERE rtr.active = true
+    GROUP BY rtr.tool_id
 ),
 tool_domains AS (
-    SELECT tdj.tool_id, dr.resource::text AS resource_name
+    SELECT
+        tdj.tool_id,
+        ARRAY_AGG(DISTINCT dr.resource::text ORDER BY dr.resource::text) AS domains,
+        COUNT(DISTINCT dr.resource) AS domain_count
     FROM tool_domains_junction tdj
     JOIN domains_resource dr ON dr.id = tdj.domain_id
-    WHERE tdj.active = true
+    WHERE tdj.active = true AND dr.active = true
+    GROUP BY tdj.tool_id
+),
+violations AS (
+    SELECT
+        rt.tool_id,
+        CASE
+            WHEN rt.resource_count <> 1 THEN 'resource_relation_not_single'
+            WHEN COALESCE(td.domain_count, 0) <> 1 THEN 'domain_not_single'
+            WHEN NOT (rt.resources[1] = ANY(COALESCE(td.domains, ARRAY[]::text[]))) THEN 'domain_resource_mismatch'
+        END AS issue,
+        rt.resources,
+        COALESCE(td.domains, ARRAY[]::text[]) AS domains
+    FROM resource_tools rt
+    LEFT JOIN tool_domains td ON td.tool_id = rt.tool_id
 )
-SELECT ta.id AS tool_id, rd.resource_name AS missing_domain
-FROM tool_artifact ta
-CROSS JOIN required_domains rd
-WHERE NOT EXISTS (
-    SELECT 1 FROM tool_domains AS td
-    WHERE td.tool_id = ta.id AND td.resource_name = rd.resource_name
-)
-ORDER BY ta.id, rd.resource_name;
+SELECT
+    v.tool_id,
+    (SELECT nr.name
+     FROM tool_names_junction tnj
+     JOIN names_resource nr ON nr.id = tnj.name_id
+     WHERE tnj.tool_id = v.tool_id AND tnj.active = true
+     LIMIT 1) AS tool_name,
+    v.issue,
+    v.resources,
+    v.domains
+FROM violations v
+WHERE v.issue IS NOT NULL
+ORDER BY tool_name, v.tool_id;
 ```
 
-**Expected**: Empty. Any rows = tool missing a standard domain entry.
+**Expected**: Empty. Any rows = resource tool/domain mapping drift.
 
 ### Audit 11: Invalid binding entry types
 

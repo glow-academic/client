@@ -22,8 +22,6 @@ CREATE OR REPLACE FUNCTION api_check_rubric_delete_access_v4(
     rubric_id uuid
 )
 RETURNS TABLE (
-    -- User context for Python permission logic
-    user_role text,
     -- Rubric state for Python permission logic
     rubric_department_ids text[],
     total_simulation_links bigint
@@ -31,16 +29,11 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
+-- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 WITH params AS (
     SELECT
         profile_id AS profile_id,
         rubric_id AS rubric_id
-),
--- Get user profile info
-user_profile AS (
-    SELECT role
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
 ),
 -- Get rubric departments
 rubric_departments_data AS (
@@ -64,9 +57,8 @@ simulation_links AS (
     )::bigint as total_links
 )
 SELECT
-    up.role::text as user_role,
     (SELECT department_ids FROM rubric_departments_data) as rubric_department_ids,
     (SELECT total_links FROM simulation_links) as total_simulation_links
 FROM params x
-CROSS JOIN user_profile up;
 $$;
+

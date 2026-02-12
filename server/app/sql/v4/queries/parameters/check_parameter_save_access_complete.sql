@@ -22,23 +22,17 @@ CREATE OR REPLACE FUNCTION api_check_parameter_save_access_v4(
     parameter_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
-    user_role text,
-    user_department_ids text[],
     parameter_department_ids text[],
     active_scenario_count bigint
 )
 LANGUAGE sql
 STABLE
 AS $$
+-- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 WITH params AS (
     SELECT
         profile_id AS profile_id,
         parameter_id AS parameter_id
-),
-user_profile AS (
-    SELECT role
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
 ),
 user_dept AS (
     SELECT COALESCE(
@@ -68,11 +62,9 @@ parameter_scenario_count AS (
     WHERE x.parameter_id IS NOT NULL
 )
 SELECT
-    up.role::text as user_role,
-    ud.department_ids as user_department_ids,
     (SELECT department_ids FROM parameter_dept) as parameter_department_ids,
     COALESCE((SELECT active_scenario_count FROM parameter_scenario_count), 0) as active_scenario_count
 FROM params x
-CROSS JOIN user_profile up
 CROSS JOIN user_dept ud;
 $$;
+

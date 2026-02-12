@@ -69,8 +69,6 @@ CREATE OR REPLACE FUNCTION api_list_documents_v4(
     page_offset int DEFAULT 0
 )
 RETURNS TABLE (
-    actor_name text,
-    user_role text,
     documents types.q_list_documents_v4_document[],
     scenario_option_ids types.q_list_documents_v4_option_id[],
     field_option_ids types.q_list_documents_v4_option_id[],
@@ -80,6 +78,7 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
+-- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 WITH params AS (
     SELECT profile_id AS profile_id
 ),
@@ -87,11 +86,6 @@ user_departments AS (
     SELECT department_id
     FROM params x
     JOIN profile_departments_junction ON profile_departments_junction.profile_id = x.profile_id AND profile_departments_junction.active = true
-),
-user_profile AS (
-    SELECT role, COALESCE(NULLIF(actor_name, ''), 'System') as actor_name
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
 ),
 -- Scenario linkage via scenario_documents_junction (junction table, not artifact)
 document_active_scenario_links AS (
@@ -219,8 +213,6 @@ department_option_data AS (
     WHERE dr.id IN (SELECT department_id FROM user_departments)
 )
 SELECT
-    up.actor_name::text as actor_name,
-    up.role::text as user_role,
     -- Aggregate paginated documents
     COALESCE(
         (SELECT ARRAY_AGG(
@@ -258,5 +250,6 @@ SELECT
     ) as department_option_ids,
     -- Total count of filtered documents (before pagination)
     (SELECT total_count FROM filtered_count) as total_count
-FROM user_profile up
+FROM params
 $$;
+

@@ -24,9 +24,6 @@ CREATE OR REPLACE FUNCTION api_check_profile_save_access_v4(
     input_profile_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
-    -- User context for Python permission logic
-    user_role text,
-    user_department_ids text[],
     -- Target profile state for Python permission logic (NULL/empty for create mode)
     target_department_ids text[],
     target_is_self boolean
@@ -34,22 +31,11 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
+-- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 WITH params AS (
     SELECT
         profile_id AS profile_id,
         input_profile_id AS input_profile_id
-),
--- Get user profile info
-user_profile AS (
-    SELECT role
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
-),
--- Get user's departments
-user_departments AS (
-    SELECT COALESCE(ARRAY_AGG(pd.department_id::text ORDER BY pd.created_at), ARRAY[]::text[]) as department_ids
-    FROM params x
-    LEFT JOIN profile_departments_junction pd ON pd.profile_id = x.profile_id AND pd.active = true
 ),
 -- Get target profile departments (for update mode)
 target_departments AS (
@@ -62,11 +48,8 @@ target_departments AS (
     WHERE x.input_profile_id IS NOT NULL
 )
 SELECT
-    up.role::text as user_role,
-    ud.department_ids as user_department_ids,
     COALESCE((SELECT department_ids FROM target_departments), ARRAY[]::text[]) as target_department_ids,
     ((SELECT profile_id FROM params) = (SELECT input_profile_id FROM params)) as target_is_self
 FROM params x
-CROSS JOIN user_profile up
-CROSS JOIN user_departments ud;
 $$;
+

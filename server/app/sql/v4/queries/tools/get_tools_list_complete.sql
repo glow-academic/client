@@ -47,20 +47,14 @@ CREATE TYPE types.q_get_tools_list_v4_tool AS (
 -- 4) Recreate function - returns raw data + user_role for Python permission computation
 CREATE OR REPLACE FUNCTION api_get_tools_list_v4(profile_id uuid)
 RETURNS TABLE (
-    actor_name text,
-    user_role text,
     tools types.q_get_tools_list_v4_tool[]
 )
 LANGUAGE sql
 STABLE
 AS $$
+-- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 WITH params AS (
     SELECT profile_id AS profile_id
-),
-user_profile AS (
-    SELECT role, COALESCE(NULLIF(actor_name, ''), 'System') as actor_name
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
 ),
 tool_args_counts AS (
     SELECT
@@ -106,8 +100,6 @@ tool_data AS (
     LEFT JOIN tool_usage_counts tuc ON tuc.tool_id = t.id
 )
 SELECT
-    up.actor_name::text as actor_name,
-    up.role::text as user_role,
     COALESCE(
         (SELECT ARRAY_AGG(
             (td.tool_id, td.name, td.description, td.active, td.num_schemas,
@@ -117,5 +109,6 @@ SELECT
         ) FROM tool_data td),
         '{}'::types.q_get_tools_list_v4_tool[]
     ) as tools
-FROM user_profile up
+FROM params
 $$;
+

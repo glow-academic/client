@@ -22,31 +22,23 @@ CREATE OR REPLACE FUNCTION api_check_auth_delete_access_v4(
     auth_id uuid
 )
 RETURNS TABLE (
-    -- User context for Python permission logic
-    user_role text,
     auth_exists boolean
 )
 LANGUAGE sql
 STABLE
 AS $$
+-- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 WITH params AS (
     SELECT
         profile_id AS profile_id,
         auth_id AS auth_id
-),
--- Get user profile info
-user_profile AS (
-    SELECT role
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
 ),
 -- Check if auth exists
 auth_exists_check AS (
     SELECT EXISTS(SELECT 1 FROM auths_resource WHERE id = (SELECT auth_id FROM params))::boolean as auth_exists
 )
 SELECT
-    up.role::text as user_role,
     (SELECT auth_exists FROM auth_exists_check) as auth_exists
 FROM params x
-CROSS JOIN user_profile up;
 $$;
+

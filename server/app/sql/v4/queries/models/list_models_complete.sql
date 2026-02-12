@@ -63,7 +63,6 @@ CREATE TYPE types.q_list_models_v4_status_option AS (
 -- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_list_models_v4(profile_id uuid)
 RETURNS TABLE (
-    actor_name text,
     models types.q_list_models_v4_model[],
     provider_options types.q_list_models_v4_provider_option[],
     status_options types.q_list_models_v4_status_option[]
@@ -74,10 +73,14 @@ AS $$
 WITH params AS (
     SELECT profile_id AS profile_id
 ),
+-- User context: actor_name comes from get_profile_context_internal() in Python
 user_profile AS (
-    SELECT role, COALESCE(NULLIF(actor_name, ''), 'System') as actor_name
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
+    SELECT COALESCE(r.role, 'member'::profile_type) as role,
+           ''::text as actor_name
+    FROM profile_roles_junction prj
+    JOIN roles_resource r ON prj.role_id = r.id
+    WHERE prj.profile_id = (SELECT profile_id FROM params)
+    LIMIT 1
 ),
 -- Pre-aggregate simulation usage counts for all models
 -- Domain-based agent lookup removed - return empty result
@@ -144,8 +147,7 @@ provider_options_data AS (
     ORDER BY n.name
 ),
 models_aggregated AS (
-    SELECT 
-        up.actor_name,
+    SELECT
         COALESCE(
             ARRAY_AGG(
                 (mwu.model_id, mwu.name, mwu.description, mwu.active, mwu.image_model, mwu.updated_at,
@@ -165,7 +167,7 @@ models_aggregated AS (
         ) as models
     FROM models_with_usage mwu
     CROSS JOIN user_profile up
-    GROUP BY up.actor_name
+    GROUP BY up.role
 ),
 provider_options_aggregated AS (
     SELECT 
@@ -178,8 +180,7 @@ provider_options_aggregated AS (
         ) as provider_options
     FROM provider_options_data
 )
-SELECT 
-    ma.actor_name::text as actor_name,
+SELECT
     ma.models,
     poa.provider_options,
     ARRAY[

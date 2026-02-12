@@ -14,9 +14,10 @@ from typing import Annotated, Any, cast
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.auth.context import get_profile_context_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db
+from app.main import get_db, get_pool
 from app.sql.types import (
     GetAgentsListApiRequest,
     GetAgentsListApiResponse,
@@ -75,6 +76,20 @@ async def get_agent_list(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        # Fetch user context for audit logging
+        pool = get_pool()
+        if pool:
+            async with pool.acquire() as context_conn:
+                resolved_context = await get_profile_context_internal(
+                    conn=context_conn,
+                    profile_id=profile_id,
+                    department_id_cookie=None,
+                    bypass_cache=False,
+                )
+                actor_name = resolved_context.actor_name
+        else:
+            actor_name = None
+
         # Convert API request to SQL params (add profile_id from header)
         params = GetAgentsListSqlParams(**request.model_dump(), profile_id=profile_id)
         sql_params = params.to_tuple()
@@ -90,8 +105,8 @@ async def get_agent_list(
         )
 
         # Set audit context
-        if result.actor_name:
-            audit_set(http_request, actor={"name": result.actor_name, "id": profile_id})
+        if actor_name:
+            audit_set(http_request, actor={"name": actor_name, "id": profile_id})
 
         # Convert SQL result to API response (no manual filtering needed - SQL handles it)
         api_response = GetAgentsListApiResponse.model_validate(result.model_dump())

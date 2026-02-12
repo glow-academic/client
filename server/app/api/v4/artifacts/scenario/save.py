@@ -13,9 +13,10 @@ from app.api.v4.artifacts.scenario.types import (
     SaveScenarioSqlParams,
     SaveScenarioSqlRow,
 )
+from app.api.v4.auth.context import get_profile_context_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db
+from app.main import get_db, get_pool
 from app.sql.types import load_sql_query
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
@@ -58,6 +59,20 @@ async def save_scenario(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        # Fetch user context for audit logging
+        pool = get_pool()
+        if pool:
+            async with pool.acquire() as context_conn:
+                resolved_context = await get_profile_context_internal(
+                    conn=context_conn,
+                    profile_id=profile_id,
+                    department_id_cookie=None,
+                    bypass_cache=False,
+                )
+                actor_name = resolved_context.actor_name
+        else:
+            actor_name = None
+
         async with conn.transaction():
             # Convert API request to SQL params (add profile_id from header)
             # Map input_scenario_id from API request (already correct field name)
@@ -81,8 +96,8 @@ async def save_scenario(
                     raise ValueError("Failed to create scenario")
 
             # Set audit context with data from SQL query
-            if result.actor_name:
-                audit_ctx = {"actor": {"name": result.actor_name, "id": profile_id}}
+            if actor_name:
+                audit_ctx = {"actor": {"name": actor_name, "id": profile_id}}
                 # Only add scenario to audit context if input_scenario_id was provided (update mode)
                 # For create mode, we'll use the request name if available
                 if request.input_scenario_id:
@@ -103,7 +118,7 @@ async def save_scenario(
         api_response = SaveScenarioApiResponse.model_validate(
             {
                 "scenario_id": str(result.scenario_id),
-                "actor_name": result.actor_name,
+                "actor_name": actor_name,
             }
         )
 

@@ -85,7 +85,6 @@ CREATE TYPE types.q_get_rubrics_list_v4_simulation AS (
 -- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_get_rubrics_list_v4(profile_id uuid)
 RETURNS TABLE (
-    actor_name text,
     rubrics types.q_get_rubrics_list_v4_rubric[],
     standard_groups types.q_get_rubrics_list_v4_standard_group[],
     standards types.q_get_rubrics_list_v4_standard[],
@@ -168,10 +167,14 @@ rubric_departments_data AS (
     WHERE rd.active = true
     GROUP BY rd.rubric_id
 ),
+-- User context: actor_name comes from get_profile_context_internal() in Python
 user_profile AS (
-    SELECT role, COALESCE(NULLIF(actor_name, ''), 'System') as actor_name
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
+    SELECT COALESCE(r.role, 'member'::profile_type) as role,
+           ''::text as actor_name
+    FROM profile_roles_junction prj
+    JOIN roles_resource r ON prj.role_id = r.id
+    WHERE prj.profile_id = (SELECT profile_id FROM params)
+    LIMIT 1
 ),
 rubric_data AS (
     SELECT 
@@ -380,7 +383,6 @@ simulation_options_aggregated AS (
     FROM simulation_options_with_disambiguation sod
 )
 SELECT 
-    up.actor_name::text as actor_name,
     COALESCE(
         ARRAY_AGG(
             (rd.rubric_id,

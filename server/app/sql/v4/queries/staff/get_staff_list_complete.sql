@@ -83,8 +83,6 @@ CREATE OR REPLACE FUNCTION api_list_staff_v4(
     page_offset int DEFAULT 0
 )
 RETURNS TABLE (
-    actor_name text,
-    user_role text,
     staff types.q_list_staff_v4_staff[],
     cohort_option_ids types.q_list_staff_v4_option_id[],
     department_option_ids types.q_list_staff_v4_option_id[],
@@ -108,10 +106,14 @@ user_departments AS (
     FROM params x
     JOIN profile_departments_junction ON profile_departments_junction.profile_id = x.profile_id AND profile_departments_junction.active = true
 ),
+-- User context: actor_name comes from get_profile_context_internal() in Python
 user_profile AS (
-    SELECT role, COALESCE(NULLIF(actor_name, ''), 'System') as actor_name
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
+    SELECT COALESCE(r.role, 'member'::profile_type) as role,
+           ''::text as actor_name
+    FROM profile_roles_junction prj
+    JOIN roles_resource r ON prj.role_id = r.id
+    WHERE prj.profile_id = (SELECT profile_id FROM params)
+    LIMIT 1
 ),
 -- Profile's cohort links: bridge through cohort_cohorts_junction to get resource IDs
 profile_cohorts_data AS (
@@ -379,8 +381,6 @@ earliest_date AS (
     WHERE pd.department_id IN (SELECT department_id FROM user_departments)
 )
 SELECT
-    up.actor_name::text as actor_name,
-    up.role::text as user_role,
     -- Aggregate paginated staff (no can_edit/can_delete — computed in Python)
     COALESCE(
         (SELECT ARRAY_AGG(
@@ -463,3 +463,4 @@ SELECT
     (SELECT total_count FROM filtered_count) as total_count
 FROM user_profile up
 $$;
+

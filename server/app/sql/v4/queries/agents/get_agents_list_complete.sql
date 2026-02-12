@@ -56,7 +56,6 @@ CREATE TYPE types.q_list_agents_v4_agent AS (
 -- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_list_agents_v4(profile_id uuid)
 RETURNS TABLE (
-    actor_name text,
     agents types.q_list_agents_v4_agent[]
 )
 LANGUAGE sql
@@ -70,10 +69,14 @@ user_departments AS (
     FROM params x
     JOIN profile_departments_junction ON profile_departments_junction.profile_id = x.profile_id AND profile_departments_junction.active = true
 ),
+-- User context: actor_name comes from get_profile_context_internal() in Python
 user_profile AS (
-    SELECT role, COALESCE(NULLIF(actor_name, ''), 'System') as actor_name
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
+    SELECT COALESCE(r.role, 'member'::profile_type) as role,
+           ''::text as actor_name
+    FROM profile_roles_junction prj
+    JOIN roles_resource r ON prj.role_id = r.id
+    WHERE prj.profile_id = (SELECT profile_id FROM params)
+    LIMIT 1
 ),
 agent_department_links AS (
     SELECT 
@@ -118,7 +121,6 @@ filtered_agents AS (
         OR NOT EXISTS (SELECT 1 FROM agent_departments_junction ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
 )
 SELECT 
-    up.actor_name::text as actor_name,
     COALESCE(
         ARRAY_AGG(
             (fa.id, fa.name, fa.description, 

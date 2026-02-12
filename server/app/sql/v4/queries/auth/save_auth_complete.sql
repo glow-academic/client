@@ -73,15 +73,13 @@ CREATE OR REPLACE FUNCTION api_save_auth_v4(
     items types.auth_item_action DEFAULT NULL
 )
 RETURNS TABLE (
-    auth_id uuid,
-    actor_name text
+    auth_id uuid
 )
 LANGUAGE plpgsql
 VOLATILE
 AS $$
 DECLARE
     v_auth_id uuid;
-    v_actor_name text;
     is_create boolean := (input_auth_id IS NULL);
 
     v_name_id uuid := (names).resource_id;
@@ -367,13 +365,8 @@ BEGIN
         END IF;
     END IF;
 
-    SELECT COALESCE(NULLIF(actor_name, ''), 'System')
-    INTO v_actor_name
-    FROM view_user_profile_context
-    WHERE view_user_profile_context.profile_id = api_save_auth_v4.profile_id
-    LIMIT 1;
-
     RETURN QUERY
-    SELECT v_auth_id, v_actor_name;
+    SELECT v_auth_id;
 END;
 $$;
+

@@ -48,8 +48,6 @@ CREATE OR REPLACE FUNCTION api_get_training_context_view_v4(
     practice_filter boolean DEFAULT FALSE
 )
 RETURNS TABLE (
-    actor_name text,
-    user_role text,
     items types.q_get_training_context_view_v4_item[],
     standard_group_ids uuid[],
     standard_ids uuid[]
@@ -57,15 +55,11 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
+-- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 WITH params AS (
     SELECT
         profile_id_filter AS profile_id,
         practice_filter AS practice
-),
-user_profile AS (
-    SELECT actor_name, role
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
 ),
 user_cohorts AS (
     SELECT ARRAY_AGG(DISTINCT ccj.cohorts_id) AS cohort_ids
@@ -133,8 +127,6 @@ simulation_scope AS (
     GROUP BY asim.simulation_id
 )
 SELECT
-    (SELECT actor_name FROM user_profile) AS actor_name,
-    (SELECT role::text FROM user_profile) AS user_role,
     COALESCE(
         (
             SELECT ARRAY_AGG(
@@ -175,3 +167,4 @@ SELECT
         ARRAY[]::uuid[]
     ) AS standard_ids;
 $$;
+

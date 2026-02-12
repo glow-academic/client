@@ -35,7 +35,6 @@ CREATE OR REPLACE FUNCTION api_create_or_update_profile_v4(
 RETURNS TABLE (
     profile_id uuid,
     created boolean,
-    actor_name text,
     session_id uuid
 )
 LANGUAGE sql
@@ -53,10 +52,14 @@ WITH params AS (
         COALESCE(cohort_ids, ARRAY[]::uuid[]) AS cohort_ids,
         current_profile_id AS current_profile_id
 ),
+-- User context: actor_name comes from get_profile_context_internal() in Python
 user_profile AS (
-    SELECT COALESCE(NULLIF(actor_name, ''), 'System') as actor_name
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT current_profile_id FROM params)
+    SELECT COALESCE(r.role, 'member'::profile_type) as role,
+           ''::text as actor_name
+    FROM profile_roles_junction prj
+    JOIN roles_resource r ON prj.role_id = r.id
+    WHERE prj.profile_id = (SELECT profile_id FROM params)
+    LIMIT 1
 ),
 current_user_role AS (
     -- Get current user's role for validation (if provided)
@@ -282,9 +285,9 @@ new_session AS (
 SELECT
     pu.id as profile_id,
     pu.created,
-    COALESCE(up.actor_name, 'System')::text as actor_name,
     (SELECT session_id FROM new_session) as session_id
 FROM profile_upsert pu
 CROSS JOIN user_profile up
 LIMIT 1
 $$;
+

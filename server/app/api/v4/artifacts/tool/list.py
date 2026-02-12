@@ -19,9 +19,10 @@ from app.api.v4.artifacts.tool.types import (
     ListToolApiResponse,
     ListToolApiTool,
 )
+from app.api.v4.auth.context import get_profile_context_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db
+from app.main import get_db, get_pool
 from app.sql.types import (
     GetToolsListSqlParams,
     GetToolsListSqlRow,
@@ -80,6 +81,22 @@ async def get_tool_list(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        # Fetch user context for audit logging and permissions
+        pool = get_pool()
+        if pool:
+            async with pool.acquire() as context_conn:
+                resolved_context = await get_profile_context_internal(
+                    conn=context_conn,
+                    profile_id=profile_id,
+                    department_id_cookie=None,
+                    bypass_cache=bypass_cache,
+                )
+                actor_name = resolved_context.actor_name
+                user_role = resolved_context.user_role
+        else:
+            actor_name = None
+            user_role = None
+
         # Convert API request to SQL params (add profile_id from header)
         params = GetToolsListSqlParams(profile_id=profile_id)
         sql_params = params.to_tuple()
@@ -95,14 +112,13 @@ async def get_tool_list(
         )
 
         # Set audit context
-        if result.actor_name:
+        if actor_name:
             audit_set(
                 http_request,
-                actor={"name": result.actor_name, "id": profile_id},
+                actor={"name": actor_name, "id": profile_id},
             )
 
-        # Get user_role from SQL result for Python permission computation
-        user_role = result.user_role
+        # user_role already fetched from context above
 
         # Compute permissions for each tool in Python
         tools_with_permissions: list[ListToolApiTool] = []
@@ -134,7 +150,7 @@ async def get_tool_list(
 
         # Build API response with computed permissions
         api_response = ListToolApiResponse(
-            actor_name=result.actor_name,
+            actor_name=actor_name,
             tools=tools_with_permissions,
             total_count=len(tools_with_permissions),
         )

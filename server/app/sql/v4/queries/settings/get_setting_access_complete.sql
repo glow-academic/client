@@ -20,9 +20,6 @@ CREATE OR REPLACE FUNCTION api_get_setting_access_v4(
     draft_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
-    actor_name text,
-    user_role text,
-    user_department_ids uuid[],
     setting_department_ids uuid[],
     setting_exists boolean,
     draft_version int,
@@ -34,17 +31,14 @@ AS $$
 WITH params AS (
     SELECT profile_id, setting_id, draft_id
 ),
+-- User context: actor_name comes from get_profile_context_internal() in Python
 user_profile AS (
-    SELECT vupc.actor_name, vupc.role
-    FROM view_user_profile_context vupc
-    JOIN params p ON p.profile_id = vupc.profile_id
+    SELECT COALESCE(r.role, 'member'::profile_type) as role,
+           ''::text as actor_name
+    FROM profile_roles_junction prj
+    JOIN roles_resource r ON prj.role_id = r.id
+    WHERE prj.profile_id = (SELECT profile_id FROM params)
     LIMIT 1
-),
-user_departments AS (
-    SELECT COALESCE(ARRAY_AGG(pd.department_id), ARRAY[]::uuid[]) AS department_ids
-    FROM profile_departments_junction pd
-    JOIN params p ON p.profile_id = pd.profile_id
-    WHERE pd.active = true
 ),
 setting_departments AS (
     SELECT
@@ -90,17 +84,14 @@ group_data AS (
     ) AS group_id
 )
 SELECT
-    up.actor_name,
-    up.role AS user_role,
-    ud.department_ids AS user_department_ids,
     sd.department_ids AS setting_department_ids,
     sec.setting_exists,
     dd.draft_version,
     gd.group_id
 FROM user_profile up
-CROSS JOIN user_departments ud
 CROSS JOIN setting_departments sd
 CROSS JOIN setting_exists_check sec
 LEFT JOIN draft_data dd ON true
 CROSS JOIN group_data gd;
 $$;
+

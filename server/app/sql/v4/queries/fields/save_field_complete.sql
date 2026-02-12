@@ -48,16 +48,15 @@ CREATE OR REPLACE FUNCTION api_save_field_v4(
     conditional_parameters types.field_multi_resource_action DEFAULT NULL
 )
 RETURNS TABLE (
-    field_id uuid,
-    actor_name text
+    field_id uuid
 )
 LANGUAGE plpgsql
 VOLATILE
 AS $$
+-- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 #variable_conflict use_column
 DECLARE
     v_field_id uuid;
-    v_actor_name text;
     v_profile_id uuid;
     v_group_id uuid;
     v_input_field_id uuid;
@@ -251,19 +250,8 @@ BEGIN
             v_name_id AS name_id,
             v_description_id AS description_id,
             v_active_flag_id AS active_flag_id,
-            v_department_ids AS department_ids,
             v_conditional_parameter_ids AS conditional_parameter_ids,
-            v_profile_id AS profile_id
-    ),
-    user_profile AS (
-        SELECT role, actor_name
-        FROM view_user_profile_context
-        WHERE profile_id = (SELECT profile_id FROM params)
-    ),
-    actor_profile AS (
-        SELECT x.profile_id, up.actor_name
-        FROM params x
-        CROSS JOIN user_profile up
+            v_department_ids AS department_ids
     ),
     link_field_name AS (
         INSERT INTO field_names_junction (field_id, name_id, created_at)
@@ -342,8 +330,8 @@ BEGIN
         FROM params p
         CROSS JOIN create_new_resource cnr
     )
-    SELECT x.field_id AS field_id, ap.actor_name AS actor_name
-    FROM params x
-    CROSS JOIN actor_profile ap;
+    SELECT x.field_id AS field_id
+    FROM params x;
 END;
 $$;
+

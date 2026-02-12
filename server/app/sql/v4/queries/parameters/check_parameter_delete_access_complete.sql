@@ -21,22 +21,17 @@ CREATE OR REPLACE FUNCTION api_check_parameter_delete_access_v4(
     parameter_id uuid
 )
 RETURNS TABLE (
-    user_role text,
     parameter_department_ids text[],
     total_scenario_links bigint
 )
 LANGUAGE sql
 STABLE
 AS $$
+-- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 WITH params AS (
     SELECT
         profile_id AS profile_id,
         parameter_id AS parameter_id
-),
-user_profile AS (
-    SELECT role
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
 ),
 parameter_dept AS (
     SELECT COALESCE(
@@ -55,9 +50,8 @@ parameter_scenario_links AS (
     WHERE x.parameter_id IS NOT NULL
 )
 SELECT
-    up.role::text as user_role,
     (SELECT department_ids FROM parameter_dept) as parameter_department_ids,
     COALESCE((SELECT total_scenario_links FROM parameter_scenario_links), 0) as total_scenario_links
 FROM params x
-CROSS JOIN user_profile up;
 $$;
+

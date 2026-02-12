@@ -57,7 +57,6 @@ CREATE TYPE types.q_get_auth_list_v4_auth AS (
 -- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_get_auth_list_v4(profile_id uuid)
 RETURNS TABLE (
-    actor_name text,
     auths types.q_get_auth_list_v4_auth[]
 )
 LANGUAGE sql
@@ -66,10 +65,14 @@ AS $$
 WITH params AS (
     SELECT profile_id AS profile_id
 ),
+-- User context: actor_name comes from get_profile_context_internal() in Python
 user_profile AS (
-    SELECT role, actor_name
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
+    SELECT COALESCE(r.role, 'member'::profile_type) as role,
+           ''::text as actor_name
+    FROM profile_roles_junction prj
+    JOIN roles_resource r ON prj.role_id = r.id
+    WHERE prj.profile_id = (SELECT profile_id FROM params)
+    LIMIT 1
 ),
 auth_item_counts AS (
     SELECT
@@ -98,7 +101,6 @@ auth_sample_items AS (
     GROUP BY ai.auths_id
 )
 SELECT
-    up.actor_name::text as actor_name,
     COALESCE(
         ARRAY_AGG(
             (a.id, (SELECT n.name FROM auth_auths_junction aaj_n JOIN auth_names_junction an ON an.auth_id = aaj_n.auth_id JOIN names_resource n ON an.name_id = n.id WHERE aaj_n.auths_id = a.id LIMIT 1), (SELECT d.description FROM auth_auths_junction aaj_d JOIN auth_descriptions_junction ad ON ad.auth_id = aaj_d.auth_id JOIN descriptions_resource d ON ad.description_id = d.id WHERE aaj_d.auths_id = a.id LIMIT 1), EXISTS (SELECT 1 FROM auth_auths_junction aaj_f JOIN auth_flags_junction af ON af.auth_id = aaj_f.auth_id JOIN flags_resource f ON af.flag_id = f.id WHERE aaj_f.auths_id = a.id AND f.name = 'auth_active' AND af.value = TRUE), a.created_at,

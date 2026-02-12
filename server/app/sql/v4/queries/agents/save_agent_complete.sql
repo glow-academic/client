@@ -35,15 +35,13 @@ CREATE OR REPLACE FUNCTION api_save_agent_v4(
     tool_ids uuid[] DEFAULT ARRAY[]::uuid[]
 )
 RETURNS TABLE (
-    agent_id uuid,
-    actor_name text
+    agent_id uuid
 )
 LANGUAGE plpgsql
 VOLATILE
 AS $$
 DECLARE
     v_agent_id uuid;
-    v_actor_name text;
     is_create boolean;
 BEGIN
     -- Determine if create or update
@@ -144,14 +142,6 @@ BEGIN
     description_resource AS (
         INSERT INTO descriptions_resource (description, created_at)
         SELECT description, NOW()
-        FROM params
-        WHERE description IS NOT NULL AND description != ''
-        ON CONFLICT (description) DO UPDATE SET created_at = EXCLUDED.created_at
-        RETURNING id as description_id
-    ),
-    user_profile AS (
-        SELECT role, actor_name
-        FROM view_user_profile_context
         WHERE profile_id = (SELECT profile_id FROM params)
     ),
     -- Conditional: Validate permissions based on operation
@@ -159,11 +149,6 @@ BEGIN
         SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
         FROM agent_departments_junction
         WHERE agent_departments_junction.agent_id = (SELECT p.agent_id FROM params p LIMIT 1) AND active = true
-    ),
-    user_departments AS (
-        SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
-        FROM profile_departments_junction
-        WHERE profile_departments_junction.profile_id = (SELECT p.profile_id FROM params p LIMIT 1) AND active = true
     ),
     validate_permissions AS (
         SELECT 
@@ -184,13 +169,6 @@ BEGIN
                     CROSS JOIN object_current_departments ocd
                     CROSS JOIN user_departments ud)
             END as validation_passed
-    ),
-    actor_profile AS (
-        SELECT 
-            x.profile_id,
-            up.actor_name
-        FROM params x
-        CROSS JOIN user_profile up
     ),
     -- Link agent to name
     link_agent_name AS (
@@ -386,8 +364,8 @@ BEGIN
         x.agent_id AS agent_id,
         ap.actor_name AS actor_name
     FROM params x
-    CROSS JOIN actor_profile ap
     CROSS JOIN validate_permissions vp
     WHERE vp.validation_passed = true;
 END;
 $$;
+

@@ -25,20 +25,15 @@ CREATE OR REPLACE FUNCTION api_delete_provider_v4(
 RETURNS TABLE (
     usage_count bigint,
     name text,
-    deleted boolean,
-    actor_name text
+    deleted boolean
 )
 LANGUAGE sql
 VOLATILE
 AS $$
+-- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 WITH params AS (
     SELECT provider_id AS provider_id,
            profile_id AS profile_id
-),
-user_profile AS (
-    SELECT actor_name
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
 ),
 usage_check AS (
     -- Count distinct models using this provider via models_resource.provider_id
@@ -68,6 +63,6 @@ delete_result AS (
 SELECT
     (SELECT usage_count FROM usage_check) as usage_count,
     (SELECT name FROM provider_info) as name,
-    CASE WHEN EXISTS(SELECT 1 FROM delete_result) THEN true ELSE false END as deleted,
-    (SELECT actor_name FROM user_profile) as actor_name
+    CASE WHEN EXISTS(SELECT 1 FROM delete_result) THEN true ELSE false END as deleted
 $$;
+

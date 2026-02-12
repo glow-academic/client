@@ -22,30 +22,18 @@ CREATE OR REPLACE FUNCTION api_check_eval_delete_access_v4(
     eval_id uuid
 )
 RETURNS TABLE (
-    user_role text,
-    user_department_ids text[],
     eval_department_ids text[],
     total_usage_links bigint,
-    eval_name text,
-    actor_name text
+    eval_name text
 )
 LANGUAGE sql
 STABLE
 AS $$
+-- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 WITH params AS (
     SELECT
         profile_id AS profile_id,
         eval_id AS eval_id
-),
-user_profile AS (
-    SELECT role, actor_name
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
-),
-user_departments AS (
-    SELECT COALESCE(ARRAY_AGG(pd.department_id::text ORDER BY pd.created_at), ARRAY[]::text[]) as department_ids
-    FROM params x
-    LEFT JOIN profile_departments_junction pd ON pd.profile_id = x.profile_id AND pd.active = true
 ),
 eval_departments AS (
     SELECT COALESCE(
@@ -59,13 +47,9 @@ eval_name_data AS (
     SELECT (SELECT n.name FROM eval_names_junction en JOIN names_resource n ON en.name_id = n.id WHERE en.eval_id = (SELECT eval_id FROM params) LIMIT 1) as eval_name
 )
 SELECT
-    up.role::text as user_role,
-    ud.department_ids as user_department_ids,
     (SELECT department_ids FROM eval_departments) as eval_department_ids,
     0::bigint as total_usage_links,
-    (SELECT eval_name FROM eval_name_data) as eval_name,
-    up.actor_name::text as actor_name
+    (SELECT eval_name FROM eval_name_data) as eval_name
 FROM params x
-CROSS JOIN user_profile up
-CROSS JOIN user_departments ud;
 $$;
+

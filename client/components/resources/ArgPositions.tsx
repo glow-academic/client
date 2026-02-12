@@ -2,15 +2,22 @@
 
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import type { InputOf, OutputOf } from "@/lib/api/types";
 import { ArrowDown, ArrowUp } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-type CreateDraftArgPositionsIn = InputOf<"/api/v4/resources/arg_positions", "post">;
-type CreateDraftArgPositionsOut = OutputOf<
-  "/api/v4/resources/arg_positions",
-  "post"
->;
+type CreateDraftArgPositionsIn = {
+  body: {
+    agent_id: string;
+    group_id: string;
+    tool_id: string;
+    args_id: string;
+    value: number;
+    mcp: boolean;
+  };
+};
+type CreateDraftArgPositionsOut = {
+  id?: string | null;
+};
 
 export interface ArgPositionItem {
   args_id: string;
@@ -111,7 +118,9 @@ export function ArgPositions({
     onPositionIdsChange(ids);
   }, [onPositionIdsChange, orderedArgs, positionIdsByArg]);
 
-  const saveAllPositionsRef = useRef<() => Promise<{ arg_position_ids: string[] } | void>();
+  const saveAllPositionsRef = useRef<
+    (() => Promise<{ arg_position_ids: string[] } | void>) | undefined
+  >(undefined);
 
   saveAllPositionsRef.current = async () => {
     if (!createArgPositionsAction || !group_id || !tool_id || !create_tool_id) {

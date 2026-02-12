@@ -23,21 +23,16 @@ CREATE OR REPLACE FUNCTION api_delete_eval_v4(
 RETURNS TABLE (
     eval_id uuid,
     eval_name text,
-    actor_name text,
     deleted boolean,
     usage_count bigint
 )
 LANGUAGE sql
 VOLATILE
 AS $$
+-- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 WITH params AS (
     SELECT eval_id AS eval_id,
            profile_id AS profile_id
-),
-user_profile AS (
-    SELECT actor_name
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
 ),
 eval_info AS (
     SELECT
@@ -54,7 +49,7 @@ delete_result AS (
 SELECT
     COALESCE((SELECT id FROM delete_result), (SELECT eval_id FROM params)) as eval_id,
     (SELECT name FROM eval_info) as eval_name,
-    (SELECT actor_name FROM user_profile) as actor_name,
     CASE WHEN EXISTS(SELECT 1 FROM delete_result) THEN true ELSE false END as deleted,
     0::bigint as usage_count
 $$;
+

@@ -22,31 +22,17 @@ CREATE OR REPLACE FUNCTION api_check_provider_save_access_v4(
     provider_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
-    user_role text,
-    user_department_ids uuid[],
     provider_department_ids uuid[],
     model_usage_count int
 )
 LANGUAGE sql
 STABLE
 AS $$
+-- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 WITH params AS (
     SELECT
         profile_id AS profile_id,
         provider_id AS provider_id
-),
-user_profile AS (
-    SELECT role
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
-),
-user_departments AS (
-    SELECT COALESCE(
-        ARRAY_AGG(DISTINCT pd.department_id) FILTER (WHERE pd.department_id IS NOT NULL),
-        ARRAY[]::uuid[]
-    ) as department_ids
-    FROM params x
-    LEFT JOIN profile_departments_junction pd ON pd.profile_id = x.profile_id AND pd.active = true
 ),
 provider_departments AS (
     SELECT COALESCE(
@@ -69,11 +55,8 @@ model_usage AS (
     ) as model_usage_count
 )
 SELECT
-    up.role::text as user_role,
-    ud.department_ids as user_department_ids,
     COALESCE((SELECT department_ids FROM provider_departments), ARRAY[]::uuid[]) as provider_department_ids,
     (SELECT model_usage_count FROM model_usage) as model_usage_count
 FROM params x
-CROSS JOIN user_profile up
-CROSS JOIN user_departments ud;
 $$;
+

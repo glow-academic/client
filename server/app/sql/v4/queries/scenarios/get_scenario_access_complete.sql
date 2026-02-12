@@ -24,15 +24,10 @@ CREATE OR REPLACE FUNCTION api_get_scenario_access_v4(
     draft_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
-    -- Basic metadata
-    actor_name text,
     scenario_exists boolean,
     draft_version int,
     group_id uuid,
 
-    -- User context for Python permission logic
-    user_role text,
-    user_department_ids uuid[],
 
     -- Scenario state for Python permission logic
     scenario_department_ids uuid[],
@@ -41,6 +36,7 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
+-- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 WITH params AS (
     SELECT
         scenario_id AS scenario_id,
@@ -54,21 +50,6 @@ scenario_exists_check AS (
             WHEN (SELECT scenario_id FROM params) IS NULL THEN NULL::boolean
             ELSE EXISTS(SELECT 1 FROM scenario_artifact WHERE id = (SELECT scenario_id FROM params))::boolean
         END as scenario_exists
-),
--- Get user profile info
-user_profile AS (
-    SELECT role, actor_name
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
-),
--- Get user's departments
-user_departments AS (
-    SELECT COALESCE(
-        ARRAY_AGG(DISTINCT pd.department_id) FILTER (WHERE pd.department_id IS NOT NULL),
-        ARRAY[]::uuid[]
-    ) as department_ids
-    FROM params x
-    LEFT JOIN profile_departments_junction pd ON pd.profile_id = x.profile_id AND pd.active = true
 ),
 -- Get group_id from draft
 draft_group_data AS (
@@ -112,20 +93,16 @@ scenario_edit_state AS (
 )
 SELECT
     -- Basic metadata
-    up.actor_name::text as actor_name,
     (SELECT scenario_exists FROM scenario_exists_check) as scenario_exists,
     (SELECT draft_version FROM draft_version_data) as draft_version,
     dgd.group_id,
 
     -- User context for Python permission logic
-    up.role::text as user_role,
-    ud.department_ids as user_department_ids,
 
     -- Scenario state for Python permission logic
     COALESCE((SELECT department_ids FROM scenario_departments_data), ARRAY[]::uuid[]) as scenario_department_ids,
     COALESCE((SELECT active_simulation_count FROM scenario_edit_state), 0)::int as active_simulation_count
 FROM params x
-CROSS JOIN user_profile up
-CROSS JOIN user_departments ud
 CROSS JOIN draft_group_data dgd;
 $$;
+

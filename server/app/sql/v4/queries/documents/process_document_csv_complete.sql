@@ -95,12 +95,12 @@ CREATE OR REPLACE FUNCTION api_process_document_csv_v4(
 RETURNS TABLE (
     success boolean,
     headers text[],
-    rows types.q_process_document_csv_v4_processed_row[],
-    actor_name text
+    rows types.q_process_document_csv_v4_processed_row[]
 )
 LANGUAGE sql
 STABLE
 AS $$
+-- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 -- Function accepts csv_content and column_mappings from frontend
 -- CSV parsing happens in Python, then Python constructs full response
 -- This function provides actor_name - Python will merge parsed data with actor_name
@@ -109,17 +109,11 @@ WITH params AS (
         csv_content AS csv_content,
         COALESCE(column_mappings, ARRAY[]::types.i_process_document_csv_v4_column_mapping[]) AS column_mappings,
         profile_id AS profile_id
-),
-user_profile AS (
-    SELECT COALESCE(NULLIF(actor_name, ''), 'System') as actor_name
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
 )
 SELECT 
     true::boolean as success,
     ARRAY[]::text[] as headers,  -- Populated by Python after parsing
-    ARRAY[]::types.q_process_document_csv_v4_processed_row[] as rows,  -- Populated by Python after parsing
-    up.actor_name::text as actor_name
+    ARRAY[]::types.q_process_document_csv_v4_processed_row[] as rows  -- Populated by Python after parsing
 FROM params p
-CROSS JOIN user_profile up
 $$;
+

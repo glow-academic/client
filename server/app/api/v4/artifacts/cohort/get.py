@@ -58,6 +58,7 @@ from app.api.v4.artifacts.cohort.types import (
     GetCohortApiResponse,
     GetCohortWebsocketResponse,
 )
+from app.api.v4.auth.context import get_profile_context_internal
 from app.api.v4.permissions import select_agents_for_artifact
 from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.departments.get import get_departments_internal
@@ -204,6 +205,22 @@ async def get_cohort_internal(
     if not pool:
         raise RuntimeError("Database pool not initialized")
 
+    # Resolve shared profile context first (default path)
+    async with pool.acquire() as context_conn:
+        resolved_context = await get_profile_context_internal(
+            conn=context_conn,
+            profile_id=profile_id,
+            department_id_cookie=None,
+            bypass_cache=bypass_cache,
+        )
+
+    # Extract user context from internal fetch (single source of truth)
+    user_role = resolved_context.user_role
+    actor_name = resolved_context.actor_name
+    user_department_ids = [
+        d.department_id for d in resolved_context.departments if d.department_id
+    ]
+
     async with pool.acquire() as conn:
         query1_params = GetCohortAccessSqlParams(
             profile_id=profile_id,
@@ -215,10 +232,6 @@ async def get_cohort_internal(
             GetCohortAccessSqlRow,
             await execute_sql_typed(conn, QUERY1_SQL_PATH, params=query1_params),
         )
-
-        # Extract user context from Query 1
-        user_role = access_result.user_role
-        user_department_ids = access_result.user_department_ids or []
         cohort_department_ids = access_result.cohort_department_ids or []
 
         # Early validation: check cohort exists
@@ -638,7 +651,7 @@ async def get_cohort_internal(
 
     return CohortInternalData(
         # Access/context
-        actor_name=access_result.actor_name,
+        actor_name=actor_name,
         cohort_exists=access_result.cohort_exists,
         can_edit=can_edit,
         disabled_reason=disabled_reason,

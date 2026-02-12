@@ -20,9 +20,10 @@ from app.api.v4.artifacts.model.types import (
     SaveModelSqlParams,
     SaveModelSqlRow,
 )
+from app.api.v4.auth.context import get_profile_context_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db
+from app.main import get_db, get_pool
 from app.sql.types import (
     CheckModelSaveAccessSqlParams,
     CheckModelSaveAccessSqlRow,
@@ -80,6 +81,26 @@ async def save_model(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        # Fetch user context for permissions and audit logging
+        pool = get_pool()
+        if pool:
+            async with pool.acquire() as context_conn:
+                resolved_context = await get_profile_context_internal(
+                    conn=context_conn,
+                    profile_id=profile_id,
+                    department_id_cookie=None,
+                    bypass_cache=False,
+                )
+                actor_name = resolved_context.actor_name
+                user_role = resolved_context.user_role
+                user_department_ids = [
+                    d.department_id for d in resolved_context.departments if d.department_id
+                ]
+        else:
+            actor_name = None
+            user_role = None
+            user_department_ids = []
+
         # Pass 1: Check access using typed access query
         access_params = CheckModelSaveAccessSqlParams(
             profile_id=profile_id,
@@ -95,10 +116,7 @@ async def save_model(
         )
 
         if access_result:
-            user_role = getattr(access_result, "user_role", None)
-            user_department_ids = (
-                getattr(access_result, "user_department_ids", None) or []
-            )
+            # user_role and user_department_ids already fetched from context above
             model_department_ids = (
                 getattr(access_result, "model_department_ids", None) or []
             )
@@ -159,9 +177,9 @@ async def save_model(
                     raise ValueError("Failed to create model")
 
             # Set audit context with data from SQL query
-            if result.actor_name:
+            if actor_name:
                 audit_ctx: dict[str, Any] = {
-                    "actor": {"name": result.actor_name, "id": profile_id}
+                    "actor": {"name": actor_name, "id": profile_id}
                 }
                 if request.input_model_id:
                     model_name = "Model"
@@ -187,7 +205,7 @@ async def save_model(
         api_response = SaveModelApiResponse.model_validate(
             {
                 "model_id": str(result.model_id),
-                "actor_name": result.actor_name,
+                "actor_name": actor_name,
             }
         )
 

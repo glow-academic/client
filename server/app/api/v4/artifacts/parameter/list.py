@@ -26,6 +26,7 @@ from app.api.v4.artifacts.parameter.types import (
     ListParameterApiResponse,
     ListParameterApiScenario,
 )
+from app.api.v4.auth.context import get_profile_context_internal
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.scenarios.get import get_scenarios_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
@@ -94,6 +95,22 @@ async def get_parameter_list(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        # Fetch user context for audit logging and permissions
+        pool = get_pool()
+        if pool:
+            async with pool.acquire() as context_conn:
+                resolved_context = await get_profile_context_internal(
+                    conn=context_conn,
+                    profile_id=profile_id,
+                    department_id_cookie=None,
+                    bypass_cache=bypass_cache,
+                )
+                actor_name = resolved_context.actor_name
+                user_role = resolved_context.user_role
+        else:
+            actor_name = None
+            user_role = None
+
         # Convert API request to SQL params (add profile_id from header + request body fields)
         params = GetParametersListSqlParams(
             profile_id=profile_id,
@@ -118,11 +135,10 @@ async def get_parameter_list(
         )
 
         # Set audit context
-        if result.actor_name:
-            audit_set(http_request, actor={"name": result.actor_name, "id": profile_id})
+        if actor_name:
+            audit_set(http_request, actor={"name": actor_name, "id": profile_id})
 
-        # Get user_role from SQL result for Python permission computation
-        user_role = result.user_role
+        # user_role already fetched from context above
 
         # Compute permissions for each parameter in Python
         parameters_with_permissions: list[ListParameterApiParameter] = []
@@ -249,7 +265,7 @@ async def get_parameter_list(
 
         # Build API response with computed permissions
         api_response = ListParameterApiResponse(
-            actor_name=result.actor_name,
+            actor_name=actor_name,
             parameters=parameters_with_permissions,
             scenarios=scenarios,
             departments=departments,

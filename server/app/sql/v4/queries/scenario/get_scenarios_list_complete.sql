@@ -76,8 +76,6 @@ CREATE OR REPLACE FUNCTION api_list_scenarios_v4(
     page_offset int DEFAULT 0
 )
 RETURNS TABLE (
-    actor_name text,
-    user_role text,
     scenarios types.q_list_scenarios_v4_scenario[],
     persona_options types.q_list_scenarios_v4_option[],
     simulation_options types.q_list_scenarios_v4_option[],
@@ -95,10 +93,14 @@ user_departments AS (
     FROM params x
     JOIN profile_departments_junction ON profile_departments_junction.profile_id = x.profile_id AND profile_departments_junction.active = true
 ),
+-- User context: actor_name comes from get_profile_context_internal() in Python
 user_profile AS (
-    SELECT role, COALESCE(NULLIF(actor_name, ''), 'System') as actor_name
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
+    SELECT COALESCE(r.role, 'member'::profile_type) as role,
+           ''::text as actor_name
+    FROM profile_roles_junction prj
+    JOIN roles_resource r ON prj.role_id = r.id
+    WHERE prj.profile_id = (SELECT profile_id FROM params)
+    LIMIT 1
 ),
 -- Objectives per scenario (scenario's own junction)
 scenario_objectives_agg AS (
@@ -278,8 +280,6 @@ all_department_ids_options AS (
     FROM scenario_data WHERE department_ids IS NOT NULL AND parent_scenario_id IS NULL
 )
 SELECT
-    up.actor_name::text as actor_name,
-    up.role::text as user_role,
     -- Scenarios (paginated roots + children)
     COALESCE(
         ARRAY_AGG(
@@ -333,3 +333,4 @@ FROM page_scenarios sd
 CROSS JOIN user_profile up
 GROUP BY up.actor_name, up.role
 $$;
+

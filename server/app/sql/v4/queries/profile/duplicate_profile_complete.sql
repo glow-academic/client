@@ -20,21 +20,16 @@ CREATE OR REPLACE FUNCTION api_duplicate_profile_v4(
 )
 RETURNS TABLE (
     new_profile_id uuid,
-    original_name text,
-    actor_name text
+    original_name text
 )
 LANGUAGE sql
 VOLATILE
 AS $$
+-- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 WITH params AS (
     SELECT
         target_profile_id AS target_profile_id,
         profile_id AS profile_id
-),
-actor_profile AS (
-    SELECT up.actor_name
-    FROM view_user_profile_context up
-    WHERE up.profile_id = (SELECT profile_id FROM params)
 ),
 source_profile AS (
     SELECT
@@ -153,6 +148,6 @@ copy_request_limits AS (
 )
 SELECT
     (SELECT id FROM new_profile LIMIT 1) AS new_profile_id,
-    (SELECT original_name FROM source_profile LIMIT 1) AS original_name,
-    (SELECT actor_name FROM actor_profile LIMIT 1) AS actor_name
+    (SELECT original_name FROM source_profile LIMIT 1) AS original_name
 $$;
+

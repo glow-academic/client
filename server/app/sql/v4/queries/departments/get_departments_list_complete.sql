@@ -64,7 +64,6 @@ CREATE TYPE types.q_list_departments_v4_profile AS (
 -- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_list_departments_v4(profile_id uuid)
 RETURNS TABLE (
-    actor_name text,
     departments types.q_list_departments_v4_department[],
     cohorts types.q_list_departments_v4_cohort[],
     profiles types.q_list_departments_v4_profile[]
@@ -80,10 +79,14 @@ user_departments AS (
     FROM params x
     JOIN profile_departments_junction ON profile_departments_junction.profile_id = x.profile_id AND profile_departments_junction.active = true
 ),
+-- User context: actor_name comes from get_profile_context_internal() in Python
 user_profile AS (
-    SELECT role, COALESCE(NULLIF(actor_name, ''), 'System') as actor_name
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
+    SELECT COALESCE(r.role, 'member'::profile_type) as role,
+           ''::text as actor_name
+    FROM profile_roles_junction prj
+    JOIN roles_resource r ON prj.role_id = r.id
+    WHERE prj.profile_id = (SELECT profile_id FROM params)
+    LIMIT 1
 ),
 model_run_costs AS (
     SELECT

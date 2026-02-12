@@ -148,7 +148,6 @@ CREATE OR REPLACE FUNCTION api_get_agent_v4(
 )
 RETURNS TABLE (
     -- Required fields (first 5)
-    actor_name text,
     agent_exists boolean,
     can_edit boolean,
     disabled_reason text,
@@ -291,10 +290,14 @@ draft_version_data AS (
     WHERE TRUE
     LIMIT 1
 ),
+-- User context: actor_name comes from get_profile_context_internal() in Python
 user_profile AS (
-    SELECT role, actor_name
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
+    SELECT COALESCE(r.role, 'member'::profile_type) as role,
+           ''::text as actor_name
+    FROM profile_roles_junction prj
+    JOIN roles_resource r ON prj.role_id = r.id
+    WHERE prj.profile_id = (SELECT profile_id FROM params)
+    LIMIT 1
 ),
 user_departments AS (
     SELECT DISTINCT pd.department_id
@@ -2471,7 +2474,6 @@ debug_data AS (
 )
 SELECT 
     -- Required fields (first 5)
-    up.actor_name::text as actor_name,
     aec.agent_exists::boolean as agent_exists,
     perm_final.can_edit::boolean as can_edit,
     perm_final.disabled_reason::text as disabled_reason,
@@ -2699,3 +2701,4 @@ LEFT JOIN models_agg ma ON true
 LEFT JOIN prompt_mapping_data_safe pmds ON true
 LEFT JOIN department_mapping_data dmd ON true
 $$;
+

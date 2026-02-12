@@ -21,12 +21,12 @@ RETURNS TABLE (
     setting_exists boolean,
     setting_id uuid,
     name text,
-    deleted boolean,
-    actor_name text
+    deleted boolean
 )
 LANGUAGE sql
 VOLATILE
 AS $$
+-- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 WITH params AS (
     SELECT
         setting_id AS setting_id,
@@ -38,11 +38,6 @@ setting_exists_check AS (
         FROM setting_artifact s
         WHERE s.id = (SELECT setting_id FROM params)
     )::boolean AS setting_exists
-),
-actor_profile AS (
-    SELECT up.actor_name
-    FROM view_user_profile_context up
-    WHERE up.profile_id = (SELECT profile_id FROM params)
 ),
 setting_data AS (
     SELECT
@@ -71,11 +66,10 @@ SELECT
     sec.setting_exists,
     sd.setting_id,
     sd.name,
-    (sdel.id IS NOT NULL) AS deleted,
-    ap.actor_name
+    (sdel.id IS NOT NULL) AS deleted
 FROM setting_exists_check sec
-CROSS JOIN actor_profile ap
 LEFT JOIN setting_data sd ON sec.setting_exists = true
 LEFT JOIN setting_delete sdel ON sdel.id = sd.setting_id
 LIMIT 1
 $$;
+

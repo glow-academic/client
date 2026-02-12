@@ -17,6 +17,7 @@ from app.api.v4.artifacts.simulation.types import (
     ListSimulationSqlRow,
     QGetScenariosV4Item,
 )
+from app.api.v4.auth.context import get_profile_context_internal
 from app.api.v4.resources.personas.get import get_personas_internal
 from app.api.v4.resources.scenarios.get import get_scenarios_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
@@ -84,6 +85,20 @@ async def get_simulation_list(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        # Fetch user context for audit logging
+        pool = get_pool()
+        if pool:
+            async with pool.acquire() as context_conn:
+                resolved_context = await get_profile_context_internal(
+                    conn=context_conn,
+                    profile_id=profile_id,
+                    department_id_cookie=None,
+                    bypass_cache=bypass_cache,
+                )
+                actor_name = resolved_context.actor_name
+        else:
+            actor_name = None
+
         # Convert API request to SQL params
         params = GetSimulationsListSqlParams(
             **filters.model_dump(), profile_id=profile_id
@@ -101,8 +116,8 @@ async def get_simulation_list(
         )
 
         # Set audit context
-        if result.actor_name:
-            audit_set(http_request, actor={"name": result.actor_name, "id": profile_id})
+        if actor_name:
+            audit_set(http_request, actor={"name": actor_name, "id": profile_id})
 
         # --- Python hydration: scenarios + personas from cached *_internal() ---
         # 1. Collect unique scenario_ids from paginated simulations
@@ -167,7 +182,7 @@ async def get_simulation_list(
 
         # Build API response
         api_response = ListSimulationApiResponse(
-            actor_name=result.actor_name,
+            actor_name=actor_name,
             simulations=result.simulations,
             scenarios=scenario_mapping,
             scenario_options=result.scenario_options,

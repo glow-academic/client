@@ -54,8 +54,7 @@ CREATE OR REPLACE FUNCTION api_save_document_v4(
     texts types.document_multi_resource_action DEFAULT NULL
 )
 RETURNS TABLE (
-    document_id uuid,
-    actor_name text
+    document_id uuid
 )
 LANGUAGE plpgsql
 VOLATILE
@@ -80,7 +79,6 @@ DECLARE
     -- Call tracking
     v_run_id uuid;
     v_call_id uuid;
-    v_actor_name text;
 BEGIN
     v_profile_id := profile_id;
     v_input_document_id := input_document_id;
@@ -431,11 +429,7 @@ BEGIN
     WHERE j.documents_id = r.id
       AND j.document_id = v_document_id;
 
-    SELECT up.actor_name INTO v_actor_name
-    FROM view_user_profile_context up
-    WHERE up.profile_id = v_profile_id
-    LIMIT 1;
-
-    RETURN QUERY SELECT v_document_id, v_actor_name;
+    RETURN QUERY SELECT v_document_id;
 END;
 $$;
+

@@ -22,28 +22,17 @@ CREATE OR REPLACE FUNCTION api_check_eval_save_access_v4(
     eval_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
-    user_role text,
-    user_department_ids text[],
     eval_department_ids text[],
     active_usage_count bigint
 )
 LANGUAGE sql
 STABLE
 AS $$
+-- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 WITH params AS (
     SELECT
         profile_id AS profile_id,
         eval_id AS eval_id
-),
-user_profile AS (
-    SELECT role
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
-),
-user_departments AS (
-    SELECT COALESCE(ARRAY_AGG(pd.department_id::text ORDER BY pd.created_at), ARRAY[]::text[]) as department_ids
-    FROM params x
-    LEFT JOIN profile_departments_junction pd ON pd.profile_id = x.profile_id AND pd.active = true
 ),
 eval_departments AS (
     SELECT COALESCE(
@@ -55,11 +44,8 @@ eval_departments AS (
     WHERE x.eval_id IS NOT NULL
 )
 SELECT
-    up.role::text as user_role,
-    ud.department_ids as user_department_ids,
     (SELECT department_ids FROM eval_departments) as eval_department_ids,
     0::bigint as active_usage_count
 FROM params x
-CROSS JOIN user_profile up
-CROSS JOIN user_departments ud;
 $$;
+

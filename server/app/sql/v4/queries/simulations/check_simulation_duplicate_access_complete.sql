@@ -21,35 +21,19 @@ CREATE OR REPLACE FUNCTION api_check_simulation_duplicate_access_v4(
     simulation_id uuid
 )
 RETURNS TABLE (
-    actor_name text,
+    -- User context (role, actor_name, department_ids) comes from get_profile_context_internal()
     simulation_exists boolean,
     simulation_name text,
-    user_role text,
-    user_department_ids uuid[],
     simulation_department_ids uuid[]
 )
 LANGUAGE sql
 STABLE
 AS $$
+-- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 WITH params AS (
     SELECT
         profile_id AS p_profile_id,
         simulation_id AS p_simulation_id
-),
--- Get user profile info
-user_profile AS (
-    SELECT
-        vp.actor_name,
-        vp.role::text as user_role
-    FROM view_user_profile_context vp
-    WHERE vp.profile_id = (SELECT p_profile_id FROM params)
-),
--- Get user's department IDs
-user_departments AS (
-    SELECT ARRAY_AGG(pd.department_id) as department_ids
-    FROM profile_departments_junction pd
-    WHERE pd.profile_id = (SELECT p_profile_id FROM params)
-      AND pd.active = true
 ),
 -- Check if simulation exists
 simulation_exists_check AS (
@@ -71,14 +55,9 @@ simulation_departments AS (
       AND sd.active = true
 )
 SELECT
-    up.actor_name::text,
     (SELECT simulation_exists FROM simulation_exists_check),
     snd.simulation_name::text,
-    up.user_role::text,
-    ud.department_ids as user_department_ids,
     sd.department_ids as simulation_department_ids
-FROM user_profile up
-CROSS JOIN user_departments ud
-CROSS JOIN simulation_departments sd
+FROM simulation_departments sd
 CROSS JOIN simulation_name_data snd;
 $$;

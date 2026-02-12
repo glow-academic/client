@@ -24,20 +24,15 @@ CREATE OR REPLACE FUNCTION api_duplicate_provider_v4(
 )
 RETURNS TABLE (
     new_provider_id uuid,
-    original_name text,
-    actor_name text
+    original_name text
 )
 LANGUAGE sql
 VOLATILE
 AS $$
+-- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 WITH params AS (
     SELECT provider_id AS provider_id,
            profile_id AS profile_id
-),
-user_profile AS (
-    SELECT actor_name
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
 ),
 original_provider AS (
     SELECT
@@ -147,6 +142,6 @@ link_providers_resource AS (
 )
 SELECT
     (SELECT id FROM new_provider LIMIT 1) as new_provider_id,
-    (SELECT name FROM original_provider LIMIT 1) as original_name,
-    (SELECT actor_name FROM user_profile LIMIT 1) as actor_name
+    (SELECT name FROM original_provider LIMIT 1) as original_name
 $$;
+

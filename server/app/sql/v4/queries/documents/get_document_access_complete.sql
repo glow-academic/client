@@ -24,15 +24,10 @@ CREATE OR REPLACE FUNCTION api_get_document_access_v4(
     draft_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
-    -- Basic metadata
-    actor_name text,
     document_exists boolean,
     draft_version int,
     group_id uuid,
 
-    -- User context for Python permission logic
-    user_role text,
-    user_department_ids uuid[],
 
     -- Document state for Python permission logic
     document_department_ids uuid[],
@@ -42,6 +37,7 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
+-- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 WITH params AS (
     SELECT
         document_id AS document_id,
@@ -55,21 +51,6 @@ document_exists_check AS (
             WHEN (SELECT document_id FROM params) IS NULL THEN NULL::boolean
             ELSE EXISTS(SELECT 1 FROM document_artifact WHERE id = (SELECT document_id FROM params))::boolean
         END as document_exists
-),
--- Get user profile info
-user_profile AS (
-    SELECT role, actor_name
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
-),
--- Get user's departments
-user_departments AS (
-    SELECT COALESCE(
-        ARRAY_AGG(DISTINCT pd.department_id) FILTER (WHERE pd.department_id IS NOT NULL),
-        ARRAY[]::uuid[]
-    ) as department_ids
-    FROM params x
-    LEFT JOIN profile_departments_junction pd ON pd.profile_id = x.profile_id AND pd.active = true
 ),
 -- Resolve canonical document group context (draft override handled in Python service layer)
 document_group_data AS (
@@ -110,21 +91,17 @@ document_edit_state AS (
 )
 SELECT
     -- Basic metadata
-    up.actor_name::text as actor_name,
     (SELECT document_exists FROM document_exists_check) as document_exists,
     (SELECT draft_version FROM draft_version_data) as draft_version,
     dgd.group_id,
 
     -- User context for Python permission logic
-    up.role::text as user_role,
-    ud.department_ids as user_department_ids,
 
     -- Document state for Python permission logic
     COALESCE((SELECT department_ids FROM document_departments_data), ARRAY[]::uuid[]) as document_department_ids,
     COALESCE((SELECT active_scenario_count FROM document_edit_state), 0) as active_scenario_count,
     COALESCE((SELECT total_scenario_links FROM document_edit_state), 0) as total_scenario_links
 FROM params x
-CROSS JOIN user_profile up
-CROSS JOIN user_departments ud
 CROSS JOIN document_group_data dgd;
 $$;
+

@@ -22,8 +22,6 @@ CREATE OR REPLACE FUNCTION api_check_persona_delete_access_v4(
     persona_id uuid
 )
 RETURNS TABLE (
-    -- User context for Python permission logic
-    user_role text,
     -- Persona state for Python permission logic
     persona_department_ids text[],
     total_scenario_links bigint
@@ -31,16 +29,11 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
+-- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 WITH params AS (
     SELECT
         profile_id AS profile_id,
         persona_id AS persona_id
-),
--- Get user profile info
-user_profile AS (
-    SELECT role
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
 ),
 -- Get persona departments
 persona_departments_data AS (
@@ -60,9 +53,8 @@ scenario_links AS (
     LEFT JOIN scenario_personas_junction sp ON sp.persona_id = x.persona_id
 )
 SELECT
-    up.role::text as user_role,
     (SELECT department_ids FROM persona_departments_data) as persona_department_ids,
     (SELECT total_links FROM scenario_links) as total_scenario_links
 FROM params x
-CROSS JOIN user_profile up;
 $$;
+

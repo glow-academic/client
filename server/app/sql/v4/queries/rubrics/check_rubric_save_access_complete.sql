@@ -22,9 +22,6 @@ CREATE OR REPLACE FUNCTION api_check_rubric_save_access_v4(
     rubric_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
-    -- User context for Python permission logic
-    user_role text,
-    user_department_ids text[],
     -- Rubric state for Python permission logic (NULL for create mode)
     rubric_department_ids text[],
     active_simulation_count bigint
@@ -32,22 +29,11 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
+-- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 WITH params AS (
     SELECT
         profile_id AS profile_id,
         rubric_id AS rubric_id
-),
--- Get user profile info
-user_profile AS (
-    SELECT role
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
-),
--- Get user's departments
-user_departments AS (
-    SELECT COALESCE(ARRAY_AGG(rd.department_id::text ORDER BY rd.created_at), ARRAY[]::text[]) as department_ids
-    FROM params x
-    LEFT JOIN profile_departments_junction rd ON rd.profile_id = x.profile_id AND rd.active = true
 ),
 -- Get rubric departments (for update mode)
 rubric_departments_data AS (
@@ -81,11 +67,8 @@ rubric_active_simulations AS (
     )::bigint as count
 )
 SELECT
-    up.role::text as user_role,
-    ud.department_ids as user_department_ids,
     (SELECT department_ids FROM rubric_departments_data) as rubric_department_ids,
     (SELECT count FROM rubric_active_simulations) as active_simulation_count
 FROM params x
-CROSS JOIN user_profile up
-CROSS JOIN user_departments ud;
 $$;
+

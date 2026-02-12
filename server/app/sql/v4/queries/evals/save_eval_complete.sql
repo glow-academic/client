@@ -47,15 +47,13 @@ CREATE OR REPLACE FUNCTION api_save_eval_v4(
     group_rubric_links types.q_save_eval_v4_group_rubric_link[] DEFAULT ARRAY[]::types.q_save_eval_v4_group_rubric_link[]
 )
 RETURNS TABLE (
-    eval_id uuid,
-    actor_name text
+    eval_id uuid
 )
 LANGUAGE plpgsql
 VOLATILE
 AS $$
 DECLARE
     v_eval_id uuid;
-    v_actor_name text;
     v_evals_id uuid;
     v_is_create boolean;
 BEGIN
@@ -213,16 +211,11 @@ BEGIN
     ELSE
         UPDATE evals_resource
         SET group_id = api_save_eval_v4.group_id,
-            department_ids = COALESCE(api_save_eval_v4.department_ids, ARRAY[]::uuid[]),
-            active = TRUE
+            department_ids = COALESCE(api_save_eval_v4.department_ids, ARRAY[]::uuid[])
         WHERE id = v_evals_id;
     END IF;
 
-    SELECT actor_name
-    INTO v_actor_name
-    FROM view_user_profile_context
-    WHERE profile_id = api_save_eval_v4.profile_id;
-
-    RETURN QUERY SELECT v_eval_id, v_actor_name;
+    RETURN QUERY SELECT v_eval_id;
 END;
 $$;
+

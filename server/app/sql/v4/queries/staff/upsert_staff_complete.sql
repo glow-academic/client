@@ -54,12 +54,12 @@ CREATE OR REPLACE FUNCTION api_upsert_staff_v4(
 RETURNS TABLE (
     profile_ids uuid[],
     created_count integer,
-    updated_count integer,
-    actor_name text
+    updated_count integer
 )
 LANGUAGE sql
 VOLATILE
 AS $$
+-- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 WITH params AS (
     SELECT 
         COALESCE(profiles, ARRAY[]::types.i_upsert_staff_v4_profile[]) AS profiles,
@@ -80,11 +80,6 @@ profiles_expanded AS (
         COALESCE(profile_data.cohort_ids, ARRAY[]::uuid[]) AS cohort_ids
     FROM params p
     CROSS JOIN LATERAL unnest(p.profiles) AS profile_data
-),
-user_profile AS (
-    SELECT COALESCE(NULLIF(actor_name, ''), 'System') as actor_name
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT current_profile_id FROM params)
 ),
 current_user_role AS (
     -- Get current user's role for validation
@@ -318,14 +313,13 @@ results AS (
     SELECT 
         ARRAY_AGG(puc.id ORDER BY puc.id) as profile_ids,
         COUNT(*) FILTER (WHERE puc.created = true)::integer as created_count,
-        COUNT(*) FILTER (WHERE puc.created = false)::integer as updated_count,
-        (SELECT actor_name FROM user_profile LIMIT 1) as actor_name
+        COUNT(*) FILTER (WHERE puc.created = false)::integer as updated_count
     FROM profile_upsert_with_created puc
 )
-SELECT 
+SELECT
     COALESCE(r.profile_ids, ARRAY[]::uuid[]) as profile_ids,
     COALESCE(r.created_count, 0) as created_count,
-    COALESCE(r.updated_count, 0) as updated_count,
-    COALESCE(r.actor_name, 'System') as actor_name
+    COALESCE(r.updated_count, 0) as updated_count
 FROM results r
 $$;
+

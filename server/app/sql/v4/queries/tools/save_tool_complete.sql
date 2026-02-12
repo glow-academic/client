@@ -48,16 +48,15 @@ CREATE OR REPLACE FUNCTION api_save_tool_v4(
     args_outputs types.tool_multi_resource_action DEFAULT NULL
 )
 RETURNS TABLE (
-    tool_id uuid,
-    actor_name text
+    tool_id uuid
 )
 LANGUAGE plpgsql
 VOLATILE
 AS $$
+-- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 #variable_conflict use_column
 DECLARE
     v_tool_id uuid;
-    v_actor_name text;
     v_name_id uuid;
     v_description_id uuid;
     v_active_flag_id uuid;
@@ -68,10 +67,6 @@ DECLARE
     v_run_id uuid;
     v_call_id uuid;
 BEGIN
-    SELECT up.actor_name INTO v_actor_name
-    FROM view_user_profile_context up
-    WHERE up.profile_id = api_save_tool_v4.profile_id;
-
     v_name_id := (names).resource_id;
     v_description_id := (descriptions).resource_id;
     v_active_flag_id := (flags).resource_id;
@@ -313,6 +308,7 @@ BEGIN
     END IF;
 
     RETURN QUERY
-    SELECT v_tool_id, v_actor_name;
+    SELECT v_tool_id;
 END;
 $$;
+

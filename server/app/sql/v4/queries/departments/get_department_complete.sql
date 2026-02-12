@@ -105,7 +105,6 @@ CREATE OR REPLACE FUNCTION api_get_department_v4(
 )
 RETURNS TABLE (
     -- Required fields (first 5)
-    actor_name text,
     department_exists boolean,
     can_edit boolean,
     disabled_reason text,
@@ -228,10 +227,14 @@ draft_group_data AS (
     WHERE TRUE
     LIMIT 1
 ),
+-- User context: actor_name comes from get_profile_context_internal() in Python
 user_profile AS (
-    SELECT role, COALESCE(NULLIF(actor_name, ''), 'System') as actor_name
-    FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
+    SELECT COALESCE(r.role, 'member'::profile_type) as role,
+           ''::text as actor_name
+    FROM profile_roles_junction prj
+    JOIN roles_resource r ON prj.role_id = r.id
+    WHERE prj.profile_id = (SELECT profile_id FROM params)
+    LIMIT 1
 ),
 user_departments AS (
     SELECT DISTINCT pd.department_id
@@ -964,7 +967,6 @@ department_usage AS (
 )
 SELECT
     -- Required fields (first 5)
-    up.actor_name::text as actor_name,
     (SELECT department_exists FROM department_exists_check) as department_exists,
     perm_final.can_edit,
     perm_final.disabled_reason,
@@ -1161,3 +1163,4 @@ LEFT JOIN department_price_spent dps ON (SELECT department_id FROM params) IS NO
 LEFT JOIN department_staff_count dsc ON (SELECT department_id FROM params) IS NOT NULL
 LEFT JOIN department_usage du ON (SELECT department_id FROM params) IS NOT NULL
 $$;
+

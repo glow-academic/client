@@ -27,6 +27,7 @@ from app.api.v4.artifacts.field.types import (
     ListFieldApiPersona,
     ListFieldApiResponse,
 )
+from app.api.v4.auth.context import get_profile_context_internal
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.parameters.get import get_parameters_internal
 from app.api.v4.resources.personas.get import get_personas_internal
@@ -93,6 +94,22 @@ async def get_field_list(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        # Fetch user context for audit logging and permissions
+        pool = get_pool()
+        if pool:
+            async with pool.acquire() as context_conn:
+                resolved_context = await get_profile_context_internal(
+                    conn=context_conn,
+                    profile_id=profile_id,
+                    department_id_cookie=None,
+                    bypass_cache=bypass_cache,
+                )
+                actor_name = resolved_context.actor_name
+                user_role = resolved_context.user_role
+        else:
+            actor_name = None
+            user_role = None
+
         params = GetFieldsListSqlParams(profile_id=profile_id)
         sql_params = params.to_tuple()
 
@@ -106,11 +123,10 @@ async def get_field_list(
         )
 
         # Set audit context
-        if result.actor_name:
-            audit_set(http_request, actor={"name": result.actor_name, "id": profile_id})
+        if actor_name:
+            audit_set(http_request, actor={"name": actor_name, "id": profile_id})
 
-        # Get user_role from SQL result for Python permission computation
-        user_role = result.user_role
+        # user_role already fetched from context above
 
         # Compute permissions for each field in Python
         fields_with_permissions: list[ListFieldApiField] = []
@@ -259,7 +275,7 @@ async def get_field_list(
 
         # Build API response with computed permissions
         api_response = ListFieldApiResponse(
-            actor_name=result.actor_name,
+            actor_name=actor_name,
             fields=fields_with_permissions,
             conditional_parameters=conditional_parameters,
             personas=personas,
