@@ -183,6 +183,9 @@ async def get_tool_internal(
             selected_active_flag_id = draft_item.flag_ids[0]
         if draft_item.args_ids:
             selected_args_ids = draft_item.args_ids
+        draft_arg_position_ids = getattr(draft_item, "arg_position_ids", None)
+        if draft_arg_position_ids:
+            selected_arg_position_ids = draft_arg_position_ids
         if draft_item.args_outputs_ids:
             selected_args_outputs_ids = draft_item.args_outputs_ids
 

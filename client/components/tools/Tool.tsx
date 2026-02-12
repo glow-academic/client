@@ -128,8 +128,10 @@ function ToolComponent({
       // Draft ID (URL-backed, updated when draft is created)
       draftId: parseAsString,
       argsSearch: parseAsString,
+      argPositionsSearch: parseAsString,
       argsOutputsSearch: parseAsString,
       argsShowSelected: parseAsBoolean,
+      argPositionsShowSelected: parseAsBoolean,
       argsOutputsShowSelected: parseAsBoolean,
     }),
     []
@@ -217,16 +219,36 @@ function ToolComponent({
           description: arg.description ?? "",
           field_type: arg.field_type ?? "",
           required: arg.required ?? false,
-          position: arg.position ?? 0,
           generated: arg.generated ?? false,
         }))
-        .sort((a, b) =>
-          a.position === b.position
-            ? a.name.localeCompare(b.name)
-            : a.position - b.position
-        ) ?? []
+        .sort((a, b) => a.name.localeCompare(b.name)) ?? []
     );
   }, [stableToolDataFields?.args]);
+
+  const argPositionsItems = useMemo(() => {
+    return (
+      stableToolDataFields?.arg_positions
+        ?.filter(
+          (ap): ap is NonNullable<typeof ap> =>
+            !!ap && !!ap.id && !!ap.args_id && ap.value !== null && ap.value !== undefined
+        )
+        .map((ap) => ({
+          id: ap.id!,
+          args_id: ap.args_id!,
+          value: ap.value!,
+          generated: ap.generated ?? false,
+        }))
+        .sort((a, b) => a.value - b.value) ?? []
+    );
+  }, [stableToolDataFields?.arg_positions]);
+
+  const argPositionByArgId = useMemo(() => {
+    const map = new Map<string, { id: string; value: number }>();
+    argPositionsItems.forEach((item) => {
+      map.set(item.args_id, { id: item.id, value: item.value });
+    });
+    return map;
+  }, [argPositionsItems]);
 
   const argsOutputsItems = useMemo(() => {
     return (
@@ -318,6 +340,36 @@ function ToolComponent({
     });
   }, [argsOutputsById, formState.args_ids]);
 
+  useEffect(() => {
+    setFormState((prev) => {
+      const selectedArgs = new Set(prev.args_ids);
+      const orderedArgIds = prev.args_ids
+        .map((argId) => ({
+          argId,
+          item: argPositionByArgId.get(argId),
+        }))
+        .filter((entry) => !!entry.item)
+        .sort((a, b) => (a.item?.value ?? 0) - (b.item?.value ?? 0))
+        .map((entry) => entry.item!.id);
+
+      const nextArgPositionIds = orderedArgIds.filter((id) => {
+        const argIdForPosition = [...argPositionByArgId.entries()].find(
+          ([, value]) => value.id === id
+        )?.[0];
+        return argIdForPosition ? selectedArgs.has(argIdForPosition) : false;
+      });
+
+      if (JSON.stringify(nextArgPositionIds) === JSON.stringify(prev.arg_position_ids)) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        arg_position_ids: nextArgPositionIds,
+      };
+    });
+  }, [argPositionByArgId, formState.args_ids]);
+
   // Memoize stringified array dependencies (derive from resources.current)
   const argsIdsStr = React.useMemo(
     () =>
@@ -337,6 +389,15 @@ function ToolComponent({
       ),
     [toolData?.args_outputs]
   );
+  const argPositionsIdsStr = React.useMemo(
+    () =>
+      JSON.stringify(
+        (toolData?.arg_positions?.current ?? [])
+          .map((a) => a.id)
+          .filter(Boolean)
+      ),
+    [toolData?.arg_positions]
+  );
 
   // Update form state when server data changes
   useEffect(() => {
@@ -346,6 +407,8 @@ function ToolComponent({
         prev.name !== newState.name ||
         prev.description !== newState.description ||
         JSON.stringify(prev.args_ids) !== JSON.stringify(newState.args_ids) ||
+        JSON.stringify(prev.arg_position_ids) !==
+          JSON.stringify(newState.arg_position_ids) ||
         JSON.stringify(prev.args_outputs_ids) !==
           JSON.stringify(newState.args_outputs_ids)
       ) {
@@ -357,6 +420,7 @@ function ToolComponent({
     toolData?.names?.resource,
     toolData?.descriptions?.resource,
     argsIdsStr,
+    argPositionsIdsStr,
     argsOutputsIdsStr,
     getInitialFormState,
   ]);
@@ -416,6 +480,7 @@ function ToolComponent({
         description_id: stableToolDataFields?.descriptions?.resource?.id ?? null,
         active_flag_id: stableToolDataFields?.flags?.current?.flag_option_id ?? null,
         args_ids: formState.args_ids,
+        arg_position_ids: formState.arg_position_ids,
         args_outputs_ids: formState.args_outputs_ids,
       }),
     [
@@ -424,6 +489,7 @@ function ToolComponent({
       stableToolDataFields?.descriptions?.resource?.id,
       stableToolDataFields?.flags,
       formState.args_ids,
+      formState.arg_position_ids,
       formState.args_outputs_ids,
     ]
   );
@@ -432,7 +498,9 @@ function ToolComponent({
 
   useEffect(() => {
     const hasResourceIds =
-      formState.args_ids.length > 0 || formState.args_outputs_ids.length > 0;
+      formState.args_ids.length > 0 ||
+      formState.arg_position_ids.length > 0 ||
+      formState.args_outputs_ids.length > 0;
 
     if (!hasResourceIds || !patchToolDraftActionRef.current) {
       return;
@@ -470,6 +538,11 @@ function ToolComponent({
               create_tool_id: currentFields?.args?.create_tool_id ?? null,
               link_tool_id: currentFields?.args?.link_tool_id ?? null,
             },
+            arg_positions: {
+              resource_ids: formState.arg_position_ids,
+              create_tool_id: currentFields?.arg_positions?.create_tool_id ?? null,
+              link_tool_id: currentFields?.arg_positions?.link_tool_id ?? null,
+            },
             args_outputs: {
               resource_ids: formState.args_outputs_ids,
               create_tool_id: currentFields?.args_outputs?.create_tool_id ?? null,
@@ -496,7 +569,13 @@ function ToolComponent({
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, [draftPatchKey, draftId, formState.args_ids, formState.args_outputs_ids]);
+  }, [
+    draftPatchKey,
+    draftId,
+    formState.args_ids,
+    formState.arg_position_ids,
+    formState.args_outputs_ids,
+  ]);
 
   // WebSocket handlers for AI generation
   useEffect(() => {
@@ -509,6 +588,7 @@ function ToolComponent({
       group_id?: string;
       resource_type?: string;
       args_resources?: Array<{ id?: string | null }>;
+      arg_position_resources?: Array<{ id?: string | null }>;
       args_outputs_resources?: Array<{ id?: string | null }>;
       message?: string;
       success?: boolean;
@@ -523,7 +603,11 @@ function ToolComponent({
         return;
       }
 
-      const validResourceTypes: ToolResourceType[] = ["args", "args_outputs"];
+      const validResourceTypes: ToolResourceType[] = [
+        "args",
+        "arg_positions",
+        "args_outputs",
+      ];
       if (
         data.resource_type &&
         validResourceTypes.includes(data.resource_type as ToolResourceType)
@@ -541,6 +625,19 @@ function ToolComponent({
               (id) => !prev.args_ids.includes(id)
             );
             updates.args_ids = [...prev.args_ids, ...newArgsIds];
+          }
+          if (
+            data.arg_position_resources &&
+            data.arg_position_resources.length > 0
+          ) {
+            const newArgPositionIds = data.arg_position_resources
+              .map((r) => r?.id)
+              .filter((id): id is string => !!id)
+              .filter((id) => !prev.arg_position_ids.includes(id));
+            updates.arg_position_ids = [
+              ...prev.arg_position_ids,
+              ...newArgPositionIds,
+            ];
           }
           if (
             data.args_outputs_resources &&
@@ -612,7 +709,11 @@ function ToolComponent({
         return;
       }
 
-      const validResourceTypes: ToolResourceType[] = ["args", "args_outputs"];
+      const validResourceTypes: ToolResourceType[] = [
+        "args",
+        "arg_positions",
+        "args_outputs",
+      ];
       const resourceTypes =
         data.resource_types || (data.resource_type ? [data.resource_type] : []);
       setGeneratingResources((prev) => {
