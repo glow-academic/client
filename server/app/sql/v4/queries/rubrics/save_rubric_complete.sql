@@ -207,14 +207,14 @@ BEGIN
             v_call_id := uuidv7();
             INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
             VALUES (v_call_id, 'rubric_save_create_names_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((names).create_tool_id, v_call_id);
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((names).create_tool_id, v_call_id);
             INSERT INTO names_calls_connection (names_id, call_id) VALUES (v_name_id, v_call_id);
         END IF;
         IF v_name_id IS NOT NULL AND (names).link_tool_id IS NOT NULL THEN
             v_call_id := uuidv7();
             INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
             VALUES (v_call_id, 'rubric_save_link_names_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((names).link_tool_id, v_call_id);
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((names).link_tool_id, v_call_id);
             INSERT INTO names_calls_connection (names_id, call_id) VALUES (v_name_id, v_call_id);
         END IF;
 
@@ -223,14 +223,14 @@ BEGIN
             v_call_id := uuidv7();
             INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
             VALUES (v_call_id, 'rubric_save_create_descriptions_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((descriptions).create_tool_id, v_call_id);
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((descriptions).create_tool_id, v_call_id);
             INSERT INTO descriptions_calls_connection (descriptions_id, call_id) VALUES (v_description_id, v_call_id);
         END IF;
         IF v_description_id IS NOT NULL AND (descriptions).link_tool_id IS NOT NULL THEN
             v_call_id := uuidv7();
             INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
             VALUES (v_call_id, 'rubric_save_link_descriptions_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((descriptions).link_tool_id, v_call_id);
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((descriptions).link_tool_id, v_call_id);
             INSERT INTO descriptions_calls_connection (descriptions_id, call_id) VALUES (v_description_id, v_call_id);
         END IF;
 
@@ -239,14 +239,14 @@ BEGIN
             v_call_id := uuidv7();
             INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
             VALUES (v_call_id, 'rubric_save_create_flags_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((flags).create_tool_id, v_call_id);
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((flags).create_tool_id, v_call_id);
             INSERT INTO flags_calls_connection (flags_id, call_id) VALUES (v_active_flag_id, v_call_id);
         END IF;
         IF v_active_flag_id IS NOT NULL AND (flags).link_tool_id IS NOT NULL THEN
             v_call_id := uuidv7();
             INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
             VALUES (v_call_id, 'rubric_save_link_flags_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((flags).link_tool_id, v_call_id);
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((flags).link_tool_id, v_call_id);
             INSERT INTO flags_calls_connection (flags_id, call_id) VALUES (v_active_flag_id, v_call_id);
         END IF;
 
@@ -255,7 +255,7 @@ BEGIN
             v_call_id := uuidv7();
             INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
             VALUES (v_call_id, 'rubric_save_create_departments_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((departments).create_tool_id, v_call_id);
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((departments).create_tool_id, v_call_id);
             INSERT INTO departments_calls_connection (departments_id, call_id)
             SELECT did, v_call_id FROM UNNEST(v_department_ids) AS did;
         END IF;
@@ -263,7 +263,7 @@ BEGIN
             v_call_id := uuidv7();
             INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
             VALUES (v_call_id, 'rubric_save_link_departments_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((departments).link_tool_id, v_call_id);
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((departments).link_tool_id, v_call_id);
             INSERT INTO departments_calls_connection (departments_id, call_id)
             SELECT did, v_call_id FROM UNNEST(v_department_ids) AS did;
         END IF;
@@ -273,14 +273,14 @@ BEGIN
             v_call_id := uuidv7();
             INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
             VALUES (v_call_id, 'rubric_save_create_points_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((points).create_tool_id, v_call_id);
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((points).create_tool_id, v_call_id);
             INSERT INTO points_calls_connection (points_id, call_id) VALUES (v_total_points_id, v_call_id);
         END IF;
         IF v_total_points_id IS NOT NULL AND (points).link_tool_id IS NOT NULL THEN
             v_call_id := uuidv7();
             INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
             VALUES (v_call_id, 'rubric_save_link_points_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((points).link_tool_id, v_call_id);
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((points).link_tool_id, v_call_id);
             INSERT INTO points_calls_connection (points_id, call_id) VALUES (v_total_points_id, v_call_id);
         END IF;
 
@@ -289,14 +289,14 @@ BEGIN
             v_call_id := uuidv7();
             INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
             VALUES (v_call_id, 'rubric_save_create_pass_points_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((pass_points).create_tool_id, v_call_id);
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((pass_points).create_tool_id, v_call_id);
             INSERT INTO points_calls_connection (points_id, call_id) VALUES (v_pass_points_id, v_call_id);
         END IF;
         IF v_pass_points_id IS NOT NULL AND (pass_points).link_tool_id IS NOT NULL THEN
             v_call_id := uuidv7();
             INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
             VALUES (v_call_id, 'rubric_save_link_pass_points_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((pass_points).link_tool_id, v_call_id);
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((pass_points).link_tool_id, v_call_id);
             INSERT INTO points_calls_connection (points_id, call_id) VALUES (v_pass_points_id, v_call_id);
         END IF;
 
@@ -305,7 +305,7 @@ BEGIN
             v_call_id := uuidv7();
             INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
             VALUES (v_call_id, 'rubric_save_create_standard_groups_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((standard_groups).create_tool_id, v_call_id);
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((standard_groups).create_tool_id, v_call_id);
             INSERT INTO standard_groups_calls_connection (standard_groups_id, call_id)
             SELECT sgid, v_call_id FROM UNNEST(v_standard_group_ids) AS sgid;
         END IF;
@@ -313,7 +313,7 @@ BEGIN
             v_call_id := uuidv7();
             INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
             VALUES (v_call_id, 'rubric_save_link_standard_groups_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((standard_groups).link_tool_id, v_call_id);
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((standard_groups).link_tool_id, v_call_id);
             INSERT INTO standard_groups_calls_connection (standard_groups_id, call_id)
             SELECT sgid, v_call_id FROM UNNEST(v_standard_group_ids) AS sgid;
         END IF;
@@ -323,7 +323,7 @@ BEGIN
             v_call_id := uuidv7();
             INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
             VALUES (v_call_id, 'rubric_save_create_standards_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((standards).create_tool_id, v_call_id);
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((standards).create_tool_id, v_call_id);
             INSERT INTO standards_calls_connection (standards_id, call_id)
             SELECT sid, v_call_id FROM UNNEST(v_standard_ids) AS sid;
         END IF;
@@ -331,7 +331,7 @@ BEGIN
             v_call_id := uuidv7();
             INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
             VALUES (v_call_id, 'rubric_save_link_standards_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((standards).link_tool_id, v_call_id);
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((standards).link_tool_id, v_call_id);
             INSERT INTO standards_calls_connection (standards_id, call_id)
             SELECT sid, v_call_id FROM UNNEST(v_standard_ids) AS sid;
         END IF;

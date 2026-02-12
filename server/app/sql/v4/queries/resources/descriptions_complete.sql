@@ -73,7 +73,7 @@ BEGIN
         VALUES (v_call_id, 'descriptions_' || v_call_id::text, v_run_id, true, NOW(), NOW());
 
         -- Link tool to call
-        INSERT INTO tool_calls_junction (tool_id, call_id) VALUES (api_create_descriptions_v4.tool_id, v_call_id);
+        INSERT INTO tools_calls_connection (tools_id, call_id) VALUES (api_create_descriptions_v4.tool_id, v_call_id);
 
         -- Link resource to call
         INSERT INTO descriptions_calls_connection (descriptions_id, call_id)

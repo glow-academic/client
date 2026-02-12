@@ -269,12 +269,6 @@ link_use_templates_flag AS (
     CROSS JOIN get_use_templates_flag gutf
     WHERE sf.use_templates IS NOT NULL
 ),
--- Tree edge for scenario hierarchy
-insert_tree_edge AS (
-    INSERT INTO scenario_tree_junction (parent_id, child_id, active, created_at)
-    SELECT ns.id, ns.id, true, NOW()
-    FROM new_scenario ns
-),
 -- Link existing personas
 copy_personas AS (
     INSERT INTO scenario_personas_junction (scenario_id, persona_id, active, created_at)

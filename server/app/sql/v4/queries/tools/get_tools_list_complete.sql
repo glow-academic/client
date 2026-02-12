@@ -74,11 +74,11 @@ tool_usage_counts AS (
     SELECT
         t.id as tool_id,
         COALESCE(
-            (SELECT COUNT(*) FROM tool_calls_junction tcj WHERE tcj.tool_id = t.id),
+            (SELECT COUNT(*) FROM tools_calls_connection tcj WHERE tcj.tools_id = t.id),
             0
         )::int as active_usage_count,
         COALESCE(
-            (SELECT COUNT(*) FROM tool_calls_junction tcj WHERE tcj.tool_id = t.id),
+            (SELECT COUNT(*) FROM tools_calls_connection tcj WHERE tcj.tools_id = t.id),
             0
         )::int as total_usage_count
     FROM tool_artifact t

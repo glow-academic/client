@@ -1,5 +1,5 @@
 -- Create Problem
--- Inserts into problems_entry + profile_problems_junction
+-- Inserts into problems_entry + profiles_problems_connection
 -- Returns problem_id and actor_name
 
 DROP FUNCTION IF EXISTS api_create_problem_v4(feedback_type, text, uuid);
@@ -28,7 +28,7 @@ new_problem AS (
     RETURNING id
 ),
 junction AS (
-    INSERT INTO profile_problems_junction (profile_id, problem_id)
+    INSERT INTO profiles_problems_connection (profiles_id, problem_id)
     SELECT p_profile_id, np.id
     FROM new_problem np
 )

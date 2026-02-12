@@ -1,4 +1,4 @@
--- Link tool to call in tool_calls_junction
+-- Link tool to call in tools_calls_connection
 -- 1) Drop function first
 DO $$
 DECLARE
@@ -25,7 +25,7 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO tool_calls_junction (tool_id, call_id)
+    INSERT INTO tools_calls_connection (tools_id, call_id)
     VALUES ($1, $2)
     ON CONFLICT DO NOTHING;
 

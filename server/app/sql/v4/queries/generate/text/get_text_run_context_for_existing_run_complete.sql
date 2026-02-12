@@ -113,9 +113,9 @@ selected_agent AS (
 ),
 -- Get profile FROM view_runs_entry
 run_profile AS (
-    SELECT prj.profile_id
+    SELECT prj.profiles_id
     FROM view_runs_entry r
-    JOIN profile_runs_junction prj ON prj.run_id = r.id
+    JOIN profiles_runs_connection prj ON prj.run_id = r.id
     CROSS JOIN params p
     WHERE r.id = p.run_id
     LIMIT 1
@@ -125,7 +125,7 @@ profile_rate_limit AS (
     SELECT 
         rl.requests_per_day as req_per_day
     FROM run_profile rp
-    LEFT JOIN profile_request_limits_junction prl ON prl.profile_id = rp.profile_id AND prl.active = true
+    LEFT JOIN profile_request_limits_junction prl ON prl.profile_id = rp.profiles_id AND prl.active = true
     LEFT JOIN request_limits_resource rl ON prl.request_limit_id = rl.id
 ),
 runs_today AS (
@@ -133,16 +133,16 @@ runs_today AS (
         COUNT(*)::bigint as runs_today_count,
         MIN(mr.created_at) as earliest_run_created_at
     FROM view_runs_entry mr
-    JOIN profile_runs_junction prj2 ON prj2.run_id = mr.id
+    JOIN profiles_runs_connection prj2 ON prj2.run_id = mr.id
     CROSS JOIN run_profile rp
-    WHERE prj2.profile_id = rp.profile_id
+    WHERE prj2.profile_id = rp.profiles_id
       AND mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
 ),
 -- Get profile's primary department for department name resolution
 profile_primary_department AS (
     SELECT pd.department_id
     FROM run_profile rp
-    JOIN profile_departments_junction pd ON pd.profile_id = rp.profile_id
+    JOIN profile_departments_junction pd ON pd.profile_id = rp.profiles_id
     WHERE pd.is_primary = TRUE
       AND pd.active = true
     LIMIT 1
@@ -483,7 +483,7 @@ context_data AS (
         pr_prov_res.key as api_key,
         
         -- Profile data
-        rp.profile_id::text as profile_id,
+        rp.profiles_id::text as profile_id,
         
         -- Rate limit data (for display)
         prl.req_per_day,

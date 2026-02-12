@@ -261,26 +261,26 @@ groups_mapping AS (
     ORDER BY og.id, ngwo.id
 ),
 standard_call_context AS (
-    SELECT tcj.tool_id, 1 as priority
+    SELECT tcj.tools_id, 1 as priority
     FROM view_calls_entry c
-    JOIN tool_calls_junction tcj ON tcj.call_id = c.id
-    JOIN tool_names_junction tn ON tn.tool_id = tcj.tool_id
+    JOIN tools_calls_connection tcj ON tcj.call_id = c.id
+    JOIN tool_names_junction tn ON tn.tool_id = tcj.tools_id
     JOIN names_resource n ON tn.name_id = n.id
     WHERE n.name = 'create_standard_group'
     UNION ALL
-    SELECT tcj.tool_id, 2 as priority
+    SELECT tcj.tools_id, 2 as priority
     FROM view_calls_entry c
-    JOIN tool_calls_junction tcj ON tcj.call_id = c.id
-    JOIN tool_names_junction tn ON tn.tool_id = tcj.tool_id
+    JOIN tools_calls_connection tcj ON tcj.call_id = c.id
+    JOIN tool_names_junction tn ON tn.tool_id = tcj.tools_id
     JOIN names_resource n ON tn.name_id = n.id
     WHERE n.name = 'create_rubrics'
     UNION ALL
-    SELECT tcj.tool_id, 3 as priority
+    SELECT tcj.tools_id, 3 as priority
     FROM view_calls_entry c
-    JOIN tool_calls_junction tcj ON tcj.call_id = c.id
+    JOIN tools_calls_connection tcj ON tcj.call_id = c.id
 ),
 standard_call_params AS (
-    SELECT tool_id
+    SELECT tools_id
     FROM standard_call_context
     ORDER BY priority
     LIMIT 1
@@ -289,7 +289,7 @@ standard_calls AS (
     SELECT
         os.id as standard_id,
         uuidv7() as call_id,
-        scp.tool_id
+        scp.tools_id
     FROM original_standards os
     CROSS JOIN standard_call_params scp
 ),
@@ -317,8 +317,8 @@ insert_standard_calls AS (
     RETURNING id
 ),
 insert_standard_call_tool_junctions AS (
-    INSERT INTO tool_calls_junction (tool_id, call_id)
-    SELECT sc.tool_id, sc.call_id
+    INSERT INTO tools_calls_connection (tools_id, call_id)
+    SELECT sc.tools_id, sc.call_id
     FROM standard_calls sc
     JOIN insert_standard_calls isc ON isc.id = sc.call_id
 ),

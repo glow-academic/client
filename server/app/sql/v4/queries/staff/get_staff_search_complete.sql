@@ -120,20 +120,20 @@ profile_departments_agg AS (
 ),
 recent_runs AS (
     SELECT
-        prj.profile_id,
+        prj.profiles_id,
         COUNT(*) as run_count
-    FROM profile_runs_junction prj
+    FROM profiles_runs_connection prj
     JOIN view_runs_entry r ON r.id = prj.run_id
     WHERE r.created_at >= NOW() - INTERVAL '24 hours'
-    GROUP BY prj.profile_id
+    GROUP BY prj.profiles_id
 ),
 profile_total_runs AS (
     SELECT
-        prj.profile_id,
+        prj.profiles_id,
         COUNT(*) as total_requests
-    FROM profile_runs_junction prj
+    FROM profiles_runs_connection prj
     JOIN view_runs_entry r ON r.id = prj.run_id
-    GROUP BY prj.profile_id
+    GROUP BY prj.profiles_id
 ),
 all_cohort_ids AS (
     SELECT DISTINCT c.id as cohort_id
@@ -209,9 +209,9 @@ staff_rows AS (
     LEFT JOIN request_limits_resource rl ON prl.request_limit_id = rl.id
     LEFT JOIN LATERAL (
         SELECT ae.last_active
-        FROM profile_activity_junction pactj
+        FROM profiles_activity_connection pactj
         JOIN view_activity_entry ae ON ae.id = pactj.activity_id
-        WHERE pactj.profile_id = p.id
+        WHERE pactj.profiles_id = p.id
         ORDER BY ae.created_at DESC
         LIMIT 1
     ) pa ON true

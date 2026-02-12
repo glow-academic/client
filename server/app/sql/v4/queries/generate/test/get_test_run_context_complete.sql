@@ -164,9 +164,9 @@ runs_today AS (
     SELECT
         COUNT(*)::bigint as runs_today_count
     FROM view_runs_entry mr
-    JOIN profile_runs_junction prj ON prj.run_id = mr.id
+    JOIN profiles_runs_connection prj ON prj.run_id = mr.id
     CROSS JOIN params p
-    WHERE prj.profile_id = p.profile_id
+    WHERE prj.profiles_id = p.profile_id
       AND mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
 ),
 -- Runs linked to this invocation

@@ -91,7 +91,7 @@ BEGIN
     );
 
     -- Link tool to call
-    INSERT INTO tool_calls_junction (tool_id, call_id) VALUES (v_tool_id, v_call_id);
+    INSERT INTO tools_calls_connection (tools_id, call_id) VALUES (v_tool_id, v_call_id);
 
     -- INSERT INTO parameter_fields_resource table
     INSERT INTO parameter_fields_resource(parameter_id, field_id, active, generated)

@@ -121,7 +121,7 @@ BEGIN
     RETURNING id, created_at INTO v_run_id, v_created_at;
 
     -- Link profile to run
-    INSERT INTO profile_runs_junction (profile_id, run_id)
+    INSERT INTO profiles_runs_connection (profiles_id, run_id)
     VALUES (p_profile_id, v_run_id);
 
     -- Return all the data

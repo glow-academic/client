@@ -1,6 +1,6 @@
 -- Resolve Problem
 -- Updates problems_entry resolved status
--- Permission check via profile_problems_junction
+-- Permission check via profiles_problems_connection
 
 DROP FUNCTION IF EXISTS api_resolve_problem_v4(uuid, boolean, uuid);
 
@@ -30,9 +30,9 @@ updated AS (
         updated_at = now()
     WHERE pe.id = p_problem_id
       AND EXISTS (
-          SELECT 1 FROM profile_problems_junction ppj
+          SELECT 1 FROM profiles_problems_connection ppj
           WHERE ppj.problem_id = p_problem_id
-            AND ppj.profile_id = p_profile_id
+            AND ppj.profiles_id = p_profile_id
       )
     RETURNING pe.id, pe.resolved, pe.updated_at
 )

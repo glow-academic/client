@@ -29,10 +29,10 @@ STABLE
 AS $$
     SELECT
         c.id,
-        tcj.tool_id,
+        tcj.tools_id,
         c.arguments_raw
     FROM view_calls_entry c
-    JOIN tool_calls_junction tcj ON tcj.call_id = c.id
+    JOIN tools_calls_connection tcj ON tcj.call_id = c.id
     WHERE c.external_call_id = external_call_id
     LIMIT 1;
 $$;

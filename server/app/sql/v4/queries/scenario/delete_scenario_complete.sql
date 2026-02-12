@@ -73,10 +73,11 @@ usage_check AS (
         JOIN scenario_scenarios_junction ssj ON ssj.scenarios_id = msc.scenario_id
         WHERE ssj.scenario_id = x.scenario_id
     ) + (
+        -- Count child scenarios (variants) whose parent_id = this scenario's resource ID
         SELECT COUNT(*)
-        FROM scenario_tree_junction st
-        WHERE (st.parent_id = x.scenario_id OR st.child_id = x.scenario_id)
-          AND st.parent_id != st.child_id
+        FROM scenario_scenarios_junction ssj_res
+        JOIN scenarios_resource sr_child ON sr_child.parent_id = ssj_res.scenarios_id
+        WHERE ssj_res.scenario_id = x.scenario_id
     ) as usage_count
     FROM params x
 ),

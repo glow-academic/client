@@ -579,24 +579,17 @@ simulation_scenarios_base AS (
     ORDER BY (SELECT spr.value FROM simulation_scenario_positions_junction ssp JOIN scenario_positions_resource spr ON spr.id = ssp.scenario_position_id WHERE ssp.simulation_id = ss.simulation_id AND spr.scenario_id = ss.scenario_id LIMIT 1)
 ),
 scenario_statistics AS (
-    SELECT 
+    SELECT
         ss.scenario_id,
-        COALESCE(
-            (SELECT st.parent_id 
-             FROM scenario_tree_junction st 
-             WHERE st.child_id = ss.scenario_id 
-               AND st.parent_id = st.child_id 
-             LIMIT 1),
-            ss.scenario_id
-        ) as root_scenario_id,
+        ss.scenario_id as root_scenario_id,
         COUNT(DISTINCT sc.id) as usage_count,
-        CASE 
-            WHEN COUNT(DISTINCT CASE WHEN sc.completed = true THEN sc.id END) > 0 
+        CASE
+            WHEN COUNT(DISTINCT CASE WHEN sc.completed = true THEN sc.id END) > 0
             THEN ROUND(
-                (COUNT(DISTINCT CASE WHEN sc.completed = true AND scg.passed = true THEN sc.id END)::numeric / 
+                (COUNT(DISTINCT CASE WHEN sc.completed = true AND scg.passed = true THEN sc.id END)::numeric /
                  COUNT(DISTINCT CASE WHEN sc.completed = true THEN sc.id END)::numeric) * 100
             )
-            ELSE 0 
+            ELSE 0
         END as success_rate,
         MAX(sc.created_at) as last_used_date
     FROM params x
@@ -607,16 +600,11 @@ scenario_statistics AS (
         FROM mv_attempt_chats msc
         JOIN scenario_scenarios_junction ssj2 ON ssj2.scenarios_id = msc.scenario_id
     ) scj_sc ON (
+        -- Match children of this scenario via scenarios_resource.parent_id
         scj_sc.scenario_id IN (
-            SELECT st2.child_id
-            FROM scenario_tree_junction st2
-            WHERE st2.parent_id = COALESCE(
-                (SELECT st3.parent_id
-                 FROM scenario_tree_junction st3
-                 WHERE st3.child_id = ss.scenario_id
-                   AND st3.parent_id = st3.child_id),
-                ss.scenario_id
-            )
+            SELECT sr_child.id
+            FROM scenarios_resource sr_child
+            WHERE sr_child.parent_id = ss.scenario_id
         )
         OR scj_sc.scenario_id = ss.scenario_id
     )
@@ -659,7 +647,8 @@ valid_scenarios_list AS (
         COALESCE((SELECT (SELECT d.description FROM document_descriptions_junction dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM scenario_descriptions_junction sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1), '') as description
     FROM scenario_artifact s
     CROSS JOIN user_department_ids udi
-    JOIN scenario_tree_junction st ON st.parent_id = s.id AND st.child_id = s.id
+    JOIN scenario_scenarios_junction ssj_root ON ssj_root.scenario_id = s.id AND ssj_root.active = true
+    JOIN scenarios_resource sr_root ON sr_root.id = ssj_root.scenarios_id AND sr_root.is_root = TRUE
     LEFT JOIN scenario_departments_junction sd ON sd.scenario_id = s.id AND sd.active = true
     WHERE EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'scenario_active' AND sf.value = true)
       AND (
@@ -668,29 +657,15 @@ valid_scenarios_list AS (
       )
     UNION
     SELECT DISTINCT
-        COALESCE(
-            (SELECT st2.parent_id 
-             FROM scenario_tree_junction st2 
-             WHERE st2.child_id = ssb.scenario_id 
-               AND st2.parent_id = st2.child_id 
-             LIMIT 1),
-            ssb.scenario_id
-        ) as id,
+        ssj2.scenario_id as id,
         (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = ssj2.scenario_id LIMIT 1) as name,
-        COALESCE((SELECT d.description FROM scenario_descriptions_junction sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.scenario_id = s2.id LIMIT 1), '') as description
+        COALESCE((SELECT d.description FROM scenario_descriptions_junction sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.scenario_id = ssj2.scenario_id LIMIT 1), '') as description
     FROM params x
     JOIN simulation_scenarios_base ssb ON ssb.simulation_id = x.simulation_id
-    JOIN scenarios_resource s2 ON s2.id = COALESCE(
-        (SELECT st3.parent_id
-         FROM scenario_tree_junction st3
-         WHERE st3.child_id = ssb.scenario_id
-           AND st3.parent_id = st3.child_id
-         LIMIT 1),
-        ssb.scenario_id
-    )
+    JOIN scenarios_resource s2 ON s2.id = ssb.scenario_id
     JOIN scenario_scenarios_junction ssj2 ON ssj2.scenarios_id = s2.id
     WHERE x.simulation_id IS NOT NULL
-      AND EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s2.id AND f.name = 'scenario_active' AND sf.value = TRUE)
+      AND EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = ssj2.scenario_id AND f.name = 'scenario_active' AND sf.value = TRUE)
 ),
 valid_scenarios AS (
     SELECT ARRAY_AGG(id::text) as ids

@@ -330,14 +330,14 @@ BEGIN
                 v_call_id := uuidv7();
                 INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
                 VALUES (v_call_id, 'model_draft_create_names_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-                INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((names).create_tool_id, v_call_id);
+                INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((names).create_tool_id, v_call_id);
                 INSERT INTO names_calls_connection (names_id, call_id) VALUES (v_name_id, v_call_id);
             END IF;
             IF (names).link_tool_id IS NOT NULL THEN
                 v_call_id := uuidv7();
                 INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
                 VALUES (v_call_id, 'model_draft_link_names_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-                INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((names).link_tool_id, v_call_id);
+                INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((names).link_tool_id, v_call_id);
                 INSERT INTO names_calls_connection (names_id, call_id) VALUES (v_name_id, v_call_id);
             END IF;
         END IF;
@@ -347,14 +347,14 @@ BEGIN
                 v_call_id := uuidv7();
                 INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
                 VALUES (v_call_id, 'model_draft_create_descriptions_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-                INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((descriptions).create_tool_id, v_call_id);
+                INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((descriptions).create_tool_id, v_call_id);
                 INSERT INTO descriptions_calls_connection (descriptions_id, call_id) VALUES (v_description_id, v_call_id);
             END IF;
             IF (descriptions).link_tool_id IS NOT NULL THEN
                 v_call_id := uuidv7();
                 INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
                 VALUES (v_call_id, 'model_draft_link_descriptions_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-                INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((descriptions).link_tool_id, v_call_id);
+                INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((descriptions).link_tool_id, v_call_id);
                 INSERT INTO descriptions_calls_connection (descriptions_id, call_id) VALUES (v_description_id, v_call_id);
             END IF;
         END IF;
@@ -364,14 +364,14 @@ BEGIN
                 v_call_id := uuidv7();
                 INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
                 VALUES (v_call_id, 'model_draft_create_values_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-                INSERT INTO tool_calls_junction (tool_id, call_id) VALUES (("values").create_tool_id, v_call_id);
+                INSERT INTO tools_calls_connection (tools_id, call_id) VALUES (("values").create_tool_id, v_call_id);
                 INSERT INTO values_calls_connection (values_id, call_id) VALUES (v_value_id, v_call_id);
             END IF;
             IF ("values").link_tool_id IS NOT NULL THEN
                 v_call_id := uuidv7();
                 INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
                 VALUES (v_call_id, 'model_draft_link_values_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-                INSERT INTO tool_calls_junction (tool_id, call_id) VALUES (("values").link_tool_id, v_call_id);
+                INSERT INTO tools_calls_connection (tools_id, call_id) VALUES (("values").link_tool_id, v_call_id);
                 INSERT INTO values_calls_connection (values_id, call_id) VALUES (v_value_id, v_call_id);
             END IF;
         END IF;
@@ -381,14 +381,14 @@ BEGIN
                 v_call_id := uuidv7();
                 INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
                 VALUES (v_call_id, 'model_draft_create_providers_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-                INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((providers).create_tool_id, v_call_id);
+                INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((providers).create_tool_id, v_call_id);
                 INSERT INTO providers_calls_connection (providers_id, call_id) VALUES (v_provider_id, v_call_id);
             END IF;
             IF (providers).link_tool_id IS NOT NULL THEN
                 v_call_id := uuidv7();
                 INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
                 VALUES (v_call_id, 'model_draft_link_providers_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-                INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((providers).link_tool_id, v_call_id);
+                INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((providers).link_tool_id, v_call_id);
                 INSERT INTO providers_calls_connection (providers_id, call_id) VALUES (v_provider_id, v_call_id);
             END IF;
         END IF;
@@ -398,7 +398,7 @@ BEGIN
                 v_call_id := uuidv7();
                 INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
                 VALUES (v_call_id, 'model_draft_create_flags_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-                INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((flags).create_tool_id, v_call_id);
+                INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((flags).create_tool_id, v_call_id);
                 INSERT INTO flags_calls_connection (flags_id, call_id)
                 SELECT fid, v_call_id FROM UNNEST(v_flag_ids) fid;
             END IF;
@@ -406,7 +406,7 @@ BEGIN
                 v_call_id := uuidv7();
                 INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
                 VALUES (v_call_id, 'model_draft_link_flags_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-                INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((flags).link_tool_id, v_call_id);
+                INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((flags).link_tool_id, v_call_id);
                 INSERT INTO flags_calls_connection (flags_id, call_id)
                 SELECT fid, v_call_id FROM UNNEST(v_flag_ids) fid;
             END IF;
@@ -417,7 +417,7 @@ BEGIN
                 v_call_id := uuidv7();
                 INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
                 VALUES (v_call_id, 'model_draft_create_departments_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-                INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((departments).create_tool_id, v_call_id);
+                INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((departments).create_tool_id, v_call_id);
                 INSERT INTO departments_calls_connection (departments_id, call_id)
                 SELECT did, v_call_id FROM UNNEST(v_department_ids) did;
             END IF;
@@ -425,7 +425,7 @@ BEGIN
                 v_call_id := uuidv7();
                 INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
                 VALUES (v_call_id, 'model_draft_link_departments_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-                INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((departments).link_tool_id, v_call_id);
+                INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((departments).link_tool_id, v_call_id);
                 INSERT INTO departments_calls_connection (departments_id, call_id)
                 SELECT did, v_call_id FROM UNNEST(v_department_ids) did;
             END IF;
@@ -436,7 +436,7 @@ BEGIN
                 v_call_id := uuidv7();
                 INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
                 VALUES (v_call_id, 'model_draft_create_modalities_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-                INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((modalities).create_tool_id, v_call_id);
+                INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((modalities).create_tool_id, v_call_id);
                 INSERT INTO modalities_calls_connection (modalities_id, call_id)
                 SELECT mid, v_call_id FROM UNNEST(v_modality_ids) mid;
             END IF;
@@ -444,7 +444,7 @@ BEGIN
                 v_call_id := uuidv7();
                 INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
                 VALUES (v_call_id, 'model_draft_link_modalities_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-                INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((modalities).link_tool_id, v_call_id);
+                INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((modalities).link_tool_id, v_call_id);
                 INSERT INTO modalities_calls_connection (modalities_id, call_id)
                 SELECT mid, v_call_id FROM UNNEST(v_modality_ids) mid;
             END IF;
@@ -455,7 +455,7 @@ BEGIN
                 v_call_id := uuidv7();
                 INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
                 VALUES (v_call_id, 'model_draft_create_temperature_levels_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-                INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((temperature_levels).create_tool_id, v_call_id);
+                INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((temperature_levels).create_tool_id, v_call_id);
                 INSERT INTO temperature_levels_calls_connection (temperature_levels_id, call_id)
                 SELECT tid, v_call_id FROM UNNEST(v_temperature_level_ids) tid;
             END IF;
@@ -463,7 +463,7 @@ BEGIN
                 v_call_id := uuidv7();
                 INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
                 VALUES (v_call_id, 'model_draft_link_temperature_levels_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-                INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((temperature_levels).link_tool_id, v_call_id);
+                INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((temperature_levels).link_tool_id, v_call_id);
                 INSERT INTO temperature_levels_calls_connection (temperature_levels_id, call_id)
                 SELECT tid, v_call_id FROM UNNEST(v_temperature_level_ids) tid;
             END IF;
@@ -474,7 +474,7 @@ BEGIN
                 v_call_id := uuidv7();
                 INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
                 VALUES (v_call_id, 'model_draft_create_pricing_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-                INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((pricing).create_tool_id, v_call_id);
+                INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((pricing).create_tool_id, v_call_id);
                 INSERT INTO pricing_calls_connection (pricing_id, call_id)
                 SELECT pid, v_call_id FROM UNNEST(v_pricing_ids) pid;
             END IF;
@@ -482,7 +482,7 @@ BEGIN
                 v_call_id := uuidv7();
                 INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
                 VALUES (v_call_id, 'model_draft_link_pricing_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-                INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((pricing).link_tool_id, v_call_id);
+                INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((pricing).link_tool_id, v_call_id);
                 INSERT INTO pricing_calls_connection (pricing_id, call_id)
                 SELECT pid, v_call_id FROM UNNEST(v_pricing_ids) pid;
             END IF;
@@ -493,7 +493,7 @@ BEGIN
                 v_call_id := uuidv7();
                 INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
                 VALUES (v_call_id, 'model_draft_create_reasoning_levels_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-                INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((reasoning_levels).create_tool_id, v_call_id);
+                INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((reasoning_levels).create_tool_id, v_call_id);
                 INSERT INTO reasoning_levels_calls_connection (reasoning_levels_id, call_id)
                 SELECT rid, v_call_id FROM UNNEST(v_reasoning_level_ids) rid;
             END IF;
@@ -501,7 +501,7 @@ BEGIN
                 v_call_id := uuidv7();
                 INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
                 VALUES (v_call_id, 'model_draft_link_reasoning_levels_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-                INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((reasoning_levels).link_tool_id, v_call_id);
+                INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((reasoning_levels).link_tool_id, v_call_id);
                 INSERT INTO reasoning_levels_calls_connection (reasoning_levels_id, call_id)
                 SELECT rid, v_call_id FROM UNNEST(v_reasoning_level_ids) rid;
             END IF;
@@ -512,7 +512,7 @@ BEGIN
                 v_call_id := uuidv7();
                 INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
                 VALUES (v_call_id, 'model_draft_create_qualities_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-                INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((qualities).create_tool_id, v_call_id);
+                INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((qualities).create_tool_id, v_call_id);
                 INSERT INTO qualities_calls_connection (qualities_id, call_id)
                 SELECT qid, v_call_id FROM UNNEST(v_quality_ids) qid;
             END IF;
@@ -520,7 +520,7 @@ BEGIN
                 v_call_id := uuidv7();
                 INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
                 VALUES (v_call_id, 'model_draft_link_qualities_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-                INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((qualities).link_tool_id, v_call_id);
+                INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((qualities).link_tool_id, v_call_id);
                 INSERT INTO qualities_calls_connection (qualities_id, call_id)
                 SELECT qid, v_call_id FROM UNNEST(v_quality_ids) qid;
             END IF;
@@ -531,7 +531,7 @@ BEGIN
                 v_call_id := uuidv7();
                 INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
                 VALUES (v_call_id, 'model_draft_create_voices_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-                INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((voices).create_tool_id, v_call_id);
+                INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((voices).create_tool_id, v_call_id);
                 INSERT INTO voices_calls_connection (voices_id, call_id)
                 SELECT vid, v_call_id FROM UNNEST(v_voice_ids) vid;
             END IF;
@@ -539,7 +539,7 @@ BEGIN
                 v_call_id := uuidv7();
                 INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
                 VALUES (v_call_id, 'model_draft_link_voices_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-                INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((voices).link_tool_id, v_call_id);
+                INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((voices).link_tool_id, v_call_id);
                 INSERT INTO voices_calls_connection (voices_id, call_id)
                 SELECT vid, v_call_id FROM UNNEST(v_voice_ids) vid;
             END IF;

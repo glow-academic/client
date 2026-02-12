@@ -56,7 +56,7 @@ SELECT
     r.group_id,
     cac.agents_id AS agent_id,
     amj.model_id,
-    prj.profile_id,
+    prj.profiles_id,
     gi.session_id,
 
     -- Name resource IDs (pre-resolved for lightweight hydration via get_names_internal)
@@ -80,7 +80,7 @@ LEFT JOIN run_pricing_rollup rpr ON rpr.run_id = r.id
 LEFT JOIN config_agents_connection cac ON cac.config_id = r.config_id AND cac.active = TRUE
 LEFT JOIN agent_models_junction amj ON amj.agent_id = cac.agents_id AND amj.active = TRUE
 LEFT JOIN groups_entry gi ON gi.id = r.group_id AND gi.active = TRUE
-LEFT JOIN profile_runs_junction prj ON prj.run_id = r.id AND prj.active = TRUE
+LEFT JOIN profiles_runs_connection prj ON prj.run_id = r.id AND prj.active = TRUE
 -- Name junctions (pre-resolve artifact IDs → name resource IDs)
 -- Use DISTINCT ON to avoid row multiplication when multiple name entries exist
 LEFT JOIN LATERAL (
@@ -95,7 +95,7 @@ LEFT JOIN LATERAL (
 ) anj ON TRUE
 LEFT JOIN LATERAL (
     SELECT pnj.name_id FROM profile_names_junction pnj
-    WHERE pnj.profile_id = prj.profile_id
+    WHERE pnj.profile_id = prj.profiles_id
     ORDER BY pnj.created_at DESC LIMIT 1
 ) pnj ON TRUE
 WITH NO DATA;
@@ -126,8 +126,8 @@ CREATE INDEX mv_pricing_run_facts_model_id_idx
     WHERE model_id IS NOT NULL;
 
 CREATE INDEX mv_pricing_run_facts_profile_id_idx
-    ON mv_pricing_run_facts (profile_id)
-    WHERE profile_id IS NOT NULL;
+    ON mv_pricing_run_facts (profiles_id)
+    WHERE profiles_id IS NOT NULL;
 
 CREATE INDEX mv_pricing_run_facts_session_id_idx
     ON mv_pricing_run_facts (session_id)
@@ -158,8 +158,8 @@ CREATE INDEX mv_pricing_run_facts_model_created_at_idx
     WHERE model_id IS NOT NULL;
 
 CREATE INDEX mv_pricing_run_facts_profile_created_at_idx
-    ON mv_pricing_run_facts (profile_id, run_created_at DESC)
-    WHERE profile_id IS NOT NULL;
+    ON mv_pricing_run_facts (profiles_id, run_created_at DESC)
+    WHERE profiles_id IS NOT NULL;
 
 CREATE INDEX mv_pricing_run_facts_agent_model_idx
     ON mv_pricing_run_facts (agent_id, model_id)

@@ -160,8 +160,8 @@ runs_today AS (
         COUNT(*)::bigint as runs_today_count,
         MIN(mr.created_at) as earliest_run_created_at
     FROM view_runs_entry mr
-    JOIN profile_runs_junction prj ON prj.run_id = mr.id
-    WHERE prj.profile_id = (SELECT ppj.profile_id FROM all_chats sc
+    JOIN profiles_runs_connection prj ON prj.run_id = mr.id
+    WHERE prj.profiles_id = (SELECT ppj.profile_id FROM all_chats sc
                             JOIN all_attempts sa ON sa.id = sc.attempt_id
                             JOIN all_attempt_profiles aap ON aap.attempt_id = sa.id
                             JOIN profile_profiles_junction ppj ON ppj.profiles_id = aap.profiles_id

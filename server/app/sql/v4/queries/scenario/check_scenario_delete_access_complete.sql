@@ -86,11 +86,10 @@ usage_check AS (
         SELECT COUNT(*) FROM mv_attempt_chats msc
         WHERE msc.scenario_id = (SELECT scenarios_id FROM scenario_resource)
     ) + (
+        -- Count child scenarios (variants) whose parent_id = this scenario's resource ID
         SELECT COUNT(*)
-        FROM scenario_tree_junction st
-        WHERE (st.parent_id = (SELECT p_scenario_id FROM params)
-            OR st.child_id = (SELECT p_scenario_id FROM params))
-          AND st.parent_id != st.child_id
+        FROM scenarios_resource sr_child
+        WHERE sr_child.parent_id = (SELECT scenarios_id FROM scenario_resource)
     ) as usage_count
 )
 SELECT

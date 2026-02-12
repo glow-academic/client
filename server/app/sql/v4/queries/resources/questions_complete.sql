@@ -106,7 +106,7 @@ BEGIN
     );
 
     -- Link tool to call
-    INSERT INTO tool_calls_junction (tool_id, call_id) VALUES (v_tool_id, v_call_id);
+    INSERT INTO tools_calls_connection (tools_id, call_id) VALUES (v_tool_id, v_call_id);
     
     -- INSERT INTO questions_resource table (always insert, never update)
     INSERT INTO questions_resource(question_text, allow_multiple, time, active, mcp)

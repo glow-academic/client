@@ -196,9 +196,7 @@ BEGIN
         INSERT INTO scenario_artifact (created_at, updated_at)
         VALUES (NOW(), NOW())
         RETURNING id INTO v_scenario_id;
-        -- Insert root tree edge so scenario appears in the list
-        INSERT INTO scenario_tree_junction (parent_id, child_id, active, created_at)
-        VALUES (v_scenario_id, v_scenario_id, true, NOW());
+        -- Root status is now set on scenarios_resource (is_root = TRUE) below
     ELSE
         v_scenario_id := v_input_scenario_id;
 
@@ -291,14 +289,14 @@ BEGIN
             v_call_id := uuidv7();
             INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
             VALUES (v_call_id, 'scenario_save_create_names_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((names).create_tool_id, v_call_id);
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((names).create_tool_id, v_call_id);
             INSERT INTO names_calls_connection (names_id, call_id) VALUES (v_name_id, v_call_id);
         END IF;
         IF (names).link_tool_id IS NOT NULL THEN
             v_call_id := uuidv7();
             INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
             VALUES (v_call_id, 'scenario_save_link_names_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((names).link_tool_id, v_call_id);
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((names).link_tool_id, v_call_id);
             INSERT INTO names_calls_connection (names_id, call_id) VALUES (v_name_id, v_call_id);
         END IF;
     END IF;
@@ -309,14 +307,14 @@ BEGIN
             v_call_id := uuidv7();
             INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
             VALUES (v_call_id, 'scenario_save_create_descriptions_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((descriptions).create_tool_id, v_call_id);
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((descriptions).create_tool_id, v_call_id);
             INSERT INTO descriptions_calls_connection (descriptions_id, call_id) VALUES (v_description_id, v_call_id);
         END IF;
         IF (descriptions).link_tool_id IS NOT NULL THEN
             v_call_id := uuidv7();
             INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
             VALUES (v_call_id, 'scenario_save_link_descriptions_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((descriptions).link_tool_id, v_call_id);
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((descriptions).link_tool_id, v_call_id);
             INSERT INTO descriptions_calls_connection (descriptions_id, call_id) VALUES (v_description_id, v_call_id);
         END IF;
     END IF;
@@ -327,14 +325,14 @@ BEGIN
             v_call_id := uuidv7();
             INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
             VALUES (v_call_id, 'scenario_save_create_problem_statements_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((problem_statements).create_tool_id, v_call_id);
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((problem_statements).create_tool_id, v_call_id);
             INSERT INTO problem_statements_calls_connection (problem_statements_id, call_id) VALUES (v_problem_statement_id, v_call_id);
         END IF;
         IF (problem_statements).link_tool_id IS NOT NULL THEN
             v_call_id := uuidv7();
             INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
             VALUES (v_call_id, 'scenario_save_link_problem_statements_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((problem_statements).link_tool_id, v_call_id);
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((problem_statements).link_tool_id, v_call_id);
             INSERT INTO problem_statements_calls_connection (problem_statements_id, call_id) VALUES (v_problem_statement_id, v_call_id);
         END IF;
     END IF;
@@ -345,7 +343,7 @@ BEGIN
             v_call_id := uuidv7();
             INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
             VALUES (v_call_id, 'scenario_save_create_flags_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((flags).create_tool_id, v_call_id);
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((flags).create_tool_id, v_call_id);
             INSERT INTO flags_calls_connection (flags_id, call_id)
             SELECT x.flag_id, v_call_id FROM UNNEST(v_flag_ids) AS x(flag_id);
         END IF;
@@ -353,7 +351,7 @@ BEGIN
             v_call_id := uuidv7();
             INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
             VALUES (v_call_id, 'scenario_save_link_flags_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((flags).link_tool_id, v_call_id);
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((flags).link_tool_id, v_call_id);
             INSERT INTO flags_calls_connection (flags_id, call_id)
             SELECT x.flag_id, v_call_id FROM UNNEST(v_flag_ids) AS x(flag_id);
         END IF;
@@ -365,7 +363,7 @@ BEGIN
             v_call_id := uuidv7();
             INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
             VALUES (v_call_id, 'scenario_save_create_departments_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((departments).create_tool_id, v_call_id);
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((departments).create_tool_id, v_call_id);
             INSERT INTO departments_calls_connection (departments_id, call_id)
             SELECT x.department_id, v_call_id FROM UNNEST(v_department_ids) AS x(department_id);
         END IF;
@@ -373,7 +371,7 @@ BEGIN
             v_call_id := uuidv7();
             INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
             VALUES (v_call_id, 'scenario_save_link_departments_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((departments).link_tool_id, v_call_id);
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((departments).link_tool_id, v_call_id);
             INSERT INTO departments_calls_connection (departments_id, call_id)
             SELECT x.department_id, v_call_id FROM UNNEST(v_department_ids) AS x(department_id);
         END IF;
@@ -385,7 +383,7 @@ BEGIN
             v_call_id := uuidv7();
             INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
             VALUES (v_call_id, 'scenario_save_create_personas_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((personas).create_tool_id, v_call_id);
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((personas).create_tool_id, v_call_id);
             INSERT INTO personas_calls_connection (personas_id, call_id)
             SELECT x.persona_id, v_call_id FROM UNNEST(v_persona_ids) AS x(persona_id);
         END IF;
@@ -393,7 +391,7 @@ BEGIN
             v_call_id := uuidv7();
             INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
             VALUES (v_call_id, 'scenario_save_link_personas_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((personas).link_tool_id, v_call_id);
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((personas).link_tool_id, v_call_id);
             INSERT INTO personas_calls_connection (personas_id, call_id)
             SELECT x.persona_id, v_call_id FROM UNNEST(v_persona_ids) AS x(persona_id);
         END IF;
@@ -405,7 +403,7 @@ BEGIN
             v_call_id := uuidv7();
             INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
             VALUES (v_call_id, 'scenario_save_create_documents_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((documents).create_tool_id, v_call_id);
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((documents).create_tool_id, v_call_id);
             INSERT INTO documents_calls_connection (documents_id, call_id)
             SELECT x.document_id, v_call_id FROM UNNEST(v_document_ids) AS x(document_id);
         END IF;
@@ -413,7 +411,7 @@ BEGIN
             v_call_id := uuidv7();
             INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
             VALUES (v_call_id, 'scenario_save_link_documents_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((documents).link_tool_id, v_call_id);
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((documents).link_tool_id, v_call_id);
             INSERT INTO documents_calls_connection (documents_id, call_id)
             SELECT x.document_id, v_call_id FROM UNNEST(v_document_ids) AS x(document_id);
         END IF;
@@ -425,7 +423,7 @@ BEGIN
             v_call_id := uuidv7();
             INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
             VALUES (v_call_id, 'scenario_save_create_templates_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((templates).create_tool_id, v_call_id);
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((templates).create_tool_id, v_call_id);
             INSERT INTO templates_calls_connection (templates_id, call_id)
             SELECT x.template_id, v_call_id FROM UNNEST(v_template_document_ids) AS x(template_id);
         END IF;
@@ -433,7 +431,7 @@ BEGIN
             v_call_id := uuidv7();
             INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
             VALUES (v_call_id, 'scenario_save_link_templates_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((templates).link_tool_id, v_call_id);
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((templates).link_tool_id, v_call_id);
             INSERT INTO templates_calls_connection (templates_id, call_id)
             SELECT x.template_id, v_call_id FROM UNNEST(v_template_document_ids) AS x(template_id);
         END IF;
@@ -445,7 +443,7 @@ BEGIN
             v_call_id := uuidv7();
             INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
             VALUES (v_call_id, 'scenario_save_create_parameters_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((parameters).create_tool_id, v_call_id);
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((parameters).create_tool_id, v_call_id);
             INSERT INTO parameters_calls_connection (parameters_id, call_id)
             SELECT x.parameter_id, v_call_id FROM UNNEST(v_parameter_ids) AS x(parameter_id);
         END IF;
@@ -453,7 +451,7 @@ BEGIN
             v_call_id := uuidv7();
             INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
             VALUES (v_call_id, 'scenario_save_link_parameters_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((parameters).link_tool_id, v_call_id);
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((parameters).link_tool_id, v_call_id);
             INSERT INTO parameters_calls_connection (parameters_id, call_id)
             SELECT x.parameter_id, v_call_id FROM UNNEST(v_parameter_ids) AS x(parameter_id);
         END IF;
@@ -466,7 +464,7 @@ BEGIN
             v_parameter_fields_call_id := v_call_id;
             INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
             VALUES (v_call_id, 'scenario_save_create_parameter_fields_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((parameter_fields).create_tool_id, v_call_id);
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((parameter_fields).create_tool_id, v_call_id);
             INSERT INTO parameter_fields_calls_connection (parameter_fields_id, call_id)
             SELECT pfr.id, v_call_id
             FROM UNNEST(v_parameter_field_ids) AS x(field_id)
@@ -477,7 +475,7 @@ BEGIN
             v_parameter_fields_call_id := v_call_id;
             INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
             VALUES (v_call_id, 'scenario_save_link_parameter_fields_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((parameter_fields).link_tool_id, v_call_id);
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((parameter_fields).link_tool_id, v_call_id);
             INSERT INTO parameter_fields_calls_connection (parameter_fields_id, call_id)
             SELECT pfr.id, v_call_id
             FROM UNNEST(v_parameter_field_ids) AS x(field_id)
@@ -491,7 +489,7 @@ BEGIN
             v_call_id := uuidv7();
             INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
             VALUES (v_call_id, 'scenario_save_create_images_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((images).create_tool_id, v_call_id);
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((images).create_tool_id, v_call_id);
             INSERT INTO images_calls_connection (images_id, call_id)
             SELECT x.image_id, v_call_id FROM UNNEST(v_image_ids) AS x(image_id);
         END IF;
@@ -499,7 +497,7 @@ BEGIN
             v_call_id := uuidv7();
             INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
             VALUES (v_call_id, 'scenario_save_link_images_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((images).link_tool_id, v_call_id);
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((images).link_tool_id, v_call_id);
             INSERT INTO images_calls_connection (images_id, call_id)
             SELECT x.image_id, v_call_id FROM UNNEST(v_image_ids) AS x(image_id);
         END IF;
@@ -511,7 +509,7 @@ BEGIN
             v_call_id := uuidv7();
             INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
             VALUES (v_call_id, 'scenario_save_create_objectives_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((objectives).create_tool_id, v_call_id);
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((objectives).create_tool_id, v_call_id);
             INSERT INTO objectives_calls_connection (objectives_id, call_id)
             SELECT x.objective_id, v_call_id FROM UNNEST(v_objective_ids) AS x(objective_id);
         END IF;
@@ -519,7 +517,7 @@ BEGIN
             v_call_id := uuidv7();
             INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
             VALUES (v_call_id, 'scenario_save_link_objectives_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((objectives).link_tool_id, v_call_id);
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((objectives).link_tool_id, v_call_id);
             INSERT INTO objectives_calls_connection (objectives_id, call_id)
             SELECT x.objective_id, v_call_id FROM UNNEST(v_objective_ids) AS x(objective_id);
         END IF;
@@ -531,7 +529,7 @@ BEGIN
             v_call_id := uuidv7();
             INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
             VALUES (v_call_id, 'scenario_save_create_videos_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((videos).create_tool_id, v_call_id);
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((videos).create_tool_id, v_call_id);
             INSERT INTO videos_calls_connection (videos_id, call_id)
             SELECT x.video_id, v_call_id FROM UNNEST(v_video_ids) AS x(video_id);
         END IF;
@@ -539,7 +537,7 @@ BEGIN
             v_call_id := uuidv7();
             INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
             VALUES (v_call_id, 'scenario_save_link_videos_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((videos).link_tool_id, v_call_id);
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((videos).link_tool_id, v_call_id);
             INSERT INTO videos_calls_connection (videos_id, call_id)
             SELECT x.video_id, v_call_id FROM UNNEST(v_video_ids) AS x(video_id);
         END IF;
@@ -551,7 +549,7 @@ BEGIN
             v_call_id := uuidv7();
             INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
             VALUES (v_call_id, 'scenario_save_create_questions_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((questions).create_tool_id, v_call_id);
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((questions).create_tool_id, v_call_id);
             INSERT INTO questions_calls_connection (questions_id, call_id)
             SELECT x.question_id, v_call_id FROM UNNEST(v_question_ids) AS x(question_id);
         END IF;
@@ -559,7 +557,7 @@ BEGIN
             v_call_id := uuidv7();
             INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
             VALUES (v_call_id, 'scenario_save_link_questions_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((questions).link_tool_id, v_call_id);
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((questions).link_tool_id, v_call_id);
             INSERT INTO questions_calls_connection (questions_id, call_id)
             SELECT x.question_id, v_call_id FROM UNNEST(v_question_ids) AS x(question_id);
         END IF;
@@ -727,7 +725,8 @@ BEGIN
         images_enabled,
         questions_enabled,
         templates_enabled,
-        department_ids
+        department_ids,
+        is_root
     )
     SELECT
         n.name,
@@ -738,7 +737,8 @@ BEGIN
         v_images_enabled_flag_id IS NOT NULL,
         v_questions_enabled_flag_id IS NOT NULL,
         v_use_templates_flag_id IS NOT NULL,
-        v_department_ids
+        v_department_ids,
+        is_create  -- new scenarios are root; updates preserve existing tree structure
     FROM (SELECT 1) one
     LEFT JOIN names_resource n ON n.id = v_name_id
     LEFT JOIN descriptions_resource d ON d.id = v_description_id

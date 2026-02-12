@@ -202,7 +202,7 @@ create_run AS (
     RETURNING id as run_id
 ),
 link_run_to_profile AS (
-    INSERT INTO profile_runs_junction (profile_id, run_id)
+    INSERT INTO profiles_runs_connection (profiles_id, run_id)
     SELECT p.profile_id, cr.run_id
     FROM params p
     CROSS JOIN create_run cr

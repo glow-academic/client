@@ -151,7 +151,7 @@ grant_insert AS (
 ),
 -- Link actor profile to grant via junction table
 link_grant_actor AS (
-    INSERT INTO profile_grants_junction (profile_id, grant_id, created_at)
+    INSERT INTO profiles_grants_connection (profiles_id, grant_id, created_at)
     SELECT
         (SELECT requester_profile_id FROM params),
         gi.id,
@@ -170,7 +170,7 @@ emulation_insert AS (
 ),
 -- Link target profile to emulation via junction table
 link_emulation_target AS (
-    INSERT INTO profile_emulations_junction (profile_id, emulation_id, created_at)
+    INSERT INTO profiles_emulations_connection (profiles_id, emulation_id, created_at)
     SELECT
         (SELECT target_profile_id FROM params),
         ei.id,

@@ -55,7 +55,7 @@ link_run_agent AS (
 ),
 link_run_profile AS (
     -- Link run to profile via junction table
-    INSERT INTO profile_runs_junction (profile_id, run_id)
+    INSERT INTO profiles_runs_connection (profiles_id, run_id)
     SELECT p.profile_id, cr.id
     FROM params p
     CROSS JOIN create_run cr

@@ -29,7 +29,7 @@ AS $$
         RETURNING id
     ),
     link_profile AS (
-        INSERT INTO profile_audits_junction (profile_id, audit_id)
+        INSERT INTO profiles_audits_connection (profiles_id, audit_id)
         SELECT profile_id, na.id
         FROM new_audit na
         WHERE profile_id IS NOT NULL

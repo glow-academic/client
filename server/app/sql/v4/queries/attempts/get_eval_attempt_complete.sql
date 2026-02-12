@@ -288,7 +288,7 @@ runs_with_details AS (
         NULL::uuid as persona_id,
         NULL::text as persona_name,
         -- Profile info
-        prj.profile_id,
+        prj.profiles_id,
         COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as profile_name,
         -- Grade info (from eval_agent's run, not original run)
         -- Grade is on the eval_agent run via view_tests_entry.group_id -> view_runs_entry.group_id -> view_grades_entry.run_id
@@ -323,8 +323,8 @@ runs_with_details AS (
     JOIN view_runs_entry r ON r.id = rws.run_id
     LEFT JOIN config_agents_connection cac ON cac.config_id = r.config_id AND cac.active = TRUE
     LEFT JOIN agents_resource a ON a.id = cac.agents_id
-    LEFT JOIN profile_runs_junction prj ON prj.run_id = r.id
-    LEFT JOIN profile_artifact p ON p.id = prj.profile_id
+    LEFT JOIN profiles_runs_connection prj ON prj.run_id = r.id
+    LEFT JOIN profile_artifact p ON p.id = prj.profiles_id
     ORDER BY rws.eval_run_assigned_at DESC
 ),
 -- Calculate status summary
@@ -340,7 +340,7 @@ runs_aggregated AS (
     SELECT 
         COALESCE(
             ARRAY_AGG(
-                (rwd.run_id, rwd.status, rwd.test_id, rwd.eval_run_completed, rwd.eval_run_assigned_at, rwd.eval_run_updated_at, rwd.run_created_at, rwd.model_id, rwd.model_name, rwd.agent_id, rwd.agent_name, rwd.persona_id, rwd.persona_name, rwd.profile_id, rwd.profile_name, rwd.grade_score, rwd.grade_passed, rwd.grade_created_at)::types.q_get_eval_attempt_v4_run
+                (rwd.run_id, rwd.status, rwd.test_id, rwd.eval_run_completed, rwd.eval_run_assigned_at, rwd.eval_run_updated_at, rwd.run_created_at, rwd.model_id, rwd.model_name, rwd.agent_id, rwd.agent_name, rwd.persona_id, rwd.persona_name, rwd.profiles_id, rwd.profile_name, rwd.grade_score, rwd.grade_passed, rwd.grade_created_at)::types.q_get_eval_attempt_v4_run
                 ORDER BY rwd.eval_run_assigned_at DESC
             ),
             '{}'::types.q_get_eval_attempt_v4_run[]

@@ -6,7 +6,7 @@
 --
 -- This MV is INDEPENDENT - it does not depend on any other MVs.
 -- Section: ACTIVITY
--- Source: problems_entry + profile_problems_junction + profile_names_junction + names_resource
+-- Source: problems_entry + profiles_problems_connection + profile_names_junction + names_resource
 
 -- ============================================================================
 -- Step 1: Drop all indexes on mv_activity_problems materialized view (if it exists)
@@ -44,13 +44,13 @@ SELECT
     pe.resolved,
     pe.created_at,
     pe.updated_at,
-    ppj.profile_id,
+    ppj.profiles_id,
     nr.name AS profile_name
 FROM problems_entry pe
-LEFT JOIN profile_problems_junction ppj
+LEFT JOIN profiles_problems_connection ppj
     ON ppj.problem_id = pe.id
 LEFT JOIN profile_names_junction pnj
-    ON pnj.profile_id = ppj.profile_id
+    ON pnj.profile_id = ppj.profiles_id
    AND pnj.active = true
 LEFT JOIN names_resource nr
     ON nr.id = pnj.name_id
@@ -75,8 +75,8 @@ CREATE INDEX mv_activity_problems_created_at_idx
     ON mv_activity_problems (created_at DESC);
 
 CREATE INDEX mv_activity_problems_profile_id_idx
-    ON mv_activity_problems (profile_id)
-    WHERE profile_id IS NOT NULL;
+    ON mv_activity_problems (profiles_id)
+    WHERE profiles_id IS NOT NULL;
 
 -- ============================================================================
 -- Step 6: Refresh Materialized View with Data

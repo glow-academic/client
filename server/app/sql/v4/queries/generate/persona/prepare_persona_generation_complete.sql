@@ -88,7 +88,7 @@ BEGIN
     RETURNING id INTO v_run_id;
 
     -- Link run to profile
-    INSERT INTO profile_runs_junction (profile_id, run_id)
+    INSERT INTO profiles_runs_connection (profiles_id, run_id)
     VALUES (p_profile_id, v_run_id);
 
     RETURN QUERY SELECT v_run_id, v_group_id, v_trace_id::text, v_config_id;

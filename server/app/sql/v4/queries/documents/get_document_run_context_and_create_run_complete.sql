@@ -159,9 +159,9 @@ runs_today AS (
     SELECT
         COUNT(*)::bigint as runs_today_count,
         MIN(mr.created_at) as earliest_run_created_at
-    FROM profile_runs_junction prj
+    FROM profiles_runs_connection prj
     JOIN view_runs_entry mr ON mr.id = prj.run_id
-    WHERE prj.profile_id = (SELECT profile_id FROM params)
+    WHERE prj.profiles_id = (SELECT profile_id FROM params)
       AND mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
 ),
 -- Build tool arguments FROM args_resource (replaces schemas_resource)
@@ -368,7 +368,7 @@ create_run AS (
 ),
 link_run_to_profile AS (
     -- Link run to profile via junction table
-    INSERT INTO profile_runs_junction (profile_id, run_id)
+    INSERT INTO profiles_runs_connection (profiles_id, run_id)
     SELECT cd.profile_id::uuid, cr.id
     FROM context_data cd
     CROSS JOIN create_run cr

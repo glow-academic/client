@@ -62,7 +62,7 @@ insert_activity AS (
 ),
 link_activity_to_profile AS (
     -- Link activity to profile via junction table
-    INSERT INTO profile_activity_junction (profile_id, activity_id)
+    INSERT INTO profiles_activity_connection (profiles_id, activity_id)
     SELECT up.profile_id, ia.activity_id
     FROM update_profile up
     CROSS JOIN insert_activity ia

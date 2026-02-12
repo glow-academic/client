@@ -183,7 +183,7 @@ scenario_data AS (
         EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'scenario_active' AND sf.value = TRUE) as active,
         s.generated as generated,
         s.updated_at,
-        st.parent_id as parent_scenario_id,
+        sr.parent_id as parent_scenario_id,
         COALESCE(sdd.department_ids, NULL) as department_ids,
         COALESCE(so.objective_ids, ARRAY[]::text[]) as objective_ids,
         COALESCE(sr.persona_ids::text[], ARRAY[]::text[]) as persona_ids,
@@ -207,16 +207,13 @@ scenario_data AS (
         END as can_delete,
         true as can_duplicate
     FROM scenario_artifact s
-    -- Root check: scenarios with self-referencing entry in scenario_tree_junction
-    JOIN scenario_tree_junction root_check ON root_check.parent_id = s.id AND root_check.child_id = s.id
-    -- Bridge to scenarios_resource for denormalized persona_ids
-    LEFT JOIN scenario_scenarios_junction ssj ON ssj.scenario_id = s.id
-    LEFT JOIN scenarios_resource sr ON sr.id = ssj.scenarios_id
+    -- Bridge to scenarios_resource for denormalized persona_ids + root check + parent linkage
+    JOIN scenario_scenarios_junction ssj ON ssj.scenario_id = s.id
+    JOIN scenarios_resource sr ON sr.id = ssj.scenarios_id
     -- Department scoping (for HAVING clause)
     LEFT JOIN scenario_departments_junction sd ON sd.scenario_id = s.id AND sd.active = true
     LEFT JOIN scenario_departments_data sdd ON sdd.scenario_id = s.id
-    -- Parent-child linkage
-    LEFT JOIN scenario_tree_junction st ON st.child_id = s.id AND st.parent_id != st.child_id
+    -- Parent-child linkage (from scenarios_resource.parent_id, already joined as sr)
     -- Problem statement
     LEFT JOIN scenario_problem_statements_junction sps_j ON sps_j.scenario_id = s.id AND sps_j.active = true
     LEFT JOIN problem_statements_resource ps ON ps.id = sps_j.problem_statement_id
@@ -231,7 +228,7 @@ scenario_data AS (
         (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1),
         ps.problem_statement,
         EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'scenario_active' AND sf.value = TRUE),
-        s.generated, s.updated_at, st.parent_id, sr.persona_ids,
+        s.generated, s.updated_at, sr.parent_id, sr.persona_ids,
         sdd.department_ids, so.objective_ids, sfd.field_ids,
         ss.simulation_ids, ss.num_simulations, sc.cohort_ids,
         su.active_usage_count, su.total_simulation_links, up.role

@@ -81,34 +81,25 @@ existing_chats AS (
     CROSS JOIN attempt_base ab
     WHERE sc.attempt_id = ab.attempt_id
 ),
--- Recursively map child scenario IDs to root parent IDs  
+-- Recursively map child scenario IDs to root parent IDs via scenarios_resource.parent_id
 scenario_ancestors AS (
     SELECT DISTINCT
         ec.child_scenario_id,
         ec.child_scenario_id as ancestor_id,
         0 as depth
     FROM existing_chats ec
-    
+
     UNION ALL
-    
-    SELECT 
+
+    SELECT
         sa.child_scenario_id,
-        COALESCE(
-            (SELECT st.parent_id 
-             FROM scenario_tree_junction st 
-             WHERE st.child_id = sa.ancestor_id 
-               AND st.parent_id != st.child_id 
-             LIMIT 1),
-            sa.ancestor_id
-        ) as ancestor_id,
+        sr.parent_id as ancestor_id,
         sa.depth + 1 as depth
     FROM scenario_ancestors sa
+    JOIN scenarios_resource sr ON sr.id = sa.ancestor_id
     WHERE sa.depth < 100
-      AND EXISTS (
-          SELECT 1 FROM scenario_tree_junction st 
-          WHERE st.child_id = sa.ancestor_id 
-            AND st.parent_id != st.child_id
-      )
+      AND sr.parent_id IS NOT NULL
+      AND sr.is_root IS NOT TRUE
 ),
 root_scenarios AS (
     SELECT DISTINCT
@@ -116,8 +107,8 @@ root_scenarios AS (
         ancestor_id as root_scenario_id
     FROM scenario_ancestors
     WHERE depth = (
-        SELECT MAX(depth) 
-        FROM scenario_ancestors sa2 
+        SELECT MAX(depth)
+        FROM scenario_ancestors sa2
         WHERE sa2.child_scenario_id = scenario_ancestors.child_scenario_id
     )
 ),

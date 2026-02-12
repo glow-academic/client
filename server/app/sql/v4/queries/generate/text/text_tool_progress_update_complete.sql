@@ -44,7 +44,7 @@ WITH params AS (
 -- Get tool_id AND tool_type from tool_name + agent_tools_junction junction table
 -- Works with any agent (not hardcoded to document)
 get_tool_info AS (
-    SELECT t.id as tool_id, COALESCE(rt.resource::text, '') as tool_type, (SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1) as tool_name
+    SELECT t.id as tool_id, tr_res.id as tools_resource_id, COALESCE(rt.resource::text, '') as tool_type, (SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1) as tool_name
     FROM params p
     JOIN tool_artifact t ON (SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1) = p.tool_name
     JOIN tool_tools_junction ttj ON ttj.tool_id = t.id
@@ -82,10 +82,10 @@ create_tool_call AS (
     WHERE NOT EXISTS (SELECT 1 FROM existing_tool_call)
     RETURNING id as tool_call_id, external_call_id
 ),
--- Insert into tool_calls_junction to link call to tool
+-- Insert into tools_calls_connection to link call to tool
 create_tool_call_junction AS (
-    INSERT INTO tool_calls_junction (call_id, tool_id)
-    SELECT ctc.tool_call_id, gt.tool_id
+    INSERT INTO tools_calls_connection (tools_id, call_id)
+    SELECT gt.tools_resource_id, ctc.tool_call_id
     FROM create_tool_call ctc
     CROSS JOIN get_tool_info gt
     RETURNING call_id

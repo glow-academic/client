@@ -6,7 +6,7 @@
 --
 -- This MV is INDEPENDENT - it does not depend on any other MVs.
 -- Section: ACTIVITY
--- Source: logins_entry + profile_logins_junction
+-- Source: logins_entry + profiles_logins_connection
 
 DO $$
 DECLARE
@@ -27,7 +27,7 @@ DROP MATERIALIZED VIEW IF EXISTS mv_activity_logins CASCADE;
 CREATE MATERIALIZED VIEW mv_activity_logins AS
 SELECT
     l.id AS login_id,
-    pl.profile_id,
+    pl.profiles_id,
     l.last_login,
     l.created_at,
     l.updated_at,
@@ -36,7 +36,7 @@ SELECT
     l.mcp,
     l.call_id
 FROM logins_entry l
-LEFT JOIN profile_logins_junction pl
+LEFT JOIN profiles_logins_connection pl
     ON pl.login_id = l.id
    AND pl.active = true
 WITH NO DATA;
@@ -45,8 +45,8 @@ CREATE UNIQUE INDEX mv_activity_logins_pk
     ON mv_activity_logins (login_id);
 
 CREATE INDEX mv_activity_logins_profile_id_idx
-    ON mv_activity_logins (profile_id)
-    WHERE profile_id IS NOT NULL;
+    ON mv_activity_logins (profiles_id)
+    WHERE profiles_id IS NOT NULL;
 
 CREATE INDEX mv_activity_logins_last_login_idx
     ON mv_activity_logins (last_login DESC);

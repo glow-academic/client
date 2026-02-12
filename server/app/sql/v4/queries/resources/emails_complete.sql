@@ -104,7 +104,7 @@ BEGIN
     );
 
     -- Link tool to call
-    INSERT INTO tool_calls_junction (tool_id, call_id) VALUES (v_tool_id, v_call_id);
+    INSERT INTO tools_calls_connection (tools_id, call_id) VALUES (v_tool_id, v_call_id);
     
     -- INSERT INTO emails_resource table (always insert, never update)
     -- Note: Column names and values need to be adjusted based on actual table schema

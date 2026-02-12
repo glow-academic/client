@@ -55,7 +55,7 @@ login_insert AS (
 ),
 -- Link login to profile via junction table
 login_profile_link AS (
-    INSERT INTO profile_logins_junction (profile_id, login_id)
+    INSERT INTO profiles_logins_connection (profiles_id, login_id)
     SELECT (SELECT profile_id FROM params), li.id
     FROM login_insert li
 )

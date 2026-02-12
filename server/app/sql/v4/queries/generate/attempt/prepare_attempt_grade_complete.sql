@@ -125,7 +125,7 @@ BEGIN
     RETURNING id INTO v_run_id;
 
     -- Link run to profile
-    INSERT INTO profile_runs_junction (profile_id, run_id)
+    INSERT INTO profiles_runs_connection (profiles_id, run_id)
     VALUES (p_profile_id, v_run_id);
 
     -- Create grade entry (grade has chat_id directly)

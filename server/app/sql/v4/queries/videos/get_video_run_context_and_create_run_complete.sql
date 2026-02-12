@@ -93,7 +93,7 @@ runs_today AS (
         COUNT(*)::bigint as runs_today_count,
         MIN(mr.created_at) as earliest_run_created_at
     FROM params p
-    LEFT JOIN profile_runs_junction prj ON prj.profile_id = p.profile_id
+    LEFT JOIN profiles_runs_connection prj ON prj.profiles_id = p.profile_id
     LEFT JOIN view_runs_entry mr ON mr.id = prj.run_id
     WHERE p.profile_id IS NOT NULL
       AND mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
@@ -157,7 +157,7 @@ create_run AS (
 ),
 link_run_to_profile AS (
     -- Link run to profile via junction table
-    INSERT INTO profile_runs_junction (profile_id, run_id)
+    INSERT INTO profiles_runs_connection (profiles_id, run_id)
     SELECT cd.profile_id::uuid, cr.id
     FROM context_data cd
     CROSS JOIN create_run cr

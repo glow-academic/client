@@ -115,7 +115,7 @@ BEGIN
     );
 
     -- Link tool to call
-    INSERT INTO tool_calls_junction (tool_id, call_id) VALUES (v_tool_id, v_call_id);
+    INSERT INTO tools_calls_connection (tools_id, call_id) VALUES (v_tool_id, v_call_id);
 
     -- INSERT INTO group_rubrics_resource table (always insert, never update)
     INSERT INTO group_rubrics_resource (

@@ -909,9 +909,9 @@ runs_for_department_via_agents AS (
 ),
 runs_for_department_via_profiles AS (
     SELECT DISTINCT mr.id as run_id
-    FROM profile_runs_junction prj
+    FROM profiles_runs_connection prj
     JOIN view_runs_entry mr ON mr.id = prj.run_id
-    JOIN profile_departments_junction pd ON pd.profile_id = prj.profile_id AND pd.active = true
+    JOIN profile_departments_junction pd ON pd.profile_id = prj.profiles_id AND pd.active = true
     WHERE pd.department_id = (SELECT department_id FROM params)
     AND (SELECT department_id FROM params) IS NOT NULL
 ),
