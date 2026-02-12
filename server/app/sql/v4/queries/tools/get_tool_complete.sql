@@ -478,7 +478,7 @@ args_mapping_data AS (
         a.field_type,
         a.required,
         a.default_value,
-        a.position,
+        0 as position,
         COALESCE(ta.generated, false) as generated,
         COALESCE(r.group_id, NULL::uuid) as group_id
     FROM params x
@@ -571,8 +571,8 @@ input_args_fields_data AS (
     SELECT 
         COALESCE(
             (SELECT ARRAY_AGG(
-                (a.id, a.name, COALESCE(a.description, ''), COALESCE(a.field_type, ''), COALESCE(a.required, false), COALESCE(a.default_value, ''), COALESCE(a.position, 0), COALESCE(ta.generated, false))::types.q_get_tool_v4_args_field_detail
-                ORDER BY a.position, a.name
+                (a.id, a.name, COALESCE(a.description, ''), COALESCE(a.field_type, ''), COALESCE(a.required, false), COALESCE(a.default_value, ''), 0, COALESCE(ta.generated, false))::types.q_get_tool_v4_args_field_detail
+                ORDER BY a.name
             )
             FROM params x
             CROSS JOIN args_ids_data aid
