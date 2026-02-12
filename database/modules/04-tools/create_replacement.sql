@@ -1,0 +1,47 @@
+-- Module: create_replacement
+-- Category: tool
+-- Description: create_replacement MCP tool
+-- ============================================================
+
+
+-- Resource rows
+INSERT INTO public.arg_positions_resource (id, args_id, value, created_at, active, generated, mcp) VALUES ('019c4e6b-2c29-79fa-b073-a0248ef0333d', '019c16d8-a124-71f7-9577-af43b8f435c2', 0, '2026-02-11T20:36:12.457770+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.arg_positions_resource (id, args_id, value, created_at, active, generated, mcp) VALUES ('019c4e6b-2c29-79fe-83e8-f7bdc6138e41', '019c16d8-a124-7228-988e-a69fc1de46f5', 1, '2026-02-11T20:36:12.457770+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.arg_positions_resource (id, args_id, value, created_at, active, generated, mcp) VALUES ('019c4e6b-2c29-7a00-9bf6-f1b32f3df6c0', '019c16d8-a124-724f-af64-0b725e117645', 2, '2026-02-11T20:36:12.457770+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.arg_positions_resource (id, args_id, value, created_at, active, generated, mcp) VALUES ('019c4e6b-2c29-7a07-a217-1194e95c717a', '019c16d8-a124-726e-bdd2-87bf7d5813a4', 3, '2026-02-11T20:36:12.457770+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.bindings_resource (id, entry, active, generated, mcp, created_at) VALUES ('019c164d-313e-7be3-a5b9-4d6f68c68dd6', 'replacements', true, false, false, '2026-01-31T23:04:43.581941+00:00') ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019c16d8-a129-71ef-9cd4-eb0aefbf637e', 'Create a replacement suggestion for an improvement in the simulation', '2026-02-01T01:37:01.720364+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019c16d8-a129-70c3-802d-49c1ae883e63', 'create_replacement', '2026-02-01T01:37:01.720364+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.tools_resource (id, created_at, generated, mcp, active, name, description, department_ids, createable) VALUES ('019c16d8-a125-7364-8818-8035df41de53', '2026-02-01T01:37:01.720364+00:00', false, false, true, 'create_replacement', 'Create a replacement suggestion for an improvement in the simulation', '{}', false) ON CONFLICT (id) DO NOTHING;
+
+-- Artifact
+-- tool_artifact
+INSERT INTO public.tool_artifact (id, created_at, updated_at, generated, mcp) VALUES ('019c16d8-a128-7f6f-a6f8-c9c5aa236504', '2026-02-01T01:37:01.720364+00:00', '2026-02-01T01:37:01.720364+00:00', false, false) ON CONFLICT (id) DO NOTHING;
+
+-- Junctions
+-- tool_arg_positions_junction
+INSERT INTO public.tool_arg_positions_junction (tool_id, arg_positions_id, created_at, active, generated, mcp) VALUES ('019c16d8-a128-7f6f-a6f8-c9c5aa236504', '019c4e6b-2c29-79fa-b073-a0248ef0333d', '2026-02-11T20:36:12.459709+00:00', true, false, false) ON CONFLICT (tool_id, arg_positions_id) DO NOTHING;
+INSERT INTO public.tool_arg_positions_junction (tool_id, arg_positions_id, created_at, active, generated, mcp) VALUES ('019c16d8-a128-7f6f-a6f8-c9c5aa236504', '019c4e6b-2c29-79fe-83e8-f7bdc6138e41', '2026-02-11T20:36:12.459709+00:00', true, false, false) ON CONFLICT (tool_id, arg_positions_id) DO NOTHING;
+INSERT INTO public.tool_arg_positions_junction (tool_id, arg_positions_id, created_at, active, generated, mcp) VALUES ('019c16d8-a128-7f6f-a6f8-c9c5aa236504', '019c4e6b-2c29-7a00-9bf6-f1b32f3df6c0', '2026-02-11T20:36:12.459709+00:00', true, false, false) ON CONFLICT (tool_id, arg_positions_id) DO NOTHING;
+INSERT INTO public.tool_arg_positions_junction (tool_id, arg_positions_id, created_at, active, generated, mcp) VALUES ('019c16d8-a128-7f6f-a6f8-c9c5aa236504', '019c4e6b-2c29-7a07-a217-1194e95c717a', '2026-02-11T20:36:12.459709+00:00', true, false, false) ON CONFLICT (tool_id, arg_positions_id) DO NOTHING;
+-- tool_args_junction
+INSERT INTO public.tool_args_junction (tool_id, args_id, created_at, generated, mcp, active) VALUES ('019c16d8-a128-7f6f-a6f8-c9c5aa236504', '019c16d8-a124-71f7-9577-af43b8f435c2', '2026-02-01T01:37:01.720364+00:00', false, false, true) ON CONFLICT (tool_id, args_id) DO NOTHING;
+INSERT INTO public.tool_args_junction (tool_id, args_id, created_at, generated, mcp, active) VALUES ('019c16d8-a128-7f6f-a6f8-c9c5aa236504', '019c16d8-a124-7228-988e-a69fc1de46f5', '2026-02-01T01:37:01.720364+00:00', false, false, true) ON CONFLICT (tool_id, args_id) DO NOTHING;
+INSERT INTO public.tool_args_junction (tool_id, args_id, created_at, generated, mcp, active) VALUES ('019c16d8-a128-7f6f-a6f8-c9c5aa236504', '019c16d8-a124-724f-af64-0b725e117645', '2026-02-01T01:37:01.720364+00:00', false, false, true) ON CONFLICT (tool_id, args_id) DO NOTHING;
+INSERT INTO public.tool_args_junction (tool_id, args_id, created_at, generated, mcp, active) VALUES ('019c16d8-a128-7f6f-a6f8-c9c5aa236504', '019c16d8-a124-726e-bdd2-87bf7d5813a4', '2026-02-01T01:37:01.720364+00:00', false, false, true) ON CONFLICT (tool_id, args_id) DO NOTHING;
+-- tool_args_outputs_junction
+INSERT INTO public.tool_args_outputs_junction (tool_id, args_outputs_id, created_at, generated, mcp, active) VALUES ('019c16d8-a128-7f6f-a6f8-c9c5aa236504', '019c24ff-49ef-761e-963a-16e0c0f71aad', '2026-02-03T19:33:56.326236+00:00', false, false, true) ON CONFLICT (tool_id, args_outputs_id) DO NOTHING;
+INSERT INTO public.tool_args_outputs_junction (tool_id, args_outputs_id, created_at, generated, mcp, active) VALUES ('019c16d8-a128-7f6f-a6f8-c9c5aa236504', '019c24ff-49ef-7793-8206-9c445038845f', '2026-02-03T19:33:56.326236+00:00', false, false, true) ON CONFLICT (tool_id, args_outputs_id) DO NOTHING;
+INSERT INTO public.tool_args_outputs_junction (tool_id, args_outputs_id, created_at, generated, mcp, active) VALUES ('019c16d8-a128-7f6f-a6f8-c9c5aa236504', '019c24ff-49ef-7907-90f3-79b220cf4be3', '2026-02-03T19:33:56.326236+00:00', false, false, true) ON CONFLICT (tool_id, args_outputs_id) DO NOTHING;
+INSERT INTO public.tool_args_outputs_junction (tool_id, args_outputs_id, created_at, generated, mcp, active) VALUES ('019c16d8-a128-7f6f-a6f8-c9c5aa236504', '019c24ff-49ef-7a9e-823f-403a0f1d03d7', '2026-02-03T19:33:56.326236+00:00', false, false, true) ON CONFLICT (tool_id, args_outputs_id) DO NOTHING;
+-- tool_bindings_junction
+INSERT INTO public.tool_bindings_junction (tool_id, binding_id, active, created_at, generated, mcp) VALUES ('019c16d8-a128-7f6f-a6f8-c9c5aa236504', '019c164d-313e-7be3-a5b9-4d6f68c68dd6', true, '2026-02-01T01:37:01.720364+00:00', false, false) ON CONFLICT (tool_id, binding_id) DO NOTHING;
+-- tool_descriptions_junction
+INSERT INTO public.tool_descriptions_junction (tool_id, description_id, created_at, generated, mcp, active) VALUES ('019c16d8-a128-7f6f-a6f8-c9c5aa236504', '019c16d8-a129-71ef-9cd4-eb0aefbf637e', '2026-02-01T01:37:01.720364+00:00', false, false, true) ON CONFLICT (tool_id, description_id) DO NOTHING;
+-- tool_flags_junction
+INSERT INTO public.tool_flags_junction (tool_id, flag_id, value, created_at, generated, mcp, active) VALUES ('019c16d8-a128-7f6f-a6f8-c9c5aa236504', '019be334-bfc6-74fb-be11-ea6b522945bb', true, '2026-02-01T01:37:01.720364+00:00', false, false, true) ON CONFLICT (tool_id, flag_id) DO NOTHING;
+INSERT INTO public.tool_flags_junction (tool_id, flag_id, value, created_at, generated, mcp, active) VALUES ('019c16d8-a128-7f6f-a6f8-c9c5aa236504', 'df188f80-b6c5-46bc-b945-df1a40318de5', true, '2026-02-01T01:37:01.720364+00:00', false, false, true) ON CONFLICT (tool_id, flag_id) DO NOTHING;
+-- tool_names_junction
+INSERT INTO public.tool_names_junction (tool_id, name_id, created_at, generated, mcp, active) VALUES ('019c16d8-a128-7f6f-a6f8-c9c5aa236504', '019c16d8-a129-70c3-802d-49c1ae883e63', '2026-02-01T01:37:01.720364+00:00', false, false, true) ON CONFLICT (tool_id, name_id) DO NOTHING;
+-- tool_tools_junction
+INSERT INTO public.tool_tools_junction (tool_id, tools_id, active, created_at, generated, mcp) VALUES ('019c16d8-a128-7f6f-a6f8-c9c5aa236504', '019c16d8-a125-7364-8818-8035df41de53', true, '2026-02-01T01:37:01.720364+00:00', false, false) ON CONFLICT (tool_id, tools_id) DO NOTHING;

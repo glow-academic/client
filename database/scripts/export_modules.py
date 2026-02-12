@@ -734,7 +734,7 @@ async def export_agents(conn: asyncpg.Connection) -> None:
 
 
 # ---------------------------------------------------------------------------
-# 04-tools: All tools in one file
+# 04-tools: One file per tool
 # ---------------------------------------------------------------------------
 
 
@@ -742,36 +742,23 @@ async def export_tools(conn: asyncpg.Connection) -> None:
     print("Exporting 04-tools/ ...")
     tools_dir = MODULES_DIR / "04-tools"
     tools_dir.mkdir(parents=True, exist_ok=True)
-    output_path = tools_dir / "all.sql"
 
     artifacts = await get_artifacts_with_names(conn, "tool")
     junctions = await get_junction_tables(conn, "tool")
 
-    seen = set()
-    with open(output_path, "w") as f:
-        f.write("-- Module: all tools\n")
-        f.write("-- Category: tools\n")
-        f.write("-- Description: All MCP tool definitions\n")
-        f.write("-- ============================================================\n")
-
-        for art_id, art_name in artifacts:
-            f.write(f"\n-- Tool: {art_name} ({art_id})\n")
-
-            # Resource rows
-            await export_resource_rows_for_artifact(
-                conn, "tool", art_id, junctions, f, seen
-            )
-            # Artifact
-            await export_artifact_row(conn, "tool", art_id, f)
-            # Junctions
-            await export_junction_rows_for_artifact(conn, "tool", art_id, junctions, f)
-
-    count = sum(
-        1
-        for line in output_path.read_text().splitlines()
-        if line.startswith("INSERT INTO")
-    )
-    print(f"    all.sql ({count} inserts)")
+    for art_id, art_name in artifacts:
+        slug = to_slug(art_name)
+        output_path = tools_dir / f"{slug}.sql"
+        header = (
+            f"-- Module: {art_name}\n"
+            f"-- Category: tool\n"
+            f"-- Description: {art_name} MCP tool\n"
+            f"-- ============================================================\n\n"
+        )
+        count = await write_artifact_module(
+            conn, "tool", art_id, junctions, output_path, header
+        )
+        print(f"    {slug}.sql ({count} inserts)")
 
 
 # ---------------------------------------------------------------------------
@@ -991,49 +978,61 @@ async def export_rubrics(conn: asyncpg.Connection) -> None:
 
 
 async def export_evals(conn: asyncpg.Connection) -> None:
-    """Export all evals into 07-evals/ at module root."""
+    """Export one file per eval into 07-evals/ at module root."""
     print("  Exporting 07-evals/ ...")
     out_dir = MODULES_DIR / "07-evals"
     out_dir.mkdir(parents=True, exist_ok=True)
-    output_path = out_dir / "all.sql"
 
-    rows = await conn.fetch("SELECT id FROM public.eval_artifact ORDER BY created_at")
+    artifacts = await get_artifacts_with_names(conn, "eval")
     junctions = await get_junction_tables(conn, "eval")
 
-    seen: set[tuple[str, str]] = set()
-    with open(output_path, "w") as f:
-        f.write("-- Module: all evals\n")
-        f.write("-- Category: evals\n")
-        f.write("-- Description: All eval artifacts\n")
-        f.write("-- ============================================================\n")
+    for art_id, art_name in artifacts:
+        slug = to_slug(art_name)
+        output_path = out_dir / f"{slug}.sql"
+        header = (
+            f"-- Module: {art_name}\n"
+            f"-- Category: eval\n"
+            f"-- Description: {art_name} eval\n"
+            f"-- ============================================================\n\n"
+        )
+        count = await write_artifact_module(
+            conn, "eval", art_id, junctions, output_path, header
+        )
+        print(f"    {slug}.sql ({count} inserts)")
 
-        if not rows:
-            f.write("\n-- (no rows)\n")
-            print("    all.sql (0 inserts)")
-            return
 
-        f.write("\n-- Resource rows\n")
-        for r in rows:
-            await export_resource_rows_for_artifact(
-                conn, "eval", str(r["id"]), junctions, f, seen
-            )
+async def export_base_profiles(conn: asyncpg.Connection) -> None:
+    """Export profiles with no department (default admin roles) to 08-profiles/."""
+    print("Exporting 08-profiles/ ...")
+    out_dir = MODULES_DIR / "08-profiles"
+    out_dir.mkdir(parents=True, exist_ok=True)
 
-        f.write("\n-- Artifacts\n")
-        for r in rows:
-            await export_artifact_row(conn, "eval", str(r["id"]), f)
+    rows = await conn.fetch("""
+        SELECT p.id, nr.name
+        FROM profile_artifact p
+        JOIN profile_names_junction pnj ON pnj.profile_id = p.id
+        JOIN names_resource nr ON nr.id = pnj.name_id
+        WHERE NOT EXISTS (
+            SELECT 1 FROM profile_departments_junction pdj WHERE pdj.profile_id = p.id
+        )
+        ORDER BY nr.name
+    """)
+    artifacts = [(str(r["id"]), r["name"]) for r in rows]
+    junctions = await get_junction_tables(conn, "profile")
 
-        f.write("\n-- Junctions\n")
-        for r in rows:
-            await export_junction_rows_for_artifact(
-                conn, "eval", str(r["id"]), junctions, f
-            )
-
-    count = sum(
-        1
-        for line in output_path.read_text().splitlines()
-        if line.startswith("INSERT INTO")
-    )
-    print(f"    all.sql ({count} inserts)")
+    for art_id, art_name in artifacts:
+        slug = to_slug(art_name)
+        output_path = out_dir / f"{slug}.sql"
+        header = (
+            f"-- Module: {art_name}\n"
+            f"-- Category: profile\n"
+            f"-- Description: {art_name} base profile\n"
+            f"-- ============================================================\n\n"
+        )
+        count = await write_artifact_module(
+            conn, "profile", art_id, junctions, output_path, header
+        )
+        print(f"    {slug}.sql ({count} inserts)")
 
 
 async def _get_scenario_artifact_ids_for_simulation(
@@ -1147,16 +1146,13 @@ async def export_setup_simulations(conn: asyncpg.Connection) -> None:
         print(f"    {slug}.sql ({count} inserts)")
 
 
-async def export_setup(conn: asyncpg.Connection, *, include_auth: bool = True) -> None:
+async def export_setup(conn: asyncpg.Connection) -> None:
     print("Exporting 10-setups/university/ ...")
-    if include_auth:
-        await export_auth(conn)
     await export_setup_per_artifact(conn, "department", "01-departments", "department", active_flag="department_active")
     await export_setup_per_artifact(conn, "persona", "02-personas", "persona")
     await export_setup_all_in_one(conn, "document", "03-documents")
     await export_setup_all_in_one(conn, "field", "04-fields")
     await export_rubrics(conn)
-    await export_evals(conn)
     await export_setup_simulations(conn)
     await export_setup_all_in_one(conn, "cohort", "08-cohorts")
     await export_setup_all_in_one(conn, "profile", "09-profiles")
@@ -1194,6 +1190,8 @@ async def main() -> None:
             "agents": export_agents,
             "tools": export_tools,
             "auth": export_auth,
+            "rubrics": export_rubrics,
+            "evals": export_evals,
             "setup": export_setup,
         }
 
@@ -1211,7 +1209,11 @@ async def main() -> None:
             print()
             await export_auth(conn)
             print()
-            await export_setup(conn, include_auth=False)
+            await export_rubrics(conn)
+            print()
+            await export_evals(conn)
+            print()
+            await export_setup(conn)
             print()
             print("=== Export complete ===")
             print(f"Module files are in: {MODULES_DIR}/")
