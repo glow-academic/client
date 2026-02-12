@@ -4,11 +4,8 @@
 -- Grain: One row per (date, model_id, agent_id)
 -- Purpose: Daily trend charts on pricing overview page
 --
--- IMPORTANT: This MV depends on mv_pricing_run_facts.
--- mv_pricing_run_facts must be created and refreshed BEFORE this one.
---
--- Section: PRICING
--- Source: Aggregate from mv_pricing_run_facts grouped by date + model + agent
+-- Section: PRICING (self-contained, no MV dependencies)
+-- Source: Aggregates from entry tables directly grouped by date + model + agent
 --
 -- ============================================================================
 -- Step 1: Drop all indexes on mv_pricing_daily materialized view (if it exists)
@@ -39,6 +36,61 @@ DROP MATERIALIZED VIEW IF EXISTS mv_pricing_daily CASCADE;
 -- ============================================================================
 
 CREATE MATERIALIZED VIEW mv_pricing_daily AS
+WITH run_pricing_rollup AS (
+    SELECT
+        rpe.run_id,
+        COALESCE(SUM(
+            (rpe.count::numeric / aur.value::numeric) * pr.price
+        ) FILTER (WHERE rpe.pricing_type = 'input'), 0)::numeric AS input_cost,
+        COALESCE(SUM(
+            (rpe.count::numeric / aur.value::numeric) * pr.price
+        ) FILTER (WHERE rpe.pricing_type = 'output'), 0)::numeric AS output_cost,
+        COALESCE(SUM(
+            (rpe.count::numeric / aur.value::numeric) * pr.price
+        ) FILTER (WHERE rpe.pricing_type = 'cached'), 0)::numeric AS cached_cost
+    FROM run_pricing_entry rpe
+    JOIN run_pricing_pricing_connection rppc ON rppc.run_pricing_id = rpe.id AND rppc.active = TRUE
+    JOIN pricing_resource pr ON pr.id = rppc.pricing_id AND pr.active = TRUE
+    JOIN artifact_units_relation aur ON aur.id = rpe.unit_id AND aur.active = TRUE
+    WHERE rpe.active = TRUE
+    GROUP BY rpe.run_id
+),
+run_facts AS (
+    SELECT
+        r.id AS run_id,
+        r.group_id,
+        cac.agents_id AS agent_id,
+        amj.model_id,
+        prj.profiles_id,
+        gi.session_id,
+        COALESCE(r.input_tokens, 0) AS input_tokens,
+        COALESCE(r.output_tokens, 0) AS output_tokens,
+        COALESCE(r.cached_input_tokens, 0) AS cached_input_tokens,
+        (COALESCE(r.input_tokens, 0) + COALESCE(r.output_tokens, 0) + COALESCE(r.cached_input_tokens, 0))::int AS total_tokens,
+        ROUND(COALESCE(rpr.input_cost, 0), 8) AS input_cost,
+        ROUND(COALESCE(rpr.output_cost, 0), 8) AS output_cost,
+        ROUND(COALESCE(rpr.cached_cost, 0), 8) AS cached_cost,
+        ROUND((COALESCE(rpr.input_cost, 0) + COALESCE(rpr.output_cost, 0) + COALESCE(rpr.cached_cost, 0)), 8) AS total_cost,
+        r.created_at AS run_created_at,
+        mnj.name_id AS model_name_id,
+        anj.name_id AS agent_name_id
+    FROM runs_entry r
+    LEFT JOIN run_pricing_rollup rpr ON rpr.run_id = r.id
+    LEFT JOIN config_agents_connection cac ON cac.config_id = r.config_id AND cac.active = TRUE
+    LEFT JOIN agent_models_junction amj ON amj.agent_id = cac.agents_id AND amj.active = TRUE
+    LEFT JOIN groups_entry gi ON gi.id = r.group_id AND gi.active = TRUE
+    LEFT JOIN profiles_runs_connection prj ON prj.run_id = r.id AND prj.active = TRUE
+    LEFT JOIN LATERAL (
+        SELECT mnj.name_id FROM model_names_junction mnj
+        WHERE mnj.model_id = amj.model_id
+        ORDER BY mnj.created_at DESC LIMIT 1
+    ) mnj ON TRUE
+    LEFT JOIN LATERAL (
+        SELECT anj.name_id FROM agent_names_junction anj
+        WHERE anj.agent_id = cac.agents_id
+        ORDER BY anj.created_at DESC LIMIT 1
+    ) anj ON TRUE
+)
 SELECT
     -- Keys
     (rpf.run_created_at::date) AS date_key,
@@ -71,7 +123,7 @@ SELECT
     TRUNC(AVG(rpf.total_tokens), 2) AS avg_tokens_per_run,
     TRUNC(AVG(rpf.total_cost), 8) AS avg_cost_per_run
 
-FROM mv_pricing_run_facts rpf
+FROM run_facts rpf
 GROUP BY (rpf.run_created_at::date), rpf.model_id, rpf.agent_id
 WITH NO DATA;
 

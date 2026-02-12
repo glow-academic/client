@@ -142,7 +142,7 @@ resolved_dept AS (
     ) as department_id
 ),
 profile_rate_limit AS (
-    -- Get rate limit for the profile (via view_attempts_entry)
+    -- Get rate limit for the profile (via simulation_attempts_entry)
     SELECT
         rl.requests_per_day as req_per_day
     FROM all_chats sc
@@ -220,7 +220,7 @@ SELECT
         AND sfr.scenario_id = ss.scenario_id
         AND f.name = 'copy_paste_allowed' LIMIT 1), false) as copy_paste_allowed,
 
-    -- Profile data (via view_attempts_entry)
+    -- Profile data (via simulation_attempts_entry)
     aap_main.profiles_id::text as profile_id,
     
     -- Rate limit data

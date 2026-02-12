@@ -24,6 +24,7 @@ from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
+    GetToolsListApiRequest,
     GetToolsListSqlParams,
     GetToolsListSqlRow,
     load_sql_query,
@@ -48,6 +49,7 @@ router = APIRouter()
     ],
 )
 async def get_tool_list(
+    request: GetToolsListApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
@@ -58,8 +60,9 @@ async def get_tool_list(
     # Check for cache bypass header (for testing)
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
-    # Generate cache key from path
-    cache_key_val = cache_key(http_request.url.path, {})
+    # Generate cache key from path and parsed body
+    body_dict = request.model_dump(mode="json")
+    cache_key_val = cache_key(http_request.url.path, body_dict)
 
     # Try cache (unless bypassed)
     if not bypass_cache:
@@ -98,7 +101,12 @@ async def get_tool_list(
             user_role = None
 
         # Convert API request to SQL params (add profile_id from header)
-        params = GetToolsListSqlParams(profile_id=profile_id)
+        params = GetToolsListSqlParams(
+            profile_id=profile_id,
+            search=request.search,
+            page_size=request.page_size,
+            page_offset=request.page_offset,
+        )
         sql_params = params.to_tuple()
 
         # Execute query with typed helper
@@ -152,7 +160,7 @@ async def get_tool_list(
         api_response = ListToolApiResponse(
             actor_name=actor_name,
             tools=tools_with_permissions,
-            total_count=len(tools_with_permissions),
+            total_count=result.total_count,
         )
 
         # Cache response

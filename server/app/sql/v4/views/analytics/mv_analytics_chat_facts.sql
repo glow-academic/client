@@ -7,7 +7,7 @@
 -- Purpose: Base fact table that all other analytics MVs derive from
 -- Section: ANALYTICS (unified base layer)
 --
--- Dependencies: Uses entry tables + mv_attempt_chats scope (avoids direct chat connection table coupling)
+-- Dependencies: Uses entry tables only (self-contained, no MV dependencies)
 
 DO $$
 DECLARE
@@ -65,12 +65,21 @@ grade_rubric AS (
 ),
 chat_scope AS (
     SELECT
-        msc.chat_id,
-        msc.scenario_id,
-        msc.rubric_id,
-        msc.persona_ids,
-        msc.document_ids
-    FROM mv_attempt_chats msc
+        c.id AS chat_id,
+        (ARRAY_AGG(tsc.scenarios_id ORDER BY tsc.created_at) FILTER (WHERE tsc.scenarios_id IS NOT NULL))[1] AS scenario_id,
+        (ARRAY_AGG(trc.rubrics_id ORDER BY trc.created_at) FILTER (WHERE trc.rubrics_id IS NOT NULL))[1] AS rubric_id,
+        COALESCE(ARRAY_AGG(DISTINCT tpc.personas_id ORDER BY tpc.personas_id) FILTER (WHERE tpc.personas_id IS NOT NULL), ARRAY[]::uuid[]) AS persona_ids,
+        COALESCE(ARRAY_AGG(DISTINCT tdc.documents_id ORDER BY tdc.documents_id) FILTER (WHERE tdc.documents_id IS NOT NULL), ARRAY[]::uuid[]) AS document_ids
+    FROM simulation_chats_entry c
+    JOIN simulation_attempts_entry a ON a.id = c.attempt_id
+    LEFT JOIN training_bundle_departments_entry tbd ON tbd.id = c.training_bundle_department_id AND tbd.active = TRUE
+    LEFT JOIN training_bundle_departments_scenarios_connection tsc ON tsc.training_bundle_department_id = tbd.id AND tsc.active = TRUE
+    LEFT JOIN training_bundle_departments_rubrics_connection trc ON trc.training_bundle_department_id = tbd.id AND trc.active = TRUE
+    LEFT JOIN training_bundle_departments_personas_connection tpc ON tpc.training_bundle_department_id = tbd.id AND tpc.active = TRUE
+    LEFT JOIN training_bundle_departments_documents_connection tdc ON tdc.training_bundle_department_id = tbd.id AND tdc.active = TRUE
+    WHERE c.active = TRUE
+      AND a.active = TRUE
+    GROUP BY c.id
 ),
 chat_persona AS (
     SELECT

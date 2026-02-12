@@ -1,5 +1,5 @@
 -- Rubric Duplicate Access Check
--- Returns user role for Python to compute duplicate permissions
+-- Returns rubric_exists for Python to validate before duplicate
 
 -- Drop function if exists (handles signature variations)
 DO $$
@@ -18,15 +18,23 @@ END $$;
 
 -- Create function
 CREATE OR REPLACE FUNCTION api_check_rubric_duplicate_access_v4(
-    profile_id uuid
+    profile_id uuid,
+    rubric_id uuid
 )
 RETURNS TABLE (
-    -- User context for Python permission logic
-    user_role text
+    rubric_exists boolean
 )
 LANGUAGE sql
 STABLE
 AS $$
--- User context (role, actor_name, department_ids) comes from get_profile_context_internal()
-SELECT true::boolean as access_check;
+WITH params AS (
+    SELECT profile_id AS profile_id, rubric_id AS rubric_id
+),
+rubric_exists_check AS (
+    SELECT EXISTS(
+        SELECT 1 FROM rubric_artifact WHERE id = (SELECT rubric_id FROM params)
+    )::boolean as rubric_exists
+)
+SELECT (SELECT rubric_exists FROM rubric_exists_check) as rubric_exists
+FROM params x
 $$;

@@ -34,18 +34,17 @@ WITH params AS (
         profile_id AS profile_id,
         tool_id AS tool_id
 ),
--- Count total usage (agents, calls, resources linked to this tool)
+-- Count total usage from all 3 sources (matching delete mutation SQL)
 tool_usage AS (
     SELECT (
-        COALESCE(
-            (SELECT COUNT(DISTINCT at.agent_id)
-             FROM agent_tools_junction at
-             JOIN tools_resource tr ON tr.id = at.tool_id
-             JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
-             WHERE ttj.tool_id = (SELECT tool_id FROM params)
-               AND at.active = true),
-            0
-        )
+        COALESCE((SELECT COUNT(*) FROM tools_calls_connection tcj
+            WHERE tcj.tools_id = (SELECT tool_id FROM params)), 0) +
+        COALESCE((SELECT COUNT(DISTINCT at.agent_id) FROM agent_tools_junction at
+            JOIN tools_resource tr ON tr.id = at.tool_id
+            JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
+            WHERE ttj.tool_id = (SELECT tool_id FROM params) AND at.active = true), 0) +
+        COALESCE((SELECT COUNT(*) FROM resource_tools_relation rt
+            WHERE rt.tool_id = (SELECT tool_id FROM params)), 0)
     )::bigint as usage_count
     FROM params x
 )
@@ -53,4 +52,3 @@ SELECT
     (SELECT usage_count FROM tool_usage) as usage_count
 FROM params x
 $$;
-

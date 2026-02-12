@@ -1,17 +1,27 @@
 """Settings list endpoint."""
 
 from typing import Annotated, Any, cast
+from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.artifacts.setting.permissions import (
+    compute_can_delete,
+    compute_can_duplicate,
+    compute_can_edit,
+)
+from app.api.v4.artifacts.setting.types import (
+    ListSettingApiKey,
+    ListSettingApiResponse,
+    ListSettingApiSetting,
+)
 from app.api.v4.auth.context import get_profile_context_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
     GetSettingsListApiRequest,
-    GetSettingsListApiResponse,
     GetSettingsListSqlParams,
     GetSettingsListSqlRow,
     load_sql_query,
@@ -30,7 +40,7 @@ router = APIRouter()
 
 @router.post(
     "/list",
-    response_model=GetSettingsListApiResponse,
+    response_model=ListSettingApiResponse,
     dependencies=[
         audit_activity("settings.list", "{{ actor.name }} visited the Settings page")
     ],
@@ -40,20 +50,24 @@ async def get_setting_list(
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> GetSettingsListApiResponse:
+) -> ListSettingApiResponse:
     """Get list of all settings ordered by created_at DESC."""
     tags = ["settings"]  # From router tags
+
+    # Check for cache bypass header (for testing)
+    bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     # Generate cache key from path and parsed body
     body_dict = request.model_dump(mode="json")
     cache_key_val = cache_key(http_request.url.path, body_dict)
 
-    # Try cache
-    cached = await get_cached(cache_key_val)
-    if cached:
-        response.headers["X-Cache-Tags"] = ",".join(tags)
-        response.headers["X-Cache-Hit"] = "1"
-        return GetSettingsListApiResponse.model_validate(cached["data"])
+    # Try cache (unless bypassed)
+    if not bypass_cache:
+        cached = await get_cached(cache_key_val)
+        if cached:
+            response.headers["X-Cache-Tags"] = ",".join(tags)
+            response.headers["X-Cache-Hit"] = "1"
+            return ListSettingApiResponse.model_validate(cached["data"])
 
     sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
@@ -67,7 +81,7 @@ async def get_setting_list(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for audit logging
+        # Fetch user context for audit logging and permissions
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -75,11 +89,20 @@ async def get_setting_list(
                     conn=context_conn,
                     profile_id=profile_id,
                     department_id_cookie=None,
-                    bypass_cache=False,
+                    bypass_cache=bypass_cache,
                 )
                 actor_name = resolved_context.actor_name
+                user_role = resolved_context.user_role
         else:
             actor_name = None
+            user_role = None
+
+        # Extract user department IDs for permission checks
+        user_department_ids: list[UUID] = [
+            d.department_id
+            for d in (resolved_context.departments if pool else [])
+            if d.department_id
+        ]
 
         # Convert API request to SQL params (add profile_id from header)
         params = GetSettingsListSqlParams(profile_id=profile_id)
@@ -99,8 +122,57 @@ async def get_setting_list(
         if actor_name:
             audit_set(http_request, actor={"name": actor_name, "id": profile_id})
 
-        # Convert SQL result to API response (no manual filtering needed - SQL handles it)
-        api_response = GetSettingsListApiResponse.model_validate(result.model_dump())
+        # Compute permissions for each setting in Python
+        settings_with_permissions: list[ListSettingApiSetting] = []
+        for setting in result.settings or []:
+            setting_dept_uuids = [UUID(d) for d in (setting.department_ids or [])]
+
+            can_edit_val = compute_can_edit(
+                user_role=user_role,
+                user_department_ids=user_department_ids,
+                setting_department_ids=setting_dept_uuids,
+            )
+            can_delete_val = compute_can_delete(
+                user_role=user_role,
+                user_department_ids=user_department_ids,
+                setting_department_ids=setting_dept_uuids,
+            )
+            can_duplicate_val = compute_can_duplicate(user_role)
+
+            settings_with_permissions.append(
+                ListSettingApiSetting(
+                    settings_id=setting.settings_id,
+                    created_at=setting.created_at,
+                    active=setting.active,
+                    name=setting.name,
+                    description=setting.description,
+                    department_ids=setting.department_ids,
+                    can_edit=can_edit_val,
+                    can_delete=can_delete_val,
+                    can_duplicate=can_duplicate_val,
+                )
+            )
+
+        # Map keys to handcrafted type
+        keys: list[ListSettingApiKey] = [
+            ListSettingApiKey(
+                key_id=k.key_id,
+                name=k.name,
+                key_masked=k.key_masked,
+                description=k.description,
+                active=k.active,
+                department_ids=k.department_ids,
+            )
+            for k in (result.keys or [])
+        ]
+
+        # Build API response with computed permissions
+        api_response = ListSettingApiResponse(
+            actor_name=actor_name,
+            user_role=user_role,
+            settings=settings_with_permissions,
+            keys=keys,
+        )
 
         # Cache response (use mode='json' to serialize UUIDs and other types)
         await set_cached(

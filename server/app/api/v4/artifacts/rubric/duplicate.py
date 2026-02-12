@@ -80,9 +80,10 @@ async def duplicate_rubric(
             actor_name = None
             user_role = None
 
-        # Permission check: get user role using typed SQL
+        # Permission check: verify rubric exists using typed SQL
         access_params = CheckRubricDuplicateAccessSqlParams(
             profile_id=profile_id,
+            rubric_id=request.rubric_id,
         )
         access_result = cast(
             CheckRubricDuplicateAccessSqlRow,
@@ -97,6 +98,12 @@ async def duplicate_rubric(
             raise HTTPException(
                 status_code=401,
                 detail="Unable to verify user permissions.",
+            )
+
+        if access_result.rubric_exists is False:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Rubric {request.rubric_id} not found",
             )
 
         can_duplicate = compute_can_duplicate(user_role=user_role)

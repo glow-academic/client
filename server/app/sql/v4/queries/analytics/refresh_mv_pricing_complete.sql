@@ -1,12 +1,6 @@
 -- Refresh Pricing Materialized Views - API Endpoint
--- Refreshes all pricing MVs in dependency order:
--- Layer 1 (Base):
---   1. mv_model_pricing_ppm (base, rarely changes)
---   2. mv_run_pricing_facts (base)
--- Layer 2:
---   3. mv_group_pricing_facts (depends on mv_run_pricing_facts)
--- Layer 3:
---   4. mv_run_costs_daily (depends on mv_run_pricing_facts)
+-- Refreshes all pricing MVs.
+-- All MVs are independent — no dependency ordering required.
 -- Uses safe drop/recreate pattern: drop function first, then recreate
 -- ============================================================================
 -- Step 1: Drop function if exists
@@ -45,20 +39,18 @@ DECLARE
     actor_name_val text;
     refreshed text[] := ARRAY[]::text[];
 BEGIN
-    -- Step 1: Refresh base MVs (Layer 1)
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_model_pricing_ppm;
-    refreshed := array_append(refreshed, 'mv_model_pricing_ppm');
+    -- Refresh pricing MVs (all independent, no ordering required)
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_pricing_run_facts;
+    refreshed := array_append(refreshed, 'mv_pricing_run_facts');
 
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_run_pricing_facts;
-    refreshed := array_append(refreshed, 'mv_run_pricing_facts');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_pricing_group_summary;
+    refreshed := array_append(refreshed, 'mv_pricing_group_summary');
 
-    -- Step 2: Refresh Layer 2 MVs (depend on mv_run_pricing_facts)
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_group_pricing_facts;
-    refreshed := array_append(refreshed, 'mv_group_pricing_facts');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_pricing_daily;
+    refreshed := array_append(refreshed, 'mv_pricing_daily');
 
-    -- Step 3: Refresh Layer 3 MVs
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_run_costs_daily;
-    refreshed := array_append(refreshed, 'mv_run_costs_daily');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_artifact_session_list;
+    refreshed := array_append(refreshed, 'mv_artifact_session_list');
 
     -- Get actor_name from profile_artifact using profile_names_junction junction table
     SELECT COALESCE(

@@ -193,119 +193,18 @@ async def _recover_from_transaction_abort(conn: asyncpg.Connection) -> bool:
         return False
 
 
-def _build_view_dependency_order(
-    sql_files: list[Path], server_root: Path
-) -> dict[str, int]:
-    """Auto-detect view/MV dependencies and return execution order levels.
-
-    Parses SQL files to find CREATE VIEW / CREATE MATERIALIZED VIEW statements,
-    then detects cross-file references and computes a topological ordering.
-
-    Args:
-        sql_files: List of all SQL file paths
-        server_root: Server root directory
-
-    Returns:
-        Dict mapping relative sql_path -> level (0 = no view deps, higher = later)
-    """
-    view_prefix = f"app/sql/{VERSION}/views/"
-
-    # Filter to view files only
-    view_files: list[tuple[str, Path]] = []
-    for f in sql_files:
-        rel = str(f.relative_to(server_root))
-        if rel.startswith(view_prefix):
-            view_files.append((rel, f))
-
-    # Pass 1: parse CREATE statements to build object_name -> sql_path map
-    create_re = re.compile(
-        r"CREATE\s+(?:OR\s+REPLACE\s+)?(?:MATERIALIZED\s+)?VIEW\s+(?:IF\s+NOT\s+EXISTS\s+)?(\w+)",
-        re.IGNORECASE,
-    )
-    # object_name -> set of sql_paths that create it
-    name_to_file: dict[str, str] = {}
-    # sql_path -> set of object names it creates
-    file_creates: dict[str, set[str]] = {}
-    # sql_path -> full SQL text (cached for pass 2)
-    file_sql: dict[str, str] = {}
-
-    for rel_path, full_path in view_files:
-        try:
-            sql_text = full_path.read_text()
-        except Exception:
-            continue
-        file_sql[rel_path] = sql_text
-        creates: set[str] = set()
-        for m in create_re.finditer(sql_text):
-            obj_name = m.group(1).lower()
-            creates.add(obj_name)
-            name_to_file[obj_name] = rel_path
-        file_creates[rel_path] = creates
-
-    # Pass 2: detect cross-file dependencies via word-boundary matching
-    # For each file, check which other files' created objects appear in its SQL
-    # deps: sql_path -> set of sql_paths it depends on
-    deps: dict[str, set[str]] = {}
-    all_names = list(name_to_file.keys())
-
-    for rel_path in file_sql:
-        sql_text = file_sql[rel_path].lower()
-        own_names = file_creates.get(rel_path, set())
-        file_deps: set[str] = set()
-        for obj_name in all_names:
-            # Skip self-references (same file creates and references it, e.g. DROP then CREATE)
-            if obj_name in own_names:
-                continue
-            # Word-boundary check to avoid false matches on substrings
-            if re.search(r"\b" + re.escape(obj_name) + r"\b", sql_text):
-                dep_file = name_to_file[obj_name]
-                if dep_file != rel_path:
-                    file_deps.add(dep_file)
-        deps[rel_path] = file_deps
-
-    # Topological sort: compute levels
-    levels: dict[str, int] = {}
-    computing: set[str] = set()  # cycle detection
-
-    def _compute_level(path: str) -> int:
-        if path in levels:
-            return levels[path]
-        if path in computing:
-            # Cycle detected — treat as level 0
-            levels[path] = 0
-            return 0
-        computing.add(path)
-        dep_paths = deps.get(path, set())
-        if not dep_paths:
-            level = 0
-        else:
-            level = max(_compute_level(d) for d in dep_paths) + 1
-        levels[path] = level
-        computing.discard(path)
-        return level
-
-    for rel_path, _ in view_files:
-        _compute_level(rel_path)
-
-    return levels
-
-
-def _sort_sql_files(
-    sql_file: Path, server_root: Path, view_order: dict[str, int] | None = None
-) -> tuple[int, str]:
-    """Sort SQL files with proper dependency ordering for views and MVs.
+def _sort_sql_files(sql_file: Path, server_root: Path) -> tuple[int, str]:
+    """Sort SQL files with proper ordering for views and queries.
 
     Args:
         sql_file: Path to SQL file
         server_root: Server root directory
-        view_order: Auto-detected view dependency levels from _build_view_dependency_order()
 
     Returns:
         Tuple of (priority, path) for sorting where lower priority = earlier execution.
 
-    View/MV Dependency Ordering (auto-detected):
-        Levels are computed by _build_view_dependency_order() via topological sort.
-        Level 0 = no view/MV dependencies, Level N = depends on Level N-1.
+    View/MV Ordering:
+        All views/MVs are independent (no MV-to-MV dependencies), so they all get priority 0.
 
     Query Ordering:
         Priority 10: Analytics queries
@@ -316,10 +215,9 @@ def _sort_sql_files(
     """
     sql_path = str(sql_file.relative_to(server_root))
 
-    # Handle views/ directory — use auto-detected dependency levels
+    # Handle views/ directory — all views/MVs are independent
     if sql_path.startswith(f"app/sql/{VERSION}/views/"):
-        level = (view_order or {}).get(sql_path, 0)
-        return (level, sql_path)
+        return (0, sql_path)
 
     # Other analytics routes come next
     if sql_path.startswith(f"app/sql/{VERSION}/queries/analytics/"):
@@ -1357,10 +1255,9 @@ async def compile_sql_types(
 
         print(f"🔍 Found {len(sql_file_paths)} SQL files to process")
 
-    # Auto-detect view dependency order, then sort
-    view_order = _build_view_dependency_order(sql_file_paths, server_root)
+    # Sort SQL files (views first, then queries by priority)
     sorted_sql_files = sorted(
-        sql_file_paths, key=lambda f: _sort_sql_files(f, server_root, view_order)
+        sql_file_paths, key=lambda f: _sort_sql_files(f, server_root)
     )
 
     # Connect to database
@@ -1416,11 +1313,10 @@ async def compile_sql_types(
                         True,
                         f"No SQL files found in app/sql/{VERSION}/ or tests/sql/{VERSION}/integration/",
                     )
-                # Re-sort SQL files with auto-detected view dependency order
-                view_order = _build_view_dependency_order(sql_file_paths, server_root)
+                # Re-sort SQL files
                 sorted_sql_files = sorted(
                     sql_file_paths,
-                    key=lambda f: _sort_sql_files(f, server_root, view_order),
+                    key=lambda f: _sort_sql_files(f, server_root),
                 )
                 print(
                     f"🔍 Found {len(sql_file_paths)} SQL files to process (full compilation mode)"

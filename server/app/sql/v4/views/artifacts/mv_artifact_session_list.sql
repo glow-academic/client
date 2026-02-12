@@ -4,11 +4,8 @@
 -- Grain: One row per session
 -- Purpose: Fast pagination for session list with pre-aggregated costs and audit counts
 --
--- IMPORTANT: This MV depends on mv_pricing_group_summary.
--- mv_pricing_group_summary must be created and refreshed BEFORE this one.
---
--- Section: ARTIFACTS
--- Source: sessions_entry + mv_pricing_group_summary + audits_entry + profile naming
+-- Section: ARTIFACTS (self-contained, no MV dependencies)
+-- Source: sessions_entry + runs_entry + run_pricing_entry + audits_entry + profile naming
 --
 -- ============================================================================
 -- Step 1: Drop all indexes on mv_artifact_session_list materialized view (if it exists)
@@ -40,19 +37,40 @@ DROP MATERIALIZED VIEW IF EXISTS mv_artifact_session_list CASCADE;
 
 CREATE MATERIALIZED VIEW mv_artifact_session_list AS
 WITH
--- Aggregate group/run/cost data per session from mv_pricing_group_summary
+run_pricing_rollup AS (
+    SELECT
+        rpe.run_id,
+        COALESCE(SUM(
+            (rpe.count::numeric / aur.value::numeric) * pr.price
+        ) FILTER (WHERE rpe.pricing_type = 'input'), 0)::numeric AS input_cost,
+        COALESCE(SUM(
+            (rpe.count::numeric / aur.value::numeric) * pr.price
+        ) FILTER (WHERE rpe.pricing_type = 'output'), 0)::numeric AS output_cost,
+        COALESCE(SUM(
+            (rpe.count::numeric / aur.value::numeric) * pr.price
+        ) FILTER (WHERE rpe.pricing_type = 'cached'), 0)::numeric AS cached_cost
+    FROM run_pricing_entry rpe
+    JOIN run_pricing_pricing_connection rppc ON rppc.run_pricing_id = rpe.id AND rppc.active = TRUE
+    JOIN pricing_resource pr ON pr.id = rppc.pricing_id AND pr.active = TRUE
+    JOIN artifact_units_relation aur ON aur.id = rpe.unit_id AND aur.active = TRUE
+    WHERE rpe.active = TRUE
+    GROUP BY rpe.run_id
+),
+-- Aggregate run/cost data per session directly from runs_entry + groups_entry
 session_pricing AS (
     SELECT
-        gs.session_id,
-        COUNT(*)::int AS group_count,
-        SUM(gs.run_count)::int AS run_count,
-        MIN(gs.first_run_at) AS first_run_at,
-        MAX(gs.last_run_at) AS last_run_at,
-        SUM(gs.total_tokens)::bigint AS total_tokens,
-        SUM(gs.total_cost)::numeric AS total_cost
-    FROM mv_pricing_group_summary gs
-    WHERE gs.session_id IS NOT NULL
-    GROUP BY gs.session_id
+        gi.session_id,
+        COUNT(DISTINCT r.group_id)::int AS group_count,
+        COUNT(*)::int AS run_count,
+        MIN(r.created_at) AS first_run_at,
+        MAX(r.created_at) AS last_run_at,
+        SUM(COALESCE(r.input_tokens, 0) + COALESCE(r.output_tokens, 0) + COALESCE(r.cached_input_tokens, 0))::bigint AS total_tokens,
+        SUM(ROUND((COALESCE(rpr.input_cost, 0) + COALESCE(rpr.output_cost, 0) + COALESCE(rpr.cached_cost, 0)), 8))::numeric AS total_cost
+    FROM runs_entry r
+    JOIN groups_entry gi ON gi.id = r.group_id AND gi.active = TRUE
+    LEFT JOIN run_pricing_rollup rpr ON rpr.run_id = r.id
+    WHERE gi.session_id IS NOT NULL
+    GROUP BY gi.session_id
 ),
 -- Aggregate audit data per session
 session_audits AS (

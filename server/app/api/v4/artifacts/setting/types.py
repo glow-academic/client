@@ -1,5 +1,6 @@
 """Handcrafted request models for settings artifact migration."""
 
+from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -57,3 +58,60 @@ class PatchSettingDraftApiRequest(BaseModel):
     roles: SettingMultiResourceAction | None = None
     role_routes: SettingMultiResourceAction | None = None
     expected_version: int = 0
+
+
+# ========== List Endpoint Types ==========
+
+
+class ListSettingApiSetting(BaseModel):
+    settings_id: UUID | None = None
+    created_at: datetime | None = None
+    active: bool | None = None
+    name: str | None = None
+    description: str | None = None
+    department_ids: list[str] | None = None
+    # Computed in Python
+    can_edit: bool | None = None
+    can_delete: bool | None = None
+    can_duplicate: bool | None = None
+
+
+class ListSettingApiKey(BaseModel):
+    key_id: UUID | None = None
+    name: str | None = None
+    key_masked: str | None = None
+    description: str | None = None
+    active: bool | None = None
+    department_ids: list[str] | None = None
+
+
+class ListSettingApiResponse(BaseModel):
+    actor_name: str | None = None
+    user_role: str | None = None
+    settings: list[ListSettingApiSetting] | None = None
+    keys: list[ListSettingApiKey] | None = None
+
+
+# ========== Delete Endpoint Types ==========
+
+
+class DeleteSettingApiRequest(BaseModel):
+    setting_id: UUID
+
+
+class DeleteSettingApiResponse(BaseModel):
+    success: bool
+    message: str
+
+
+# ========== Duplicate Endpoint Types ==========
+
+
+class DuplicateSettingApiRequest(BaseModel):
+    setting_id: UUID
+
+
+class DuplicateSettingApiResponse(BaseModel):
+    success: bool
+    setting_id: UUID
+    message: str

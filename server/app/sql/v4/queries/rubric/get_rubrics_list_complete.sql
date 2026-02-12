@@ -1,15 +1,17 @@
--- Get rubrics list with permissions
--- Converted to function with composite types
--- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
+-- Get rubrics list - resource-first pattern
+-- SQL returns minimal data (entity data + option IDs with counts for filters)
+-- Python computes permissions from permissions.py
+-- Server-side pagination + search + filters (departments, simulations)
+-- Standard groups and standards stay in SQL (rubric's own junction data)
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
 DECLARE
     r RECORD;
 BEGIN
-    FOR r IN 
-        SELECT oidvectortypes(proargtypes) as sig 
-        FROM pg_proc 
+    FOR r IN
+        SELECT oidvectortypes(proargtypes) as sig
+        FROM pg_proc
         WHERE proname = 'api_get_rubrics_list_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
@@ -24,9 +26,9 @@ DO $$
 DECLARE
     r RECORD;
 BEGIN
-    FOR r IN 
-        SELECT typname 
-        FROM pg_type 
+    FOR r IN
+        SELECT typname
+        FROM pg_type
         WHERE typname LIKE 'q_get_rubrics_list_v4_%'
           AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
     LOOP
@@ -46,9 +48,6 @@ CREATE TYPE types.q_get_rubrics_list_v4_rubric AS (
     simulation_ids text[],
     active_simulation_count int,
     total_simulation_links int,
-    can_edit boolean,
-    can_delete boolean,
-    can_duplicate boolean,
     standard_group_ids uuid[]
 );
 
@@ -69,32 +68,35 @@ CREATE TYPE types.q_get_rubrics_list_v4_standard AS (
     points int
 );
 
-CREATE TYPE types.q_get_rubrics_list_v4_department AS (
-    department_id uuid,
-    name text,
-    description text
-);
-
-CREATE TYPE types.q_get_rubrics_list_v4_simulation AS (
-    simulation_id uuid,
-    name text,
-    description text,
-    time_limit int
+-- Filter option type: id + count only (names hydrated in Python from cache)
+CREATE TYPE types.q_get_rubrics_list_v4_option_id AS (
+    id uuid,
+    count bigint
 );
 
 -- 4) Recreate function
-CREATE OR REPLACE FUNCTION api_get_rubrics_list_v4(profile_id uuid)
+CREATE OR REPLACE FUNCTION api_get_rubrics_list_v4(
+    profile_id uuid,
+    search text DEFAULT NULL,
+    filter_department_ids uuid[] DEFAULT NULL,
+    filter_simulation_ids uuid[] DEFAULT NULL,
+    department_search text DEFAULT NULL,
+    simulation_search text DEFAULT NULL,
+    page_size int DEFAULT 1000,
+    page_offset int DEFAULT 0
+)
 RETURNS TABLE (
     rubrics types.q_get_rubrics_list_v4_rubric[],
     standard_groups types.q_get_rubrics_list_v4_standard_group[],
     standards types.q_get_rubrics_list_v4_standard[],
-    departments types.q_get_rubrics_list_v4_department[],
-    simulations types.q_get_rubrics_list_v4_simulation[],
-    simulation_options types.q_get_rubrics_list_v4_simulation[]
+    department_option_ids types.q_get_rubrics_list_v4_option_id[],
+    simulation_option_ids types.q_get_rubrics_list_v4_option_id[],
+    total_count bigint
 )
 LANGUAGE sql
 STABLE
 AS $$
+-- User context (actor_name, user_role) comes from get_profile_context_internal() in Python
 WITH params AS (
     SELECT profile_id AS profile_id
 ),
@@ -104,7 +106,7 @@ user_departments AS (
     JOIN profile_departments_junction ON profile_departments_junction.profile_id = x.profile_id AND profile_departments_junction.active = true
 ),
 rubric_active_simulation_links AS (
-    SELECT 
+    SELECT
         srr.rubric_id,
         COUNT(DISTINCT ss.simulation_id) as active_simulation_count
     FROM simulation_scenarios_junction ss
@@ -115,7 +117,7 @@ rubric_active_simulation_links AS (
     GROUP BY srr.rubric_id
 ),
 rubric_all_simulation_links AS (
-    SELECT 
+    SELECT
         srr.rubric_id,
         COUNT(DISTINCT ss.simulation_id) as total_simulation_links
     FROM simulation_scenarios_junction ss
@@ -125,11 +127,9 @@ rubric_all_simulation_links AS (
     GROUP BY srr.rubric_id
 ),
 simulation_department_access_for_rubrics AS (
-    -- Pre-compute which simulations the user has access to (for filtering rubric_simulations_data)
-    SELECT 
+    SELECT
         s.id as simulation_id,
-        CASE 
-            -- Include if has matching department link OR has no department links at all (cross-dept)
+        CASE
             WHEN COUNT(sd.simulation_id) FILTER (WHERE sd.department_id IN (SELECT department_id FROM user_departments)) > 0 THEN true
             WHEN NOT EXISTS (SELECT 1 FROM simulation_departments_junction sd2 WHERE sd2.simulation_id = s.id AND sd2.active = true) THEN true
             ELSE false
@@ -142,82 +142,81 @@ simulation_department_access_for_rubrics AS (
 rubric_simulations_distinct AS (
     SELECT DISTINCT ON (srr.rubric_id, s.id)
         srr.rubric_id,
-        s.id as simulation_id,
-        (SELECT n.name FROM simulation_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) as simulation_title
+        s.id as simulation_id
     FROM simulation_artifact s
     INNER JOIN simulation_department_access_for_rubrics sdar ON sdar.simulation_id = s.id AND sdar.has_access = true
     INNER JOIN simulation_scenarios_junction ss ON ss.simulation_id = s.id AND EXISTS (SELECT 1 FROM simulation_scenario_flags_junction ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND sfr.scenario_id = ss.scenario_id AND f.name = 'scenario_active' AND ssf.value = true)
     INNER JOIN simulation_scenario_rubrics_junction ssr ON ssr.simulation_id = ss.simulation_id
     INNER JOIN scenario_rubrics_resource srr ON srr.id = ssr.scenario_rubric_id AND srr.scenario_id = ss.scenario_id
     WHERE EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'scenario_active' AND sf.value = true) AND srr.rubric_id IS NOT NULL
-    ORDER BY srr.rubric_id, s.id, (SELECT n.name FROM simulation_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1)
+    ORDER BY srr.rubric_id, s.id
 ),
 rubric_simulations_data AS (
-    SELECT 
+    SELECT
         rsd.rubric_id,
         ARRAY_AGG(DISTINCT rsd.simulation_id::text ORDER BY rsd.simulation_id::text) as simulation_ids
     FROM rubric_simulations_distinct rsd
     GROUP BY rsd.rubric_id
 ),
 rubric_departments_data AS (
-    SELECT 
+    SELECT
         rd.rubric_id,
         ARRAY_AGG(rd.department_id::text ORDER BY rd.created_at) as department_ids
     FROM rubric_departments_junction rd
     WHERE rd.active = true
     GROUP BY rd.rubric_id
 ),
--- User context: actor_name comes from get_profile_context_internal() in Python
-user_profile AS (
-    SELECT COALESCE(r.role, 'member'::profile_type) as role,
-           ''::text as actor_name
-    FROM profile_roles_junction prj
-    JOIN roles_resource r ON prj.role_id = r.id
-    WHERE prj.profile_id = (SELECT profile_id FROM params)
-    LIMIT 1
-),
 rubric_data AS (
-    SELECT 
+    SELECT
         r.id as rubric_id,
-        (SELECT n.name FROM rubric_names_junction rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1),
-        (SELECT d.description FROM rubric_descriptions_junction rd JOIN descriptions_resource d ON rd.description_id = d.id WHERE rd.rubric_id = r.id LIMIT 1),
+        (SELECT n.name FROM rubric_names_junction rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1) as name,
+        (SELECT d.description FROM rubric_descriptions_junction rd JOIN descriptions_resource d ON rd.description_id = d.id WHERE rd.rubric_id = r.id LIMIT 1) as description,
         (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::point_type LIMIT 1) as points,
         (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'pass'::point_type LIMIT 1) as pass_points,
         COALESCE(rdd.department_ids, NULL) as department_ids,
         COALESCE(rsd.simulation_ids, ARRAY[]::text[]) as simulation_ids,
         COALESCE(rasl.active_simulation_count, 0) as active_simulation_count,
-        COALESCE(rasl_all.total_simulation_links, 0) as total_simulation_links,
-        CASE 
-            WHEN COALESCE(rasl.active_simulation_count, 0) > 0 THEN false
-            WHEN up.role IN ('admin'::profile_type, 'superadmin'::profile_type) THEN true
-            ELSE false
-        END as can_edit,
-        CASE 
-            WHEN COALESCE(rasl_all.total_simulation_links, 0) > 0 THEN false
-            WHEN up.role IN ('admin'::profile_type, 'superadmin'::profile_type) THEN true
-            ELSE false
-        END as can_delete,
-        CASE 
-            WHEN up.role IN ('admin'::profile_type, 'superadmin'::profile_type) THEN true
-            ELSE false
-        END as can_duplicate
+        COALESCE(rasl_all.total_simulation_links, 0) as total_simulation_links
     FROM rubric_artifact r
     LEFT JOIN rubric_departments_junction rd ON rd.rubric_id = r.id AND rd.active = true
     LEFT JOIN rubric_departments_data rdd ON rdd.rubric_id = r.id
     LEFT JOIN rubric_simulations_data rsd ON rsd.rubric_id = r.id
     LEFT JOIN rubric_active_simulation_links rasl ON rasl.rubric_id = r.id
     LEFT JOIN rubric_all_simulation_links rasl_all ON rasl_all.rubric_id = r.id
-    CROSS JOIN user_profile up
-    GROUP BY r.id, (SELECT n.name FROM rubric_names_junction rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1), (SELECT d.description FROM rubric_descriptions_junction rd JOIN descriptions_resource d ON rd.description_id = d.id WHERE rd.rubric_id = r.id LIMIT 1), (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::point_type LIMIT 1), (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'pass'::point_type LIMIT 1), rdd.department_ids, rsd.simulation_ids, rasl.active_simulation_count, rasl_all.total_simulation_links, up.role
-    HAVING 
+    GROUP BY r.id, (SELECT n.name FROM rubric_names_junction rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1), (SELECT d.description FROM rubric_descriptions_junction rd JOIN descriptions_resource d ON rd.description_id = d.id WHERE rd.rubric_id = r.id LIMIT 1), (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::point_type LIMIT 1), (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'pass'::point_type LIMIT 1), rdd.department_ids, rsd.simulation_ids, rasl.active_simulation_count, rasl_all.total_simulation_links
+    HAVING
         COUNT(rd.rubric_id) FILTER (WHERE rd.department_id IN (SELECT department_id FROM user_departments)) > 0
         OR NOT EXISTS (SELECT 1 FROM rubric_departments_junction rd2 WHERE rd2.rubric_id = r.id AND rd2.active = true)
 ),
+-- Apply server-side filters
+filtered_rubrics AS (
+    SELECT rd.*
+    FROM rubric_data rd
+    WHERE
+        -- Search filter: match name or description (case-insensitive)
+        (search IS NULL OR LOWER(rd.name) LIKE '%' || LOWER(search) || '%' OR LOWER(rd.description) LIKE '%' || LOWER(search) || '%')
+        -- Department filter: rubric must belong to at least one selected department
+        AND (filter_department_ids IS NULL OR rd.department_ids && filter_department_ids::text[])
+        -- Simulation filter: rubric must be linked to at least one selected simulation
+        AND (filter_simulation_ids IS NULL OR rd.simulation_ids && filter_simulation_ids::text[])
+),
+-- Count total filtered results (before pagination)
+filtered_count AS (
+    SELECT COUNT(*)::bigint as total_count FROM filtered_rubrics
+),
+-- Paginate filtered results
+paginated_rubrics AS (
+    SELECT fr.*
+    FROM filtered_rubrics fr
+    ORDER BY fr.name
+    LIMIT page_size OFFSET page_offset
+),
+-- Standard groups and standards scoped to paginated rubrics
 all_rubric_ids AS (
-    SELECT DISTINCT rubric_id FROM rubric_data
+    SELECT DISTINCT rubric_id FROM paginated_rubrics
 ),
 rubric_standard_group_ids AS (
-    SELECT 
+    SELECT
         rsg.rubric_id,
         ARRAY_AGG(rsg.standard_group_id ORDER BY rsg.position, sg.name) as standard_group_ids
     FROM rubric_standard_groups_junction rsg
@@ -230,32 +229,6 @@ all_standard_group_ids AS (
     FROM rubric_standard_groups_junction rsg
     WHERE rsg.rubric_id IN (SELECT rubric_id FROM all_rubric_ids) AND rsg.active = true
 ),
-all_standard_ids AS (
-    SELECT DISTINCT s.id as standard_id
-    FROM standards_resource s
-    WHERE s.standard_group_id IN (SELECT standard_group_id FROM all_standard_group_ids)
-),
-all_department_ids AS (
-    SELECT DISTINCT unnest(department_ids)::uuid as department_id
-    FROM rubric_departments_data
-    WHERE department_ids IS NOT NULL
-),
-all_simulation_ids AS (
-    SELECT DISTINCT unnest(simulation_ids)::uuid as simulation_id
-    FROM rubric_simulations_data
-    WHERE simulation_ids IS NOT NULL
-),
--- Collect all assigned simulation IDs and department IDs from rubric_data for filtering
-assigned_simulation_ids AS (
-    SELECT DISTINCT unnest(simulation_ids)::uuid as simulation_id
-    FROM rubric_data
-    WHERE simulation_ids IS NOT NULL AND COALESCE(array_length(simulation_ids, 1), 0) > 0
-),
-assigned_department_ids AS (
-    SELECT DISTINCT unnest(department_ids)::uuid as department_id
-    FROM rubric_data
-    WHERE department_ids IS NOT NULL AND COALESCE(array_length(department_ids, 1), 0) > 0
-),
 standard_groups_distinct AS (
     SELECT DISTINCT ON (sg.id)
         sg.id, rsg.rubric_id, sg.name, COALESCE(sg.description, '') as description, sg.points, sg.pass_points, rsg.position
@@ -265,7 +238,7 @@ standard_groups_distinct AS (
     ORDER BY sg.id, rsg.rubric_id, rsg.position, sg.name
 ),
 standard_groups_aggregated AS (
-    SELECT 
+    SELECT
         COALESCE(
             ARRAY_AGG(
                 (sgd.id, sgd.rubric_id, sgd.name, sgd.description, sgd.points, sgd.pass_points)::types.q_get_rubrics_list_v4_standard_group
@@ -283,7 +256,7 @@ standards_distinct AS (
     ORDER BY s.id, s.standard_group_id, (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1)
 ),
 standards_aggregated AS (
-    SELECT 
+    SELECT
         COALESCE(
             ARRAY_AGG(
                 (sd.id, sd.standard_group_id, sd.name, sd.description, sd.points)::types.q_get_rubrics_list_v4_standard
@@ -293,129 +266,69 @@ standards_aggregated AS (
         ) as standards
     FROM standards_distinct sd
 ),
-departments_distinct AS (
-    SELECT DISTINCT ON (d.id)
-        d.id, (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1), COALESCE((SELECT d2.description FROM department_descriptions_junction dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1), '') as description
-    FROM department_artifact d
-    WHERE d.id IN (SELECT department_id FROM assigned_department_ids)
-    ORDER BY d.id, (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1)
+-- Filter option IDs with counts (names hydrated in Python from cached *_internal() functions)
+-- Department options: all departments the user has access to, with count of rubrics in each
+department_option_data AS (
+    SELECT
+        dr.id,
+        (SELECT COUNT(*) FROM rubric_data rd WHERE rd.department_ids IS NOT NULL AND dr.id::text = ANY(rd.department_ids)) as count
+    FROM departments_resource dr
+    WHERE dr.id IN (SELECT department_id FROM user_departments)
 ),
-departments_aggregated AS (
-    SELECT 
-        COALESCE(
-            ARRAY_AGG(
-                (dd.id, dd.name, dd.description)::types.q_get_rubrics_list_v4_department
-                ORDER BY dd.name
-            ),
-            '{}'::types.q_get_rubrics_list_v4_department[]
-        ) as departments
-    FROM departments_distinct dd
+-- Simulation options: all simulations linked to visible rubrics, with count of rubrics linked
+assigned_simulation_ids AS (
+    SELECT DISTINCT unnest(simulation_ids)::uuid as simulation_id
+    FROM rubric_data
+    WHERE simulation_ids IS NOT NULL AND COALESCE(array_length(simulation_ids, 1), 0) > 0
 ),
-simulations_with_time_limit AS (
-    SELECT DISTINCT ON (s.id)
-        s.id, 
-        (SELECT n.name FROM simulation_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) as name, 
-        COALESCE((SELECT (SELECT d.description FROM document_descriptions_junction dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM scenario_descriptions_junction sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1), '') as description,
-        COALESCE(
-            (SELECT SUM(stlr.time_limit_seconds)
-             FROM simulation_scenario_time_limits_junction sstl
-             JOIN scenario_time_limits_resource stlr ON stlr.id = sstl.scenario_time_limit_id
-             JOIN simulation_scenarios_junction ss ON ss.simulation_id = sstl.simulation_id AND ss.scenario_id = stlr.scenario_id
-             WHERE sstl.simulation_id = s.id AND sstl.active = true AND stlr.active = true AND EXISTS (SELECT 1 FROM simulation_scenario_flags_junction ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND sfr.scenario_id = ss.scenario_id AND f.name = 'scenario_active' AND ssf.value = true)),
-            0
-        )::int as time_limit
-    FROM simulation_artifact s
-    INNER JOIN simulation_department_access_for_rubrics sdar ON sdar.simulation_id = s.id AND sdar.has_access = true
-    WHERE EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'scenario_active' AND sf.value = true) 
-      AND s.id IN (SELECT simulation_id FROM all_simulation_ids)
-    ORDER BY s.id, (SELECT n.name FROM simulation_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1)
-),
-simulations_aggregated AS (
-    SELECT 
-        COALESCE(
-            ARRAY_AGG(
-                (swtl.id, swtl.name, swtl.description, swtl.time_limit)::types.q_get_rubrics_list_v4_simulation
-                ORDER BY swtl.name
-            ),
-            '{}'::types.q_get_rubrics_list_v4_simulation[]
-        ) as simulations
-    FROM simulations_with_time_limit swtl
-),
--- Filter simulation_options to only include assigned simulations (with disambiguation for duplicate names)
-simulation_name_counts AS (
-    SELECT (SELECT n.name FROM simulation_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) as name, COUNT(*) as count
-    FROM simulation_artifact s
-    WHERE s.id IN (SELECT simulation_id FROM assigned_simulation_ids)
-    GROUP BY (SELECT n.name FROM simulation_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1)
-),
-simulation_options_with_disambiguation AS (
-    SELECT DISTINCT ON (s.id)
-        s.id,
-        CASE 
-            WHEN snc.count > 1 THEN (SELECT n.name FROM simulation_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) || ' (' || RIGHT(s.id::text, 8) || ')'
-            ELSE (SELECT n.name FROM simulation_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1)
-        END as name,
-        COALESCE((SELECT (SELECT d.description FROM document_descriptions_junction dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM scenario_descriptions_junction sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1), '') as description,
-        COALESCE(
-            (SELECT SUM(stlr.time_limit_seconds)
-             FROM simulation_scenario_time_limits_junction sstl
-             JOIN scenario_time_limits_resource stlr ON stlr.id = sstl.scenario_time_limit_id
-             JOIN simulation_scenarios_junction ss ON ss.simulation_id = sstl.simulation_id AND ss.scenario_id = stlr.scenario_id
-             WHERE sstl.simulation_id = s.id AND sstl.active = true AND stlr.active = true AND EXISTS (SELECT 1 FROM simulation_scenario_flags_junction ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND sfr.scenario_id = ss.scenario_id AND f.name = 'scenario_active' AND ssf.value = true)),
-            0
-        )::int as time_limit
-    FROM simulation_artifact s
-    INNER JOIN simulation_department_access_for_rubrics sdar ON sdar.simulation_id = s.id AND sdar.has_access = true
-    LEFT JOIN simulation_name_counts snc ON snc.name = (SELECT n.name FROM simulation_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1)
-    WHERE EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'scenario_active' AND sf.value = true) 
-      AND s.id IN (SELECT simulation_id FROM assigned_simulation_ids)
-    ORDER BY s.id, (SELECT n.name FROM simulation_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1)
-),
-simulation_options_aggregated AS (
-    SELECT 
-        COALESCE(
-            ARRAY_AGG(
-                (sod.id, sod.name, sod.description, sod.time_limit)::types.q_get_rubrics_list_v4_simulation
-                ORDER BY sod.name
-            ),
-            '{}'::types.q_get_rubrics_list_v4_simulation[]
-        ) as simulation_options
-    FROM simulation_options_with_disambiguation sod
+simulation_option_data AS (
+    SELECT
+        rsd.simulation_id as id,
+        COUNT(DISTINCT rsd.rubric_id) as count
+    FROM rubric_simulations_distinct rsd
+    WHERE rsd.rubric_id IN (SELECT rubric_id FROM rubric_data)
+    GROUP BY rsd.simulation_id
 )
-SELECT 
+SELECT
+    -- Aggregate paginated rubrics
     COALESCE(
-        ARRAY_AGG(
-            (rd.rubric_id,
-             rd.name,
-             rd.description,
-             rd.points,
-             rd.pass_points,
-             CASE WHEN rd.points > 0 THEN ROUND((rd.pass_points::numeric / rd.points::numeric) * 100) ELSE 0 END::int,
-             rd.department_ids,
-             rd.simulation_ids,
-             rd.active_simulation_count,
-             rd.total_simulation_links,
-             rd.can_edit,
-             rd.can_delete,
-             rd.can_duplicate,
+        (SELECT ARRAY_AGG(
+            (pr.rubric_id,
+             pr.name,
+             pr.description,
+             pr.points,
+             pr.pass_points,
+             CASE WHEN pr.points > 0 THEN ROUND((pr.pass_points::numeric / pr.points::numeric) * 100) ELSE 0 END::int,
+             pr.department_ids,
+             pr.simulation_ids,
+             pr.active_simulation_count,
+             pr.total_simulation_links,
              COALESCE(rsgi.standard_group_ids, ARRAY[]::uuid[])
             )::types.q_get_rubrics_list_v4_rubric
-            ORDER BY rd.name
-        ),
+            ORDER BY pr.name
+        ) FROM paginated_rubrics pr
+        LEFT JOIN rubric_standard_group_ids rsgi ON rsgi.rubric_id = pr.rubric_id),
         '{}'::types.q_get_rubrics_list_v4_rubric[]
     ) as rubrics,
-    sga.standard_groups,
-    sta.standards,
-    da.departments,
-    sima.simulations,
-    soa.simulation_options
-FROM rubric_data rd
-CROSS JOIN user_profile up
-LEFT JOIN rubric_standard_group_ids rsgi ON rsgi.rubric_id = rd.rubric_id
-CROSS JOIN standard_groups_aggregated sga
-CROSS JOIN standards_aggregated sta
-CROSS JOIN departments_aggregated da
-CROSS JOIN simulations_aggregated sima
-CROSS JOIN simulation_options_aggregated soa
-GROUP BY up.actor_name, sga.standard_groups, sta.standards, da.departments, sima.simulations, soa.simulation_options
+    -- Standard groups for paginated rubrics
+    (SELECT standard_groups FROM standard_groups_aggregated) as standard_groups,
+    -- Standards for paginated rubrics
+    (SELECT standards FROM standards_aggregated) as standards,
+    -- Department option IDs with counts (names hydrated in Python)
+    COALESCE(
+        (SELECT ARRAY_AGG(
+            (dod.id, dod.count)::types.q_get_rubrics_list_v4_option_id
+        ) FROM department_option_data dod),
+        '{}'::types.q_get_rubrics_list_v4_option_id[]
+    ) as department_option_ids,
+    -- Simulation option IDs with counts (names hydrated in Python)
+    COALESCE(
+        (SELECT ARRAY_AGG(
+            (sod.id, sod.count)::types.q_get_rubrics_list_v4_option_id
+        ) FROM simulation_option_data sod),
+        '{}'::types.q_get_rubrics_list_v4_option_id[]
+    ) as simulation_option_ids,
+    -- Total count of filtered rubrics (before pagination)
+    (SELECT total_count FROM filtered_count) as total_count
+FROM params
 $$;

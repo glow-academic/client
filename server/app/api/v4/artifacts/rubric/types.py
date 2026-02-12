@@ -306,3 +306,64 @@ class PatchRubricDraftSqlRow(BaseModel):
     draft_id: UUID | None = None
     new_version: int | None = None
     draft_exists: bool | None = None
+
+
+# ========== List Endpoint Types ==========
+
+
+class ListRubricApiRubric(BaseModel):
+    rubric_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    points: int | None = None
+    pass_points: int | None = None
+    pass_percentage: int | None = None
+    department_ids: list[str] | None = None
+    simulation_ids: list[str] | None = None
+    active_simulation_count: int | None = None
+    total_simulation_links: int | None = None
+    can_edit: bool | None = None
+    can_delete: bool | None = None
+    can_duplicate: bool | None = None
+    standard_group_ids: list[UUID] | None = None
+
+
+class ListRubricApiDepartment(BaseModel):
+    department_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    count: int | None = None
+
+
+class ListRubricApiSimulationOption(BaseModel):
+    simulation_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    count: int | None = None
+
+
+class ListRubricApiStandardGroup(BaseModel):
+    standard_group_id: UUID | None = None
+    rubric_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    points: int | None = None
+    pass_points: int | None = None
+
+
+class ListRubricApiStandard(BaseModel):
+    standard_id: UUID | None = None
+    standard_group_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    points: int | None = None
+
+
+class ListRubricApiResponse(BaseModel):
+    actor_name: str | None = None
+    rubrics: list[ListRubricApiRubric] | None = None
+    standard_groups: list[ListRubricApiStandardGroup] | None = None
+    standards: list[ListRubricApiStandard] | None = None
+    departments: list[ListRubricApiDepartment] | None = None
+    simulation_options: list[ListRubricApiSimulationOption] | None = None
+    total_count: int | None = None

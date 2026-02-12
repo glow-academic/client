@@ -154,7 +154,7 @@ cohort_ids_internal AS (
       AND EXISTS (SELECT 1 FROM cohort_flags_junction cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = c.id AND f.name = 'cohort_active' AND cf.value = true)
 ),
 cohort_ids_data AS (
-    -- Return resource IDs for analytics (matches mv_dashboard_facts.cohort_id)
+    -- Return resource IDs for analytics (matches mv_chat_facts.cohort_id)
     SELECT COALESCE(
         ARRAY_AGG(resource_id ORDER BY created_at),
         ARRAY[]::uuid[]
@@ -162,7 +162,7 @@ cohort_ids_data AS (
     FROM cohort_ids_internal
 ),
 simulation_ids_data AS (
-    -- Get simulation resource IDs for the profile's cohorts (matches mv_dashboard_facts.simulation_id)
+    -- Get simulation resource IDs for the profile's cohorts (matches mv_chat_facts.simulation_id)
     SELECT COALESCE(
         ARRAY_AGG(DISTINCT ssj.simulations_id ORDER BY ssj.simulations_id),
         ARRAY[]::uuid[]

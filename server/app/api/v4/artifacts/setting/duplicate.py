@@ -5,13 +5,18 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.artifacts.setting.permissions import compute_can_duplicate
+from app.api.v4.artifacts.setting.types import (
+    DuplicateSettingApiRequest,
+    DuplicateSettingApiResponse,
+)
 from app.api.v4.auth.context import get_profile_context_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
-    DuplicateSettingApiRequest,
-    DuplicateSettingApiResponse,
+    CheckSettingDuplicateAccessSqlParams,
+    CheckSettingDuplicateAccessSqlRow,
     DuplicateSettingSqlParams,
     DuplicateSettingSqlRow,
     load_sql_query,
@@ -19,8 +24,11 @@ from app.sql.types import (
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
-# Load SQL with types at module level - makes it clear what SQL file is used
-SQL_PATH = "app/sql/v4/queries/settings/duplicate_setting_complete.sql"
+# SQL paths
+ACCESS_CHECK_SQL_PATH = (
+    "app/sql/v4/queries/settings/check_setting_duplicate_access_complete.sql"
+)
+DUPLICATE_SQL_PATH = "app/sql/v4/queries/settings/duplicate_setting_complete.sql"
 
 router = APIRouter()
 
@@ -42,9 +50,9 @@ async def duplicate_setting(
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DuplicateSettingApiResponse:
     """Duplicate a setting."""
-    tags = ["settings"]  # From router tags
+    tags = ["settings"]
 
-    sql_query = load_sql_query(SQL_PATH)
+    sql_query = load_sql_query(DUPLICATE_SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -56,7 +64,7 @@ async def duplicate_setting(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for audit logging
+        # Fetch user context for permissions and audit logging
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -67,48 +75,76 @@ async def duplicate_setting(
                     bypass_cache=False,
                 )
                 actor_name = resolved_context.actor_name
+                user_role = resolved_context.user_role
         else:
             actor_name = None
+            user_role = None
 
-        # Convert API request to SQL params (add profile_id from header)
-        params = DuplicateSettingSqlParams(
-            **request.model_dump(), profile_id=profile_id
+        # Permission check: get access check using typed SQL
+        access_params = CheckSettingDuplicateAccessSqlParams(
+            profile_id=profile_id,
         )
-        sql_params = params.to_tuple()
-
-        # Execute query with typed helper - automatically detects and calls function if present
-        result = cast(
-            DuplicateSettingSqlRow,
+        access_result = cast(
+            CheckSettingDuplicateAccessSqlRow,
             await execute_sql_typed(
                 conn,
-                SQL_PATH,
-                params=params,
+                ACCESS_CHECK_SQL_PATH,
+                params=access_params,
             ),
         )
 
-        if not result or not result.new_setting_id:
-            raise ValueError(f"Setting not found: {request.setting_id}")
-
-        original_name = result.original_name or "Unknown"
-
-        # Set audit context with data from SQL query
-        if actor_name:
-            audit_set(
-                http_request,
-                actor={"name": actor_name, "id": profile_id},
-                setting={"name": original_name, "id": str(request.setting_id)},
+        if not access_result:
+            raise HTTPException(
+                status_code=401,
+                detail="Unable to verify user permissions.",
             )
 
+        can_duplicate = compute_can_duplicate(user_role=user_role)
+
+        if not can_duplicate:
+            raise HTTPException(
+                status_code=403,
+                detail="You don't have permission to duplicate this setting.",
+            )
+
+        async with conn.transaction():
+            # Convert API request to SQL params (add profile_id from header)
+            params = DuplicateSettingSqlParams(
+                **request.model_dump(), profile_id=profile_id
+            )
+            sql_params = params.to_tuple()
+
+            # Execute SQL with typed helper
+            result = cast(
+                DuplicateSettingSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    DUPLICATE_SQL_PATH,
+                    params=params,
+                ),
+            )
+
+            if not result or not result.new_setting_id:
+                raise ValueError(f"Setting not found: {request.setting_id}")
+
+            original_name = result.original_name or "Unknown"
+
+            # Set audit context with data from SQL query
+            if actor_name:
+                audit_set(
+                    http_request,
+                    actor={"name": actor_name, "id": profile_id},
+                    setting={"name": original_name, "id": str(request.setting_id)},
+                )
+
         # Convert SQL result to API response
-        api_response = DuplicateSettingApiResponse.model_validate(
-            {
-                "success": True,
-                "settingId": str(result.new_setting_id),
-                "message": f"Setting '{original_name}' duplicated successfully",
-            }
+        api_response = DuplicateSettingApiResponse(
+            success=True,
+            setting_id=result.new_setting_id,
+            message=f"Setting '{original_name}' duplicated successfully",
         )
 
-        # Invalidate cache after mutation
+        # Invalidate cache after transaction
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 

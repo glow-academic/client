@@ -5,9 +5,9 @@
 -- Filter: None at MV level - all data included (filtering done at query time)
 --
 -- Purpose: Profile-level aggregates for Reports leaderboards and profile cards
--- Section: ANALYTICS (derived from mv_chat_facts)
+-- Section: ANALYTICS (self-contained, no MV dependencies)
 --
--- Dependencies: Aggregates from mv_chat_facts grouped by profile
+-- Dependencies: Uses entry tables only
 -- ============================================================================
 -- Step 1: Drop all indexes on mv_profile_metrics materialized view (if it exists)
 -- ============================================================================
@@ -38,6 +38,75 @@ DROP MATERIALIZED VIEW IF EXISTS mv_profile_metrics CASCADE;
 
 CREATE MATERIALIZED VIEW mv_profile_metrics AS
 WITH
+latest_grade AS (
+    SELECT DISTINCT ON (g.chat_id)
+        g.chat_id,
+        g.score,
+        g.passed,
+        g.time_taken,
+        g.total_points AS rubric_total_points
+    FROM simulation_grades_entry g
+    WHERE g.active = TRUE
+    ORDER BY g.chat_id, g.created_at DESC
+),
+message_stats AS (
+    SELECT
+        sm.chat_id,
+        COUNT(*)::int AS num_messages_total,
+        ARRAY_AGG(
+            EXTRACT(EPOCH FROM (sm.updated_at - sm.created_at))::int
+            ORDER BY sm.created_at
+        ) FILTER (WHERE m.role = 'assistant'::message_type) AS message_time_taken_seconds
+    FROM simulation_messages_entry sm
+    JOIN messages_entry m ON m.id = sm.id
+    WHERE m.active = TRUE
+      AND m.role IN ('user'::message_type, 'assistant'::message_type)
+    GROUP BY sm.chat_id
+),
+chat_scope AS (
+    SELECT
+        c.id AS chat_id,
+        (ARRAY_AGG(tsc.scenarios_id ORDER BY tsc.created_at) FILTER (WHERE tsc.scenarios_id IS NOT NULL))[1] AS scenario_id
+    FROM simulation_chats_entry c
+    JOIN simulation_attempts_entry a ON a.id = c.attempt_id
+    LEFT JOIN training_bundle_departments_entry tbd ON tbd.id = c.training_bundle_department_id AND tbd.active = TRUE
+    LEFT JOIN training_bundle_departments_scenarios_connection tsc ON tsc.training_bundle_department_id = tbd.id AND tsc.active = TRUE
+    WHERE c.active = TRUE
+      AND a.active = TRUE
+    GROUP BY c.id
+),
+chat_facts AS (
+    SELECT
+        c.id AS chat_id,
+        c.attempt_id,
+        asc_conn.simulations_id AS simulation_id,
+        apc.profiles_id AS profile_id,
+        acc.cohorts_id AS cohort_id,
+        a.created_at AS attempt_created_at,
+        CASE WHEN COALESCE(a.practice, FALSE) THEN 'practice' ELSE 'general' END AS attempt_type,
+        COALESCE(a.archived, FALSE) AS is_archived,
+        (EXISTS (SELECT 1 FROM simulation_completions_entry comp WHERE comp.chat_id = c.id AND comp.active = TRUE)) AS completed,
+        cs.scenario_id,
+        lg.passed,
+        lg.time_taken,
+        CASE
+            WHEN lg.rubric_total_points IS NOT NULL AND lg.rubric_total_points > 0
+            THEN ROUND((lg.score::numeric / lg.rubric_total_points::numeric) * 100, 2)
+            ELSE NULL
+        END AS grade_percent,
+        COALESCE(ms.num_messages_total, 0) AS num_messages_total,
+        COALESCE(ms.message_time_taken_seconds, ARRAY[]::int[]) AS message_time_taken_seconds
+    FROM simulation_chats_entry c
+    JOIN simulation_attempts_entry a ON a.id = c.attempt_id
+    JOIN simulation_attempts_simulations_connection asc_conn ON asc_conn.attempt_id = a.id
+    JOIN simulation_attempts_profiles_connection apc ON apc.attempt_id = a.id
+    LEFT JOIN simulation_attempts_cohorts_connection acc ON acc.attempt_id = a.id
+    JOIN chat_scope cs ON cs.chat_id = c.id
+    LEFT JOIN latest_grade lg ON lg.chat_id = c.id
+    LEFT JOIN message_stats ms ON ms.chat_id = c.id
+    WHERE c.active = TRUE
+      AND a.active = TRUE
+),
 -- First attempt per profile (for first_attempt_pass_rate)
 first_attempts AS (
     SELECT DISTINCT ON (cf.profile_id, cf.attempt_type, cf.is_archived)
@@ -45,7 +114,7 @@ first_attempts AS (
         cf.attempt_type,
         cf.is_archived,
         cf.passed AS first_attempt_passed
-    FROM mv_chat_facts cf
+    FROM chat_facts cf
     WHERE cf.completed = TRUE
     ORDER BY cf.profile_id, cf.attempt_type, cf.is_archived, cf.attempt_created_at
 ),
@@ -56,7 +125,7 @@ quickest_pass AS (
         cf.attempt_type,
         cf.is_archived,
         cf.time_taken AS quickest_pass_seconds
-    FROM mv_chat_facts cf
+    FROM chat_facts cf
     WHERE cf.passed = TRUE
       AND cf.time_taken IS NOT NULL
       AND cf.time_taken > 0
@@ -106,7 +175,7 @@ base_metrics AS (
         ARRAY_AGG(DISTINCT cf.scenario_id ORDER BY cf.scenario_id) AS scenario_ids,
         ARRAY_AGG(DISTINCT cf.cohort_id ORDER BY cf.cohort_id) FILTER (WHERE cf.cohort_id IS NOT NULL) AS cohort_ids
 
-    FROM mv_chat_facts cf
+    FROM chat_facts cf
     GROUP BY
         cf.profile_id,
         cf.attempt_type,
@@ -136,7 +205,7 @@ improvement_calc AS (
             COUNT(*) OVER (
                 PARTITION BY cf.profile_id, cf.attempt_type, cf.is_archived
             ) AS cnt
-        FROM mv_chat_facts cf
+        FROM chat_facts cf
         WHERE cf.grade_percent IS NOT NULL
     ) ranked
     WHERE cnt >= 2
@@ -158,7 +227,7 @@ efficiency_calc AS (
             ),
             2
         ) AS session_efficiency
-    FROM mv_chat_facts cf
+    FROM chat_facts cf
     WHERE cf.time_taken > 0
     GROUP BY cf.profile_id, cf.attempt_type, cf.is_archived
 )

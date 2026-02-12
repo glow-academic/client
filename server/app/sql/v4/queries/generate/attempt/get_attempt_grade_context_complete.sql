@@ -175,7 +175,7 @@ attempt_data AS (
     SELECT
         a.id as attempt_id,
         TRUE as attempt_exists
-    FROM view_attempts_entry a
+    FROM simulation_attempts_entry a
     CROSS JOIN params p
     WHERE a.id = p.attempt_id
     LIMIT 1

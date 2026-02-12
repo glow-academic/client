@@ -1,18 +1,6 @@
 -- Refresh Dashboard Materialized Views - API Endpoint
--- Refreshes all dashboard MVs in dependency order:
--- Layer 1 (Base):
---   1. mv_simulation_analytics (base)
--- Layer 2:
---   3. mv_dashboard_facts (depends on general + practice)
--- Layer 3:
---   4. mv_dashboard_daily_agg (depends on facts)
---   5. mv_dashboard_persona_agg (depends on facts)
---   6. mv_dashboard_attempt_seq (depends on facts)
---   7. mv_dashboard_cohort_facts (depends on facts)
---   8. mv_persona_response_times (depends on facts)
---   9. mv_profile_analytics (depends on facts)
--- Independent:
---   10. mv_dashboard_rubric_facts (uses base tables directly)
+-- Refreshes all dashboard-related analytics MVs.
+-- All MVs are independent — no dependency ordering required.
 -- Uses safe drop/recreate pattern: drop function first, then recreate
 -- ============================================================================
 -- Step 1: Drop function if exists
@@ -51,36 +39,18 @@ DECLARE
     actor_name_val text;
     refreshed text[] := ARRAY[]::text[];
 BEGIN
-    -- Step 1: Refresh base MVs
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_simulation_analytics;
-    refreshed := array_append(refreshed, 'mv_simulation_analytics');
+    -- Refresh analytics MVs (all independent, no ordering required)
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_chat_facts;
+    refreshed := array_append(refreshed, 'mv_chat_facts');
 
-    -- Step 2: Refresh dashboard facts
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_dashboard_facts;
-    refreshed := array_append(refreshed, 'mv_dashboard_facts');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_attempt_facts;
+    refreshed := array_append(refreshed, 'mv_attempt_facts');
 
-    -- Step 3: Refresh aggregation MVs (depend on facts)
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_dashboard_daily_agg;
-    refreshed := array_append(refreshed, 'mv_dashboard_daily_agg');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_daily_metrics;
+    refreshed := array_append(refreshed, 'mv_daily_metrics');
 
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_dashboard_persona_agg;
-    refreshed := array_append(refreshed, 'mv_dashboard_persona_agg');
-
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_dashboard_attempt_seq;
-    refreshed := array_append(refreshed, 'mv_dashboard_attempt_seq');
-
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_dashboard_cohort_facts;
-    refreshed := array_append(refreshed, 'mv_dashboard_cohort_facts');
-
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_persona_response_times;
-    refreshed := array_append(refreshed, 'mv_persona_response_times');
-
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_profile_analytics;
-    refreshed := array_append(refreshed, 'mv_profile_analytics');
-
-    -- Step 4: Refresh rubric facts (independent, uses base tables directly)
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_dashboard_rubric_facts;
-    refreshed := array_append(refreshed, 'mv_dashboard_rubric_facts');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_profile_metrics;
+    refreshed := array_append(refreshed, 'mv_profile_metrics');
 
     -- Get actor_name from profile_artifact using profile_names_junction junction table
     SELECT COALESCE(

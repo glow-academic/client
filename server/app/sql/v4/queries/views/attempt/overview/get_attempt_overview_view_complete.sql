@@ -186,58 +186,58 @@ cohort_simulations AS (
 -- MEMBER MODE: Get simulation status for current profile
 member_sim_status AS (
     SELECT
-        mh.simulation_id,
-        COUNT(DISTINCT mh.attempt_id)::int AS attempt_count,
-        COUNT(DISTINCT mh.attempt_id) FILTER (WHERE mh.num_chats_completed > 0)::int AS completed_count,
-        MAX(mh.score_percent)::int AS highest_score,
-        BOOL_OR(mh.has_passed) AS has_passed,
-        MAX(mh.rubric_total_points) AS rubric_total_points,
-        MAX(mh.rubric_pass_points) AS rubric_pass_points,
+        af.simulation_id,
+        COUNT(DISTINCT af.attempt_id)::int AS attempt_count,
+        COUNT(DISTINCT af.attempt_id) FILTER (WHERE af.num_chats_completed > 0)::int AS completed_count,
+        MAX(af.score_percent)::int AS highest_score,
+        BOOL_OR(af.has_passed) AS has_passed,
+        MAX(af.rubric_total_points) AS rubric_total_points,
+        MAX(af.rubric_pass_points) AS rubric_pass_points,
         ARRAY_AGG(DISTINCT pid) FILTER (WHERE pid IS NOT NULL) AS persona_ids,
-        ARRAY_AGG(DISTINCT mh.cohort_id) FILTER (WHERE mh.cohort_id IS NOT NULL) AS cohort_ids,
+        ARRAY_AGG(DISTINCT af.cohort_id) FILTER (WHERE af.cohort_id IS NOT NULL) AS cohort_ids,
         NULL::int AS passed_count,
         NULL::int AS in_progress_count,
         NULL::int AS not_started_count,
         NULL::int AS total_members
     FROM params p
     CROSS JOIN mode_info mi
-    CROSS JOIN mv_simulation_history mh
-    CROSS JOIN LATERAL unnest(mh.persona_ids) AS pid
+    CROSS JOIN mv_attempt_facts af
+    CROSS JOIN LATERAL unnest(af.persona_ids) AS pid
     WHERE mi.is_member_mode
-      AND (p.practice_filter IS NULL OR mh.practice = p.practice_filter)
-      AND mh.profile_id = p.profile_id
-      AND mh.attempt_created_at >= p.start_date
-      AND mh.attempt_created_at < p.end_date
-      AND mh.simulation_id IN (SELECT simulation_id FROM cohort_simulations)
-      AND (cardinality(p.cohort_ids) = 0 OR mh.cohort_id = ANY(p.cohort_ids))
-      AND (cardinality(p.department_ids) = 0 OR mh.department_id = ANY(p.department_ids))
-    GROUP BY mh.simulation_id
+      AND (p.practice_filter IS NULL OR (af.attempt_type = 'practice') = p.practice_filter)
+      AND af.profile_id = p.profile_id
+      AND af.attempt_created_at >= p.start_date
+      AND af.attempt_created_at < p.end_date
+      AND af.simulation_id IN (SELECT simulation_id FROM cohort_simulations)
+      AND (cardinality(p.cohort_ids) = 0 OR af.cohort_id = ANY(p.cohort_ids))
+      AND (cardinality(p.department_ids) = 0 OR af.department_id = ANY(p.department_ids))
+    GROUP BY af.simulation_id
 ),
 
 -- INSTRUCTIONAL MODE: First get per-profile status, then aggregate
 inst_profile_status AS (
     SELECT
-        mh.simulation_id,
-        mh.profile_id,
-        BOOL_OR(mh.has_passed) AS profile_has_passed,
-        SUM(mh.num_chats_completed) > 0 AS profile_has_completed,
-        MAX(mh.score_percent) AS profile_highest_score,
-        MAX(mh.rubric_total_points) AS rubric_total_points,
-        MAX(mh.rubric_pass_points) AS rubric_pass_points,
+        af.simulation_id,
+        af.profile_id,
+        BOOL_OR(af.has_passed) AS profile_has_passed,
+        SUM(af.num_chats_completed) > 0 AS profile_has_completed,
+        MAX(af.score_percent) AS profile_highest_score,
+        MAX(af.rubric_total_points) AS rubric_total_points,
+        MAX(af.rubric_pass_points) AS rubric_pass_points,
         ARRAY_AGG(DISTINCT pid) FILTER (WHERE pid IS NOT NULL) AS persona_ids,
-        ARRAY_AGG(DISTINCT mh.cohort_id) FILTER (WHERE mh.cohort_id IS NOT NULL) AS cohort_ids
+        ARRAY_AGG(DISTINCT af.cohort_id) FILTER (WHERE af.cohort_id IS NOT NULL) AS cohort_ids
     FROM params p
     CROSS JOIN mode_info mi
-    CROSS JOIN mv_simulation_history mh
-    LEFT JOIN LATERAL unnest(mh.persona_ids) AS pid ON true
+    CROSS JOIN mv_attempt_facts af
+    LEFT JOIN LATERAL unnest(af.persona_ids) AS pid ON true
     WHERE NOT mi.is_member_mode
-      AND (p.practice_filter IS NULL OR mh.practice = p.practice_filter)
-      AND mh.attempt_created_at >= p.start_date
-      AND mh.attempt_created_at < p.end_date
-      AND mh.simulation_id IN (SELECT simulation_id FROM cohort_simulations)
-      AND (cardinality(p.cohort_ids) = 0 OR mh.cohort_id = ANY(p.cohort_ids))
-      AND (cardinality(p.department_ids) = 0 OR mh.department_id = ANY(p.department_ids))
-    GROUP BY mh.simulation_id, mh.profile_id
+      AND (p.practice_filter IS NULL OR (af.attempt_type = 'practice') = p.practice_filter)
+      AND af.attempt_created_at >= p.start_date
+      AND af.attempt_created_at < p.end_date
+      AND af.simulation_id IN (SELECT simulation_id FROM cohort_simulations)
+      AND (cardinality(p.cohort_ids) = 0 OR af.cohort_id = ANY(p.cohort_ids))
+      AND (cardinality(p.department_ids) = 0 OR af.department_id = ANY(p.department_ids))
+    GROUP BY af.simulation_id, af.profile_id
 ),
 
 -- Aggregate persona_ids per simulation (instructional)
@@ -305,12 +305,12 @@ all_sim_status AS (
 -- Get scenario IDs for time limit and rubric
 sim_scenarios AS (
     SELECT DISTINCT
-        mh.simulation_id,
+        af.simulation_id,
         sid AS scenario_id
-    FROM mv_simulation_history mh, params p
-    CROSS JOIN LATERAL unnest(mh.scenario_ids) AS sid
-    WHERE (p.practice_filter IS NULL OR mh.practice = p.practice_filter)
-      AND mh.simulation_id IN (SELECT simulation_id FROM all_sim_status)
+    FROM mv_attempt_facts af, params p
+    CROSS JOIN LATERAL unnest(af.scenario_ids) AS sid
+    WHERE (p.practice_filter IS NULL OR (af.attempt_type = 'practice') = p.practice_filter)
+      AND af.simulation_id IN (SELECT simulation_id FROM all_sim_status)
 ),
 
 -- Get time limits per simulation

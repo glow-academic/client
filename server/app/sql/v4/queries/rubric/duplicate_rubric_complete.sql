@@ -89,14 +89,12 @@ new_name_resource AS (
     ON CONFLICT (name) DO UPDATE SET created_at = EXCLUDED.created_at
     RETURNING id as name_id
 ),
--- Insert description INTO descriptions_resource table
-new_description_resource AS (
-    INSERT INTO descriptions_resource (description, created_at)
-    SELECT description, NOW()
-    FROM original_rubric
-    WHERE description IS NOT NULL AND description != ''
-    ON CONFLICT (description) DO UPDATE SET created_at = EXCLUDED.created_at
-    RETURNING id as description_id
+-- Get existing description_id from junction (link existing, don't create new)
+original_description_id AS (
+    SELECT rd.description_id
+    FROM rubric_descriptions_junction rd
+    WHERE rd.rubric_id = (SELECT original_rubric_id FROM params)
+    LIMIT 1
 ),
 -- Get or create points (points table may not have unique constraint on value)
 existing_points AS (
@@ -151,12 +149,13 @@ link_rubric_name AS (
     CROSS JOIN new_name_resource nnr
     ON CONFLICT (rubric_id, name_id) DO NOTHING
 ),
--- Link rubric to description
+-- Link rubric to description (link existing description from original rubric)
 link_rubric_description AS (
     INSERT INTO rubric_descriptions_junction (rubric_id, description_id, created_at)
-    SELECT nr.rubric_id, ndr.description_id, NOW()
+    SELECT nr.rubric_id, odi.description_id, NOW()
     FROM new_rubric nr
-    CROSS JOIN new_description_resource ndr
+    CROSS JOIN original_description_id odi
+    WHERE odi.description_id IS NOT NULL
     ON CONFLICT (rubric_id, description_id) DO NOTHING
 ),
 -- Link rubric active flag (set to false for duplicate)

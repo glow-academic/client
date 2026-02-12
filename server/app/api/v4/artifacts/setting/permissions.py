@@ -79,3 +79,17 @@ def compute_flag_required() -> bool:
 
 def compute_departments_required(show_departments: bool) -> bool:
     return show_departments
+
+
+def compute_can_delete(
+    user_role: str | None,
+    user_department_ids: list[UUID],
+    setting_department_ids: list[UUID],
+) -> bool:
+    """Settings can only be deleted by users with access."""
+    return has_access(user_role, user_department_ids, setting_department_ids)
+
+
+def compute_can_duplicate(user_role: str | None) -> bool:
+    """Any authenticated user can duplicate a setting."""
+    return user_role is not None

@@ -1,37 +1,6 @@
 -- Refresh All Materialized Views - API Endpoint
--- Refreshes ALL MVs in the system in correct dependency order.
--- This is the master refresh function for full system refreshes.
---
--- Dependency Graph:
--- Layer 1 (Base - Independent):
---   1. mv_simulation_analytics
---   3. mv_benchmark_analytics
---   4. mv_model_pricing_ppm
---   5. mv_run_pricing_facts
---   6. mv_call_facts
---   7. mv_health_hourly_agg
---   8. mv_metrics_hourly_agg
---
--- Layer 2:
---   9. mv_dashboard_facts (depends on mv_simulation_analytics)
---   10. mv_group_pricing_facts (depends on mv_run_pricing_facts)
---   11. mv_health_daily_agg (depends on mv_health_hourly_agg)
---   12. mv_metrics_daily_agg (depends on mv_metrics_hourly_agg)
---
--- Layer 3:
---   13. mv_dashboard_daily_agg (depends on facts)
---   14. mv_dashboard_persona_agg (depends on facts)
---   15. mv_dashboard_attempt_seq (depends on facts)
---   16. mv_dashboard_cohort_facts (depends on facts)
---   17. mv_persona_response_times (depends on facts)
---   18. mv_profile_analytics (depends on facts)
---   19. mv_run_costs_daily (depends on mv_run_pricing_facts)
---   20. mv_call_metrics_daily (depends on mv_call_facts)
---   21. mv_session_facts (depends on mv_group_pricing_facts)
---
--- Independent:
---   22. mv_dashboard_rubric_facts (uses base tables directly)
---
+-- Refreshes ALL MVs in the system.
+-- All MVs are independent — no dependency ordering required.
 -- Uses safe drop/recreate pattern: drop function first, then recreate
 -- ============================================================================
 -- Step 1: Drop function if exists
@@ -70,95 +39,103 @@ DECLARE
     actor_name_val text;
     refreshed text[] := ARRAY[]::text[];
 BEGIN
-    -- ===========================================
-    -- Layer 1: Base MVs (Independent)
-    -- ===========================================
+    -- All MVs are independent — no ordering required
 
-    -- Analytics base MVs
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_simulation_analytics;
-    refreshed := array_append(refreshed, 'mv_simulation_analytics');
+    -- Analytics MVs
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_chat_facts;
+    refreshed := array_append(refreshed, 'mv_chat_facts');
 
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_benchmark_analytics;
-    refreshed := array_append(refreshed, 'mv_benchmark_analytics');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_attempt_facts;
+    refreshed := array_append(refreshed, 'mv_attempt_facts');
 
-    -- Pricing base MVs
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_model_pricing_ppm;
-    refreshed := array_append(refreshed, 'mv_model_pricing_ppm');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_daily_metrics;
+    refreshed := array_append(refreshed, 'mv_daily_metrics');
 
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_run_pricing_facts;
-    refreshed := array_append(refreshed, 'mv_run_pricing_facts');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_profile_metrics;
+    refreshed := array_append(refreshed, 'mv_profile_metrics');
 
-    -- Calls base MV
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_call_facts;
-    refreshed := array_append(refreshed, 'mv_call_facts');
+    -- Pricing MVs
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_pricing_run_facts;
+    refreshed := array_append(refreshed, 'mv_pricing_run_facts');
 
-    -- Health & Metrics base MVs
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_health_hourly_agg;
-    refreshed := array_append(refreshed, 'mv_health_hourly_agg');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_pricing_group_summary;
+    refreshed := array_append(refreshed, 'mv_pricing_group_summary');
 
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_metrics_hourly_agg;
-    refreshed := array_append(refreshed, 'mv_metrics_hourly_agg');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_pricing_daily;
+    refreshed := array_append(refreshed, 'mv_pricing_daily');
 
-    -- ===========================================
-    -- Layer 2: MVs dependent on Layer 1
-    -- ===========================================
+    -- Artifact MVs
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_artifact_session_list;
+    refreshed := array_append(refreshed, 'mv_artifact_session_list');
 
-    -- Dashboard facts (depends on general + practice)
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_dashboard_facts;
-    refreshed := array_append(refreshed, 'mv_dashboard_facts');
+    -- Attempt MVs
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_attempt_chats;
+    refreshed := array_append(refreshed, 'mv_attempt_chats');
 
-    -- Group pricing (depends on mv_run_pricing_facts)
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_group_pricing_facts;
-    refreshed := array_append(refreshed, 'mv_group_pricing_facts');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_attempt_list;
+    refreshed := array_append(refreshed, 'mv_attempt_list');
 
-    -- Health & Metrics daily (depends on hourly)
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_health_daily_agg;
-    refreshed := array_append(refreshed, 'mv_health_daily_agg');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_attempt_messages;
+    refreshed := array_append(refreshed, 'mv_attempt_messages');
 
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_metrics_daily_agg;
-    refreshed := array_append(refreshed, 'mv_metrics_daily_agg');
+    -- Benchmark MVs
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_benchmark_attempt_facts;
+    refreshed := array_append(refreshed, 'mv_benchmark_attempt_facts');
 
-    -- ===========================================
-    -- Layer 3: MVs dependent on Layer 2
-    -- ===========================================
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_benchmark_bundle;
+    refreshed := array_append(refreshed, 'mv_benchmark_bundle');
 
-    -- Dashboard aggregation MVs (depend on mv_dashboard_facts)
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_dashboard_daily_agg;
-    refreshed := array_append(refreshed, 'mv_dashboard_daily_agg');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_benchmark_eval_summary;
+    refreshed := array_append(refreshed, 'mv_benchmark_eval_summary');
 
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_dashboard_persona_agg;
-    refreshed := array_append(refreshed, 'mv_dashboard_persona_agg');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_benchmark_invocations;
+    refreshed := array_append(refreshed, 'mv_benchmark_invocations');
 
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_dashboard_attempt_seq;
-    refreshed := array_append(refreshed, 'mv_dashboard_attempt_seq');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_benchmark_tests;
+    refreshed := array_append(refreshed, 'mv_benchmark_tests');
 
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_dashboard_cohort_facts;
-    refreshed := array_append(refreshed, 'mv_dashboard_cohort_facts');
+    -- Health MVs
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_health_metrics_hourly;
+    refreshed := array_append(refreshed, 'mv_health_metrics_hourly');
 
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_persona_response_times;
-    refreshed := array_append(refreshed, 'mv_persona_response_times');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_health_service_hourly;
+    refreshed := array_append(refreshed, 'mv_health_service_hourly');
 
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_profile_analytics;
-    refreshed := array_append(refreshed, 'mv_profile_analytics');
+    -- Activity MVs
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_activity_audits;
+    refreshed := array_append(refreshed, 'mv_activity_audits');
 
-    -- Pricing daily (depends on mv_run_pricing_facts)
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_run_costs_daily;
-    refreshed := array_append(refreshed, 'mv_run_costs_daily');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_activity_daily;
+    refreshed := array_append(refreshed, 'mv_activity_daily');
 
-    -- Calls daily (depends on mv_call_facts)
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_call_metrics_daily;
-    refreshed := array_append(refreshed, 'mv_call_metrics_daily');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_activity_feedbacks;
+    refreshed := array_append(refreshed, 'mv_activity_feedbacks');
 
-    -- Session facts (depends on mv_group_pricing_facts)
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_session_facts;
-    refreshed := array_append(refreshed, 'mv_session_facts');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_activity_logins;
+    refreshed := array_append(refreshed, 'mv_activity_logins');
 
-    -- ===========================================
-    -- Independent: Uses base tables directly
-    -- ===========================================
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_activity_problems;
+    refreshed := array_append(refreshed, 'mv_activity_problems');
 
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_dashboard_rubric_facts;
-    refreshed := array_append(refreshed, 'mv_dashboard_rubric_facts');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_activity_session_facts;
+    refreshed := array_append(refreshed, 'mv_activity_session_facts');
+
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_activity_summary;
+    refreshed := array_append(refreshed, 'mv_activity_summary');
+
+    -- Training MVs
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_training;
+    refreshed := array_append(refreshed, 'mv_training');
+
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_training_bundle;
+    refreshed := array_append(refreshed, 'mv_training_bundle');
+
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_training_context;
+    refreshed := array_append(refreshed, 'mv_training_context');
+
+    -- Config MV
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_config;
+    refreshed := array_append(refreshed, 'mv_config');
 
     -- Get actor_name from profile_artifact using profile_names_junction junction table
     SELECT COALESCE(

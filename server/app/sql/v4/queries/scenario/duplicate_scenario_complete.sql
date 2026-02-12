@@ -89,11 +89,6 @@ source_parameter_fields AS (
     FROM params x
     JOIN scenario_parameter_fields_junction spf ON spf.scenario_id = x.scenario_id AND spf.active = true
 ),
-default_call AS (
-    SELECT id as call_id
-    FROM view_calls_entry
-    LIMIT 1
-),
 source_objectives AS (
     SELECT so.objective_id, so.idx
     FROM params x
@@ -292,11 +287,10 @@ copy_departments AS (
 ),
 -- Link existing parameter fields
 copy_parameter_fields AS (
-    INSERT INTO scenario_parameter_fields_junction (scenario_id, parameter_field_id, active, call_id, created_at)
-    SELECT ns.id, spf.parameter_field_id, spf.active, dc.call_id, NOW()
+    INSERT INTO scenario_parameter_fields_junction (scenario_id, parameter_field_id, active, created_at)
+    SELECT ns.id, spf.parameter_field_id, spf.active, NOW()
     FROM new_scenario ns
     CROSS JOIN source_parameter_fields spf
-    CROSS JOIN default_call dc
 ),
 -- Link existing objectives
 copy_objectives AS (
