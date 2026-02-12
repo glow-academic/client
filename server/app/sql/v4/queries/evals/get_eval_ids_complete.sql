@@ -68,7 +68,6 @@ RETURNS TABLE (
 
     -- Multi-select resource IDs
     department_ids uuid[],
-    agent_ids uuid[],
     rubric_ids uuid[],
     model_run_ids uuid[],
     group_ids uuid[],
@@ -77,7 +76,6 @@ RETURNS TABLE (
     name_suggestions uuid[],
     description_suggestions uuid[],
     department_suggestions uuid[],
-    agent_suggestions uuid[],
     rubric_suggestions uuid[],
 
     -- Cross-reference mappings
@@ -92,7 +90,6 @@ RETURNS TABLE (
     descriptions_has_tools boolean,
     flags_has_tools boolean,
     departments_has_tools boolean,
-    agents_has_tools boolean,
     rubrics_has_tools boolean,
 
     -- Domain IDs
@@ -100,7 +97,6 @@ RETURNS TABLE (
     description_domain_id uuid,
     flag_domain_id uuid,
     departments_domain_id uuid,
-    agents_domain_id uuid,
     rubrics_domain_id uuid
 )
 LANGUAGE sql
@@ -175,21 +171,6 @@ eval_department_ids_data AS (
                 ARRAY[]::uuid[]
             )
         END as department_ids
-    FROM params
-    LIMIT 1
-),
--- Multi-select: agent IDs (from eval junction or draft)
-eval_agent_ids_data AS (
-    SELECT
-        CASE
-            WHEN (SELECT eval_id FROM params) IS NULL THEN ARRAY[]::uuid[]
-            ELSE COALESCE(
-                (SELECT ARRAY_AGG(ea.agent_id ORDER BY ea.created_at)
-                 FROM eval_agents_junction ea
-                 WHERE ea.eval_id = (SELECT eval_id FROM params) AND ea.active = true),
-                ARRAY[]::uuid[]
-            )
-        END as agent_ids
     FROM params
     LIMIT 1
 ),
@@ -314,40 +295,6 @@ department_suggestions_data AS (
              ) ed),
             ARRAY[]::uuid[]
         ) as department_suggestions
-    FROM params
-    LIMIT 1
-),
--- Agent suggestions (all valid agents for eval)
-agent_suggestions_data AS (
-    SELECT
-        COALESCE(
-            (SELECT ARRAY_AGG(a.id ORDER BY (SELECT n.name FROM agent_names_junction an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1))
-             FROM agents_resource a
-             WHERE EXISTS (
-                 SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id
-                 WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true
-             )
-             AND EXISTS (
-                 SELECT 1 FROM agent_tools_junction at
-                 JOIN tools_resource tr_rt ON tr_rt.id = at.tool_id
-                 JOIN tool_tools_junction ttj_rt ON ttj_rt.tools_id = tr_rt.id
-                 JOIN resource_tools_relation rt ON rt.tool_id = ttj_rt.tool_id
-                 JOIN artifact_resources_relation ar ON ar.resource = rt.resource
-                 WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'eval'::artifact_type
-             )
-             AND (
-                 EXISTS (
-                     SELECT 1 FROM agent_departments_junction ad
-                     WHERE ad.agent_id = a.id AND ad.active = true
-                     AND ad.department_id = ANY(api_get_eval_ids_v4.user_department_ids)
-                 )
-                 OR NOT EXISTS (
-                     SELECT 1 FROM agent_departments_junction ad2
-                     WHERE ad2.agent_id = a.id AND ad2.active = true
-                 )
-             )),
-            ARRAY[]::uuid[]
-        ) as agent_suggestions
     FROM params
     LIMIT 1
 ),
@@ -530,12 +477,6 @@ tools_existence_data AS (
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'agents'::resource_type
-              AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
-        ) as agents_has_tools,
-        EXISTS (
-            SELECT 1 FROM resource_tools_relation rt
-            JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'rubrics'::resource_type
               AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as rubrics_has_tools
@@ -547,7 +488,6 @@ domain_ids_data AS (
         (SELECT id FROM domains_resource WHERE resource = 'descriptions'::resource_type AND active = true LIMIT 1) as description_domain_id,
         (SELECT id FROM domains_resource WHERE resource = 'flags'::resource_type AND active = true LIMIT 1) as flag_domain_id,
         (SELECT id FROM domains_resource WHERE resource = 'departments'::resource_type AND active = true LIMIT 1) as departments_domain_id,
-        (SELECT id FROM domains_resource WHERE resource = 'agents'::resource_type AND active = true LIMIT 1) as agents_domain_id,
         (SELECT id FROM domains_resource WHERE resource = 'rubrics'::resource_type AND active = true LIMIT 1) as rubrics_domain_id
 )
 SELECT
@@ -560,7 +500,6 @@ SELECT
 
     -- Multi-select IDs
     COALESCE((SELECT department_ids FROM eval_department_ids_data), ARRAY[]::uuid[]) as department_ids,
-    COALESCE((SELECT agent_ids FROM eval_agent_ids_data), ARRAY[]::uuid[]) as agent_ids,
     COALESCE((SELECT rubric_ids FROM eval_rubric_ids_data), ARRAY[]::uuid[]) as rubric_ids,
     COALESCE((SELECT run_ids FROM eval_run_ids_data), ARRAY[]::uuid[]) as model_run_ids,
     COALESCE((SELECT group_ids FROM eval_group_ids_data), ARRAY[]::uuid[]) as group_ids,
@@ -569,7 +508,6 @@ SELECT
     COALESCE((SELECT name_suggestions FROM name_suggestions_data), ARRAY[]::uuid[]) as name_suggestions,
     COALESCE((SELECT description_suggestions FROM description_suggestions_data), ARRAY[]::uuid[]) as description_suggestions,
     COALESCE((SELECT department_suggestions FROM department_suggestions_data), ARRAY[]::uuid[]) as department_suggestions,
-    COALESCE((SELECT agent_suggestions FROM agent_suggestions_data), ARRAY[]::uuid[]) as agent_suggestions,
     COALESCE((SELECT rubric_suggestions FROM rubric_suggestions_data), ARRAY[]::uuid[]) as rubric_suggestions,
 
     -- Cross-reference mappings
@@ -584,7 +522,6 @@ SELECT
     ted.descriptions_has_tools,
     ted.flags_has_tools,
     ted.departments_has_tools,
-    ted.agents_has_tools,
     ted.rubrics_has_tools,
 
     -- Domain IDs
@@ -592,7 +529,6 @@ SELECT
     did.description_domain_id,
     did.flag_domain_id,
     did.departments_domain_id,
-    did.agents_domain_id,
     did.rubrics_domain_id
 FROM params x
 CROSS JOIN tools_existence_data ted

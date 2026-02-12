@@ -4684,6 +4684,35 @@ class DeleteEvalApiResponse(BaseModel):
 
 
 
+# Generated from: duplicate_eval
+
+class DuplicateEvalSqlParams(BaseModel):
+
+    eval_id: UUID
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.eval_id,
+            self.profile_id,
+        )
+
+class DuplicateEvalSqlRow(BaseModel):
+
+    new_eval_id: UUID | None = None
+    original_name: str | None = None
+
+class DuplicateEvalApiRequest(BaseModel):
+
+    eval_id: UUID
+
+class DuplicateEvalApiResponse(BaseModel):
+
+    new_eval_id: UUID | None = None
+    original_name: str | None = None
+
+
+
 # Generated from: get_eval_access
 
 class GetEvalAccessSqlParams(BaseModel):
@@ -4719,6 +4748,160 @@ class GetEvalAccessApiResponse(BaseModel):
     group_id: UUID | None = None
     eval_department_ids: list[UUID] | None = None
     active_usage_count: int | None = None
+
+
+
+# Generated from: get_eval_ids
+
+class GetEvalIdsSqlParams(BaseModel):
+
+    profile_id: UUID
+    eval_id: UUID | None = None
+    draft_id: UUID | None = None
+    group_id: UUID | None = None
+    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.eval_id,
+            self.draft_id,
+            self.group_id,
+            self.user_department_ids,
+        )
+
+class GetEvalIdsSqlRow(BaseModel):
+
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    dynamic_flag_id: UUID | None = None
+    groups_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    rubric_ids: list[UUID] | None = None
+    model_run_ids: list[UUID] | None = None
+    group_ids: list[UUID] | None = None
+    name_suggestions: list[UUID] | None = None
+    description_suggestions: list[UUID] | None = None
+    department_suggestions: list[UUID] | None = None
+    rubric_suggestions: list[UUID] | None = None
+    run_rubrics: Any | None = None
+    group_rubrics: Any | None = None
+    candidate_agents: Any | None = None
+    names_has_tools: bool | None = None
+    descriptions_has_tools: bool | None = None
+    flags_has_tools: bool | None = None
+    departments_has_tools: bool | None = None
+    rubrics_has_tools: bool | None = None
+    name_domain_id: UUID | None = None
+    description_domain_id: UUID | None = None
+    flag_domain_id: UUID | None = None
+    departments_domain_id: UUID | None = None
+    rubrics_domain_id: UUID | None = None
+
+class GetEvalIdsApiRequest(BaseModel):
+
+    eval_id: UUID | None = None
+    draft_id: UUID | None = None
+    group_id: UUID | None = None
+    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class GetEvalIdsApiResponse(BaseModel):
+
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    dynamic_flag_id: UUID | None = None
+    groups_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    rubric_ids: list[UUID] | None = None
+    model_run_ids: list[UUID] | None = None
+    group_ids: list[UUID] | None = None
+    name_suggestions: list[UUID] | None = None
+    description_suggestions: list[UUID] | None = None
+    department_suggestions: list[UUID] | None = None
+    rubric_suggestions: list[UUID] | None = None
+    run_rubrics: Any | None = None
+    group_rubrics: Any | None = None
+    candidate_agents: Any | None = None
+    names_has_tools: bool | None = None
+    descriptions_has_tools: bool | None = None
+    flags_has_tools: bool | None = None
+    departments_has_tools: bool | None = None
+    rubrics_has_tools: bool | None = None
+    name_domain_id: UUID | None = None
+    description_domain_id: UUID | None = None
+    flag_domain_id: UUID | None = None
+    departments_domain_id: UUID | None = None
+    rubrics_domain_id: UUID | None = None
+
+
+
+# Generated from: get_evals_list
+
+class GetEvalsListSqlParams(BaseModel):
+
+    profile_id: UUID
+    search: str | None = None
+    filter_department_ids: list[UUID] | None = None
+    department_search: str | None = None
+    page_size: int | None = 50
+    page_offset: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.search,
+            self.filter_department_ids,
+            self.department_search,
+            self.page_size,
+            self.page_offset,
+        )
+
+class QListEvalsV4Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+    count: int | None
+
+
+
+
+class QListEvalsV4Eval(BaseModel):
+
+    eval_id: UUID | None
+    name: str | None
+    description: str | None
+    department_ids: list[str] | None
+    is_inactive: bool | None
+    is_dynamic: bool | None
+    use_groups: bool | None
+    num_runs: int | None
+    num_groups: int | None
+    active_usage_count: int | None
+    total_usage_links: int | None
+    updated_at: datetime | None
+
+class GetEvalsListSqlRow(BaseModel):
+
+    evals: list[QListEvalsV4Eval] | None = None
+    departments: list[QListEvalsV4Department] | None = None
+    total_count: int | None = None
+
+class GetEvalsListApiRequest(BaseModel):
+
+    search: str | None = None
+    filter_department_ids: list[UUID] | None = None
+    department_search: str | None = None
+    page_size: int | None = 50
+    page_offset: int | None = 0
+
+class GetEvalsListApiResponse(BaseModel):
+
+    evals: list[QListEvalsV4Eval] | None = None
+    departments: list[QListEvalsV4Department] | None = None
+    total_count: int | None = None
 
 
 
@@ -23172,11 +23355,29 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "DeleteEvalApiRequest",
         "DeleteEvalApiResponse",
     ),
+    "app/sql/v4/queries/evals/duplicate_eval_complete.sql": (
+        "DuplicateEvalSqlParams",
+        "DuplicateEvalSqlRow",
+        "DuplicateEvalApiRequest",
+        "DuplicateEvalApiResponse",
+    ),
     "app/sql/v4/queries/evals/get_eval_access_complete.sql": (
         "GetEvalAccessSqlParams",
         "GetEvalAccessSqlRow",
         "GetEvalAccessApiRequest",
         "GetEvalAccessApiResponse",
+    ),
+    "app/sql/v4/queries/evals/get_eval_ids_complete.sql": (
+        "GetEvalIdsSqlParams",
+        "GetEvalIdsSqlRow",
+        "GetEvalIdsApiRequest",
+        "GetEvalIdsApiResponse",
+    ),
+    "app/sql/v4/queries/evals/get_evals_list_complete.sql": (
+        "GetEvalsListSqlParams",
+        "GetEvalsListSqlRow",
+        "GetEvalsListApiRequest",
+        "GetEvalsListApiResponse",
     ),
     "app/sql/v4/queries/evals/patch_eval_draft_complete.sql": (
         "PatchEvalDraftSqlParams",
@@ -26234,7 +26435,22 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/evals/duplicate_eval_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/evals/get_eval_access_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/evals/get_eval_ids_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/evals/get_evals_list_complete.sql"]
     ) -> SqlString: ...
 
     @overload

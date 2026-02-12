@@ -91,7 +91,6 @@ BEGIN
         DELETE FROM eval_descriptions_junction WHERE eval_id = v_eval_id;
         DELETE FROM eval_flags_junction WHERE eval_id = v_eval_id;
         DELETE FROM eval_departments_junction WHERE eval_id = v_eval_id;
-        DELETE FROM eval_agents_junction WHERE eval_id = v_eval_id;
         DELETE FROM eval_runs_junction WHERE eval_id = v_eval_id;
         DELETE FROM eval_groups_junction WHERE eval_id = v_eval_id;
         DELETE FROM eval_run_positions_junction WHERE eval_id = v_eval_id;
@@ -131,11 +130,7 @@ BEGIN
     ON CONFLICT ON CONSTRAINT eval_departments_pkey DO UPDATE
     SET active = TRUE;
 
-    INSERT INTO eval_agents_junction (eval_id, agent_id, created_at)
-    SELECT v_eval_id, agent_id, NOW()
-    FROM UNNEST(COALESCE(agent_ids, ARRAY[]::uuid[])) AS agent_id
-    ON CONFLICT ON CONSTRAINT eval_agents_pkey DO UPDATE
-    SET active = TRUE;
+    -- Eval no longer persists direct agent links; routing is resource-first.
 
     INSERT INTO eval_runs_junction (eval_id, run_id, completed, created_at)
     SELECT v_eval_id, run_id, FALSE, NOW()
@@ -218,4 +213,3 @@ BEGIN
     RETURN QUERY SELECT v_eval_id;
 END;
 $$;
-

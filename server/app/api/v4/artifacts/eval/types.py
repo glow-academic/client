@@ -236,7 +236,6 @@ class ListEvalApiEval(BaseModel):
     name: str | None = None
     description: str | None = None
     department_ids: list[str] | None = None
-    agent_ids: list[UUID] | None = None
     is_inactive: bool | None = None
     is_dynamic: bool | None = None
     use_groups: bool | None = None

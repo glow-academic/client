@@ -1094,7 +1094,7 @@ Frontend notes:
 Architecture notes:
 - Eval generation routing is resource-first, not domain-first.
 - Eval section model is:
-  - top-level: `names`, `descriptions`, `active_flags`, `dynamic_flags`, `groups_flags`, `departments`, `agents`, `rubrics`, `runs`, `groups`
+  - top-level: `names`, `descriptions`, `active_flags`, `dynamic_flags`, `groups_flags`, `departments`, `rubrics`, `runs`, `groups`
   - scoped-by-target: `run_positions`, `group_positions`, `run_rubrics`, `group_rubrics`
 - `rubrics` is the rubric catalog section; assignments remain scoped through `run_rubrics` / `group_rubrics` mappings.
 - Hard-cut API GET shape:
@@ -1111,7 +1111,7 @@ Architecture notes:
 - Eval save/draft request contracts are nested section-action payloads:
   - single: `{ resource_id, create_tool_id, link_tool_id }`
   - multi: `{ resource_ids, create_tool_id, link_tool_id }`
-  - sections: `names`, `descriptions`, `flags`, `departments`, `agents`, `runs`, `groups`, `run_positions`, `group_positions`
+  - sections: `names`, `descriptions`, `flags`, `departments`, `rubrics`, `runs`, `groups`, `run_positions`, `group_positions`
   - scoped mappings: `run_rubrics[]`, `group_rubrics[]`
 
 Frontend notes:
@@ -1134,7 +1134,7 @@ Schema alignment notes:
   - `eval_group_positions_junction` -> `group_positions_resource`
   - `eval_runs_rubrics_junction` -> `run_rubrics_resource`
   - `eval_groups_rubrics_junction` -> `group_rubrics_resource`
-- Keep `agents` top-level on eval.
+- Eval no longer has a direct `agents` resource section; settings retains `agents`.
 - Auth socket parity normalization:
   - `auth_generation_complete` emits resource-complete payloads only from `generate_call_complete` tool results.
   - Auth socket `progress`/`error` handlers are scoped to call-based generation events and filtered to valid auth resource types.

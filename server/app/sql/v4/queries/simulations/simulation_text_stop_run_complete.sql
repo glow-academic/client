@@ -12,30 +12,27 @@ AS $$
 WITH params AS (
     SELECT api_simulation_text_stop_run_v4.chat_id as chat_id
 ),
--- Unified chats from both entry tables
-all_chats AS (
-    SELECT id FROM view_simulation_chats_entry
-),
 latest_message AS (
     SELECT
-        m.id,
+        me.id,
         COALESCE(ce.content, '') as content
-    FROM all_chats c
-    JOIN view_simulation_messages_entry m ON m.chat_id = c.id
+    FROM simulation_chats_entry c
+    JOIN simulation_messages_entry sm ON sm.chat_id = c.id
+    JOIN messages_entry me ON me.id = sm.message_id
     LEFT JOIN LATERAL (
         SELECT content
         FROM simulation_contents_entry ce
-        WHERE ce.message_id = m.id
+        WHERE ce.message_id = me.id
           AND ce.active = true
         ORDER BY ce.created_at
         LIMIT 1
     ) ce ON TRUE
     WHERE c.id = (SELECT chat_id FROM params)
       AND NOT EXISTS (
-          SELECT 1 FROM view_message_tree_entry mt
-          WHERE mt.parent_id = m.id AND mt.active = true
+          SELECT 1 FROM simulation_message_tree_entry mt
+          WHERE mt.parent_id = me.id AND mt.active = true
       )
-    ORDER BY m.created_at DESC
+    ORDER BY me.created_at DESC
     LIMIT 1
 ),
 update_message AS (

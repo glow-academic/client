@@ -60,14 +60,6 @@ eval_rubrics AS (
     LEFT JOIN group_rubrics_resource gr ON gr.id = egr.group_rubric_id
     ORDER BY e.id, COALESCE(err.created_at, egr.created_at) ASC
 ),
--- Get agent_ids per eval
-eval_agents AS (
-    SELECT
-        ea.eval_id,
-        ARRAY_AGG(ea.agent_id ORDER BY ea.created_at) AS agent_ids
-    FROM eval_agents_junction ea
-    GROUP BY ea.eval_id
-),
 -- Get department_ids per eval (via rubric)
 eval_departments AS (
     SELECT
@@ -103,14 +95,11 @@ eval_description_ids AS (
     FROM eval_descriptions_junction edj
     WHERE edj.active = true
 ),
--- Get agent name_ids per eval (via eval_agents_junction + agent_names_junction)
 eval_agent_name_ids AS (
     SELECT
-        eaj.eval_id,
-        ARRAY_AGG(anj.name_id ORDER BY eaj.created_at) FILTER (WHERE anj.name_id IS NOT NULL) AS agent_name_ids
-    FROM eval_agents_junction eaj
-    JOIN agent_names_junction anj ON anj.agent_id = eaj.agent_id AND anj.active = true
-    GROUP BY eaj.eval_id
+        e.id AS eval_id,
+        ARRAY[]::uuid[] AS agent_name_ids
+    FROM eval_artifact e
 )
 SELECT
     -- Primary key
@@ -118,7 +107,7 @@ SELECT
 
     -- Related IDs
     er.rubric_id,
-    COALESCE(ea.agent_ids, ARRAY[]::uuid[]) AS agent_ids,
+    ARRAY[]::uuid[] AS agent_ids,
     COALESCE(ed.department_ids, ARRAY[]::uuid[]) AS department_ids,
 
     -- Name/description IDs for hydration
@@ -149,7 +138,6 @@ SELECT
 
 FROM eval_artifact e
 LEFT JOIN eval_rubrics er ON er.eval_id = e.id
-LEFT JOIN eval_agents ea ON ea.eval_id = e.id
 LEFT JOIN eval_departments ed ON ed.eval_id = e.id
 LEFT JOIN eval_flags ef ON ef.eval_id = e.id
 LEFT JOIN eval_run_counts erc ON erc.eval_id = e.id
@@ -188,10 +176,6 @@ CREATE INDEX mv_benchmark_eval_summary_updated_at_idx
 -- Run count sorting
 CREATE INDEX mv_benchmark_eval_summary_total_runs_idx
     ON mv_benchmark_eval_summary (total_runs DESC);
-
--- GIN indexes for array filtering
-CREATE INDEX mv_benchmark_eval_summary_agent_ids_gin
-    ON mv_benchmark_eval_summary USING GIN (agent_ids);
 
 CREATE INDEX mv_benchmark_eval_summary_department_ids_gin
     ON mv_benchmark_eval_summary USING GIN (department_ids);

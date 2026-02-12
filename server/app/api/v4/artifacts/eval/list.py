@@ -149,7 +149,6 @@ async def get_eval_list(
                     name=eval_item.name,
                     description=eval_item.description,
                     department_ids=eval_item.department_ids,
-                    agent_ids=eval_item.agent_ids,
                     is_inactive=eval_item.is_inactive,
                     is_dynamic=eval_item.is_dynamic,
                     use_groups=eval_item.use_groups,

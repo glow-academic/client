@@ -82,9 +82,6 @@ SELECT * FROM health_entry;
 CREATE OR REPLACE VIEW view_messages_entry AS
 SELECT * FROM messages_entry;
 
-CREATE OR REPLACE VIEW view_message_tree_entry AS
-SELECT * FROM message_tree_entry;
-
 CREATE OR REPLACE VIEW view_highlights_entry AS
 SELECT * FROM highlights_entry;
 

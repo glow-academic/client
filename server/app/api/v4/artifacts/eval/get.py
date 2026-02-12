@@ -20,7 +20,6 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from app.api.v4.artifacts.eval.permissions import (
     EVAL_RESOURCES,
     compute_active_flag_required,
-    compute_agents_required,
     compute_can_edit,
     compute_departments_required,
     compute_description_required,
@@ -28,7 +27,6 @@ from app.api.v4.artifacts.eval.permissions import (
     compute_name_required,
     compute_rubrics_required,
     compute_show_active_flag,
-    compute_show_agents,
     compute_show_departments,
     compute_show_description,
     compute_show_name,
@@ -57,7 +55,6 @@ from app.api.v4.artifacts.eval.types import (
 )
 from app.api.v4.auth.context import get_profile_context_internal
 from app.api.v4.permissions import select_agents_for_artifact
-from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.departments.search import search_departments_internal
 from app.api.v4.resources.descriptions.get import get_descriptions_internal
@@ -318,7 +315,6 @@ async def get_eval_internal(
     description_show_ai_generate = compute_show_ai_generate("descriptions")
     flag_show_ai_generate = compute_show_ai_generate("flags")
     departments_show_ai_generate = compute_show_ai_generate("departments")
-    agents_show_ai_generate = compute_show_ai_generate("agents")
     rubrics_show_ai_generate = compute_show_ai_generate("rubrics")
 
     # Step-level show_ai_generate flags
@@ -354,9 +350,7 @@ async def get_eval_internal(
     groups_flag_ids = [selected_groups_flag_id] if selected_groups_flag_id else []
     all_flag_ids = active_flag_ids + dynamic_flag_ids + groups_flag_ids
     department_ids = selected_department_ids
-    selected_agent_ids = ids_result.agent_ids or []
     selected_rubric_ids = ids_result.rubric_ids or []
-    agent_suggestion_ids = ids_result.agent_suggestions or []
     rubric_suggestion_ids = ids_result.rubric_suggestions or []
 
     async def fetch_names() -> tuple[list[Any], list[Any]]:
@@ -422,14 +416,6 @@ async def get_eval_internal(
             )
             return (selected, suggestions)
 
-    async def fetch_agents() -> tuple[list[Any], list[Any]]:
-        async with pool.acquire() as c:
-            selected = await get_agents_internal(c, selected_agent_ids, bypass_cache)
-            suggestions = await get_agents_internal(
-                c, agent_suggestion_ids, bypass_cache
-            )
-            return (selected, suggestions)
-
     async def fetch_rubrics() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
             selected = await get_rubrics_batch_internal(
@@ -446,14 +432,12 @@ async def get_eval_internal(
         (descriptions_selected, descriptions_suggestions),
         (flags_selected, flags_suggestions),
         (departments_selected, departments_suggestions),
-        (agents_selected, agents_suggestions),
         (rubrics_selected, rubrics_suggestions),
     ) = await asyncio.gather(
         fetch_names(),
         fetch_descriptions(),
         fetch_flags(),
         fetch_departments(),
-        fetch_agents(),
         fetch_rubrics(),
     )
 
@@ -463,17 +447,13 @@ async def get_eval_internal(
     departments = _dedupe_by_id(
         departments_selected + departments_suggestions, "department_id"
     )
-    agents = _dedupe_by_id(agents_selected + agents_suggestions, "id")
     rubrics = _dedupe_by_id(rubrics_selected + rubrics_suggestions, "id")
 
     # Find selected resources
     name_resource = next((n for n in names if n.id == selected_name_id), None)
-    agent_resources = [a for a in agents if a.id in selected_agent_ids]
-
     name_suggestion_ids = [n.id for n in names_suggestions]
     description_suggestion_ids = [d.id for d in descriptions_suggestions]
     department_suggestion_ids = [d.department_id for d in departments_suggestions]
-    agent_suggestion_ids_out = [a.id for a in agents_suggestions if a.id]
     rubric_suggestion_ids_out = [r.id for r in rubrics_suggestions if r.id]
 
     # Compute show flags
@@ -481,7 +461,7 @@ async def get_eval_internal(
     show_description_flag = compute_show_description()
     show_active_flag = compute_show_active_flag()
     show_departments_flag = compute_show_departments(len(departments))
-    show_agents_flag = compute_show_agents(len(ids_result.agent_ids or []))
+    show_agents_flag = False
     show_rubrics_flag = compute_show_rubrics(len(ids_result.rubric_ids or []))
 
     # Build show and required flags maps for domain_data
@@ -490,7 +470,6 @@ async def get_eval_internal(
         "descriptions": show_description_flag,
         "flags": show_active_flag,
         "departments": show_departments_flag,
-        "agents": show_agents_flag,
         "rubrics": show_rubrics_flag,
     }
 
@@ -499,7 +478,6 @@ async def get_eval_internal(
         "descriptions": compute_description_required(),
         "flags": compute_active_flag_required(),
         "departments": compute_departments_required(show_departments_flag),
-        "agents": compute_agents_required(show_agents_flag),
         "rubrics": compute_rubrics_required(show_rubrics_flag),
     }
 
@@ -519,16 +497,7 @@ async def get_eval_internal(
         if flag.id
     ]
 
-    eval_agents = [
-        EvalAgentItem(
-            id=a.id,
-            name=a.name,
-            description=a.description,
-            generated=bool(a.generated),
-        )
-        for a in agents
-        if a.id
-    ]
+    eval_agents: list[EvalAgentItem] = []
 
     eval_rubrics = [
         EvalRubricItem(
@@ -565,7 +534,6 @@ async def get_eval_internal(
         "descriptions": description_show_ai_generate,
         "flags": flag_show_ai_generate,
         "departments": departments_show_ai_generate,
-        "agents": agents_show_ai_generate,
         "rubrics": rubrics_show_ai_generate,
     }
 
@@ -574,12 +542,11 @@ async def get_eval_internal(
         "names": name_suggestion_ids,
         "descriptions": description_suggestion_ids,
         "departments": department_suggestion_ids,
-        "agents": cast(list[UUID], agent_suggestion_ids_out),
         "rubrics": cast(list[UUID], rubric_suggestion_ids_out),
     }
 
     # Config chain hydration for websocket generation parity.
-    config_agents = agent_resources
+    config_agents: list[Any] = []
     model_ids = list({a.model_id for a in config_agents if a.model_id})
     config_models = []
     config_providers = []
@@ -642,7 +609,7 @@ async def get_eval_internal(
         dynamic_flag_id=selected_dynamic_flag_id,
         groups_flag_id=selected_groups_flag_id,
         department_ids=selected_department_ids,
-        agent_ids=selected_agent_ids,
+        agent_ids=[],
         model_run_ids=ids_result.model_run_ids or [],
         group_ids=ids_result.group_ids or [],
         # Eval-specific

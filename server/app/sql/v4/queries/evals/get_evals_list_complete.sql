@@ -37,7 +37,6 @@ CREATE TYPE types.q_list_evals_v4_eval AS (
     name text,
     description text,
     department_ids text[],
-    agent_ids uuid[],
     is_inactive boolean,
     is_dynamic boolean,
     use_groups boolean,
@@ -162,7 +161,6 @@ eval_objects AS (
                 (SELECT n.name FROM eval_names_junction en JOIN names_resource n ON en.name_id = n.id WHERE en.eval_id = pe.id LIMIT 1),
                 COALESCE((SELECT d.description FROM eval_descriptions_junction ed JOIN descriptions_resource d ON ed.description_id = d.id WHERE ed.eval_id = pe.id LIMIT 1), ''),
                 COALESCE((SELECT ARRAY_AGG(ed.department_id::text) FROM eval_departments_junction ed WHERE ed.eval_id = pe.id AND ed.active = true), ARRAY[]::text[]),
-                COALESCE((SELECT ARRAY_AGG(ea.agent_id) FROM eval_agents_junction ea WHERE ea.eval_id = pe.id AND ea.active = true), ARRAY[]::uuid[]),
                 NOT COALESCE((SELECT ef.value FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = pe.id AND f.name = 'eval_active' LIMIT 1), false),
                 COALESCE((SELECT ef.value FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = pe.id AND f.name = 'dynamic' LIMIT 1), false),
                 COALESCE((SELECT ef.value FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = pe.id AND f.name = '' LIMIT 1), false),
@@ -209,4 +207,3 @@ SELECT
     (SELECT count FROM total) as total_count
 FROM user_profile up;
 $$;
-

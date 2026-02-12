@@ -128,32 +128,15 @@ attempt_data AS (
     JOIN view_benchmark_tests_entry ea ON ea.id = x.attempt_id
     JOIN benchmark_tests_evals_connection eaj ON eaj.attempt_id = ea.id
 ),
--- Get eval agents for system prompt (use first agent)
-eval_agents_data AS (
-    SELECT 
-        ea.eval_id,
-        ARRAY_AGG(ea.agent_id::text ORDER BY ea.created_at) as agent_ids,
-        (ARRAY_AGG(ea.agent_id ORDER BY ea.created_at))[1] as first_agent_id
-    FROM attempt_data ad
-    JOIN eval_agents_junction ea ON ea.eval_id = ad.eval_id
-    GROUP BY ea.eval_id
-),
--- Get system prompt FROM eval_artifact's first agent (default active prompt)
-agent_system_prompt AS (
-    SELECT 
-        COALESCE(pr.system_prompt, '') as system_prompt
-    FROM attempt_data ad
-    LEFT JOIN eval_agents_data ead ON ead.eval_id = ad.eval_id
-    LEFT JOIN agent_prompts_junction ap ON ap.agent_id = ead.first_agent_id AND ap.active = true
-    LEFT JOIN prompts_resource pr ON pr.id = ap.prompt_id
-    LIMIT 1
+eval_system_prompt AS (
+    SELECT ''::text as system_prompt
 ),
 eval_info AS (
     SELECT 
         e.id as eval_id,
         (SELECT n.name FROM eval_names_junction en JOIN names_resource n ON en.name_id = n.id WHERE en.eval_id = e.id LIMIT 1) as eval_name,
         (SELECT d.description FROM eval_descriptions_junction ed JOIN descriptions_resource d ON ed.description_id = d.id WHERE ed.eval_id = e.id LIMIT 1) as eval_description,
-        COALESCE(NULL::uuid[], ARRAY[]::uuid[]) as agent_ids,
+        ARRAY[]::text[] as agent_ids,
         EXISTS (SELECT 1 FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'dynamic' AND ef.value = true) AS dynamic,
         -- Get first rubric from direct rubric links
         -- Get first rubric FROM view_runs_entry (when use_groups = false) or view_groups_entry (when use_groups = true)
@@ -205,7 +188,6 @@ eval_info AS (
         NULL::uuid as eval_agent_id
     FROM attempt_data ad
     JOIN evals_resource e ON e.id = ad.eval_id
-    LEFT JOIN eval_agents_data ead ON ead.eval_id = e.id
 ),
 -- Get all view_runs_entry for this eval (from eval_runs_junction)
 eval_runs_data AS (
@@ -369,7 +351,7 @@ SELECT
     aec.attempt_exists,
     ap.actor_name,
     (ad.id, ad.created_at, ad.eval_id, ad.archived, ad.infinite_mode)::types.q_get_eval_attempt_v4_attempt as attempt,
-    (ei.eval_id, ei.eval_name, ei.eval_description, ei.agent_ids, ei.dynamic, ei.rubric_id, ei.rubric_name, ei.rubric_description, ei.eval_agent_id, COALESCE(asp.system_prompt, ''))::types.q_get_eval_attempt_v4_eval as eval,
+    (ei.eval_id, ei.eval_name, ei.eval_description, ei.agent_ids, ei.dynamic, ei.rubric_id, ei.rubric_name, ei.rubric_description, ei.eval_agent_id, COALESCE(esp.system_prompt, ''))::types.q_get_eval_attempt_v4_eval as eval,
     COALESCE(ra.runs_entry, '{}'::types.q_get_eval_attempt_v4_run[]) as runs_entry,
     (ss.not_started, ss.in_progress, ss.completed, ss.total)::types.q_get_eval_attempt_v4_status_summary as status_summary
 FROM attempt_exists_check aec
@@ -377,6 +359,6 @@ CROSS JOIN attempt_data ad
 CROSS JOIN eval_info ei
 CROSS JOIN status_summary ss
 CROSS JOIN actor_profile ap
-CROSS JOIN agent_system_prompt asp
+CROSS JOIN eval_system_prompt esp
 CROSS JOIN runs_aggregated ra
 $$;

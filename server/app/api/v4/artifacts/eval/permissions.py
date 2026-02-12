@@ -265,7 +265,6 @@ EVAL_RESOURCES: set[str] = {
     "descriptions",
     "flags",
     "departments",
-    "agents",
     "rubrics",
 }
 
@@ -299,11 +298,6 @@ EVAL_DOMAIN_METADATA: dict[str, dict[str, str | bool]] = {
         "name": "Departments",
         "description": "Which departments can access this eval",
         "icon": "building",
-    },
-    "agents": {
-        "name": "Agents",
-        "description": "Agents to evaluate",
-        "icon": "bot",
     },
     "rubrics": {
         "name": "Rubrics",

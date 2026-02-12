@@ -46,12 +46,6 @@ original_departments AS (
     FROM params x
     JOIN eval_departments_junction ed ON ed.eval_id = x.eval_id AND ed.active = true
 ),
-original_agents AS (
-    -- Get agent IDs from original eval
-    SELECT agent_id
-    FROM params x
-    JOIN eval_agents_junction ea ON ea.eval_id = x.eval_id
-),
 original_flags AS (
     -- Get flag IDs from original eval (excluding active flag which is handled separately)
     SELECT ef.flag_id
@@ -147,20 +141,8 @@ copy_departments AS (
     FROM new_eval ne
     CROSS JOIN original_departments od
     RETURNING eval_id
-),
-copy_agents AS (
-    -- Copy agent links from original eval
-    INSERT INTO eval_agents_junction (eval_id, agent_id, created_at)
-    SELECT 
-        ne.id,
-        oa.agent_id,
-        NOW()
-    FROM new_eval ne
-    CROSS JOIN original_agents oa
-    RETURNING eval_id
 )
 SELECT 
     (SELECT id FROM new_eval LIMIT 1) as new_eval_id,
     (SELECT name FROM original_eval LIMIT 1) as original_name
 $$;
-
