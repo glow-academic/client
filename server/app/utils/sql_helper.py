@@ -168,10 +168,21 @@ async def execute_sql_typed(
         function_call_sql = function_call_sql.strip().rstrip(";")
 
         # Fetch rows (use fetch for both single and multi-row - consistent with raw SQL path)
-        if sql_params:
-            rows = await conn.fetch(function_call_sql, *sql_params)
-        else:
-            rows = await conn.fetch(function_call_sql)
+        # Retry once on schema change (e.g. after sql-compile drops/recreates types while server is running)
+        try:
+            if sql_params:
+                rows = await conn.fetch(function_call_sql, *sql_params)
+            else:
+                rows = await conn.fetch(function_call_sql)
+        except (
+            asyncpg.exceptions.InvalidCachedStatementError,
+            asyncpg.exceptions.InternalClientError,
+        ):
+            await conn.reload_schema_state()
+            if sql_params:
+                rows = await conn.fetch(function_call_sql, *sql_params)
+            else:
+                rows = await conn.fetch(function_call_sql)
 
         if rows:
             # Convert rows to dicts - asyncpg handles composite types automatically
@@ -228,10 +239,20 @@ async def execute_sql_typed(
         # It's raw SQL - execute normally
         sql_query = load_sql_query(sql_path)
 
-        if sql_params:
-            rows = await conn.fetch(sql_query, *sql_params)
-        else:
-            rows = await conn.fetch(sql_query)
+        try:
+            if sql_params:
+                rows = await conn.fetch(sql_query, *sql_params)
+            else:
+                rows = await conn.fetch(sql_query)
+        except (
+            asyncpg.exceptions.InvalidCachedStatementError,
+            asyncpg.exceptions.InternalClientError,
+        ):
+            await conn.reload_schema_state()
+            if sql_params:
+                rows = await conn.fetch(sql_query, *sql_params)
+            else:
+                rows = await conn.fetch(sql_query)
 
         # Apply nest if we have rows
         if rows:

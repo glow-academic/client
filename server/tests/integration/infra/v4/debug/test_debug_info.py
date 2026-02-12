@@ -1,6 +1,7 @@
 """Integration tests for app.infra.v4.debug.debug_info."""
 
 import uuid
+from unittest.mock import patch
 
 import asyncpg
 import pytest
@@ -26,12 +27,12 @@ class TestDebugInfo:
 
         mock_ctx = MockRunContextWrapper(debug_context)
 
-        # Act
-        result = debug_info(mock_ctx, "Test debug message")
+        # Act — patch create_task to prevent fire-and-forget from holding the connection
+        with patch("app.infra.v4.debug.debug_info.asyncio.create_task"):
+            result = await debug_info(mock_ctx, "Test debug message")
 
         # Assert
         assert result == "Saved debug info"
-        # Actual database insertion is async and fire-and-forget
 
     async def test_debug_info_with_content(self, db: asyncpg.Connection) -> None:
         """Test debug_info with content."""
@@ -45,8 +46,9 @@ class TestDebugInfo:
 
         mock_ctx = MockRunContextWrapper(debug_context)
 
-        # Act
-        result = debug_info(mock_ctx, "Debug: Testing debug info insertion")
+        # Act — patch create_task to prevent fire-and-forget from holding the connection
+        with patch("app.infra.v4.debug.debug_info.asyncio.create_task"):
+            result = await debug_info(mock_ctx, "Debug: Testing debug info insertion")
 
         # Assert
         assert result == "Saved debug info"

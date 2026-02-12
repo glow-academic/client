@@ -13,8 +13,8 @@ END $$;
 CREATE OR REPLACE FUNCTION infra_insert_activity_v4(
     message text,
     endpoint text,
-    profile_id uuid,
-    error boolean,
+    profile_id uuid DEFAULT NULL,
+    error boolean DEFAULT false,
     session_id uuid DEFAULT NULL
 )
 RETURNS TABLE (

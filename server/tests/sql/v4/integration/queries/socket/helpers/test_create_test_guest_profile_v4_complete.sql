@@ -26,9 +26,14 @@ AS $$
     active_flag AS (
         SELECT id FROM flags_resource WHERE name = 'active' LIMIT 1
     ),
+    new_artifact AS (
+        INSERT INTO profile_artifact DEFAULT VALUES
+        RETURNING id
+    ),
     new_profile AS (
-        INSERT INTO profiles_resource(role) 
-        VALUES ('guest') 
+        INSERT INTO profiles_resource(id, role)
+        SELECT na.id, 'guest'
+        FROM new_artifact na
         RETURNING id
     ),
     profile_name_link AS (
@@ -43,10 +48,16 @@ AS $$
         FROM new_profile np, active_flag af
         RETURNING profile_id
     ),
+    new_email_resource AS (
+        INSERT INTO emails_resource(email)
+        SELECT test_create_test_guest_profile_v4.email
+        ON CONFLICT (email) DO UPDATE SET email = EXCLUDED.email
+        RETURNING id, email
+    ),
     new_email AS (
-        INSERT INTO profile_emails_junction(profile_id, email, is_primary, active) 
-        SELECT id, test_create_test_guest_profile_v4.email, true, true
-        FROM new_profile
+        INSERT INTO profile_emails_junction(profile_id, email_id, email, is_primary, active)
+        SELECT np.id, ner.id, test_create_test_guest_profile_v4.email, true, true
+        FROM new_profile np, new_email_resource ner
         RETURNING profile_id, email
     )
     SELECT np.id as guest_id, ne.email

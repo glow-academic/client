@@ -17,20 +17,10 @@ BEGIN
     END LOOP;
 END $$;
 
--- 2) Drop types WITHOUT CASCADE
-DO $$
-DECLARE
-    r RECORD;
-BEGIN
-    FOR r IN
-        SELECT typname
-        FROM pg_type
-        WHERE typname LIKE 'q_list_parameters_v4_%'
-          AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
-    LOOP
-        EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
-    END LOOP;
-END $$;
+-- 2) Drop types in reverse dependency order (parameter depends on sample_item)
+DROP TYPE IF EXISTS types.q_list_parameters_v4_parameter;
+DROP TYPE IF EXISTS types.q_list_parameters_v4_option_id;
+DROP TYPE IF EXISTS types.q_list_parameters_v4_sample_item;
 
 -- 3) Recreate types
 CREATE TYPE types.q_list_parameters_v4_sample_item AS (

@@ -1,5 +1,8 @@
 """Integration tests for app.infra.v4.health."""
 
+from contextlib import asynccontextmanager
+from unittest.mock import MagicMock
+
 import pytest
 
 from app.infra.v4.health import (
@@ -9,7 +12,7 @@ from app.infra.v4.health import (
     check_websocket,
     run_service_checks,
 )
-from app.main import get_pool, get_redis_client
+from app.main import get_redis_client
 
 pytestmark = pytest.mark.asyncio
 
@@ -18,27 +21,22 @@ class TestCheckDatabase:
     """Tests for check_database function."""
 
     async def test_check_database_success(self, db) -> None:
-        """Test successful database check."""
-        # Arrange
-        # Use a separate connection from the pool, not the test transaction
-        pool = get_pool()
-        assert pool is not None
+        """Test successful database check with mock pool wrapping test connection."""
+
+        # Arrange — create a mock pool whose acquire() yields the test connection
+        @asynccontextmanager
+        async def _acquire():
+            yield db
+
+        mock_pool = MagicMock()
+        mock_pool.acquire = _acquire
 
         # Act
-        # The check_database function acquires its own connection from the pool
-        # This should work even though db fixture has a transaction
-        result = await check_database(pool)
+        result = await check_database(mock_pool)
 
         # Assert
-        # In test environment, the pool might be busy with test transactions
-        # So we just verify the function executes without error
-        assert isinstance(result.ok, bool)
+        assert result.ok is True
         assert result.latency_ms >= 0
-        # If it fails, it should be due to pool being busy, not a real error
-        if not result.ok:
-            assert (
-                "operation is in progress" in result.error or "no pool" in result.error
-            )
 
     async def test_check_database_no_pool(self) -> None:
         """Test database check with no pool."""

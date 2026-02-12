@@ -43,9 +43,16 @@ AS $$
     active_flag AS (
         SELECT id FROM flags_resource WHERE name = 'active' LIMIT 1
     ),
+    new_artifact AS (
+        INSERT INTO profile_artifact(id)
+        SELECT uuidv7()
+        WHERE NOT EXISTS (SELECT 1 FROM existing_profile)
+        RETURNING id
+    ),
     new_profile AS (
-        INSERT INTO profiles_resource(role)
-        SELECT test_get_or_create_test_profile_v4.role::profile_type
+        INSERT INTO profiles_resource(id, role)
+        SELECT na.id, test_get_or_create_test_profile_v4.role::profile_type
+        FROM new_artifact na
         WHERE NOT EXISTS (SELECT 1 FROM existing_profile)
         RETURNING id, test_get_or_create_test_profile_v4.role::text as role
     ),
@@ -63,14 +70,22 @@ AS $$
         WHERE NOT EXISTS (SELECT 1 FROM existing_profile)
         RETURNING profile_id
     ),
+    new_email_resource AS (
+        INSERT INTO emails_resource(email)
+        SELECT test_get_or_create_test_profile_v4.email
+        WHERE NOT EXISTS (SELECT 1 FROM existing_profile)
+        ON CONFLICT (email) DO UPDATE SET email = EXCLUDED.email
+        RETURNING id, email
+    ),
     new_email AS (
-        INSERT INTO profile_emails_junction(profile_id, email, is_primary, active)
-        SELECT 
+        INSERT INTO profile_emails_junction(profile_id, email_id, email, is_primary, active)
+        SELECT
             np.id,
+            ner.id,
             test_get_or_create_test_profile_v4.email,
             true,
             true
-        FROM new_profile np
+        FROM new_profile np, new_email_resource ner
         WHERE NOT EXISTS (SELECT 1 FROM existing_profile)
         RETURNING profile_id, email
     )

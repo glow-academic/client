@@ -25,9 +25,8 @@ class TestProfileExists:
             params=CreateTestProfileSqlParams(
                 profile_first_name="Test",
                 profile_last_name="User",
-                profile_role="student",
+                profile_role="guest",
                 profile_active=True,
-                profile_default_profile=False,
             ),
         )
         typed_result = CreateTestProfileSqlRow.model_validate(result.model_dump())

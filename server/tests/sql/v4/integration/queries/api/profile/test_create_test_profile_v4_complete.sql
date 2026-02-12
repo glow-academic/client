@@ -22,7 +22,11 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    WITH name_resource AS (
+    WITH new_artifact AS (
+        INSERT INTO profile_artifact DEFAULT VALUES
+        RETURNING id
+    ),
+    name_resource AS (
         INSERT INTO names_resource(name)
         VALUES (CONCAT_WS(' ', profile_first_name, profile_last_name))
         RETURNING id
@@ -31,8 +35,9 @@ AS $$
         SELECT id FROM flags_resource WHERE name = 'active' LIMIT 1
     ),
     new_profile AS (
-        INSERT INTO profiles_resource(role)
-        VALUES (profile_role::profile_type)
+        INSERT INTO profiles_resource(id, role)
+        SELECT na.id, profile_role::profile_type
+        FROM new_artifact na
         RETURNING id, created_at
     ),
     profile_name_link AS (
@@ -46,8 +51,20 @@ AS $$
         SELECT np.id, af.id, profile_active
         FROM new_profile np, active_flag af
         RETURNING profile_id
+    ),
+    new_email AS (
+        INSERT INTO emails_resource(email)
+        SELECT CONCAT(np.id::text, '@test.local')
+        FROM new_profile np
+        RETURNING id, email
+    ),
+    profile_email_link AS (
+        INSERT INTO profile_emails_junction(profile_id, email_id, email, is_primary, active)
+        SELECT np.id, ne.id, ne.email, true, true
+        FROM new_profile np, new_email ne
+        RETURNING profile_id
     )
-    SELECT 
+    SELECT
         np.id AS profile_id,
         profile_first_name AS first_name,
         profile_last_name AS last_name,

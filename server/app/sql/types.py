@@ -8557,8 +8557,8 @@ class InfrastructureActivityInsertSqlParams(BaseModel):
 
     message: str
     endpoint: str
-    profile_id: UUID
-    error: bool
+    profile_id: UUID | None = None
+    error: bool | None = False
     session_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -8578,7 +8578,7 @@ class InfrastructureActivityInsertApiRequest(BaseModel):
 
     message: str
     endpoint: str
-    error: bool
+    error: bool | None = False
     session_id: UUID | None = None
 
 class InfrastructureActivityInsertApiResponse(BaseModel):
@@ -8593,8 +8593,8 @@ class InfrastructureActivityInsertWebsocketSqlParams(BaseModel):
 
     message: str
     endpoint: str
-    profile_id: UUID
-    error: bool
+    profile_id: UUID | None = None
+    error: bool | None = False
     session_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -8614,7 +8614,7 @@ class InfrastructureActivityInsertWebsocketApiRequest(BaseModel):
 
     message: str
     endpoint: str
-    error: bool
+    error: bool | None = False
     session_id: UUID | None = None
 
 class InfrastructureActivityInsertWebsocketApiResponse(BaseModel):
