@@ -44,6 +44,7 @@ CREATE OR REPLACE FUNCTION api_save_tool_v4(
     descriptions types.tool_resource_action DEFAULT NULL,
     flags types.tool_resource_action DEFAULT NULL,
     args types.tool_multi_resource_action DEFAULT NULL,
+    arg_positions types.tool_multi_resource_action DEFAULT NULL,
     args_outputs types.tool_multi_resource_action DEFAULT NULL
 )
 RETURNS TABLE (
@@ -61,6 +62,7 @@ DECLARE
     v_description_id uuid;
     v_active_flag_id uuid;
     v_args_ids uuid[];
+    v_arg_position_ids uuid[];
     v_args_outputs_ids uuid[];
     is_create boolean;
     v_run_id uuid;
@@ -74,6 +76,7 @@ BEGIN
     v_description_id := (descriptions).resource_id;
     v_active_flag_id := (flags).resource_id;
     v_args_ids := COALESCE((args).resource_ids, ARRAY[]::uuid[]);
+    v_arg_position_ids := COALESCE((arg_positions).resource_ids, ARRAY[]::uuid[]);
     v_args_outputs_ids := COALESCE((args_outputs).resource_ids, ARRAY[]::uuid[]);
 
     IF group_id IS NULL THEN
@@ -111,6 +114,15 @@ BEGIN
         END IF;
     END IF;
 
+    IF COALESCE(array_length(v_arg_position_ids, 1), 0) > 0 THEN
+        IF EXISTS (
+            SELECT 1 FROM UNNEST(v_arg_position_ids) AS arg_positions_id
+            WHERE NOT EXISTS (SELECT 1 FROM arg_positions_resource WHERE id = arg_positions_id)
+        ) THEN
+            RAISE EXCEPTION 'One or more arg_positions resources not found';
+        END IF;
+    END IF;
+
     is_create := input_tool_id IS NULL;
 
     IF is_create THEN
@@ -128,6 +140,7 @@ BEGIN
         UPDATE tool_descriptions_junction SET active = false WHERE tool_id = v_tool_id;
         UPDATE tool_flags_junction SET active = false WHERE tool_id = v_tool_id;
         DELETE FROM tool_args_junction WHERE tool_id = v_tool_id;
+        UPDATE tool_arg_positions_junction SET active = false WHERE tool_id = v_tool_id;
         DELETE FROM tool_args_outputs_junction WHERE tool_id = v_tool_id;
     END IF;
 
@@ -166,11 +179,26 @@ BEGIN
         ON CONFLICT ON CONSTRAINT tool_args_pkey DO NOTHING;
     END IF;
 
+    IF COALESCE(array_length(v_arg_position_ids, 1), 0) > 0 THEN
+        INSERT INTO tool_arg_positions_junction (
+            tool_id, arg_positions_id, created_at, generated, mcp, active
+        )
+        SELECT v_tool_id, arg_positions_id, NOW(), false, false, true
+        FROM UNNEST(v_arg_position_ids) AS arg_positions_id
+        ON CONFLICT ON CONSTRAINT tool_arg_positions_junction_pkey DO UPDATE
+        SET active = true,
+            generated = EXCLUDED.generated,
+            mcp = EXCLUDED.mcp;
+    END IF;
+
     IF COALESCE(array_length(v_args_outputs_ids, 1), 0) > 0 THEN
-        INSERT INTO tool_args_outputs_junction (tool_id, args_outputs_id, created_at, generated, mcp)
-        SELECT v_tool_id, args_outputs_id, NOW(), false, false
+        INSERT INTO tool_args_outputs_junction (tool_id, args_outputs_id, created_at, generated, mcp, active)
+        SELECT v_tool_id, args_outputs_id, NOW(), false, false, true
         FROM UNNEST(v_args_outputs_ids) AS args_outputs_id
-        ON CONFLICT ON CONSTRAINT tool_args_outputs_pkey DO NOTHING;
+        ON CONFLICT ON CONSTRAINT tool_args_outputs_pkey DO UPDATE
+        SET active = true,
+            generated = EXCLUDED.generated,
+            mcp = EXCLUDED.mcp;
     END IF;
 
     -- Tool call lineage for save
@@ -243,6 +271,25 @@ BEGIN
             INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((args).link_tool_id, v_call_id);
             INSERT INTO args_calls_connection (args_id, call_id)
             SELECT args_id, v_call_id FROM UNNEST(v_args_ids) AS args_id;
+        END IF;
+    END IF;
+
+    IF COALESCE(array_length(v_arg_position_ids, 1), 0) > 0 THEN
+        IF (arg_positions).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'tool_save_create_arg_positions_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((arg_positions).create_tool_id, v_call_id);
+            INSERT INTO arg_positions_calls_connection (arg_positions_id, call_id)
+            SELECT arg_positions_id, v_call_id FROM UNNEST(v_arg_position_ids) AS arg_positions_id;
+        END IF;
+        IF (arg_positions).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'tool_save_link_arg_positions_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tool_calls_junction (tool_id, call_id) VALUES ((arg_positions).link_tool_id, v_call_id);
+            INSERT INTO arg_positions_calls_connection (arg_positions_id, call_id)
+            SELECT arg_positions_id, v_call_id FROM UNNEST(v_arg_position_ids) AS arg_positions_id;
         END IF;
     END IF;
 
