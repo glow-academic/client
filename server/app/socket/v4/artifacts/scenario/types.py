@@ -24,7 +24,6 @@ from app.sql.types import (
     QGetPersonasV4Item,
     QGetProblemStatementsV4Item,
     QGetQuestionsV4Item,
-    QGetTemplatesV4Item,
     QGetVideosV4Item,
 )
 
@@ -69,7 +68,6 @@ class ScenarioGenerationCompleteEvent(GenerationCompleteEvent):
     department_resources: list[QGetDepartmentsV4Item] | None = None
     persona_resources: list[QGetPersonasV4Item] | None = None
     document_resources: list[QGetDocumentsV4Item] | None = None
-    template_resources: list[QGetTemplatesV4Item] | None = None
     objective_resources: list[QGetObjectivesV4Item] | None = None
     question_resources: list[QGetQuestionsV4Item] | None = None
     image_resources: list[QGetImagesV4Item] | None = None

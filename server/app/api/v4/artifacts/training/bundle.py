@@ -35,7 +35,6 @@ from app.api.v4.artifacts.training.types import (
     TrainingBundleQuestionSection,
     TrainingBundleScenarioFlags,
     TrainingBundleScenarioSection,
-    TrainingBundleTemplateSection,
     TrainingBundleVideoSection,
     TrainingBundleWebsocketResources,
     TrainingBundleWebsocketViews,
@@ -55,7 +54,6 @@ from app.api.v4.resources.problem_statements.get import get_problem_statements_i
 from app.api.v4.resources.providers.get import get_providers_internal
 from app.api.v4.resources.questions.get import get_questions_internal
 from app.api.v4.resources.scenarios.get import get_scenarios_internal
-from app.api.v4.resources.templates.get import get_templates_internal
 from app.api.v4.resources.tools.get import get_tools_internal
 from app.api.v4.resources.videos.get import get_videos_internal
 from app.api.v4.views.drafts.get import get_draft_training_internal
@@ -160,13 +158,6 @@ RESOURCE_CONFIG: list[tuple[str, str, str, Any, str]] = [
     ("videos", "video_ids", "video_ids", get_videos_internal, "video_id"),
     ("images", "image_ids", "image_ids", get_images_internal, "image_id"),
     (
-        "templates",
-        "template_ids",
-        "template_ids",
-        get_templates_internal,
-        "template_id",
-    ),
-    (
         "problem_statements",
         "problem_statement_ids",
         "problem_statement_ids",
@@ -230,7 +221,6 @@ async def get_training_bundle_internal(
         "objectives_enabled": view_data.objectives_enabled,
         "images_enabled": view_data.images_enabled,
         "questions_enabled": view_data.questions_enabled,
-        "use_templates": view_data.use_templates,
     }
 
     # 4. Draft override for all 13 customizable resource ID arrays
@@ -405,7 +395,6 @@ async def get_training_bundle_websocket(
             options=data.current_resources.get("options") or None,
             videos=data.current_resources.get("videos") or None,
             images=data.current_resources.get("images") or None,
-            templates=data.current_resources.get("templates") or None,
             problem_statements=data.current_resources.get("problem_statements") or None,
             objectives=data.current_resources.get("objectives") or None,
             agents=data.config_agents or None,
@@ -436,7 +425,6 @@ _SECTION_CLASSES: dict[str, type] = {
     "options": TrainingBundleOptionSection,
     "videos": TrainingBundleVideoSection,
     "images": TrainingBundleImageSection,
-    "templates": TrainingBundleTemplateSection,
     "problem_statements": TrainingBundleProblemStatementSection,
     "objectives": TrainingBundleObjectiveSection,
 }
@@ -489,7 +477,6 @@ async def get_training_bundle_client(
         options=_section("options"),
         videos=_section("videos"),
         images=_section("images"),
-        templates=_section("templates"),
         problem_statements=_section("problem_statements"),
         objectives=_section("objectives"),
         agents=data.config_agents or None,

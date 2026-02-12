@@ -50,7 +50,6 @@ async def get_training_bundle_view_internal(
         option_ids=list(row.option_ids or []),
         video_ids=list(row.video_ids or []),
         image_ids=list(row.image_ids or []),
-        template_ids=list(row.template_ids or []),
         problem_statement_ids=list(row.problem_statement_ids or []),
         objective_ids=list(row.objective_ids or []),
         video_enabled=row.video_enabled or False,
@@ -58,7 +57,6 @@ async def get_training_bundle_view_internal(
         objectives_enabled=row.objectives_enabled or False,
         images_enabled=row.images_enabled or False,
         questions_enabled=row.questions_enabled or False,
-        use_templates=row.use_templates or False,
     )
 
 

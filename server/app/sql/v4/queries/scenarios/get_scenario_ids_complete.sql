@@ -55,7 +55,6 @@ RETURNS TABLE (
     video_enabled_flag_id uuid,
     questions_enabled_flag_id uuid,
     problem_statement_enabled_flag_id uuid,
-    use_templates_flag_id uuid,
 
     -- Multi-select resource IDs
     department_ids uuid[],
@@ -67,7 +66,6 @@ RETURNS TABLE (
     image_ids uuid[],
     video_ids uuid[],
     question_ids uuid[],
-    template_ids uuid[],
 
     -- Suggestion IDs (computed in Python via search endpoints)
     name_suggestions uuid[],
@@ -80,7 +78,6 @@ RETURNS TABLE (
     image_suggestions uuid[],
     video_suggestions uuid[],
     question_suggestions uuid[],
-    template_suggestions uuid[],
 
     -- Candidate agents (for Python-side agent scoring)
     candidate_agents scenario_candidate_agent[],
@@ -98,7 +95,6 @@ RETURNS TABLE (
     images_has_tools boolean,
     videos_has_tools boolean,
     questions_has_tools boolean,
-    templates_has_tools boolean,
 
     -- Video enabled flag value (for video parameter filtering)
     video_enabled_value boolean,
@@ -116,8 +112,7 @@ RETURNS TABLE (
     objectives_domain_id uuid,
     images_domain_id uuid,
     videos_domain_id uuid,
-    questions_domain_id uuid,
-    templates_domain_id uuid
+    questions_domain_id uuid
 )
 LANGUAGE sql
 STABLE
@@ -183,12 +178,6 @@ draft_questions_data AS (
     SELECT COALESCE(ARRAY_REMOVE(ARRAY_AGG(dq.questions_id ORDER BY dq.created_at), NULL), ARRAY[]::uuid[]) as question_ids
     FROM params x
     LEFT JOIN questions_drafts_connection dq ON dq.draft_id = x.draft_id
-    LIMIT 1
-),
-draft_templates_data AS (
-    SELECT COALESCE(ARRAY_REMOVE(ARRAY_AGG(dt.templates_id ORDER BY dt.created_at), NULL), ARRAY[]::uuid[]) as template_ids
-    FROM params x
-    LEFT JOIN templates_drafts_connection dt ON dt.draft_id = x.draft_id
     LIMIT 1
 ),
 -- Scenario junction multi-select resource IDs
@@ -318,20 +307,6 @@ scenario_questions_junction_data AS (
     FROM params
     LIMIT 1
 ),
-scenario_templates_junction_data AS (
-    SELECT
-        CASE
-            WHEN (SELECT scenario_id FROM params) IS NULL THEN ARRAY[]::uuid[]
-            ELSE COALESCE(
-                (SELECT ARRAY_AGG(st.template_id ORDER BY st.template_id)
-                 FROM scenario_templates_junction st
-                 WHERE st.scenario_id = (SELECT scenario_id FROM params) AND st.active = true),
-                ARRAY[]::uuid[]
-            )
-        END as template_ids
-    FROM params
-    LIMIT 1
-),
 -- Combined multi-select IDs (draft preferred over scenario)
 scenario_departments_combined_data AS (
     SELECT
@@ -450,19 +425,6 @@ scenario_questions_combined_data AS (
     FROM params
     LIMIT 1
 ),
-scenario_templates_combined_data AS (
-    SELECT
-        CASE
-            WHEN (SELECT draft_id FROM params) IS NOT NULL
-                AND COALESCE(array_length((SELECT template_ids FROM draft_templates_data), 1), 0) > 0
-                THEN (SELECT template_ids FROM draft_templates_data)
-            WHEN COALESCE(array_length((SELECT template_ids FROM scenario_templates_junction_data), 1), 0) > 0
-                THEN (SELECT template_ids FROM scenario_templates_junction_data)
-            ELSE ARRAY[]::uuid[]
-        END as template_ids
-    FROM params
-    LIMIT 1
-),
 -- Single-select resource IDs (from draft or scenario junction)
 name_resource_data AS (
     SELECT COALESCE(
@@ -528,13 +490,6 @@ problem_statement_enabled_flag_resource_data AS (
         (SELECT df.flags_id FROM flags_drafts_connection df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) AND f.name = 'scenario_problem_statement_enabled' LIMIT 1),
         (SELECT sf.flag_id FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = (SELECT scenario_id FROM params) AND f.name = 'scenario_problem_statement_enabled' AND sf.value = TRUE AND sf.active = true LIMIT 1)
     ) as problem_statement_enabled_flag_id
-    FROM params
-),
-use_templates_flag_resource_data AS (
-    SELECT COALESCE(
-        (SELECT df.flags_id FROM flags_drafts_connection df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) AND f.name = 'scenario_use_templates' LIMIT 1),
-        (SELECT sf.flag_id FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = (SELECT scenario_id FROM params) AND f.name = 'scenario_use_templates' AND sf.value = TRUE AND sf.active = true LIMIT 1)
-    ) as use_templates_flag_id
     FROM params
 ),
 -- Video enabled value for filtering (not just flag ID, but actual boolean value)
@@ -634,8 +589,7 @@ tools_existence_check AS (
         EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'objectives'::resource_type AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as objectives_has_tools,
         EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'images'::resource_type AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as images_has_tools,
         EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'videos'::resource_type AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as videos_has_tools,
-        EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'questions'::resource_type AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as questions_has_tools,
-        EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'templates'::resource_type AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as templates_has_tools
+        EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'questions'::resource_type AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as questions_has_tools
     FROM params x
 ),
 -- Domain IDs from domains_resource table
@@ -653,8 +607,7 @@ domain_ids_data AS (
         (SELECT id FROM domains_resource WHERE resource = 'objectives'::resource_type AND active = true LIMIT 1) as objectives_domain_id,
         (SELECT id FROM domains_resource WHERE resource = 'images'::resource_type AND active = true LIMIT 1) as images_domain_id,
         (SELECT id FROM domains_resource WHERE resource = 'videos'::resource_type AND active = true LIMIT 1) as videos_domain_id,
-        (SELECT id FROM domains_resource WHERE resource = 'questions'::resource_type AND active = true LIMIT 1) as questions_domain_id,
-        (SELECT id FROM domains_resource WHERE resource = 'templates'::resource_type AND active = true LIMIT 1) as templates_domain_id
+        (SELECT id FROM domains_resource WHERE resource = 'questions'::resource_type AND active = true LIMIT 1) as questions_domain_id
 )
 SELECT
     -- Single-select resource IDs
@@ -667,7 +620,6 @@ SELECT
     (SELECT video_enabled_flag_id FROM video_enabled_flag_resource_data) as video_enabled_flag_id,
     (SELECT questions_enabled_flag_id FROM questions_enabled_flag_resource_data) as questions_enabled_flag_id,
     (SELECT problem_statement_enabled_flag_id FROM problem_statement_enabled_flag_resource_data) as problem_statement_enabled_flag_id,
-    (SELECT use_templates_flag_id FROM use_templates_flag_resource_data) as use_templates_flag_id,
 
     -- Multi-select resource IDs
     (SELECT department_ids FROM scenario_departments_combined_data) as department_ids,
@@ -679,7 +631,6 @@ SELECT
     (SELECT image_ids FROM scenario_images_combined_data) as image_ids,
     (SELECT video_ids FROM scenario_videos_combined_data) as video_ids,
     (SELECT question_ids FROM scenario_questions_combined_data) as question_ids,
-    (SELECT template_ids FROM scenario_templates_combined_data) as template_ids,
 
     -- Suggestion IDs (computed in Python via search endpoints)
     ARRAY[]::uuid[] as name_suggestions,
@@ -692,7 +643,6 @@ SELECT
     ARRAY[]::uuid[] as image_suggestions,
     ARRAY[]::uuid[] as video_suggestions,
     ARRAY[]::uuid[] as question_suggestions,
-    ARRAY[]::uuid[] as template_suggestions,
 
     -- Candidate agents (for Python-side agent scoring with tool IDs)
     (SELECT COALESCE(
@@ -713,7 +663,6 @@ SELECT
     tec.images_has_tools,
     tec.videos_has_tools,
     tec.questions_has_tools,
-    tec.templates_has_tools,
 
     -- Video enabled flag value
     (SELECT video_enabled_value FROM video_enabled_value_data) as video_enabled_value,
@@ -731,8 +680,7 @@ SELECT
     did.objectives_domain_id,
     did.images_domain_id,
     did.videos_domain_id,
-    did.questions_domain_id,
-    did.templates_domain_id
+    did.questions_domain_id
 FROM params x
 CROSS JOIN tools_existence_check tec
 CROSS JOIN domain_ids_data did;

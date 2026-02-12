@@ -30,7 +30,6 @@ WITH draft_links AS (
     UNION ALL SELECT draft_id, 'options'::resource_type AS resource_type, options_id::uuid AS resource_id FROM options_drafts_connection WHERE active = true
     UNION ALL SELECT draft_id, 'videos'::resource_type AS resource_type, videos_id::uuid AS resource_id FROM videos_drafts_connection WHERE active = true
     UNION ALL SELECT draft_id, 'images'::resource_type AS resource_type, images_id::uuid AS resource_id FROM images_drafts_connection WHERE active = true
-    UNION ALL SELECT draft_id, 'templates'::resource_type AS resource_type, templates_id::uuid AS resource_id FROM templates_drafts_connection WHERE active = true
     UNION ALL SELECT draft_id, 'problem_statements'::resource_type AS resource_type, problem_statements_id::uuid AS resource_id FROM problem_statements_drafts_connection WHERE active = true
     UNION ALL SELECT draft_id, 'objectives'::resource_type AS resource_type, objectives_id::uuid AS resource_id FROM objectives_drafts_connection WHERE active = true
 )
@@ -53,7 +52,6 @@ SELECT
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'options'::resource_type), ARRAY[]::uuid[]) AS option_ids,
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'videos'::resource_type), ARRAY[]::uuid[]) AS video_ids,
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'images'::resource_type), ARRAY[]::uuid[]) AS image_ids,
-    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'templates'::resource_type), ARRAY[]::uuid[]) AS template_ids,
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'problem_statements'::resource_type), ARRAY[]::uuid[]) AS problem_statement_ids,
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'objectives'::resource_type), ARRAY[]::uuid[]) AS objective_ids
 FROM drafts_entry d

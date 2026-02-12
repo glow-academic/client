@@ -144,7 +144,6 @@ async def get_attempt_chats_internal(
                     option_ids=list(item.option_ids) if item.option_ids else None,
                     responses=responses,
                     # Resource IDs - Both Views
-                    template_ids=list(item.template_ids) if item.template_ids else None,
                     image_ids=list(item.image_ids) if item.image_ids else None,
                     video_ids=list(item.video_ids) if item.video_ids else None,
                     document_ids=list(item.document_ids) if item.document_ids else None,

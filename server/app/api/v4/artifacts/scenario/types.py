@@ -109,6 +109,7 @@ class ScenarioDocument(BaseModel):
     file_path: str | None = None
     mime_type: str | None = None
     upload_id: UUID | None = None
+    html: bool | None = None
     parameter_ids: list[UUID] | None = None
     field_ids: list[UUID] | None = None
     parent_document_id: UUID | None = None
@@ -116,15 +117,6 @@ class ScenarioDocument(BaseModel):
     non_video_document: bool | None = (
         None  # Has linked parameter with video_parameter=false
     )
-
-
-class ScenarioTemplate(BaseModel):
-    """Template for scenario."""
-
-    template_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    generated: bool | None = None
 
 
 class ScenarioParameter(BaseModel):
@@ -224,7 +216,6 @@ class ScenarioResourceBucket(BaseModel):
     images: list[ScenarioImage] | None = None
     videos: list[ScenarioVideo] | None = None
     questions: list[ScenarioQuestion] | None = None
-    templates: list[ScenarioTemplate] | None = None
 
 
 class ScenarioResources(BaseModel):
@@ -245,7 +236,6 @@ class GetScenarioApiRequest(BaseModel):
     scenario_id: UUID | None = None
     document_ids: list[UUID] | None = None
     problem_statement_ids: list[UUID] | None = None
-    template_document_ids: list[UUID] | None = None
     filter_department_ids: list[UUID] | None = None
     filter_persona_ids: list[UUID] | None = None
     filter_document_ids: list[UUID] | None = None
@@ -256,7 +246,6 @@ class GetScenarioApiRequest(BaseModel):
     parameter_search: str | None = None
     description_search: str | None = None
     problem_statement_search: str | None = None
-    template_search: str | None = None
     image_search: str | None = None
     video_search: str | None = None
     question_search: str | None = None
@@ -316,11 +305,6 @@ class ScenarioDocumentSection(BaseResourceSection):
     resources: list[ScenarioDocument] | None = None
 
 
-class ScenarioTemplateSection(BaseResourceSection):
-    current: list[ScenarioTemplate] | None = None
-    resources: list[ScenarioTemplate] | None = None
-
-
 class ScenarioParameterSection(BaseResourceSection):
     current: list[ScenarioParameter] | None = None
     resources: list[ScenarioParameter] | None = None
@@ -374,7 +358,6 @@ class GetScenarioApiResponse(BaseModel):
     departments: ScenarioDepartmentSection | None = None
     personas: ScenarioPersonaSection | None = None
     documents: ScenarioDocumentSection | None = None
-    templates: ScenarioTemplateSection | None = None
     parameters: ScenarioParameterSection | None = None
     parameter_fields: ScenarioParameterFieldSection | None = None
     objectives: ScenarioObjectiveSection | None = None
@@ -409,7 +392,7 @@ class ScenarioWebsocketViews(BaseModel):
 class ScenarioWebsocketResources(BaseModel):
     """Hydrated resources for websocket — selected only, no `current` wrapper."""
 
-    # 14 scenario resources (selected)
+    # 13 scenario resources (selected)
     names: list[ScenarioNameResource] | None = None
     descriptions: list[ScenarioDescriptionResource] | None = None
     problem_statements: list[ScenarioProblemStatement] | None = None
@@ -417,7 +400,6 @@ class ScenarioWebsocketResources(BaseModel):
     departments: list[ScenarioDepartment] | None = None
     personas: list[ScenarioPersona] | None = None
     documents: list[ScenarioDocument] | None = None
-    templates: list[ScenarioTemplate] | None = None
     parameters: list[ScenarioParameter] | None = None
     parameter_fields: list[ScenarioField] | None = None
     objectives: list[ScenarioObjective] | None = None
@@ -552,7 +534,6 @@ class SaveScenarioApiRequest(BaseModel):
     departments: "ScenarioMultiResourceAction"
     personas: "ScenarioMultiResourceAction"
     documents: "ScenarioMultiResourceAction"
-    templates: "ScenarioMultiResourceAction"
     parameters: "ScenarioMultiResourceAction"
     parameter_fields: "ScenarioMultiResourceAction"
     images: "ScenarioMultiResourceAction"
@@ -640,7 +621,6 @@ class PatchScenarioDraftApiRequest(BaseModel):
     departments: ScenarioMultiResourceAction | None = None
     personas: ScenarioMultiResourceAction | None = None
     documents: ScenarioMultiResourceAction | None = None
-    templates: ScenarioMultiResourceAction | None = None
     parameters: ScenarioMultiResourceAction | None = None
     parameter_fields: ScenarioMultiResourceAction | None = None
     images: ScenarioMultiResourceAction | None = None
@@ -708,7 +688,6 @@ class GetScenarioSqlParams(BaseModel):
     scenario_id: UUID | None = None
     document_ids: list[UUID] | None = None
     problem_statement_ids: list[UUID] | None = None
-    template_document_ids: list[UUID] | None = None
     filter_department_ids: list[UUID] | None = None
     filter_persona_ids: list[UUID] | None = None
     filter_document_ids: list[UUID] | None = None
@@ -719,7 +698,6 @@ class GetScenarioSqlParams(BaseModel):
     parameter_search: str | None = None
     description_search: str | None = None
     problem_statement_search: str | None = None
-    template_search: str | None = None
     image_search: str | None = None
     video_search: str | None = None
     question_search: str | None = None
@@ -743,7 +721,6 @@ class GetScenarioSqlParams(BaseModel):
             self.scenario_id,
             self.document_ids,
             self.problem_statement_ids,
-            self.template_document_ids,
             self.filter_department_ids,
             self.filter_persona_ids,
             self.filter_document_ids,
@@ -754,7 +731,6 @@ class GetScenarioSqlParams(BaseModel):
             self.parameter_search,
             self.description_search,
             self.problem_statement_search,
-            self.template_search,
             self.image_search,
             self.video_search,
             self.question_search,
@@ -817,10 +793,6 @@ class GetScenarioSqlRow(BaseModel):
     problem_statement_enabled_flag_resource: ScenarioFlagResource | None = None
     show_problem_statement_enabled_flag: bool | None = None
     problem_statement_enabled_flag_required: bool | None = None
-    use_templates_flag_id: UUID | None = None
-    use_templates_flag_resource: ScenarioFlagResource | None = None
-    show_use_templates_flag: bool | None = None
-    use_templates_flag_required: bool | None = None
     department_ids: list[UUID] | None = None
     department_resources: list[ScenarioDepartment] | None = None
     show_departments: bool | None = None
@@ -856,12 +828,6 @@ class GetScenarioSqlRow(BaseModel):
     questions_required: bool | None = None
     question_suggestions: list[UUID] | None = None
     questions: list[ScenarioQuestion] | None = None
-    template_ids: list[UUID] | None = None
-    template_resources: list[ScenarioTemplate] | None = None
-    show_templates: bool | None = None
-    templates_required: bool | None = None
-    template_suggestions: list[UUID] | None = None
-    templates: list[ScenarioTemplate] | None = None
     persona_ids: list[UUID] | None = None
     persona_resources: list[ScenarioPersona] | None = None
     show_personas: bool | None = None
@@ -939,7 +905,6 @@ class SaveScenarioSqlParams(BaseModel):
     departments: ScenarioMultiResourceAction
     personas: ScenarioMultiResourceAction
     documents: ScenarioMultiResourceAction
-    templates: ScenarioMultiResourceAction
     parameters: ScenarioMultiResourceAction
     parameter_fields: ScenarioMultiResourceAction
     images: ScenarioMultiResourceAction
@@ -971,7 +936,6 @@ class SaveScenarioSqlParams(BaseModel):
             multi(self.departments),
             multi(self.personas),
             multi(self.documents),
-            multi(self.templates),
             multi(self.parameters),
             multi(self.parameter_fields),
             multi(self.images),
@@ -1050,7 +1014,6 @@ class PatchScenarioDraftSqlParams(BaseModel):
     departments: ScenarioMultiResourceAction
     personas: ScenarioMultiResourceAction
     documents: ScenarioMultiResourceAction
-    templates: ScenarioMultiResourceAction
     parameters: ScenarioMultiResourceAction
     parameter_fields: ScenarioMultiResourceAction
     images: ScenarioMultiResourceAction
@@ -1076,7 +1039,6 @@ class PatchScenarioDraftSqlParams(BaseModel):
             departments=request.departments or empty_multi,
             personas=request.personas or empty_multi,
             documents=request.documents or empty_multi,
-            templates=request.templates or empty_multi,
             parameters=request.parameters or empty_multi,
             parameter_fields=request.parameter_fields or empty_multi,
             images=request.images or empty_multi,
@@ -1104,7 +1066,6 @@ class PatchScenarioDraftSqlParams(BaseModel):
             multi(self.departments),
             multi(self.personas),
             multi(self.documents),
-            multi(self.templates),
             multi(self.parameters),
             multi(self.parameter_fields),
             multi(self.images),

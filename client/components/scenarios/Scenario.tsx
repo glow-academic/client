@@ -36,7 +36,6 @@ import { Parameters } from "@/components/resources/Parameters";
 import { Personas } from "@/components/resources/Personas";
 import { ProblemStatements } from "@/components/resources/ProblemStatements";
 import { Questions } from "@/components/resources/Questions";
-import { Templates } from "@/components/resources/Templates";
 import { Videos } from "@/components/resources/Videos";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
@@ -88,8 +87,6 @@ type CreateDraftObjectivesOut = OutputOf<
   "/api/v4/resources/objectives",
   "post"
 >;
-type CreateDraftTemplatesIn = InputOf<"/api/v4/resources/templates", "post">;
-type CreateDraftTemplatesOut = OutputOf<"/api/v4/resources/templates", "post">;
 type CreateDraftParameterFieldsIn = InputOf<
   "/api/v4/resources/parameter_fields",
   "post"
@@ -119,7 +116,6 @@ type ScenarioResourceType =
   | "departments"
   | "personas"
   | "documents"
-  | "templates"
   | "parameters"
   | "parameter_fields"
   | "images"
@@ -136,11 +132,9 @@ type ScenarioFormState = {
   video_enabled_flag_id: string | null;
   questions_enabled_flag_id: string | null;
   problem_statement_enabled_flag_id: string | null;
-  use_templates_flag_id: string | null;
   department_ids: string[];
   persona_ids: string[];
   document_ids: string[];
-  template_ids: string[];
   parameter_ids: string[];
   parameter_field_ids: string[];
   image_ids: string[];
@@ -155,7 +149,6 @@ type FlushResult = {
   description_id?: string | null;
   problem_statement_id?: string | null;
   objective_ids?: string[];
-  template_ids?: string[];
   image_ids?: string[];
   video_ids?: string[];
   question_ids?: string[];
@@ -170,7 +163,6 @@ function getSelectedScenarioFlagIds(state: ScenarioFormState): string[] {
     state.video_enabled_flag_id,
     state.questions_enabled_flag_id,
     state.problem_statement_enabled_flag_id,
-    state.use_templates_flag_id,
   ].filter((id): id is string => !!id);
 }
 
@@ -182,7 +174,6 @@ type ScenarioAiFormData = {
   department_resources?: ScenarioGenerationCompletePayload["department_resources"];
   persona_resources?: ScenarioGenerationCompletePayload["persona_resources"];
   document_resources?: ScenarioGenerationCompletePayload["document_resources"];
-  template_resources?: ScenarioGenerationCompletePayload["template_resources"];
   objective_resources?: ScenarioGenerationCompletePayload["objective_resources"];
   question_resources?: ScenarioGenerationCompletePayload["question_resources"];
   image_resources?: ScenarioGenerationCompletePayload["image_resources"];
@@ -216,9 +207,6 @@ export interface ScenarioProps {
   createObjectivesAction?: (
     input: CreateDraftObjectivesIn
   ) => Promise<CreateDraftObjectivesOut>;
-  createTemplatesAction?: (
-    input: CreateDraftTemplatesIn
-  ) => Promise<CreateDraftTemplatesOut>;
   createParameterFieldsAction?: (
     input: CreateDraftParameterFieldsIn
   ) => Promise<CreateDraftParameterFieldsOut>;
@@ -238,7 +226,6 @@ const FLUSH_KEYS = [
   "descriptions",
   "problem_statements",
   "objectives",
-  "templates",
   "images",
   "videos",
   "questions",
@@ -254,7 +241,6 @@ const VALID_RESOURCE_TYPES: ScenarioResourceType[] = [
   "departments",
   "personas",
   "documents",
-  "templates",
   "parameters",
   "parameter_fields",
   "images",
@@ -289,7 +275,6 @@ const SCENARIO_RESOURCES: ResourceConfig[] = [
     flushKey: null,
     type: "multi",
   },
-  { key: "templates", formKey: "template_ids", flushKey: "template_ids", type: "multi" },
   {
     key: "parameters",
     formKey: "parameter_ids",
@@ -328,7 +313,6 @@ function ScenarioComponent({
   createDescriptionsAction,
   createProblemStatementsAction,
   createObjectivesAction,
-  createTemplatesAction,
   createParameterFieldsAction,
   createImagesAction,
   createVideosAction,
@@ -359,7 +343,6 @@ function ScenarioComponent({
       if (data["department_resources"]) aiUpdates.department_resources = data["department_resources"] as ScenarioAiFormData["department_resources"];
       if (data["persona_resources"]) aiUpdates.persona_resources = data["persona_resources"] as ScenarioAiFormData["persona_resources"];
       if (data["document_resources"]) aiUpdates.document_resources = data["document_resources"] as ScenarioAiFormData["document_resources"];
-      if (data["template_resources"]) aiUpdates.template_resources = data["template_resources"] as ScenarioAiFormData["template_resources"];
       if (data["objective_resources"]) aiUpdates.objective_resources = data["objective_resources"] as ScenarioAiFormData["objective_resources"];
       if (data["question_resources"]) aiUpdates.question_resources = data["question_resources"] as ScenarioAiFormData["question_resources"];
       if (data["image_resources"]) aiUpdates.image_resources = data["image_resources"] as ScenarioAiFormData["image_resources"];
@@ -401,7 +384,6 @@ function ScenarioComponent({
       parameterSearch: parseAsString,
       descriptionSearch: parseAsString,
       problemStatementSearch: parseAsString,
-      templateSearch: parseAsString,
       imageSearch: parseAsString,
       videoSearch: parseAsString,
       personaShowSelected: parseAsBoolean,
@@ -429,11 +411,9 @@ function ScenarioComponent({
         video_enabled_flag_id: null,
         questions_enabled_flag_id: null,
         problem_statement_enabled_flag_id: null,
-        use_templates_flag_id: null,
         department_ids: [],
         persona_ids: [],
         document_ids: [],
-        template_ids: [],
         parameter_ids: [],
         parameter_field_ids: [],
         image_ids: [],
@@ -469,7 +449,6 @@ function ScenarioComponent({
       problem_statement_enabled_flag_id: selectedFlagId(
         "problem_statement_enabled",
       ),
-      use_templates_flag_id: selectedFlagId("use_templates"),
       department_ids: (scenarioData.departments?.current ?? [])
         .map((item) => item.department_id)
         .filter(Boolean)
@@ -480,10 +459,6 @@ function ScenarioComponent({
         .map(String),
       document_ids: (scenarioData.documents?.current ?? [])
         .map((item) => item.document_id)
-        .filter(Boolean)
-        .map(String),
-      template_ids: (scenarioData.templates?.current ?? [])
-        .map((item) => item.template_id)
         .filter(Boolean)
         .map(String),
       parameter_ids: (scenarioData.parameters?.current ?? [])
@@ -545,10 +520,6 @@ function ScenarioComponent({
     () => JSON.stringify(formState.document_ids),
     [formState.document_ids]
   );
-  const templateIdsStr = useMemo(
-    () => JSON.stringify(formState.template_ids),
-    [formState.template_ids]
-  );
   const parameterIdsStr = useMemo(
     () => JSON.stringify(formState.parameter_ids),
     [formState.parameter_ids]
@@ -601,15 +572,6 @@ function ScenarioComponent({
           .filter(Boolean),
       ),
     [scenarioData?.documents]
-  );
-  const scenarioTemplateIdsStr = useMemo(
-    () =>
-      JSON.stringify(
-        (scenarioData?.templates?.current ?? [])
-          .map((item) => item.template_id)
-          .filter(Boolean),
-      ),
-    [scenarioData?.templates]
   );
   const scenarioParameterIdsStr = useMemo(
     () =>
@@ -682,15 +644,12 @@ function ScenarioComponent({
         prev.questions_enabled_flag_id !== newState.questions_enabled_flag_id ||
         prev.problem_statement_enabled_flag_id !==
           newState.problem_statement_enabled_flag_id ||
-        prev.use_templates_flag_id !== newState.use_templates_flag_id ||
         JSON.stringify(prev.department_ids) !==
           JSON.stringify(newState.department_ids) ||
         JSON.stringify(prev.persona_ids) !==
           JSON.stringify(newState.persona_ids) ||
         JSON.stringify(prev.document_ids) !==
           JSON.stringify(newState.document_ids) ||
-        JSON.stringify(prev.template_ids) !==
-          JSON.stringify(newState.template_ids) ||
         JSON.stringify(prev.parameter_ids) !==
           JSON.stringify(newState.parameter_ids) ||
         JSON.stringify(prev.parameter_field_ids) !==
@@ -718,7 +677,6 @@ function ScenarioComponent({
     scenarioDepartmentIdsStr,
     scenarioPersonaIdsStr,
     scenarioDocumentIdsStr,
-    scenarioTemplateIdsStr,
     scenarioParameterIdsStr,
     scenarioParameterFieldIdsStr,
     scenarioImageIdsStr,
@@ -761,11 +719,9 @@ function ScenarioComponent({
         questions_enabled_flag_id: formState.questions_enabled_flag_id,
         problem_statement_enabled_flag_id:
           formState.problem_statement_enabled_flag_id,
-        use_templates_flag_id: formState.use_templates_flag_id,
         department_ids: formState.department_ids,
         persona_ids: formState.persona_ids,
         document_ids: formState.document_ids,
-        template_document_ids: formState.template_ids,
         parameter_ids: formState.parameter_ids,
         field_ids: formState.parameter_field_ids,
         image_ids: formState.image_ids,
@@ -784,11 +740,9 @@ function ScenarioComponent({
       formState.video_enabled_flag_id,
       formState.questions_enabled_flag_id,
       formState.problem_statement_enabled_flag_id,
-      formState.use_templates_flag_id,
       departmentIdsStr,
       personaIdsStr,
       documentIdsStr,
-      templateIdsStr,
       parameterIdsStr,
       parameterFieldIdsStr,
       imageIdsStr,
@@ -893,7 +847,6 @@ function ScenarioComponent({
       departments: scenarioData.departments,
       personas: scenarioData.personas,
       documents: scenarioData.documents,
-      templates: scenarioData.templates,
       parameters: scenarioData.parameters,
       parameter_fields: scenarioData.parameter_fields,
       objectives: scenarioData.objectives,
@@ -914,7 +867,6 @@ function ScenarioComponent({
       images: !!formState.images_enabled_flag_id,
       videos: !!formState.video_enabled_flag_id,
       questions: !!formState.questions_enabled_flag_id,
-      templates: !!formState.use_templates_flag_id,
     }),
     [
       formState.problem_statement_enabled_flag_id,
@@ -922,7 +874,6 @@ function ScenarioComponent({
       formState.images_enabled_flag_id,
       formState.video_enabled_flag_id,
       formState.questions_enabled_flag_id,
-      formState.use_templates_flag_id,
     ]
   );
 
@@ -931,7 +882,6 @@ function ScenarioComponent({
   const showImagesSection = flagsEnabled.images;
   const showVideosSection = flagsEnabled.videos;
   const showQuestionsSection = flagsEnabled.questions;
-  const showTemplatesSection = flagsEnabled.templates;
 
   // Whether video mode is enabled - used for filtering personas/documents/parameters
   const videoEnabled = !!formState.video_enabled_flag_id;
@@ -975,12 +925,6 @@ function ScenarioComponent({
         case "documents":
           // ScenarioDocument doesn't have generated field in API
           return false;
-        case "templates":
-          return (
-            stableScenarioDataFields.templates?.current?.some(
-              (t: { generated?: boolean | null }) => t.generated
-            ) ?? false
-          );
         case "parameters":
           // ScenarioParameter doesn't have generated field in API
           return false;
@@ -1104,9 +1048,6 @@ function ScenarioComponent({
         problem_statement_ids: formState.problem_statement_id
           ? [formState.problem_statement_id]
           : null,
-        template_document_ids: formState.template_ids.length
-          ? formState.template_ids
-          : null,
         filter_department_ids: formState.department_ids.length
           ? formState.department_ids
           : null,
@@ -1139,7 +1080,6 @@ function ScenarioComponent({
       formState.video_enabled_flag_id,
       formState.document_ids,
       formState.problem_statement_id,
-      formState.template_ids,
       formState.department_ids,
       formState.persona_ids,
       formState.parameter_ids,
@@ -1167,7 +1107,6 @@ function ScenarioComponent({
       objectives: ["objectives"],
       personas: ["personas"],
       documents: ["documents"],
-      templates: ["templates"],
       parameters: ["parameters", "parameter_fields"],
       images: ["images"],
       videos: ["videos"],
@@ -1181,7 +1120,6 @@ function ScenarioComponent({
         "departments",
         "personas",
         "documents",
-        "templates",
         "parameters",
         "parameter_fields",
         "images",
@@ -1202,7 +1140,6 @@ function ScenarioComponent({
       departments: "Departments",
       personas: "Personas",
       documents: "Documents",
-      templates: "Templates",
       parameters: "Parameters",
       parameter_fields: "Parameter Fields",
       images: "Images",
@@ -1280,15 +1217,6 @@ function ScenarioComponent({
       });
     }
 
-    if (showTemplatesSection) {
-      items.push({
-        id: "templates",
-        title: "Templates",
-        description: "Select templates for the scenario.",
-        resetFields: ["templates", "templateSearch"],
-      });
-    }
-
     if (stableScenarioDataFields?.parameters?.show) {
       items.push({
         id: "parameters",
@@ -1331,7 +1259,6 @@ function ScenarioComponent({
     showObjectivesSection,
     stableScenarioDataFields?.personas?.show,
     stableScenarioDataFields?.documents?.show,
-    showTemplatesSection,
     stableScenarioDataFields?.parameters?.show,
     showImagesSection,
     showVideosSection,
@@ -1373,8 +1300,6 @@ function ScenarioComponent({
         return "Personas reset";
       case "documents":
         return "Documents reset";
-      case "templates":
-        return "Templates reset";
       case "parameters":
         return "Parameters reset";
       case "images":
@@ -1403,7 +1328,6 @@ function ScenarioComponent({
             video_enabled_flag_id: null,
             questions_enabled_flag_id: null,
             problem_statement_enabled_flag_id: null,
-            use_templates_flag_id: null,
           };
         case "problem_statement":
           return {
@@ -1424,11 +1348,6 @@ function ScenarioComponent({
           return {
             ...prev,
             document_ids: [],
-          };
-        case "templates":
-          return {
-            ...prev,
-            template_ids: [],
           };
         case "parameters":
           return {
@@ -1511,14 +1430,6 @@ function ScenarioComponent({
       }
 
       if (
-        stableScenarioDataFields?.templates?.required &&
-        formState.template_ids.length === 0
-      ) {
-        toast.error("Templates are required");
-        throw new Error("Templates are required");
-      }
-
-      if (
         stableScenarioDataFields?.parameters?.required &&
         formState.parameter_ids.length === 0
       ) {
@@ -1597,7 +1508,6 @@ function ScenarioComponent({
           departments: resourceActions["departments"] as SaveScenarioIn["body"]["departments"],
           personas: resourceActions["personas"] as SaveScenarioIn["body"]["personas"],
           documents: resourceActions["documents"] as SaveScenarioIn["body"]["documents"],
-          templates: resourceActions["templates"] as SaveScenarioIn["body"]["templates"],
           parameters: resourceActions["parameters"] as SaveScenarioIn["body"]["parameters"],
           parameter_fields: resourceActions["parameter_fields"] as SaveScenarioIn["body"]["parameter_fields"],
           images: resourceActions["images"] as SaveScenarioIn["body"]["images"],
@@ -1637,7 +1547,6 @@ function ScenarioComponent({
       stableScenarioDataFields?.departments?.required,
       stableScenarioDataFields?.personas?.required,
       stableScenarioDataFields?.documents?.required,
-      stableScenarioDataFields?.templates?.required,
       stableScenarioDataFields?.parameters?.required,
       stableScenarioDataFields?.images?.required,
       stableScenarioDataFields?.videos?.required,
@@ -1679,9 +1588,6 @@ function ScenarioComponent({
         case "documents":
           if (!hasName || !hasDescription) return "pending";
           return formState.document_ids.length > 0 ? "completed" : "active";
-        case "templates":
-          if (!hasName || !hasDescription) return "pending";
-          return formState.template_ids.length > 0 ? "completed" : "active";
         case "parameters":
           if (!hasName || !hasDescription) return "pending";
           return formState.parameter_ids.length > 0 ? "completed" : "active";
@@ -1742,8 +1648,6 @@ function ScenarioComponent({
         (formData["descriptionSearch"] as string | undefined) ?? "";
       const problemStatementSearch =
         (formData["problemStatementSearch"] as string | undefined) ?? "";
-      const templateSearch =
-        (formData["templateSearch"] as string | undefined) ?? "";
       const personaShowSelected =
         (formData["personaShowSelected"] as boolean | undefined) ?? false;
       const documentShowSelected =
@@ -1891,7 +1795,6 @@ function ScenarioComponent({
                     objectives_enabled:
                       formState.objectives_enabled_flag_id ?? null,
                     images_enabled: formState.images_enabled_flag_id ?? null,
-                    use_templates: formState.use_templates_flag_id ?? null,
                     questions_enabled:
                       formState.questions_enabled_flag_id ?? null,
                   }}
@@ -1907,7 +1810,6 @@ function ScenarioComponent({
                         "problem_statement_enabled_flag_id",
                       objectives_enabled: "objectives_enabled_flag_id",
                       images_enabled: "images_enabled_flag_id",
-                      use_templates: "use_templates_flag_id",
                       questions_enabled: "questions_enabled_flag_id",
                     };
                     const field = fieldMap[key];
@@ -2186,71 +2088,6 @@ function ScenarioComponent({
                   onReject={() => clearAiResource("document_resources")}
                 />
               </div>
-            </StepCard>
-          );
-        case "templates":
-          return (
-            <StepCard
-              stepStatus={stepStatus}
-              stepNumber={stepNumber}
-              stepTitle={stepTitle}
-              stepDescription={stepDescription}
-              isReadonly={disabled}
-              isEditMode={isEditMode}
-              searchTerm={templateSearch}
-              onSearchChange={(term: string) =>
-                setFormData({ templateSearch: term || null })
-              }
-              searchPlaceholder="Search templates..."
-              debounceMs={300}
-              resetFields={["templates"]}
-              actions={
-                stepResources["templates"]?.length &&
-                (s?.templates?.show_ai_generate ?? false) ? (
-                  <StepCardAiButton
-                    stepId="templates"
-                    resourceTypes={stepResources["templates"]}
-                    canRegenerate={canRegenerate}
-                    isGenerating={isGeneratingStepResource}
-                    onOpenModal={handleOpenStepCardModal}
-                    disabled={disabled}
-                  />
-                ) : undefined
-              }
-              {...resetProps}
-            >
-              <Templates
-                template_ids={formState.template_ids}
-                template_resources={
-                  s?.templates?.current ?? []
-                }
-                show_templates={showTemplatesSection}
-                template_suggestions={
-                  s?.templates?.suggestions ?? []
-                }
-                templates={s?.templates?.resources ?? []}
-                searchTerm={templateSearch}
-                disabled={disabled}
-                onChange={(ids) =>
-                  setFormState((prev) => ({ ...prev, template_ids: ids }))
-                }
-                group_id={s?.group_id ?? null}
-                required={s?.templates?.required ?? false}
-                createTemplatesAction={
-                  createTemplatesAction as
-                    | ((
-                        input: CreateDraftTemplatesIn
-                      ) => Promise<CreateDraftTemplatesOut>)
-                    | undefined
-                }
-                onGenerate={generateHandlers["templates"]}
-                isGenerating={isGenerating("templates")}
-                isAutosaveEnabled={isAutosaveEnabled}
-                registerFlush={registerFlushCallbacks["templates"]}
-                aiTemplateResources={aiFormData.template_resources ?? null}
-                onAccept={() => clearAiResource("template_resources")}
-                onReject={() => clearAiResource("template_resources")}
-              />
             </StepCard>
           );
         case "parameters":
@@ -2548,7 +2385,6 @@ function ScenarioComponent({
       createDescriptionsAction,
       createProblemStatementsAction,
       createObjectivesAction,
-      createTemplatesAction,
       createParameterFieldsAction,
       createImagesAction,
       createVideosAction,
@@ -2564,7 +2400,6 @@ function ScenarioComponent({
       handleConditionalParameterToggle,
       showObjectivesSection,
       showProblemStatementSection,
-      showTemplatesSection,
       aiFormData,
       clearAiResource,
       videoEnabled,

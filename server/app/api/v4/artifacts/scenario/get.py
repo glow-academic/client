@@ -48,9 +48,7 @@ from app.api.v4.artifacts.scenario.permissions import (
     compute_show_personas,
     compute_show_problem_statement,
     compute_show_questions,
-    compute_show_templates,
     compute_show_videos,
-    compute_templates_required,
     compute_videos_required,
     has_access,
 )
@@ -73,7 +71,6 @@ from app.api.v4.artifacts.scenario.types import (
     ScenarioQuestionSection,
     ScenarioResourceBucket,
     ScenarioResources,
-    ScenarioTemplateSection,
     ScenarioVideoSection,
     ScenarioWebsocketResources,
     ScenarioWebsocketViews,
@@ -111,8 +108,6 @@ from app.api.v4.resources.problem_statements.search import (
 )
 from app.api.v4.resources.questions.get import get_questions_internal
 from app.api.v4.resources.questions.search import search_questions_internal
-from app.api.v4.resources.templates.get import get_templates_internal
-from app.api.v4.resources.templates.search import search_templates_internal
 from app.api.v4.resources.tools.get import get_tools_internal
 from app.api.v4.resources.videos.get import get_videos_internal
 from app.api.v4.resources.videos.search import search_videos_internal
@@ -144,7 +139,6 @@ SCENARIO_FLAG_LABELS = {
     "problem_statement_enabled": "Problem Statement",
     "objectives_enabled": "Objectives",
     "images_enabled": "Images",
-    "use_templates": "Templates",
     "questions_enabled": "Questions",
 }
 
@@ -249,7 +243,6 @@ async def get_scenario_internal(
     document_search: str | None = None,
     parameter_search: str | None = None,
     problem_statement_search: str | None = None,
-    template_search: str | None = None,
     image_search: str | None = None,
     video_search: str | None = None,
     question_search: str | None = None,
@@ -404,7 +397,6 @@ async def get_scenario_internal(
         "images": ids_result.images_domain_id,
         "videos": ids_result.videos_domain_id,
         "questions": ids_result.questions_domain_id,
-        "templates": ids_result.templates_domain_id,
     }
 
     # === COMPUTE SHOW_AI_GENERATE FLAGS ===
@@ -460,7 +452,6 @@ async def get_scenario_internal(
     selected_image_ids = ids_result.image_ids or []
     selected_video_ids = ids_result.video_ids or []
     selected_question_ids = ids_result.question_ids or []
-    selected_template_ids = ids_result.template_ids or []
 
     # Draft values override canonical junction values
     if draft_item is not None:
@@ -478,8 +469,6 @@ async def get_scenario_internal(
             selected_parameter_ids = draft_item.parameter_ids
         if draft_item.parameter_field_ids:
             selected_parameter_field_ids = draft_item.parameter_field_ids
-        if draft_item.template_ids:
-            selected_template_ids = draft_item.template_ids
         if draft_item.question_ids:
             selected_question_ids = draft_item.question_ids
 
@@ -498,7 +487,6 @@ async def get_scenario_internal(
         "images": draft_item.group_id if draft_item else None,
         "videos": draft_item.group_id if draft_item else None,
         "questions": draft_item.group_id if draft_item else None,
-        "templates": draft_item.group_id if draft_item else None,
     }
 
     # Parallel fetch all resources
@@ -559,7 +547,6 @@ async def get_scenario_internal(
         "problem_statement_enabled",
         "objectives_enabled",
         "images_enabled",
-        "scenario_use_templates",
         "questions_enabled",
     }
 
@@ -576,7 +563,6 @@ async def get_scenario_internal(
                     ids_result.video_enabled_flag_id,
                     ids_result.questions_enabled_flag_id,
                     ids_result.problem_statement_enabled_flag_id,
-                    ids_result.use_templates_flag_id,
                 ]
                 if fid
             ]
@@ -728,21 +714,6 @@ async def get_scenario_internal(
             )
             return (selected, suggestions)
 
-    async def fetch_templates():
-        async with pool.acquire() as c:
-            selected = await get_templates_internal(
-                c, selected_template_ids, bypass_cache
-            )
-            suggestions = await search_templates_internal(
-                c,
-                template_search,
-                20,
-                0,
-                selected_template_ids,
-                bypass_cache,
-            )
-            return (selected, suggestions)
-
     # === TWO-PHASE FETCH ===
     # Phase 1a: Fetch scenario parameters FIRST to get all scenario parameter IDs
     (parameters_selected, parameters_suggestions) = await fetch_parameters()
@@ -786,7 +757,6 @@ async def get_scenario_internal(
         (images_selected, images_suggestions),
         (videos_selected, videos_suggestions),
         (questions_selected, questions_suggestions),
-        (templates_selected, templates_suggestions),
     ) = await asyncio.gather(
         fetch_names(),
         fetch_descriptions(),
@@ -800,7 +770,6 @@ async def get_scenario_internal(
         fetch_images(),
         fetch_videos(),
         fetch_questions(),
-        fetch_templates(),
     )
 
     # === VIDEO PARAMETER COMPUTATION ===
@@ -886,7 +855,6 @@ async def get_scenario_internal(
     images = _dedupe_by_id(images_selected + images_suggestions, "image_id")
     videos = _dedupe_by_id(videos_selected + videos_suggestions, "video_id")
     questions = _dedupe_by_id(questions_selected + questions_suggestions, "question_id")
-    templates = _dedupe_by_id(templates_selected + templates_suggestions, "template_id")
 
     # Compute final show flags
     show_name = compute_show_name()
@@ -902,7 +870,6 @@ async def get_scenario_internal(
     show_images = compute_show_images(len(images))
     show_videos = compute_show_videos(len(videos))
     show_questions = compute_show_questions(len(questions))
-    show_templates = compute_show_templates(len(templates))
 
     show_flags_map = {
         "names": show_name,
@@ -918,7 +885,6 @@ async def get_scenario_internal(
         "images": show_images,
         "videos": show_videos,
         "questions": show_questions,
-        "templates": show_templates,
     }
 
     required_flags_map = {
@@ -935,7 +901,6 @@ async def get_scenario_internal(
         "images": compute_images_required(),
         "videos": compute_videos_required(),
         "questions": compute_questions_required(),
-        "templates": compute_templates_required(),
     }
 
     # Build rich domain metadata for client display
@@ -1046,7 +1011,6 @@ async def get_scenario_internal(
     image_resources = images_selected
     video_resources = videos_selected
     question_resources = questions_selected
-    template_resources = templates_selected
 
     # Build resources payload
     resources_payload = ScenarioResources(
@@ -1064,7 +1028,6 @@ async def get_scenario_internal(
             images=[_to_dict(i) for i in images],
             videos=[_to_dict(v) for v in videos],
             questions=[_to_dict(q) for q in questions],
-            templates=[_to_dict(t) for t in templates],
         ),
         current=ScenarioResourceBucket(
             names=[_to_dict(name_resource)] if name_resource else [],
@@ -1085,7 +1048,6 @@ async def get_scenario_internal(
                     ids_result.video_enabled_flag_id,
                     ids_result.questions_enabled_flag_id,
                     ids_result.problem_statement_enabled_flag_id,
-                    ids_result.use_templates_flag_id,
                 }
                 - {None}
             ],
@@ -1098,7 +1060,6 @@ async def get_scenario_internal(
             images=[_to_dict(i) for i in image_resources],
             videos=[_to_dict(v) for v in video_resources],
             questions=[_to_dict(q) for q in question_resources],
-            templates=[_to_dict(t) for t in template_resources],
         ),
     )
 
@@ -1117,7 +1078,6 @@ async def get_scenario_internal(
         "images": [i.image_id for i in images_suggestions],
         "videos": [v.video_id for v in videos_suggestions],
         "questions": [q.question_id for q in questions_suggestions],
-        "templates": [t.template_id for t in templates_suggestions],
     }
 
     # Validation for new mode
@@ -1287,7 +1247,6 @@ async def get_scenario_websocket(
             departments=current.departments if current else None,
             personas=current.personas if current else None,
             documents=current.documents if current else None,
-            templates=current.templates if current else None,
             parameters=current.parameters if current else None,
             parameter_fields=current.parameter_fields if current else None,
             objectives=current.objectives if current else None,
@@ -1318,7 +1277,6 @@ async def get_scenario_client(
     document_search: str | None = None,
     parameter_search: str | None = None,
     problem_statement_search: str | None = None,
-    template_search: str | None = None,
     image_search: str | None = None,
     video_search: str | None = None,
     question_search: str | None = None,
@@ -1341,7 +1299,6 @@ async def get_scenario_client(
         document_search=document_search,
         parameter_search=parameter_search,
         problem_statement_search=problem_statement_search,
-        template_search=template_search,
         image_search=image_search,
         video_search=video_search,
         question_search=question_search,
@@ -1420,11 +1377,6 @@ async def get_scenario_client(
             current=(current_bucket.documents if current_bucket else None),
             resources=(resources_bucket.documents if resources_bucket else None),
             **section_common("documents"),
-        ),
-        templates=ScenarioTemplateSection(
-            current=(current_bucket.templates if current_bucket else None),
-            resources=(resources_bucket.templates if resources_bucket else None),
-            **section_common("templates"),
         ),
         parameters=ScenarioParameterSection(
             current=(current_bucket.parameters if current_bucket else None),
@@ -1511,7 +1463,6 @@ async def get_scenario(
             document_search=request.document_search,
             parameter_search=request.parameter_search,
             problem_statement_search=request.problem_statement_search,
-            template_search=request.template_search,
             image_search=request.image_search,
             video_search=request.video_search,
             question_search=request.question_search,

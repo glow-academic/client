@@ -92,7 +92,6 @@ class ChatViewItem(BaseModel):
     responses: list[ResponseItem] | None = None
 
     # Resource IDs - Both Views (plural arrays)
-    template_ids: list[UUID] | None = None
     image_ids: list[UUID] | None = None
     video_ids: list[UUID] | None = None
     document_ids: list[UUID] | None = None

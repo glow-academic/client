@@ -290,8 +290,6 @@ export interface ContentSectionProps {
     upload_id?: string | null;
     [key: string]: unknown;
   }>;
-  templateDocumentIds: string[];
-
   // Personas (for preview)
   selectedPersonaIds: string[];
   personaMapping: Record<string, PersonaMappingItem>;
@@ -377,7 +375,6 @@ export function ContentSection({
   documentMapping,
   initialScenarioPreviewDocumentId = null,
   documentDetails,
-  templateDocumentIds: _templateDocumentIds,
   selectedPersonaIds,
   personaMapping,
   onProblemStatementChange,
@@ -2364,7 +2361,7 @@ export function ContentSection({
 
                   const handleDocumentDelete = () => {
                     if (isReadonly) return;
-                    // Remove document from selection (updates currentDocumentIds or templateDocumentIds)
+                    // Remove document from selection
                     onDocumentRemove(docId);
                     // Handle preview switching
                     const currentIndex = allPreviewDocumentIds.indexOf(docId);

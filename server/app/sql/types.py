@@ -14192,6 +14192,31 @@ class DescriptionsApiResponse(BaseModel):
 
 
 
+# Generated from: get_document_html
+
+class GetDocumentHtmlSqlParams(BaseModel):
+
+    p_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_id,
+        )
+
+class GetDocumentHtmlSqlRow(BaseModel):
+
+    html: str | None = None
+
+class GetDocumentHtmlApiRequest(BaseModel):
+
+    p_id: UUID
+
+class GetDocumentHtmlApiResponse(BaseModel):
+
+    html: str | None = None
+
+
+
 # Generated from: get_document_resource
 
 class GetDocumentResourceSqlParams(BaseModel):
@@ -14246,6 +14271,7 @@ class QGetDocumentsV4Item(BaseModel):
     mime_type: str | None
     generated: bool | None
     upload_id: UUID | None
+    html: bool | None
 
 class GetDocumentsSqlRow(BaseModel):
 
@@ -18695,7 +18721,6 @@ class QGetScenariosV4Item(BaseModel):
     video_enabled: bool | None
     images_enabled: bool | None
     questions_enabled: bool | None
-    templates_enabled: bool | None
     persona_ids: list[UUID] | None
 
 class GetScenariosSqlRow(BaseModel):
@@ -19468,170 +19493,6 @@ class SearchTemperatureLevelsApiRequest(BaseModel):
 class SearchTemperatureLevelsApiResponse(BaseModel):
 
     items: list[QGetTemperatureLevelsV4Item] | None = None
-
-
-
-# Generated from: get_template
-
-class GetTemplateSqlParams(BaseModel):
-
-    id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.id,
-        )
-
-class QGetTemplateResourceV4Item(BaseModel):
-
-    template_id: UUID | None
-    name: str | None
-    description: str | None
-    html: str | None
-    generated: bool | None
-
-class GetTemplateSqlRow(BaseModel):
-
-    items: list[QGetTemplateResourceV4Item] | None = None
-
-class GetTemplateApiRequest(BaseModel):
-
-    id: UUID
-
-class GetTemplateApiResponse(BaseModel):
-
-    items: list[QGetTemplateResourceV4Item] | None = None
-
-
-
-# Generated from: get_template_html
-
-class GetTemplateHtmlSqlParams(BaseModel):
-
-    id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.id,
-        )
-
-class GetTemplateHtmlSqlRow(BaseModel):
-
-    html: str | None = None
-
-class GetTemplateHtmlApiRequest(BaseModel):
-
-    id: UUID
-
-class GetTemplateHtmlApiResponse(BaseModel):
-
-    html: str | None = None
-
-
-
-# Generated from: get_templates
-
-class GetTemplatesSqlParams(BaseModel):
-
-    p_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_ids,
-        )
-
-class QGetTemplatesV4Item(BaseModel):
-
-    template_id: UUID | None
-    name: str | None
-    description: str | None
-    generated: bool | None
-
-class GetTemplatesSqlRow(BaseModel):
-
-    items: list[QGetTemplatesV4Item] | None = None
-
-class GetTemplatesApiRequest(BaseModel):
-
-    p_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-class GetTemplatesApiResponse(BaseModel):
-
-    items: list[QGetTemplatesV4Item] | None = None
-
-
-
-# Generated from: search_templates
-
-class SearchTemplatesSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.exclude_ids,
-        )
-
-class SearchTemplatesSqlRow(BaseModel):
-
-    items: list[QGetTemplatesV4Item] | None = None
-
-class SearchTemplatesApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-class SearchTemplatesApiResponse(BaseModel):
-
-    items: list[QGetTemplatesV4Item] | None = None
-
-
-
-# Generated from: templates
-
-class TemplatesSqlParams(BaseModel):
-
-    agent_id: UUID
-    group_id: UUID
-    name: str
-    html: str | None = None
-    description: str | None = None
-    mcp: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.agent_id,
-            self.group_id,
-            self.name,
-            self.html,
-            self.description,
-            self.mcp,
-        )
-
-class TemplatesSqlRow(BaseModel):
-
-    template_id: UUID | None = None
-
-class TemplatesApiRequest(BaseModel):
-
-    agent_id: UUID
-    group_id: UUID
-    name: str
-    html: str | None = None
-    description: str | None = None
-    mcp: bool | None = False
-
-class TemplatesApiResponse(BaseModel):
-
-    template_id: UUID | None = None
 
 
 
@@ -21556,7 +21417,6 @@ class GetScenarioIdsSqlRow(BaseModel):
     video_enabled_flag_id: UUID | None = None
     questions_enabled_flag_id: UUID | None = None
     problem_statement_enabled_flag_id: UUID | None = None
-    use_templates_flag_id: UUID | None = None
     department_ids: list[UUID] | None = None
     persona_ids: list[UUID] | None = None
     document_ids: list[UUID] | None = None
@@ -21566,7 +21426,6 @@ class GetScenarioIdsSqlRow(BaseModel):
     image_ids: list[UUID] | None = None
     video_ids: list[UUID] | None = None
     question_ids: list[UUID] | None = None
-    template_ids: list[UUID] | None = None
     name_suggestions: list[UUID] | None = None
     description_suggestions: list[UUID] | None = None
     problem_statement_suggestions: list[UUID] | None = None
@@ -21577,7 +21436,6 @@ class GetScenarioIdsSqlRow(BaseModel):
     image_suggestions: list[UUID] | None = None
     video_suggestions: list[UUID] | None = None
     question_suggestions: list[UUID] | None = None
-    template_suggestions: list[UUID] | None = None
     candidate_agents: Any | None = None
     names_has_tools: bool | None = None
     descriptions_has_tools: bool | None = None
@@ -21591,7 +21449,6 @@ class GetScenarioIdsSqlRow(BaseModel):
     images_has_tools: bool | None = None
     videos_has_tools: bool | None = None
     questions_has_tools: bool | None = None
-    templates_has_tools: bool | None = None
     video_enabled_value: bool | None = None
     name_domain_id: UUID | None = None
     description_domain_id: UUID | None = None
@@ -21606,7 +21463,6 @@ class GetScenarioIdsSqlRow(BaseModel):
     images_domain_id: UUID | None = None
     videos_domain_id: UUID | None = None
     questions_domain_id: UUID | None = None
-    templates_domain_id: UUID | None = None
 
 class GetScenarioIdsApiRequest(BaseModel):
 
@@ -21626,7 +21482,6 @@ class GetScenarioIdsApiResponse(BaseModel):
     video_enabled_flag_id: UUID | None = None
     questions_enabled_flag_id: UUID | None = None
     problem_statement_enabled_flag_id: UUID | None = None
-    use_templates_flag_id: UUID | None = None
     department_ids: list[UUID] | None = None
     persona_ids: list[UUID] | None = None
     document_ids: list[UUID] | None = None
@@ -21636,7 +21491,6 @@ class GetScenarioIdsApiResponse(BaseModel):
     image_ids: list[UUID] | None = None
     video_ids: list[UUID] | None = None
     question_ids: list[UUID] | None = None
-    template_ids: list[UUID] | None = None
     name_suggestions: list[UUID] | None = None
     description_suggestions: list[UUID] | None = None
     problem_statement_suggestions: list[UUID] | None = None
@@ -21647,7 +21501,6 @@ class GetScenarioIdsApiResponse(BaseModel):
     image_suggestions: list[UUID] | None = None
     video_suggestions: list[UUID] | None = None
     question_suggestions: list[UUID] | None = None
-    template_suggestions: list[UUID] | None = None
     candidate_agents: Any | None = None
     names_has_tools: bool | None = None
     descriptions_has_tools: bool | None = None
@@ -21661,7 +21514,6 @@ class GetScenarioIdsApiResponse(BaseModel):
     images_has_tools: bool | None = None
     videos_has_tools: bool | None = None
     questions_has_tools: bool | None = None
-    templates_has_tools: bool | None = None
     video_enabled_value: bool | None = None
     name_domain_id: UUID | None = None
     description_domain_id: UUID | None = None
@@ -21676,7 +21528,6 @@ class GetScenarioIdsApiResponse(BaseModel):
     images_domain_id: UUID | None = None
     videos_domain_id: UUID | None = None
     questions_domain_id: UUID | None = None
-    templates_domain_id: UUID | None = None
 
 
 
@@ -21709,7 +21560,6 @@ class GetScenarioResourceIdsByGroupIdSqlRow(BaseModel):
     department_ids: list[UUID] | None = None
     persona_ids: list[UUID] | None = None
     document_ids: list[UUID] | None = None
-    template_ids: list[UUID] | None = None
     parameter_ids: list[UUID] | None = None
     field_ids: list[UUID] | None = None
     image_ids: list[UUID] | None = None
@@ -21733,7 +21583,6 @@ class GetScenarioResourceIdsByGroupIdApiResponse(BaseModel):
     department_ids: list[UUID] | None = None
     persona_ids: list[UUID] | None = None
     document_ids: list[UUID] | None = None
-    template_ids: list[UUID] | None = None
     parameter_ids: list[UUID] | None = None
     field_ids: list[UUID] | None = None
     image_ids: list[UUID] | None = None
@@ -21771,7 +21620,6 @@ class PatchScenarioDraftSqlParams(BaseModel):
     departments: ScenarioMultiResourceAction | None = None
     personas: ScenarioMultiResourceAction | None = None
     documents: ScenarioMultiResourceAction | None = None
-    templates: ScenarioMultiResourceAction | None = None
     parameters: ScenarioMultiResourceAction | None = None
     parameter_fields: ScenarioMultiResourceAction | None = None
     images: ScenarioMultiResourceAction | None = None
@@ -21792,7 +21640,6 @@ class PatchScenarioDraftSqlParams(BaseModel):
             self.departments,
             self.personas,
             self.documents,
-            self.templates,
             self.parameters,
             self.parameter_fields,
             self.images,
@@ -21819,7 +21666,6 @@ class PatchScenarioDraftApiRequest(BaseModel):
     departments: ScenarioMultiResourceAction | None = None
     personas: ScenarioMultiResourceAction | None = None
     documents: ScenarioMultiResourceAction | None = None
-    templates: ScenarioMultiResourceAction | None = None
     parameters: ScenarioMultiResourceAction | None = None
     parameter_fields: ScenarioMultiResourceAction | None = None
     images: ScenarioMultiResourceAction | None = None
@@ -21850,7 +21696,6 @@ class SaveScenarioSqlParams(BaseModel):
     departments: ScenarioMultiResourceAction | None = None
     personas: ScenarioMultiResourceAction | None = None
     documents: ScenarioMultiResourceAction | None = None
-    templates: ScenarioMultiResourceAction | None = None
     parameters: ScenarioMultiResourceAction | None = None
     parameter_fields: ScenarioMultiResourceAction | None = None
     images: ScenarioMultiResourceAction | None = None
@@ -21870,7 +21715,6 @@ class SaveScenarioSqlParams(BaseModel):
             self.departments,
             self.personas,
             self.documents,
-            self.templates,
             self.parameters,
             self.parameter_fields,
             self.images,
@@ -21895,7 +21739,6 @@ class SaveScenarioApiRequest(BaseModel):
     departments: ScenarioMultiResourceAction | None = None
     personas: ScenarioMultiResourceAction | None = None
     documents: ScenarioMultiResourceAction | None = None
-    templates: ScenarioMultiResourceAction | None = None
     parameters: ScenarioMultiResourceAction | None = None
     parameter_fields: ScenarioMultiResourceAction | None = None
     images: ScenarioMultiResourceAction | None = None
@@ -23250,7 +23093,6 @@ class QGetSimulationV4ScenarioResource(BaseModel):
     video_enabled: bool | None
     images_enabled: bool | None
     questions_enabled: bool | None
-    templates_enabled: bool | None
 
 
 
@@ -25048,7 +24890,6 @@ class PatchTrainingBundleDraftSqlParams(BaseModel):
     options: TrainingBundleMultiResourceAction | None = None
     videos: TrainingBundleMultiResourceAction | None = None
     images: TrainingBundleMultiResourceAction | None = None
-    templates: TrainingBundleMultiResourceAction | None = None
     problem_statements: TrainingBundleMultiResourceAction | None = None
     objectives: TrainingBundleMultiResourceAction | None = None
     expected_version: int | None = 0
@@ -25068,7 +24909,6 @@ class PatchTrainingBundleDraftSqlParams(BaseModel):
             self.options,
             self.videos,
             self.images,
-            self.templates,
             self.problem_statements,
             self.objectives,
             self.expected_version,
@@ -25094,7 +24934,6 @@ class PatchTrainingBundleDraftApiRequest(BaseModel):
     options: TrainingBundleMultiResourceAction | None = None
     videos: TrainingBundleMultiResourceAction | None = None
     images: TrainingBundleMultiResourceAction | None = None
-    templates: TrainingBundleMultiResourceAction | None = None
     problem_statements: TrainingBundleMultiResourceAction | None = None
     objectives: TrainingBundleMultiResourceAction | None = None
     expected_version: int | None = 0
@@ -26165,7 +26004,6 @@ class QGetAttemptChatsViewV4Item(BaseModel):
     question_ids: list[UUID] | None
     option_ids: list[UUID] | None
     responses: list[QGetAttemptChatsViewV4Response] | None
-    template_ids: list[UUID] | None
     image_ids: list[UUID] | None
     video_ids: list[UUID] | None
     document_ids: list[UUID] | None
@@ -27085,7 +26923,6 @@ class QGetDraftScenarioViewV4Item(BaseModel):
     document_ids: list[UUID] | None
     parameter_ids: list[UUID] | None
     parameter_field_ids: list[UUID] | None
-    template_ids: list[UUID] | None
     question_ids: list[UUID] | None
 
 class GetDraftScenarioViewSqlRow(BaseModel):
@@ -27263,7 +27100,6 @@ class QGetDraftTrainingViewV4Item(BaseModel):
     option_ids: list[UUID] | None
     video_ids: list[UUID] | None
     image_ids: list[UUID] | None
-    template_ids: list[UUID] | None
     problem_statement_ids: list[UUID] | None
     objective_ids: list[UUID] | None
 
@@ -27310,7 +27146,6 @@ class GetTrainingBundleViewSqlRow(BaseModel):
     option_ids: list[UUID] | None = None
     video_ids: list[UUID] | None = None
     image_ids: list[UUID] | None = None
-    template_ids: list[UUID] | None = None
     problem_statement_ids: list[UUID] | None = None
     objective_ids: list[UUID] | None = None
     video_enabled: bool | None = None
@@ -27318,7 +27153,6 @@ class GetTrainingBundleViewSqlRow(BaseModel):
     objectives_enabled: bool | None = None
     images_enabled: bool | None = None
     questions_enabled: bool | None = None
-    use_templates: bool | None = None
 
 class GetTrainingBundleViewApiRequest(BaseModel):
 
@@ -27341,7 +27175,6 @@ class GetTrainingBundleViewApiResponse(BaseModel):
     option_ids: list[UUID] | None = None
     video_ids: list[UUID] | None = None
     image_ids: list[UUID] | None = None
-    template_ids: list[UUID] | None = None
     problem_statement_ids: list[UUID] | None = None
     objective_ids: list[UUID] | None = None
     video_enabled: bool | None = None
@@ -27349,7 +27182,6 @@ class GetTrainingBundleViewApiResponse(BaseModel):
     objectives_enabled: bool | None = None
     images_enabled: bool | None = None
     questions_enabled: bool | None = None
-    use_templates: bool | None = None
 
 
 
@@ -29238,6 +29070,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "DescriptionsApiRequest",
         "DescriptionsApiResponse",
     ),
+    "app/sql/v4/queries/resources/documents/get_document_html_complete.sql": (
+        "GetDocumentHtmlSqlParams",
+        "GetDocumentHtmlSqlRow",
+        "GetDocumentHtmlApiRequest",
+        "GetDocumentHtmlApiResponse",
+    ),
     "app/sql/v4/queries/resources/documents/get_document_resource_complete.sql": (
         "GetDocumentResourceSqlParams",
         "GetDocumentResourceSqlRow",
@@ -30155,36 +29993,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SearchTemperatureLevelsSqlRow",
         "SearchTemperatureLevelsApiRequest",
         "SearchTemperatureLevelsApiResponse",
-    ),
-    "app/sql/v4/queries/resources/templates/get_template_complete.sql": (
-        "GetTemplateSqlParams",
-        "GetTemplateSqlRow",
-        "GetTemplateApiRequest",
-        "GetTemplateApiResponse",
-    ),
-    "app/sql/v4/queries/resources/templates/get_template_html_complete.sql": (
-        "GetTemplateHtmlSqlParams",
-        "GetTemplateHtmlSqlRow",
-        "GetTemplateHtmlApiRequest",
-        "GetTemplateHtmlApiResponse",
-    ),
-    "app/sql/v4/queries/resources/templates/get_templates_complete.sql": (
-        "GetTemplatesSqlParams",
-        "GetTemplatesSqlRow",
-        "GetTemplatesApiRequest",
-        "GetTemplatesApiResponse",
-    ),
-    "app/sql/v4/queries/resources/templates/search_templates_complete.sql": (
-        "SearchTemplatesSqlParams",
-        "SearchTemplatesSqlRow",
-        "SearchTemplatesApiRequest",
-        "SearchTemplatesApiResponse",
-    ),
-    "app/sql/v4/queries/resources/templates_complete.sql": (
-        "TemplatesSqlParams",
-        "TemplatesSqlRow",
-        "TemplatesApiRequest",
-        "TemplatesApiResponse",
     ),
     "app/sql/v4/queries/resources/texts/get_texts_complete.sql": (
         "GetTextsSqlParams",
@@ -32644,6 +32452,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/documents/get_document_html_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/documents/get_document_resource_complete.sql"]
     ) -> SqlString: ...
 
@@ -33405,31 +33218,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/temperature_levels/search_temperature_levels_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/resources/templates/get_template_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/resources/templates/get_template_html_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/resources/templates/get_templates_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/resources/templates/search_templates_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/resources/templates_complete.sql"]
     ) -> SqlString: ...
 
     @overload

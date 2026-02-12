@@ -119,6 +119,9 @@ router.include_router(domains_search_router)
 from app.api.v4.resources.documents.get import router as documents_get_router
 
 router.include_router(documents_get_router)
+from app.api.v4.resources.documents.html import router as documents_html_router
+
+router.include_router(documents_html_router)
 from app.api.v4.resources.documents.search import router as documents_search_router
 
 router.include_router(documents_search_router)
@@ -605,15 +608,7 @@ from app.api.v4.resources.temperature_levels.search import (
 
 router.include_router(temperature_levels_get_router)
 router.include_router(temperature_levels_search_router)
-from app.api.v4.resources.templates.create import router as templates_router
-from app.api.v4.resources.templates.get import router as templates_get_router
-from app.api.v4.resources.templates.html import router as templates_html_router
-from app.api.v4.resources.templates.search import router as templates_search_router
-
-router.include_router(templates_router)
-router.include_router(templates_get_router)
-router.include_router(templates_html_router)
-router.include_router(templates_search_router)
+# NOTE: templates removed - consolidated into documents (migration 444)
 # NOTE: thresholds removed - non-creatable (migration 328)
 # GET/Search endpoints available for two-pass architecture
 from app.api.v4.resources.thresholds.get import router as thresholds_get_router

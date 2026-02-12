@@ -17,7 +17,6 @@ from app.api.v4.resources.parameters.get import get_parameters_internal
 from app.api.v4.resources.personas.get import get_personas_internal
 from app.api.v4.resources.problem_statements.get import get_problem_statements_internal
 from app.api.v4.resources.questions.get import get_questions_internal
-from app.api.v4.resources.templates.get import get_templates_internal
 from app.api.v4.resources.videos.get import get_videos_internal
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
@@ -128,9 +127,6 @@ async def handle_scenario_artifact_complete(data: dict[str, Any]) -> None:
             elif resource_type == "documents":
                 items = await get_documents_internal(conn, [resource_id])
                 event.document_resources = items if items else None
-            elif resource_type == "templates":
-                items = await get_templates_internal(conn, [resource_id])
-                event.template_resources = items if items else None
             elif resource_type == "objectives":
                 items = await get_objectives_internal(conn, [resource_id])
                 event.objective_resources = items if items else None

@@ -1,6 +1,7 @@
-"""Templates HTML endpoint - v4 API.
+"""Documents HTML endpoint - v4 API.
 
-Provides endpoint for fetching template HTML content by ID.
+Provides endpoint for fetching document HTML content by ID.
+Replaces the old templates/html endpoint after template->document consolidation.
 """
 
 from typing import Annotated, Any, cast
@@ -18,7 +19,7 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/v4/queries/resources/templates/get_template_html_complete.sql"
+SQL_PATH = "app/sql/v4/queries/resources/documents/get_document_html_complete.sql"
 
 router = APIRouter()
 
@@ -28,20 +29,20 @@ router = APIRouter()
 # =============================================================================
 
 
-class GetTemplateHtmlApiRequest(BaseModel):
-    """Request for getting template HTML by ID."""
+class GetDocumentHtmlApiRequest(BaseModel):
+    """Request for getting document HTML by ID."""
 
     id: UUID
 
 
-class GetTemplateHtmlApiResponse(BaseModel):
-    """Response for getting template HTML."""
+class GetDocumentHtmlApiResponse(BaseModel):
+    """Response for getting document HTML."""
 
     html: str | None = None
 
 
-class GetTemplateHtmlSqlParams(BaseModel):
-    """SQL parameters for get template HTML."""
+class GetDocumentHtmlSqlParams(BaseModel):
+    """SQL parameters for get document HTML."""
 
     id: UUID
 
@@ -49,8 +50,8 @@ class GetTemplateHtmlSqlParams(BaseModel):
         return (self.id,)
 
 
-class GetTemplateHtmlSqlRow(BaseModel):
-    """SQL row for get template HTML."""
+class GetDocumentHtmlSqlRow(BaseModel):
+    """SQL row for get document HTML."""
 
     html: str | None = None
 
@@ -60,22 +61,22 @@ class GetTemplateHtmlSqlRow(BaseModel):
 # =============================================================================
 
 
-async def get_template_html_internal(
+async def get_document_html_internal(
     conn: asyncpg.Connection,
     id: UUID,
     bypass_cache: bool = False,
 ) -> str | None:
-    """Internal function for fetching template HTML."""
-    cache_key_val = cache_key("templates/html", {"id": str(id)})
+    """Internal function for fetching document HTML."""
+    cache_key_val = cache_key("documents/html", {"id": str(id)})
 
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
         if cached:
             return cached.get("html")
 
-    params = GetTemplateHtmlSqlParams(id=id)
+    params = GetDocumentHtmlSqlParams(id=id)
     result = cast(
-        GetTemplateHtmlSqlRow | None,
+        GetDocumentHtmlSqlRow | None,
         await execute_sql_typed(conn, SQL_PATH, params=params),
     )
 
@@ -85,7 +86,7 @@ async def get_template_html_internal(
         cache_key_val,
         {"html": html},
         ttl=60,
-        tags=["templates"],
+        tags=["documents"],
     )
 
     return html
@@ -97,23 +98,23 @@ async def get_template_html_internal(
 
 
 @router.post(
-    "/templates/html",
-    response_model=GetTemplateHtmlApiResponse,
+    "/documents/html",
+    response_model=GetDocumentHtmlApiResponse,
 )
-async def get_template_html(
-    request: GetTemplateHtmlApiRequest,
+async def get_document_html(
+    request: GetDocumentHtmlApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> GetTemplateHtmlApiResponse:
-    """Get template HTML by ID."""
-    tags = ["resources", "templates"]
+) -> GetDocumentHtmlApiResponse:
+    """Get document HTML by ID."""
+    tags = ["resources", "documents"]
 
     try:
         bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
-        html = await get_template_html_internal(conn, request.id, bypass_cache)
+        html = await get_document_html_internal(conn, request.id, bypass_cache)
         response.headers["X-Cache-Tags"] = ",".join(tags)
-        return GetTemplateHtmlApiResponse(html=html)
+        return GetDocumentHtmlApiResponse(html=html)
     except HTTPException:
         raise
     except ValueError as e:
@@ -122,7 +123,7 @@ async def get_template_html(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="get_template_html",
+            operation="get_document_html",
             sql_query=load_sql_query(SQL_PATH),
             sql_params=None,
             request=http_request,

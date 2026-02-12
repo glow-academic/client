@@ -112,14 +112,6 @@ image_agg AS (
     WHERE tbic.active = true
     GROUP BY tbic.training_bundle_id
 ),
-template_agg AS (
-    SELECT
-        tbtc.training_bundle_id,
-        ARRAY_AGG(DISTINCT tbtc.templates_id ORDER BY tbtc.templates_id) AS template_ids
-    FROM training_bundle_templates_connection tbtc
-    WHERE tbtc.active = true
-    GROUP BY tbtc.training_bundle_id
-),
 problem_statement_agg AS (
     SELECT
         tbpsc.training_bundle_id,
@@ -138,7 +130,7 @@ objective_agg AS (
 ),
 -- Scenario flags: resolved from scenario_flags_junction via scenario_scenarios_junction.
 -- Each bundle has one scenarios_id; we resolve scenario_artifact via scenario_scenarios_junction
--- then pivot the 6 flags into boolean columns.
+-- then pivot the 5 flags into boolean columns.
 flag_pivot AS (
     SELECT
         tbe.id AS training_bundle_id,
@@ -146,8 +138,7 @@ flag_pivot AS (
         COALESCE(BOOL_OR(CASE WHEN fr.name = 'problem_statement_enabled' THEN sfj.value END), false) AS problem_statement_enabled,
         COALESCE(BOOL_OR(CASE WHEN fr.name = 'objectives_enabled' THEN sfj.value END), false) AS objectives_enabled,
         COALESCE(BOOL_OR(CASE WHEN fr.name = 'images_enabled' THEN sfj.value END), false) AS images_enabled,
-        COALESCE(BOOL_OR(CASE WHEN fr.name = 'questions_enabled' THEN sfj.value END), false) AS questions_enabled,
-        COALESCE(BOOL_OR(CASE WHEN fr.name = 'use_templates' THEN sfj.value END), false) AS use_templates
+        COALESCE(BOOL_OR(CASE WHEN fr.name = 'questions_enabled' THEN sfj.value END), false) AS questions_enabled
     FROM training_bundle_entry tbe
     JOIN scenario_scenarios_junction ssj
       ON ssj.scenarios_id = tbe.scenarios_id AND ssj.active = true
@@ -161,8 +152,7 @@ flag_pivot AS (
           'problem_statement_enabled',
           'objectives_enabled',
           'images_enabled',
-          'questions_enabled',
-          'use_templates'
+          'questions_enabled'
       )
     GROUP BY tbe.id
 )
@@ -182,7 +172,6 @@ SELECT
     COALESCE(opt.option_ids, ARRAY[]::uuid[]) AS option_ids,
     COALESCE(vid.video_ids, ARRAY[]::uuid[]) AS video_ids,
     COALESCE(img.image_ids, ARRAY[]::uuid[]) AS image_ids,
-    COALESCE(tpl.template_ids, ARRAY[]::uuid[]) AS template_ids,
     COALESCE(ps.problem_statement_ids, ARRAY[]::uuid[]) AS problem_statement_ids,
     COALESCE(obj.objective_ids, ARRAY[]::uuid[]) AS objective_ids,
 
@@ -192,7 +181,6 @@ SELECT
     COALESCE(fp.objectives_enabled, false) AS objectives_enabled,
     COALESCE(fp.images_enabled, false) AS images_enabled,
     COALESCE(fp.questions_enabled, false) AS questions_enabled,
-    COALESCE(fp.use_templates, false) AS use_templates,
 
     tbe.created_at,
     tbe.updated_at,
@@ -210,7 +198,6 @@ LEFT JOIN question_agg que ON que.training_bundle_id = tbe.id
 LEFT JOIN option_agg opt ON opt.training_bundle_id = tbe.id
 LEFT JOIN video_agg vid ON vid.training_bundle_id = tbe.id
 LEFT JOIN image_agg img ON img.training_bundle_id = tbe.id
-LEFT JOIN template_agg tpl ON tpl.training_bundle_id = tbe.id
 LEFT JOIN problem_statement_agg ps ON ps.training_bundle_id = tbe.id
 LEFT JOIN objective_agg obj ON obj.training_bundle_id = tbe.id
 LEFT JOIN flag_pivot fp ON fp.training_bundle_id = tbe.id

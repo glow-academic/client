@@ -80,7 +80,6 @@ CREATE TYPE types.q_get_draft_training_view_v4_item AS (
     option_ids uuid[],
     video_ids uuid[],
     image_ids uuid[],
-    template_ids uuid[],
     problem_statement_ids uuid[],
     objective_ids uuid[]
 );
@@ -124,7 +123,6 @@ AS $$
                     option_ids,
                     video_ids,
                     image_ids,
-                    template_ids,
                     problem_statement_ids,
                     objective_ids
                 )::types.q_get_draft_training_view_v4_item

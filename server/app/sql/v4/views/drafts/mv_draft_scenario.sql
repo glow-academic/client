@@ -27,7 +27,6 @@ WITH draft_links AS (
     UNION ALL SELECT draft_id, 'documents'::resource_type AS resource_type, documents_id::uuid AS resource_id FROM documents_drafts_connection WHERE active = true
     UNION ALL SELECT draft_id, 'parameters'::resource_type AS resource_type, parameters_id::uuid AS resource_id FROM parameters_drafts_connection WHERE active = true
     UNION ALL SELECT draft_id, 'parameter_fields'::resource_type AS resource_type, parameter_fields_id::uuid AS resource_id FROM parameter_fields_drafts_connection WHERE active = true
-    UNION ALL SELECT draft_id, 'templates'::resource_type AS resource_type, templates_id::uuid AS resource_id FROM templates_drafts_connection WHERE active = true
     UNION ALL SELECT draft_id, 'questions'::resource_type AS resource_type, questions_id::uuid AS resource_id FROM questions_drafts_connection WHERE active = true
 )
 SELECT
@@ -48,7 +47,6 @@ SELECT
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'documents'::resource_type), ARRAY[]::uuid[]) AS document_ids,
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'parameters'::resource_type), ARRAY[]::uuid[]) AS parameter_ids,
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'parameter_fields'::resource_type), ARRAY[]::uuid[]) AS parameter_field_ids,
-    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'templates'::resource_type), ARRAY[]::uuid[]) AS template_ids,
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'questions'::resource_type), ARRAY[]::uuid[]) AS question_ids
 FROM drafts_entry d
 LEFT JOIN draft_links l ON l.draft_id = d.id

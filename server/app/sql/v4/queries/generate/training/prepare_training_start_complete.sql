@@ -338,13 +338,6 @@ BEGIN
       AND soj.active = true
     ON CONFLICT (training_bundle_department_id, options_id) DO NOTHING;
 
-    INSERT INTO training_bundle_departments_templates_connection (training_bundle_department_id, templates_id, created_at, active, generated, mcp)
-    SELECT DISTINCT v_training_bundle_department_id, stj.template_id, NOW(), true, false, false
-    FROM scenario_templates_junction stj
-    WHERE stj.scenario_id = v_scenario_artifact_id
-      AND stj.active = true
-    ON CONFLICT (training_bundle_department_id, templates_id) DO NOTHING;
-
     INSERT INTO training_bundle_departments_videos_connection (training_bundle_department_id, videos_id, created_at, active, generated, mcp)
     SELECT DISTINCT v_training_bundle_department_id, svj.video_id, NOW(), true, false, false
     FROM scenario_videos_junction svj

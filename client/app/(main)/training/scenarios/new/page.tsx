@@ -49,8 +49,6 @@ type CreateDraftObjectivesOut = OutputOf<
 >;
 type CreateDraftQuestionsIn = InputOf<"/api/v4/resources/questions", "post">;
 type CreateDraftQuestionsOut = OutputOf<"/api/v4/resources/questions", "post">;
-type CreateDraftTemplatesIn = InputOf<"/api/v4/resources/templates", "post">;
-type CreateDraftTemplatesOut = OutputOf<"/api/v4/resources/templates", "post">;
 type CreateDraftImagesIn = InputOf<"/api/v4/resources/images", "post">;
 type CreateDraftImagesOut = OutputOf<"/api/v4/resources/images", "post">;
 type CreateDraftVideosIn = InputOf<"/api/v4/resources/videos", "post">;
@@ -108,13 +106,6 @@ async function patchScenarioDraft(
 ): Promise<PatchScenarioDraftOut> {
   "use server";
   return api.patch("/artifacts/scenarios/draft", input);
-}
-
-async function createDraftTemplates(
-  input: CreateDraftTemplatesIn
-): Promise<CreateDraftTemplatesOut> {
-  "use server";
-  return api.post("/resources/templates", input);
 }
 
 async function createDraftImages(
@@ -180,7 +171,6 @@ export default async function NewScenarioPage({
       filter_department_ids: csvToArray(q.departmentIds) ?? null,
       filter_persona_ids: csvToArray(q.personaIds) ?? null,
       filter_document_ids: csvToArray(q.documentIds) ?? null,
-      template_document_ids: csvToArray(q.templateDocumentIds) ?? null,
       filter_parameter_ids: csvToArray(q.parameterIds) ?? null,
       filter_field_ids: csvToArray(q.fieldIds) ?? null,
       persona_search: q.personaSearch ?? null,
@@ -188,7 +178,6 @@ export default async function NewScenarioPage({
       parameter_search: q.parameterSearch ?? null,
       description_search: q.descriptionSearch ?? null,
       problem_statement_search: q.problemStatementSearch ?? null,
-      template_search: q.templateSearch ?? null,
       image_search: q.imageSearch ?? null,
       video_search: q.videoSearch ?? null,
       document_show_selected: q.documentShowSelected ?? null,
@@ -222,7 +211,6 @@ export default async function NewScenarioPage({
         createProblemStatementsAction={createDraftProblemStatements}
         createObjectivesAction={createDraftObjectives}
         createQuestionsAction={createDraftQuestions}
-        createTemplatesAction={createDraftTemplates}
         createImagesAction={createDraftImages}
         createVideosAction={createDraftVideos}
         createParameterFieldsAction={createDraftParameterFields}

@@ -42,7 +42,6 @@ CREATE OR REPLACE FUNCTION api_patch_training_bundle_draft_v4(
     options types.training_bundle_multi_resource_action DEFAULT NULL,
     videos types.training_bundle_multi_resource_action DEFAULT NULL,
     images types.training_bundle_multi_resource_action DEFAULT NULL,
-    templates types.training_bundle_multi_resource_action DEFAULT NULL,
     problem_statements types.training_bundle_multi_resource_action DEFAULT NULL,
     objectives types.training_bundle_multi_resource_action DEFAULT NULL,
     expected_version int DEFAULT 0
@@ -73,7 +72,6 @@ DECLARE
     option_ids uuid[];
     video_ids uuid[];
     image_ids uuid[];
-    template_ids uuid[];
     problem_statement_ids uuid[];
     objective_ids uuid[];
     -- Tool-call logging
@@ -91,7 +89,6 @@ BEGIN
     option_ids := COALESCE((options).resource_ids, ARRAY[]::uuid[]);
     video_ids := COALESCE((videos).resource_ids, ARRAY[]::uuid[]);
     image_ids := COALESCE((images).resource_ids, ARRAY[]::uuid[]);
-    template_ids := COALESCE((templates).resource_ids, ARRAY[]::uuid[]);
     problem_statement_ids := COALESCE((problem_statements).resource_ids, ARRAY[]::uuid[]);
     objective_ids := COALESCE((objectives).resource_ids, ARRAY[]::uuid[]);
 
@@ -137,7 +134,6 @@ BEGIN
             DELETE FROM options_drafts_connection WHERE options_drafts_connection.draft_id = v_draft_id;
             DELETE FROM videos_drafts_connection WHERE videos_drafts_connection.draft_id = v_draft_id;
             DELETE FROM images_drafts_connection WHERE images_drafts_connection.draft_id = v_draft_id;
-            DELETE FROM templates_drafts_connection WHERE templates_drafts_connection.draft_id = v_draft_id;
             DELETE FROM problem_statements_drafts_connection WHERE problem_statements_drafts_connection.draft_id = v_draft_id;
             DELETE FROM objectives_drafts_connection WHERE objectives_drafts_connection.draft_id = v_draft_id;
 
@@ -210,13 +206,6 @@ BEGIN
                 SELECT v_draft_id, image_id, v_new_version
                 FROM unnest(image_ids) as image_id
                 ON CONFLICT ON CONSTRAINT images_draft_pkey DO UPDATE SET version = v_new_version;
-            END IF;
-
-            IF template_ids IS NOT NULL THEN
-                INSERT INTO templates_drafts_connection (draft_id, templates_id, version)
-                SELECT v_draft_id, template_id, v_new_version
-                FROM unnest(template_ids) as template_id
-                ON CONFLICT ON CONSTRAINT templates_draft_pkey DO UPDATE SET version = v_new_version;
             END IF;
 
             IF problem_statement_ids IS NOT NULL THEN
@@ -319,13 +308,6 @@ BEGIN
             SELECT v_draft_id, image_id, v_new_version
             FROM unnest(image_ids) as image_id
             ON CONFLICT ON CONSTRAINT images_draft_pkey DO UPDATE SET version = v_new_version;
-        END IF;
-
-        IF template_ids IS NOT NULL THEN
-            INSERT INTO templates_drafts_connection (draft_id, templates_id, version)
-            SELECT v_draft_id, template_id, v_new_version
-            FROM unnest(template_ids) as template_id
-            ON CONFLICT ON CONSTRAINT templates_draft_pkey DO UPDATE SET version = v_new_version;
         END IF;
 
         IF problem_statement_ids IS NOT NULL THEN
@@ -553,26 +535,6 @@ BEGIN
                 INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((images).link_tool_id, v_call_id);
                 INSERT INTO images_calls_connection (images_id, call_id)
                 SELECT x.image_id, v_call_id FROM UNNEST(image_ids) AS x(image_id);
-            END IF;
-        END IF;
-
-        -- templates
-        IF COALESCE(array_length(template_ids, 1), 0) > 0 THEN
-            IF (templates).create_tool_id IS NOT NULL THEN
-                v_call_id := uuidv7();
-                INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
-                VALUES (v_call_id, 'training_draft_create_templates_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-                INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((templates).create_tool_id, v_call_id);
-                INSERT INTO templates_calls_connection (templates_id, call_id)
-                SELECT x.template_id, v_call_id FROM UNNEST(template_ids) AS x(template_id);
-            END IF;
-            IF (templates).link_tool_id IS NOT NULL THEN
-                v_call_id := uuidv7();
-                INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
-                VALUES (v_call_id, 'training_draft_link_templates_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-                INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((templates).link_tool_id, v_call_id);
-                INSERT INTO templates_calls_connection (templates_id, call_id)
-                SELECT x.template_id, v_call_id FROM UNNEST(template_ids) AS x(template_id);
             END IF;
         END IF;
 

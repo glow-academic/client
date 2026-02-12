@@ -62,7 +62,6 @@ from app.api.v4.artifacts.attempt.types import (
     StandardGroupEntry,
     StandardGroupMeta,
     StandardMeta,
-    TemplateEntry,
     TimerData,
     VideoEntry,
 )
@@ -79,7 +78,6 @@ from app.api.v4.resources.scenarios.get import get_scenarios_internal
 from app.api.v4.resources.simulations.get import get_simulations_batch_internal
 from app.api.v4.resources.standard_groups.get import get_standard_groups_internal
 from app.api.v4.resources.standards.get import get_standards_internal
-from app.api.v4.resources.templates.get import get_templates_internal
 from app.api.v4.resources.videos.get import get_videos_internal
 from app.api.v4.views.attempt.chats.get import get_attempt_chats_internal
 from app.api.v4.views.attempt.list.get import get_attempt_list_internal
@@ -206,7 +204,6 @@ async def get_attempt_internal(
             image_ids: list[UUID],
             video_ids: list[UUID],
             document_ids: list[UUID],
-            template_ids: list[UUID],
             persona_ids: list[UUID],
             objective_ids: list[UUID],
             question_ids: list[UUID],
@@ -222,7 +219,6 @@ async def get_attempt_internal(
                 "images": {},
                 "videos": {},
                 "documents": {},
-                "templates": {},
                 "personas": {},
                 "objectives": {},
                 "questions": {},
@@ -273,18 +269,7 @@ async def get_attempt_internal(
                                 "name": item.name,
                                 "description": item.description,
                                 "upload_id": item.upload_id,
-                            }
-
-                # Fetch templates
-                if template_ids:
-                    items = await get_templates_internal(
-                        c, template_ids, bypass_cache=bypass_cache
-                    )
-                    for item in items:
-                        if item.template_id:
-                            result["templates"][item.template_id] = {
-                                "name": item.name,
-                                "description": item.description,
+                                "html": item.html,
                             }
 
                 # Fetch personas
@@ -514,7 +499,6 @@ async def get_attempt_internal(
         all_image_ids: list[UUID] = []
         all_video_ids: list[UUID] = []
         all_document_ids: list[UUID] = []
-        all_template_ids: list[UUID] = []
         all_persona_ids: list[UUID] = []
         all_objective_ids: list[UUID] = []
         all_question_ids: list[UUID] = []
@@ -532,8 +516,6 @@ async def get_attempt_internal(
                 all_video_ids.extend(chat_item.video_ids)
             if chat_item.document_ids:
                 all_document_ids.extend(chat_item.document_ids)
-            if chat_item.template_ids:
-                all_template_ids.extend(chat_item.template_ids)
             if chat_item.persona_ids:
                 all_persona_ids.extend(chat_item.persona_ids)
             if chat_item.objective_ids:
@@ -557,7 +539,6 @@ async def get_attempt_internal(
             image_ids=list(set(all_image_ids)),
             video_ids=list(set(all_video_ids)),
             document_ids=list(set(all_document_ids)),
-            template_ids=list(set(all_template_ids)),
             persona_ids=list(set(all_persona_ids)),
             objective_ids=list(set(all_objective_ids)),
             question_ids=list(set(all_question_ids)),
@@ -614,22 +595,13 @@ async def get_attempt_internal(
                     description=resource_meta["documents"]
                     .get(document_id, {})
                     .get("description"),
+                    html=resource_meta["documents"]
+                    .get(document_id, {})
+                    .get("html"),
                 )
                 for document_id in resource_meta["documents"].keys()
             }
             if resource_meta.get("documents")
-            else None,
-            templates={
-                str(template_id): TemplateEntry(
-                    template_id=template_id,
-                    name=resource_meta["templates"].get(template_id, {}).get("name"),
-                    description=resource_meta["templates"]
-                    .get(template_id, {})
-                    .get("description"),
-                )
-                for template_id in resource_meta["templates"].keys()
-            }
-            if resource_meta.get("templates")
             else None,
             personas={
                 str(persona_id): PersonaEntry(
@@ -999,7 +971,6 @@ async def get_attempt_internal(
                         else None
                     ),
                     document_ids=chat_item.document_ids,
-                    template_ids=chat_item.template_ids,
                     rubric_id=chat_item.rubric_id,
                     standard_group_ids=chat_item.standard_group_ids,
                     standard_ids=chat_item.standard_ids,

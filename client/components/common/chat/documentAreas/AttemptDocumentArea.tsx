@@ -1,12 +1,11 @@
 /**
  * AttemptDocumentArea.tsx
- * Document and Template sidebar component
+ * Document sidebar component
  * Explicit, self-contained types (like resource components)
  */
 "use client";
 
 import DocumentViewer from "@/components/common/chat/viewers/DocumentViewer";
-import TemplateViewer from "@/components/common/chat/viewers/TemplateViewer";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Select,
@@ -16,7 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ResizableHandle, ResizablePanel } from "@/components/ui/resizable";
-import { FileText, Code } from "lucide-react";
+import { FileText } from "lucide-react";
 
 // Explicit, self-contained prop interface (like resource components)
 export interface DocumentAreaProps {
@@ -35,21 +34,14 @@ export interface DocumentAreaProps {
     active: boolean | null;
     department_ids: Array<string> | null;
     upload_id: string | null;
+    html: boolean | null;
     field_ids: Array<string> | null;
   }>;
-
-  // Templates for the current chat
-  templates?: Array<{
-    template_id: string | null;
-    name: string | null;
-    description?: string | null;
-  }> | null;
 
   selected_document_id: string | null;
   on_select_document: (id: string | null) => void;
 
   document_viewer?: React.ComponentType<any>;
-  template_viewer?: React.ComponentType<any>;
   disabled?: boolean;
 
   // Whether we're in graded/rubric view mode (affects height calculation)
@@ -57,18 +49,14 @@ export interface DocumentAreaProps {
 }
 
 // Unified item type for the selector
-type SidebarItem =
-  | { type: "document"; id: string; name: string; data: DocumentAreaProps["documents"][number] }
-  | { type: "template"; id: string; name: string; data: NonNullable<DocumentAreaProps["templates"]>[number] };
+type SidebarItem = { type: "document"; id: string; name: string; data: DocumentAreaProps["documents"][number] };
 
 export function AttemptDocumentArea({
   visible,
   documents,
-  templates,
   selected_document_id,
   on_select_document,
   document_viewer: DocumentViewerComponent = DocumentViewer,
-  template_viewer: TemplateViewerComponent = TemplateViewer,
   disabled = false,
   is_graded_view = false,
 }: DocumentAreaProps) {
@@ -76,7 +64,6 @@ export function AttemptDocumentArea({
 
   // Documents are already filtered for the current chat by the server
   const filteredDocs = documents.filter((doc) => doc.document_id);
-  const filteredTemplates = (templates || []).filter((t) => t.template_id);
 
   // Create unified list with type prefixes
   const items: SidebarItem[] = [
@@ -85,12 +72,6 @@ export function AttemptDocumentArea({
       id: `doc:${doc.document_id}`,
       name: doc.name || "Document",
       data: doc,
-    })),
-    ...filteredTemplates.map((t) => ({
-      type: "template" as const,
-      id: `template:${t.template_id}`,
-      name: t.name || "Template",
-      data: t,
     })),
   ];
 
@@ -103,7 +84,6 @@ export function AttemptDocumentArea({
     if (item.id === selected_document_id) return true;
     // Check non-prefixed ID for backwards compatibility
     if (item.type === "document" && item.data.document_id === selected_document_id) return true;
-    if (item.type === "template" && item.data.template_id === selected_document_id) return true;
     return false;
   }) || items[0];
 
@@ -132,11 +112,7 @@ export function AttemptDocumentArea({
                     {items.map((item) => (
                       <SelectItem key={item.id} value={item.id}>
                         <div className="flex items-center gap-2">
-                          {item.type === "document" ? (
-                            <FileText className="h-4 w-4 text-muted-foreground" />
-                          ) : (
-                            <Code className="h-4 w-4 text-muted-foreground" />
-                          )}
+                          <FileText className="h-4 w-4 text-muted-foreground" />
                           <span>{item.name}</span>
                         </div>
                       </SelectItem>
@@ -161,20 +137,11 @@ export function AttemptDocumentArea({
                     active: selectedItem.data.active ?? false,
                     department_ids: selectedItem.data.department_ids,
                     upload_id: selectedItem.data.upload_id,
+                    html: selectedItem.data.html,
                     field_ids: selectedItem.data.field_ids || [],
                     valid_field_ids: null,
                     active_scenario_count: null,
                     total_scenario_links: null,
-                  }}
-                />
-              )}
-              {selectedItem && selectedItem.type === "template" && (
-                <TemplateViewerComponent
-                  key={selectedItem.id}
-                  template={{
-                    template_id: selectedItem.data.template_id!,
-                    name: selectedItem.data.name,
-                    description: selectedItem.data.description,
                   }}
                 />
               )}

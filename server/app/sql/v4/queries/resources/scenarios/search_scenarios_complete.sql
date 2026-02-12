@@ -52,7 +52,6 @@ all_scenarios AS (
         s.video_enabled,
         s.images_enabled,
         s.questions_enabled,
-        s.templates_enabled,
         COALESCE(s.persona_ids, ARRAY[]::uuid[]) as persona_ids,
         s.created_at as updated_at
     FROM scenarios_resource s
@@ -92,7 +91,6 @@ linked_scenarios AS (
         a.video_enabled,
         a.images_enabled,
         a.questions_enabled,
-        a.templates_enabled,
         a.persona_ids,
         a.updated_at
     FROM all_scenarios a
@@ -114,7 +112,6 @@ recent_scenarios AS (
         a.video_enabled,
         a.images_enabled,
         a.questions_enabled,
-        a.templates_enabled,
         a.persona_ids,
         a.updated_at
     FROM all_scenarios a
@@ -132,7 +129,6 @@ filtered_scenarios AS (
         video_enabled,
         images_enabled,
         questions_enabled,
-        templates_enabled,
         persona_ids,
         updated_at
     FROM (
@@ -161,14 +157,13 @@ final_result AS (
         fs.video_enabled,
         fs.images_enabled,
         fs.questions_enabled,
-        fs.templates_enabled,
         fs.persona_ids
     FROM filtered_scenarios fs
     ORDER BY fs.name ASC
 )
 SELECT COALESCE(
     ARRAY_AGG(
-        (q.scenario_id, q.name, q.description, q.generated, q.problem_statement_enabled, q.objectives_enabled, q.video_enabled, q.images_enabled, q.questions_enabled, q.templates_enabled, q.persona_ids)::types.q_get_scenarios_v4_item
+        (q.scenario_id, q.name, q.description, q.generated, q.problem_statement_enabled, q.objectives_enabled, q.video_enabled, q.images_enabled, q.questions_enabled, q.persona_ids)::types.q_get_scenarios_v4_item
         ORDER BY q.name
     ),
     ARRAY[]::types.q_get_scenarios_v4_item[]

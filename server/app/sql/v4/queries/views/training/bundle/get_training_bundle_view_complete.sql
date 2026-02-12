@@ -38,16 +38,14 @@ RETURNS TABLE (
     option_ids uuid[],
     video_ids uuid[],
     image_ids uuid[],
-    template_ids uuid[],
     problem_statement_ids uuid[],
     objective_ids uuid[],
-    -- 6 scenario flags
+    -- 5 scenario flags
     video_enabled boolean,
     problem_statement_enabled boolean,
     objectives_enabled boolean,
     images_enabled boolean,
-    questions_enabled boolean,
-    use_templates boolean
+    questions_enabled boolean
 )
 LANGUAGE sql
 STABLE
@@ -98,15 +96,13 @@ SELECT
     b.option_ids,
     b.video_ids,
     b.image_ids,
-    b.template_ids,
     b.problem_statement_ids,
     b.objective_ids,
     b.video_enabled,
     b.problem_statement_enabled,
     b.objectives_enabled,
     b.images_enabled,
-    b.questions_enabled,
-    b.use_templates
+    b.questions_enabled
 FROM bundle b
 LEFT JOIN access_check ac ON TRUE;
 $$;

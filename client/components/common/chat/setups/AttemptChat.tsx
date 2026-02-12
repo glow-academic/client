@@ -54,7 +54,6 @@ type AttemptResources = {
   documents?: AttemptResourceMap<components["schemas"]["DocumentEntry"]>;
   images?: AttemptResourceMap<components["schemas"]["ImageEntry"]>;
   videos?: AttemptResourceMap<components["schemas"]["VideoEntry"]>;
-  templates?: AttemptResourceMap<components["schemas"]["TemplateEntry"]>;
   objectives?: AttemptResourceMap<components["schemas"]["ObjectiveEntry"]>;
   questions?: AttemptResourceMap<components["schemas"]["QuestionEntry"]>;
   options?: AttemptResourceMap<components["schemas"]["OptionEntry"]>;
@@ -403,11 +402,6 @@ export function AttemptChat({
       currentChat.document_ids,
       resources?.documents
     );
-    const resolvedTemplates = resolveByIds(
-      currentChat.template_ids,
-      resources?.templates
-    );
-
     return {
       ...currentChat,
       scenario: resolveById(currentChat.scenario_id, resources?.scenarios),
@@ -420,7 +414,6 @@ export function AttemptChat({
       videos: resolvedVideos,
       video: resolvedVideos?.[0] ?? null,
       documents: resolvedDocuments,
-      templates: resolvedTemplates,
       questions: resolvedQuestions,
       rubric: resolveById(currentChat.rubric_id, resources?.rubrics),
       standard_groups: resolveByIds(
@@ -654,28 +647,20 @@ export function AttemptChat({
     setQuestionIndex(0);
   }, [currentChatIndex]);
 
-  // Auto-select first document/template when chat changes or content becomes available
+  // Auto-select first document when chat changes or content becomes available
   useEffect(() => {
     const chatDocuments = resolvedChat?.documents || [];
-    const chatTemplates = resolvedChat?.templates || [];
 
-    // Create unified list with prefixed IDs (documents first, then templates)
-    const allItems: { id: string; type: "document" | "template" }[] = [
-      ...chatDocuments
-        .filter((doc) => doc.document_id)
-        .map((doc) => ({ id: `doc:${doc.document_id}`, type: "document" as const })),
-      ...chatTemplates
-        .filter((t) => t.template_id)
-        .map((t) => ({ id: `template:${t.template_id}`, type: "template" as const })),
-    ];
+    const allItems = chatDocuments
+      .filter((doc) => doc.document_id)
+      .map((doc) => ({ id: `doc:${doc.document_id}` }));
 
     if (allItems.length > 0) {
       // Check if current selection is valid (support both prefixed and non-prefixed IDs)
       const currentSelectionValid = selectedDocumentId && allItems.some((item) => {
         if (item.id === selectedDocumentId) return true;
         // Check non-prefixed for backwards compatibility
-        if (item.type === "document" && item.id === `doc:${selectedDocumentId}`) return true;
-        if (item.type === "template" && item.id === `template:${selectedDocumentId}`) return true;
+        if (item.id === `doc:${selectedDocumentId}`) return true;
         return false;
       });
 
@@ -688,7 +673,7 @@ export function AttemptChat({
     } else {
       setSelectedDocumentId(null);
     }
-  }, [resolvedChat?.documents, resolvedChat?.templates, resolvedChat?.id, selectedDocumentId]);
+  }, [resolvedChat?.documents, resolvedChat?.id, selectedDocumentId]);
 
   // ---------------------------------------------------------------------------
   // VIEW MODE
@@ -1490,8 +1475,7 @@ export function AttemptChat({
 
   const chatHeaderProps: ChatHeaderProps = useMemo(() => {
     const chatDocuments = resolvedChat?.documents || [];
-    const chatTemplates = resolvedChat?.templates || [];
-    const hasContent = chatDocuments.length > 0 || chatTemplates.length > 0;
+    const hasContent = chatDocuments.length > 0;
     const currentChatData = attemptData?.views?.simulation_chats?.[currentChatIndex];
     const hasVideoQuestions = (resolvedChat?.questions?.length ?? 0) > 0;
     return {
@@ -1647,7 +1631,6 @@ export function AttemptChat({
     return {
       visible: showDocuments,
       documents: resolvedChat?.documents || [],
-      templates: resolvedChat?.templates || [],
       selected_document_id: selectedDocumentId,
       on_select_document: setSelectedDocumentId,
     };

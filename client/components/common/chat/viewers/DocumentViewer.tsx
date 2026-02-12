@@ -64,57 +64,68 @@ export default function DocumentViewer({
         }
         setContent(null);
 
-        // Build URL with preview parameter for compact mode
-        let url = "";
-        if (isFormDocument && document.upload_id) {
-          // For form documents, use upload_id
-          url = `/api/resources/uploads/download/${document.upload_id}`;
-        } else if (document.upload_id) {
-          // Use upload_id for download
-          url = `/api/resources/uploads/download/${document.upload_id}`;
-        } else {
-          throw new Error("Document upload_id is required");
-        }
+        // HTML documents (no upload, content stored in texts_entry)
+        if ((document as any).html && !document.upload_id) {
+          const response = await fetch("/api/resources/documents/html", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({ id: document.document_id }),
+          });
 
-        // Add preview parameter for compact mode (backend will only generate previews for PDFs)
-        if (compact) {
-          url += "?preview=true";
-        }
-
-        const response = await fetch(url, {
-          method: "GET",
-          credentials: "include",
-        });
-
-        if (!response.ok) {
-          // Try to get error details from JSON response
-          let errorMessage = `Failed to load document: ${response.status} ${response.statusText}`;
-          try {
-            const errorData = await response.json();
-            if (errorData.message) {
-              errorMessage = errorData.message;
-            }
-          } catch {
-            // If not JSON, use the default error message
+          if (!response.ok) {
+            throw new Error(`Failed to load HTML document: ${response.status}`);
           }
-          throw new Error(errorMessage);
-        }
 
-        const contentType = response.headers.get("content-type") ?? "";
-        setType(contentType);
+          const data = await response.json();
+          setType("text/html");
+          setContent(data.html ?? "");
+        } else if (document.upload_id) {
+          // File-based documents — download via upload
+          let url = `/api/resources/uploads/download/${document.upload_id}`;
 
-        const shouldTreatAsText =
-          contentType.startsWith("text/") || isCodeByName(document.name);
+          // Add preview parameter for compact mode (backend will only generate previews for PDFs)
+          if (compact) {
+            url += "?preview=true";
+          }
 
-        // Read once
-        if (shouldTreatAsText) {
-          const textContent = await response.text();
-          setContent(textContent);
+          const response = await fetch(url, {
+            method: "GET",
+            credentials: "include",
+          });
+
+          if (!response.ok) {
+            // Try to get error details from JSON response
+            let errorMessage = `Failed to load document: ${response.status} ${response.statusText}`;
+            try {
+              const errorData = await response.json();
+              if (errorData.message) {
+                errorMessage = errorData.message;
+              }
+            } catch {
+              // If not JSON, use the default error message
+            }
+            throw new Error(errorMessage);
+          }
+
+          const contentType = response.headers.get("content-type") ?? "";
+          setType(contentType);
+
+          const shouldTreatAsText =
+            contentType.startsWith("text/") || isCodeByName(document.name);
+
+          // Read once
+          if (shouldTreatAsText) {
+            const textContent = await response.text();
+            setContent(textContent);
+          } else {
+            const blob = await response.blob();
+            blobUrl = URL.createObjectURL(blob);
+            blobUrlRef.current = blobUrl;
+            setContent(blobUrl);
+          }
         } else {
-          const blob = await response.blob();
-          blobUrl = URL.createObjectURL(blob);
-          blobUrlRef.current = blobUrl;
-          setContent(blobUrl);
+          throw new Error("Document has no content source");
         }
       } catch (e) {
         setError((e as Error).message);
@@ -237,7 +248,7 @@ export default function DocumentViewer({
       );
     }
 
-    // HTML viewer - show rendered HTML only (no tabs), similar to TemplatePreview
+    // HTML viewer - show rendered HTML only (no tabs)
     if (type?.includes("text/html") || document.name?.endsWith(".html")) {
       // Sanitize HTML content for security
       const sanitizeHtml = (html: string): string => {
@@ -272,7 +283,7 @@ export default function DocumentViewer({
         );
       }
 
-      // Non-compact: show rendered HTML only (no tabs), like TemplatePreview
+      // Non-compact: show rendered HTML only (no tabs)
       return (
         <div className="w-full h-full relative min-h-[500px]">
           {iframeLoading && (

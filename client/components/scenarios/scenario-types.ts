@@ -22,7 +22,6 @@ export type DraftState = {
   departmentIds: string[];
   personaIds: string[];
   documentIds: string[];
-  templateDocumentIds: string[];
   parameterIds: string[];
   fieldIds: string[];
   imageIds: string[];
@@ -71,7 +70,6 @@ export type ScenarioFormState = {
   department_ids: string[];
   persona_ids: string[];
   document_ids: string[];
-  template_document_ids: string[];
   parameter_ids: string[];
   field_ids: string[];
   image_ids: string[];

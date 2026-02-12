@@ -39,7 +39,6 @@ SCENARIO_RESOURCES: set[str] = {
     "personas",
     "documents",
     "parameters",
-    "templates",
 }
 
 # Multi-resource agent definitions for scenario
@@ -55,7 +54,6 @@ SCENARIO_CONTENT_RESOURCES: set[str] = {
     "documents",
     "parameters",
     "fields",
-    "templates",
     "objectives",
     "images",
     "videos",
@@ -130,11 +128,6 @@ SCENARIO_DOMAIN_METADATA: dict[str, dict[str, str | bool]] = {
         "name": "Questions",
         "description": "Assessment questions for this scenario",
         "icon": "message-square",
-    },
-    "templates": {
-        "name": "Templates",
-        "description": "Document templates for this scenario",
-        "icon": "layout",
     },
 }
 
@@ -433,19 +426,6 @@ def compute_show_documents(documents_count: int | None) -> bool:
     return count > 0
 
 
-def compute_show_templates(templates_count: int | None) -> bool:
-    """Compute whether to show templates field.
-
-    Args:
-        templates_count: Number of available templates
-
-    Returns:
-        True if templates field should be shown
-    """
-    count = templates_count or 0
-    return count > 0
-
-
 def compute_show_parameters(parameters_count: int | None) -> bool:
     """Compute whether to show parameters field.
 
@@ -579,15 +559,6 @@ def compute_documents_required() -> bool:
     return False
 
 
-def compute_templates_required() -> bool:
-    """Compute whether templates are required.
-
-    Returns:
-        Always False - templates are optional
-    """
-    return False
-
-
 def compute_parameters_required() -> bool:
     """Compute whether parameters are required.
 
@@ -664,7 +635,6 @@ def get_missing_tools(
     personas_has_tools: bool | None,
     objectives_has_tools: bool | None = None,
     documents_has_tools: bool | None = None,
-    templates_has_tools: bool | None = None,
     parameters_has_tools: bool | None = None,
     fields_has_tools: bool | None = None,
     images_has_tools: bool | None = None,
@@ -682,7 +652,6 @@ def get_missing_tools(
         personas_has_tools: Whether personas tools exist
         objectives_has_tools: Whether objectives tools exist
         documents_has_tools: Whether documents tools exist
-        templates_has_tools: Whether templates tools exist
         parameters_has_tools: Whether parameters tools exist
         fields_has_tools: Whether fields tools exist
         images_has_tools: Whether images tools exist
@@ -709,8 +678,6 @@ def get_missing_tools(
         missing.append("objectives")
     if documents_has_tools is False:
         missing.append("documents")
-    if templates_has_tools is False:
-        missing.append("templates")
     if parameters_has_tools is False:
         missing.append("parameters")
     if fields_has_tools is False:

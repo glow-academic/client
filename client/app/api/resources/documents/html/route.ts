@@ -6,21 +6,22 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     const response = await fetch(
-      `${INTERNAL_HTTP_BASE}/api/v4/resources/templates/html`,
+      `${INTERNAL_HTTP_BASE}/api/v4/resources/documents/html`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Cookie: request.headers.get("cookie") || "",
         },
         body: JSON.stringify(body),
-      }
+      },
     );
 
     if (!response.ok) {
       const errorText = await response.text();
       return NextResponse.json(
-        { error: errorText },
-        { status: response.status }
+        { error: errorText || "Failed to fetch document HTML" },
+        { status: response.status },
       );
     }
 
@@ -29,7 +30,7 @@ export async function POST(request: NextRequest) {
   } catch {
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

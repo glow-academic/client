@@ -269,7 +269,6 @@ TRAINING_BUNDLE_FLAG_MAP: dict[str, str] = {
     "problem_statements": "problem_statement_enabled",
     "objectives": "objectives_enabled",
     "questions": "questions_enabled",
-    "templates": "use_templates",
 }
 
 

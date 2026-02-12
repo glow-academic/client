@@ -160,7 +160,6 @@ class DraftScenarioViewItem(DraftViewItemBase):
     document_ids: list[UUID] = Field(default_factory=list)
     parameter_ids: list[UUID] = Field(default_factory=list)
     parameter_field_ids: list[UUID] = Field(default_factory=list)
-    template_ids: list[UUID] = Field(default_factory=list)
     question_ids: list[UUID] = Field(default_factory=list)
 
 
@@ -195,7 +194,6 @@ class DraftTrainingViewItem(DraftViewItemBase):
     option_ids: list[UUID] = Field(default_factory=list)
     video_ids: list[UUID] = Field(default_factory=list)
     image_ids: list[UUID] = Field(default_factory=list)
-    template_ids: list[UUID] = Field(default_factory=list)
     problem_statement_ids: list[UUID] = Field(default_factory=list)
     objective_ids: list[UUID] = Field(default_factory=list)
 

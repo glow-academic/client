@@ -56,7 +56,8 @@ CREATE TYPE types.q_get_documents_v4_item AS (
     file_path text,
     mime_type text,
     generated boolean,
-    upload_id uuid
+    upload_id uuid,
+    html boolean
 );
 
 -- Create function - query documents_resource directly with upload join
@@ -78,7 +79,8 @@ SELECT COALESCE(
             COALESCE(u.file_path, ''),
             COALESCE(u.mime_type, ''),
             COALESCE(d.generated, false),
-            d.upload_id
+            d.upload_id,
+            COALESCE(d.html, false)
         )::types.q_get_documents_v4_item
         ORDER BY array_position(p_ids, d.id)
     ),

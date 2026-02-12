@@ -32,7 +32,6 @@ from app.sql.types import (
     QGetProvidersV4Item,
     QGetQuestionsV4Item,
     QGetScenariosV4Item,
-    QGetTemplatesV4Item,
     QGetToolsV4Item,
     QGetVideosV4Item,
 )
@@ -360,11 +359,6 @@ class TrainingBundleImageSection(BaseTrainingBundleSection):
     resources: list[QGetImagesV4Item] | None = None
 
 
-class TrainingBundleTemplateSection(BaseTrainingBundleSection):
-    current: list[QGetTemplatesV4Item] | None = None
-    resources: list[QGetTemplatesV4Item] | None = None
-
-
 class TrainingBundleProblemStatementSection(BaseTrainingBundleSection):
     current: list[QGetProblemStatementsV4Item] | None = None
     resources: list[QGetProblemStatementsV4Item] | None = None
@@ -386,7 +380,6 @@ class TrainingBundleScenarioFlags(BaseModel):
     objectives_enabled: bool = False
     images_enabled: bool = False
     questions_enabled: bool = False
-    use_templates: bool = False
 
 
 # --- GET response (section-first) ---
@@ -417,7 +410,6 @@ class GetTrainingBundleResponse(BaseModel):
     options: TrainingBundleOptionSection | None = None
     videos: TrainingBundleVideoSection | None = None
     images: TrainingBundleImageSection | None = None
-    templates: TrainingBundleTemplateSection | None = None
     problem_statements: TrainingBundleProblemStatementSection | None = None
     objectives: TrainingBundleObjectiveSection | None = None
 
@@ -453,7 +445,6 @@ class TrainingBundleWebsocketResources(BaseModel):
     options: list[QGetOptionsV4Item] | None = None
     videos: list[QGetVideosV4Item] | None = None
     images: list[QGetImagesV4Item] | None = None
-    templates: list[QGetTemplatesV4Item] | None = None
     problem_statements: list[QGetProblemStatementsV4Item] | None = None
     objectives: list[QGetObjectivesV4Item] | None = None
     # Config chain
@@ -502,7 +493,6 @@ class PatchTrainingBundleDraftApiRequest(BaseModel):
     options: TrainingBundleMultiResourceAction | None = None
     videos: TrainingBundleMultiResourceAction | None = None
     images: TrainingBundleMultiResourceAction | None = None
-    templates: TrainingBundleMultiResourceAction | None = None
     problem_statements: TrainingBundleMultiResourceAction | None = None
     objectives: TrainingBundleMultiResourceAction | None = None
 
@@ -531,7 +521,6 @@ class PatchTrainingBundleDraftSqlParams(BaseModel):
     options: TrainingBundleMultiResourceAction
     videos: TrainingBundleMultiResourceAction
     images: TrainingBundleMultiResourceAction
-    templates: TrainingBundleMultiResourceAction
     problem_statements: TrainingBundleMultiResourceAction
     objectives: TrainingBundleMultiResourceAction
     expected_version: int = 0
@@ -557,7 +546,6 @@ class PatchTrainingBundleDraftSqlParams(BaseModel):
             options=request.options or empty,
             videos=request.videos or empty,
             images=request.images or empty,
-            templates=request.templates or empty,
             problem_statements=request.problem_statements or empty,
             objectives=request.objectives or empty,
             expected_version=request.expected_version,
@@ -581,7 +569,6 @@ class PatchTrainingBundleDraftSqlParams(BaseModel):
             multi(self.options),
             multi(self.videos),
             multi(self.images),
-            multi(self.templates),
             multi(self.problem_statements),
             multi(self.objectives),
             self.expected_version,

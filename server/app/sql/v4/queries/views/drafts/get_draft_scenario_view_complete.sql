@@ -50,7 +50,6 @@ CREATE TYPE types.q_get_draft_scenario_view_v4_item AS (
     document_ids uuid[],
     parameter_ids uuid[],
     parameter_field_ids uuid[],
-    template_ids uuid[],
     question_ids uuid[]
 );
 
@@ -92,7 +91,6 @@ AS $$
                     document_ids,
                     parameter_ids,
                     parameter_field_ids,
-                    template_ids,
                     question_ids
                 )::types.q_get_draft_scenario_view_v4_item
                 ORDER BY updated_at DESC

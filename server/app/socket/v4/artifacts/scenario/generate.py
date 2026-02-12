@@ -45,7 +45,6 @@ SCENARIO_RESOURCE_TYPES = [
     "personas",
     "documents",
     "parameters",
-    "templates",
 ]
 
 
@@ -202,7 +201,6 @@ async def _scenario_generate_impl(
             add_resource_ids("images", resources_bucket.images, "image_id")
             add_resource_ids("videos", resources_bucket.videos, "video_id")
             add_resource_ids("questions", resources_bucket.questions, "question_id")
-            add_resource_ids("templates", resources_bucket.templates, "template_id")
             add_resource_ids("flags", resources_bucket.flags, "flag_option_id")
             add_resource_ids(
                 "parameter_fields", resources_bucket.parameter_fields, "field_id"

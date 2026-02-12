@@ -64,8 +64,7 @@ source_flags AS (
         (SELECT sf.value FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = ss.source_id AND f.name = 'images_enabled' LIMIT 1) as images_enabled,
         (SELECT sf.value FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = ss.source_id AND f.name = 'video_enabled' LIMIT 1) as video_enabled,
         (SELECT sf.value FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = ss.source_id AND f.name = 'questions_enabled' LIMIT 1) as questions_enabled,
-        (SELECT sf.value FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = ss.source_id AND f.name = 'problem_statement_enabled' LIMIT 1) as problem_statement_enabled,
-        (SELECT sf.value FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = ss.source_id AND f.name = 'use_templates' LIMIT 1) as use_templates
+        (SELECT sf.value FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = ss.source_id AND f.name = 'problem_statement_enabled' LIMIT 1) as problem_statement_enabled
     FROM source_scenario ss
 ),
 -- Get multi-select resource IDs from source
@@ -109,11 +108,6 @@ source_questions AS (
     FROM params x
     JOIN scenario_questions_junction sq ON sq.scenario_id = x.scenario_id AND sq.active = true
 ),
-source_templates AS (
-    SELECT st.template_id
-    FROM params x
-    JOIN scenario_templates_junction st ON st.scenario_id = x.scenario_id AND st.active = true
-),
 -- Create new name with " Copy" suffix
 get_or_create_name AS (
     INSERT INTO names_resource (name, created_at)
@@ -141,9 +135,6 @@ get_questions_enabled_flag AS (
 ),
 get_problem_statement_enabled_flag AS (
     SELECT id as flag_id FROM flags_resource WHERE name = 'problem_statement_enabled' LIMIT 1
-),
-get_use_templates_flag AS (
-    SELECT id as flag_id FROM flags_resource WHERE name = 'use_templates' LIMIT 1
 ),
 -- Handle group
 ensure_group AS (
@@ -255,15 +246,6 @@ link_problem_statement_enabled_flag AS (
     CROSS JOIN get_problem_statement_enabled_flag gpsef
     WHERE sf.problem_statement_enabled IS NOT NULL
 ),
--- Link use_templates flag (copy value from source)
-link_use_templates_flag AS (
-    INSERT INTO scenario_flags_junction (scenario_id, flag_id, value, created_at)
-    SELECT ns.id, gutf.flag_id, sf.use_templates, NOW()
-    FROM new_scenario ns
-    CROSS JOIN source_flags sf
-    CROSS JOIN get_use_templates_flag gutf
-    WHERE sf.use_templates IS NOT NULL
-),
 -- Link existing personas
 copy_personas AS (
     INSERT INTO scenario_personas_junction (scenario_id, persona_id, active, created_at)
@@ -319,13 +301,6 @@ copy_questions AS (
     SELECT ns.id, sq.question_id, true, NOW()
     FROM new_scenario ns
     CROSS JOIN source_questions sq
-),
--- Link existing templates
-copy_templates AS (
-    INSERT INTO scenario_templates_junction (scenario_id, template_id, active, created_at)
-    SELECT ns.id, st.template_id, true, NOW()
-    FROM new_scenario ns
-    CROSS JOIN source_templates st
 )
 SELECT
     ns.id as scenario_id,

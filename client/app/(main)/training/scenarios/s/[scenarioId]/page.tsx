@@ -50,8 +50,6 @@ type CreateDraftObjectivesOut = OutputOf<
 >;
 type CreateDraftQuestionsIn = InputOf<"/api/v4/resources/questions", "post">;
 type CreateDraftQuestionsOut = OutputOf<"/api/v4/resources/questions", "post">;
-type CreateDraftTemplatesIn = InputOf<"/api/v4/resources/templates", "post">;
-type CreateDraftTemplatesOut = OutputOf<"/api/v4/resources/templates", "post">;
 type CreateDraftImagesIn = InputOf<"/api/v4/resources/images", "post">;
 type CreateDraftImagesOut = OutputOf<"/api/v4/resources/images", "post">;
 type CreateDraftVideosIn = InputOf<"/api/v4/resources/videos", "post">;
@@ -95,14 +93,12 @@ const getScenario = async (
     departmentIds?: string[];
     personaIds?: string[];
     documentIds?: string[];
-    templateDocumentIds?: string[];
     parameterIds?: string[];
     parameterItemIds?: string[];
     personaSearch?: string;
     documentSearch?: string;
     parameterSearch?: string;
     documentShowSelected?: boolean;
-    documentShowTemplate?: boolean;
     personaShowSelected?: boolean;
     parameterShowSelected?: boolean;
     fieldShowSelectedByParam?: Record<string, boolean>; // Per-parameter field filters: {paramId: bool}
@@ -133,8 +129,6 @@ const getScenario = async (
       body.filter_persona_ids = filterParams.personaIds;
     if (filterParams.documentIds)
       body.filter_document_ids = filterParams.documentIds;
-    if (filterParams.templateDocumentIds)
-      body.template_document_ids = filterParams.templateDocumentIds;
     if (filterParams.parameterIds)
       body.filter_parameter_ids = filterParams.parameterIds;
     if (filterParams.parameterItemIds)
@@ -149,13 +143,11 @@ const getScenario = async (
       body.description_search = filterParams.descriptionSearch;
     if (filterParams.problemStatementSearch)
       body.problem_statement_search = filterParams.problemStatementSearch;
-    if (filterParams.templateSearch)
-      body.template_search = filterParams.templateSearch;
     if (filterParams.imageSearch) body.image_search = filterParams.imageSearch;
     if (filterParams.videoSearch) body.video_search = filterParams.videoSearch;
     if (filterParams.documentShowSelected !== undefined)
       body.document_show_selected = filterParams.documentShowSelected;
-    // Note: document_show_template, persona_min, persona_max, document_min, document_max,
+    // Note: persona_min, persona_max, document_min, document_max,
     // parameter_selection_min, parameter_selection_max, field_ranges are not part of the API request
     if (filterParams.personaShowSelected !== undefined)
       body.persona_show_selected = filterParams.personaShowSelected;
@@ -228,13 +220,6 @@ async function patchScenarioDraft(
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
   return api.patch("/artifacts/scenarios/draft", input);
-}
-
-async function createDraftTemplates(
-  input: CreateDraftTemplatesIn
-): Promise<CreateDraftTemplatesOut> {
-  "use server";
-  return api.post("/resources/templates", input);
 }
 
 async function createDraftImages(
@@ -337,7 +322,6 @@ export default async function EditScenarioPage({
       departmentIds?: string[];
       personaIds?: string[];
       documentIds?: string[];
-      templateDocumentIds?: string[];
       parameterIds?: string[];
       parameterItemIds?: string[];
       personaSearch?: string;
@@ -345,11 +329,9 @@ export default async function EditScenarioPage({
       parameterSearch?: string;
       descriptionSearch?: string;
       problemStatementSearch?: string;
-      templateSearch?: string;
       imageSearch?: string;
       videoSearch?: string;
       documentShowSelected?: boolean;
-      documentShowTemplate?: boolean;
       personaShowSelected?: boolean;
       parameterShowSelected?: boolean;
       fieldShowSelectedByParam?: Record<string, boolean>; // Per-parameter field filters
@@ -369,15 +351,12 @@ export default async function EditScenarioPage({
     const departmentIds = csvToArray(q.departmentIds);
     const personaIds = csvToArray(q.personaIds);
     const documentIds = csvToArray(q.documentIds);
-    const templateDocumentIds = csvToArray(q.templateDocumentIds);
     const parameterIds = csvToArray(q.parameterIds);
     const fieldIds = csvToArray(q.fieldIds);
 
     if (departmentIds) filterParams.departmentIds = departmentIds;
     if (personaIds) filterParams.personaIds = personaIds;
     if (documentIds) filterParams.documentIds = documentIds;
-    if (templateDocumentIds)
-      filterParams.templateDocumentIds = templateDocumentIds;
     if (parameterIds) filterParams.parameterIds = parameterIds;
     // Edit mode uses parameterItemIds, but nuqs uses fieldIds
     if (fieldIds) filterParams.parameterItemIds = fieldIds;
@@ -387,13 +366,10 @@ export default async function EditScenarioPage({
     if (q.descriptionSearch) filterParams.descriptionSearch = q.descriptionSearch;
     if (q.problemStatementSearch)
       filterParams.problemStatementSearch = q.problemStatementSearch;
-    if (q.templateSearch) filterParams.templateSearch = q.templateSearch;
     if (q.imageSearch) filterParams.imageSearch = q.imageSearch;
     if (q.videoSearch) filterParams.videoSearch = q.videoSearch;
     if (q.documentShowSelected !== undefined && q.documentShowSelected !== null)
       filterParams.documentShowSelected = q.documentShowSelected;
-    if (q.documentShowTemplate !== undefined && q.documentShowTemplate !== null)
-      filterParams.documentShowTemplate = q.documentShowTemplate;
     if (q.personaShowSelected !== undefined && q.personaShowSelected !== null)
       filterParams.personaShowSelected = q.personaShowSelected;
     if (
@@ -457,7 +433,6 @@ export default async function EditScenarioPage({
           createProblemStatementsAction={createDraftProblemStatements}
           createObjectivesAction={createDraftObjectives}
           createQuestionsAction={createDraftQuestions}
-          createTemplatesAction={createDraftTemplates}
           createImagesAction={createDraftImages}
           createVideosAction={createDraftVideos}
           createParameterFieldsAction={createDraftParameterFields}

@@ -4134,6 +4134,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/documents/html": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Document Html
+         * @description Get document HTML by ID.
+         */
+        post: operations["get_document_html_api_v4_resources_documents_html_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/documents/search": {
         parameters: {
             query?: never;
@@ -6907,83 +6927,6 @@ export interface paths {
          * @description Search temperature_levels resources.
          */
         post: operations["search_temperature_levels_api_v4_resources_temperature_levels_search_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/resources/templates": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Templates
-         * @description Create templates resource (always INSERT).
-         */
-        post: operations["create_templates_api_v4_resources_templates_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/resources/templates/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Template
-         * @description Get template by ID.
-         */
-        post: operations["get_template_api_v4_resources_templates_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/resources/templates/html": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Template Html
-         * @description Get template HTML by ID.
-         */
-        post: operations["get_template_html_api_v4_resources_templates_html_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/resources/templates/search": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Search Templates */
-        post: operations["search_templates_api_v4_resources_templates_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -12594,10 +12537,6 @@ export interface components {
             videos?: {
                 [key: string]: components["schemas"]["VideoEntry"];
             } | null;
-            /** Templates */
-            templates?: {
-                [key: string]: components["schemas"]["TemplateEntry"];
-            } | null;
             /** Objectives */
             objectives?: {
                 [key: string]: components["schemas"]["ObjectiveEntry"];
@@ -13950,7 +13889,7 @@ export interface components {
          *     Split into view categories:
          *     - Normal/General View: problem_statement, objectives, personas, images
          *     - Video/Quiz View: videos, questions, options, responses
-         *     - Both Views: documents, templates
+         *     - Both Views: documents
          */
         ChatData: {
             /**
@@ -14003,8 +13942,6 @@ export interface components {
             responses?: components["schemas"]["QuizResponse"][] | null;
             /** Document Ids */
             document_ids?: string[] | null;
-            /** Template Ids */
-            template_ids?: string[] | null;
             /** Rubric Id */
             rubric_id?: string | null;
             /** Standard Group Ids */
@@ -14179,8 +14116,6 @@ export interface components {
             option_ids?: string[] | null;
             /** Responses */
             responses?: components["schemas"]["ResponseItem"][] | null;
-            /** Template Ids */
-            template_ids?: string[] | null;
             /** Image Ids */
             image_ids?: string[] | null;
             /** Video Ids */
@@ -15645,6 +15580,8 @@ export interface components {
             name?: string | null;
             /** Description */
             description?: string | null;
+            /** Html */
+            html?: boolean | null;
         };
         /** DocumentFieldSection */
         DocumentFieldSection: {
@@ -18738,6 +18675,25 @@ export interface components {
             images?: components["schemas"]["DocumentImageSection"] | null;
             texts?: components["schemas"]["DocumentTextSection"] | null;
         };
+        /**
+         * GetDocumentHtmlApiRequest
+         * @description Request for getting document HTML by ID.
+         */
+        GetDocumentHtmlApiRequest: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+        };
+        /**
+         * GetDocumentHtmlApiResponse
+         * @description Response for getting document HTML.
+         */
+        GetDocumentHtmlApiResponse: {
+            /** Html */
+            html?: string | null;
+        };
         /** GetDocumentResourceApiRequest */
         GetDocumentResourceApiRequest: {
             /**
@@ -20590,8 +20546,6 @@ export interface components {
             document_ids?: string[] | null;
             /** Problem Statement Ids */
             problem_statement_ids?: string[] | null;
-            /** Template Document Ids */
-            template_document_ids?: string[] | null;
             /** Filter Department Ids */
             filter_department_ids?: string[] | null;
             /** Filter Persona Ids */
@@ -20612,8 +20566,6 @@ export interface components {
             description_search?: string | null;
             /** Problem Statement Search */
             problem_statement_search?: string | null;
-            /** Template Search */
-            template_search?: string | null;
             /** Image Search */
             image_search?: string | null;
             /** Video Search */
@@ -20664,7 +20616,6 @@ export interface components {
             departments?: components["schemas"]["ScenarioDepartmentSection"] | null;
             personas?: components["schemas"]["ScenarioPersonaSection"] | null;
             documents?: components["schemas"]["ScenarioDocumentSection"] | null;
-            templates?: components["schemas"]["ScenarioTemplateSection"] | null;
             parameters?: components["schemas"]["ScenarioParameterSection"] | null;
             parameter_fields?: components["schemas"]["ScenarioParameterFieldSection"] | null;
             objectives?: components["schemas"]["ScenarioObjectiveSection"] | null;
@@ -21314,57 +21265,6 @@ export interface components {
             items?: components["schemas"]["QGetTemperatureLevelsV4Item"][] | null;
         };
         /**
-         * GetTemplateApiRequest
-         * @description Request for getting a template by ID.
-         */
-        GetTemplateApiRequest: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-        };
-        /**
-         * GetTemplateApiResponse
-         * @description Response for getting a template.
-         */
-        GetTemplateApiResponse: {
-            item?: components["schemas"]["GetTemplateV4Item"] | null;
-        };
-        /**
-         * GetTemplateHtmlApiRequest
-         * @description Request for getting template HTML by ID.
-         */
-        GetTemplateHtmlApiRequest: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-        };
-        /**
-         * GetTemplateHtmlApiResponse
-         * @description Response for getting template HTML.
-         */
-        GetTemplateHtmlApiResponse: {
-            /** Html */
-            html?: string | null;
-        };
-        /**
-         * GetTemplateV4Item
-         * @description Template item returned from get endpoint.
-         */
-        GetTemplateV4Item: {
-            /** Template Id */
-            template_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Generated */
-            generated?: boolean | null;
-        };
-        /**
          * GetTestArtifactRequest
          * @description Request for benchmark test artifact detail.
          */
@@ -21587,7 +21487,6 @@ export interface components {
             options?: components["schemas"]["TrainingBundleOptionSection"] | null;
             videos?: components["schemas"]["TrainingBundleVideoSection"] | null;
             images?: components["schemas"]["TrainingBundleImageSection"] | null;
-            templates?: components["schemas"]["TrainingBundleTemplateSection"] | null;
             problem_statements?: components["schemas"]["TrainingBundleProblemStatementSection"] | null;
             objectives?: components["schemas"]["TrainingBundleObjectiveSection"] | null;
             /** Agents */
@@ -21635,8 +21534,6 @@ export interface components {
             video_ids?: string[];
             /** Image Ids */
             image_ids?: string[];
-            /** Template Ids */
-            template_ids?: string[];
             /** Problem Statement Ids */
             problem_statement_ids?: string[];
             /** Objective Ids */
@@ -21666,11 +21563,6 @@ export interface components {
              * @default false
              */
             questions_enabled: boolean;
-            /**
-             * Use Templates
-             * @default false
-             */
-            use_templates: boolean;
         };
         /**
          * GetTrainingContextViewResponse
@@ -25713,7 +25605,6 @@ export interface components {
             departments?: components["schemas"]["ScenarioMultiResourceAction"] | null;
             personas?: components["schemas"]["ScenarioMultiResourceAction"] | null;
             documents?: components["schemas"]["ScenarioMultiResourceAction"] | null;
-            templates?: components["schemas"]["ScenarioMultiResourceAction"] | null;
             parameters?: components["schemas"]["ScenarioMultiResourceAction"] | null;
             parameter_fields?: components["schemas"]["ScenarioMultiResourceAction"] | null;
             images?: components["schemas"]["ScenarioMultiResourceAction"] | null;
@@ -25858,7 +25749,6 @@ export interface components {
             options?: components["schemas"]["TrainingBundleMultiResourceAction"] | null;
             videos?: components["schemas"]["TrainingBundleMultiResourceAction"] | null;
             images?: components["schemas"]["TrainingBundleMultiResourceAction"] | null;
-            templates?: components["schemas"]["TrainingBundleMultiResourceAction"] | null;
             problem_statements?: components["schemas"]["TrainingBundleMultiResourceAction"] | null;
             objectives?: components["schemas"]["TrainingBundleMultiResourceAction"] | null;
         };
@@ -27990,6 +27880,8 @@ export interface components {
             generated: boolean | null;
             /** Upload Id */
             upload_id: string | null;
+            /** Html */
+            html: boolean | null;
         };
         /** QGetDomainsV4Item */
         QGetDomainsV4Item: {
@@ -28812,8 +28704,6 @@ export interface components {
             images_enabled: boolean | null;
             /** Questions Enabled */
             questions_enabled: boolean | null;
-            /** Templates Enabled */
-            templates_enabled: boolean | null;
             /** Persona Ids */
             persona_ids: string[] | null;
         };
@@ -29031,17 +28921,6 @@ export interface components {
             id: string | null;
             /** Temperature */
             temperature: number | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetTemplatesV4Item */
-        QGetTemplatesV4Item: {
-            /** Template Id */
-            template_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
             /** Generated */
             generated: boolean | null;
         };
@@ -31017,7 +30896,6 @@ export interface components {
             departments: components["schemas"]["ScenarioMultiResourceAction"];
             personas: components["schemas"]["ScenarioMultiResourceAction"];
             documents: components["schemas"]["ScenarioMultiResourceAction"];
-            templates: components["schemas"]["ScenarioMultiResourceAction"];
             parameters: components["schemas"]["ScenarioMultiResourceAction"];
             parameter_fields: components["schemas"]["ScenarioMultiResourceAction"];
             images: components["schemas"]["ScenarioMultiResourceAction"];
@@ -31217,6 +31095,8 @@ export interface components {
             mime_type?: string | null;
             /** Upload Id */
             upload_id?: string | null;
+            /** Html */
+            html?: boolean | null;
             /** Parameter Ids */
             parameter_ids?: string[] | null;
             /** Field Ids */
@@ -31392,8 +31272,6 @@ export interface components {
             persona_resources?: components["schemas"]["QGetPersonasV4Item"][] | null;
             /** Document Resources */
             document_resources?: components["schemas"]["QGetDocumentsV4Item"][] | null;
-            /** Template Resources */
-            template_resources?: components["schemas"]["QGetTemplatesV4Item"][] | null;
             /** Objective Resources */
             objective_resources?: components["schemas"]["QGetObjectivesV4Item"][] | null;
             /** Question Resources */
@@ -31872,48 +31750,6 @@ export interface components {
         ScenarioRubricsApiResponse: {
             /** Id */
             id?: string | null;
-        };
-        /**
-         * ScenarioTemplate
-         * @description Template for scenario.
-         */
-        ScenarioTemplate: {
-            /** Template Id */
-            template_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Generated */
-            generated?: boolean | null;
-        };
-        /** ScenarioTemplateSection */
-        ScenarioTemplateSection: {
-            /**
-             * Show
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @default false
-             */
-            required: boolean;
-            /** Suggestions */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
-            /** Current */
-            current?: components["schemas"]["ScenarioTemplate"][] | null;
-            /** Resources */
-            resources?: components["schemas"]["ScenarioTemplate"][] | null;
         };
         /** ScenarioTimeLimitsApiRequest */
         ScenarioTimeLimitsApiRequest: {
@@ -33531,28 +33367,6 @@ export interface components {
             /** Items */
             items?: components["schemas"]["QGetTemperatureLevelsV4Item"][] | null;
         };
-        /** SearchTemplatesApiRequest */
-        SearchTemplatesApiRequest: {
-            /** Search */
-            search?: string | null;
-            /**
-             * Limit Count
-             * @default 20
-             */
-            limit_count: number | null;
-            /**
-             * Offset Count
-             * @default 0
-             */
-            offset_count: number | null;
-            /** Exclude Ids */
-            exclude_ids?: string[] | null;
-        };
-        /** SearchTemplatesApiResponse */
-        SearchTemplatesApiResponse: {
-            /** Items */
-            items?: components["schemas"]["QGetTemplatesV4Item"][] | null;
-        };
         /** SearchTextsApiRequest */
         SearchTextsApiRequest: {
             /** Search */
@@ -34628,47 +34442,6 @@ export interface components {
             highlights?: components["schemas"]["HighlightItem"][] | null;
         };
         /**
-         * TemplateEntry
-         * @description Template entry with resource metadata.
-         */
-        TemplateEntry: {
-            /** Template Id */
-            template_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-        };
-        /** TemplatesApiRequest */
-        TemplatesApiRequest: {
-            /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
-            /** Name */
-            name: string;
-            /** Html */
-            html?: string | null;
-            /** Description */
-            description?: string | null;
-            /**
-             * Mcp
-             * @default false
-             */
-            mcp: boolean | null;
-        };
-        /** TemplatesApiResponse */
-        TemplatesApiResponse: {
-            /** Template Id */
-            template_id?: string | null;
-        };
-        /**
          * TestAllCompleteEvent
          * @description Server-to-client event: test_all_complete.
          *
@@ -35682,11 +35455,6 @@ export interface components {
              * @default false
              */
             questions_enabled: boolean;
-            /**
-             * Use Templates
-             * @default false
-             */
-            use_templates: boolean;
         };
         /** TrainingBundleScenarioSection */
         TrainingBundleScenarioSection: {
@@ -35715,34 +35483,6 @@ export interface components {
             current?: components["schemas"]["app__sql__types__QGetScenariosV4Item"][] | null;
             /** Resources */
             resources?: components["schemas"]["app__sql__types__QGetScenariosV4Item"][] | null;
-        };
-        /** TrainingBundleTemplateSection */
-        TrainingBundleTemplateSection: {
-            /**
-             * Show
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @default false
-             */
-            required: boolean;
-            /** Suggestions */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
-            /** Current */
-            current?: components["schemas"]["QGetTemplatesV4Item"][] | null;
-            /** Resources */
-            resources?: components["schemas"]["QGetTemplatesV4Item"][] | null;
         };
         /** TrainingBundleVideoSection */
         TrainingBundleVideoSection: {
@@ -36582,8 +36322,6 @@ export interface components {
             images_enabled: boolean | null;
             /** Questions Enabled */
             questions_enabled: boolean | null;
-            /** Templates Enabled */
-            templates_enabled: boolean | null;
             /** Persona Ids */
             persona_ids: string[] | null;
         };
@@ -44283,6 +44021,43 @@ export interface operations {
             };
         };
     };
+    get_document_html_api_v4_resources_documents_html_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetDocumentHtmlApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetDocumentHtmlApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     search_documents_api_v4_resources_documents_search_post: {
         parameters: {
             query?: never;
@@ -49413,154 +49188,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchTemperatureLevelsApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_templates_api_v4_resources_templates_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TemplatesApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TemplatesApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_template_api_v4_resources_templates_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetTemplateApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetTemplateApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_template_html_api_v4_resources_templates_html_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetTemplateHtmlApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetTemplateHtmlApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    search_templates_api_v4_resources_templates_search_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SearchTemplatesApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SearchTemplatesApiResponse"];
                 };
             };
             /** @description Validation Error */

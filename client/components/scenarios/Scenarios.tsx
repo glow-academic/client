@@ -595,7 +595,6 @@ export function Scenarios({
       { id: "documents", label: "Documents", active: true },
       { id: "parameters", label: "Parameters", active: true },
       { id: "fields", label: "Fields", active: true },
-      { id: "templates", label: "Templates", active: true },
       { id: "images", label: "Images", active: true },
       { id: "videos", label: "Videos", active: true },
       { id: "questions", label: "Questions", active: true },

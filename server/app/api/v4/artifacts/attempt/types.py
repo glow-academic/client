@@ -85,20 +85,13 @@ class DocumentEntry(BaseModel):
     upload_id: UUID | None = None
     name: str | None = None
     description: str | None = None
+    html: bool | None = None
 
 
 class AnalysisEntry(BaseModel):
     """Analysis entry for chat-level analysis content."""
 
     content: str | None = None
-
-
-class TemplateEntry(BaseModel):
-    """Template entry with resource metadata."""
-
-    template_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
 
 
 class ObjectiveEntry(BaseModel):
@@ -426,7 +419,7 @@ class ChatData(BaseModel):
     Split into view categories:
     - Normal/General View: problem_statement, objectives, personas, images
     - Video/Quiz View: videos, questions, options, responses
-    - Both Views: documents, templates
+    - Both Views: documents
     """
 
     id: UUID
@@ -466,7 +459,6 @@ class ChatData(BaseModel):
 
     # --- Both Views resource IDs ---
     document_ids: list[UUID] | None = None
-    template_ids: list[UUID] | None = None
 
     # --- Rubric/Grade resource IDs ---
     rubric_id: UUID | None = None
@@ -482,7 +474,6 @@ class AttemptResources(BaseModel):
     documents: dict[str, DocumentEntry] | None = None
     images: dict[str, ImageEntry] | None = None
     videos: dict[str, VideoEntry] | None = None
-    templates: dict[str, TemplateEntry] | None = None
     objectives: dict[str, ObjectiveEntry] | None = None
     questions: dict[str, QuestionEntry] | None = None
     options: dict[str, OptionEntry] | None = None

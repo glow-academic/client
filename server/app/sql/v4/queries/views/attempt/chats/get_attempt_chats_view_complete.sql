@@ -123,7 +123,6 @@ CREATE TYPE types.q_get_attempt_chats_view_v4_item AS (
     responses types.q_get_attempt_chats_view_v4_response[],
 
     -- Resource IDs - Both Views (plural arrays)
-    template_ids uuid[],
     image_ids uuid[],
     video_ids uuid[],
     document_ids uuid[],
@@ -246,7 +245,6 @@ AS $$
             mv.option_ids,
             rt.responses,
             -- Resource IDs - Both Views
-            mv.template_ids,
             mv.image_ids,
             mv.video_ids,
             mv.document_ids,
@@ -287,7 +285,6 @@ AS $$
                     question_ids,
                     option_ids,
                     responses,
-                    template_ids,
                     image_ids,
                     video_ids,
                     document_ids,

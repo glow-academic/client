@@ -14,7 +14,6 @@ import { Fields } from "@/components/resources/Fields";
 import { Questions } from "@/components/resources/Questions";
 import { Videos } from "@/components/resources/Videos";
 import { Images } from "@/components/resources/Images";
-import { Templates } from "@/components/resources/Templates";
 import { ProblemStatements } from "@/components/resources/ProblemStatements";
 import { Objectives } from "@/components/resources/Objectives";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -49,7 +48,6 @@ type TrainingBundleFormState = {
   option_ids: string[];
   video_ids: string[];
   image_ids: string[];
-  template_ids: string[];
   problem_statement_ids: string[];
   objective_ids: string[];
 };
@@ -98,7 +96,6 @@ export default function TrainingBundle({
       option_ids: extractIds(s.options?.current, "option_id"),
       video_ids: extractIds(s.videos?.current, "video_id"),
       image_ids: extractIds(s.images?.current, "image_id"),
-      template_ids: extractIds(s.templates?.current, "template_id"),
       problem_statement_ids: extractIds(
         s.problem_statements?.current,
         "problem_statement_id",
@@ -160,7 +157,6 @@ export default function TrainingBundle({
           options: { resource_ids: formState.option_ids },
           videos: { resource_ids: formState.video_ids },
           images: { resource_ids: formState.image_ids },
-          templates: { resource_ids: formState.template_ids },
           problem_statements: {
             resource_ids: formState.problem_statement_ids,
           },
@@ -365,20 +361,6 @@ export default function TrainingBundle({
           }
           disabled={false}
           label="Images"
-        />
-      )}
-
-      {s.templates?.show && (
-        <Templates
-          template_ids={formState.template_ids}
-          template_resources={s.templates.current ?? []}
-          show_templates={s.templates.show}
-          templates={s.templates.resources ?? []}
-          onChange={(ids) =>
-            setFormState((prev) => ({ ...prev, template_ids: ids }))
-          }
-          disabled={false}
-          label="Templates"
         />
       )}
 

@@ -20,7 +20,6 @@ export const scenarioSearchParams = {
   departmentIds: parseAsArrayOf(parseAsString),
   personaIds: parseAsArrayOf(parseAsString),
   documentIds: parseAsArrayOf(parseAsString),
-  templateDocumentIds: parseAsArrayOf(parseAsString),
   parameterIds: parseAsArrayOf(parseAsString),
   fieldIds: parseAsArrayOf(parseAsString),
 
@@ -35,13 +34,11 @@ export const scenarioSearchParams = {
   parameterSearch: parseAsString,
   descriptionSearch: parseAsString,
   problemStatementSearch: parseAsString,
-  templateSearch: parseAsString,
   imageSearch: parseAsString,
   videoSearch: parseAsString,
 
   // Filter toggles
   documentShowSelected: parseAsBoolean,
-  documentShowTemplate: parseAsBoolean,
   personaShowSelected: parseAsBoolean,
   parameterShowSelected: parseAsBoolean,
 

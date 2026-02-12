@@ -65,7 +65,6 @@ DECLARE
         'questions',
         'responses',
         'scenario_flags',
-        'templates',
         'videos'
     ];
     is_scenario_resource boolean := FALSE;

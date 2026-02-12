@@ -98,8 +98,7 @@ CREATE TYPE types.q_get_simulation_v4_scenario_resource AS (
     objectives_enabled boolean,
     video_enabled boolean,
     images_enabled boolean,
-    questions_enabled boolean,
-    templates_enabled boolean
+    questions_enabled boolean
 );
 
 CREATE TYPE types.q_get_simulation_v4_scenario_flag_resource AS (
@@ -2735,8 +2734,7 @@ SELECT
              s.objectives_enabled,
              s.video_enabled,
              s.images_enabled,
-             s.questions_enabled,
-             s.templates_enabled
+             s.questions_enabled
             )::types.q_get_simulation_v4_scenario_resource
             ORDER BY (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = ssj_res.scenario_id LIMIT 1)
         )
@@ -2769,8 +2767,7 @@ SELECT
              s.objectives_enabled,
              s.video_enabled,
              s.images_enabled,
-             s.questions_enabled,
-             s.templates_enabled
+             s.questions_enabled
             )::types.q_get_simulation_v4_scenario_resource
             ORDER BY (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = ssj_all.scenario_id LIMIT 1)
         ) FROM scenarios_resource s

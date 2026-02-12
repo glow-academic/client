@@ -23,7 +23,6 @@ export type ResourceType =
   | "scenario_rubrics"
   | "simulation_positions"
   | "simulations"
-  | "templates"
   | "uploads"
   | "images"
   | "texts"

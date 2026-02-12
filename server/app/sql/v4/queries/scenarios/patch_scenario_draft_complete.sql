@@ -50,7 +50,6 @@ CREATE OR REPLACE FUNCTION api_patch_scenario_draft_v4(
     departments types.scenario_multi_resource_action DEFAULT NULL,
     personas types.scenario_multi_resource_action DEFAULT NULL,
     documents types.scenario_multi_resource_action DEFAULT NULL,
-    templates types.scenario_multi_resource_action DEFAULT NULL,
     parameters types.scenario_multi_resource_action DEFAULT NULL,
     parameter_fields types.scenario_multi_resource_action DEFAULT NULL,
     images types.scenario_multi_resource_action DEFAULT NULL,
@@ -84,11 +83,9 @@ DECLARE
     video_enabled_flag_id uuid;
     questions_enabled_flag_id uuid;
     problem_statement_enabled_flag_id uuid;
-    use_templates_flag_id uuid;
     department_ids uuid[];
     persona_ids uuid[];
     document_ids uuid[];
-    template_document_ids uuid[];
     parameter_ids uuid[];
     parameter_field_ids uuid[];
     image_ids uuid[];
@@ -139,16 +136,9 @@ BEGIN
           AND fr.id = ANY(COALESCE((flags).resource_ids, ARRAY[]::uuid[]))
         LIMIT 1
     );
-    use_templates_flag_id := (
-        SELECT fr.id FROM flags_resource fr
-        WHERE fr.name = 'scenario_use_templates'
-          AND fr.id = ANY(COALESCE((flags).resource_ids, ARRAY[]::uuid[]))
-        LIMIT 1
-    );
     department_ids := COALESCE((departments).resource_ids, ARRAY[]::uuid[]);
     persona_ids := COALESCE((personas).resource_ids, ARRAY[]::uuid[]);
     document_ids := COALESCE((documents).resource_ids, ARRAY[]::uuid[]);
-    template_document_ids := COALESCE((templates).resource_ids, ARRAY[]::uuid[]);
     parameter_ids := COALESCE((parameters).resource_ids, ARRAY[]::uuid[]);
     parameter_field_ids := COALESCE((parameter_fields).resource_ids, ARRAY[]::uuid[]);
     image_ids := COALESCE((images).resource_ids, ARRAY[]::uuid[]);
@@ -200,10 +190,6 @@ BEGIN
         RAISE EXCEPTION 'Flag resource not found: %', problem_statement_enabled_flag_id;
     END IF;
 
-    IF use_templates_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = use_templates_flag_id) THEN
-        RAISE EXCEPTION 'Flag resource not found: %', use_templates_flag_id;
-    END IF;
-
     IF problem_statement_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM problem_statements_resource WHERE id = problem_statement_id) THEN
         RAISE EXCEPTION 'Problem statement resource not found: %', problem_statement_id;
     END IF;
@@ -248,7 +234,6 @@ BEGIN
             DELETE FROM departments_drafts_connection WHERE departments_drafts_connection.draft_id = v_draft_id;
             DELETE FROM personas_drafts_connection WHERE personas_drafts_connection.draft_id = v_draft_id;
             DELETE FROM documents_drafts_connection WHERE documents_drafts_connection.draft_id = v_draft_id;
-            DELETE FROM templates_drafts_connection WHERE templates_drafts_connection.draft_id = v_draft_id;
             DELETE FROM parameters_drafts_connection WHERE parameters_drafts_connection.draft_id = v_draft_id;
             DELETE FROM fields_drafts_connection WHERE fields_drafts_connection.draft_id = v_draft_id;
             DELETE FROM images_drafts_connection WHERE images_drafts_connection.draft_id = v_draft_id;
@@ -313,13 +298,6 @@ BEGIN
                 SET version = v_new_version;
             END IF;
 
-            IF use_templates_flag_id IS NOT NULL THEN
-                INSERT INTO flags_drafts_connection (draft_id, flags_id, version)
-                VALUES (v_draft_id, use_templates_flag_id, v_new_version)
-                ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE
-                SET version = v_new_version;
-            END IF;
-
             IF department_ids IS NOT NULL THEN
                 INSERT INTO departments_drafts_connection (draft_id, departments_id, version)
                 SELECT v_draft_id, dept_id, v_new_version
@@ -341,14 +319,6 @@ BEGIN
                 SELECT v_draft_id, doc_id, v_new_version
                 FROM unnest(document_ids) as doc_id
                 ON CONFLICT ON CONSTRAINT documents_draft_pkey DO UPDATE
-                SET version = v_new_version;
-            END IF;
-
-            IF template_document_ids IS NOT NULL THEN
-                INSERT INTO templates_drafts_connection (draft_id, templates_id, version)
-                SELECT v_draft_id, template_id, v_new_version
-                FROM unnest(template_document_ids) as template_id
-                ON CONFLICT ON CONSTRAINT templates_draft_pkey DO UPDATE
                 SET version = v_new_version;
             END IF;
 
@@ -484,13 +454,6 @@ BEGIN
             SET version = v_new_version;
         END IF;
 
-        IF use_templates_flag_id IS NOT NULL THEN
-            INSERT INTO flags_drafts_connection (draft_id, flags_id, version)
-            VALUES (v_draft_id, use_templates_flag_id, v_new_version)
-            ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE
-            SET version = v_new_version;
-        END IF;
-
         IF department_ids IS NOT NULL THEN
             INSERT INTO departments_drafts_connection (draft_id, departments_id, version)
             SELECT v_draft_id, dept_id, v_new_version
@@ -512,14 +475,6 @@ BEGIN
             SELECT v_draft_id, doc_id, v_new_version
             FROM unnest(document_ids) as doc_id
             ON CONFLICT ON CONSTRAINT documents_draft_pkey DO UPDATE
-            SET version = v_new_version;
-        END IF;
-
-        IF template_document_ids IS NOT NULL THEN
-            INSERT INTO templates_drafts_connection (draft_id, templates_id, version)
-            SELECT v_draft_id, template_id, v_new_version
-            FROM unnest(template_document_ids) as template_id
-            ON CONFLICT ON CONSTRAINT templates_draft_pkey DO UPDATE
             SET version = v_new_version;
         END IF;
 
@@ -718,26 +673,6 @@ BEGIN
                 INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((documents).link_tool_id, v_call_id);
                 INSERT INTO documents_calls_connection (documents_id, call_id)
                 SELECT x.document_id, v_call_id FROM UNNEST(document_ids) AS x(document_id);
-            END IF;
-        END IF;
-
-        -- templates
-        IF COALESCE(array_length(template_document_ids, 1), 0) > 0 THEN
-            IF (templates).create_tool_id IS NOT NULL THEN
-                v_call_id := uuidv7();
-                INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
-                VALUES (v_call_id, 'scenario_draft_create_templates_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-                INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((templates).create_tool_id, v_call_id);
-                INSERT INTO templates_calls_connection (templates_id, call_id)
-                SELECT x.template_id, v_call_id FROM UNNEST(template_document_ids) AS x(template_id);
-            END IF;
-            IF (templates).link_tool_id IS NOT NULL THEN
-                v_call_id := uuidv7();
-                INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
-                VALUES (v_call_id, 'scenario_draft_link_templates_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-                INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((templates).link_tool_id, v_call_id);
-                INSERT INTO templates_calls_connection (templates_id, call_id)
-                SELECT x.template_id, v_call_id FROM UNNEST(template_document_ids) AS x(template_id);
             END IF;
         END IF;
 

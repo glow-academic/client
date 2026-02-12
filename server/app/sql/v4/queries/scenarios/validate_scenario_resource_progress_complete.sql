@@ -64,7 +64,6 @@ DECLARE
         'questions',
         'responses',
         'scenario_flags',
-        'templates',
         'videos'
     ];
 BEGIN

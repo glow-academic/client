@@ -68,7 +68,6 @@ CREATE OR REPLACE FUNCTION api_save_scenario_v4(
     departments types.scenario_multi_resource_action DEFAULT NULL,
     personas types.scenario_multi_resource_action DEFAULT NULL,
     documents types.scenario_multi_resource_action DEFAULT NULL,
-    templates types.scenario_multi_resource_action DEFAULT NULL,
     parameters types.scenario_multi_resource_action DEFAULT NULL,
     parameter_fields types.scenario_multi_resource_action DEFAULT NULL,
     images types.scenario_multi_resource_action DEFAULT NULL,
@@ -100,11 +99,9 @@ DECLARE
     v_video_enabled_flag_id uuid;
     v_questions_enabled_flag_id uuid;
     v_problem_statement_enabled_flag_id uuid;
-    v_use_templates_flag_id uuid;
     v_department_ids uuid[];
     v_persona_ids uuid[];
     v_document_ids uuid[];
-    v_template_document_ids uuid[];
     v_parameter_ids uuid[];
     v_parameter_field_ids uuid[];
     v_image_ids uuid[];
@@ -160,16 +157,9 @@ BEGIN
           AND fr.id = ANY(COALESCE((flags).resource_ids, ARRAY[]::uuid[]))
         LIMIT 1
     );
-    v_use_templates_flag_id := (
-        SELECT fr.id FROM flags_resource fr
-        WHERE fr.name = 'scenario_use_templates'
-          AND fr.id = ANY(COALESCE((flags).resource_ids, ARRAY[]::uuid[]))
-        LIMIT 1
-    );
     v_department_ids := COALESCE((departments).resource_ids, ARRAY[]::uuid[]);
     v_persona_ids := COALESCE((personas).resource_ids, ARRAY[]::uuid[]);
     v_document_ids := COALESCE((documents).resource_ids, ARRAY[]::uuid[]);
-    v_template_document_ids := COALESCE((templates).resource_ids, ARRAY[]::uuid[]);
     v_parameter_ids := COALESCE((parameters).resource_ids, ARRAY[]::uuid[]);
     v_parameter_field_ids := COALESCE((parameter_fields).resource_ids, ARRAY[]::uuid[]);
     v_image_ids := COALESCE((images).resource_ids, ARRAY[]::uuid[]);
@@ -253,10 +243,6 @@ BEGIN
         RAISE EXCEPTION 'Flag resource not found: %', v_problem_statement_enabled_flag_id;
     END IF;
 
-    IF v_use_templates_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = v_use_templates_flag_id) THEN
-        RAISE EXCEPTION 'Flag resource not found: %', v_use_templates_flag_id;
-    END IF;
-
     -- For update: deactivate old links first (persona-style active history)
     IF NOT is_create THEN
         UPDATE scenario_names_junction SET active = false WHERE scenario_id = v_scenario_id AND active = true;
@@ -265,7 +251,6 @@ BEGIN
         UPDATE scenario_departments_junction SET active = false WHERE scenario_id = v_scenario_id AND active = true;
         UPDATE scenario_personas_junction SET active = false WHERE scenario_id = v_scenario_id AND active = true;
         UPDATE scenario_documents_junction SET active = false WHERE scenario_id = v_scenario_id AND active = true;
-        UPDATE scenario_templates_junction SET active = false WHERE scenario_id = v_scenario_id AND active = true;
         UPDATE scenario_parameters_junction SET active = false WHERE scenario_id = v_scenario_id AND active = true;
         UPDATE scenario_parameter_fields_junction SET active = false WHERE scenario_id = v_scenario_id AND active = true;
         UPDATE scenario_images_junction SET active = false WHERE scenario_id = v_scenario_id AND active = true;
@@ -414,26 +399,6 @@ BEGIN
             INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((documents).link_tool_id, v_call_id);
             INSERT INTO documents_calls_connection (documents_id, call_id)
             SELECT x.document_id, v_call_id FROM UNNEST(v_document_ids) AS x(document_id);
-        END IF;
-    END IF;
-
-    -- templates
-    IF COALESCE(array_length(v_template_document_ids, 1), 0) > 0 THEN
-        IF (templates).create_tool_id IS NOT NULL THEN
-            v_call_id := uuidv7();
-            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
-            VALUES (v_call_id, 'scenario_save_create_templates_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((templates).create_tool_id, v_call_id);
-            INSERT INTO templates_calls_connection (templates_id, call_id)
-            SELECT x.template_id, v_call_id FROM UNNEST(v_template_document_ids) AS x(template_id);
-        END IF;
-        IF (templates).link_tool_id IS NOT NULL THEN
-            v_call_id := uuidv7();
-            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
-            VALUES (v_call_id, 'scenario_save_link_templates_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((templates).link_tool_id, v_call_id);
-            INSERT INTO templates_calls_connection (templates_id, call_id)
-            SELECT x.template_id, v_call_id FROM UNNEST(v_template_document_ids) AS x(template_id);
         END IF;
     END IF;
 
@@ -626,12 +591,6 @@ BEGIN
         ON CONFLICT (scenario_id, flag_id) DO UPDATE SET value = EXCLUDED.value, active = true;
     END IF;
 
-    IF v_use_templates_flag_id IS NOT NULL THEN
-        INSERT INTO scenario_flags_junction (scenario_id, flag_id, value, created_at)
-        VALUES (v_scenario_id, v_use_templates_flag_id, true, NOW())
-        ON CONFLICT (scenario_id, flag_id) DO UPDATE SET value = EXCLUDED.value, active = true;
-    END IF;
-
     IF v_department_ids IS NOT NULL THEN
         INSERT INTO scenario_departments_junction (scenario_id, department_id, active, created_at)
         SELECT v_scenario_id, dept_id, true, NOW()
@@ -651,13 +610,6 @@ BEGIN
         SELECT v_scenario_id, doc_id, true, NOW()
         FROM UNNEST(v_document_ids) as doc_id
         ON CONFLICT (scenario_id, document_id) DO UPDATE SET active = true;
-    END IF;
-
-    IF v_template_document_ids IS NOT NULL THEN
-        INSERT INTO scenario_templates_junction (scenario_id, template_id, active, created_at)
-        SELECT v_scenario_id, template_id, true, NOW()
-        FROM UNNEST(v_template_document_ids) as template_id
-        ON CONFLICT (scenario_id, template_id) DO UPDATE SET active = true;
     END IF;
 
     IF v_parameter_ids IS NOT NULL THEN
@@ -724,7 +676,6 @@ BEGIN
         video_enabled,
         images_enabled,
         questions_enabled,
-        templates_enabled,
         department_ids,
         is_root
     )
@@ -736,7 +687,6 @@ BEGIN
         v_video_enabled_flag_id IS NOT NULL,
         v_images_enabled_flag_id IS NOT NULL,
         v_questions_enabled_flag_id IS NOT NULL,
-        v_use_templates_flag_id IS NOT NULL,
         v_department_ids,
         is_create  -- new scenarios are root; updates preserve existing tree structure
     FROM (SELECT 1) one

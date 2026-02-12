@@ -18,7 +18,6 @@ export function buildSearchParams({
   draftState,
   selectedPersonaIds,
   currentDocumentIds,
-  templateDocumentIds,
   currentFieldIds,
   currentProblemStatementIds,
   currentObjectiveIds,
@@ -26,7 +25,6 @@ export function buildSearchParams({
   documentSearchTerm,
   parameterSearchTerm,
   documentShowSelected,
-  documentShowTemplate,
   personaShowSelected,
   parameterShowSelected,
   fieldShowSelectedByParam,
@@ -50,7 +48,6 @@ export function buildSearchParams({
   draftState: DraftState;
   selectedPersonaIds: string[];
   currentDocumentIds: string[];
-  templateDocumentIds: string[];
   currentFieldIds: string[];
   currentProblemStatementIds: string[];
   currentObjectiveIds: string[];
@@ -58,7 +55,6 @@ export function buildSearchParams({
   documentSearchTerm: string;
   parameterSearchTerm: string;
   documentShowSelected: boolean;
-  documentShowTemplate: boolean;
   personaShowSelected: boolean;
   parameterShowSelected: boolean;
   fieldShowSelectedByParam: Record<string, boolean>;
@@ -120,11 +116,6 @@ export function buildSearchParams({
       params.append("documentIds", id);
     });
   }
-  if (templateDocumentIds.length > 0) {
-    templateDocumentIds.forEach((id) => {
-      params.append("templateDocumentIds", id);
-    });
-  }
   if (draftState.parameterIds && draftState.parameterIds.length > 0) {
     draftState.parameterIds.forEach((id) => {
       params.append("parameterIds", id);
@@ -160,9 +151,6 @@ export function buildSearchParams({
   // Add filter params when true (omit when false, following boolean flag pattern)
   if (documentShowSelected) {
     params.set("documentShowSelected", "true");
-  }
-  if (documentShowTemplate) {
-    params.set("documentShowTemplate", "true");
   }
   if (personaShowSelected) {
     params.set("personaShowSelected", "true");

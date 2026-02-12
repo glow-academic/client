@@ -48,7 +48,6 @@ RETURNS TABLE (
     department_ids uuid[],
     persona_ids uuid[],
     document_ids uuid[],
-    template_ids uuid[],
     parameter_ids uuid[],
     field_ids uuid[],
     image_ids uuid[],
@@ -78,7 +77,6 @@ DECLARE
         'questions',
         'responses',
         'scenario_flags',
-        'templates',
         'videos'
     ];
 BEGIN
@@ -103,7 +101,6 @@ BEGIN
         CASE WHEN resource_type = 'departments' THEN ARRAY[resource_id] ELSE ARRAY[]::uuid[] END as department_ids,
         CASE WHEN resource_type = 'personas' THEN ARRAY[resource_id] ELSE ARRAY[]::uuid[] END as persona_ids,
         CASE WHEN resource_type = 'documents' THEN ARRAY[resource_id] ELSE ARRAY[]::uuid[] END as document_ids,
-        CASE WHEN resource_type = 'templates' THEN ARRAY[resource_id] ELSE ARRAY[]::uuid[] END as template_ids,
         CASE WHEN resource_type = 'parameters' THEN ARRAY[resource_id] ELSE ARRAY[]::uuid[] END as parameter_ids,
         CASE WHEN resource_type = 'fields' THEN ARRAY[resource_id] ELSE ARRAY[]::uuid[] END as field_ids,
         CASE WHEN resource_type = 'images' THEN ARRAY[resource_id] ELSE ARRAY[]::uuid[] END as image_ids,

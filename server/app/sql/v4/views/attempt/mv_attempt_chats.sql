@@ -106,7 +106,6 @@ subbundle_snapshot AS (
         COALESCE(ARRAY_AGG(DISTINCT toc.objectives_id ORDER BY toc.objectives_id) FILTER (WHERE toc.objectives_id IS NOT NULL), ARRAY[]::uuid[]) AS objective_ids,
         COALESCE(ARRAY_AGG(DISTINCT tqc.questions_id ORDER BY tqc.questions_id) FILTER (WHERE tqc.questions_id IS NOT NULL), ARRAY[]::uuid[]) AS question_ids,
         COALESCE(ARRAY_AGG(DISTINCT topt.options_id ORDER BY topt.options_id) FILTER (WHERE topt.options_id IS NOT NULL), ARRAY[]::uuid[]) AS option_ids,
-        COALESCE(ARRAY_AGG(DISTINCT ttc.templates_id ORDER BY ttc.templates_id) FILTER (WHERE ttc.templates_id IS NOT NULL), ARRAY[]::uuid[]) AS template_ids,
         COALESCE(ARRAY_AGG(DISTINCT tic.images_id ORDER BY tic.images_id) FILTER (WHERE tic.images_id IS NOT NULL), ARRAY[]::uuid[]) AS image_ids,
         COALESCE(ARRAY_AGG(DISTINCT tvc.videos_id ORDER BY tvc.videos_id) FILTER (WHERE tvc.videos_id IS NOT NULL), ARRAY[]::uuid[]) AS video_ids,
         COALESCE(ARRAY_AGG(DISTINCT tdc.documents_id ORDER BY tdc.documents_id) FILTER (WHERE tdc.documents_id IS NOT NULL), ARRAY[]::uuid[]) AS document_ids,
@@ -124,7 +123,6 @@ subbundle_snapshot AS (
     LEFT JOIN training_bundle_departments_objectives_connection toc ON toc.training_bundle_department_id = tbd.id AND toc.active = true
     LEFT JOIN training_bundle_departments_questions_connection tqc ON tqc.training_bundle_department_id = tbd.id AND tqc.active = true
     LEFT JOIN training_bundle_departments_options_connection topt ON topt.training_bundle_department_id = tbd.id AND topt.active = true
-    LEFT JOIN training_bundle_departments_templates_connection ttc ON ttc.training_bundle_department_id = tbd.id AND ttc.active = true
     LEFT JOIN training_bundle_departments_images_connection tic ON tic.training_bundle_department_id = tbd.id AND tic.active = true
     LEFT JOIN training_bundle_departments_videos_connection tvc ON tvc.training_bundle_department_id = tbd.id AND tvc.active = true
     LEFT JOIN training_bundle_departments_documents_connection tdc ON tdc.training_bundle_department_id = tbd.id AND tdc.active = true
@@ -189,7 +187,6 @@ base_chats AS (
         COALESCE(sb.objective_ids, ARRAY[]::uuid[]) AS objective_ids,
         COALESCE(sb.question_ids, ARRAY[]::uuid[]) AS question_ids,
         COALESCE(sb.option_ids, ARRAY[]::uuid[]) AS option_ids,
-        COALESCE(sb.template_ids, ARRAY[]::uuid[]) AS template_ids,
         COALESCE(sb.image_ids, ARRAY[]::uuid[]) AS image_ids,
         COALESCE(sb.video_ids, ARRAY[]::uuid[]) AS video_ids,
         COALESCE(sb.document_ids, ARRAY[]::uuid[]) AS document_ids,
@@ -232,7 +229,6 @@ SELECT
     bc.question_ids,
     bc.option_ids,
     COALESCE(ra.responses, ARRAY[]::types.mv_response[]) AS responses,
-    bc.template_ids,
     bc.image_ids,
     bc.video_ids,
     bc.document_ids,
