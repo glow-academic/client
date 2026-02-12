@@ -2,7 +2,7 @@
  * app/(main)/system/providers/page.tsx
  * Providers list page
  */
-import Providers from "@/components/providers/Providers";
+import Providers from "@/components/artifacts/provider/Providers";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";

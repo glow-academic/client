@@ -4,7 +4,7 @@
  */
 
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
-import Tool from "@/components/tools/Tool";
+import Tool from "@/components/artifacts/tool/Tool";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";

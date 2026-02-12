@@ -5,7 +5,7 @@
  * 06/09/2025
  */
 
-import Scenario from "@/components/scenarios/Scenario";
+import Scenario from "@/components/artifacts/scenario/Scenario";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";

@@ -37,29 +37,24 @@ router = APIRouter()
 
 async def search_scenario_personas_internal(
     conn: asyncpg.Connection,
-    simulation_id: UUID | None,
     scenario_ids: list[UUID],
     bypass_cache: bool = False,
 ) -> list[QGetScenarioPersonasV4Item]:
-    """Internal function for parallel fetching from simulation endpoint.
+    """Internal function for parallel fetching from artifact endpoint.
 
     Args:
         conn: Database connection
-        simulation_id: Simulation ID context
         scenario_ids: List of scenario IDs to search personas for
         bypass_cache: Whether to bypass cache
 
     Returns:
         List of available scenario persona items
     """
-    # Note: When scenario_ids is empty, SQL returns ALL available scenario_personas
-
     # Generate cache key
     cache_key_val = cache_key(
         "scenario_personas/search",
         {
-            "simulation_id": str(simulation_id) if simulation_id else None,
-            "scenario_ids": [str(id) for id in scenario_ids],
+            "scenario_ids": sorted([str(id) for id in scenario_ids]),
         },
     )
 
@@ -73,10 +68,7 @@ async def search_scenario_personas_internal(
             ]
 
     # Execute SQL
-    params = SearchScenarioPersonasSqlParams(
-        simulation_id=simulation_id or UUID("00000000-0000-0000-0000-000000000000"),
-        scenario_ids=scenario_ids,
-    )
+    params = SearchScenarioPersonasSqlParams(scenario_ids=scenario_ids)
     result = cast(
         SearchScenarioPersonasSqlRow,
         await execute_sql_typed(
@@ -132,7 +124,6 @@ async def search_scenario_personas(
 
         items = await search_scenario_personas_internal(
             conn=conn,
-            simulation_id=request.simulation_id,
             scenario_ids=request.scenario_ids or [],
             bypass_cache=bypass_cache,
         )

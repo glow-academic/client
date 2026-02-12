@@ -5,7 +5,7 @@
  * 07/26/2025
  */
 
-import Parameter from "@/components/parameters/Parameter";
+import Parameter from "@/components/artifacts/parameter/Parameter";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";

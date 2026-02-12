@@ -5,7 +5,7 @@
  * 01/20/2025
  */
 
-import Activity from "@/components/activity/Activity";
+import Activity from "@/components/artifacts/activity/Activity";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";

@@ -282,7 +282,6 @@ async def get_tool_internal(
             )
             suggestions = await search_arg_positions_internal(
                 c,
-                tool_id=tool_id,
                 args_ids=selected_args_ids,
                 limit_count=100,
                 offset_count=0,

@@ -39,29 +39,24 @@ router = APIRouter()
 
 async def search_scenario_flags_internal(
     conn: asyncpg.Connection,
-    simulation_id: UUID | None,
     scenario_ids: list[UUID],
     bypass_cache: bool = False,
 ) -> list[QGetScenarioFlagsV4Item]:
-    """Internal function for parallel fetching from simulation endpoint.
+    """Internal function for parallel fetching from artifact endpoint.
 
     Args:
         conn: Database connection
-        simulation_id: Simulation ID context
         scenario_ids: List of scenario IDs to search flags for (empty = all scenarios)
         bypass_cache: Whether to bypass cache
 
     Returns:
         List of available scenario flag items
     """
-    # Don't return early - empty scenario_ids means "get all flags"
-
     # Generate cache key
     cache_key_val = cache_key(
         "scenario_flags/search",
         {
-            "simulation_id": str(simulation_id) if simulation_id else None,
-            "scenario_ids": [str(id) for id in scenario_ids],
+            "scenario_ids": sorted([str(id) for id in scenario_ids]),
         },
     )
 
@@ -75,10 +70,7 @@ async def search_scenario_flags_internal(
             ]
 
     # Execute SQL
-    params = SearchScenarioFlagsSqlParams(
-        simulation_id=simulation_id or UUID("00000000-0000-0000-0000-000000000000"),
-        scenario_ids=scenario_ids,
-    )
+    params = SearchScenarioFlagsSqlParams(scenario_ids=scenario_ids)
     result = cast(
         SearchScenarioFlagsSqlRow,
         await execute_sql_typed(
@@ -134,7 +126,6 @@ async def search_scenario_flags(
 
         items = await search_scenario_flags_internal(
             conn=conn,
-            simulation_id=request.simulation_id,
             scenario_ids=request.scenario_ids or [],
             bypass_cache=bypass_cache,
         )

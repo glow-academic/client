@@ -24,7 +24,7 @@ import {
 } from "react";
 import { toast } from "sonner";
 import { VoiceWaveform } from "./VoiceWaveform";
-import { useAudioWorklet } from "./hooks/useAudioWorklet";
+import { useAudioWorklet } from "@/hooks/use-audio-worklet";
 
 // Explicit, self-contained prop interface (like resource components)
 export interface VoiceInputProps {

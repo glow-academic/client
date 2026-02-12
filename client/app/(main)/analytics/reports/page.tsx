@@ -5,7 +5,7 @@
  * 06/08/2025
  */
 
-import Reports from "@/components/reports/Reports";
+import Reports from "@/components/artifacts/reports/Reports";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";

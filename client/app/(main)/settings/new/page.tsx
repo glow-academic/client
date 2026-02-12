@@ -3,7 +3,7 @@
  * New settings page for the settings section.
  */
 
-import Setting from "@/components/settings/Setting";
+import Setting from "@/components/artifacts/setting/Setting";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";

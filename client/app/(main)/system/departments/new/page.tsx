@@ -5,7 +5,7 @@
  * 06/08/2025
  */
 
-import Department from "@/components/departments/Department";
+import Department from "@/components/artifacts/department/Department";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";

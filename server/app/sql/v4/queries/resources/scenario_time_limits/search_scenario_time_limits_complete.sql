@@ -1,6 +1,6 @@
 -- Search available scenario time limits for scenarios
--- Returns available time limits that can be set for scenarios
--- Parameters: simulation_id (uuid), scenario_ids (uuid[])
+-- Returns available time limits from scenario_time_limits_resource
+-- Parameters: scenario_ids (uuid[])
 
 -- Drop function if exists (handles signature variations)
 DO $$
@@ -20,7 +20,6 @@ END $$;
 -- Reuses type from get endpoint: types.q_get_scenario_time_limits_v4_item
 
 CREATE OR REPLACE FUNCTION api_search_scenario_time_limits_v4(
-    simulation_id uuid,
     scenario_ids uuid[] DEFAULT ARRAY[]::uuid[]
 )
 RETURNS TABLE (
@@ -29,32 +28,18 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-WITH params AS (
-    SELECT simulation_id AS sim_id, scenario_ids AS scen_ids
-),
--- Get all available time limits for the given scenarios
--- If scenario_ids is empty, return all available scenario_time_limits
-available_time_limits AS (
-    SELECT
-        stlr.id,
-        stlr.scenario_id,
-        stlr.time_limit_seconds,
-        COALESCE(stlr.generated, false) as generated
-    FROM params p
-    JOIN scenario_time_limits_resource stlr ON stlr.active = true
-    WHERE
-        -- If scenario_ids is empty, return all
-        COALESCE(array_length(p.scen_ids, 1), 0) = 0
-        OR
-        -- Otherwise filter to provided scenario_ids
-        stlr.scenario_id = ANY(p.scen_ids)
-)
 SELECT
     COALESCE(
-        (SELECT ARRAY_AGG(
-            (atl.id, atl.scenario_id, atl.time_limit_seconds, atl.generated)::types.q_get_scenario_time_limits_v4_item
-            ORDER BY atl.time_limit_seconds, atl.scenario_id
-        ) FROM available_time_limits atl),
+        ARRAY_AGG(
+            (stlr.id, stlr.scenario_id, stlr.time_limit_seconds, COALESCE(stlr.generated, false))::types.q_get_scenario_time_limits_v4_item
+            ORDER BY stlr.time_limit_seconds, stlr.scenario_id
+        ),
         '{}'::types.q_get_scenario_time_limits_v4_item[]
-    ) as items;
+    ) as items
+FROM scenario_time_limits_resource stlr
+WHERE stlr.active = true
+  AND (
+    COALESCE(array_length(scenario_ids, 1), 0) = 0
+    OR stlr.scenario_id = ANY(scenario_ids)
+  );
 $$;

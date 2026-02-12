@@ -2,7 +2,7 @@
  * app/(main)/system/auth/new/page.tsx
  * Auth create page - uses unified get/save endpoints and NewAuth component
  */
-import Auth from "@/components/auth/Auth";
+import Auth from "@/components/artifacts/auth/Auth";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";

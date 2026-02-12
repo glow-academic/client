@@ -7,7 +7,7 @@
 
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import type { ScenarioFlagsProps } from "@/components/resources/ScenarioFlags";
-import Simulation from "@/components/simulations/Simulation";
+import Simulation from "@/components/artifacts/simulation/Simulation";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";

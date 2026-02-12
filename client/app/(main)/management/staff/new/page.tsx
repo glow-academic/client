@@ -5,7 +5,7 @@
  * 12/04/2025
  */
 
-import Profile from "@/components/staff/Profile";
+import Profile from "@/components/artifacts/profile/Profile";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";

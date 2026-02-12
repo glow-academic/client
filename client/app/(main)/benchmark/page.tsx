@@ -5,8 +5,8 @@
  * 01/XX/2025
  */
 
-import Benchmark from "@/components/benchmark/Benchmark";
-import EvalHistory from "@/components/benchmark/EvalHistory";
+import Benchmark from "@/components/artifacts/benchmark/Benchmark";
+import EvalHistory from "@/components/artifacts/benchmark/EvalHistory";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";

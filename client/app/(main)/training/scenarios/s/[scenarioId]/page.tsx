@@ -6,7 +6,7 @@
  */
 
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
-import Scenario from "@/components/scenarios/Scenario";
+import Scenario from "@/components/artifacts/scenario/Scenario";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";

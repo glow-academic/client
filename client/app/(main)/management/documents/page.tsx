@@ -5,7 +5,7 @@
  * 06/09/2025
  */
 
-import Documents from "@/components/documents/Documents";
+import Documents from "@/components/artifacts/document/Documents";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";

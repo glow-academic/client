@@ -5,7 +5,7 @@
  * 06/08/2025
  */
 
-import Model from "@/components/models/Model";
+import Model from "@/components/artifacts/model/Model";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";

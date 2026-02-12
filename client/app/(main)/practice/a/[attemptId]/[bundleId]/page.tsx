@@ -1,4 +1,4 @@
-import TrainingBundle, { type TrainingBundleData } from "@/components/training/TrainingBundle";
+import TrainingBundle, { type TrainingBundleData } from "@/components/artifacts/training/TrainingBundle";
 import { api } from "@/lib/api/client";
 import type { Metadata } from "next";
 

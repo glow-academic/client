@@ -4,7 +4,7 @@
  * @AshokSaravanan222 & @siladiea
  * 06/09/2025
  */
-import Departments from "@/components/departments/Departments";
+import Departments from "@/components/artifacts/department/Departments";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";

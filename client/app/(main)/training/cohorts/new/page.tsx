@@ -5,7 +5,7 @@
  * 01/12/2026
  */
 
-import Cohort from "@/components/cohorts/Cohort";
+import Cohort from "@/components/artifacts/cohort/Cohort";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";

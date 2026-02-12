@@ -6,7 +6,7 @@
  */
 
 import SimulationHistory from "@/components/common/history/SimulationHistory";
-import Practice from "@/components/practice/Practice";
+import Practice from "@/components/artifacts/attempt/Practice";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";

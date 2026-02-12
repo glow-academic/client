@@ -1,6 +1,6 @@
--- Get scenario positions for a simulation
--- Returns scenario position values for scenarios in a simulation
--- Parameters: simulation_id (uuid), scenario_ids (uuid[])
+-- Get scenario positions by resource IDs
+-- Returns scenario position values
+-- Parameters: ids (uuid[])
 
 -- Drop function if exists (handles signature variations)
 DO $$
@@ -35,15 +35,13 @@ END $$;
 -- Create composite type for scenario position items
 CREATE TYPE types.q_get_scenario_positions_v4_item AS (
     id uuid,
-    simulation_id uuid,
     scenario_id uuid,
     value integer,
     generated boolean
 );
 
 CREATE OR REPLACE FUNCTION api_get_scenario_positions_v4(
-    simulation_id uuid,
-    scenario_ids uuid[] DEFAULT ARRAY[]::uuid[]
+    ids uuid[] DEFAULT ARRAY[]::uuid[]
 )
 RETURNS TABLE (
     items types.q_get_scenario_positions_v4_item[]
@@ -51,28 +49,15 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-WITH params AS (
-    SELECT simulation_id AS sim_id, scenario_ids AS scen_ids
-),
-position_data AS (
-    SELECT
-        spr.id,
-        sspj.simulation_id,
-        spr.scenario_id,
-        spr.value,
-        COALESCE(sspj.generated, false) as generated
-    FROM params p
-    JOIN simulation_scenario_positions_junction sspj ON sspj.simulation_id = p.sim_id
-    JOIN scenario_positions_resource spr ON spr.id = sspj.scenario_position_id
-    WHERE sspj.active = true
-      AND (COALESCE(array_length(p.scen_ids, 1), 0) = 0 OR spr.scenario_id = ANY(p.scen_ids))
-)
 SELECT
     COALESCE(
-        (SELECT ARRAY_AGG(
-            (pd.id, pd.simulation_id, pd.scenario_id, pd.value, pd.generated)::types.q_get_scenario_positions_v4_item
-            ORDER BY pd.value, pd.scenario_id
-        ) FROM position_data pd),
+        ARRAY_AGG(
+            (spr.id, spr.scenario_id, spr.value, COALESCE(spr.generated, false))::types.q_get_scenario_positions_v4_item
+            ORDER BY spr.value, spr.scenario_id
+        ),
         '{}'::types.q_get_scenario_positions_v4_item[]
-    ) as items;
+    ) as items
+FROM scenario_positions_resource spr
+WHERE spr.id = ANY(ids)
+  AND spr.active = true;
 $$;

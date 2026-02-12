@@ -5,7 +5,7 @@
  * 06/09/2025
  */
 
-import Rubric from "@/components/rubrics/Rubric";
+import Rubric from "@/components/artifacts/rubric/Rubric";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";

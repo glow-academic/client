@@ -6,8 +6,8 @@
  */
 import { Suspense } from "react";
 
-import { PricingRunsClient } from "@/components/pricing/PricingRunsClient";
-import { PricingSummary } from "@/components/pricing/PricingSummary";
+import { PricingRunsClient } from "@/components/artifacts/pricing/PricingRunsClient";
+import { PricingSummary } from "@/components/artifacts/pricing/PricingSummary";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";

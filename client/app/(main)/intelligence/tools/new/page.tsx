@@ -3,7 +3,7 @@
  * New tool page (skeleton)
  */
 
-import Tool from "@/components/tools/Tool";
+import Tool from "@/components/artifacts/tool/Tool";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";

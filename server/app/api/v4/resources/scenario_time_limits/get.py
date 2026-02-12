@@ -1,6 +1,6 @@
 """Scenario time limits get endpoint - v4 API.
 
-Provides get endpoint for fetching scenario time limits by simulation and scenario IDs.
+Provides get endpoint for fetching scenario time limits by resource IDs.
 """
 
 from typing import Annotated, Any, cast
@@ -37,30 +37,27 @@ router = APIRouter()
 
 async def get_scenario_time_limits_internal(
     conn: asyncpg.Connection,
-    simulation_id: UUID | None,
-    scenario_ids: list[UUID],
+    ids: list[UUID],
     bypass_cache: bool = False,
 ) -> list[QGetScenarioTimeLimitsV4Item]:
-    """Internal function for parallel fetching from simulation endpoint.
+    """Internal function for parallel fetching from artifact endpoint.
 
     Args:
         conn: Database connection
-        simulation_id: Simulation ID to fetch time limits for
-        scenario_ids: List of scenario IDs to filter by
+        ids: List of scenario time limit resource IDs
         bypass_cache: Whether to bypass cache
 
     Returns:
         List of scenario time limit items
     """
-    if not simulation_id:
+    if not ids:
         return []
 
     # Generate cache key
     cache_key_val = cache_key(
         "scenario_time_limits/get",
         {
-            "simulation_id": str(simulation_id),
-            "scenario_ids": [str(id) for id in scenario_ids],
+            "ids": sorted([str(id) for id in ids]),
         },
     )
 
@@ -74,9 +71,7 @@ async def get_scenario_time_limits_internal(
             ]
 
     # Execute SQL
-    params = GetScenarioTimeLimitsSqlParams(
-        simulation_id=simulation_id, scenario_ids=scenario_ids
-    )
+    params = GetScenarioTimeLimitsSqlParams(ids=ids)
     result = cast(
         GetScenarioTimeLimitsSqlRow,
         await execute_sql_typed(
@@ -114,7 +109,7 @@ async def get_scenario_time_limits(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetScenarioTimeLimitsApiResponse:
-    """Get scenario time limits by simulation and scenario IDs."""
+    """Get scenario time limits by resource IDs."""
     tags = ["resources", "scenario_time_limits"]
 
     sql_query = load_sql_query(SQL_PATH)
@@ -132,8 +127,7 @@ async def get_scenario_time_limits(
 
         items = await get_scenario_time_limits_internal(
             conn=conn,
-            simulation_id=request.simulation_id,
-            scenario_ids=request.scenario_ids or [],
+            ids=request.ids or [],
             bypass_cache=bypass_cache,
         )
 

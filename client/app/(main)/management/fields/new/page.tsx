@@ -5,7 +5,7 @@
  * 12/05/2025
  */
 
-import Field from "@/components/fields/Field";
+import Field from "@/components/artifacts/field/Field";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";

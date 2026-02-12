@@ -3,7 +3,7 @@
  * Auth edit page - uses unified get/save endpoints and Auth component
  */
 
-import Auth from "@/components/auth/Auth";
+import Auth from "@/components/artifacts/auth/Auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";

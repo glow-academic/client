@@ -6,7 +6,7 @@
  */
 
 import SimulationHistory from "@/components/common/history/SimulationHistory";
-import Home from "@/components/home/Home";
+import Home from "@/components/artifacts/attempt/Home";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";

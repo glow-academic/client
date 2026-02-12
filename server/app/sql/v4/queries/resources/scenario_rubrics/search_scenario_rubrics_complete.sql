@@ -1,6 +1,6 @@
 -- Search available scenario rubrics for scenarios
--- Returns available rubrics that can be assigned to scenarios
--- Parameters: simulation_id (uuid), scenario_ids (uuid[])
+-- Returns available rubrics from scenario_rubrics_resource
+-- Parameters: scenario_ids (uuid[])
 
 -- Drop function if exists (handles signature variations)
 DO $$
@@ -20,7 +20,6 @@ END $$;
 -- Reuses type from get endpoint: types.q_get_scenario_rubrics_v4_item
 
 CREATE OR REPLACE FUNCTION api_search_scenario_rubrics_v4(
-    simulation_id uuid,
     scenario_ids uuid[] DEFAULT ARRAY[]::uuid[]
 )
 RETURNS TABLE (
@@ -29,32 +28,18 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-WITH params AS (
-    SELECT simulation_id AS sim_id, scenario_ids AS scen_ids
-),
--- Get all available rubrics for the given scenarios
--- If scenario_ids is empty, return all available scenario_rubrics
-available_rubrics AS (
-    SELECT
-        srr.id,
-        srr.scenario_id,
-        srr.rubric_id,
-        COALESCE(srr.generated, false) as generated
-    FROM params p
-    JOIN scenario_rubrics_resource srr ON srr.active = true
-    WHERE
-        -- If scenario_ids is empty, return all
-        COALESCE(array_length(p.scen_ids, 1), 0) = 0
-        OR
-        -- Otherwise filter to provided scenario_ids
-        srr.scenario_id = ANY(p.scen_ids)
-)
 SELECT
     COALESCE(
-        (SELECT ARRAY_AGG(
-            (ar.id, ar.scenario_id, ar.rubric_id, ar.generated)::types.q_get_scenario_rubrics_v4_item
-            ORDER BY ar.scenario_id
-        ) FROM available_rubrics ar),
+        ARRAY_AGG(
+            (srr.id, srr.scenario_id, srr.rubric_id, COALESCE(srr.generated, false))::types.q_get_scenario_rubrics_v4_item
+            ORDER BY srr.scenario_id
+        ),
         '{}'::types.q_get_scenario_rubrics_v4_item[]
-    ) as items;
+    ) as items
+FROM scenario_rubrics_resource srr
+WHERE srr.active = true
+  AND (
+    COALESCE(array_length(scenario_ids, 1), 0) = 0
+    OR srr.scenario_id = ANY(scenario_ids)
+  );
 $$;

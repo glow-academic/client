@@ -5,7 +5,7 @@
  */
 "use client";
 
-import TableRubric from "@/components/common/rubric/TableRubric";
+import TableRubric from "@/components/artifacts/rubric/TableRubric";
 import type { components } from "@/lib/api/schema";
 
 // ---- OpenAPI types (single source of truth) ----

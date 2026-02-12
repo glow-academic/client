@@ -5,7 +5,7 @@
  * 06/08/2025
  */
 
-import Profiles from "@/components/staff/Profiles";
+import Profiles from "@/components/artifacts/profile/Profiles";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";

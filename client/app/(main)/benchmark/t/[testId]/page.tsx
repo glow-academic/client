@@ -5,7 +5,7 @@
  * 02/2025
  */
 
-import EvalAttemptStatus from "@/components/benchmark/EvalAttemptStatus";
+import EvalAttemptStatus from "@/components/artifacts/benchmark/EvalAttemptStatus";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { api } from "@/lib/api/client";
 import type { OutputOf } from "@/lib/api/types";

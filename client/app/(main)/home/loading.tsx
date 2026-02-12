@@ -4,7 +4,7 @@
  * @AshokSaravanan222 & @siladiea
  * 01/20/2025
  */
-import { HomeSkeleton } from "@/components/home/Home";
+import { HomeSkeleton } from "@/components/artifacts/attempt/Home";
 
 export default function Loading() {
   return <HomeSkeleton />;

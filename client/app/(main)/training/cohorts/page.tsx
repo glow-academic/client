@@ -4,7 +4,7 @@
  * @AshokSaravanan222 & @siladiea
  * 06/18/2025
  */
-import Cohorts from "@/components/cohorts/Cohorts";
+import Cohorts from "@/components/artifacts/cohort/Cohorts";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";

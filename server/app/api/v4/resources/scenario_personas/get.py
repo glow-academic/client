@@ -1,6 +1,6 @@
 """Scenario personas get endpoint - v4 API.
 
-Provides get endpoint for fetching scenario personas by simulation and scenario IDs.
+Provides get endpoint for fetching scenario personas by resource IDs.
 """
 
 from typing import Annotated, Any, cast
@@ -39,30 +39,27 @@ router = APIRouter()
 
 async def get_scenario_personas_internal(
     conn: asyncpg.Connection,
-    simulation_id: UUID | None,
-    scenario_ids: list[UUID],
+    ids: list[UUID],
     bypass_cache: bool = False,
 ) -> list[QGetScenarioPersonasV4Item]:
-    """Internal function for parallel fetching from simulation endpoint.
+    """Internal function for parallel fetching from artifact endpoint.
 
     Args:
         conn: Database connection
-        simulation_id: Simulation ID to fetch personas for
-        scenario_ids: List of scenario IDs to filter by
+        ids: List of scenario persona resource IDs
         bypass_cache: Whether to bypass cache
 
     Returns:
         List of scenario persona items
     """
-    if not simulation_id:
+    if not ids:
         return []
 
     # Generate cache key
     cache_key_val = cache_key(
         "scenario_personas/get",
         {
-            "simulation_id": str(simulation_id),
-            "scenario_ids": [str(id) for id in scenario_ids],
+            "ids": sorted([str(id) for id in ids]),
         },
     )
 
@@ -76,9 +73,7 @@ async def get_scenario_personas_internal(
             ]
 
     # Execute SQL
-    params = GetScenarioPersonasSqlParams(
-        simulation_id=simulation_id, scenario_ids=scenario_ids
-    )
+    params = GetScenarioPersonasSqlParams(ids=ids)
     result = cast(
         GetScenarioPersonasSqlRow,
         await execute_sql_typed(
@@ -116,7 +111,7 @@ async def get_scenario_personas(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetScenarioPersonasApiResponse:
-    """Get scenario personas by simulation and scenario IDs."""
+    """Get scenario personas by resource IDs."""
     tags = ["resources", "scenario_personas"]
 
     sql_query = load_sql_query(SQL_PATH)
@@ -134,8 +129,7 @@ async def get_scenario_personas(
 
         items = await get_scenario_personas_internal(
             conn=conn,
-            simulation_id=request.simulation_id,
-            scenario_ids=request.scenario_ids or [],
+            ids=request.ids or [],
             bypass_cache=bypass_cache,
         )
 

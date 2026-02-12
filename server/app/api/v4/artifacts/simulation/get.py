@@ -346,6 +346,11 @@ async def get_simulation_internal(
     department_ids = ids_result.department_ids or []
     scenario_ids = ids_result.scenario_ids or []
     effective_scenario_ids = filter_scenario_ids or scenario_ids
+    scenario_flag_ids = ids_result.scenario_flag_ids or []
+    scenario_position_ids = ids_result.scenario_position_ids or []
+    scenario_rubric_ids = ids_result.scenario_rubric_ids or []
+    scenario_time_limit_ids = ids_result.scenario_time_limit_ids or []
+    scenario_persona_ids = ids_result.scenario_persona_ids or []
 
     async def fetch_names():
         async with pool.acquire() as c:
@@ -435,50 +440,50 @@ async def get_simulation_internal(
     async def fetch_scenario_flags():
         async with pool.acquire() as c:
             selected = await get_scenario_flags_internal(
-                c, simulation_id, effective_scenario_ids, bypass_cache
+                c, scenario_flag_ids, bypass_cache
             )
             suggestions = await search_scenario_flags_internal(
-                c, simulation_id, effective_scenario_ids, bypass_cache
+                c, effective_scenario_ids, bypass_cache
             )
             return (selected, suggestions)
 
     async def fetch_scenario_personas():
         async with pool.acquire() as c:
             selected = await get_scenario_personas_internal(
-                c, simulation_id, effective_scenario_ids, bypass_cache
+                c, scenario_persona_ids, bypass_cache
             )
             suggestions = await search_scenario_personas_internal(
-                c, simulation_id, effective_scenario_ids, bypass_cache
+                c, effective_scenario_ids, bypass_cache
             )
             return (selected, suggestions)
 
     async def fetch_scenario_positions():
         async with pool.acquire() as c:
             selected = await get_scenario_positions_internal(
-                c, simulation_id, effective_scenario_ids, bypass_cache
+                c, scenario_position_ids, bypass_cache
             )
             suggestions = await search_scenario_positions_internal(
-                c, simulation_id, effective_scenario_ids, bypass_cache
+                c, effective_scenario_ids, bypass_cache
             )
             return (selected, suggestions)
 
     async def fetch_scenario_rubrics():
         async with pool.acquire() as c:
             selected = await get_scenario_rubrics_internal(
-                c, simulation_id, effective_scenario_ids, bypass_cache
+                c, scenario_rubric_ids, bypass_cache
             )
             suggestions = await search_scenario_rubrics_internal(
-                c, simulation_id, effective_scenario_ids, bypass_cache
+                c, effective_scenario_ids, bypass_cache
             )
             return (selected, suggestions)
 
     async def fetch_scenario_time_limits():
         async with pool.acquire() as c:
             selected = await get_scenario_time_limits_internal(
-                c, simulation_id, effective_scenario_ids, bypass_cache
+                c, scenario_time_limit_ids, bypass_cache
             )
             suggestions = await search_scenario_time_limits_internal(
-                c, simulation_id, effective_scenario_ids, bypass_cache
+                c, effective_scenario_ids, bypass_cache
             )
             return (selected, suggestions)
 

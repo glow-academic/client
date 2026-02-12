@@ -6,7 +6,7 @@
  */
 "use client";
 
-import TableRubric from "@/components/common/rubric/TableRubric";
+import TableRubric from "@/components/artifacts/rubric/TableRubric";
 import { Button } from "@/components/ui/button";
 import {
   Card,

@@ -6,7 +6,7 @@
  */
 
 import SimulationHistory from "@/components/common/history/SimulationHistory";
-import Report from "@/components/reports/Report";
+import Report from "@/components/artifacts/reports/Report";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";

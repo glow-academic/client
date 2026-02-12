@@ -5,7 +5,7 @@
  * 01/12/2026
  */
 
-import Document from "@/components/documents/Document";
+import Document from "@/components/artifacts/document/Document";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";

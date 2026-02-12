@@ -3,7 +3,7 @@
  * New provider page for the providers section.
  */
 
-import Provider from "@/components/providers/Provider";
+import Provider from "@/components/artifacts/provider/Provider";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";

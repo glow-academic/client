@@ -6,7 +6,7 @@
  */
 
 import { getSession } from "@/auth";
-import GroupMessages from "@/components/pricing/GroupMessages";
+import GroupMessages from "@/components/artifacts/pricing/GroupMessages";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";

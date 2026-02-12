@@ -6,7 +6,7 @@
  */
 
 import SimulationHistory from "@/components/common/history/SimulationHistory";
-import Dashboard from "@/components/dashboard/Dashboard";
+import Dashboard from "@/components/artifacts/dashboard/Dashboard";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";

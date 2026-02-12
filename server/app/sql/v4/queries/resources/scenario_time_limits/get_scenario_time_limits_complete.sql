@@ -1,6 +1,6 @@
--- Get scenario time limits for a simulation
--- Returns scenario time limit values for scenarios in a simulation
--- Parameters: simulation_id (uuid), scenario_ids (uuid[])
+-- Get scenario time limits by resource IDs
+-- Returns scenario time limit values
+-- Parameters: ids (uuid[])
 
 -- Drop function if exists (handles signature variations)
 DO $$
@@ -41,8 +41,7 @@ CREATE TYPE types.q_get_scenario_time_limits_v4_item AS (
 );
 
 CREATE OR REPLACE FUNCTION api_get_scenario_time_limits_v4(
-    simulation_id uuid,
-    scenario_ids uuid[] DEFAULT ARRAY[]::uuid[]
+    ids uuid[] DEFAULT ARRAY[]::uuid[]
 )
 RETURNS TABLE (
     items types.q_get_scenario_time_limits_v4_item[]
@@ -50,27 +49,15 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-WITH params AS (
-    SELECT simulation_id AS sim_id, scenario_ids AS scen_ids
-),
-time_limit_data AS (
-    SELECT
-        stlr.id,
-        stlr.scenario_id,
-        stlr.time_limit_seconds,
-        COALESCE(sstlj.generated, false) as generated
-    FROM params p
-    JOIN simulation_scenario_time_limits_junction sstlj ON sstlj.simulation_id = p.sim_id
-    JOIN scenario_time_limits_resource stlr ON stlr.id = sstlj.scenario_time_limit_id
-    WHERE sstlj.active = true
-      AND (COALESCE(array_length(p.scen_ids, 1), 0) = 0 OR stlr.scenario_id = ANY(p.scen_ids))
-)
 SELECT
     COALESCE(
-        (SELECT ARRAY_AGG(
-            (tld.id, tld.scenario_id, tld.time_limit_seconds, tld.generated)::types.q_get_scenario_time_limits_v4_item
-            ORDER BY tld.time_limit_seconds, tld.scenario_id
-        ) FROM time_limit_data tld),
+        ARRAY_AGG(
+            (stlr.id, stlr.scenario_id, stlr.time_limit_seconds, COALESCE(stlr.generated, false))::types.q_get_scenario_time_limits_v4_item
+            ORDER BY stlr.time_limit_seconds, stlr.scenario_id
+        ),
         '{}'::types.q_get_scenario_time_limits_v4_item[]
-    ) as items;
+    ) as items
+FROM scenario_time_limits_resource stlr
+WHERE stlr.id = ANY(ids)
+  AND stlr.active = true;
 $$;

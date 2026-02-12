@@ -4,7 +4,7 @@
  * @AshokSaravanan222 & @siladiea
  * 01/20/2025
  */
-import { DashboardSkeleton } from "@/components/dashboard/Dashboard";
+import { DashboardSkeleton } from "@/components/artifacts/dashboard/Dashboard";
 
 export default function Loading() {
   return <DashboardSkeleton />;

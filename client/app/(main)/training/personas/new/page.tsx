@@ -5,7 +5,7 @@
  * 06/08/2025
  */
 
-import Persona from "@/components/personas/Persona";
+import Persona from "@/components/artifacts/persona/Persona";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";

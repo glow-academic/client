@@ -4,7 +4,7 @@
  * @AshokSaravanan222
  * 01/26/2025
  */
-import Evals from "@/components/evals/Evals";
+import Evals from "@/components/artifacts/eval/Evals";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";

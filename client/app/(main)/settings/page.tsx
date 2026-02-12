@@ -2,7 +2,7 @@
  * app/(main)/settings/page.tsx
  * Settings list page - shows list of settings
  */
-import Settings from "@/components/settings/Settings";
+import Settings from "@/components/artifacts/setting/Settings";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";

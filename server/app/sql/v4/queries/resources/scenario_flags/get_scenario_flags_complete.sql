@@ -1,6 +1,6 @@
--- Get scenario flags for a simulation
+-- Get scenario flags by resource IDs
 -- Returns scenario flag details joined with flag information
--- Parameters: simulation_id (uuid), scenario_ids (uuid[])
+-- Parameters: ids (uuid[])
 
 -- Drop function if exists (handles signature variations)
 DO $$
@@ -44,8 +44,7 @@ CREATE TYPE types.q_get_scenario_flags_v4_item AS (
 );
 
 CREATE OR REPLACE FUNCTION api_get_scenario_flags_v4(
-    simulation_id uuid,
-    scenario_ids uuid[] DEFAULT ARRAY[]::uuid[]
+    ids uuid[] DEFAULT ARRAY[]::uuid[]
 )
 RETURNS TABLE (
     items types.q_get_scenario_flags_v4_item[]
@@ -53,32 +52,16 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-WITH params AS (
-    SELECT simulation_id AS sim_id, scenario_ids AS scen_ids
-),
-flag_data AS (
-    SELECT
-        sfr.id,
-        sfr.scenario_id,
-        sfr.flag_id,
-        f.name,
-        COALESCE(f.description, '') as description,
-        f.icon,
-        COALESCE(ssfj.generated, false) as generated
-    FROM params p
-    JOIN simulation_scenario_flags_junction ssfj ON ssfj.simulation_id = p.sim_id
-    JOIN scenario_flags_resource sfr ON sfr.id = ssfj.scenario_flag_id
-    JOIN flags_resource f ON f.id = sfr.flag_id
-    WHERE ssfj.value = true
-      AND ssfj.active = true
-      AND (COALESCE(array_length(p.scen_ids, 1), 0) = 0 OR sfr.scenario_id = ANY(p.scen_ids))
-)
 SELECT
     COALESCE(
-        (SELECT ARRAY_AGG(
-            (fd.id, fd.scenario_id, fd.flag_id, fd.name, fd.description, fd.icon, fd.generated)::types.q_get_scenario_flags_v4_item
-            ORDER BY fd.name, fd.scenario_id
-        ) FROM flag_data fd),
+        ARRAY_AGG(
+            (sfr.id, sfr.scenario_id, sfr.flag_id, f.name, COALESCE(f.description, ''), f.icon, COALESCE(sfr.generated, false))::types.q_get_scenario_flags_v4_item
+            ORDER BY f.name, sfr.scenario_id
+        ),
         '{}'::types.q_get_scenario_flags_v4_item[]
-    ) as items;
+    ) as items
+FROM scenario_flags_resource sfr
+JOIN flags_resource f ON f.id = sfr.flag_id
+WHERE sfr.id = ANY(ids)
+  AND sfr.active = true;
 $$;

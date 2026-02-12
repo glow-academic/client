@@ -1,6 +1,6 @@
 "use client";
 
-import { useCSSVariable } from "@/lib/hooks/useCSSVariable";
+import { useCSSVariable } from "@/hooks/use-css-variable";
 
 /**
  * Converts oklch() color to a format Recharts can understand.

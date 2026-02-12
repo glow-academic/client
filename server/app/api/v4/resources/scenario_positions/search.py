@@ -37,29 +37,24 @@ router = APIRouter()
 
 async def search_scenario_positions_internal(
     conn: asyncpg.Connection,
-    simulation_id: UUID | None,
     scenario_ids: list[UUID],
     bypass_cache: bool = False,
 ) -> list[QGetScenarioPositionsV4Item]:
-    """Internal function for parallel fetching from simulation endpoint.
+    """Internal function for parallel fetching from artifact endpoint.
 
     Args:
         conn: Database connection
-        simulation_id: Simulation ID context
         scenario_ids: List of scenario IDs to search positions for
         bypass_cache: Whether to bypass cache
 
     Returns:
         List of available scenario position items
     """
-    # Note: When scenario_ids is empty, SQL returns ALL available scenario_positions
-
     # Generate cache key
     cache_key_val = cache_key(
         "scenario_positions/search",
         {
-            "simulation_id": str(simulation_id) if simulation_id else None,
-            "scenario_ids": [str(id) for id in scenario_ids],
+            "scenario_ids": sorted([str(id) for id in scenario_ids]),
         },
     )
 
@@ -73,10 +68,7 @@ async def search_scenario_positions_internal(
             ]
 
     # Execute SQL
-    params = SearchScenarioPositionsSqlParams(
-        simulation_id=simulation_id or UUID("00000000-0000-0000-0000-000000000000"),
-        scenario_ids=scenario_ids,
-    )
+    params = SearchScenarioPositionsSqlParams(scenario_ids=scenario_ids)
     result = cast(
         SearchScenarioPositionsSqlRow,
         await execute_sql_typed(
@@ -132,7 +124,6 @@ async def search_scenario_positions(
 
         items = await search_scenario_positions_internal(
             conn=conn,
-            simulation_id=request.simulation_id,
             scenario_ids=request.scenario_ids or [],
             bypass_cache=bypass_cache,
         )

@@ -27,7 +27,7 @@ import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
 import { useNoPasteTextarea } from "@/hooks/use-no-paste-textarea";
 import { VoiceWaveform } from "./VoiceWaveform";
-import { useAudioWorklet } from "./hooks/useAudioWorklet";
+import { useAudioWorklet } from "@/hooks/use-audio-worklet";
 
 const MAX_INPUT_CHARS = 5000;
 

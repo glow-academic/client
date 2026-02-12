@@ -4,7 +4,7 @@
  * @AshokSaravanan222
  * 01/26/2025
  */
-import Eval from "@/components/evals/Eval";
+import Eval from "@/components/artifacts/eval/Eval";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";

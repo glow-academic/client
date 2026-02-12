@@ -1,6 +1,6 @@
 import BenchmarkBundle, {
   type BenchmarkBundleData,
-} from "@/components/benchmark/BenchmarkBundle";
+} from "@/components/artifacts/benchmark/BenchmarkBundle";
 import { api } from "@/lib/api/client";
 import type { Metadata } from "next";
 

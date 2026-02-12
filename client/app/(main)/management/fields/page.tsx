@@ -4,7 +4,7 @@
  * @AshokSaravanan222 & @siladiea
  * 12/05/2025
  */
-import Fields from "@/components/fields/Fields";
+import Fields from "@/components/artifacts/field/Fields";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";

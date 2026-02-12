@@ -4,7 +4,7 @@
  * @AshokSaravanan222 & @siladiea
  * 07/21/2025
  */
-import Parameters from "@/components/parameters/Parameters";
+import Parameters from "@/components/artifacts/parameter/Parameters";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";

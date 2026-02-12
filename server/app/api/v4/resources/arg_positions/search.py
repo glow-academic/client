@@ -30,7 +30,6 @@ router = APIRouter()
 
 async def search_arg_positions_internal(
     conn: asyncpg.Connection,
-    tool_id: UUID | None = None,
     args_ids: list[UUID] | None = None,
     limit_count: int | None = 100,
     offset_count: int | None = 0,
@@ -42,11 +41,10 @@ async def search_arg_positions_internal(
     cache_key_val = cache_key(
         "/api/v4/resources/arg_positions/search",
         {
-            "tool_id": str(tool_id) if tool_id else None,
-            "args_ids": [str(id) for id in (args_ids or [])],
+            "args_ids": sorted([str(id) for id in (args_ids or [])]),
             "limit_count": limit_count,
             "offset_count": offset_count,
-            "exclude_ids": [str(id) for id in (exclude_ids or [])],
+            "exclude_ids": sorted([str(id) for id in (exclude_ids or [])]),
         },
     )
 
@@ -59,7 +57,6 @@ async def search_arg_positions_internal(
             ]
 
     params = SearchArgPositionsSqlParams(
-        tool_id=tool_id,
         args_ids=args_ids or [],
         limit_count=limit_count,
         offset_count=offset_count,
@@ -101,7 +98,6 @@ async def search_arg_positions(
     try:
         items = await search_arg_positions_internal(
             conn,
-            request.tool_id,
             request.args_ids,
             request.limit_count,
             request.offset_count,

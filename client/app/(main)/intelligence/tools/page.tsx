@@ -2,7 +2,7 @@
  * app/(main)/engine/tools/page.tsx
  * Tools list page (skeleton)
  */
-import Tools from "@/components/tools/Tools";
+import Tools from "@/components/artifacts/tool/Tools";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";

@@ -2,7 +2,7 @@
  * app/(main)/system/auth/page.tsx
  * Auth list page
  */
-import Auths from "@/components/auth/Auths";
+import Auths from "@/components/artifacts/auth/Auths";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";

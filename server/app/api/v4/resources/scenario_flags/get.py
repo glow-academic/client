@@ -1,6 +1,6 @@
 """Scenario flags get endpoint - v4 API.
 
-Provides get endpoint for fetching scenario flags by simulation and scenario IDs.
+Provides get endpoint for fetching scenario flags by resource IDs.
 """
 
 from typing import Annotated, Any, cast
@@ -37,30 +37,27 @@ router = APIRouter()
 
 async def get_scenario_flags_internal(
     conn: asyncpg.Connection,
-    simulation_id: UUID | None,
-    scenario_ids: list[UUID],
+    ids: list[UUID],
     bypass_cache: bool = False,
 ) -> list[QGetScenarioFlagsV4Item]:
-    """Internal function for parallel fetching from simulation endpoint.
+    """Internal function for parallel fetching from artifact endpoint.
 
     Args:
         conn: Database connection
-        simulation_id: Simulation ID to fetch flags for
-        scenario_ids: List of scenario IDs to filter by
+        ids: List of scenario flag resource IDs
         bypass_cache: Whether to bypass cache
 
     Returns:
         List of scenario flag items
     """
-    if not simulation_id:
+    if not ids:
         return []
 
     # Generate cache key
     cache_key_val = cache_key(
         "scenario_flags/get",
         {
-            "simulation_id": str(simulation_id),
-            "scenario_ids": [str(id) for id in scenario_ids],
+            "ids": sorted([str(id) for id in ids]),
         },
     )
 
@@ -74,9 +71,7 @@ async def get_scenario_flags_internal(
             ]
 
     # Execute SQL
-    params = GetScenarioFlagsSqlParams(
-        simulation_id=simulation_id, scenario_ids=scenario_ids
-    )
+    params = GetScenarioFlagsSqlParams(ids=ids)
     result = cast(
         GetScenarioFlagsSqlRow,
         await execute_sql_typed(
@@ -114,7 +109,7 @@ async def get_scenario_flags(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetScenarioFlagsApiResponse:
-    """Get scenario flags by simulation and scenario IDs."""
+    """Get scenario flags by resource IDs."""
     tags = ["resources", "scenario_flags"]
 
     sql_query = load_sql_query(SQL_PATH)
@@ -132,8 +127,7 @@ async def get_scenario_flags(
 
         items = await get_scenario_flags_internal(
             conn=conn,
-            simulation_id=request.simulation_id,
-            scenario_ids=request.scenario_ids or [],
+            ids=request.ids or [],
             bypass_cache=bypass_cache,
         )
 

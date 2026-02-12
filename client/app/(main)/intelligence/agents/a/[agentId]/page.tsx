@@ -5,7 +5,7 @@
  * 06/08/2025
  */
 
-import Agent from "@/components/agents/Agent";
+import Agent from "@/components/artifacts/agent/Agent";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
