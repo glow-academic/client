@@ -30,6 +30,7 @@ from app.api.v4.artifacts.training.types import (
     TrainingWebsocketResources,
     TrainingWebsocketViews,
 )
+from app.api.v4.auth.context import get_profile_context_internal
 from app.api.v4.resources.cohorts.get import get_cohorts_internal
 from app.api.v4.resources.personas.get import get_personas_internal
 from app.api.v4.resources.simulations.get import get_simulations_batch_internal
@@ -201,7 +202,7 @@ async def get_training_internal(
     """
     attempt_type = "practice" if practice else "general"
 
-    # --- Phase 1: Two parallel view fetches ---
+    # --- Phase 1: Three parallel fetches ---
     async def fetch_context() -> GetTrainingContextViewResponse:
         async with pool.acquire() as c:
             return await get_training_context_view_internal(
@@ -223,11 +224,21 @@ async def get_training_internal(
                 bypass_cache=bypass_cache,
             )
 
-    context, personal_facts = await asyncio.gather(
-        fetch_context(), fetch_personal_stats()
+    async def fetch_profile_context():
+        async with pool.acquire() as c:
+            return await get_profile_context_internal(
+                conn=c,
+                profile_id=profile_id,
+                department_id_cookie=None,
+                bypass_cache=bypass_cache,
+            )
+
+    context, personal_facts, profile_ctx = await asyncio.gather(
+        fetch_context(), fetch_personal_stats(), fetch_profile_context()
     )
 
-    user_role = context.user_role if context else None
+    actor_name = profile_ctx.actor_name if profile_ctx else None
+    user_role = profile_ctx.user_role if profile_ctx else None
     view_mode = compute_mode(practice, user_role)
     is_instructional = view_mode == "instructional"
 
@@ -495,7 +506,7 @@ async def get_training_internal(
         ]
 
     return GetTrainingGetResponse(
-        actor_name=context.actor_name if context else None,
+        actor_name=actor_name,
         items=items,
         standard_groups=standard_groups,
         standards=standards,

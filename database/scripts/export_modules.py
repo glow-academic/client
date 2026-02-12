@@ -768,7 +768,20 @@ async def export_auth(conn: asyncpg.Connection) -> None:
     auth_dir = MODULES_DIR / "05-auth"
     auth_dir.mkdir(parents=True, exist_ok=True)
 
-    artifacts = await get_artifacts_with_names(conn, "auth")
+    # Only export auth providers with auth_active flag = true
+    active_artifacts = await conn.fetch("""
+        SELECT a.id, nr.name
+        FROM auth_artifact a
+        JOIN auth_names_junction nj ON a.id = nj.auth_id
+        JOIN names_resource nr ON nj.name_id = nr.id
+        WHERE EXISTS (
+            SELECT 1 FROM auth_flags_junction af
+            JOIN flags_resource f ON f.id = af.flag_id
+            WHERE af.auth_id = a.id AND f.name = 'auth_active' AND af.value = true
+        )
+        ORDER BY nr.name
+    """)
+    artifacts = [(str(r["id"]), r["name"]) for r in active_artifacts]
     junctions = await get_junction_tables(conn, "auth")
 
     for art_id, art_name in artifacts:

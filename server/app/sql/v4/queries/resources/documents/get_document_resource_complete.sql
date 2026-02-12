@@ -67,7 +67,7 @@ SELECT COALESCE(
     ARRAY[]::types.q_get_document_resource_v4_item[]
 ) as items
 FROM documents_resource d
-LEFT JOIN document_uploads_resource dur ON dur.document_id = d.id AND dur.active = true
+LEFT JOIN document_uploads_junction dur ON dur.document_id = d.id AND dur.active = true
 LEFT JOIN uploads_resource ur ON ur.id = dur.uploads_id
 LEFT JOIN uploads_uploads_connection uuc ON uuc.uploads_id = ur.id
 LEFT JOIN view_uploads_entry u ON u.id = uuc.upload_id

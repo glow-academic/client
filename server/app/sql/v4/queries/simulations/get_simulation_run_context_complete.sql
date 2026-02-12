@@ -296,7 +296,7 @@ LEFT JOIN provider_names_junction pn_voice_prov ON pn_voice_prov.provider_id = p
 LEFT JOIN names_resource n_voice_prov ON n_voice_prov.id = pn_voice_prov.name_id
 LEFT JOIN scenario_documents_junction sd ON sd.scenario_id = s.id
 LEFT JOIN documents_resource doc ON doc.id = sd.document_id
-LEFT JOIN document_uploads_resource dur ON dur.document_id = doc.id AND dur.active = true
+LEFT JOIN document_uploads_junction dur ON dur.document_id = doc.id AND dur.active = true
 LEFT JOIN uploads_resource ur ON ur.id = dur.uploads_id
 LEFT JOIN uploads_uploads_connection uuc ON uuc.uploads_id = ur.id
 LEFT JOIN view_uploads_entry u ON u.id = uuc.upload_id

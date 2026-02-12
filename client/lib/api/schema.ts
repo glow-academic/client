@@ -5140,43 +5140,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/regenerates/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Regenerates
-         * @description Get regenerates resources by IDs.
-         */
-        post: operations["get_regenerates_api_v4_resources_regenerates_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/resources/regenerates/search": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Search Regenerates */
-        post: operations["search_regenerates_api_v4_resources_regenerates_search_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v4/resources/qualities/get": {
         parameters: {
             query?: never;
@@ -19482,16 +19445,6 @@ export interface components {
             /** Items */
             items?: components["schemas"]["QGetReasoningLevelsV4Item"][] | null;
         };
-        /** GetRegeneratesApiRequest */
-        GetRegeneratesApiRequest: {
-            /** Ids */
-            ids?: string[] | null;
-        };
-        /** GetRegeneratesApiResponse */
-        GetRegeneratesApiResponse: {
-            /** Items */
-            items?: components["schemas"]["QGetRegeneratesV4Item"][] | null;
-        };
         /** GetRequestLimitsApiRequest */
         GetRequestLimitsApiRequest: {
             /** Ids */
@@ -27538,15 +27491,6 @@ export interface components {
             /** Generated */
             generated: boolean | null;
         };
-        /** QGetRegeneratesV4Item */
-        QGetRegeneratesV4Item: {
-            /** Id */
-            id: string | null;
-            /** Instructions */
-            instructions: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
         /** QGetRequestLimitsV4Item */
         QGetRequestLimitsV4Item: {
             /** Id */
@@ -31500,30 +31444,6 @@ export interface components {
         SearchReasoningLevelsApiResponse: {
             /** Items */
             items?: components["schemas"]["QGetReasoningLevelsV4Item"][] | null;
-        };
-        /** SearchRegeneratesApiRequest */
-        SearchRegeneratesApiRequest: {
-            /** Search */
-            search?: string | null;
-            /**
-             * Limit Count
-             * @default 20
-             */
-            limit_count: number | null;
-            /**
-             * Offset Count
-             * @default 0
-             */
-            offset_count: number | null;
-            /** Suggest Source */
-            suggest_source?: string | null;
-            /** Exclude Ids */
-            exclude_ids?: string[] | null;
-        };
-        /** SearchRegeneratesApiResponse */
-        SearchRegeneratesApiResponse: {
-            /** Items */
-            items?: components["schemas"]["QGetRegeneratesV4Item"][] | null;
         };
         /**
          * SearchRequestLimitsApiRequest
@@ -44360,80 +44280,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchProtocolsApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_regenerates_api_v4_resources_regenerates_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetRegeneratesApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetRegeneratesApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    search_regenerates_api_v4_resources_regenerates_search_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SearchRegeneratesApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SearchRegeneratesApiResponse"];
                 };
             };
             /** @description Validation Error */

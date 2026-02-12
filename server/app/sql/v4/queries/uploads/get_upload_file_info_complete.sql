@@ -55,10 +55,10 @@ actor_profile AS (
     WHERE id = (SELECT profile_id FROM params)
 ),
 regular_document_upload AS (
-    -- Case 1: Upload is linked to a document via document_uploads_resource
+    -- Case 1: Upload is linked to a document via document_uploads_junction
     SELECT
         dur.document_id
-    FROM document_uploads_resource dur
+    FROM document_uploads_junction dur
     JOIN uploads_resource ur ON ur.id = dur.uploads_id
     JOIN uploads_uploads_connection uuc ON uuc.uploads_id = ur.id
     JOIN documents_resource d ON d.id = dur.document_id

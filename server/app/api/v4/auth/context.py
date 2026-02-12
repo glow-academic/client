@@ -23,13 +23,11 @@ from app.api.v4.auth.types import (
     GetProfileContextApiResponse,
     ProfileContextInternalData,
 )
-from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.cohorts.get import get_cohorts_internal
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.roles.get import get_roles_internal
 from app.api.v4.resources.settings.get import get_settings_internal
 from app.api.v4.resources.simulations.get import get_simulations_batch_internal
-from app.api.v4.resources.tools.get import get_tools_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.drafts.get import get_drafts_internal
 from app.infra.v4.error.handle_route_error import handle_route_error
@@ -199,34 +197,9 @@ async def get_profile_context_internal(
             detail="Settings theme not found in profile context",
         )
 
-    settings_agent_ids: list[UUID] = []
-    if settings_item and settings_item.provider_ids:
-        for _ in settings_item.provider_ids:
-            # Placeholder for future provider->agent expansion in context graph.
-            pass
-
-    # Pull candidate generation agents from access query when available.
-    # This is intentionally light and cache-friendly.
-    settings_agents = []
-    settings_tools = []
-
-    if settings_agent_ids:
-        async with pool.acquire() as c:
-            settings_agents = await get_agents_internal(
-                c, settings_agent_ids, bypass_cache
-            )
-        tool_ids: list[UUID] = []
-        for agent in settings_agents:
-            if agent.tool_ids:
-                tool_ids.extend([tid for tid in agent.tool_ids if tid])
-        deduped_tool_ids = list(dict.fromkeys(tool_ids))
-        if deduped_tool_ids:
-            async with pool.acquire() as c:
-                settings_tools = await get_tools_internal(
-                    c,
-                    deduped_tool_ids,
-                    bypass_cache,
-                )
+    # TODO: future provider->agent expansion in context graph
+    settings_agents: list = []
+    settings_tools: list = []
 
     theme_primitives = {
         "primary": settings_theme.primary_color or "",

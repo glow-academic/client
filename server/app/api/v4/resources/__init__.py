@@ -275,13 +275,7 @@ router.include_router(protocols_router)
 router.include_router(protocols_get_router)
 router.include_router(protocols_search_router)
 # NOTE: providers removed - non-creatable, sync via artifact save (migration 328)
-# NOTE: regenerates removed - non-creatable (migration 328)
-# GET/Search endpoints available for provider two-pass architecture
-from app.api.v4.resources.regenerates.get import router as regenerates_get_router
-from app.api.v4.resources.regenerates.search import router as regenerates_search_router
-
-router.include_router(regenerates_get_router)
-router.include_router(regenerates_search_router)
+# NOTE: regenerates removed entirely (migration 442)
 # NOTE: qualities removed - non-creatable (migration 328)
 # GET/Search endpoints available for model two-pass architecture
 from app.api.v4.resources.qualities.get import (

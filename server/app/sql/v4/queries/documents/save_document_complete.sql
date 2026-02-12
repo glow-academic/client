@@ -173,7 +173,7 @@ BEGIN
         DELETE FROM document_departments_junction WHERE document_id = v_document_id;
         DELETE FROM document_parameter_fields_junction WHERE document_id = v_document_id;
         DELETE FROM document_parameters_junction WHERE document_id = v_document_id;
-        DELETE FROM document_uploads_resource WHERE document_id = v_document_id;
+        DELETE FROM document_uploads_junction WHERE document_id = v_document_id;
         DELETE FROM document_images WHERE document_id = v_document_id;
         DELETE FROM document_texts WHERE document_id = v_document_id;
         -- Update existing flags
@@ -396,7 +396,7 @@ BEGIN
         active = true;
 
     -- Link uploads
-    INSERT INTO document_uploads_resource (document_id, uploads_id, active, created_at)
+    INSERT INTO document_uploads_junction (document_id, uploads_id, active, created_at)
     SELECT v_document_id, uid, true, NOW()
     FROM UNNEST(v_upload_ids) AS uid
     WHERE COALESCE(array_length(v_upload_ids, 1), 0) > 0

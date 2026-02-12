@@ -10355,85 +10355,6 @@ class GetParameterIdsApiResponse(BaseModel):
 
 
 
-# Generated from: get_parameters_list
-
-class GetParametersListSqlParams(BaseModel):
-
-    profile_id: UUID
-    search: str | None = None
-    scenario_ids: list[UUID] | None = None
-    filter_department_ids: list[UUID] | None = None
-    scenario_search: str | None = None
-    department_search: str | None = None
-    page_size: int | None = 12
-    page_offset: int | None = 0
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.search,
-            self.scenario_ids,
-            self.filter_department_ids,
-            self.scenario_search,
-            self.department_search,
-            self.page_size,
-            self.page_offset,
-        )
-
-class QListParametersV4OptionId(BaseModel):
-
-    id: UUID | None
-    count: int | None
-
-
-
-
-class QListParametersV4SampleItem(BaseModel):
-
-    parameter_item_id: UUID | None
-    name: str | None
-    description: str | None
-
-class QListParametersV4Parameter(BaseModel):
-
-    parameter_id: UUID | None
-    name: str | None
-    description: str | None
-    active: bool | None
-    updated_at: datetime | None
-    department_ids: list[str] | None
-    scenario_ids: list[UUID] | None
-    num_items: int | None
-    sample_items: list[QListParametersV4SampleItem] | None
-    active_scenario_count: int | None
-    total_scenario_links: int | None
-
-class GetParametersListSqlRow(BaseModel):
-
-    parameters: list[QListParametersV4Parameter] | None = None
-    scenario_option_ids: list[QListParametersV4OptionId] | None = None
-    department_option_ids: list[QListParametersV4OptionId] | None = None
-    total_count: int | None = None
-
-class GetParametersListApiRequest(BaseModel):
-
-    search: str | None = None
-    scenario_ids: list[UUID] | None = None
-    filter_department_ids: list[UUID] | None = None
-    scenario_search: str | None = None
-    department_search: str | None = None
-    page_size: int | None = 12
-    page_offset: int | None = 0
-
-class GetParametersListApiResponse(BaseModel):
-
-    parameters: list[QListParametersV4Parameter] | None = None
-    scenario_option_ids: list[QListParametersV4OptionId] | None = None
-    department_option_ids: list[QListParametersV4OptionId] | None = None
-    total_count: int | None = None
-
-
-
 # Generated from: patch_parameter_draft
 
 class ParameterMultiResourceAction(BaseModel):
@@ -16726,74 +16647,6 @@ class SearchReasoningLevelsApiRequest(BaseModel):
 class SearchReasoningLevelsApiResponse(BaseModel):
 
     items: list[QGetReasoningLevelsV4Item] | None = None
-
-
-
-# Generated from: get_regenerates
-
-class GetRegeneratesSqlParams(BaseModel):
-
-    ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.ids,
-        )
-
-class QGetRegeneratesV4Item(BaseModel):
-
-    id: UUID | None
-    instructions: str | None
-    generated: bool | None
-
-class GetRegeneratesSqlRow(BaseModel):
-
-    items: list[QGetRegeneratesV4Item] | None = None
-
-class GetRegeneratesApiRequest(BaseModel):
-
-    ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-class GetRegeneratesApiResponse(BaseModel):
-
-    items: list[QGetRegeneratesV4Item] | None = None
-
-
-
-# Generated from: search_regenerates
-
-class SearchRegeneratesSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    suggest_source: str | None = None
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.suggest_source,
-            self.exclude_ids,
-        )
-
-class SearchRegeneratesSqlRow(BaseModel):
-
-    items: list[QGetRegeneratesV4Item] | None = None
-
-class SearchRegeneratesApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    suggest_source: str | None = None
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-class SearchRegeneratesApiResponse(BaseModel):
-
-    items: list[QGetRegeneratesV4Item] | None = None
 
 
 
@@ -27524,12 +27377,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetParameterIdsApiRequest",
         "GetParameterIdsApiResponse",
     ),
-    "app/sql/v4/queries/parameters/get_parameters_list_complete.sql": (
-        "GetParametersListSqlParams",
-        "GetParametersListSqlRow",
-        "GetParametersListApiRequest",
-        "GetParametersListApiResponse",
-    ),
     "app/sql/v4/queries/parameters/patch_parameter_draft_complete.sql": (
         "PatchParameterDraftSqlParams",
         "PatchParameterDraftSqlRow",
@@ -28471,18 +28318,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SearchReasoningLevelsSqlRow",
         "SearchReasoningLevelsApiRequest",
         "SearchReasoningLevelsApiResponse",
-    ),
-    "app/sql/v4/queries/resources/regenerates/get_regenerates_complete.sql": (
-        "GetRegeneratesSqlParams",
-        "GetRegeneratesSqlRow",
-        "GetRegeneratesApiRequest",
-        "GetRegeneratesApiResponse",
-    ),
-    "app/sql/v4/queries/resources/regenerates/search_regenerates_complete.sql": (
-        "SearchRegeneratesSqlParams",
-        "SearchRegeneratesSqlRow",
-        "SearchRegeneratesApiRequest",
-        "SearchRegeneratesApiResponse",
     ),
     "app/sql/v4/queries/resources/request_limits/get_request_limits_complete.sql": (
         "GetRequestLimitsSqlParams",
@@ -30793,11 +30628,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/parameters/get_parameters_list_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/parameters/patch_parameter_draft_complete.sql"]
     ) -> SqlString: ...
 
@@ -31579,16 +31409,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/reasoning_levels/search_reasoning_levels_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/resources/regenerates/get_regenerates_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/resources/regenerates/search_regenerates_complete.sql"]
     ) -> SqlString: ...
 
     @overload

@@ -78,9 +78,9 @@ async def get_training_context_view_internal(
                 )
             )
 
+    # actor_name and user_role come from get_profile_context_internal() in the
+    # artifact layer, not from this SQL query.
     response = GetTrainingContextViewResponse(
-        actor_name=result.actor_name if result else None,
-        user_role=result.user_role if result else None,
         items=items,
         standard_group_ids=list(result.standard_group_ids)
         if result and result.standard_group_ids

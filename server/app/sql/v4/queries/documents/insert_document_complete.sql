@@ -116,7 +116,7 @@ get_uploads_resource_id AS (
 ),
 insert_upload AS (
     -- Link regular upload if provided
-    INSERT INTO document_uploads_resource (document_id, uploads_id, active, created_at)
+    INSERT INTO document_uploads_junction (document_id, uploads_id, active, created_at)
     SELECT id.document_id, gur.uploads_id, true, NOW()
     FROM insert_doc id
     CROSS JOIN get_uploads_resource_id gur

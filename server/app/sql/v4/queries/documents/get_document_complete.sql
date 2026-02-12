@@ -439,7 +439,7 @@ upload_ids_data AS (
             WHEN (SELECT document_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
                 (SELECT ARRAY_AGG(dur.uploads_id ORDER BY dur.created_at)
-                 FROM document_uploads_resource dur
+                 FROM document_uploads_junction dur
                  WHERE dur.document_id = (SELECT document_id FROM params)
                    AND dur.active = true),
                 ARRAY[]::uuid[]
@@ -472,7 +472,7 @@ upload_suggestions_data AS (
             (SELECT ARRAY_AGG(dur.uploads_id ORDER BY dur.created_at DESC)
              FROM (
                  SELECT DISTINCT dur.uploads_id, MAX(dur.created_at) as created_at
-                 FROM document_uploads_resource dur
+                 FROM document_uploads_junction dur
                  JOIN uploads_resource ur ON ur.id = dur.uploads_id
                  JOIN uploads_uploads_connection uuc ON uuc.uploads_id = ur.id
                  JOIN view_uploads_entry u ON u.id = uuc.upload_id
@@ -480,7 +480,7 @@ upload_suggestions_data AS (
                  WHERE dur.uploads_id IS NOT NULL
                    AND u.file_path IS NOT NULL
                    AND (
-                       -- Option 1: Linked to documents (document_uploads_resource junction table means it's validated/used)
+                       -- Option 1: Linked to documents (document_uploads_junction junction table means it's validated/used)
                        -- Option 2: OR linked to same group with generated=true (show generated items from current group)
                        dur.active = true
                        AND (
