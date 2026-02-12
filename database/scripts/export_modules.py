@@ -822,13 +822,18 @@ async def export_setup_per_artifact(
     category: str,
     *,
     active_flag: str | None = None,
+    filter_name: str | None = None,
 ) -> None:
     """Export one file per artifact (departments, personas, rubrics).
 
     If active_flag is set, only export artifacts where that flag is true.
+    If filter_name is set, only export the artifact with that exact name.
     """
     print(f"  Exporting {subfolder}/ ...")
     out_dir = MODULES_DIR / "10-setups" / "university" / subfolder
+    if out_dir.exists():
+        for old in out_dir.glob("*.sql"):
+            old.unlink()
     out_dir.mkdir(parents=True, exist_ok=True)
 
     if active_flag:
@@ -844,6 +849,16 @@ async def export_setup_per_artifact(
             )
             ORDER BY nr.name
         """, active_flag)
+        artifacts = [(str(r["id"]), r["name"]) for r in rows]
+    elif filter_name:
+        rows = await conn.fetch(f"""
+            SELECT a.id, nr.name
+            FROM {artifact_type}_artifact a
+            JOIN {artifact_type}_names_junction nj ON a.id = nj.{artifact_type}_id
+            JOIN names_resource nr ON nj.name_id = nr.id
+            WHERE nr.name = $1
+            ORDER BY nr.name
+        """, filter_name)
         artifacts = [(str(r["id"]), r["name"]) for r in rows]
     else:
         artifacts = await get_artifacts_with_names(conn, artifact_type)
@@ -873,6 +888,9 @@ async def export_setup_all_in_one(
     """Export all artifacts of a type into a single 'all.sql' file."""
     print(f"  Exporting {subfolder}/ ...")
     out_dir = MODULES_DIR / "10-setups" / "university" / subfolder
+    if out_dir.exists():
+        for old in out_dir.glob("*.sql"):
+            old.unlink()
     out_dir.mkdir(parents=True, exist_ok=True)
     output_path = out_dir / f"{filename}.sql"
 
@@ -1072,6 +1090,57 @@ async def export_base_settings(conn: asyncpg.Connection) -> None:
         print(f"    {slug}.sql ({count} inserts)")
 
 
+async def export_setup_departments(conn: asyncpg.Connection) -> None:
+    """Export active non-General departments to university, General to root."""
+    # General → 10-setups/organization/01-departments/
+    # Non-General active → 10-setups/university/01-departments/
+    org_dir = MODULES_DIR / "10-setups" / "organization" / "01-departments"
+    univ_dir = MODULES_DIR / "10-setups" / "university" / "01-departments"
+    for d in (org_dir, univ_dir):
+        if d.exists():
+            for old in d.glob("*.sql"):
+                old.unlink()
+
+    rows = await conn.fetch("""
+        SELECT a.id, nr.name
+        FROM department_artifact a
+        JOIN department_names_junction nj ON a.id = nj.department_id
+        JOIN names_resource nr ON nj.name_id = nr.id
+        WHERE EXISTS (
+            SELECT 1 FROM department_flags_junction af
+            JOIN flags_resource f ON f.id = af.flag_id
+            WHERE af.department_id = a.id AND f.name = 'department_active' AND af.value = true
+        )
+        ORDER BY nr.name
+    """)
+    junctions = await get_junction_tables(conn, "department")
+
+    for r in rows:
+        art_id = str(r["id"])
+        art_name = r["name"]
+        slug = to_slug(art_name).replace(",", "")
+
+        if art_name.lower() == "general":
+            out_dir = MODULES_DIR / "10-setups" / "organization" / "01-departments"
+            label = "organization"
+        else:
+            out_dir = MODULES_DIR / "10-setups" / "university" / "01-departments"
+            label = "university"
+        out_dir.mkdir(parents=True, exist_ok=True)
+
+        output_path = out_dir / f"{slug}.sql"
+        header = (
+            f"-- Module: {art_name}\n"
+            f"-- Category: department ({label})\n"
+            f"-- Description: {art_name} department\n"
+            f"-- ============================================================\n\n"
+        )
+        count = await write_artifact_module(
+            conn, "department", art_id, junctions, output_path, header
+        )
+        print(f"    {output_path.relative_to(MODULES_DIR)} ({count} inserts)")
+
+
 async def _get_scenario_artifact_ids_for_simulation(
     conn: asyncpg.Connection, sim_id: str
 ) -> list[str]:
@@ -1117,9 +1186,21 @@ async def export_setup_simulations(conn: asyncpg.Connection) -> None:
     """Export simulations with inline scenarios."""
     print("  Exporting 06-simulations/ ...")
     sim_dir = MODULES_DIR / "10-setups" / "university" / "06-simulations"
+    if sim_dir.exists():
+        for old in sim_dir.glob("*.sql"):
+            old.unlink()
     sim_dir.mkdir(parents=True, exist_ok=True)
 
-    sim_artifacts = await get_artifacts_with_names(conn, "simulation")
+    practice_names = {
+        "general practice",
+        "aggressive practice",
+        "confused practice",
+        "happy practice",
+        "passive practice",
+        "video practice",
+    }
+    all_sims = await get_artifacts_with_names(conn, "simulation")
+    sim_artifacts = [(sid, sname) for sid, sname in all_sims if sname.lower() in practice_names]
     sim_junctions = await get_junction_tables(conn, "simulation")
     scn_junctions = await get_junction_tables(conn, "scenario")
 
@@ -1183,17 +1264,69 @@ async def export_setup_simulations(conn: asyncpg.Connection) -> None:
         print(f"    {slug}.sql ({count} inserts)")
 
 
+async def export_setup_scenarios(conn: asyncpg.Connection) -> None:
+    """Export scenarios linked to the 6 practice simulations."""
+    print("  Exporting 07-scenarios/ ...")
+    scn_dir = MODULES_DIR / "10-setups" / "university" / "07-scenarios"
+    if scn_dir.exists():
+        for old in scn_dir.glob("*.sql"):
+            old.unlink()
+    scn_dir.mkdir(parents=True, exist_ok=True)
+
+    practice_names = {
+        "general practice",
+        "aggressive practice",
+        "confused practice",
+        "happy practice",
+        "passive practice",
+        "video practice",
+    }
+    all_sims = await get_artifacts_with_names(conn, "simulation")
+    practice_sims = [(sid, sname) for sid, sname in all_sims if sname.lower() in practice_names]
+
+    # Collect unique scenario artifact IDs across all practice sims
+    seen_scenario_ids: set[str] = set()
+    for sim_id, _ in practice_sims:
+        scn_ids = await _get_scenario_artifact_ids_for_simulation(conn, sim_id)
+        seen_scenario_ids.update(scn_ids)
+
+    # Get names for each scenario
+    junctions = await get_junction_tables(conn, "scenario")
+    for scn_id in sorted(seen_scenario_ids):
+        row = await conn.fetchrow("""
+            SELECT nr.name
+            FROM scenario_names_junction snj
+            JOIN names_resource nr ON nr.id = snj.name_id
+            WHERE snj.scenario_id = $1
+        """, UUID(scn_id))
+        if not row:
+            continue
+        scn_name = row["name"]
+        slug = to_slug(scn_name).replace(",", "")
+        output_path = scn_dir / f"{slug}.sql"
+        header = (
+            f"-- Module: {scn_name}\n"
+            f"-- Category: scenario\n"
+            f"-- Description: {scn_name} scenario\n"
+            f"-- ============================================================\n\n"
+        )
+        count = await write_artifact_module(
+            conn, "scenario", scn_id, junctions, output_path, header
+        )
+        print(f"    {slug}.sql ({count} inserts)")
+
+
 async def export_setup(conn: asyncpg.Connection) -> None:
     print("Exporting 10-setups/university/ ...")
-    await export_setup_per_artifact(conn, "department", "01-departments", "department", active_flag="department_active")
+    await export_setup_departments(conn)
     await export_setup_per_artifact(conn, "persona", "02-personas", "persona")
     await export_setup_all_in_one(conn, "document", "03-documents")
-    await export_setup_all_in_one(conn, "field", "04-fields")
+    await export_setup_per_artifact(conn, "field", "04-fields", "field")
+    await export_setup_per_artifact(conn, "parameter", "05-parameters", "parameter")
     await export_rubrics(conn)
     await export_setup_simulations(conn)
-    await export_setup_all_in_one(conn, "cohort", "08-cohorts")
-    await export_setup_all_in_one(conn, "profile", "09-profiles")
-    await export_setup_all_in_one(conn, "setting", "10-settings")
+    await export_setup_scenarios(conn)
+    await export_setup_per_artifact(conn, "cohort", "08-cohorts", "cohort", filter_name="Practice Cohort")
 
 
 # ---------------------------------------------------------------------------

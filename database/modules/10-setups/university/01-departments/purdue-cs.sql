@@ -1,5 +1,5 @@
 -- Module: Purdue CS
--- Category: department
+-- Category: department (university)
 -- Description: Purdue CS department
 -- ============================================================
 

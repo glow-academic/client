@@ -30,7 +30,7 @@ import { GenerateRegenerateModal } from "@/components/common/GenerateRegenerateM
 import { ProviderCardGrid } from "@/components/common/models/ProviderCardGrid";
 import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
 import { Descriptions } from "@/components/resources/Descriptions";
-import { Flags } from "@/components/resources/FlagsLegacy";
+import { Flags } from "@/components/resources/Flags";
 import { Modalities } from "@/components/resources/Modalities";
 import { Names } from "@/components/resources/Names";
 import { Pricing } from "@/components/resources/Pricing";
@@ -1257,18 +1257,6 @@ function ModelComponent({
       // Section-first flag access
       const allFlags = s?.flags?.resources ?? [];
       const flagConfig = (key: string) => allFlags.find((f) => f.key === key);
-      const flagResource = (key: string) => {
-        const cfg = flagConfig(key);
-        return cfg
-          ? {
-              id: cfg.flag_option_id ?? null,
-              name: cfg.label ?? null,
-              description: cfg.description ?? null,
-              icon: cfg.icon_id ?? null,
-              generated: cfg.generated ?? null,
-            }
-          : null;
-      };
 
       switch (stepId) {
         case "basic":
@@ -1448,49 +1436,47 @@ function ModelComponent({
                 )}
 
                 <Flags
+                  flags={allFlags.filter(f => f.key === "active")}
                   flag_id={formState.active_flag_id ?? null}
-                  flag_resource={flagResource("active")}
-                  show_flag={flagConfig("active")?.show ?? false}
+                  show_flags={flagConfig("active")?.show ?? false}
+                  columns={1}
+                  label="Active"
                   disabled={disabled}
-                  onFlagIdChange={(id) =>
+                  onChange={(id) =>
                     setFormState((prev) => ({ ...prev, active_flag_id: id }))
                   }
-                  label="Active"
-                  helpText="Inactive models will not be available for selection"
-                  required={flagConfig("active")?.required ?? false}
                   group_id={s?.group_id ?? null}
                   link_tool_id={s?.flags?.link_tool_id ?? null}
                   showAiGenerate={s?.flags?.show_ai_generate ?? false}
-
                 />
 
                 <Flags
+                  flags={allFlags.filter(f => f.key === "modalities_enabled")}
                   flag_id={formState.modalities_enabled_flag_id ?? null}
-                  flag_resource={flagResource("modalities_enabled")}
-                  show_flag={flagConfig("modalities_enabled")?.show ?? false}
+                  show_flags={flagConfig("modalities_enabled")?.show ?? false}
+                  columns={1}
+                  label="Modalities"
                   disabled={disabled}
-                  onFlagIdChange={(id) => {
+                  onChange={(id) => {
                     setFormState((prev) => ({
                       ...prev,
                       modalities_enabled_flag_id: id,
                       modality_ids: id ? prev.modality_ids : [],
                     }));
                   }}
-                  label="Modalities"
-                  helpText="Enable modalities configuration"
-                  required={flagConfig("modalities_enabled")?.required ?? false}
                   group_id={s?.group_id ?? null}
                   link_tool_id={s?.flags?.link_tool_id ?? null}
                   showAiGenerate={s?.flags?.show_ai_generate ?? false}
-
                 />
 
                 <Flags
+                  flags={allFlags.filter(f => f.key === "temperature_enabled")}
                   flag_id={formState.temperature_enabled_flag_id ?? null}
-                  flag_resource={flagResource("temperature_enabled")}
-                  show_flag={flagConfig("temperature_enabled")?.show ?? false}
+                  show_flags={flagConfig("temperature_enabled")?.show ?? false}
+                  columns={1}
+                  label="Temperature"
                   disabled={disabled}
-                  onFlagIdChange={(id) => {
+                  onChange={(id) => {
                     setFormState((prev) => ({
                       ...prev,
                       temperature_enabled_flag_id: id,
@@ -1499,103 +1485,87 @@ function ModelComponent({
                         : [],
                     }));
                   }}
-                  label="Temperature"
-                  helpText="Configure temperature levels for this model"
-                  required={
-                    flagConfig("temperature_enabled")?.required ?? false
-                  }
                   group_id={s?.group_id ?? null}
                   link_tool_id={s?.flags?.link_tool_id ?? null}
                   showAiGenerate={s?.flags?.show_ai_generate ?? false}
-
                 />
 
                 <Flags
+                  flags={allFlags.filter(f => f.key === "pricing_enabled")}
                   flag_id={formState.pricing_enabled_flag_id ?? null}
-                  flag_resource={flagResource("pricing_enabled")}
-                  show_flag={flagConfig("pricing_enabled")?.show ?? false}
+                  show_flags={flagConfig("pricing_enabled")?.show ?? false}
+                  columns={1}
+                  label="Pricing"
                   disabled={disabled}
-                  onFlagIdChange={(id) => {
+                  onChange={(id) => {
                     setFormState((prev) => ({
                       ...prev,
                       pricing_enabled_flag_id: id,
                       pricing_ids: id ? prev.pricing_ids : [],
                     }));
                   }}
-                  label="Pricing"
-                  helpText="Configure pricing for this model"
-                  required={flagConfig("pricing_enabled")?.required ?? false}
                   group_id={s?.group_id ?? null}
                   link_tool_id={s?.flags?.link_tool_id ?? null}
                   showAiGenerate={s?.flags?.show_ai_generate ?? false}
-
                 />
 
                 <Flags
+                  flags={allFlags.filter(f => f.key === "voices_enabled")}
                   flag_id={formState.voices_enabled_flag_id ?? null}
-                  flag_resource={flagResource("voices_enabled")}
-                  show_flag={flagConfig("voices_enabled")?.show ?? false}
+                  show_flags={flagConfig("voices_enabled")?.show ?? false}
+                  columns={1}
+                  label="Voices"
                   disabled={disabled}
-                  onFlagIdChange={(id) => {
+                  onChange={(id) => {
                     setFormState((prev) => ({
                       ...prev,
                       voices_enabled_flag_id: id,
                       voice_ids: id ? prev.voice_ids : [],
                     }));
                   }}
-                  label="Voices"
-                  helpText="Select voices for this model"
-                  required={flagConfig("voices_enabled")?.required ?? false}
                   group_id={s?.group_id ?? null}
                   link_tool_id={s?.flags?.link_tool_id ?? null}
                   showAiGenerate={s?.flags?.show_ai_generate ?? false}
-
                 />
 
                 <Flags
+                  flags={allFlags.filter(f => f.key === "reasoning_levels_enabled")}
                   flag_id={formState.reasoning_levels_enabled_flag_id ?? null}
-                  flag_resource={flagResource("reasoning_levels_enabled")}
-                  show_flag={
+                  show_flags={
                     flagConfig("reasoning_levels_enabled")?.show ?? false
                   }
+                  columns={1}
+                  label="Reasoning Levels"
                   disabled={disabled}
-                  onFlagIdChange={(id) => {
+                  onChange={(id) => {
                     setFormState((prev) => ({
                       ...prev,
                       reasoning_levels_enabled_flag_id: id,
                       reasoning_level_ids: id ? prev.reasoning_level_ids : [],
                     }));
                   }}
-                  label="Reasoning Levels"
-                  helpText="Select reasoning levels for this model"
-                  required={
-                    flagConfig("reasoning_levels_enabled")?.required ?? false
-                  }
                   group_id={s?.group_id ?? null}
                   link_tool_id={s?.flags?.link_tool_id ?? null}
                   showAiGenerate={s?.flags?.show_ai_generate ?? false}
-
                 />
 
                 <Flags
+                  flags={allFlags.filter(f => f.key === "qualities_enabled")}
                   flag_id={formState.qualities_enabled_flag_id ?? null}
-                  flag_resource={flagResource("qualities_enabled")}
-                  show_flag={flagConfig("qualities_enabled")?.show ?? false}
+                  show_flags={flagConfig("qualities_enabled")?.show ?? false}
+                  columns={1}
+                  label="Qualities"
                   disabled={disabled}
-                  onFlagIdChange={(id) => {
+                  onChange={(id) => {
                     setFormState((prev) => ({
                       ...prev,
                       qualities_enabled_flag_id: id,
                       quality_ids: id ? prev.quality_ids : [],
                     }));
                   }}
-                  label="Qualities"
-                  helpText="Select quality levels for this model"
-                  required={flagConfig("qualities_enabled")?.required ?? false}
                   group_id={s?.group_id ?? null}
                   link_tool_id={s?.flags?.link_tool_id ?? null}
                   showAiGenerate={s?.flags?.show_ai_generate ?? false}
-
                 />
               </div>
             </StepCard>

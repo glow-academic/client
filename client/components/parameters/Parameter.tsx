@@ -15,7 +15,7 @@ import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
 import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
 import { Fields } from "@/components/resources/Fields";
-import { Flags } from "@/components/resources/FlagsLegacy";
+import { Flags, type FlagConfig } from "@/components/resources/Flags";
 import { Names } from "@/components/resources/Names";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -917,23 +917,13 @@ function ParameterComponent({
                 />
 
                 <Flags
+                  flags={(s?.flags?.resources ?? []).filter(f => f.key === "active") as FlagConfig[]}
                   flag_id={formState.active_flag_id}
-                  flag_resource={(() => {
-                    const active = (s?.flags?.resources ?? []).find(
-                      (f) => f.key === "active"
-                    );
-                    if (!active) return null;
-                    return {
-                      id: active.flag_option_id ?? null,
-                      name: active.label ?? null,
-                      description: active.description ?? null,
-                      icon: active.icon_id ?? null,
-                      generated: active.generated ?? null,
-                    };
-                  })()}
-                  show_flag={s?.flags?.show ?? false}
+                  show_flags={s?.flags?.show ?? false}
+                  columns={1}
+                  label="Active"
                   disabled={disabled}
-                  onFlagIdChange={(flagId) =>
+                  onChange={(flagId) =>
                     setFormState((prev) => {
                       const nextFlagIds = prev.flag_ids.filter(
                         (id) => id !== (prev.active_flag_id ?? "")
@@ -948,9 +938,6 @@ function ParameterComponent({
                   }
                   onGenerate={() => handleGenerateResources(["flags"])}
                   isGenerating={isGenerating("flags")}
-                  label="Active"
-                  required={false}
-                  helpText="Inactive parameters will not be available for selection"
                   group_id={s?.group_id ?? null}
                   showAiGenerate={s?.flags?.show_ai_generate ?? false}
                   link_tool_id={s?.flags?.link_tool_id ?? null}

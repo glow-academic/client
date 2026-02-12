@@ -33,7 +33,7 @@ import {
   type DepartmentsProps,
 } from "@/components/resources/Departments";
 import { Emails, type EmailsProps } from "@/components/resources/Emails";
-import { Flags } from "@/components/resources/FlagsLegacy";
+import { Flags } from "@/components/resources/Flags";
 import { Names, type NamesProps } from "@/components/resources/Names";
 import {
   RequestLimits,
@@ -87,7 +87,7 @@ type CreateDraftRequestLimitsOut = Awaited<
 
 type NameItem = NonNullable<NamesProps["names"]>[number];
 type NameResource = NonNullable<NamesProps["name_resource"]>;
-type FlagResource = NonNullable<Parameters<typeof Flags>[0]["flag_resource"]>;
+import type { FlagConfig } from "@/components/resources/Flags";
 type RequestLimitItem = NonNullable<RequestLimitsProps["request_limits"]>[number];
 type RequestLimitResource = NonNullable<RequestLimitsProps["request_limit_resource"]>;
 type DepartmentItem = NonNullable<DepartmentsProps["departments"]>[number];
@@ -116,8 +116,8 @@ type StaffData = OutputOf<"/api/v4/artifacts/profiles/get", "post"> &
   flags?: {
     show?: boolean;
     required?: boolean;
-    current?: FlagResource | null;
-    resources?: FlagResource[];
+    current?: FlagConfig | null;
+    resources?: FlagConfig[];
   } | null;
   request_limits?: {
     show?: boolean;
@@ -276,7 +276,7 @@ function ProfileComponent({
       can_edit: s.can_edit ?? null,
       role: s.role ?? null,
       name_id: nameResource?.id ?? null,
-      active_flag_id: flagResource?.id ?? null,
+      active_flag_id: flagResource?.flag_option_id ?? null,
       request_limit_id: requestLimitResource?.id ?? null,
       department_ids: departmentIds,
       email_ids: emailIds,
@@ -1241,11 +1241,13 @@ function ProfileComponent({
                   group_id={currentStaffData?.group_id ?? null}
                 />
                 <Flags
+                  flags={currentStaffData?.flags ?? []}
                   flag_id={formState.active_flag_id ?? null}
-                  flag_resource={currentStaffData?.flag_resource ?? null}
-                  show_flag={currentStaffData?.show_flag ?? false}
+                  show_flags={currentStaffData?.show_flag ?? false}
+                  columns={1}
+                  label="Active"
                   disabled={disabled}
-                  onFlagIdChange={(flagId) =>
+                  onChange={(flagId) =>
                     setFormState((prev) => ({
                       ...prev,
                       active_flag_id: flagId,
@@ -1253,9 +1255,6 @@ function ProfileComponent({
                   }
                   onGenerate={handleGenerateFlags}
                   isGenerating={isGenerating("flags")}
-                  label="Active"
-                  helpText="Inactive staff members will not be able to access the system"
-                  required={currentStaffData?.flag_required ?? false}
                   group_id={currentStaffData?.group_id ?? null}
                 />
               </div>

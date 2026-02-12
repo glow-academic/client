@@ -22,7 +22,7 @@ import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
 import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
 import { Fields } from "@/components/resources/Fields";
-import { Flags } from "@/components/resources/FlagsLegacy";
+import { Flags } from "@/components/resources/Flags";
 import { Names } from "@/components/resources/Names";
 import { Images } from "@/components/resources/Images";
 import { Texts } from "@/components/resources/Texts";
@@ -1110,21 +1110,13 @@ function DocumentComponent({
 
                 {/* Active Switch - using Flags resource component */}
                 <Flags
+                  flags={documentDetail?.flags?.resources ?? []}
                   flag_id={formState.active_flag_id ?? null}
-                  flag_resource={(() => {
-                    const f = documentDetail?.flags?.current?.[0];
-                    if (!f) return null;
-                    return {
-                      id: f.flag_option_id ?? null,
-                      name: f.label ?? null,
-                      description: f.description ?? null,
-                      icon: null,
-                      generated: f.generated ?? null,
-                    };
-                  })()}
-                  show_flag={documentDetail?.flags?.show ?? false}
+                  show_flags={documentDetail?.flags?.show ?? false}
+                  columns={1}
+                  label="Active"
                   disabled={disabled}
-                  onFlagIdChange={(flagId) =>
+                  onChange={(flagId) =>
                     setFormState((prev) => ({
                       ...prev,
                       active_flag_id: flagId,
@@ -1132,9 +1124,6 @@ function DocumentComponent({
                   }
                   onGenerate={handleGenerateFlags}
                   isGenerating={isGenerating("flags")}
-                  label="Active"
-                  helpText="Inactive documents will not be available for scenarios"
-                  required={documentDetail?.flags?.required ?? false}
                   group_id={documentDetail?.group_id ?? null}
                   showAiGenerate={
                     documentDetail?.flags?.show_ai_generate ?? false

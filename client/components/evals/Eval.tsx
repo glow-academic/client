@@ -26,7 +26,7 @@ import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
 import { Agents } from "@/components/resources/Agents";
 import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
-import { Flags } from "@/components/resources/FlagsLegacy";
+import { Flags } from "@/components/resources/Flags";
 import { GroupRubrics } from "@/components/resources/GroupRubrics";
 import { Groups } from "@/components/resources/Groups";
 import { Names } from "@/components/resources/Names";
@@ -334,27 +334,6 @@ function EvalComponent({
 
   const [formState, setFormState] =
     useState<EvalFormState>(getInitialFormState);
-
-  const mapFlagToLegacy = useCallback(
-    (
-      section:
-        | EvalData["active_flags"]
-        | EvalData["dynamic_flags"]
-        | EvalData["groups_flags"]
-        | null
-        | undefined,
-      name: string
-    ) =>
-      section?.resource
-        ? {
-            id: section.resource.flag_option_id ?? null,
-            name,
-            description: section.resource.description ?? null,
-            generated: section.resource.generated ?? null,
-          }
-        : null,
-    []
-  );
 
   const currentAgentResources = useMemo(
     () =>
@@ -1491,11 +1470,13 @@ function EvalComponent({
                 />
 
                 <Flags
+                  flags={s?.active_flags?.resources ?? []}
                   flag_id={formState.active_flag_id ?? null}
-                  flag_resource={mapFlagToLegacy(s?.active_flags, "eval_active")}
-                  show_flag={s?.active_flags?.show ?? false}
+                  show_flags={s?.active_flags?.show ?? false}
+                  columns={1}
+                  label="Active"
                   disabled={disabled}
-                  onFlagIdChange={(flagId) =>
+                  onChange={(flagId) =>
                     setFormState((prev) => ({
                       ...prev,
                       active_flag_id: flagId,
@@ -1503,20 +1484,17 @@ function EvalComponent({
                   }
                   onGenerate={handleGenerateFlags}
                   isGenerating={isGenerating("flags")}
-                  label="Active"
-                  helpText="Inactive evals will not be available for runs"
-                  required={s?.active_flags?.required ?? false}
                   group_id={s?.group_id ?? null}
-                  agent_id={null}
-                  createFlagsAction={createFlagsAction}
                 />
 
                 <Flags
+                  flags={s?.dynamic_flags?.resources ?? []}
                   flag_id={formState.dynamic_flag_id ?? null}
-                  flag_resource={mapFlagToLegacy(s?.dynamic_flags, "dynamic")}
-                  show_flag={s?.dynamic_flags?.show ?? false}
+                  show_flags={s?.dynamic_flags?.show ?? false}
+                  columns={1}
+                  label="Dynamic"
                   disabled={disabled}
-                  onFlagIdChange={(flagId) =>
+                  onChange={(flagId) =>
                     setFormState((prev) => ({
                       ...prev,
                       dynamic_flag_id: flagId,
@@ -1524,20 +1502,17 @@ function EvalComponent({
                   }
                   onGenerate={handleGenerateFlags}
                   isGenerating={isGenerating("flags")}
-                  label="Dynamic"
-                  helpText="Enable dynamic evaluation settings"
-                  required={s?.dynamic_flags?.required ?? false}
                   group_id={s?.group_id ?? null}
-                  agent_id={null}
-                  createFlagsAction={createFlagsAction}
                 />
 
                 <Flags
+                  flags={s?.groups_flags?.resources ?? []}
                   flag_id={formState.groups_flag_id ?? null}
-                  flag_resource={mapFlagToLegacy(s?.groups_flags, "groups")}
-                  show_flag={s?.groups_flags?.show ?? false}
+                  show_flags={s?.groups_flags?.show ?? false}
+                  columns={1}
+                  label="Use Groups"
                   disabled={disabled}
-                  onFlagIdChange={(flagId) =>
+                  onChange={(flagId) =>
                     setFormState((prev) => ({
                       ...prev,
                       groups_flag_id: flagId,
@@ -1545,12 +1520,7 @@ function EvalComponent({
                   }
                   onGenerate={handleGenerateFlags}
                   isGenerating={isGenerating("flags")}
-                  label="Use Groups"
-                  helpText="Evaluate by group instead of individual runs"
-                  required={s?.groups_flags?.required ?? false}
                   group_id={s?.group_id ?? null}
-                  agent_id={null}
-                  createFlagsAction={createFlagsAction}
                 />
 
                 <Departments

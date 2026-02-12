@@ -28,7 +28,7 @@ import { GenerateRegenerateModal } from "@/components/common/GenerateRegenerateM
 import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
 import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
-import { Flags } from "@/components/resources/FlagsLegacy";
+import { Flags } from "@/components/resources/Flags";
 import { Instructions } from "@/components/resources/Instructions";
 import { Models } from "@/components/resources/Models";
 import { Names } from "@/components/resources/Names";
@@ -1493,19 +1493,13 @@ export default function Agent({
                         />
 
                         <Flags
+                          flags={flagsSection?.resources ?? []}
                           flag_id={draftState.active_flag_id}
-                          flag_resource={(aiFormData.flag_resource ?? (flagsSection?.current?.[0]
-                            ? {
-                                id: flagsSection.current[0].flag_option_id ?? null,
-                                name: flagsSection.current[0].label ?? null,
-                                description: flagsSection.current[0].description ?? null,
-                                icon: flagsSection.current[0].icon_id ?? null,
-                                generated: flagsSection.current[0].generated ?? null,
-                              }
-                            : null)) as any}
-                          show_flag={flagsSection?.show ?? false}
+                          show_flags={flagsSection?.show ?? false}
+                          columns={1}
+                          label="Active"
                           disabled={isReadonly}
-                          onFlagIdChange={(flagId) => {
+                          onChange={(flagId) => {
                             setDraftState((prev) => ({
                               ...prev,
                               active_flag_id: flagId,
@@ -1513,9 +1507,6 @@ export default function Agent({
                           }}
                           onGenerate={handleGenerateFlags}
                           isGenerating={isGenerating("flags")}
-                          label="Active"
-                          helpText="Inactive agents will not be available to perform operations for departments"
-                          required={flagsSection?.required ?? false}
                           group_id={sectionData?.group_id ?? null}
                           link_tool_id={flagsSection?.link_tool_id ?? null}
                           showAiGenerate={!!sectionData?.flags?.show_ai_generate}

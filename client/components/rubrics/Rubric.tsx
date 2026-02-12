@@ -18,7 +18,7 @@ import { GenerateRegenerateModal } from "@/components/common/GenerateRegenerateM
 import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
 import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
-import { Flags } from "@/components/resources/FlagsLegacy";
+import { Flags } from "@/components/resources/Flags";
 import { Names } from "@/components/resources/Names";
 import { Points } from "@/components/resources/Points";
 import { Standards } from "@/components/resources/Standards";
@@ -785,33 +785,16 @@ function RubricComponent({
               />
 
               <Flags
+                flags={s?.flags?.resources ?? []}
                 flag_id={formState.active_flag_id}
-                flag_resource={
-                  s?.flags?.current?.[0]
-                    ? {
-                        id: s.flags.current[0].flag_option_id ?? null,
-                        name: s.flags.current[0].label ?? null,
-                        description: s.flags.current[0].description ?? null,
-                        icon: s.flags.current[0].icon_id ?? null,
-                        generated: s.flags.current[0].generated ?? null,
-                      }
-                    : null
-                }
-                flags={(s?.flags?.resources ?? []).map((f) => ({
-                  id: f.flag_option_id ?? null,
-                  name: f.label ?? null,
-                  description: f.description ?? null,
-                  icon: f.icon_id ?? null,
-                  generated: f.generated ?? null,
-                }))}
-                show_flag={s?.flags?.show ?? false}
+                show_flags={s?.flags?.show ?? false}
+                columns={1}
                 disabled={disabled}
-                onFlagIdChange={(flagId) =>
+                onChange={(flagId) =>
                   setFormState((prev) => ({ ...prev, active_flag_id: flagId }))
                 }
                 onGenerate={() => handleGenerateResources(["flags"])}
                 isGenerating={isGenerating("flags")}
-                required={s?.flags?.required ?? false}
                 group_id={s?.group_id ?? null}
                 showAiGenerate={s?.flags?.show_ai_generate ?? false}
                 link_tool_id={s?.flags?.link_tool_id ?? null}

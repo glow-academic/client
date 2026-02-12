@@ -23,7 +23,7 @@ import { Auths } from "@/components/resources/Auths";
 import { Colors } from "@/components/resources/Colors";
 import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
-import { Flags } from "@/components/resources/FlagsLegacy";
+import { Flags, type FlagConfig } from "@/components/resources/Flags";
 import { Names } from "@/components/resources/Names";
 import { Profiles } from "@/components/resources/Profiles";
 import { ProviderKeys } from "@/components/resources/ProviderKeys";
@@ -1368,19 +1368,18 @@ function SettingComponent({
 
                 {/* Active Switch - using Flags resource component */}
                 <Flags
+                  flags={currentSettingData?.flag_resource ? [currentSettingData.flag_resource as unknown as FlagConfig] : []}
                   flag_id={formState.active_flag_id ?? null}
-                  flag_resource={currentSettingData?.flag_resource ?? null}
-                  show_flag={currentSettingData?.show_flag ?? false}
+                  show_flags={currentSettingData?.show_flag ?? false}
+                  columns={1}
+                  label="Active"
                   disabled={disabled}
-                  onFlagIdChange={(flagId) =>
+                  onChange={(flagId) =>
                     setFormState((prev) => ({
                       ...prev,
                       active_flag_id: flagId,
                     }))
                   }
-                  label="Active"
-                  helpText="Inactive settings will not be available"
-                  required={currentSettingData?.flag_required ?? false}
                   group_id={currentSettingData?.group_id ?? null}
                 />
               </div>

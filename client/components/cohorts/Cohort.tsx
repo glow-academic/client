@@ -22,7 +22,7 @@ import { GenerateRegenerateModal } from "@/components/common/GenerateRegenerateM
 import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
 import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
-import { Flags } from "@/components/resources/FlagsLegacy";
+import { Flags, type FlagConfig } from "@/components/resources/Flags";
 import { Names } from "@/components/resources/Names";
 import {
   SimulationPositions,
@@ -30,7 +30,6 @@ import {
   type SimulationPositionItem,
 } from "@/components/resources/SimulationPositions";
 import { Simulations } from "@/components/resources/Simulations";
-import type { FlagItem } from "@/components/resources/FlagsLegacy";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
@@ -1030,15 +1029,6 @@ function CohortComponent({
       const s = stableCohortDataFields;
       switch (stepId) {
         case "basic":
-          const flagResource: FlagItem | null = s?.flags?.resource
-            ? {
-                id: s.flags.resource.id ?? null,
-                name: s.flags.resource.name ?? null,
-                description: s.flags.resource.description ?? null,
-                icon: s.flags.resource.icon ?? null,
-                generated: s.flags.resource.generated ?? false,
-              }
-            : null;
           return (
             <StepCard
               stepStatus={stepStatus}
@@ -1153,11 +1143,13 @@ function CohortComponent({
 
                 {/* Active Switch - using Flags resource component */}
                 <Flags
+                  flags={(s?.flags?.resources ?? []) as FlagConfig[]}
                   flag_id={formState.active_flag_id ?? null}
-                  flag_resource={flagResource}
-                  show_flag={s?.flags?.show ?? false}
+                  show_flags={s?.flags?.show ?? false}
+                  columns={1}
+                  label="Active"
                   disabled={disabled}
-                  onFlagIdChange={(flagId) =>
+                  onChange={(flagId) =>
                     setFormState((prev) => ({
                       ...prev,
                       active_flag_id: flagId,
@@ -1165,9 +1157,6 @@ function CohortComponent({
                   }
                   onGenerate={handleGenerateFlags}
                   isGenerating={isGenerating("flags")}
-                  label="Active"
-                  helpText="Inactive cohorts will not be available for selection"
-                  required={s?.flags?.required ?? false}
                   group_id={s?.group_id ?? null}
                   showAiGenerate={s?.flags?.show_ai_generate ?? false}
                 />
