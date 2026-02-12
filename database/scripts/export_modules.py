@@ -1015,6 +1015,7 @@ async def export_base_profiles(conn: asyncpg.Connection) -> None:
         WHERE NOT EXISTS (
             SELECT 1 FROM profile_departments_junction pdj WHERE pdj.profile_id = p.id
         )
+          AND nr.name NOT ILIKE '%benchmark%'
         ORDER BY nr.name
     """)
     artifacts = [(str(r["id"]), r["name"]) for r in rows]
@@ -1192,6 +1193,7 @@ async def main() -> None:
             "auth": export_auth,
             "rubrics": export_rubrics,
             "evals": export_evals,
+            "profiles": export_base_profiles,
             "setup": export_setup,
         }
 
@@ -1212,6 +1214,8 @@ async def main() -> None:
             await export_rubrics(conn)
             print()
             await export_evals(conn)
+            print()
+            await export_base_profiles(conn)
             print()
             await export_setup(conn)
             print()
