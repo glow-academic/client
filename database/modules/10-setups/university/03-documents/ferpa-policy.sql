@@ -6,7 +6,7 @@
 
 -- Resource rows
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019b995c-8e90-77bc-a551-5ea801f3cc75', 'Family Educational Rights and Privacy Act (FERPA) policy document', '2025-12-12T13:44:32.428979+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.documents_resource (created_at, active, generated, mcp, id, name, description, department_ids, upload_id, text_id) VALUES ('2025-12-12T13:44:32.428979+00:00', true, false, false, '019bb25e-e619-7831-a70a-a7fb065a1999', 'FERPA Policy', 'Family Educational Rights and Privacy Act (FERPA) policy document', '{}', '019b3be4-3cf0-7029-82ab-3b4eda4f818d', NULL) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.documents_resource (created_at, active, generated, mcp, id, name, description, department_ids, upload_id, text_id, html) VALUES ('2025-12-12T13:44:32.428979+00:00', true, false, false, '019bb25e-e619-7831-a70a-a7fb065a1999', 'FERPA Policy', 'Family Educational Rights and Privacy Act (FERPA) policy document', '{}', '019b3be4-3cf0-7029-82ab-3b4eda4f818d', NULL, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019b995c-8e8e-7a22-a285-9726b43ab391', 'FERPA Policy', '2025-12-12T13:44:32.428979+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.uploads_resource (id, created_at, active, generated, mcp) VALUES ('019bcc94-efb5-7ac7-a390-938a31051739', '2026-01-17T15:31:11.407183+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 

@@ -45,7 +45,7 @@ make seed-file-from-yaml               # Generate SQL file without loading
 
 ## YAML Config
 
-Add a `modules` section to `install-config.yaml` (see `install-config.example.yaml`):
+Add a `modules` section to `config.yaml` (see `config.example.yaml`):
 
 ```yaml
 modules:

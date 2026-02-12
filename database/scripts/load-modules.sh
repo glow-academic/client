@@ -8,7 +8,7 @@ set -euo pipefail
 # Can either output a combined SQL file or pipe directly to psql.
 #
 # Usage:
-#   ./load-modules.sh                              # Use default install-config.yaml
+#   ./load-modules.sh                              # Use default config.yaml
 #   ./load-modules.sh config.yaml                  # Use specific config
 #   ./load-modules.sh config.yaml --output         # Write to timestamped file
 #   ./load-modules.sh config.yaml --output out.sql # Write to specific file
@@ -40,9 +40,9 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ -z "$config_file" ]]; then
-  config_file="$project_root/install-config.yaml"
+  config_file="$project_root/config.yaml"
   if [[ ! -f "$config_file" ]]; then
-    config_file="$project_root/install-config.example.yaml"
+    config_file="$project_root/config.example.yaml"
   fi
 fi
 

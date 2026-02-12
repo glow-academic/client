@@ -138,8 +138,12 @@ async def execute_sql_typed(
     sql_text = load_sql(sql_path)
     is_function, function_name, schema = _detect_function_in_sql(sql_text)
 
-    # Get types (works for both functions and raw SQL)
-    InputType, OutputType = get_sql_types(sql_path)
+    # Get types — try app registry first, fall back to test registry
+    try:
+        InputType, OutputType = get_sql_types(sql_path)
+    except ValueError:
+        from tests.sql.types import get_sql_types as get_test_sql_types
+        InputType, OutputType = get_test_sql_types(sql_path)
     # Type annotation to help type checker understand OutputType is Type[BaseModel]
     OutputTypeClass: type[BaseModel] = OutputType
 
@@ -151,7 +155,10 @@ async def execute_sql_typed(
 
     # Execute query - handle functions vs raw SQL differently
     if is_function and function_name:
-        # It's a function - call it with SELECT * FROM schema.function_name($1, $2, ...)
+        # JIT-create the function if it doesn't exist (e.g. test functions)
+        await conn.execute(sql_text)
+
+        # Call it with SELECT * FROM schema.function_name($1, $2, ...)
         num_params = len(sql_params)
         param_placeholders = ", ".join([f"${i + 1}" for i in range(num_params)])
         function_call_sql = (

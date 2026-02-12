@@ -469,9 +469,8 @@ if [ "$BARE_MODE" = true ]; then
         "docker-compose.yml"
         "Makefile"
         "pyproject.toml"
-        ".env.example"
         ".gitignore"
-        "install-config.example.yaml"
+        "config.example.yaml"
         ".python-version"
         ".mvric"
     )
@@ -512,7 +511,7 @@ else
     else
         # Fallback: copy common root files if not a git repo
         warning "Not a git repository, copying common root files..."
-        ROOT_FILES=(".gitignore" ".cursorignore" "AGENTS.md" "Makefile" "docker-compose.yml" "pyproject.toml" "README.md" ".env.example")
+        ROOT_FILES=(".gitignore" ".cursorignore" "AGENTS.md" "Makefile" "docker-compose.yml" "pyproject.toml" "README.md" "config.example.yaml")
         for file in "${ROOT_FILES[@]}"; do
             if [ -f "$file" ]; then
                 cp "$file" "$EXPORT_DIR/"
@@ -524,7 +523,7 @@ fi
 
 # Create .env file from selected environment (skip in bare mode)
 if [ "$BARE_MODE" = true ]; then
-    info "Bare mode: skipping .env file creation (only .env.example included)"
+    info "Bare mode: skipping .env file creation (only config.example.yaml included)"
 else
     info "Creating .env file from $ENV_FILE..."
     if [ ! -f "$ENV_FILE" ]; then
@@ -696,7 +695,7 @@ if [ "$IS_REMOTE" = true ]; then
         fi && \
         rm -rf client server database web notify 2>/dev/null || true && \
         rm -rf uploads history 2>/dev/null || true && \
-        rm -f .gitignore .cursorignore AGENTS.md Makefile docker-compose.yml pyproject.toml README.md .env.example export.sh 2>/dev/null || true && \
+        rm -f .gitignore .cursorignore AGENTS.md Makefile docker-compose.yml pyproject.toml README.md config.example.yaml export.sh 2>/dev/null || true && \
         # Note: .github folder is preserved (not deleted) && \
         unzip -q -o \"$ZIP_NAME\" && \
         rm \"$ZIP_NAME\" && \
@@ -740,7 +739,7 @@ else
     # Note: .github folder is preserved (not deleted)
     rm -rf client server database web notify 2>/dev/null || true
     rm -rf uploads history 2>/dev/null || true
-    rm -f .gitignore .cursorignore AGENTS.md Makefile docker-compose.yml pyproject.toml README.md .env.example export.sh 2>/dev/null || true
+    rm -f .gitignore .cursorignore AGENTS.md Makefile docker-compose.yml pyproject.toml README.md config.example.yaml export.sh 2>/dev/null || true
     
     if ! unzip -q -o "$FINAL_ZIP_PATH"; then
         error "Failed to extract archive"

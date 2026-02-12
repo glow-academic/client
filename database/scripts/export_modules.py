@@ -196,6 +196,8 @@ def sql_literal(val: Any) -> str:
         if not val:
             return "'{}'"
         inner = ",".join(_array_element(v) for v in val)
+        # Escape single quotes for the outer SQL string literal
+        inner = inner.replace("'", "''")
         return f"'{{{inner}}}'"
     if isinstance(val, bytes):
         return f"'\\x{val.hex()}'"

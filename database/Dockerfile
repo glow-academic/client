@@ -30,6 +30,7 @@ VOLUME ["/var/lib/postgresql"]
 # Copy seeds directory (creates /database/seeds/ automatically)
 # If seeds/ doesn't exist in build context, this will fail
 # Ensure seeds/ directory exists in database/ folder before building
+COPY schema.sql /database/schema.sql
 COPY seeds/ /database/seeds/
 COPY scripts/sql-helpers.sh         /docker-entrypoint-initdb.d/
 COPY scripts/custom-entrypoint.sh   /usr/local/bin/custom-entrypoint.sh

@@ -1,4 +1,4 @@
-.PHONY: help setup install clean format lint typecheck run run-test test test-unit test-integration test-cov cleanup generate-tests generate-test-schema stop stop-keycloak install-client install-e2e restore-db migrate-db migrate-db-all connect-db fresh-db export-schema export-modules build-test-seed typecheck-client build-client openapi-gen gen-client-types sql-compile sql-format watch-sql-types configure
+.PHONY: help setup install clean format lint typecheck run run-test test test-unit test-integration test-cov cleanup generate-tests generate-test-schema stop stop-keycloak install-client install-e2e restore-db migrate-db migrate-db-all connect-db fresh-db export-schema export-modules build-test-seed typecheck-client build-client openapi-gen gen-client-types sql-compile sql-format watch-sql-types configure deploy deploy-clean
 
 # Default Python interpreter
 PYTHON := python3.11
@@ -27,15 +27,19 @@ check-python:
 		exit 1; \
 	fi
 
+# Interactive setup wizard — writes config.yaml and generates .env
+setup:
+	@python3 scripts/setup.py
+
 # Create virtual environment
-setup: check-python
+setup-venv: check-python
 	@echo "Creating virtual environment at $(VENV)..."
 	@$(PYTHON) -m venv $(VENV)
 	@echo "✅ Virtual environment created at $(VENV)"
 	@echo "To activate: source $(VENV_BIN)/activate"
 
-# Generate .env from install-config.yaml (or interactively)
-#   make configure                          — reads install-config.yaml → .env
+# Generate .env from config.yaml (or interactively)
+#   make configure                          — reads config.yaml → .env
 #   make configure INTERACTIVE=1            — prompts for values interactively
 #   make configure CONFIG=my-config.yaml    — reads specified YAML file
 configure:
@@ -46,6 +50,23 @@ configure:
 	else \
 		python3 scripts/generate-env.py; \
 	fi
+
+# Deploy: generate .env, build seed SQL, start services
+deploy:
+	@echo "🚀 Deploying Glow..."
+	@python3 scripts/generate-env.py
+	@bash database/scripts/load-modules.sh config.yaml --output database/seeds/seed_modules.sql
+	@docker compose up -d --build
+	@echo "✅ Deploy complete"
+
+# Deploy clean: wipe volumes, generate .env, build seed SQL, start fresh
+deploy-clean:
+	@echo "🚀 Deploying Glow (clean)..."
+	@python3 scripts/generate-env.py
+	@bash database/scripts/load-modules.sh config.yaml --output database/seeds/seed_modules.sql
+	@docker compose down -v
+	@docker compose up -d --build
+	@echo "✅ Clean deploy complete"
 
 # Install all dependencies
 install: check-venv
@@ -207,6 +228,7 @@ gen-client-types:
 
 # Start all services in foreground with combined logs
 run: check-venv
+	@python3 scripts/generate-env.py 2>/dev/null || true
 	@echo "🚀 Starting all GLOW services..."
 	@echo "  Redis:    localhost:$(REDIS_PORT)"
 	@echo "  Server:   http://localhost:$(SERVER_PORT)"
@@ -438,11 +460,10 @@ seed-file-from-yaml:
 # Start database with fresh data (interactive setup)
 fresh-db:
 	@echo "Starting interactive database setup..."
-	@cd database/scripts && bash setup-fresh-db.sh
+	@python3 scripts/setup.py
 	@echo "✅ Interactive setup completed"
 	@echo ""
-	@echo "To load the generated seed file, run:"
-	@echo "  cd database && yarn start:clean"
+	@echo "To deploy, run: make deploy"
 
 
 # MCP setup for Cursor IDE
@@ -463,9 +484,14 @@ mcp: check-venv
 help:
 	@echo "GLOW - Graduate Learning Orientation Workshop"
 	@echo ""
+	@echo "Getting started:"
+	@echo "  setup          - Interactive setup wizard (writes config.yaml + .env)"
+	@echo "  deploy         - Generate .env, build seed SQL, start all Docker services"
+	@echo "  deploy-clean   - Same as deploy but wipes volumes first (fresh start)"
+	@echo ""
 	@echo "Environment setup:"
-	@echo "  configure    - Generate .env from install-config.yaml (or INTERACTIVE=1)"
-	@echo "  setup        - Create virtual environment at .venv"
+	@echo "  configure    - Generate .env from config.yaml (or INTERACTIVE=1)"
+	@echo "  setup-venv   - Create virtual environment at .venv"
 	@echo "  install      - Install all dependencies in venv"
 	@echo "  clean        - Remove virtual environment"
 	@echo ""

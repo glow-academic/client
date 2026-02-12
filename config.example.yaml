@@ -1,16 +1,16 @@
 # =============================================================================
-# Glow Install Configuration
+# Glow Configuration — Single Source of Truth
 # =============================================================================
-# Copy this file to install-config.yaml and fill in your values.
+# Copy this file to config.yaml and fill in your values.
+# The .env file is auto-generated from this file — never edit .env directly.
 #
 # Usage:
-#   cp install-config.example.yaml install-config.yaml
-#   # Edit install-config.yaml with your values
-#   make configure                          # Generates .env from YAML
-#   docker compose up -d --build            # Start services
+#   cp config.example.yaml config.yaml
+#   # Edit config.yaml with your values
+#   make deploy                             # Generates .env, builds seed, starts services
 #
-# Or run interactively (prompts for values):
-#   make configure INTERACTIVE=1
+# Or run the interactive setup wizard:
+#   make setup                              # Prompts for values, writes config.yaml
 
 # -----------------------------------------------------------------------------
 # Instance
@@ -40,10 +40,11 @@ database:
   user: "myuser"                            # DB_USER
   password: "mypassword"                    # DB_PASSWORD
   name: "mydb"                              # DB_NAME
-  operation: "RESTORE"                      # DB_OPERATION:
-                                            #   "RESTORE"         — restore from latest backup
-                                            #   "seed_*.sql"      — load specific seed file
-                                            #   ""                — use existing database (no init)
+  operation: "auto"                          # DB_OPERATION:
+                                            #   "auto"            — schema + seed on first start, preserve on restart
+                                            #   "modules"         — wipe and rebuild from schema + seed modules
+                                            #   "restore"         — restore from latest backup
+                                            #   "skip"            — use existing database (no init)
 
 # -----------------------------------------------------------------------------
 # Auth
