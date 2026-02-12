@@ -332,7 +332,7 @@ export default function Rubrics({
   };
 
   const handleEdit = (id: string) => {
-    router.push(`/system/rubrics/r/${id}`);
+    router.push(`/system/rubrics/${id}`);
   };
 
   const renderRubricCard = (rubric: (typeof rubrics)[number]) => {

@@ -1,25 +1,4 @@
-import {
-  getAvailableSectionsForRole,
-  getFirstAvailableSectionForRole,
-  isSectionAvailableForRole,
-} from "@/utils/route-permissions";
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
-
-// ProfileRole type (matches v3 API)
-export type ProfileRole =
-  | "superadmin"
-  | "admin"
-  | "instructional"
-  | "member"
-  | "guest"
-  | "custom";
-
-// Re-export the functions from route-permissions for backward compatibility
-export {
-  getAvailableSectionsForRole,
-  getFirstAvailableSectionForRole,
-  isSectionAvailableForRole,
-};
 
 /**
  * Check if the current path represents a main screen that should show chat components
@@ -47,7 +26,7 @@ export const isMainScreen = (pathname: string): boolean => {
   // - /management/departments (1 slash)
   // But NOT:
   // - /create/classes/c/123 (3 slashes)
-  // - /analytics/reports/p/456 (3 slashes)
+  // - /analytics/reports/456 (2 slashes)
   return slashCount <= 1;
 };
 
@@ -153,24 +132,24 @@ export const getSectionRoute = (
       if (section.startsWith("cohort-")) {
         const cohortId = section.replace("cohort-", "");
         // Route to edit page (cohorts are now under training)
-        return `/training/cohorts/c/${cohortId}`;
+        return `/training/cohorts/${cohortId}`;
       }
 
       if (section.startsWith("simulation-")) {
         const simulationId = section.replace("simulation-", "");
-        return `/training/simulations/s/${simulationId}`;
+        return `/training/simulations/${simulationId}`;
       }
       if (section.startsWith("scenario-")) {
         const scenarioId = section.replace("scenario-", "");
-        return `/training/scenarios/s/${scenarioId}`;
+        return `/training/scenarios/${scenarioId}`;
       }
       if (section.startsWith("rubric-")) {
         const rubricId = section.replace("rubric-", "");
-        return `/system/rubrics/r/${rubricId}`;
+        return `/system/rubrics/${rubricId}`;
       }
       if (section.startsWith("document-")) {
         const documentId = section.replace("document-", "");
-        return `/management/documents/d/${documentId}`;
+        return `/management/documents/${documentId}`;
       }
 
       if (section.startsWith("chat-")) {
@@ -181,15 +160,15 @@ export const getSectionRoute = (
         const attemptId = section.replace("attempt-", "");
         // Context-aware routing: if we're currently on a practice page, route to practice
         if (currentPathname && currentPathname.startsWith("/practice")) {
-          return `/practice/a/${attemptId}`;
+          return `/practice/${attemptId}`;
         }
         // Default to home context
-        return `/home/a/${attemptId}`;
+        return `/home/${attemptId}`;
       }
 
       if (section.startsWith("parameter-")) {
         const parameterId = section.replace("parameter-", "");
-        return `/management/parameters/p/${parameterId}`;
+        return `/management/parameters/${parameterId}`;
       }
       if (section.startsWith("model-")) {
         const modelId = section.replace("model-", "");
@@ -199,34 +178,34 @@ export const getSectionRoute = (
         const profileId = section.replace("profile-", "");
         // Check if we're in reports context or staff context
         if (currentPathname && currentPathname.includes("/analytics/reports")) {
-          return `/analytics/reports/p/${profileId}`;
+          return `/analytics/reports/${profileId}`;
         }
         // Staff editing is now done via modals, so redirect to staff list
         return `/management/staff`;
       }
       if (section.startsWith("department-")) {
         const departmentId = section.replace("department-", "");
-        return `/system/departments/d/${departmentId}`;
+        return `/system/departments/${departmentId}`;
       }
       if (section.startsWith("persona-")) {
         const personaId = section.replace("persona-", "");
-        return `/training/personas/p/${personaId}`;
+        return `/training/personas/${personaId}`;
       }
 
       // Intelligence dynamic routes
       if (section.startsWith("agent-")) {
         const agentId = section.replace("agent-", "");
-        return `/intelligence/agents/a/${agentId}`;
+        return `/intelligence/agents/${agentId}`;
       }
       if (section.startsWith("eval-run-")) {
         const evalRunId = section.replace("eval-run-", "");
-        return `/benchmark/er/${evalRunId}`;
+        return `/benchmark/${evalRunId}`;
       }
       if (section.startsWith("pricing-run-")) {
         const runId = section.replace("pricing-run-", "");
         // Note: This now refers to group_id, not individual run_id
         // The pricing table shows groups, so pricing-run- prefix now means group
-        return `/analytics/pricing/g/${runId}`;
+        return `/analytics/pricing/${runId}`;
       }
 
       return "/home"; // Default fallback to home
@@ -275,38 +254,6 @@ export const createBreadcrumbSectionChangeHandler = (
 ) => {
   return (section: string) => {
     const route = getBreadcrumbSectionRoute(section, currentPathname);
-    router.push(route);
-    // Refresh to trigger server component re-render on route change
-    router.refresh();
-  };
-};
-
-/**
- * Creates a role-aware section change handler that ensures users can only navigate to allowed sections
- * Calls router.refresh() after navigation to ensure server components re-render
- */
-export const createRoleAwareSectionChangeHandler = (
-  router: AppRouterInstance,
-  currentRole: ProfileRole,
-  onSectionChange?: (section: string) => void,
-  currentPathname?: string,
-) => {
-  return (section: string) => {
-    // Check if the section is available for the current role
-    if (!isSectionAvailableForRole(section, currentRole)) {
-      // If not available, navigate to the first available section for this role
-      const fallbackSection = getFirstAvailableSectionForRole(currentRole);
-      section = fallbackSection;
-    }
-
-    // If onSectionChange prop is provided, use it (for layout components)
-    if (onSectionChange) {
-      onSectionChange(section);
-      return;
-    }
-
-    // Otherwise, handle navigation internally
-    const route = getSectionRoute(section, currentPathname);
     router.push(route);
     // Refresh to trigger server component re-render on route change
     router.refresh();

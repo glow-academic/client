@@ -383,9 +383,10 @@ async def get_persona_internal(
                 20,
                 0,
                 effective_group_id,
-                "recent",
+                None,
                 name_ids,
                 bypass_cache,
+                persona=True,
             )
             return (selected, suggestions)
 

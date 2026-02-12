@@ -364,9 +364,10 @@ async def get_document_internal(
                 20,
                 0,
                 effective_group_id,
-                "recent",
+                None,
                 name_ids,
                 bypass_cache,
+                document=True,
             )
             return (selected, suggestions)
 

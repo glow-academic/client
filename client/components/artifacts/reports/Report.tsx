@@ -9,7 +9,7 @@
 import type {
   GetProfileOut,
   ReportsOverviewOut,
-} from "@/app/(main)/analytics/reports/p/[profileId]/page";
+} from "@/app/(main)/analytics/reports/[profileId]/page";
 import Dashboard from "@/components/artifacts/dashboard/Dashboard";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";

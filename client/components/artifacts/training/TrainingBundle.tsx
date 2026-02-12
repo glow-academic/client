@@ -199,7 +199,7 @@ export default function TrainingBundle({
       if (infiniteMode) params.set("infiniteMode", "true");
       if (userInstructions.trim()) params.set("userInstructions", userInstructions.trim());
       const qs = params.toString();
-      router.push(`${basePath}/a/${attemptId}${qs ? `?${qs}` : ""}`);
+      router.push(`${basePath}/${attemptId}${qs ? `?${qs}` : ""}`);
     } catch {
       toast.error("Failed to save draft.");
     } finally {

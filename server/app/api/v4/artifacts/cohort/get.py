@@ -350,9 +350,10 @@ async def get_cohort_internal(
                 20,
                 0,
                 access_result.group_id,
-                "recent",
+                None,
                 name_ids,
                 bypass_cache,
+                cohort=True,
             )
             return (selected, suggestions)
 

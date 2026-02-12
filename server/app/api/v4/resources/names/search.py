@@ -1,10 +1,11 @@
 """Names SEARCH endpoint - v4 API following DHH principles."""
 
-from typing import Annotated, cast
+from typing import Annotated, Any, cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
@@ -12,7 +13,6 @@ from app.sql.types import (
     QGetNamesV4Item,
     SearchNamesApiRequest,
     SearchNamesApiResponse,
-    SearchNamesSqlParams,
     SearchNamesSqlRow,
     load_sql_query,
 )
@@ -27,6 +27,61 @@ SQL_PATH = "app/sql/v4/queries/resources/names/search_names_complete.sql"
 router = APIRouter()
 
 
+# Handcrafted params to match new SQL signature with artifact boolean filters
+class SearchNamesParams(BaseModel):
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    draft_id: UUID | None = None
+    suggest_source: str | None = "all"
+    exclude_ids: list[UUID] = []
+    # Artifact boolean filters
+    agent: bool = False
+    auth: bool = False
+    cohort: bool = False
+    department: bool = False
+    document: bool = False
+    eval: bool = False
+    field: bool = False
+    model: bool = False
+    parameter: bool = False
+    persona: bool = False
+    profile: bool = False
+    provider: bool = False
+    rubric: bool = False
+    scenario: bool = False
+    setting: bool = False
+    simulation: bool = False
+    tool: bool = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.search,
+            self.limit_count,
+            self.offset_count,
+            self.draft_id,
+            self.suggest_source,
+            self.exclude_ids,
+            self.agent,
+            self.auth,
+            self.cohort,
+            self.department,
+            self.document,
+            self.eval,
+            self.field,
+            self.model,
+            self.parameter,
+            self.persona,
+            self.profile,
+            self.provider,
+            self.rubric,
+            self.scenario,
+            self.setting,
+            self.simulation,
+            self.tool,
+        )
+
+
 async def search_names_internal(
     conn: asyncpg.Connection,
     search: str | None = None,
@@ -36,8 +91,30 @@ async def search_names_internal(
     suggest_source: str | None = None,
     exclude_ids: list[UUID] | None = None,
     bypass_cache: bool = False,
+    *,
+    agent: bool = False,
+    auth: bool = False,
+    cohort: bool = False,
+    department: bool = False,
+    document: bool = False,
+    eval: bool = False,
+    field: bool = False,
+    model: bool = False,
+    parameter: bool = False,
+    persona: bool = False,
+    profile: bool = False,
+    provider: bool = False,
+    rubric: bool = False,
+    scenario: bool = False,
+    setting: bool = False,
+    simulation: bool = False,
+    tool: bool = False,
 ) -> list[QGetNamesV4Item]:
-    """Internal function to search names."""
+    """Internal function to search names.
+
+    Artifact boolean filters (keyword-only): when True, only return names
+    linked to at least one instance of that artifact type via junction table.
+    """
     if limit_count is not None and limit_count <= 0:
         return []
 
@@ -51,6 +128,23 @@ async def search_names_internal(
             "draft_id": str(draft_id) if draft_id else None,
             "suggest_source": suggest_source,
             "exclude_ids": [str(id) for id in (exclude_ids or [])],
+            "agent": agent,
+            "auth": auth,
+            "cohort": cohort,
+            "department": department,
+            "document": document,
+            "eval": eval,
+            "field": field,
+            "model": model,
+            "parameter": parameter,
+            "persona": persona,
+            "profile": profile,
+            "provider": provider,
+            "rubric": rubric,
+            "scenario": scenario,
+            "setting": setting,
+            "simulation": simulation,
+            "tool": tool,
         },
     )
 
@@ -61,13 +155,30 @@ async def search_names_internal(
                 QGetNamesV4Item.model_validate(item) for item in cached.get("items", [])
             ]
 
-    params = SearchNamesSqlParams(
+    params = SearchNamesParams(
         search=search,
         limit_count=limit_count,
         offset_count=offset_count,
         draft_id=draft_id,
         suggest_source=suggest_source,
         exclude_ids=exclude_ids or [],
+        agent=agent,
+        auth=auth,
+        cohort=cohort,
+        department=department,
+        document=document,
+        eval=eval,
+        field=field,
+        model=model,
+        parameter=parameter,
+        persona=persona,
+        profile=profile,
+        provider=provider,
+        rubric=rubric,
+        scenario=scenario,
+        setting=setting,
+        simulation=simulation,
+        tool=tool,
     )
     result = cast(
         SearchNamesSqlRow,

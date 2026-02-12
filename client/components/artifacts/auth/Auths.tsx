@@ -157,7 +157,7 @@ export default function Auths({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => router.push(`/system/auth/a/${auth.auth_id}`)}
+                  onClick={() => router.push(`/system/auth/${auth.auth_id}`)}
                   aria-label={`Edit ${auth.name}`}
                   data-testid="btn-edit-auth"
                   title={`Edit ${auth.name}`}
@@ -170,7 +170,7 @@ export default function Auths({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => router.push(`/system/auth/a/${auth.auth_id}`)}
+                  onClick={() => router.push(`/system/auth/${auth.auth_id}`)}
                   aria-label={`View ${auth.name}`}
                   data-testid="btn-view-auth"
                   title={`View ${auth.name}`}

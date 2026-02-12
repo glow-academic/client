@@ -21,19 +21,19 @@ const shouldDropSegment = (segment: string): boolean => {
 const getSectionFromSegments = (segments: string[]): string => {
   if (segments.length === 0) return "dashboard";
 
-  const [first, second, third, fourth] = segments;
+  const [first, second, third] = segments;
 
   // Handle main routes
   switch (first) {
     case "home":
-      if (second === "a" && third) {
-        return `attempt-${third}`;
+      if (second) {
+        return `attempt-${second}`;
       }
       return "home";
 
     case "practice":
-      if (second === "a" && third) {
-        return `attempt-${third}`;
+      if (second) {
+        return `attempt-${second}`;
       }
       return "practice";
 
@@ -45,13 +45,13 @@ const getSectionFromSegments = (segments: string[]): string => {
 
     case "analytics":
       if (second === "pricing") {
-        if (third === "r" && fourth) {
-          return `pricing-run-${fourth}`;
+        if (third) {
+          return `pricing-run-${third}`;
         }
         return "pricing";
       }
-      if (second === "reports" && third === "p" && fourth) {
-        return `profile-${fourth}`;
+      if (second === "reports" && third) {
+        return `profile-${third}`;
       }
       if (second) {
         return second; // dashboard, reports, activity, history
@@ -60,20 +60,20 @@ const getSectionFromSegments = (segments: string[]): string => {
 
     case "training":
       if (second === "personas") {
-        if (third === "p" && fourth) {
-          return `persona-${fourth}`;
+        if (third) {
+          return `persona-${third}`;
         }
         return "personas";
       }
       if (second === "scenarios") {
-        if (third === "s" && fourth) {
-          return `scenario-${fourth}`;
+        if (third) {
+          return `scenario-${third}`;
         }
         return "scenarios";
       }
       if (second === "simulations") {
-        if (third === "s" && fourth) {
-          return `simulation-${fourth}`;
+        if (third) {
+          return `simulation-${third}`;
         }
         return "simulations";
       }
@@ -81,11 +81,8 @@ const getSectionFromSegments = (segments: string[]): string => {
         return "videos";
       }
       if (second === "cohorts") {
-        if (third === "c" && fourth) {
-          return `cohort-${fourth}`;
-        }
-        if (third === "new") {
-          return "cohorts";
+        if (third && third !== "new") {
+          return `cohort-${third}`;
         }
         return "cohorts";
       }
@@ -96,20 +93,20 @@ const getSectionFromSegments = (segments: string[]): string => {
 
     case "management":
       if (second === "staff") {
-        if (third === "p" && fourth) {
-          return `profile-${fourth}`;
+        if (third) {
+          return `profile-${third}`;
         }
         return "staff";
       }
       if (second === "documents") {
-        if (third === "d" && fourth) {
-          return `document-${fourth}`;
+        if (third) {
+          return `document-${third}`;
         }
         return "documents";
       }
       if (second === "parameters") {
-        if (third === "p" && fourth) {
-          return `parameter-${fourth}`;
+        if (third) {
+          return `parameter-${third}`;
         }
         return "parameters";
       }
@@ -123,8 +120,8 @@ const getSectionFromSegments = (segments: string[]): string => {
 
     case "intelligence":
       if (second === "agents") {
-        if (third === "a" && fourth) {
-          return `agent-${fourth}`;
+        if (third) {
+          return `agent-${third}`;
         }
         return "agents";
       }
@@ -134,15 +131,9 @@ const getSectionFromSegments = (segments: string[]): string => {
         }
         return "models";
       }
-      if (second === "rubrics") {
-        if (third === "r" && fourth) {
-          return `rubric-${fourth}`;
-        }
-        return "rubrics";
-      }
       if (second === "tools") {
-        if (third === "t" && fourth) {
-          return `tool-${fourth}`;
+        if (third) {
+          return `tool-${third}`;
         }
         return "tools";
       }
@@ -158,9 +149,15 @@ const getSectionFromSegments = (segments: string[]): string => {
       if (second === "evals") {
         return "evals";
       }
+      if (second === "rubrics") {
+        if (third) {
+          return `rubric-${third}`;
+        }
+        return "rubrics";
+      }
       if (second === "departments") {
-        if (third === "d" && fourth) {
-          return `department-${fourth}`;
+        if (third) {
+          return `department-${third}`;
         }
         return "departments";
       }
@@ -170,8 +167,8 @@ const getSectionFromSegments = (segments: string[]): string => {
       return "health";
 
     case "benchmark":
-      if (second === "er" && third) {
-        return `eval-run-${third}`;
+      if (second) {
+        return `eval-run-${second}`;
       }
       return "benchmark";
 

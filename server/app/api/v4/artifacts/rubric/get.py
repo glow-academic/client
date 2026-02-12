@@ -382,9 +382,10 @@ async def get_rubric_internal(
                 20,
                 0,
                 effective_group_id,
-                "recent",
+                None,
                 name_ids,
                 bypass_cache,
+                rubric=True,
             )
             return (selected, suggestions)
 

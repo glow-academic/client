@@ -16,7 +16,6 @@ import React, { useEffect, useMemo } from "react";
 import { SimulationControls } from "@/components/artifacts/attempt/chat/SimulationControls";
 import { FullPageGenerateButton } from "@/components/common/drafts/FullPageGenerateButton";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
-import { AccessControl } from "@/components/common/layout/AccessControl";
 import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
 import { NavigationBreadcrumbs } from "@/components/common/layout/NavigationBreadcrumbs";
 import { UnifiedSidebar } from "@/components/common/layout/UnifiedSidebar";
@@ -116,7 +115,7 @@ function MainLayoutContent({
   const activeSection = getActiveSectionFromPath(pathname);
 
   const isReportPage = useMemo(() => {
-    return pathname.startsWith("/analytics/reports/p");
+    return pathname.startsWith("/analytics/reports/") && pathname.split("/").length >= 4;
   }, [pathname]);
 
   // Check if we're on an analytics page and should show filters
@@ -133,7 +132,7 @@ function MainLayoutContent({
   }, [pathname]);
 
   const isPricingGroupPage = useMemo(() => {
-    return pathname.startsWith("/analytics/pricing/g");
+    return pathname.startsWith("/analytics/pricing/") && pathname.split("/").length >= 4;
   }, [pathname]);
 
   const isHealthPage = useMemo(() => {
@@ -145,28 +144,18 @@ function MainLayoutContent({
   }, [pathname]);
 
   const canShowAnalyticsFilters = useMemo(() => {
-    // Show filters on leaderboard page for all authorized users
     if (pathname === "/leaderboard") {
-      const allowedRoles = ["member", "instructional", "admin", "superadmin"];
-      return (
-        profile?.role && allowedRoles.includes(profile.role)
-      );
+      return true;
     }
-    // Show filters on health page for authorized users
     if (isHealthPage) {
-      const allowedRoles = ["instructional", "admin", "superadmin"];
-      return profile?.role && allowedRoles.includes(profile.role);
+      return true;
     }
-    const allowedRoles = ["instructional", "admin", "superadmin"];
     return (
-      profile?.role &&
-      allowedRoles.includes(profile.role) &&
       (isAnalyticsPage || isHomePage || isPracticePage || isBenchmarkPage) &&
       !pathname.includes("/edit") &&
       !isPricingGroupPage
     );
   }, [
-    profile?.role,
     isAnalyticsPage,
     pathname,
     isHomePage,
@@ -372,8 +361,8 @@ function MainLayoutContent({
 
   // Extract attemptId from pathname if we're on an attempt page
   const attemptMatch =
-    pathname.match(/\/home\/a\/([^/]+)/) ||
-    pathname.match(/\/practice\/a\/([^/]+)/);
+    pathname.match(/\/home\/([^/]+)/) ||
+    pathname.match(/\/practice\/([^/]+)/);
   const attemptId = attemptMatch ? attemptMatch[1] : null;
   // Check if we should show SimulationControls
   // Only show if we have attemptData, attemptId, and the attempt belongs to the active profile
@@ -387,11 +376,11 @@ function MainLayoutContent({
   // Determine if we're on a create/edit page and get resource type
   const isCreateOrEditPage = useMemo(() => {
     // Match patterns like:
-    // /create/personas/new, /create/personas/p/[id]
+    // /training/personas/new, /training/personas/[id]
     // /management/staff/new
-    // /engine/rubrics/new
+    // /system/rubrics/new
     // /system/departments/new
-    return /^\/(training|management|intelligence|system)\/([^/]+)\/(new|[pscrdafm]\/[^/]+)/.test(
+    return /^\/(training|management|intelligence|system)\/([^/]+)\/(new|[^/]+)/.test(
       pathname
     );
   }, [pathname]);
@@ -480,12 +469,7 @@ function MainLayoutContent({
           </header>
 
           <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-            <AccessControl
-              key={`access-control-${pathname}`}
-              pathname={pathname}
-            >
-              {children}
-            </AccessControl>
+            {children}
           </div>
         </SidebarInset>
       </SidebarProvider>

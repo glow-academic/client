@@ -263,7 +263,7 @@ export default function Evals({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => router.push(`/system/evals/e/${evalId}`)}
+                  onClick={() => router.push(`/system/evals/${evalId}`)}
                   aria-label={`Edit ${evalName}`}
                   data-testid={`btn-edit-eval-${evalId}`}
                   title={`Edit ${evalName}`}
@@ -276,7 +276,7 @@ export default function Evals({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => router.push(`/system/evals/e/${evalId}`)}
+                  onClick={() => router.push(`/system/evals/${evalId}`)}
                   aria-label={`View ${evalName}`}
                   data-testid={`btn-view-eval-${evalId}`}
                   title={`View ${evalName}`}

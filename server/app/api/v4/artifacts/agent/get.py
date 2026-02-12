@@ -408,7 +408,8 @@ async def get_agent_internal(
         async with pool.acquire() as c:
             selected = await get_names_internal(c, name_ids, bypass_cache)
             suggestions = await search_names_internal(
-                c, None, 20, 0, effective_group_id, "recent", name_ids, bypass_cache
+                c, None, 20, 0, effective_group_id, None, name_ids, bypass_cache,
+                agent=True,
             )
             return (selected, suggestions)
 

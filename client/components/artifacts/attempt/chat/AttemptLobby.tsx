@@ -90,7 +90,7 @@ export function AttemptLobby({
 
   const handleCustomize = useCallback(() => {
     const basePath = mode === "practice" ? "/practice" : "/home";
-    router.push(`${basePath}/a/${attemptId}/${trainingBundleEntryId}`);
+    router.push(`${basePath}/${attemptId}/${trainingBundleEntryId}`);
   }, [mode, router, attemptId, trainingBundleEntryId]);
 
   return (

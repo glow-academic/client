@@ -479,7 +479,7 @@ export function Simulations({
   };
 
   const handleEdit = (id: string) => {
-    router.push(`/training/simulations/s/${id}`);
+    router.push(`/training/simulations/${id}`);
   };
 
   const handleDuplicate = async (

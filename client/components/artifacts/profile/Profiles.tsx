@@ -1506,7 +1506,7 @@ export default function Staff({
                   onClick={() => {
                     if (!staff.profile_id) return;
                     window.open(
-                      `/analytics/reports/p/${staff.profile_id}`,
+                      `/analytics/reports/${staff.profile_id}`,
                       "_blank",
                       "noopener,noreferrer"
                     );
@@ -1530,7 +1530,7 @@ export default function Staff({
                     size="sm"
                     className="h-7 w-7 p-0"
                     onClick={() => {
-                      router.push(`/management/staff/p/${staff.profile_id}`);
+                      router.push(`/management/staff/${staff.profile_id}`);
                     }}
                     data-testid="btn-edit-staff"
                   >

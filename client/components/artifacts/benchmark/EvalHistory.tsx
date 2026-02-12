@@ -185,7 +185,7 @@ export default function EvalHistory({
             <div className="flex flex-col">
               {attemptId ? (
                 <Link
-                  href={`/benchmark/t/${attemptId}`}
+                  href={`/benchmark/${attemptId}`}
                   className="font-medium hover:underline"
                 >
                   {evalName}

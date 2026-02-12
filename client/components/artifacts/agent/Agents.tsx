@@ -277,7 +277,7 @@ export default function Agents({
   ]);
 
   const handleEdit = (id: string) => {
-    router.push(`/intelligence/agents/a/${id}`);
+    router.push(`/intelligence/agents/${id}`);
   };
 
   const handleDuplicate = async (id: string) => {

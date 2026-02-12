@@ -483,11 +483,11 @@ export function Scenarios({
   };
 
   const handleEdit = (id: string) => {
-    router.push(`/training/scenarios/s/${id}`);
+    router.push(`/training/scenarios/${id}`);
   };
 
   const handleView = (id: string) => {
-    router.push(`/training/scenarios/s/${id}`);
+    router.push(`/training/scenarios/${id}`);
   };
 
   const toggleGroupCollapse = (parentId: string) => {

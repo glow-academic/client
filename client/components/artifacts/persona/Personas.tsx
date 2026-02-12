@@ -651,11 +651,11 @@ export default function Personas({
   };
 
   const handleEdit = (id: string) => {
-    router.push(`/training/personas/p/${id}`);
+    router.push(`/training/personas/${id}`);
   };
 
   const handleView = (id: string) => {
-    router.push(`/training/personas/p/${id}`);
+    router.push(`/training/personas/${id}`);
   };
 
   const renderPersonaCard = (persona: (typeof personas)[0]) => {

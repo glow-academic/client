@@ -189,11 +189,7 @@ export function UnifiedSidebar({
 
     // Analytics - Available from instructional level and up
     // Check for parent section "analytics" - if present, show all subsections
-    if (
-      profile.role &&
-      ["instructional", "admin", "superadmin"].includes(profile.role) &&
-      availableSections.includes("analytics")
-    ) {
+    if (availableSections.includes("analytics")) {
       const analyticsItems: MenuItem[] = [];
 
       // Show all analytics subsections when parent section is available
@@ -298,10 +294,7 @@ export function UnifiedSidebar({
 
     // Intelligence - Available for admin and superadmin
     // Check for parent section "intelligence" - if present, show all subsections
-    if (
-      (profile.role === "admin" || profile.role === "superadmin") &&
-      availableSections.includes("intelligence")
-    ) {
+    if (availableSections.includes("intelligence")) {
       const intelligenceItems: MenuItem[] = [];
 
       // Show all intelligence subsections when parent section is available
@@ -336,7 +329,7 @@ export function UnifiedSidebar({
 
     // System - Available for superadmin only
     // Check for parent section "system" - if present, show all subsections
-    if (profile.role === "superadmin" && availableSections.includes("system")) {
+    if (availableSections.includes("system")) {
       const systemItems: MenuItem[] = [];
 
       // Show all system subsections when parent section is available
@@ -370,7 +363,7 @@ export function UnifiedSidebar({
     }
 
     // Health - Available for superadmin only, top-level
-    if (profile.role === "superadmin" && availableSections.includes("health")) {
+    if (availableSections.includes("health")) {
       menu.push({
         title: "Health",
         url: "#",
@@ -380,10 +373,7 @@ export function UnifiedSidebar({
     }
 
     // Benchmark - Available for superadmin only, top-level
-    if (
-      profile.role === "superadmin" &&
-      availableSections.includes("benchmark")
-    ) {
+    if (availableSections.includes("benchmark")) {
       menu.push({
         title: "Benchmark",
         url: "#",
@@ -393,10 +383,7 @@ export function UnifiedSidebar({
     }
 
     // Settings - Available for admin and superadmin, root level (bottom)
-    if (
-      (profile.role === "admin" || profile.role === "superadmin") &&
-      availableSections.includes("settings")
-    ) {
+    if (availableSections.includes("settings")) {
       menu.push({
         title: "Settings",
         url: "#",
@@ -511,31 +498,7 @@ export function UnifiedSidebar({
 
   // Check if user can emulate (instructional and higher, and must be authenticated)
   // Guest/default account users can't emulate even if they have the right role
-  const canEmulate =
-    isAuthenticated &&
-    profile &&
-    profile.role &&
-    ["instructional", "admin", "superadmin"].includes(profile.role);
-
-  // Watch for profile changes and redirect if current page is not accessible
-  // TEMPORARILY DISABLED: Let users manually navigate from access denied screen for debugging
-  /*
-  React.useEffect(() => {
-    // Don't redirect if still loading or if we don't have a profile yet
-    if (isLoading || !profile) {
-      return;
-    }
-
-    // Only redirect if current page is not accessible
-    if (!hasRouteAccess(pathname, profile.role)) {
-      // Only redirect if we're not already on a redirect path
-      const redirectPath = getRedirectPathForRole(profile.role);
-      if (pathname !== redirectPath) {
-        router.push(redirectPath);
-      }
-    }
-  }, [profile, pathname, router, isLoading]);
-  */
+  const canEmulate = isAuthenticated && !!profile;
 
   // Restore scroll position synchronously before paint to prevent flash
   useLayoutEffect(() => {

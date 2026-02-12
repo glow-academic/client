@@ -168,7 +168,7 @@ export default function Departments({
   // no longer returns cohort_ids/profile_ids per department row
 
   const handleEdit = (id: string) => {
-    router.push(`/system/departments/d/${id}`);
+    router.push(`/system/departments/${id}`);
   };
 
   const handleDuplicate = async (department: (typeof departments)[number]) => {

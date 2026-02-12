@@ -12,10 +12,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  getRedirectPathForRole,
-  type ProfileRole,
-} from "@/utils/route-permissions";
+type ProfileRole =
+  | "superadmin"
+  | "admin"
+  | "instructional"
+  | "member"
+  | "guest"
+  | "custom";
 import {
   AlertTriangle,
   Home,
@@ -251,8 +254,7 @@ export function UnifiedAccessDenied({
   };
 
   // Determine redirect path: use provided redirectPath, or role-based path, or fallback to home
-  const finalRedirectPath =
-    redirectPath || (role ? getRedirectPathForRole(role) : "/home");
+  const finalRedirectPath = redirectPath || "/home";
 
   return (
     <div className={containerClasses} data-access-denied="true">

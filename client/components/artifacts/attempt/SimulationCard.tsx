@@ -145,7 +145,7 @@ export default function SimulationCard({
         }
 
         const basePath = practice ? "/practice" : "/home";
-        router.push(`${basePath}/a/${attemptId}`);
+        router.push(`${basePath}/${attemptId}`);
 
         // Dispatch custom event for analytics
         window.dispatchEvent(
@@ -253,7 +253,7 @@ export default function SimulationCard({
             )}
             <div className="flex flex-col items-end space-y-1 flex-1 min-h-[40px] justify-between">
               {/* Rubric Icon */}
-              {profile?.role !== "guest" && (
+              {(
                 <Dialog>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -302,23 +302,6 @@ export default function SimulationCard({
                   </DialogContent>
                 </Dialog>
               )}
-              {profile?.role === "guest" && (
-                <div className="text-right">
-                  <div
-                    className="text-xs font-medium text-gray-500 dark:text-gray-400"
-                    data-testid={
-                      type === "default"
-                        ? "simulation-type"
-                        : "simulation-class"
-                    }
-                  >
-                    {type === "default" ? "Default" : "Cohort"}
-                  </div>
-                  <div className="text-xs text-gray-400">
-                    {type === "default" ? "Simulation" : "Simulations"}
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </CardHeader>
@@ -357,8 +340,7 @@ export default function SimulationCard({
                   : `${numSessions} session${numSessions !== 1 ? "s" : ""}`}
               </span>
             </div>
-            {profile?.role !== "guest" &&
-              highestScore !== undefined &&
+            {highestScore !== undefined &&
               highestScore !== null &&
               highestScore > 0 && (
                 <div className="flex items-center">

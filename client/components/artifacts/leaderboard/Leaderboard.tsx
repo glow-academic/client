@@ -142,22 +142,12 @@ export default function Leaderboard({
   }, []);
 
   const handleViewReport = (profileId: string) => {
-    // Disable navigation for TAs when viewing a specific cohort
-    if (cohortId && profile?.role === "member") {
-      return;
-    }
-    router.push(`/analytics/reports/p/${profileId}`);
+    router.push(`/analytics/reports/${profileId}`);
   };
 
-  // Check if navigation should be disabled for TAs viewing a specific cohort
-  const shouldDisableNavigation =
-    cohortId && profile?.role === "member";
+  const shouldDisableNavigation = false;
 
-  // Check if user has permission to view reports (instructional and above)
-  const canViewReports =
-    profile?.role === "superadmin" ||
-    profile?.role === "admin" ||
-    profile?.role === "instructional";
+  const canViewReports = true;
 
   // Compute accolade winners from hydrated rows using current_value from server
   const computedAccolades = useMemo(() => {
@@ -734,7 +724,7 @@ export default function Leaderboard({
                     </div>
                     {canViewReports && (
                       <Link
-                        href={`/analytics/reports/p/${selected.accolade.holder.profile_id}`}
+                        href={`/analytics/reports/${selected.accolade.holder.profile_id}`}
                         className="inline-flex items-center gap-2 text-sm px-3 py-2 rounded-xl bg-primary text-primary-foreground hover:opacity-90"
                         data-testid={`btn-view-report-${selected.accolade.holder.profile_id}`}
                       >
@@ -798,7 +788,7 @@ export default function Leaderboard({
                           </div>
                           {canViewReports && (
                             <Link
-                              href={`/analytics/reports/p/${challenger.row.profile_id}`}
+                              href={`/analytics/reports/${challenger.row.profile_id}`}
                               className="text-xs px-2 py-1 rounded-md bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
                               data-testid={`btn-view-report-${challenger.row.profile_id}`}
                             >

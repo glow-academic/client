@@ -6,7 +6,7 @@
  */
 "use client";
 
-import type { AttemptDetailOut } from "@/app/(main)/home/a/[attemptId]/page";
+import type { AttemptDetailOut } from "@/app/(main)/home/[attemptId]/page";
 import {
   AlertDialog,
   AlertDialogAction,

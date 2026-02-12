@@ -418,7 +418,7 @@ export default function Activity({
                     className="cursor-pointer hover:bg-muted/50"
                     onClick={() =>
                       router.push(
-                        `/analytics/activity/s/${row.original.session_id}`
+                        `/analytics/activity/${row.original.session_id}`
                       )
                     }
                   >

@@ -291,7 +291,7 @@ export default function Providers({
   };
 
   const handleEdit = (id: string) => {
-    router.push(`/intelligence/providers/p/${id}`);
+    router.push(`/intelligence/providers/${id}`);
   };
 
   const handleCreateNew = () => {

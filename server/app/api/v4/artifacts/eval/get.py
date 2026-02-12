@@ -362,9 +362,10 @@ async def get_eval_internal(
                 20,
                 0,
                 effective_group_id,
-                "recent",
+                None,
                 name_ids,
                 bypass_cache,
+                eval=True,
             )
             return (selected, suggestions)
 

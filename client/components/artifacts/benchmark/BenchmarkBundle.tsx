@@ -87,7 +87,7 @@ export default function BenchmarkBundle({
   const saveAndReturn = async () => {
     setIsSaving(true);
     try {
-      router.push(`/benchmark/t/${testId}`);
+      router.push(`/benchmark/${testId}`);
     } finally {
       setIsSaving(false);
     }

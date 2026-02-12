@@ -65,11 +65,45 @@ Resource endpoints must NOT take `domain_id` as a parameter. The `domain_id` pat
 
 Resource SQL queries (`server/app/sql/v4/queries/resources/{resource}/`) must NOT filter by `domain_id`.
 
-### Rule 6: Resource endpoints must only query their own resource table
+### Rule 6: Resource SQL — allowed tables per operation
 
-A resource endpoint for `{resource}` must only query `{resource}_resource`. If the endpoint joins other tables to fetch related data, this indicates a missing denormalization — the field should be on the resource table itself.
+The core principle: **all cross-table IDs must be parameters, never looked up via junction/artifact chains.**
 
-**Exception**: Joins to `names_resource` or similar for display names in search results are acceptable if the resource has a FK to that table.
+Resource SQL must NOT reference: `*_artifact` tables, cross-resource `*_resource` tables (e.g., `tools_resource` from a `names` endpoint), `resource_tools_relation`, or any lookup chain to discover IDs.
+
+#### GET (`get_{resource}_complete.sql`)
+
+| Allowed | Example |
+|---------|---------|
+| `{resource}_resource` | `FROM names_resource WHERE id = ANY(ids)` |
+
+GET is a pure data fetch by IDs. No joins to any other table.
+
+#### SEARCH (`search_{resource}_complete.sql`)
+
+| Allowed | Purpose | Example |
+|---------|---------|---------|
+| `{resource}_resource` | Primary data | `FROM names_resource n WHERE ...` |
+| `{resource}_drafts_connection` | Draft filter (by `draft_id` param) | `EXISTS (SELECT 1 FROM names_drafts_connection dc WHERE dc.names_id = n.id AND dc.draft_id = $param)` |
+| `{artifact}_{resource}_junction` | Artifact boolean filter (by `{artifact} boolean` param) | `AND (NOT persona OR EXISTS (SELECT 1 FROM persona_names_junction pnj WHERE pnj.name_id = n.id AND pnj.active = true))` |
+
+**Artifact boolean filters**: For each artifact type that uses this resource, the search function accepts a boolean parameter (e.g., `persona boolean DEFAULT false`). When `true`, results are filtered to resources linked to at least one instance of that artifact via the junction table. This replaces the old `suggest_source='linked'` pattern with explicit, per-artifact control.
+
+The list of artifact junctions per resource can be discovered via: `SELECT tablename FROM pg_tables WHERE tablename LIKE '%_{resource}_junction' ORDER BY tablename;`
+
+#### CREATE (`{resource}_complete.sql`)
+
+| Allowed | Purpose | Example |
+|---------|---------|---------|
+| `{resource}_resource` | Read (get-or-create check) + Write (INSERT) | `SELECT id FROM names_resource WHERE name = $name; INSERT INTO names_resource(...)` |
+| `runs_entry` | Tracking insert (with passed-in `group_id`) | `INSERT INTO runs_entry (id, ..., group_id, ...) VALUES (v_run_id, ..., $group_id, ...)` |
+| `calls_entry` | Tracking insert (with passed-in IDs) | `INSERT INTO calls_entry (id, ..., run_id, ...) VALUES (v_call_id, ..., v_run_id, ...)` |
+| `tools_calls_connection` | Link tool to call (with passed-in `tool_id`) | `INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ($tool_id, v_call_id)` |
+| `{resource}_calls_connection` | Link resource to call | `INSERT INTO names_calls_connection (names_id, call_id) VALUES (v_name_id, v_call_id)` |
+
+**Parameters**: CREATE takes `tool_id uuid` and `group_id uuid` as parameters for tracking. These are passed in by the caller — the SQL must NOT look them up via `agent_tools_junction` → `tools_resource` → `tool_artifact` → `resource_tools_relation` chains.
+
+**Gold standard**: `names_complete.sql` — takes `(name, mcp, group_id, tool_id)`, does get-or-create on `names_resource`, then direct inserts for tracking using the passed-in IDs.
 
 ### Rule 7: All read endpoints must implement caching
 
@@ -256,22 +290,41 @@ grep -rl "domain_id" server/app/api/v4/resources/ --include="*.py" | grep -v "/d
 
 **Expected**: Empty (except domains resource). Any other usage is legacy.
 
-### Audit 8: Resource SQL that joins non-self tables
+### Audit 8: Resource SQL violating Rule 6 table restrictions
 
 ```bash
-# For each resource, check if its SQL files JOIN tables other than {resource}_resource
+# Check GET/SEARCH SQL (in subdirectories) for disallowed tables
+echo "=== GET/SEARCH SQL ==="
 for resource_dir in server/app/sql/v4/queries/resources/*/; do
   resource=$(basename "$resource_dir")
   for sql_file in "$resource_dir"*.sql; do
     [ -f "$sql_file" ] || continue
-    # Look for FROM/JOIN on tables that are NOT {resource}_resource
-    joins=$(grep -iE "FROM|JOIN" "$sql_file" | grep -v "${resource}_resource" | grep -v "^--" | grep "_resource\|_junction\|_artifact\|_entry")
-    [ -n "$joins" ] && echo "CROSS-TABLE JOIN in $sql_file: $joins"
+    fname=$(basename "$sql_file")
+    # GET files: only {resource}_resource allowed
+    if [[ "$fname" == get_* ]]; then
+      violations=$(grep -iE "FROM|JOIN" "$sql_file" | grep -v "${resource}_resource" | grep -v "^--" | grep "_resource\|_junction\|_artifact\|_entry\|_connection")
+      [ -n "$violations" ] && echo "GET VIOLATION in $sql_file: $violations"
+    fi
+    # SEARCH files: {resource}_resource + {resource}_drafts_connection + *_{resource}_junction allowed
+    if [[ "$fname" == search_* ]]; then
+      violations=$(grep -iE "FROM|JOIN" "$sql_file" | grep -v "${resource}_resource" | grep -v "${resource}_drafts_connection" | grep -v "_${resource}_junction" | grep -v "^--" | grep "_resource\|_junction\|_artifact\|_entry\|_connection")
+      [ -n "$violations" ] && echo "SEARCH VIOLATION in $sql_file: $violations"
+    fi
   done
+done
+
+# Check CREATE SQL (in root resources/) for disallowed lookups
+echo "=== CREATE SQL ==="
+for sql_file in server/app/sql/v4/queries/resources/*_complete.sql; do
+  [ -f "$sql_file" ] || continue
+  resource=$(basename "$sql_file" _complete.sql)
+  # Disallowed: agent_tools_junction, tools_resource, tool_tools_junction, tool_artifact, resource_tools_relation, agent_flags_junction
+  violations=$(grep -iE "agent_tools_junction|tools_resource|tool_tools_junction|tool_artifact|resource_tools_relation|agent_flags_junction" "$sql_file" | grep -v "^--")
+  [ -n "$violations" ] && echo "CREATE LOOKUP VIOLATION in $sql_file: $violations"
 done
 ```
 
-**Expected**: Empty or only acceptable FK joins (e.g., `names_resource` for display names). Any other cross-table joins indicate missing denormalization.
+**Expected**: Empty. GET must only use `{resource}_resource`. SEARCH may additionally use `{resource}_drafts_connection` and `{artifact}_{resource}_junction`. CREATE must not look up IDs via junction/artifact chains — `tool_id` and `group_id` must be parameters.
 
 ### Audit 9: Read endpoints missing caching
 
@@ -521,4 +574,4 @@ Resources with docs.py:   {N}/78
 5. **`link_tool_id` is a top-level concern**. It belongs on the artifact layer (e.g., `Persona.tsx` orchestrates which tool links which resource), not on individual resource components.
 6. **`create_tool_id` is a resource-level concern**. It belongs on the resource component, enabling AI-assisted creation of that specific resource.
 7. **Run this after adding any new resource** to ensure all three layers (DB, API, UI) are in sync.
-8. **Resource SQL must be self-contained**. If a resource endpoint needs data from another table, the resource table should be denormalized to include that data (e.g., `scenarios_resource.persona_ids`).
+8. **Resource SQL must be self-contained**. GET/SEARCH only read from `{resource}_resource` (plus allowed junction/connection filters per Rule 6). If the endpoint needs data from another table, denormalize it onto the resource table (e.g., `scenarios_resource.persona_ids`). CREATE may write to tracking tables (`runs_entry`, `calls_entry`, `*_connection`) but must receive all cross-table IDs as parameters — never look them up.

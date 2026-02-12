@@ -145,7 +145,7 @@ export default function Tools({
         toast.success(
           result.message || `Tool '${tool?.name || "Unknown"}' duplicated successfully`
         );
-        router.push(`/intelligence/tools/t/${result.tool_id}`);
+        router.push(`/intelligence/tools/${result.tool_id}`);
       }
     } catch (error) {
       toast.error(
@@ -193,7 +193,7 @@ export default function Tools({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => router.push(`/intelligence/tools/t/${toolId}`)}
+                  onClick={() => router.push(`/intelligence/tools/${toolId}`)}
                   aria-label={`Edit ${toolName}`}
                   data-testid={`btn-edit-tool-${toolId}`}
                   title={`Edit ${toolName}`}
@@ -206,7 +206,7 @@ export default function Tools({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => router.push(`/intelligence/tools/t/${toolId}`)}
+                  onClick={() => router.push(`/intelligence/tools/${toolId}`)}
                   aria-label={`View ${toolName}`}
                   data-testid={`btn-view-tool-${toolId}`}
                   title={`View ${toolName}`}

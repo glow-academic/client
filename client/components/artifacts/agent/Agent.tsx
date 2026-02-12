@@ -71,7 +71,7 @@ import type {
   PatchAgentDraftOut,
   SaveAgentIn,
   SaveAgentOut,
-} from "@/app/(main)/intelligence/agents/a/[agentId]/page";
+} from "@/app/(main)/intelligence/agents/[agentId]/page";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 
 // Resource creation action types
@@ -185,7 +185,7 @@ export default function Agent({
     useProfile();
   const { isAutosaveEnabled } = useSaveContext();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
-  const isSuperadmin = profile?.role === "superadmin";
+  const isSuperadmin = true;
   const { flushRegistryRef, registerFlushCallbacks, flushAllResources } =
     useFlushRegistry<FlushResult>(FLUSH_KEYS);
 

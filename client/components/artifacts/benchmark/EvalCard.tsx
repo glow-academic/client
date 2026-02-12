@@ -131,8 +131,7 @@ export default function EvalCard({
             </Button>
             <div className="flex flex-col items-end space-y-1 flex-1 min-h-[40px] justify-between">
               {/* Rubric Icon */}
-              {profile?.role !== "guest" &&
-                standard_groups &&
+              {standard_groups &&
                 Object.keys(standard_groups).length > 0 && (
                   <Dialog>
                     <Tooltip>

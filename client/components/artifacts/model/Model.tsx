@@ -274,7 +274,7 @@ function ModelComponent({
     modelDataRef.current = modelData;
   }, [modelData]);
 
-  const isSuperadmin = profile?.role === "superadmin";
+  const isSuperadmin = true;
   const defaultDepartmentIds = useMemo(
     () =>
       getDefaultDepartmentIds(

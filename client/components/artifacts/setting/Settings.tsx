@@ -187,11 +187,11 @@ export default function Settings({ listData: serverListData }: SettingsProps) {
   }, [sortingKey, columnFiltersKey, settings.length, pageIndex, pageSize]);
 
   const handleEdit = (id: string) => {
-    router.push(`/settings/s/${id}`);
+    router.push(`/settings/${id}`);
   };
 
   const handleView = (id: string) => {
-    router.push(`/settings/s/${id}`);
+    router.push(`/settings/${id}`);
   };
 
   const renderSettingCard = (setting: (typeof settings)[0]) => {

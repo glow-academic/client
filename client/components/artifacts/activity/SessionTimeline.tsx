@@ -6,7 +6,7 @@
  */
 "use client";
 
-import type { SessionDetailOut } from "@/app/(main)/analytics/activity/s/[sessionId]/page";
+import type { SessionDetailOut } from "@/app/(main)/analytics/activity/[sessionId]/page";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -255,7 +255,7 @@ function GroupBubble({ group }: { group: GroupItem }) {
     <div className="flex gap-3 justify-end">
       <div className="flex flex-col gap-1 max-w-[80%] items-end">
         <Link
-          href={`/analytics/pricing/g/${group.group_id}`}
+          href={`/analytics/pricing/${group.group_id}`}
           className="block"
         >
           <div className="rounded-lg p-3 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">

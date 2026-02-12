@@ -420,7 +420,7 @@ export default function Parameters({
                   size="sm"
                   onClick={() =>
                     router.push(
-                      `/management/parameters/p/${parameter.parameter_id}`
+                      `/management/parameters/${parameter.parameter_id}`
                     )
                   }
                   aria-label={`Edit ${parameter.name}`}
@@ -437,7 +437,7 @@ export default function Parameters({
                   size="sm"
                   onClick={() =>
                     router.push(
-                      `/management/parameters/p/${parameter.parameter_id}`
+                      `/management/parameters/${parameter.parameter_id}`
                     )
                   }
                   aria-label={`View ${parameter.name}`}

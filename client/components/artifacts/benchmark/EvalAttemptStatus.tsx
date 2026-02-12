@@ -240,8 +240,7 @@ export default function EvalAttemptStatus({
 
       setStartingRunIds((prev) => new Set(prev).add(runId));
 
-      const profileIdForEmit =
-        profile?.role === "guest" ? "" : String(profile!.id);
+      const profileIdForEmit = String(profile?.id || "");
 
       socket.emit("benchmark_run_start", {
         attempt_id: attemptId,
@@ -451,7 +450,7 @@ export default function EvalAttemptStatus({
                           <Button
                             onClick={() =>
                               router.push(
-                                `/benchmark/t/${attemptId}/${(run as RunItem & { benchmark_bundle_entry_id: string }).benchmark_bundle_entry_id}`
+                                `/benchmark/${attemptId}/${(run as RunItem & { benchmark_bundle_entry_id: string }).benchmark_bundle_entry_id}`
                               )
                             }
                             variant="ghost"

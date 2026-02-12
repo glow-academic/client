@@ -485,11 +485,11 @@ export default function Cohorts({
   };
 
   const handleEdit = (id: string) => {
-    router.push(`/training/cohorts/c/${id}`);
+    router.push(`/training/cohorts/${id}`);
   };
 
   const handleView = (id: string) => {
-    router.push(`/training/cohorts/c/${id}`);
+    router.push(`/training/cohorts/${id}`);
   };
 
   const renderCohortCard = (cohort: (typeof cohorts)[number]) => (

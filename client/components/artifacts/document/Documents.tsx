@@ -231,7 +231,7 @@ export default function Documents({
   // Handle document edit - navigate to edit page
   const handleEdit = useCallback(
     (document: (typeof documents)[number]) => {
-      router.push(`/management/documents/d/${document.document_id}`);
+      router.push(`/management/documents/${document.document_id}`);
     },
     [router]
   );

@@ -16,11 +16,7 @@ import type {
 } from "@/app/(main)/layout-server";
 import { createSocketClient } from "@/lib/ws/socket";
 import type { ServerToClientEvents } from "@/lib/ws/types";
-import {
-  getFirstAvailableSectionForRole,
-  getSectionRoute,
-  isSectionAvailableForRole,
-} from "@/utils/navigation-utils";
+import { getSectionRoute } from "@/utils/navigation-utils";
 import { usePathname, useRouter } from "next/navigation";
 import React, {
   createContext,
@@ -337,7 +333,7 @@ export function ProfileProviderClient({
       const defaultSection =
         availableSections.length > 0
           ? availableSections[0]
-          : getFirstAvailableSectionForRole(role);
+          : "home";
       const route = getSectionRoute(defaultSection, pathname);
       router.push(route);
     },
@@ -347,13 +343,7 @@ export function ProfileProviderClient({
   const isSectionAvailable = useCallback(
     (section: string, role?: ProfileRole) => {
       const availableSections = initial?.available_sections ?? [];
-      if (availableSections.length > 0) {
-        return availableSections.includes(section);
-      }
-      const targetRole = (role ||
-        profile?.role ||
-        "guest") as ProfileRole;
-      return isSectionAvailableForRole(section, targetRole);
+      return availableSections.includes(section);
     },
     [profile?.role, initial?.available_sections]
   );

@@ -582,7 +582,7 @@ export default function Reports({
             <div
               className="flex items-center space-x-1 cursor-pointer hover:text-primary hover:underline justify-start pl-1 py-0 max-w-[130px]"
               onClick={() =>
-                router.push(`/analytics/reports/p/${profile.profileId}`)
+                router.push(`/analytics/reports/${profile.profileId}`)
               }
               title={`${displayName}${(profile.emails && profile.emails.length > 0) || profile.primary_email ? ` (${profile.emails && profile.emails.length > 0 ? profile.emails.join(", ") : profile.primary_email || ""})` : ""} - Click to view detailed report`}
               data-testid={`reports-profile-row-${profile.profileId}`}
@@ -1792,7 +1792,7 @@ export default function Reports({
                   className="h-6 hover:bg-muted/30 transition-colors cursor-pointer"
                   onClick={() =>
                     router.push(
-                      `/analytics/reports/p/${row.original.profileId}`
+                      `/analytics/reports/${row.original.profileId}`
                     )
                   }
                 >

@@ -1,5 +1,5 @@
 /**
- * app/create/scenarios/new/page.tsx
+ * app/(main)/training/scenarios/new/page.tsx
  * New scenario creation page with server actions
  * @AshokSaravanan222 & @siladiea
  * 06/09/2025

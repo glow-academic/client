@@ -100,7 +100,7 @@ export default function Benchmark({
       const { attemptId } = event.detail;
       // Server-side Redis cache is already invalidated by the WebSocket handler
       router.refresh(); // Refresh current page data so it's updated when user returns
-      router.push(`/benchmark/t/${attemptId}`);
+      router.push(`/benchmark/${attemptId}`);
     };
 
     // Listen for eval errors to reset loading state
@@ -184,8 +184,7 @@ export default function Benchmark({
   const handleStartEval = useCallback(
     async (evalId: string, infiniteMode: boolean = false) => {
       try {
-        // Only enforce profile for non-guests
-        if (profile?.role !== "guest" && !profile?.id) {
+        if (!profile?.id) {
           toast.error("Profile not loaded. Please refresh the page.");
           return;
         }
@@ -215,7 +214,7 @@ export default function Benchmark({
             if (result.test_id) {
               toast.success("Eval started successfully.");
               router.refresh();
-              router.push(`/benchmark/t/${result.test_id}`);
+              router.push(`/benchmark/${result.test_id}`);
             } else {
               toast.error("Failed to start eval. Please try again.");
             }
@@ -257,8 +256,7 @@ export default function Benchmark({
           setStartingEvalId(evalId);
         }
 
-        const profileIdForEmit =
-          profile?.role === "guest" ? "" : String(profile!.id); // "" → guest
+        const profileIdForEmit = String(profile?.id || "");
 
         socket.emit("benchmark_start", {
           eval_id: evalId,

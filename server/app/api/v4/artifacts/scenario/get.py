@@ -502,9 +502,10 @@ async def get_scenario_internal(
                 20,
                 0,
                 effective_group_id,
-                "recent",
+                None,
                 selected_name_ids,
                 bypass_cache,
+                scenario=True,
             )
             return (selected, suggestions)
 
