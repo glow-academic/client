@@ -15,6 +15,15 @@ router.include_router(args_get_router)
 from app.api.v4.resources.args.search import router as args_search_router
 
 router.include_router(args_search_router)
+from app.api.v4.resources.arg_positions.create import router as arg_positions_router
+from app.api.v4.resources.arg_positions.get import router as arg_positions_get_router
+from app.api.v4.resources.arg_positions.search import (
+    router as arg_positions_search_router,
+)
+
+router.include_router(arg_positions_router)
+router.include_router(arg_positions_get_router)
+router.include_router(arg_positions_search_router)
 from app.api.v4.resources.args_outputs.create import router as args_outputs_router
 from app.api.v4.resources.args_outputs.get import router as args_outputs_get_router
 from app.api.v4.resources.args_outputs.search import (

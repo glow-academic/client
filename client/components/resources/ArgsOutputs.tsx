@@ -42,7 +42,6 @@ export interface ArgsFieldDetail {
   field_type: string;
   required: boolean;
   default_value: string;
-  position: number;
   generated: boolean;
 }
 

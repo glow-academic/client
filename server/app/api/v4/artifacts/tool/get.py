@@ -17,6 +17,7 @@ from app.api.v4.artifacts.tool.permissions import (
     compute_flag_required,
     compute_name_required,
     compute_show_args,
+    compute_show_arg_positions,
     compute_show_args_outputs,
     compute_show_description,
     compute_show_flag,
@@ -27,6 +28,7 @@ from app.api.v4.artifacts.tool.types import (
     GetToolApiRequest,
     GetToolApiResponse,
     GetToolWebsocketResponse,
+    ToolArgPositionSection,
     ToolArgOutputSection,
     ToolArgSection,
     ToolDescriptionSection,
@@ -43,6 +45,8 @@ from app.api.v4.permissions import select_agents_for_artifact
 from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.args.get import get_args_internal
 from app.api.v4.resources.args.search import search_args_internal
+from app.api.v4.resources.arg_positions.get import get_arg_positions_internal
+from app.api.v4.resources.arg_positions.search import search_arg_positions_internal
 from app.api.v4.resources.args_outputs.get import get_args_outputs_internal
 from app.api.v4.resources.args_outputs.search import search_args_outputs_internal
 from app.api.v4.resources.descriptions.get import get_descriptions_internal
@@ -55,6 +59,7 @@ from app.api.v4.resources.names.search import search_names_internal
 from app.api.v4.resources.providers.get import get_providers_internal
 from app.api.v4.resources.tools.get import get_tools_internal
 from app.api.v4.types import CandidateAgent
+from app.api.v4.auth.context import get_profile_context_internal
 from app.api.v4.views.drafts.get import get_draft_tool_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
@@ -86,6 +91,19 @@ async def get_tool_internal(
     if not pool:
         raise RuntimeError("Database pool not initialized")
 
+    # Resolve shared profile context first (default path).
+    async with pool.acquire() as context_conn:
+        resolved_context = await get_profile_context_internal(
+            conn=context_conn,
+            profile_id=profile_id,
+            department_id_cookie=None,
+            bypass_cache=bypass_cache,
+        )
+
+    # Extract user context from internal fetch (single source of truth)
+    user_role = resolved_context.user_role
+    actor_name = resolved_context.actor_name
+
     draft_item = None
     if draft_id is not None:
         async with pool.acquire() as draft_conn:
@@ -111,7 +129,7 @@ async def get_tool_internal(
             ),
         )
 
-        user_role = access_result.user_role
+        # Extract artifact-specific state from Query 1 (no user context)
         active_usage_count = access_result.active_usage_count or 0
 
         if tool_id is not None:
@@ -153,6 +171,7 @@ async def get_tool_internal(
     selected_description_id = ids_result.description_id
     selected_active_flag_id = ids_result.active_flag_id
     selected_args_ids = ids_result.args_ids or []
+    selected_arg_position_ids = ids_result.arg_position_ids or []
     selected_args_outputs_ids = ids_result.args_outputs_ids or []
 
     if draft_item is not None:
@@ -251,6 +270,24 @@ async def get_tool_internal(
             )
             return selected, suggestions
 
+    async def fetch_arg_positions() -> tuple[list[Any], list[Any]]:
+        async with pool.acquire() as c:
+            selected = await get_arg_positions_internal(
+                c,
+                selected_arg_position_ids,
+                bypass_cache,
+            )
+            suggestions = await search_arg_positions_internal(
+                c,
+                tool_id=tool_id,
+                args_ids=selected_args_ids,
+                limit_count=100,
+                offset_count=0,
+                exclude_ids=selected_arg_position_ids,
+                bypass_cache=bypass_cache,
+            )
+            return selected, suggestions
+
     async def fetch_args_outputs() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
             selected = await get_args_outputs_internal(
@@ -289,12 +326,14 @@ async def get_tool_internal(
         (names_selected, names_suggestions),
         (descriptions_selected, descriptions_suggestions),
         (args_selected, args_suggestions),
+        (arg_positions_selected, arg_positions_suggestions),
         (args_outputs_selected, args_outputs_suggestions),
         (flags_selected, flags_suggestions),
     ) = await asyncio.gather(
         fetch_names(),
         fetch_descriptions(),
         fetch_args(),
+        fetch_arg_positions(),
         fetch_args_outputs(),
         fetch_flags(),
     )
@@ -302,6 +341,10 @@ async def get_tool_internal(
     names = _dedupe_by_id(names_selected + names_suggestions, "id")
     descriptions = _dedupe_by_id(descriptions_selected + descriptions_suggestions, "id")
     args_list = _dedupe_by_id(args_selected + args_suggestions, "id")
+    arg_positions = _dedupe_by_id(
+        arg_positions_selected + arg_positions_suggestions,
+        "id",
+    )
     args_outputs_list = _dedupe_by_id(
         args_outputs_selected + args_outputs_suggestions,
         "id",
@@ -315,7 +358,21 @@ async def get_tool_internal(
     )
     flag_resource = next((f for f in flags if f.id == selected_active_flag_id), None)
 
-    args_current = [a for a in args_list if a.id in selected_args_ids]
+    arg_position_value_by_args_id = {
+        ap.args_id: ap.value for ap in arg_positions if ap.args_id is not None
+    }
+
+    def _args_sort_key(arg: Any) -> tuple[int, str]:
+        if arg.id in arg_position_value_by_args_id:
+            return (arg_position_value_by_args_id[arg.id], arg.name or "")
+        return (10_000, arg.name or "")
+
+    args_list = sorted(args_list, key=_args_sort_key)
+    args_current = sorted(
+        [a for a in args_list if a.id in selected_args_ids],
+        key=_args_sort_key,
+    )
+    arg_positions_current = [ap for ap in arg_positions if ap.id in selected_arg_position_ids]
     args_outputs_current = [
         ao for ao in args_outputs_list if ao.id in selected_args_outputs_ids
     ]
@@ -325,6 +382,7 @@ async def get_tool_internal(
         "descriptions": compute_show_description(),
         "flags": compute_show_flag(),
         "args": compute_show_args(len(args_list)),
+        "arg_positions": compute_show_arg_positions(len(arg_positions), len(args_list)),
         "args_outputs": compute_show_args_outputs(len(args_outputs_list)),
     }
 
@@ -333,6 +391,7 @@ async def get_tool_internal(
         "descriptions": compute_description_required(),
         "flags": compute_flag_required(),
         "args": compute_args_required(),
+        "arg_positions": False,
         "args_outputs": compute_args_outputs_required(),
     }
 
@@ -355,6 +414,7 @@ async def get_tool_internal(
         "names": [n.id for n in names_suggestions],
         "descriptions": [d.id for d in descriptions_suggestions],
         "args": [a.id for a in args_suggestions],
+        "arg_positions": [ap.id for ap in arg_positions_suggestions],
         "args_outputs": [ao.id for ao in args_outputs_suggestions],
     }
 
@@ -363,6 +423,7 @@ async def get_tool_internal(
             names=names,
             descriptions=descriptions,
             args=args_list,
+            arg_positions=arg_positions,
             args_outputs=args_outputs_list,
             flags=tool_flags,
         ),
@@ -370,6 +431,7 @@ async def get_tool_internal(
             names=[name_resource] if name_resource else [],
             descriptions=[description_resource] if description_resource else [],
             args=args_current,
+            arg_positions=arg_positions_current,
             args_outputs=args_outputs_current,
             flags=[flag_resource] if flag_resource else [],
         ),
@@ -419,7 +481,7 @@ async def get_tool_internal(
                 )
 
     return ToolInternalData(
-        actor_name=access_result.actor_name,
+        actor_name=actor_name,
         tool_exists=access_result.tool_exists,
         can_edit=can_edit,
         disabled_reason=disabled_reason,
@@ -503,6 +565,7 @@ async def get_tool_websocket(
             descriptions=current.descriptions if current else None,
             flags=selected_enriched_flags or None,
             args=current.args if current else None,
+            arg_positions=current.arg_positions if current else None,
             args_outputs=current.args_outputs if current else None,
             agents=data.config_agent_resources,
             models=data.config_model_resources,
@@ -554,6 +617,10 @@ async def get_tool_client(
             for r in ("names", "descriptions", "flags")
         ),
         args_show_ai_generate=data.show_ai_generate_map.get("args", False),
+        arg_positions_show_ai_generate=data.show_ai_generate_map.get(
+            "arg_positions",
+            False,
+        ),
         args_outputs_show_ai_generate=data.show_ai_generate_map.get(
             "args_outputs",
             False,
@@ -579,6 +646,11 @@ async def get_tool_client(
             **_section_common("args"),
             current=current.args if current else [],
             resources=all_resources.args if all_resources else [],
+        ),
+        arg_positions=ToolArgPositionSection(
+            **_section_common("arg_positions"),
+            current=current.arg_positions if current else [],
+            resources=all_resources.arg_positions if all_resources else [],
         ),
         args_outputs=ToolArgOutputSection(
             **_section_common("args_outputs"),

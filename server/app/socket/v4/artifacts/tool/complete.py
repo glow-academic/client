@@ -10,6 +10,7 @@ from typing import Any
 from fastapi import APIRouter
 
 from app.api.v4.resources.args.get import get_args_internal
+from app.api.v4.resources.arg_positions.get import get_arg_positions_internal
 from app.api.v4.resources.args_outputs.get import get_args_outputs_internal
 from app.api.v4.resources.descriptions.get import get_descriptions_internal
 from app.api.v4.resources.flags.get import get_flags_internal
@@ -125,6 +126,9 @@ async def handle_tool_artifact_complete(data: dict[str, Any]) -> None:
             elif resource_type == "args":
                 items = await get_args_internal(conn, [resource_id])
                 event.args_resources = items if items else None
+            elif resource_type == "arg_positions":
+                items = await get_arg_positions_internal(conn, [resource_id])
+                event.arg_position_resources = items if items else None
             elif resource_type == "args_outputs":
                 items = await get_args_outputs_internal(conn, [resource_id])
                 event.args_outputs_resources = items if items else None

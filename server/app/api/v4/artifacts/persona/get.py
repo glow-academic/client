@@ -65,6 +65,7 @@ from app.api.v4.artifacts.persona.types import (
     PersonaWebsocketResources,
     PersonaWebsocketViews,
 )
+from app.api.v4.auth.context import get_profile_context_internal
 from app.api.v4.permissions import select_agents_for_artifact
 from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.colors.get import get_colors_internal
@@ -142,6 +143,22 @@ async def get_persona_internal(
     if not pool:
         raise RuntimeError("Database pool not initialized")
 
+    # Resolve shared profile context first (default path).
+    async with pool.acquire() as context_conn:
+        resolved_context = await get_profile_context_internal(
+            conn=context_conn,
+            profile_id=profile_id,
+            department_id_cookie=None,
+            bypass_cache=bypass_cache,
+        )
+
+    # Extract user context from internal fetch (single source of truth)
+    user_role = resolved_context.user_role
+    actor_name = resolved_context.actor_name
+    user_department_ids = [
+        d.department_id for d in resolved_context.departments if d.department_id
+    ]
+
     draft_item = None
     if draft_id is not None:
         async with pool.acquire() as draft_conn:
@@ -165,9 +182,7 @@ async def get_persona_internal(
             await execute_sql_typed(conn, QUERY1_SQL_PATH, params=query1_params),
         )
 
-        # Extract user context from Query 1
-        user_role = access_result.user_role
-        user_department_ids = access_result.user_department_ids or []
+        # Extract artifact-specific state from Query 1 (no user context)
         persona_department_ids = access_result.persona_department_ids or []
         active_scenario_count = access_result.active_scenario_count or 0
 
@@ -758,7 +773,7 @@ async def get_persona_internal(
 
     return PersonaInternalData(
         # Access/context
-        actor_name=access_result.actor_name,
+        actor_name=actor_name,
         persona_exists=access_result.persona_exists,
         can_edit=can_edit,
         disabled_reason=disabled_reason,

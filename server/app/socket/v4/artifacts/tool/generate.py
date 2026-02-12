@@ -24,6 +24,7 @@ TOOL_RESOURCE_TYPES = [
     "names",
     "descriptions",
     "args",
+    "arg_positions",
     "args_outputs",
     "flags",
 ]

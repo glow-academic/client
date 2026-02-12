@@ -39,7 +39,6 @@ export interface ArgsFieldDetail {
   field_type: string;
   required: boolean;
   default_value: string;
-  position: number;
   generated: boolean;
 }
 
@@ -82,9 +81,8 @@ export function Args({
   onAccept,
   onReject,
 }: ArgsProps) {
-  // Sort fields by position
   const sortedFields = useMemo(() => {
-    return [...input_args_fields].sort((a, b) => a.position - b.position);
+    return [...input_args_fields].sort((a, b) => a.name.localeCompare(b.name));
   }, [input_args_fields]);
 
   // Internal state for field values (like SchemaInput.tsx)
@@ -111,7 +109,6 @@ export function Args({
           required: field.required,
           description: field.description,
           default_value: field.default_value,
-          position: field.position,
         };
       });
       setFieldValues(initialValues);
@@ -133,7 +130,6 @@ export function Args({
         currentValue.field_type !== field.field_type ||
         currentValue.required !== field.required ||
         currentValue.description !== field.description ||
-        currentValue.position !== field.position ||
         currentValue.default_value !== field.default_value
       ) {
         newValues[field.args_id] = {
@@ -142,7 +138,6 @@ export function Args({
           required: field.required,
           description: field.description,
           default_value: field.default_value,
-          position: field.position,
         };
         hasChanges = true;
       } else {
@@ -177,7 +172,6 @@ export function Args({
               | "array",
             required: updates.required ?? field.required,
             default_value: updates.default_value ?? field.default_value,
-            position_value: updates.position ?? field.position,
             mcp: false,
           },
         });
@@ -469,42 +463,23 @@ export function Args({
               />
             </div>
 
-            {/* Position and Default Value */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor={`${field.args_id}-position`}>Position</Label>
-                <Input
-                  id={`${field.args_id}-position`}
-                  type="number"
-                  value={fieldValue.position ?? field.position}
-                  onChange={(e) =>
-                    handleFieldChange(
-                      field.args_id,
-                      "position",
-                      parseInt(e.target.value, 10) || 0
-                    )
-                  }
-                  disabled={disabled}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor={`${field.args_id}-default_value`}>
-                  Default Value
-                </Label>
-                <Input
-                  id={`${field.args_id}-default_value`}
-                  value={fieldValue.default_value ?? field.default_value}
-                  onChange={(e) =>
-                    handleFieldChange(
-                      field.args_id,
-                      "default_value",
-                      e.target.value
-                    )
-                  }
-                  disabled={disabled}
-                  placeholder="Default value"
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor={`${field.args_id}-default_value`}>
+                Default Value
+              </Label>
+              <Input
+                id={`${field.args_id}-default_value`}
+                value={fieldValue.default_value ?? field.default_value}
+                onChange={(e) =>
+                  handleFieldChange(
+                    field.args_id,
+                    "default_value",
+                    e.target.value
+                  )
+                }
+                disabled={disabled}
+                placeholder="Default value"
+              />
             </div>
           </div>
         );

@@ -11,6 +11,7 @@ from pydantic import BaseModel
 from app.api.v4.views.drafts.types import DraftToolViewItem
 from app.sql.types import (
     QGetAgentsV4Item,
+    QGetArgPositionsV4Item,
     QGetArgsOutputsV4Item,
     QGetArgsV4Item,
     QGetDescriptionsV4Item,
@@ -70,6 +71,11 @@ class ToolArgOutputSection(BaseResourceSection):
     resources: list[QGetArgsOutputsV4Item] | None = None
 
 
+class ToolArgPositionSection(BaseResourceSection):
+    current: list[QGetArgPositionsV4Item] | None = None
+    resources: list[QGetArgPositionsV4Item] | None = None
+
+
 class GetToolApiRequest(BaseModel):
     tool_id: UUID | None = None
     draft_id: UUID | None = None
@@ -85,12 +91,14 @@ class GetToolApiResponse(BaseModel):
 
     basic_show_ai_generate: bool | None = None
     args_show_ai_generate: bool | None = None
+    arg_positions_show_ai_generate: bool | None = None
     args_outputs_show_ai_generate: bool | None = None
 
     names: ToolNameSection | None = None
     descriptions: ToolDescriptionSection | None = None
     flags: ToolFlagSection | None = None
     args: ToolArgSection | None = None
+    arg_positions: ToolArgPositionSection | None = None
     args_outputs: ToolArgOutputSection | None = None
 
 
@@ -103,6 +111,7 @@ class ToolWebsocketResources(BaseModel):
     descriptions: list[QGetDescriptionsV4Item] | None = None
     flags: list[ToolFlagConfig] | None = None
     args: list[QGetArgsV4Item] | None = None
+    arg_positions: list[QGetArgPositionsV4Item] | None = None
     args_outputs: list[QGetArgsOutputsV4Item] | None = None
 
     agents: list[QGetAgentsV4Item] | None = None
@@ -122,6 +131,7 @@ class ToolResourceBucket(BaseModel):
     names: list[QGetNamesV4Item] | None = None
     descriptions: list[QGetDescriptionsV4Item] | None = None
     args: list[QGetArgsV4Item] | None = None
+    arg_positions: list[QGetArgPositionsV4Item] | None = None
     args_outputs: list[QGetArgsOutputsV4Item] | None = None
     flags: list[ToolFlagConfig] | None = None
 
@@ -192,6 +202,7 @@ class SaveToolApiRequest(BaseModel):
     descriptions: ToolResourceAction
     flags: ToolResourceAction
     args: ToolMultiResourceAction
+    arg_positions: ToolMultiResourceAction
     args_outputs: ToolMultiResourceAction
 
 
@@ -210,6 +221,7 @@ class SaveToolSqlParams(BaseModel):
     descriptions: ToolResourceAction
     flags: ToolResourceAction
     args: ToolMultiResourceAction
+    arg_positions: ToolMultiResourceAction
     args_outputs: ToolMultiResourceAction
 
     @classmethod
@@ -233,6 +245,7 @@ class SaveToolSqlParams(BaseModel):
             single(self.descriptions),
             single(self.flags),
             multi(self.args),
+            multi(self.arg_positions),
             multi(self.args_outputs),
         )
 
@@ -270,6 +283,7 @@ class PatchToolDraftApiRequest(BaseModel):
     descriptions: ToolResourceAction | None = None
     flags: ToolResourceAction | None = None
     args: ToolMultiResourceAction | None = None
+    arg_positions: ToolMultiResourceAction | None = None
     args_outputs: ToolMultiResourceAction | None = None
 
 
@@ -288,6 +302,7 @@ class PatchToolDraftSqlParams(BaseModel):
     descriptions: ToolResourceAction
     flags: ToolResourceAction
     args: ToolMultiResourceAction
+    arg_positions: ToolMultiResourceAction
     args_outputs: ToolMultiResourceAction
     expected_version: int = 0
 
@@ -305,6 +320,7 @@ class PatchToolDraftSqlParams(BaseModel):
             descriptions=request.descriptions or empty_single,
             flags=request.flags or empty_single,
             args=request.args or empty_multi,
+            arg_positions=request.arg_positions or empty_multi,
             args_outputs=request.args_outputs or empty_multi,
             expected_version=request.expected_version,
         )
@@ -324,6 +340,7 @@ class PatchToolDraftSqlParams(BaseModel):
             single(self.descriptions),
             single(self.flags),
             multi(self.args),
+            multi(self.arg_positions),
             multi(self.args_outputs),
             self.expected_version,
         )

@@ -69,6 +69,7 @@ from app.api.v4.artifacts.model.types import (
     ModelWebsocketResources,
     ModelWebsocketViews,
 )
+from app.api.v4.auth.context import get_profile_context_internal
 from app.api.v4.permissions import select_agents_for_artifact
 from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.departments.get import get_departments_internal
@@ -204,6 +205,22 @@ async def get_model_internal(
     if not pool:
         raise RuntimeError("Database pool not initialized")
 
+    # Resolve shared profile context first (default path).
+    async with pool.acquire() as context_conn:
+        resolved_context = await get_profile_context_internal(
+            conn=context_conn,
+            profile_id=profile_id,
+            department_id_cookie=None,
+            bypass_cache=bypass_cache,
+        )
+
+    # Extract user context from internal fetch (single source of truth)
+    user_role = resolved_context.user_role
+    actor_name = resolved_context.actor_name
+    user_department_ids = [
+        d.department_id for d in resolved_context.departments if d.department_id
+    ]
+
     # Fetch draft if draft_id provided
     draft_item = None
     if draft_id is not None:
@@ -229,8 +246,7 @@ async def get_model_internal(
             await execute_sql_typed(conn, QUERY1_SQL_PATH, params=query1_params),
         )
 
-        user_role = access_result.user_role
-        user_department_ids = access_result.user_department_ids or []
+        # Extract artifact-specific state from Query 1 (no user context)
         model_department_ids = access_result.model_department_ids or []
         active_persona_count = access_result.active_persona_count or 0
 
@@ -715,7 +731,7 @@ async def get_model_internal(
             )
 
     return ModelInternalData(
-        actor_name=access_result.actor_name,
+        actor_name=actor_name,
         model_exists=access_result.model_exists,
         can_edit=can_edit,
         disabled_reason=disabled_reason,

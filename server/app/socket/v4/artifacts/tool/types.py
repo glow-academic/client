@@ -12,6 +12,7 @@ from app.socket.v4.artifacts.types import (
     GenerationProgressEvent,
 )
 from app.sql.types import (
+    QGetArgPositionsV4Item,
     QGetArgsOutputsV4Item,
     QGetArgsV4Item,
     QGetDescriptionsV4Item,
@@ -57,6 +58,7 @@ class ToolGenerationCompleteEvent(GenerationCompleteEvent):
 
     # Multi-select resources (arrays of full objects)
     args_resources: list[QGetArgsV4Item] | None = None
+    arg_position_resources: list[QGetArgPositionsV4Item] | None = None
     args_outputs_resources: list[QGetArgsOutputsV4Item] | None = None
 
 

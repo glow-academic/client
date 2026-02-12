@@ -61,6 +61,7 @@ from app.api.v4.resources.tools.get import get_tools_internal
 from app.api.v4.resources.values.get import get_values_internal
 from app.api.v4.resources.values.search import search_values_internal
 from app.api.v4.types import CandidateAgent
+from app.api.v4.auth.context import get_profile_context_internal
 from app.api.v4.views.drafts.get import get_draft_provider_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
@@ -91,6 +92,22 @@ async def get_provider_internal(
     if not pool:
         raise RuntimeError("Database pool not initialized")
 
+    # Resolve shared profile context first (default path).
+    async with pool.acquire() as context_conn:
+        resolved_context = await get_profile_context_internal(
+            conn=context_conn,
+            profile_id=profile_id,
+            department_id_cookie=None,
+            bypass_cache=bypass_cache,
+        )
+
+    # Extract user context from internal fetch (single source of truth)
+    user_role = resolved_context.user_role
+    actor_name = resolved_context.actor_name
+    user_department_ids = [
+        d.department_id for d in resolved_context.departments if d.department_id
+    ]
+
     draft_item = None
     if draft_id is not None:
         async with pool.acquire() as draft_conn:
@@ -113,8 +130,7 @@ async def get_provider_internal(
             await execute_sql_typed(conn, QUERY1_SQL_PATH, params=query1_params),
         )
 
-        user_role = access_result.user_role
-        user_department_ids = access_result.user_department_ids or []
+        # Extract artifact-specific state from Query 1 (no user context)
         provider_department_ids = access_result.provider_department_ids or []
         model_usage_count = access_result.model_usage_count or 0
 
@@ -435,7 +451,7 @@ async def get_provider_internal(
         )
 
     return ProviderInternalData(
-        actor_name=access_result.actor_name,
+        actor_name=actor_name,
         provider_exists=access_result.provider_exists,
         can_edit=can_edit,
         disabled_reason=disabled_reason,

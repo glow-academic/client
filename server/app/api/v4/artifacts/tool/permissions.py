@@ -69,6 +69,8 @@ def get_missing_tools(
     names_has_tools: bool,
     show_args: bool,
     args_has_tools: bool,
+    show_arg_positions: bool,
+    arg_positions_has_tools: bool,
     show_args_outputs: bool,
     args_outputs_has_tools: bool,
 ) -> list[str]:
@@ -79,6 +81,8 @@ def get_missing_tools(
         missing.append("name")
     if show_args and not args_has_tools:
         missing.append("args")
+    if show_arg_positions and not arg_positions_has_tools:
+        missing.append("arg_positions")
     if show_args_outputs and not args_outputs_has_tools:
         missing.append("args_outputs")
 
@@ -114,6 +118,11 @@ def compute_show_args(args_count: int) -> bool:
 def compute_show_args_outputs(args_outputs_count: int) -> bool:
     """Determine if args_outputs picker should be shown."""
     return args_outputs_count > 0
+
+
+def compute_show_arg_positions(arg_positions_count: int, args_count: int) -> bool:
+    """Determine if arg_positions picker should be shown."""
+    return arg_positions_count > 0 or args_count > 0
 
 
 def compute_show_flag() -> bool:
@@ -209,6 +218,7 @@ TOOL_RESOURCES: set[str] = {
     "names",
     "descriptions",
     "args",
+    "arg_positions",
     "args_outputs",
     "flags",
 }
@@ -236,6 +246,11 @@ TOOL_DOMAIN_METADATA: dict[str, dict[str, str | bool]] = {
         "name": "Output Templates",
         "description": "Output templates for each argument",
         "icon": "file-output",
+    },
+    "arg_positions": {
+        "name": "Argument Positions",
+        "description": "Ordering of tool arguments",
+        "icon": "arrow-up-down",
     },
     "flags": {
         "name": "Status",
