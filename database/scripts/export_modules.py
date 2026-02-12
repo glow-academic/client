@@ -75,6 +75,8 @@ BASE_RESOURCE_TABLES = {
     "request_limits_resource",
     "voices_resource",
     "values_resource",
+    "reasoning_levels_resource",
+    "temperature_levels_resource",
 }
 
 # Tables that should NEVER be exported (secrets / runtime)
@@ -569,6 +571,8 @@ async def export_base(conn: asyncpg.Connection) -> None:
         ("15-request-limits", "request-limits", ["request_limits_resource"]),
         ("16-voices", "voices", ["voices_resource"]),
         ("17-values", "values", ["values_resource"]),
+        ("18-reasoning-levels", "reasoning-levels", ["reasoning_levels_resource"]),
+        ("19-temperature-levels", "temperature-levels", ["temperature_levels_resource"]),
     ]
 
     for file_prefix, label, tables in base_files:
