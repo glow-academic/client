@@ -21,6 +21,7 @@ import { GenerateRegenerateModal } from "@/components/common/GenerateRegenerateM
 import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
 import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { Args } from "@/components/resources/Args";
+import { ArgPositions } from "@/components/resources/ArgPositions";
 import { ArgsOutputs } from "@/components/resources/ArgsOutputs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -46,13 +47,21 @@ type CreateDraftArgsOutputsOut = OutputOf<
   "/api/v4/resources/args_outputs",
   "post"
 >;
+type CreateDraftArgPositionsIn = InputOf<
+  "/api/v4/resources/arg_positions",
+  "post"
+>;
+type CreateDraftArgPositionsOut = OutputOf<
+  "/api/v4/resources/arg_positions",
+  "post"
+>;
 type PatchToolDraftIn = InputOf<"/api/v4/artifacts/tools/draft", "patch">;
 type PatchToolDraftOut = OutputOf<"/api/v4/artifacts/tools/draft", "patch">;
 
 type ToolData = OutputOf<"/api/v4/artifacts/tools/get", "post">;
 
 // Resource types for tools
-type ToolResourceType = "args" | "args_outputs";
+type ToolResourceType = "args" | "arg_positions" | "args_outputs";
 
 export interface ToolProps {
   toolId?: string;
@@ -68,6 +77,9 @@ export interface ToolProps {
   createArgsOutputsAction?: (
     input: CreateDraftArgsOutputsIn
   ) => Promise<CreateDraftArgsOutputsOut>;
+  createArgPositionsAction?: (
+    input: CreateDraftArgPositionsIn
+  ) => Promise<CreateDraftArgPositionsOut>;
 }
 
 function ToolComponent({
@@ -77,6 +89,7 @@ function ToolComponent({
   patchToolDraftAction,
   createArgsAction,
   createArgsOutputsAction,
+  createArgPositionsAction,
 }: ToolProps) {
   const router = useRouter();
   const isEditMode = !!toolId;
@@ -138,19 +151,28 @@ function ToolComponent({
     const currentArgsOutputsIds = (s.args_outputs?.current ?? [])
       .map((a) => a.id)
       .filter((id): id is string => !!id);
+    const currentArgPositionIds = (s.arg_positions?.current ?? [])
+      .map((a) => a.id)
+      .filter((id): id is string => !!id);
     return {
       group_id: toolData.group_id,
       args_ids: currentArgsIds,
+      arg_position_ids: currentArgPositionIds,
       args_outputs_ids: currentArgsOutputsIds,
       args_resources: s.args?.current ?? [],
+      arg_positions_resources: s.arg_positions?.current ?? [],
       args_outputs_resources: s.args_outputs?.current ?? [],
       args: s.args?.resources ?? [],
+      arg_positions: s.arg_positions?.resources ?? [],
       args_outputs: s.args_outputs?.resources ?? [],
       args_suggestions: s.args?.suggestions ?? [],
+      arg_positions_suggestions: s.arg_positions?.suggestions ?? [],
       args_required: s.args?.required ?? false,
+      arg_positions_required: s.arg_positions?.required ?? false,
       args_outputs_suggestions: s.args_outputs?.suggestions ?? [],
       args_outputs_required: s.args_outputs?.required ?? false,
       args_show_ai_generate: s.args?.show_ai_generate ?? false,
+      arg_positions_show_ai_generate: s.arg_positions?.show_ai_generate ?? false,
       args_outputs_show_ai_generate: s.args_outputs?.show_ai_generate ?? false,
       names: s.names,
       descriptions: s.descriptions,
@@ -169,6 +191,10 @@ function ToolComponent({
           );
         case "args_outputs":
           return stableToolDataFields.args_outputs_resources.some(
+            (r) => r.generated
+          );
+        case "arg_positions":
+          return stableToolDataFields.arg_positions_resources.some(
             (r) => r.generated
           );
         default:
@@ -243,6 +269,7 @@ function ToolComponent({
         name: "",
         description: "",
         args_ids: [] as string[],
+        arg_position_ids: [] as string[],
         args_outputs_ids: [] as string[],
       };
     }
@@ -252,6 +279,9 @@ function ToolComponent({
       name: currentName?.name || "",
       description: currentDesc?.description || "",
       args_ids: (data.args?.current ?? [])
+        .map((a) => a.id)
+        .filter((id): id is string => !!id),
+      arg_position_ids: (data.arg_positions?.current ?? [])
         .map((a) => a.id)
         .filter((id): id is string => !!id),
       args_outputs_ids: (data.args_outputs?.current ?? [])
