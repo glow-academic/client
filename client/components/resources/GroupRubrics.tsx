@@ -46,6 +46,9 @@ export interface GroupRubricsProps {
   }> | null;
   onAccept?: () => void;
   onReject?: () => void;
+  showAiGenerate?: boolean;
+  onGenerate?: () => void | Promise<void>;
+  isGenerating?: boolean;
 }
 
 export function GroupRubrics({
@@ -58,11 +61,14 @@ export function GroupRubrics({
   required = false,
   selected_rubric_ids,
   onChange,
-  link_tool_id,
+  link_tool_id: _link_tool_id,
   // AI diff view props
   aiRubricResources,
   onAccept,
   onReject,
+  showAiGenerate: _showAiGenerate = false,
+  onGenerate: _onGenerate,
+  isGenerating: _isGenerating = false,
 }: GroupRubricsProps) {
   const selectedIds = useMemo(() => selected_rubric_ids ?? [], [
     selected_rubric_ids,

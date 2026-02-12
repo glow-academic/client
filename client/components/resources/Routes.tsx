@@ -44,6 +44,9 @@ export interface RoutesProps {
   searchTerm?: string;
   searchPlaceholder?: string;
   link_tool_id?: string | null; // Tool ID for AI link suggestions
+  showAiGenerate?: boolean;
+  onGenerate?: () => void | Promise<void>;
+  isGenerating?: boolean;
   // AI diff view props
   aiRouteResources?: Array<{
     route_id?: string | null;
@@ -70,6 +73,9 @@ export function Routes({
   searchTerm,
   searchPlaceholder = "Search routes...",
   link_tool_id,
+  showAiGenerate: _showAiGenerate = false,
+  onGenerate: _onGenerate,
+  isGenerating: _isGenerating = false,
   // AI diff view props
   aiRouteResources,
   onAccept,

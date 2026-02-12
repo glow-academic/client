@@ -572,7 +572,11 @@ async def export_base(conn: asyncpg.Connection) -> None:
         ("16-voices", "voices", ["voices_resource"]),
         ("17-values", "values", ["values_resource"]),
         ("18-reasoning-levels", "reasoning-levels", ["reasoning_levels_resource"]),
-        ("19-temperature-levels", "temperature-levels", ["temperature_levels_resource"]),
+        (
+            "19-temperature-levels",
+            "temperature-levels",
+            ["temperature_levels_resource"],
+        ),
     ]
 
     for file_prefix, label, tables in base_files:
@@ -837,7 +841,8 @@ async def export_setup_per_artifact(
     out_dir.mkdir(parents=True, exist_ok=True)
 
     if active_flag:
-        rows = await conn.fetch(f"""
+        rows = await conn.fetch(
+            f"""
             SELECT a.id, nr.name
             FROM {artifact_type}_artifact a
             JOIN {artifact_type}_names_junction nj ON a.id = nj.{artifact_type}_id
@@ -848,17 +853,22 @@ async def export_setup_per_artifact(
                 WHERE af.{artifact_type}_id = a.id AND f.name = $1 AND af.value = true
             )
             ORDER BY nr.name
-        """, active_flag)
+        """,
+            active_flag,
+        )
         artifacts = [(str(r["id"]), r["name"]) for r in rows]
     elif filter_name:
-        rows = await conn.fetch(f"""
+        rows = await conn.fetch(
+            f"""
             SELECT a.id, nr.name
             FROM {artifact_type}_artifact a
             JOIN {artifact_type}_names_junction nj ON a.id = nj.{artifact_type}_id
             JOIN names_resource nr ON nj.name_id = nr.id
             WHERE nr.name = $1
             ORDER BY nr.name
-        """, filter_name)
+        """,
+            filter_name,
+        )
         artifacts = [(str(r["id"]), r["name"]) for r in rows]
     else:
         artifacts = await get_artifacts_with_names(conn, artifact_type)
@@ -1200,7 +1210,9 @@ async def export_setup_simulations(conn: asyncpg.Connection) -> None:
         "video practice",
     }
     all_sims = await get_artifacts_with_names(conn, "simulation")
-    sim_artifacts = [(sid, sname) for sid, sname in all_sims if sname.lower() in practice_names]
+    sim_artifacts = [
+        (sid, sname) for sid, sname in all_sims if sname.lower() in practice_names
+    ]
     sim_junctions = await get_junction_tables(conn, "simulation")
     scn_junctions = await get_junction_tables(conn, "scenario")
 
@@ -1282,7 +1294,9 @@ async def export_setup_scenarios(conn: asyncpg.Connection) -> None:
         "video practice",
     }
     all_sims = await get_artifacts_with_names(conn, "simulation")
-    practice_sims = [(sid, sname) for sid, sname in all_sims if sname.lower() in practice_names]
+    practice_sims = [
+        (sid, sname) for sid, sname in all_sims if sname.lower() in practice_names
+    ]
 
     # Collect unique scenario artifact IDs across all practice sims
     seen_scenario_ids: set[str] = set()
@@ -1293,12 +1307,15 @@ async def export_setup_scenarios(conn: asyncpg.Connection) -> None:
     # Get names for each scenario
     junctions = await get_junction_tables(conn, "scenario")
     for scn_id in sorted(seen_scenario_ids):
-        row = await conn.fetchrow("""
+        row = await conn.fetchrow(
+            """
             SELECT nr.name
             FROM scenario_names_junction snj
             JOIN names_resource nr ON nr.id = snj.name_id
             WHERE snj.scenario_id = $1
-        """, UUID(scn_id))
+        """,
+            UUID(scn_id),
+        )
         if not row:
             continue
         scn_name = row["name"]
@@ -1317,7 +1334,7 @@ async def export_setup_scenarios(conn: asyncpg.Connection) -> None:
 
 
 async def export_setup_documents(conn: asyncpg.Connection) -> None:
-    """Export documents linked to Purdue CS or with no department."""
+    """Export documents with no department (shared templates/policies)."""
     print("  Exporting 03-documents/ ...")
     out_dir = MODULES_DIR / "10-setups" / "university" / "03-documents"
     if out_dir.exists():
@@ -1332,13 +1349,6 @@ async def export_setup_documents(conn: asyncpg.Connection) -> None:
         JOIN names_resource nr ON nr.id = dnj.name_id
         WHERE NOT EXISTS (
             SELECT 1 FROM document_departments_junction ddj WHERE ddj.document_id = da.id
-        )
-        OR EXISTS (
-            SELECT 1 FROM document_departments_junction ddj
-            JOIN department_departments_junction dddj ON dddj.departments_id = ddj.department_id
-            JOIN department_names_junction dnj2 ON dnj2.department_id = dddj.department_id
-            JOIN names_resource dnr ON dnr.id = dnj2.name_id
-            WHERE ddj.document_id = da.id AND dnr.name = 'Purdue CS'
         )
         ORDER BY nr.name
     """)
@@ -1414,7 +1424,9 @@ async def export_setup(conn: asyncpg.Connection) -> None:
     await export_rubrics(conn)
     await export_setup_simulations(conn)
     await export_setup_scenarios(conn)
-    await export_setup_per_artifact(conn, "cohort", "08-cohorts", "cohort", filter_name="Practice Cohort")
+    await export_setup_per_artifact(
+        conn, "cohort", "08-cohorts", "cohort", filter_name="Practice Cohort"
+    )
 
 
 # ---------------------------------------------------------------------------

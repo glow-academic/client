@@ -72,6 +72,9 @@ export interface ModelsProps {
   }> | null;
   onAccept?: () => void;
   onReject?: () => void;
+  showAiGenerate?: boolean;
+  onGenerate?: () => void | Promise<void>;
+  isGenerating?: boolean;
 }
 
 export function Models({
@@ -94,11 +97,14 @@ export function Models({
   modelResource: _modelResource,
   modelId: _modelId,
   suggestions,
-  link_tool_id,
+  link_tool_id: _link_tool_id,
   // AI diff view props
   aiModelResources,
   onAccept,
   onReject,
+  showAiGenerate: _showAiGenerate = false,
+  onGenerate: _onGenerate,
+  isGenerating: _isGenerating = false,
 }: ModelsProps) {
   // Use standardized props with fallback to legacy props
   const resourceId = model_id ?? _modelId ?? null;

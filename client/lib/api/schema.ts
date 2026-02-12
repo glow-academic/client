@@ -3471,6 +3471,48 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/agents/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Agents
+         * @description Get agents resources by IDs.
+         *
+         *     HTTP wrapper that delegates to internal function for caching and data fetching.
+         */
+        post: operations["get_agents_api_v4_resources_agents_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/agents/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Agents
+         * @description Search agents resources.
+         */
+        post: operations["search_agents_api_v4_resources_agents_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/args": {
         parameters: {
             query?: never;
@@ -3708,6 +3750,90 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/auths/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Auths
+         * @description Get auths resources by IDs.
+         *
+         *     HTTP wrapper that delegates to internal function for caching and data fetching.
+         */
+        post: operations["get_auths_api_v4_resources_auths_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/auths/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Auths
+         * @description Search auths resources.
+         */
+        post: operations["search_auths_api_v4_resources_auths_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/bindings/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Bindings
+         * @description Get bindings resources by IDs.
+         *
+         *     HTTP wrapper that delegates to internal function for caching and data fetching.
+         */
+        post: operations["get_bindings_api_v4_resources_bindings_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/bindings/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Bindings
+         * @description Search bindings resources.
+         */
+        post: operations["search_bindings_api_v4_resources_bindings_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/cohorts/get": {
         parameters: {
             query?: never;
@@ -3803,6 +3929,48 @@ export interface paths {
         put?: never;
         /** Search Colors */
         post: operations["search_colors_api_v4_resources_colors_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/conditional_parameters/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Conditional Parameters
+         * @description Get conditional_parameters resources by IDs.
+         *
+         *     HTTP wrapper that delegates to internal function for caching and data fetching.
+         */
+        post: operations["get_conditional_parameters_api_v4_resources_conditional_parameters_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/conditional_parameters/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Conditional Parameters
+         * @description Search conditional_parameters resources.
+         */
+        post: operations["search_conditional_parameters_api_v4_resources_conditional_parameters_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3907,6 +4075,45 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/domains/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Domains
+         * @description Get domains resources by IDs.
+         *
+         *     HTTP wrapper that delegates to internal function for caching and data fetching.
+         */
+        post: operations["get_domains_api_v4_resources_domains_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/domains/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Search Domains */
+        post: operations["search_domains_api_v4_resources_domains_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/documents/get": {
         parameters: {
             query?: never;
@@ -3921,6 +4128,23 @@ export interface paths {
          * @description Get document by ID.
          */
         post: operations["get_document_api_v4_resources_documents_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/documents/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Search Documents */
+        post: operations["search_documents_api_v4_resources_documents_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4021,6 +4245,65 @@ export interface paths {
          * @description Get endpoints resources by IDs.
          */
         post: operations["get_endpoints_api_v4_resources_endpoints_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/endpoints/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Endpoints
+         * @description Search endpoints resources.
+         */
+        post: operations["search_endpoints_api_v4_resources_endpoints_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/evals/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Evals
+         * @description Get evals resources by IDs.
+         *
+         *     HTTP wrapper that delegates to internal function for caching and data fetching.
+         */
+        post: operations["get_evals_api_v4_resources_evals_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/evals/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Search Evals */
+        post: operations["search_evals_api_v4_resources_evals_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4268,6 +4551,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/group_positions/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Group Positions
+         * @description Search group_positions resources.
+         */
+        post: operations["search_group_positions_api_v4_resources_group_positions_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/group_rubrics": {
         parameters: {
             query?: never;
@@ -4302,6 +4605,65 @@ export interface paths {
          * @description Get group_rubrics resources by IDs.
          */
         post: operations["get_group_rubrics_api_v4_resources_group_rubrics_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/group_rubrics/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Group Rubrics
+         * @description Search group_rubrics resources.
+         */
+        post: operations["search_group_rubrics_api_v4_resources_group_rubrics_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/groups/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Groups
+         * @description Get groups resources by IDs.
+         *
+         *     HTTP wrapper that delegates to internal function for caching and data fetching.
+         */
+        post: operations["get_groups_api_v4_resources_groups_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/groups/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Search Groups */
+        post: operations["search_groups_api_v4_resources_groups_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4503,6 +4865,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/items/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Items
+         * @description Search items resources.
+         */
+        post: operations["search_items_api_v4_resources_items_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/keys": {
         parameters: {
             query?: never;
@@ -4557,6 +4939,26 @@ export interface paths {
          * @description Get keys resources by IDs.
          */
         post: operations["get_keys_api_v4_resources_keys_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/keys/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Keys
+         * @description Search keys resources.
+         */
+        post: operations["search_keys_api_v4_resources_keys_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4804,6 +5206,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/objectives/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Objectives
+         * @description Search objectives resources.
+         */
+        post: operations["search_objectives_api_v4_resources_objectives_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/options": {
         parameters: {
             query?: never;
@@ -4838,6 +5260,26 @@ export interface paths {
          * @description Get options by IDs.
          */
         post: operations["get_options_api_v4_resources_options_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/options/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Options
+         * @description Search options resources.
+         */
+        post: operations["search_options_api_v4_resources_options_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4903,6 +5345,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/personas/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Search Personas */
+        post: operations["search_personas_api_v4_resources_personas_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/points": {
         parameters: {
             query?: never;
@@ -4937,6 +5396,26 @@ export interface paths {
          * @description Get points resources by IDs.
          */
         post: operations["get_points_api_v4_resources_points_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/points/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Points
+         * @description Search points resources.
+         */
+        post: operations["search_points_api_v4_resources_points_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4983,6 +5462,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/pricing/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Pricing
+         * @description Search pricing resources.
+         */
+        post: operations["search_pricing_api_v4_resources_pricing_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/problem_statements": {
         parameters: {
             query?: never;
@@ -5017,6 +5516,26 @@ export interface paths {
          * @description Get problem statement by ID.
          */
         post: operations["get_problem_statement_api_v4_resources_problem_statements_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/profiles/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Profiles
+         * @description Search profiles resources.
+         */
+        post: operations["search_profiles_api_v4_resources_profiles_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5134,6 +5653,48 @@ export interface paths {
         put?: never;
         /** Search Protocols */
         post: operations["search_protocols_api_v4_resources_protocols_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/providers/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Providers
+         * @description Get providers resources by IDs.
+         *
+         *     HTTP wrapper that delegates to internal function for caching and data fetching.
+         */
+        post: operations["get_providers_api_v4_resources_providers_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/providers/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Providers
+         * @description Search providers resources.
+         */
+        post: operations["search_providers_api_v4_resources_providers_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5344,6 +5905,68 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/roles/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Roles
+         * @description Search roles resources.
+         */
+        post: operations["search_roles_api_v4_resources_roles_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/routes/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Routes
+         * @description Get routes resources by IDs.
+         *
+         *     HTTP wrapper that delegates to internal function for caching and data fetching.
+         */
+        post: operations["get_routes_api_v4_resources_routes_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/routes/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Routes
+         * @description Search routes resources.
+         */
+        post: operations["search_routes_api_v4_resources_routes_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/rubrics/get": {
         parameters: {
             query?: never;
@@ -5358,6 +5981,26 @@ export interface paths {
          * @description Get rubrics by simulation ID.
          */
         post: operations["get_rubrics_api_v4_resources_rubrics_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/rubrics/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Rubrics
+         * @description Search rubrics resources.
+         */
+        post: operations["search_rubrics_api_v4_resources_rubrics_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5404,6 +6047,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/run_positions/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Run Positions
+         * @description Search run_positions resources.
+         */
+        post: operations["search_run_positions_api_v4_resources_run_positions_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/run_rubrics": {
         parameters: {
             query?: never;
@@ -5438,6 +6101,68 @@ export interface paths {
          * @description Get run_rubrics resources by IDs.
          */
         post: operations["get_run_rubrics_api_v4_resources_run_rubrics_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/run_rubrics/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Run Rubrics
+         * @description Search run_rubrics resources.
+         */
+        post: operations["search_run_rubrics_api_v4_resources_run_rubrics_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/runs/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Runs
+         * @description Get runs resources by IDs.
+         *
+         *     HTTP wrapper that delegates to internal function for caching and data fetching.
+         */
+        post: operations["get_runs_api_v4_resources_runs_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/runs/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Runs
+         * @description Search runs resources.
+         */
+        post: operations["search_runs_api_v4_resources_runs_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5484,7 +6209,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/setting_role_routes": {
+    "/api/v4/resources/role_routes": {
         parameters: {
             query?: never;
             header?: never;
@@ -5494,10 +6219,50 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Setting Role Routes
+         * Create Role Routes
          * @description Create role_routes resource (always INSERT).
          */
-        post: operations["create_setting_role_routes_api_v4_resources_setting_role_routes_post"];
+        post: operations["create_role_routes_api_v4_resources_role_routes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/role_routes/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Role Routes
+         * @description Get role_routes resources by IDs.
+         */
+        post: operations["get_role_routes_api_v4_resources_role_routes_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/role_routes/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Role Routes
+         * @description Search role_routes resources.
+         */
+        post: operations["search_role_routes_api_v4_resources_role_routes_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5806,6 +6571,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/settings/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Settings
+         * @description Search settings resources.
+         */
+        post: operations["search_settings_api_v4_resources_settings_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/simulation_positions": {
         parameters: {
             query?: never;
@@ -6006,6 +6791,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/standard_groups/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Standard Groups
+         * @description Get standard_groups by IDs.
+         */
+        post: operations["get_standard_groups_api_v4_resources_standard_groups_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/standard_groups/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Standard Groups
+         * @description Search standard_groups resources.
+         */
+        post: operations["search_standard_groups_api_v4_resources_standard_groups_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/standards/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Standards
+         * @description Get standards by IDs.
+         */
+        post: operations["get_standards_api_v4_resources_standards_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/standards/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Standards
+         * @description Search standards resources.
+         */
+        post: operations["search_standards_api_v4_resources_standards_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/temperature_levels/get": {
         parameters: {
             query?: never;
@@ -6119,6 +6984,48 @@ export interface paths {
         put?: never;
         /** Search Templates */
         post: operations["search_templates_api_v4_resources_templates_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/thresholds/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Thresholds
+         * @description Get thresholds resources by IDs.
+         *
+         *     HTTP wrapper that delegates to internal function for caching and data fetching.
+         */
+        post: operations["get_thresholds_api_v4_resources_thresholds_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/thresholds/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Thresholds
+         * @description Search thresholds resources.
+         */
+        post: operations["search_thresholds_api_v4_resources_thresholds_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -16662,6 +17569,16 @@ export interface components {
             reasoning_levels?: components["schemas"]["AgentReasoningLevelSection"] | null;
             voices?: components["schemas"]["AgentVoiceSection"] | null;
         };
+        /** GetAgentsApiRequest */
+        GetAgentsApiRequest: {
+            /** Ids */
+            ids?: string[] | null;
+        };
+        /** GetAgentsApiResponse */
+        GetAgentsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetAgentsV4Item"][] | null;
+        };
         /** GetAgentsListApiRequest */
         GetAgentsListApiRequest: {
             /** Search */
@@ -17172,6 +18089,16 @@ export interface components {
              */
             page_offset: number | null;
         };
+        /** GetAuthsApiRequest */
+        GetAuthsApiRequest: {
+            /** Ids */
+            ids?: string[] | null;
+        };
+        /** GetAuthsApiResponse */
+        GetAuthsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetAuthsV4Item"][] | null;
+        };
         /**
          * GetBenchmarkAttemptFactsRequest
          * @description Request for getting benchmark attempt facts.
@@ -17413,6 +18340,16 @@ export interface components {
              */
             total_count: number;
         };
+        /** GetBindingsApiRequest */
+        GetBindingsApiRequest: {
+            /** Ids */
+            ids?: string[] | null;
+        };
+        /** GetBindingsApiResponse */
+        GetBindingsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetBindingsV4Item"][] | null;
+        };
         /** GetCertificateDataApiRequest */
         GetCertificateDataApiRequest: Record<string, never>;
         /**
@@ -17606,6 +18543,16 @@ export interface components {
         GetColorsApiResponse: {
             /** Items */
             items?: components["schemas"]["QGetColorsV4Item"][] | null;
+        };
+        /** GetConditionalParametersApiRequest */
+        GetConditionalParametersApiRequest: {
+            /** Ids */
+            ids?: string[] | null;
+        };
+        /** GetConditionalParametersApiResponse */
+        GetConditionalParametersApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetConditionalParametersV4Item"][] | null;
         };
         /**
          * GetConfigRequest
@@ -17844,6 +18791,16 @@ export interface components {
             /** Total Count */
             total_count?: number | null;
         };
+        /** GetDomainsApiRequest */
+        GetDomainsApiRequest: {
+            /** Ids */
+            ids?: string[] | null;
+        };
+        /** GetDomainsApiResponse */
+        GetDomainsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetDomainsV4Item"][] | null;
+        };
         /** GetEmailsApiRequest */
         GetEmailsApiRequest: {
             /** Ids */
@@ -17937,6 +18894,16 @@ export interface components {
             available_model_runs_total_pages?: number | null;
             /** Available Groups */
             available_groups?: components["schemas"]["EvalAvailableGroup"][] | null;
+        };
+        /** GetEvalsApiRequest */
+        GetEvalsApiRequest: {
+            /** Ids */
+            ids?: string[] | null;
+        };
+        /** GetEvalsApiResponse */
+        GetEvalsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetEvalsV4Item"][] | null;
         };
         /** GetEvalsListApiRequest */
         GetEvalsListApiRequest: {
@@ -18101,6 +19068,16 @@ export interface components {
         GetGroupRubricsApiResponse: {
             /** Items */
             items?: components["schemas"]["QGetGroupRubricsV4Item"][] | null;
+        };
+        /** GetGroupsApiRequest */
+        GetGroupsApiRequest: {
+            /** Ids */
+            ids?: string[] | null;
+        };
+        /** GetGroupsApiResponse */
+        GetGroupsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetGroupsV4Item"][] | null;
         };
         /**
          * GetHealthAnalyticsRequest
@@ -19391,6 +20368,16 @@ export interface components {
             /** Items */
             items?: components["schemas"]["QGetProviderKeysV4Item"][] | null;
         };
+        /** GetProvidersApiRequest */
+        GetProvidersApiRequest: {
+            /** Ids */
+            ids?: string[] | null;
+        };
+        /** GetProvidersApiResponse */
+        GetProvidersApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetProvidersV4Item"][] | null;
+        };
         /** GetProvidersListApiRequest */
         GetProvidersListApiRequest: Record<string, never>;
         /** GetQualitiesApiRequest */
@@ -19455,6 +20442,16 @@ export interface components {
             /** Items */
             items?: components["schemas"]["QGetRequestLimitsV4Item"][] | null;
         };
+        /** GetRoleRoutesApiRequest */
+        GetRoleRoutesApiRequest: {
+            /** Ids */
+            ids?: string[] | null;
+        };
+        /** GetRoleRoutesApiResponse */
+        GetRoleRoutesApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetRoleRoutesV4Item"][] | null;
+        };
         /**
          * GetRolesApiRequest
          * @description Request for getting all roles.
@@ -19466,7 +20463,17 @@ export interface components {
          */
         GetRolesApiResponse: {
             /** Items */
-            items?: components["schemas"]["QGetRolesV4Item"][] | null;
+            items?: components["schemas"]["app__api__v4__resources__roles__get__QGetRolesV4Item"][] | null;
+        };
+        /** GetRoutesApiRequest */
+        GetRoutesApiRequest: {
+            /** Ids */
+            ids?: string[] | null;
+        };
+        /** GetRoutesApiResponse */
+        GetRoutesApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetRoutesV4Item"][] | null;
         };
         /** GetRubricApiRequest */
         GetRubricApiRequest: {
@@ -19561,6 +20568,16 @@ export interface components {
         GetRunRubricsApiResponse: {
             /** Items */
             items?: components["schemas"]["QGetRunRubricsV4Item"][] | null;
+        };
+        /** GetRunsApiRequest */
+        GetRunsApiRequest: {
+            /** Ids */
+            ids?: string[] | null;
+        };
+        /** GetRunsApiResponse */
+        GetRunsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetRunsV4Item"][] | null;
         };
         /**
          * GetScenarioApiRequest
@@ -20248,6 +21265,44 @@ export interface components {
             /** Departments */
             departments?: components["schemas"]["QSearchStaffV4Department"][] | null;
         };
+        /**
+         * GetStandardGroupsApiRequest
+         * @description Request for getting standard_groups by IDs.
+         */
+        GetStandardGroupsApiRequest: {
+            /** Ids */
+            ids: string[];
+        };
+        /**
+         * GetStandardGroupsApiResponse
+         * @description Response for getting standard_groups.
+         */
+        GetStandardGroupsApiResponse: {
+            /**
+             * Items
+             * @default []
+             */
+            items: components["schemas"]["QGetStandardGroupsV4Item"][];
+        };
+        /**
+         * GetStandardsApiRequest
+         * @description Request for getting standards by IDs.
+         */
+        GetStandardsApiRequest: {
+            /** Ids */
+            ids: string[];
+        };
+        /**
+         * GetStandardsApiResponse
+         * @description Response for getting standards.
+         */
+        GetStandardsApiResponse: {
+            /**
+             * Items
+             * @default []
+             */
+            items: components["schemas"]["QGetStandardsV4Item"][];
+        };
         /** GetTemperatureLevelsApiRequest */
         GetTemperatureLevelsApiRequest: {
             /** Ids */
@@ -20408,6 +21463,16 @@ export interface components {
             page_size: number;
             /** Eval Options */
             eval_options?: components["schemas"]["TestListFilterOption"][];
+        };
+        /** GetThresholdsApiRequest */
+        GetThresholdsApiRequest: {
+            /** Ids */
+            ids?: string[] | null;
+        };
+        /** GetThresholdsApiResponse */
+        GetThresholdsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetThresholdsV4Item"][] | null;
         };
         /** GetToolApiRequest */
         GetToolApiRequest: {
@@ -26810,6 +27875,32 @@ export interface components {
             /** Generated */
             generated: boolean | null;
         };
+        /** QGetAuthsV4Item */
+        QGetAuthsV4Item: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Slug */
+            slug: string | null;
+            /** Protocol */
+            protocol: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetBindingsV4Item */
+        QGetBindingsV4Item: {
+            /** Id */
+            id: string | null;
+            /** Entry */
+            entry: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
         /**
          * QGetCohortsV4Item
          * @description Cohort item returned from get endpoint.
@@ -26836,6 +27927,15 @@ export interface components {
             description: string | null;
             /** Hex Code */
             hex_code: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetConditionalParametersV4Item */
+        QGetConditionalParametersV4Item: {
+            /** Id */
+            id: string | null;
+            /** Parameter Id */
+            parameter_id: string | null;
             /** Generated */
             generated: boolean | null;
         };
@@ -26891,6 +27991,17 @@ export interface components {
             /** Upload Id */
             upload_id: string | null;
         };
+        /** QGetDomainsV4Item */
+        QGetDomainsV4Item: {
+            /** Id */
+            id: string | null;
+            /** Resource */
+            resource: string | null;
+            /** Creatable */
+            creatable: boolean | null;
+            /** Generated */
+            generated: boolean | null;
+        };
         /** QGetEmailsV4Item */
         QGetEmailsV4Item: {
             /** Id */
@@ -26906,6 +28017,19 @@ export interface components {
             id: string | null;
             /** Base Url */
             base_url: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetEvalsV4Item */
+        QGetEvalsV4Item: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Department Ids */
+            department_ids: string[] | null;
             /** Generated */
             generated: boolean | null;
         };
@@ -26969,6 +28093,13 @@ export interface components {
             groups_id: string | null;
             /** Rubric Id */
             rubric_id: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetGroupsV4Item */
+        QGetGroupsV4Item: {
+            /** Id */
+            id: string | null;
             /** Generated */
             generated: boolean | null;
         };
@@ -27400,6 +28531,19 @@ export interface components {
             /** Sidebar Ring */
             sidebar_ring: string | null;
         };
+        /** QGetProfilesV4Item */
+        QGetProfilesV4Item: {
+            /** Profile Id */
+            profile_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Emails */
+            emails: string[] | null;
+            /** Primary Email */
+            primary_email: string | null;
+        };
         /** QGetPromptsV4Item */
         QGetPromptsV4Item: {
             /** Id */
@@ -27500,21 +28644,27 @@ export interface components {
             /** Generated */
             generated: boolean | null;
         };
-        /**
-         * QGetRolesV4Item
-         * @description Role item returned from get endpoint.
-         */
-        QGetRolesV4Item: {
-            /** Role */
-            role?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Icon Value */
-            icon_value?: string | null;
-            /** Color Hex */
-            color_hex?: string | null;
+        /** QGetRoleRoutesV4Item */
+        QGetRoleRoutesV4Item: {
+            /** Id */
+            id: string | null;
+            /** Role Id */
+            role_id: string | null;
+            /** Route Id */
+            route_id: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetRoutesV4Item */
+        QGetRoutesV4Item: {
+            /** Id */
+            id: string | null;
+            /** Route */
+            route: string | null;
+            /** Role Id */
+            role_id: string | null;
+            /** Generated */
+            generated: boolean | null;
         };
         /** QGetRubricsBatchV4Item */
         QGetRubricsBatchV4Item: {
@@ -27559,6 +28709,13 @@ export interface components {
             runs_id: string | null;
             /** Rubric Id */
             rubric_id: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetRunsV4Item */
+        QGetRunsV4Item: {
+            /** Id */
+            id: string | null;
             /** Generated */
             generated: boolean | null;
         };
@@ -27894,6 +29051,15 @@ export interface components {
             texts_id: string | null;
             /** Content */
             content: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetThresholdsV4Item */
+        QGetThresholdsV4Item: {
+            /** Id */
+            id: string | null;
+            /** Value */
+            value: number | null;
             /** Generated */
             generated: boolean | null;
         };
@@ -30829,6 +31995,28 @@ export interface components {
             /** Resources */
             resources?: components["schemas"]["ScenarioVideo"][] | null;
         };
+        /** SearchAgentsApiRequest */
+        SearchAgentsApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchAgentsApiResponse */
+        SearchAgentsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetAgentsV4Item"][] | null;
+        };
         /** SearchArgPositionsApiRequest */
         SearchArgPositionsApiRequest: {
             /** Tool Id */
@@ -30927,6 +32115,50 @@ export interface components {
             /** Items */
             items?: components["schemas"]["QGetAuthItemKeysV4Item"][] | null;
         };
+        /** SearchAuthsApiRequest */
+        SearchAuthsApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchAuthsApiResponse */
+        SearchAuthsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetAuthsV4Item"][] | null;
+        };
+        /** SearchBindingsApiRequest */
+        SearchBindingsApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchBindingsApiResponse */
+        SearchBindingsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetBindingsV4Item"][] | null;
+        };
         /**
          * SearchCohortsApiRequest
          * @description Request for searching cohorts.
@@ -30980,6 +32212,16 @@ export interface components {
         SearchColorsApiResponse: {
             /** Items */
             items?: components["schemas"]["QGetColorsV4Item"][] | null;
+        };
+        /** SearchConditionalParametersApiRequest */
+        SearchConditionalParametersApiRequest: {
+            /** Parameter Ids */
+            parameter_ids?: string[] | null;
+        };
+        /** SearchConditionalParametersApiResponse */
+        SearchConditionalParametersApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetParametersV4Item"][] | null;
         };
         /** SearchDepartmentsApiRequest */
         SearchDepartmentsApiRequest: {
@@ -31035,6 +32277,56 @@ export interface components {
             /** Items */
             items?: components["schemas"]["QGetDescriptionsV4Item"][] | null;
         };
+        /** SearchDocumentsApiRequest */
+        SearchDocumentsApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** User Department Ids */
+            user_department_ids?: string[] | null;
+            /** Draft Id */
+            draft_id?: string | null;
+            /** Suggest Source */
+            suggest_source?: string | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchDocumentsApiResponse */
+        SearchDocumentsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetDocumentsV4Item"][] | null;
+        };
+        /** SearchDomainsApiRequest */
+        SearchDomainsApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchDomainsApiResponse */
+        SearchDomainsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetDomainsV4Item"][] | null;
+        };
         /**
          * SearchEmailsApiRequest
          * @description Request for searching emails.
@@ -31062,6 +32354,50 @@ export interface components {
         SearchEmailsApiResponse: {
             /** Items */
             items?: components["schemas"]["QGetEmailsV4Item"][] | null;
+        };
+        /** SearchEndpointsApiRequest */
+        SearchEndpointsApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchEndpointsApiResponse */
+        SearchEndpointsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetEndpointsV4Item"][] | null;
+        };
+        /** SearchEvalsApiRequest */
+        SearchEvalsApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchEvalsApiResponse */
+        SearchEvalsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetEvalsV4Item"][] | null;
         };
         /** SearchExamplesApiRequest */
         SearchExamplesApiRequest: {
@@ -31145,6 +32481,72 @@ export interface components {
             /** Items */
             items?: components["schemas"]["QGetFlagsV4Item"][] | null;
         };
+        /** SearchGroupPositionsApiRequest */
+        SearchGroupPositionsApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchGroupPositionsApiResponse */
+        SearchGroupPositionsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetGroupPositionsV4Item"][] | null;
+        };
+        /** SearchGroupRubricsApiRequest */
+        SearchGroupRubricsApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchGroupRubricsApiResponse */
+        SearchGroupRubricsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetGroupRubricsV4Item"][] | null;
+        };
+        /** SearchGroupsApiRequest */
+        SearchGroupsApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchGroupsApiResponse */
+        SearchGroupsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetGroupsV4Item"][] | null;
+        };
         /** SearchIconsApiRequest */
         SearchIconsApiRequest: {
             /** Search */
@@ -31219,6 +32621,50 @@ export interface components {
             /** Items */
             items?: components["schemas"]["QGetInstructionsV4Item"][] | null;
         };
+        /** SearchItemsApiRequest */
+        SearchItemsApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchItemsApiResponse */
+        SearchItemsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetItemsV4Item"][] | null;
+        };
+        /** SearchKeysApiRequest */
+        SearchKeysApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchKeysApiResponse */
+        SearchKeysApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetKeysV4Item"][] | null;
+        };
         /** SearchModalitiesApiRequest */
         SearchModalitiesApiRequest: {
             /** Search */
@@ -31289,6 +32735,50 @@ export interface components {
             /** Items */
             items?: components["schemas"]["QGetNamesV4Item"][] | null;
         };
+        /** SearchObjectivesApiRequest */
+        SearchObjectivesApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchObjectivesApiResponse */
+        SearchObjectivesApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetObjectivesV4Item"][] | null;
+        };
+        /** SearchOptionsApiRequest */
+        SearchOptionsApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchOptionsApiResponse */
+        SearchOptionsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetOptionsV4Item"][] | null;
+        };
         /** SearchParameterFieldsApiRequest */
         SearchParameterFieldsApiRequest: {
             /** Parameter Ids */
@@ -31330,6 +32820,100 @@ export interface components {
         SearchParametersApiResponse: {
             /** Items */
             items?: components["schemas"]["QGetParametersV4Item"][] | null;
+        };
+        /** SearchPersonasApiRequest */
+        SearchPersonasApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** User Department Ids */
+            user_department_ids?: string[] | null;
+            /** Draft Id */
+            draft_id?: string | null;
+            /** Suggest Source */
+            suggest_source?: string | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchPersonasApiResponse */
+        SearchPersonasApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetPersonasV4Item"][] | null;
+        };
+        /** SearchPointsApiRequest */
+        SearchPointsApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchPointsApiResponse */
+        SearchPointsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetPointsV4Item"][] | null;
+        };
+        /** SearchPricingApiRequest */
+        SearchPricingApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchPricingApiResponse */
+        SearchPricingApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetPricingV4Item"][] | null;
+        };
+        /** SearchProfilesApiRequest */
+        SearchProfilesApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchProfilesApiResponse */
+        SearchProfilesApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetProfilesV4Item"][] | null;
         };
         /** SearchPromptsApiRequest */
         SearchPromptsApiRequest: {
@@ -31400,6 +32984,28 @@ export interface components {
         SearchProviderKeysApiResponse: {
             /** Items */
             items?: components["schemas"]["QGetProviderKeysV4Item"][] | null;
+        };
+        /** SearchProvidersApiRequest */
+        SearchProvidersApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchProvidersApiResponse */
+        SearchProvidersApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetProvidersV4Item"][] | null;
         };
         /** SearchQualitiesApiRequest */
         SearchQualitiesApiRequest: {
@@ -31472,6 +33078,160 @@ export interface components {
         SearchRequestLimitsApiResponse: {
             /** Items */
             items?: components["schemas"]["QGetRequestLimitsV4Item"][] | null;
+        };
+        /** SearchRoleRoutesApiRequest */
+        SearchRoleRoutesApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchRoleRoutesApiResponse */
+        SearchRoleRoutesApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetRoleRoutesV4Item"][] | null;
+        };
+        /** SearchRolesApiRequest */
+        SearchRolesApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchRolesApiResponse */
+        SearchRolesApiResponse: {
+            /** Items */
+            items?: components["schemas"]["app__sql__types__QGetRolesV4Item"][] | null;
+        };
+        /** SearchRoutesApiRequest */
+        SearchRoutesApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchRoutesApiResponse */
+        SearchRoutesApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetRoutesV4Item"][] | null;
+        };
+        /** SearchRubricsApiRequest */
+        SearchRubricsApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchRubricsApiResponse */
+        SearchRubricsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetRubricsV4Item"][] | null;
+        };
+        /** SearchRunPositionsApiRequest */
+        SearchRunPositionsApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchRunPositionsApiResponse */
+        SearchRunPositionsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetRunPositionsV4Item"][] | null;
+        };
+        /** SearchRunRubricsApiRequest */
+        SearchRunRubricsApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchRunRubricsApiResponse */
+        SearchRunRubricsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetRunRubricsV4Item"][] | null;
+        };
+        /** SearchRunsApiRequest */
+        SearchRunsApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchRunsApiResponse */
+        SearchRunsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetRunsV4Item"][] | null;
         };
         /** SearchScenarioFlagsApiRequest */
         SearchScenarioFlagsApiRequest: {
@@ -31580,6 +33340,28 @@ export interface components {
             /** Items */
             items?: components["schemas"]["app__api__v4__artifacts__simulation__types__QGetScenariosV4Item"][] | null;
         };
+        /** SearchSettingsApiRequest */
+        SearchSettingsApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchSettingsApiResponse */
+        SearchSettingsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["app__sql__types__QGetSettingsV4Item"][] | null;
+        };
         /** SearchSimulatableProfilesApiRequest */
         SearchSimulatableProfilesApiRequest: {
             /** Limit Count */
@@ -31683,6 +33465,50 @@ export interface components {
             /** Items */
             items?: components["schemas"]["QGetSlugsV4Item"][] | null;
         };
+        /** SearchStandardGroupsApiRequest */
+        SearchStandardGroupsApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchStandardGroupsApiResponse */
+        SearchStandardGroupsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetStandardGroupsV4Item"][] | null;
+        };
+        /** SearchStandardsApiRequest */
+        SearchStandardsApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchStandardsApiResponse */
+        SearchStandardsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetStandardsV4Item"][] | null;
+        };
         /** SearchTemperatureLevelsApiRequest */
         SearchTemperatureLevelsApiRequest: {
             /** Search */
@@ -31748,6 +33574,28 @@ export interface components {
         SearchTextsApiResponse: {
             /** Items */
             items?: components["schemas"]["QGetTextsV4Item"][] | null;
+        };
+        /** SearchThresholdsApiRequest */
+        SearchThresholdsApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchThresholdsApiResponse */
+        SearchThresholdsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetThresholdsV4Item"][] | null;
         };
         /** SearchToolsApiRequest */
         SearchToolsApiRequest: {
@@ -34505,6 +36353,22 @@ export interface components {
             count?: number | null;
         };
         /**
+         * QGetRolesV4Item
+         * @description Role item returned from get endpoint.
+         */
+        app__api__v4__resources__roles__get__QGetRolesV4Item: {
+            /** Role */
+            role?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Icon Value */
+            icon_value?: string | null;
+            /** Color Hex */
+            color_hex?: string | null;
+        };
+        /**
          * QGetSettingsV4Auth
          * @description Auth item in settings.
          */
@@ -34684,6 +36548,19 @@ export interface components {
             create_tool_id: string | null;
             /** Link Tool Id */
             link_tool_id: string | null;
+        };
+        /** QGetRolesV4Item */
+        app__sql__types__QGetRolesV4Item: {
+            /** Role */
+            role: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Icon Value */
+            icon_value: string | null;
+            /** Color Hex */
+            color_hex: string | null;
         };
         /** QGetScenariosV4Item */
         app__sql__types__QGetScenariosV4Item: {
@@ -41185,6 +43062,80 @@ export interface operations {
             };
         };
     };
+    get_agents_api_v4_resources_agents_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetAgentsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetAgentsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_agents_api_v4_resources_agents_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchAgentsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchAgentsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_args_api_v4_resources_args_post: {
         parameters: {
             query?: never;
@@ -41629,6 +43580,154 @@ export interface operations {
             };
         };
     };
+    get_auths_api_v4_resources_auths_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetAuthsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetAuthsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_auths_api_v4_resources_auths_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchAuthsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchAuthsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_bindings_api_v4_resources_bindings_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetBindingsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetBindingsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_bindings_api_v4_resources_bindings_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchBindingsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchBindingsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_cohorts_api_v4_resources_cohorts_get_post: {
         parameters: {
             query?: never;
@@ -41801,6 +43900,80 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchColorsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_conditional_parameters_api_v4_resources_conditional_parameters_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetConditionalParametersApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetConditionalParametersApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_conditional_parameters_api_v4_resources_conditional_parameters_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchConditionalParametersApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchConditionalParametersApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -41999,6 +44172,80 @@ export interface operations {
             };
         };
     };
+    get_domains_api_v4_resources_domains_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetDomainsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetDomainsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_domains_api_v4_resources_domains_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchDomainsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchDomainsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_document_api_v4_resources_documents_get_post: {
         parameters: {
             query?: never;
@@ -42023,6 +44270,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetDocumentResourceApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_documents_api_v4_resources_documents_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchDocumentsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchDocumentsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -42208,6 +44492,117 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetEndpointsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_endpoints_api_v4_resources_endpoints_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchEndpointsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchEndpointsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_evals_api_v4_resources_evals_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetEvalsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetEvalsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_evals_api_v4_resources_evals_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchEvalsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchEvalsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -42665,6 +45060,43 @@ export interface operations {
             };
         };
     };
+    search_group_positions_api_v4_resources_group_positions_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchGroupPositionsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchGroupPositionsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_group_rubrics_api_v4_resources_group_rubrics_post: {
         parameters: {
             query?: never;
@@ -42726,6 +45158,117 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetGroupRubricsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_group_rubrics_api_v4_resources_group_rubrics_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchGroupRubricsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchGroupRubricsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_groups_api_v4_resources_groups_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetGroupsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetGroupsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_groups_api_v4_resources_groups_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchGroupsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchGroupsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -43109,6 +45652,43 @@ export interface operations {
             };
         };
     };
+    search_items_api_v4_resources_items_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchItemsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchItemsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_keys_api_v4_resources_keys_post: {
         parameters: {
             query?: never;
@@ -43207,6 +45787,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetKeysApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_keys_api_v4_resources_keys_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchKeysApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchKeysApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -43664,6 +46281,43 @@ export interface operations {
             };
         };
     };
+    search_objectives_api_v4_resources_objectives_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchObjectivesApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchObjectivesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_options_api_v4_resources_options_post: {
         parameters: {
             query?: never;
@@ -43725,6 +46379,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetOptionsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_options_api_v4_resources_options_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchOptionsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchOptionsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -43849,6 +46540,43 @@ export interface operations {
             };
         };
     };
+    search_personas_api_v4_resources_personas_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchPersonasApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchPersonasApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_points_api_v4_resources_points_post: {
         parameters: {
             query?: never;
@@ -43910,6 +46638,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetPointsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_points_api_v4_resources_points_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchPointsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchPointsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -43997,6 +46762,43 @@ export interface operations {
             };
         };
     };
+    search_pricing_api_v4_resources_pricing_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchPricingApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchPricingApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_problem_statements_api_v4_resources_problem_statements_post: {
         parameters: {
             query?: never;
@@ -44058,6 +46860,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetProblemStatementApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_profiles_api_v4_resources_profiles_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchProfilesApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchProfilesApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -44280,6 +47119,80 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchProtocolsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_providers_api_v4_resources_providers_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetProvidersApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetProvidersApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_providers_api_v4_resources_providers_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchProvidersApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchProvidersApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -44663,6 +47576,117 @@ export interface operations {
             };
         };
     };
+    search_roles_api_v4_resources_roles_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchRolesApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchRolesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_routes_api_v4_resources_routes_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetRoutesApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetRoutesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_routes_api_v4_resources_routes_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchRoutesApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchRoutesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_rubrics_api_v4_resources_rubrics_get_post: {
         parameters: {
             query?: never;
@@ -44687,6 +47711,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetRubricsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_rubrics_api_v4_resources_rubrics_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchRubricsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchRubricsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -44774,6 +47835,43 @@ export interface operations {
             };
         };
     };
+    search_run_positions_api_v4_resources_run_positions_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchRunPositionsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchRunPositionsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_run_rubrics_api_v4_resources_run_rubrics_post: {
         parameters: {
             query?: never;
@@ -44835,6 +47933,117 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetRunRubricsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_run_rubrics_api_v4_resources_run_rubrics_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchRunRubricsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchRunRubricsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_runs_api_v4_resources_runs_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetRunsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetRunsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_runs_api_v4_resources_runs_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchRunsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchRunsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -44922,7 +48131,7 @@ export interface operations {
             };
         };
     };
-    create_setting_role_routes_api_v4_resources_setting_role_routes_post: {
+    create_role_routes_api_v4_resources_role_routes_post: {
         parameters: {
             query?: never;
             header?: {
@@ -44946,6 +48155,80 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RoleRoutesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_role_routes_api_v4_resources_role_routes_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetRoleRoutesApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetRoleRoutesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_role_routes_api_v4_resources_role_routes_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchRoleRoutesApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchRoleRoutesApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -45514,6 +48797,43 @@ export interface operations {
             };
         };
     };
+    search_settings_api_v4_resources_settings_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchSettingsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchSettingsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_simulation_positions_api_v4_resources_simulation_positions_post: {
         parameters: {
             query?: never;
@@ -45884,6 +49204,154 @@ export interface operations {
             };
         };
     };
+    get_standard_groups_api_v4_resources_standard_groups_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetStandardGroupsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetStandardGroupsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_standard_groups_api_v4_resources_standard_groups_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchStandardGroupsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchStandardGroupsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_standards_api_v4_resources_standards_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetStandardsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetStandardsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_standards_api_v4_resources_standards_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchStandardsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchStandardsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_temperature_levels_api_v4_resources_temperature_levels_get_post: {
         parameters: {
             query?: never;
@@ -46093,6 +49561,80 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchTemplatesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_thresholds_api_v4_resources_thresholds_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetThresholdsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetThresholdsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_thresholds_api_v4_resources_thresholds_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchThresholdsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchThresholdsApiResponse"];
                 };
             };
             /** @description Validation Error */

@@ -42,6 +42,7 @@ export interface RolesProps {
     description: string | null;
     icon_value?: string | null;
     color_hex?: string | null;
+    generated?: boolean | null;
   }>;
   show_roles?: boolean;
   disabled?: boolean;
@@ -66,6 +67,9 @@ export interface RolesProps {
     }
   ) => void;
   link_tool_id?: string | null; // Tool ID for AI link suggestions
+  showAiGenerate?: boolean;
+  onGenerate?: () => void | Promise<void>;
+  isGenerating?: boolean;
   // AI diff view props
   aiRoleResources?: Array<{
     role_id?: string | null;
@@ -243,6 +247,9 @@ export function Roles({
   emptyMessage = "No roles found. Try adjusting your search.",
   onRoleResourceChange,
   link_tool_id,
+  showAiGenerate: _showAiGenerate = false,
+  onGenerate: _onGenerate,
+  isGenerating: _isGenerating = false,
   // AI diff view props
   aiRoleResources,
   onAccept,

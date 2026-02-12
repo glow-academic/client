@@ -68,6 +68,9 @@ export interface ArgsOutputsProps {
   aiArgsOutputsResources?: Array<{ id?: string | null; name?: string | null }> | null;
   onAccept?: () => void;
   onReject?: () => void;
+  showAiGenerate?: boolean;
+  onGenerate?: () => void | Promise<void>;
+  isGenerating?: boolean;
 }
 
 export function ArgsOutputs({
@@ -78,13 +81,16 @@ export function ArgsOutputs({
   createArgsOutputsAction,
   group_id,
   create_tool_id,
-  link_tool_id,
+  link_tool_id: _link_tool_id,
   isAutosaveEnabled = true,
   registerFlush,
   // AI diff view props
   aiArgsOutputsResources,
   onAccept,
   onReject,
+  showAiGenerate: _showAiGenerate = false,
+  onGenerate: _onGenerate,
+  isGenerating: _isGenerating = false,
 }: ArgsOutputsProps) {
   // Get available Jinja variables from input args fields
   const availableVariables = useMemo(() => {

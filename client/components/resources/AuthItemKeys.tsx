@@ -50,6 +50,11 @@ export interface AuthItemKeysProps {
         key_id: string;
       }) => Promise<{ auth_item_keys_id?: string | null }>)
     | undefined;
+  showAiGenerate?: boolean;
+  onGenerate?: () => void | Promise<void>;
+  isGenerating?: boolean;
+  onAccept?: () => void;
+  onReject?: () => void;
 }
 
 export function AuthItemKeys({
@@ -65,6 +70,11 @@ export function AuthItemKeys({
   show_auth_item_keys = true,
   getAuthItemKeysAction,
   createAuthItemKeysAction,
+  showAiGenerate: _showAiGenerate = false,
+  onGenerate: _onGenerate,
+  isGenerating: _isGenerating = false,
+  onAccept: _onAccept,
+  onReject: _onReject,
 }: AuthItemKeysProps) {
   const selectedIds = useMemo(() => auth_item_key_ids ?? [], [auth_item_key_ids]);
   const [resourcesById, setResourcesById] = useState<Map<string, AuthItemKeyResource>>(

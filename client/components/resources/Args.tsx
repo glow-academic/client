@@ -64,6 +64,9 @@ export interface ArgsProps {
   aiArgsResources?: Array<{ id?: string | null; name?: string | null }> | null;
   onAccept?: () => void;
   onReject?: () => void;
+  showAiGenerate?: boolean;
+  onGenerate?: () => void | Promise<void>;
+  isGenerating?: boolean;
 }
 
 export function Args({
@@ -73,13 +76,16 @@ export function Args({
   createArgsAction,
   group_id,
   create_tool_id,
-  link_tool_id,
+  link_tool_id: _link_tool_id,
   isAutosaveEnabled = true,
   registerFlush,
   // AI diff view props
   aiArgsResources,
   onAccept,
   onReject,
+  showAiGenerate: _showAiGenerate = false,
+  onGenerate: _onGenerate,
+  isGenerating: _isGenerating = false,
 }: ArgsProps) {
   const sortedFields = useMemo(() => {
     return [...input_args_fields].sort((a, b) => a.name.localeCompare(b.name));

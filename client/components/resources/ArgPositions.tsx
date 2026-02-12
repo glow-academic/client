@@ -49,6 +49,11 @@ interface ArgPositionsProps {
   ) => Promise<CreateDraftArgPositionsOut>;
   isAutosaveEnabled?: boolean;
   registerFlush?: (flush: () => Promise<{ arg_position_ids: string[] } | void>) => void;
+  showAiGenerate?: boolean;
+  onGenerate?: () => void | Promise<void>;
+  isGenerating?: boolean;
+  onAccept?: () => void;
+  onReject?: () => void;
 }
 
 export function ArgPositions({
@@ -64,6 +69,11 @@ export function ArgPositions({
   createArgPositionsAction,
   isAutosaveEnabled = true,
   registerFlush,
+  showAiGenerate: _showAiGenerate = false,
+  onGenerate: _onGenerate,
+  isGenerating: _isGenerating = false,
+  onAccept: _onAccept,
+  onReject: _onReject,
 }: ArgPositionsProps) {
   const [orderedArgs, setOrderedArgs] = useState<string[]>(args_ids);
   const [positionIdsByArg, setPositionIdsByArg] = useState<Map<string, string>>(

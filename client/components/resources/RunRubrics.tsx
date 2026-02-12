@@ -38,6 +38,9 @@ export interface RunRubricsProps {
   selected_rubric_ids?: string[];
   onChange: (runId: string, rubricIds: string[]) => void;
   link_tool_id?: string | null; // Tool ID for AI link suggestions
+  showAiGenerate?: boolean;
+  onGenerate?: () => void | Promise<void>;
+  isGenerating?: boolean;
   // AI diff view props
   aiRubricResources?: Array<{
     id?: string | null;
@@ -59,6 +62,9 @@ export function RunRubrics({
   selected_rubric_ids,
   onChange,
   link_tool_id,
+  showAiGenerate: _showAiGenerate = false,
+  onGenerate: _onGenerate,
+  isGenerating: _isGenerating = false,
   // AI diff view props
   aiRubricResources,
   onAccept,

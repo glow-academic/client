@@ -62,6 +62,9 @@ export interface VoicesProps {
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created IDs */
   registerFlush?: (flush: () => Promise<FlushResult>) => void;
+  showAiGenerate?: boolean;
+  onGenerate?: () => void | Promise<void>;
+  isGenerating?: boolean;
   // AI diff view props
   aiVoiceResources?: Array<{ id?: string | null; voice?: string | null }> | null;
   onAccept?: () => void;
@@ -88,6 +91,9 @@ export function Voices({
   createVoicesAction,
   isAutosaveEnabled: _isAutosaveEnabled = true,
   registerFlush,
+  showAiGenerate: _showAiGenerate = false,
+  onGenerate: _onGenerate,
+  isGenerating: _isGenerating = false,
   // AI diff view props
   aiVoiceResources,
   onAccept,

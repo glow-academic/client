@@ -53,6 +53,8 @@ export interface TextsProps {
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
   showAiGenerate?: boolean;
+  onAccept?: () => void;
+  onReject?: () => void;
   searchTerm?: string;
 }
 
@@ -73,6 +75,8 @@ export function Texts({
   onGenerate,
   isGenerating = false,
   showAiGenerate = false,
+  onAccept: _onAccept,
+  onReject: _onReject,
   searchTerm,
 }: TextsProps) {
   const [isCreating, setIsCreating] = useState(false);

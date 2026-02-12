@@ -49,6 +49,11 @@ export interface ProviderKeysProps {
         key_id: string;
       }) => Promise<{ provider_keys_id?: string | null }>)
     | undefined;
+  showAiGenerate?: boolean;
+  onGenerate?: () => void | Promise<void>;
+  isGenerating?: boolean;
+  onAccept?: () => void;
+  onReject?: () => void;
 }
 
 export function ProviderKeys({
@@ -64,6 +69,11 @@ export function ProviderKeys({
   show_provider_keys = true,
   getProviderKeysAction,
   createProviderKeysAction,
+  showAiGenerate: _showAiGenerate = false,
+  onGenerate: _onGenerate,
+  isGenerating: _isGenerating = false,
+  onAccept: _onAccept,
+  onReject: _onReject,
 }: ProviderKeysProps) {
   const selectedIds = useMemo(() => provider_key_ids ?? [], [provider_key_ids]);
   const [resourcesById, setResourcesById] = useState<Map<string, ProviderKeyResource>>(

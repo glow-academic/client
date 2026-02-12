@@ -58,6 +58,9 @@ export interface RoleRoutesProps {
   description?: string;
   group_id?: string | null;
   link_tool_id?: string | null; // Tool ID for AI link suggestions
+  showAiGenerate?: boolean;
+  onGenerate?: () => void | Promise<void>;
+  isGenerating?: boolean;
   // AI diff view props
   aiRoleRouteResources?: Array<{ id?: string | null; role_id?: string | null; route_id?: string | null }> | null;
   onAccept?: () => void;
@@ -80,6 +83,9 @@ export function RoleRoutes({
   description,
   group_id,
   link_tool_id,
+  showAiGenerate: _showAiGenerate = false,
+  onGenerate: _onGenerate,
+  isGenerating: _isGenerating = false,
   // AI diff view props
   aiRoleRouteResources,
   onAccept,
