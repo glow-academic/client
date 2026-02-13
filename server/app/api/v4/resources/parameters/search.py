@@ -190,7 +190,7 @@ async def search_parameters(
             request.p_video_parameter,
             request.suggest_source,
             request.exclude_ids,
-            bypass_cache,
+            bypass_cache=bypass_cache,
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return SearchParametersApiResponse(items=items)
