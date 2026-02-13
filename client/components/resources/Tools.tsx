@@ -24,6 +24,10 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 type CreateDraftToolsIn = InputOf<"/api/v4/resources/tools", "post">;
 type CreateDraftToolsOut = OutputOf<"/api/v4/resources/tools", "post">;
 
+// Derive resource item type from the GET endpoint response
+type ToolGetResponse = OutputOf<"/api/v4/resources/tools/get", "post">;
+export type ToolResourceItem = NonNullable<ToolGetResponse["items"]>[number];
+
 export interface ToolsItem {
   id: string;
   name: string;
@@ -32,20 +36,10 @@ export interface ToolsItem {
 
 export interface ToolsProps {
   tool_ids?: string[]; // Current tools resource IDs (standardized prop name)
-  tool_resources?: Array<{
-    tool_id: string | null;
-    name: string | null;
-    description?: string | null;
-    generated?: boolean | null;
-  }>; // Selected tools resources (each includes generated field)
+  tool_resources?: ToolResourceItem[]; // Selected tools resources
   show_tools?: boolean; // Whether to show this resource picker
   tool_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  tools?: Array<{
-    tool_id: string | null;
-    name: string | null;
-    description?: string | null;
-    generated?: boolean | null;
-  }>; // All available tools from API (each includes generated field)
+  tools?: ToolResourceItem[]; // All available tools from API
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update tool_ids in form state
   label?: string;
@@ -62,10 +56,7 @@ export interface ToolsProps {
   showSelectedFilter?: boolean; // Whether to show only selected tools
   onShowSelectedChange?: (value: boolean) => void; // Callback when show selected filter changes
   // AI diff view props
-  aiToolResources?: Array<{
-    tool_id?: string | null;
-    name?: string | null;
-  }> | null;
+  aiToolResources?: Pick<ToolResourceItem, "id" | "name">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
 }
@@ -106,7 +97,7 @@ export function Tools({
     () =>
       new Set(
         aiToolResources
-          ?.map((t) => t.tool_id)
+          ?.map((t) => t.id)
           .filter(Boolean) as string[]
       ),
     [aiToolResources]
@@ -116,7 +107,7 @@ export function Tools({
   const handleAccept = useCallback(() => {
     if (!aiToolResources?.length) return;
     const newIds = aiToolResources
-      .map((t) => t.tool_id)
+      .map((t) => t.id)
       .filter((id): id is string => !!id && !ids.includes(id));
     if (newIds.length > 0) {
       onChange([...ids, ...newIds]);
@@ -159,9 +150,9 @@ export function Tools({
   // Convert tools array to ToolsItem format for SelectableGrid
   const toolsItems = useMemo(() => {
     return allTools
-      .filter((m) => m.tool_id && m.name) // Filter out nulls
+      .filter((m) => m.id && m.name) // Filter out nulls
       .map((m) => ({
-        id: m.tool_id!,
+        id: m.id!,
         name: m.name!,
         ...(m.description ? { description: m.description } : {}),
       }));

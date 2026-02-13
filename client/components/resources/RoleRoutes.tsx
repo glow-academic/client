@@ -16,25 +16,20 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+// Derive resource item type from the GET endpoint response
+type RoleRoutesGetResponse = OutputOf<"/api/v4/resources/role_routes/get", "post">;
+export type RoleRoutesResourceItem = NonNullable<RoleRoutesGetResponse["items"]>[number];
+
 export interface RoleRoutesProps {
   role_route_ids?: string[];
-  role_route_resources?: Array<{
-    id: string | null;
-    role_id: string | null;
-    route_id: string | null;
-    generated?: boolean | null;
-  }>;
+  role_route_resources?: RoleRoutesResourceItem[];
   show_role_routes?: boolean;
-  role_routes?: Array<{
-    id: string | null;
-    role_id: string | null;
-    route_id: string | null;
-    generated?: boolean | null;
-  }>;
+  role_routes?: RoleRoutesResourceItem[];
   role_ids?: string[];
   role_resources?: Array<{
     role_id: string | null;
@@ -61,7 +56,7 @@ export interface RoleRoutesProps {
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
   // AI diff view props
-  aiRoleRouteResources?: Array<{ id?: string | null; role_id?: string | null; route_id?: string | null }> | null;
+  aiRoleRouteResources?: Pick<RoleRoutesResourceItem, "id" | "role_id" | "route_id">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
 }

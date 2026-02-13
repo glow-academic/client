@@ -26,6 +26,10 @@ type FlushResult = { value_ids: string[] } | void;
 type CreateDraftValuesIn = InputOf<"/api/v4/resources/values", "post">;
 type CreateDraftValuesOut = OutputOf<"/api/v4/resources/values", "post">;
 
+// Derive resource item type from the GET endpoint response
+type ValueGetResponse = OutputOf<"/api/v4/resources/values/get", "post">;
+export type ValueResourceItem = NonNullable<ValueGetResponse["items"]>[number];
+
 export interface ValuesItem {
   id: string;
   name: string;
@@ -34,20 +38,10 @@ export interface ValuesItem {
 
 export interface ValuesProps {
   value_ids?: string[]; // Current values resource IDs (standardized prop name)
-  value_resources?: Array<{
-    value_id: string | null;
-    name: string | null;
-    description?: string | null;
-    generated?: boolean | null;
-  }>; // Selected values resources (each includes generated field)
+  value_resources?: ValueResourceItem[]; // Selected values resources
   show_values?: boolean; // Whether to show this resource picker
   value_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  values?: Array<{
-    value_id: string | null;
-    name: string | null;
-    description?: string | null;
-    generated?: boolean | null;
-  }>; // All available values from API (each includes generated field)
+  values?: ValueResourceItem[]; // All available values from API
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update value_ids in form state
   label?: string;
@@ -70,7 +64,7 @@ export interface ValuesProps {
   /** Register a flush callback with parent for manual save - returns created IDs */
   registerFlush?: (flush: () => Promise<FlushResult>) => void;
   // AI diff view props
-  aiValueResources?: Array<{ id?: string | null; name?: string | null }> | null;
+  aiValueResources?: Pick<ValueResourceItem, "id" | "value">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
 }
@@ -116,9 +110,8 @@ export function Values({
     }
     const term = searchTerm.toLowerCase();
     return allValues.filter((value) => {
-      const name = value.name?.toLowerCase() ?? "";
-      const desc = value.description?.toLowerCase() ?? "";
-      return name.includes(term) || desc.includes(term);
+      const val = value.value?.toLowerCase() ?? "";
+      return val.includes(term);
     });
   }, [allValues, searchTerm]);
 
@@ -153,11 +146,10 @@ export function Values({
   // Convert values array to ValuesItem format for GenericPicker
   const valuesItems = useMemo(() => {
     return filteredValues
-      .filter((m) => m.value_id && m.name) // Filter out nulls
+      .filter((m) => m.id && m.value) // Filter out nulls
       .map((m) => ({
-        id: m.value_id!,
-        name: m.name!,
-        ...(m.description ? { description: m.description } : {}),
+        id: m.id!,
+        name: m.value!,
       }));
   }, [filteredValues]);
 
@@ -295,7 +287,7 @@ export function Values({
                   "text-sm"
                 )}
               >
-                {item.name || ""}
+                {item.value || ""}
               </div>
             ))}
           </div>
@@ -304,7 +296,7 @@ export function Values({
       <GenericPicker<ValuesItem>
         items={valuesItems}
         itemIds={filteredValues
-          .map((m) => m.value_id)
+          .map((m) => m.id)
           .filter((id): id is string => id !== null)} // All values IDs from array, filter nulls
         selectedIds={ids}
         onSelect={handleSelect}

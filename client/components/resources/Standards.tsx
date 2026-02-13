@@ -36,24 +36,10 @@ export interface StandardItem {
 
 export interface StandardsProps {
   standard_ids?: string[]; // Current standard resource IDs (standardized prop name)
-  standard_resources?: Array<{
-    standard_id: string | null;
-    standard_group_id: string | null;
-    name: string | null;
-    description?: string | null;
-    points?: number | null;
-    generated?: boolean | null;
-  }>; // Selected standards resources (each includes generated field)
+  standard_resources?: StandardResourceItem[]; // Selected standards resources
   show_standards?: boolean; // Whether to show this resource picker
   standard_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  standards?: Array<{
-    standard_id: string | null;
-    standard_group_id: string | null;
-    name: string | null;
-    description?: string | null;
-    points?: number | null;
-    generated?: boolean | null;
-  }>; // All available standards from API (each includes generated field)
+  standards?: StandardResourceItem[]; // All available standards from API
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update standard_ids in form state
   label?: string;
@@ -66,10 +52,7 @@ export interface StandardsProps {
   isGenerating?: boolean;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   // AI diff view props
-  aiStandardResources?: Array<{
-    standard_id?: string | null;
-    name?: string | null;
-  }> | null;
+  aiStandardResources?: Pick<StandardResourceItem, "standard_id" | "name">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
 }

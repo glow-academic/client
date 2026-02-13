@@ -28,6 +28,10 @@ import { v4 as uuidv4 } from "uuid";
 type CreateDraftVideosIn = InputOf<"/api/v4/resources/videos", "post">;
 type CreateDraftVideosOut = OutputOf<"/api/v4/resources/videos", "post">;
 
+// Derive resource item type from the GET endpoint response
+type VideoGetResponse = OutputOf<"/api/v4/resources/videos/get", "post">;
+export type VideoResourceItem = NonNullable<VideoGetResponse["items"]>[number];
+
 export interface VideoItem {
   id: string;
   name: string;
@@ -38,32 +42,12 @@ export interface VideoItem {
 
 export interface VideosProps {
   video_ids?: string[]; // Current video artifact IDs (standardized prop name)
-  video_resources?: Array<{
-    id?: string | null;
-    video_id?: string | null;
-    name?: string | null;
-    length_seconds?: number | null;
-    completed?: boolean | null;
-    file_path?: string | null;
-    mime_type?: string | null;
-    upload_id?: string | null;
-    generated?: boolean | null;
-  }>; // Selected video resources (each includes generated field)
+  video_resources?: VideoResourceItem[]; // Selected video resources
   show_videos?: boolean; // Whether to show this resource picker
   create_tool_id?: string | null; // Tool ID for AI generation/creation
   videos_required?: boolean; // Whether this resource is required
   video_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  videos?: Array<{
-    id?: string | null;
-    video_id?: string | null;
-    name?: string | null;
-    length_seconds?: number | null;
-    completed?: boolean | null;
-    file_path?: string | null;
-    mime_type?: string | null;
-    upload_id?: string | null;
-    generated?: boolean | null;
-  }>; // All available videos from API (each includes generated field)
+  videos?: VideoResourceItem[]; // All available videos from API
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update video_ids in form state
   label?: string;
@@ -92,10 +76,7 @@ export interface VideosProps {
     message?: string;
   }>;
   // AI diff view props
-  aiVideoResources?: Array<{
-    video_id?: string | null;
-    name?: string | null;
-  }> | null;
+  aiVideoResources?: Pick<VideoResourceItem, "video_id" | "name">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
 }
@@ -149,8 +130,8 @@ export function Videos({
   } | null>(() => {
     // Initialize from video_resources or videos array
     if (ids.length > 0 && allVideos.length > 0) {
-      const video = allVideos.find((v) => (v.video_id ?? v.id) === ids[0]);
-      const videoId = video?.video_id ?? video?.id;
+      const video = allVideos.find((v) => v.video_id === ids[0]);
+      const videoId = video?.video_id;
       if (video && videoId && video.name && video.length_seconds !== null && video.length_seconds !== undefined) {
         return {
           id: videoId,
@@ -166,8 +147,8 @@ export function Videos({
   // Sync selectedVideo when ids change
   useEffect(() => {
     if (ids.length > 0 && allVideos.length > 0) {
-      const video = allVideos.find((v) => (v.video_id ?? v.id) === ids[0]);
-      const videoId = video?.video_id ?? video?.id;
+      const video = allVideos.find((v) => v.video_id === ids[0]);
+      const videoId = video?.video_id;
       if (video && videoId && video.name && video.length_seconds !== null && video.length_seconds !== undefined) {
         setSelectedVideo({
           id: videoId,
@@ -208,7 +189,7 @@ export function Videos({
   const videoMapping = useMemo(() => {
     const mapping: Record<string, VideoItem> = {};
     allVideos.forEach((v) => {
-      const videoId = v.video_id ?? v.id;
+      const videoId = v.video_id;
       if (videoId && v.name && v.length_seconds !== null && v.length_seconds !== undefined) {
         mapping[videoId] = {
           id: videoId,

@@ -18,9 +18,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { getPersonaIconComponent } from "@/utils/persona-icons";
 import { Check, Loader2, Power, Sparkles, X } from "lucide-react";
+
+// Derive resource item type from the GET endpoint response
+type FlagGetResponse = OutputOf<"/api/v4/resources/flags/get", "post">;
+export type FlagResourceItem = NonNullable<FlagGetResponse["items"]>[number];
 import { useCallback, useMemo } from "react";
 
 export interface FlagConfig {
@@ -46,7 +51,7 @@ interface CommonFlagsProps {
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
   // AI diff view props
-  aiFlagResources?: Array<{ id?: string | null; key?: string | null }> | null;
+  aiFlagResources?: Pick<FlagResourceItem, "id" | "name">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
 }

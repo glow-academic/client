@@ -31,6 +31,10 @@ type CreateDraftRequestLimitsOut = OutputOf<
   "post"
 >;
 
+// Derive resource item type from the GET endpoint response
+type RequestLimitsGetResponse = OutputOf<"/api/v4/resources/request_limits/get", "post">;
+export type RequestLimitsResourceItem = NonNullable<RequestLimitsGetResponse["items"]>[number];
+
 export interface RequestLimitItem {
   id: string;
   requests_per_day: number;
@@ -45,18 +49,10 @@ const UNLIMITED_REQUEST_ID = "unlimited";
 
 export interface RequestLimitsProps {
   request_limit_id?: string | null; // Current request_limit_id (standardized prop name)
-  request_limit_resource?: {
-    id: string | null;
-    requests_per_day: number | null;
-    generated?: boolean | null;
-  } | null; // Resource data from server (standardized prop name; includes generated field)
+  request_limit_resource?: RequestLimitsResourceItem | null; // Resource data from server (standardized prop name; includes generated field)
   show_request_limit?: boolean; // Whether to show this resource picker
   request_limit_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  request_limits?: Array<{
-    id: string | null;
-    requests_per_day: number | null;
-    generated?: boolean | null;
-  }>; // All available request limits from API (each includes generated field)
+  request_limits?: RequestLimitsResourceItem[]; // All available request limits from API (each includes generated field)
   disabled?: boolean; // Based on can_edit flag
   onRequestLimitIdChange: (requestLimitId: string | null) => void; // Update request_limit_id in parent form state
   onGenerate?: () => Promise<void>;
@@ -79,15 +75,11 @@ export interface RequestLimitsProps {
     requests_per_day: number;
   }) => void;
   // Legacy props for backward compatibility
-  requestLimitResource?: {
-    id: string;
-    requests_per_day: number;
-    generated?: boolean | null;
-  } | null;
+  requestLimitResource?: RequestLimitsResourceItem | null;
   requestLimitId?: string | null;
   suggestions?: string[];
   // AI diff view props
-  aiRequestLimitResources?: Array<{ id?: string | null; requests_per_day?: number | null }> | null;
+  aiRequestLimitResources?: Pick<RequestLimitsResourceItem, "id" | "requests_per_day">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
   /** When false, skip automatic resource creation (manual save mode) */

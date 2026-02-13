@@ -34,6 +34,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 type CreateDraftDocumentsIn = InputOf<"/api/v4/resources/documents", "post">;
 type CreateDraftDocumentsOut = OutputOf<"/api/v4/resources/documents", "post">;
 
+// Derive resource item type from the GET endpoint response
+type DocumentGetResponse = OutputOf<"/api/v4/resources/documents/get", "post">;
+export type DocumentResourceItem = NonNullable<DocumentGetResponse["items"]>[number];
+
 export interface DocumentItem {
   id: string;
   name: string;
@@ -43,27 +47,10 @@ export interface DocumentItem {
 
 export interface DocumentsProps {
   document_ids?: string[]; // Current document artifact IDs (standardized prop name)
-  document_resources?: Array<{
-    document_id?: string | null;
-    name?: string | null;
-    description?: string | null;
-    generated?: boolean | null;
-  }>; // Selected document resources (each includes generated field)
+  document_resources?: DocumentResourceItem[]; // Selected document resources (each includes generated field)
   show_documents?: boolean; // Whether to show this resource picker
   document_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  documents?: Array<{
-    document_id?: string | null;
-    name?: string | null;
-    description?: string | null;
-    file_path?: string | null;
-    mime_type?: string | null;
-    upload_id?: string | null;
-    parameter_ids?: string[] | null;
-    field_ids?: string[] | null;
-    parent_document_id?: string | null;
-    video_document?: boolean | null;
-    non_video_document?: boolean | null;
-  }>; // All available documents from API
+  documents?: DocumentResourceItem[]; // All available documents from API
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update document_ids in form state
   label?: string;
@@ -85,10 +72,7 @@ export interface DocumentsProps {
   /** Register a flush callback with parent for manual save - returns created IDs */
   registerFlush?: (flush: () => Promise<{ document_ids: string[] } | void>) => void;
   // AI diff view props
-  aiDocumentResources?: Array<{
-    document_id?: string | null;
-    name?: string | null;
-  }> | null;
+  aiDocumentResources?: Pick<DocumentResourceItem, "document_id" | "name">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
 }

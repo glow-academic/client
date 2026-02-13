@@ -40,26 +40,18 @@ type CreateDraftQuestionsOut = OutputOf<
   "post"
 >;
 
+// Derive resource item type from the GET endpoint response
+type QuestionsGetResponse = OutputOf<"/api/v4/resources/questions/get", "post">;
+export type QuestionsResourceItem = NonNullable<QuestionsGetResponse["items"]>[number];
+
 export interface QuestionsProps {
   question_ids?: string[]; // Current question resource IDs (standardized prop name)
-  question_resources?: Array<{
-    id?: string | null;
-    question_id?: string | null;
-    question_text?: string | null;
-    allow_multiple?: boolean | null;
-    generated?: boolean | null;
-  }>; // Selected question resources (each includes generated field)
+  question_resources?: QuestionsResourceItem[]; // Selected question resources (each includes generated field)
   show_questions?: boolean; // Whether to show this resource picker
   create_tool_id?: string | null; // Tool ID for AI generation/creation
   questions_required?: boolean; // Whether this resource is required
   question_suggestions?: string[]; // Array of suggested question IDs (UUIDs) - consistent with other suggestions
-  questions?: Array<{
-    id?: string | null;
-    question_id?: string | null;
-    question_text?: string | null;
-    allow_multiple?: boolean | null;
-    generated?: boolean | null;
-  }>; // All available questions from API (each includes generated field)
+  questions?: QuestionsResourceItem[]; // All available questions from API (each includes generated field)
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update question_ids in form state
   label?: string;
@@ -84,10 +76,7 @@ export interface QuestionsProps {
   /** Register a flush callback with parent for manual save - returns created IDs */
   registerFlush?: (flush: () => Promise<{ question_ids: string[] } | void>) => void;
   // AI diff view props
-  aiQuestionResources?: Array<{
-    question_id?: string | null;
-    question_text?: string | null;
-  }> | null;
+  aiQuestionResources?: Pick<QuestionsResourceItem, "question_id" | "question_text">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
 }

@@ -31,26 +31,16 @@ type FlushResult = { uploads_id: string | null } | void;
 type CreateDraftUploadsIn = InputOf<"/api/v4/resources/uploads", "post">;
 type CreateDraftUploadsOut = OutputOf<"/api/v4/resources/uploads", "post">;
 
+// Derive resource item type from the GET endpoint response
+type UploadGetResponse = OutputOf<"/api/v4/resources/uploads/get", "post">;
+export type UploadResourceItem = NonNullable<UploadGetResponse["items"]>[number];
+
 export interface UploadsProps {
   upload_ids?: string[]; // Current uploads_resource IDs (standardized prop name)
-  upload_resources?: Array<{
-    uploads_id: string | null;
-    upload_id: string | null;
-    file_path: string | null;
-    mime_type: string | null;
-    size: number | null;
-    generated?: boolean | null;
-  }>; // Selected upload resources (each includes generated field)
+  upload_resources?: UploadResourceItem[]; // Selected upload resources
   show_uploads?: boolean; // Whether to show this resource picker
   upload_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  uploads?: Array<{
-    uploads_id: string | null;
-    upload_id: string | null;
-    file_path: string | null;
-    mime_type: string | null;
-    size: number | null;
-    generated?: boolean | null;
-  }>; // All available uploads from API (each includes generated field)
+  uploads?: UploadResourceItem[]; // All available uploads from API
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update upload_ids in form state
   label?: string;

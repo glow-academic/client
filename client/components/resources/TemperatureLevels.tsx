@@ -33,20 +33,10 @@ export interface TemperatureLevelItem {
 
 export interface TemperatureLevelsProps {
   temperature_level_id?: string | null; // Current temperature_level_id (standardized prop name)
-  temperature_level_resource?: {
-    id: string | null;
-    temperature: string | null;
-    is_upper?: boolean | null;
-    generated?: boolean | null;
-  } | null; // Resource data from server (standardized prop name; includes generated field)
+  temperature_level_resource?: TemperatureLevelResourceItem | null; // Resource data from server
   show_temperature_levels?: boolean; // Whether to show this resource picker
   temperature_level_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  temperature_levels?: Array<{
-    id: string | null;
-    temperature: string | null;
-    is_upper?: boolean | null;
-    generated?: boolean | null;
-  }>; // Array of all available temperature level options
+  temperature_levels?: TemperatureLevelResourceItem[]; // Array of all available temperature level options
   temperature_lower?: number | null; // Lower bound for slider (optional)
   temperature_upper?: number | null; // Upper bound for slider (optional)
   disabled?: boolean; // Based on can_edit flag
@@ -70,7 +60,7 @@ export interface TemperatureLevelsProps {
   aiTemperatureLevelResources?: Array<{
     temperature_level_id?: string | null;
     name?: string | null;
-  }> | null;
+  }> | null; // AI diff - fields don't map to resource item type
   onAccept?: () => void;
   onReject?: () => void;
 }
@@ -146,7 +136,7 @@ export function TemperatureLevels({
     }
     const term = searchTerm.toLowerCase();
     return (temperature_levels ?? []).filter((tl) => {
-      const value = tl.temperature?.toLowerCase() ?? "";
+      const value = tl.temperature != null ? String(tl.temperature).toLowerCase() : "";
       return value.includes(term);
     });
   }, [temperature_levels, searchTerm]);
@@ -157,11 +147,11 @@ export function TemperatureLevels({
     if (filteredTemperatureLevels.length > 0) {
       return filteredTemperatureLevels
         .filter(
-          (tl) => tl.id && tl.temperature && tl.is_upper === false
-        ) // Filter out nulls and upper bounds
+          (tl) => tl.id && tl.temperature != null
+        ) // Filter out nulls
         .map((tl) => ({
           id: tl.id!,
-          temperature: tl.temperature!,
+          temperature: String(tl.temperature!),
           is_upper: false,
         }));
     }
@@ -172,8 +162,8 @@ export function TemperatureLevels({
   const currentTemperature = useMemo(() => {
     if (!resourceId || !temperature_levels) return null;
     const selectedLevel = temperature_levels.find((tl) => tl.id === resourceId);
-    if (selectedLevel && selectedLevel.temperature) {
-      return parseFloat(selectedLevel.temperature);
+    if (selectedLevel && selectedLevel.temperature != null) {
+      return typeof selectedLevel.temperature === "number" ? selectedLevel.temperature : parseFloat(selectedLevel.temperature);
     }
     return null;
   }, [resourceId, temperature_levels]);
@@ -184,9 +174,8 @@ export function TemperatureLevels({
       if (!temperature_levels) return null;
       const matchingLevel = temperature_levels.find(
         (l) =>
-          !l.is_upper &&
-          l.temperature &&
-          Math.abs(parseFloat(l.temperature) - temp) < 0.01
+          l.temperature != null &&
+          Math.abs((typeof l.temperature === "number" ? l.temperature : parseFloat(l.temperature)) - temp) < 0.01
       );
       return matchingLevel?.id || null;
     };
