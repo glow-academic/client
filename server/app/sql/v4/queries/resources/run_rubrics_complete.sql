@@ -43,11 +43,6 @@ BEGIN
         RAISE EXCEPTION 'Run % does not exist', api_create_run_rubrics_v4.run_id;
     END IF;
 
-    -- Validate rubric exists
-    IF NOT EXISTS (SELECT 1 FROM rubric_artifact WHERE id = api_create_run_rubrics_v4.rubric_id) THEN
-        RAISE EXCEPTION 'Rubric % does not exist', api_create_run_rubrics_v4.rubric_id;
-    END IF;
-
     -- Check if run_rubrics already exists (match on run_id + rubric_id)
     SELECT r.id INTO v_resource_id
     FROM run_rubrics_resource r

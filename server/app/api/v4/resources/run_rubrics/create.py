@@ -88,6 +88,11 @@ async def create_run_rubrics(
         return api_response
     except HTTPException:
         raise
+    except asyncpg.ForeignKeyViolationError as e:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Referenced entity does not exist: {e}",
+        ) from e
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:

@@ -38,11 +38,6 @@ DECLARE
     v_run_id uuid;
     v_call_id uuid;
 BEGIN
-    -- Validate that simulation exists
-    IF NOT EXISTS (SELECT 1 FROM simulation_artifact WHERE id = api_create_simulation_positions_v4.simulation_id) THEN
-        RAISE EXCEPTION 'Simulation % does not exist', api_create_simulation_positions_v4.simulation_id;
-    END IF;
-
     -- Check if simulation_positions already exists (match on simulation_id)
     SELECT r.id INTO v_resource_id
     FROM simulation_positions_resource r

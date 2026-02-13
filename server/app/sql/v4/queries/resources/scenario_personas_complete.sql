@@ -44,11 +44,6 @@ BEGIN
         RAISE EXCEPTION 'Scenario % does not exist', api_create_scenario_personas_v4.scenario_id;
     END IF;
 
-    -- Validate persona exists
-    IF NOT EXISTS (SELECT 1 FROM persona_artifact WHERE id = api_create_scenario_personas_v4.persona_id) THEN
-        RAISE EXCEPTION 'Persona % does not exist', api_create_scenario_personas_v4.persona_id;
-    END IF;
-
     -- Check if scenario_personas already exists (match on scenario_id + persona_id)
     SELECT r.id INTO v_resource_id
     FROM scenario_personas_resource r
