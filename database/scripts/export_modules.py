@@ -417,6 +417,62 @@ async def export_table_full(
     return len(rows)
 
 
+async def _export_nested_resource_fks(
+    conn: asyncpg.Connection,
+    artifact_type: str,
+    resource_table: str,
+    res_row: asyncpg.Record,
+    f,
+    seen_resource_ids: set[tuple[str, str]],
+) -> None:
+    """Follow resource-to-resource FKs and write dependency rows first.
+
+    E.g., provider_keys_resource.key_id → keys_resource: write keys_resource
+    before provider_keys_resource so FK constraints are satisfied.
+    """
+    for (src_table, src_col), tgt_table in FK_MAP.items():
+        if src_table != resource_table:
+            continue
+        # Only follow FKs to resource tables (not artifacts, entries, etc.)
+        if not tgt_table.endswith("_resource"):
+            continue
+        # Skip standalone resource tables
+        if tgt_table in RESOURCE_TABLES:
+            continue
+        if tgt_table in EXCLUDED_TABLES:
+            continue
+        if _is_cross_artifact_resource(tgt_table, artifact_type):
+            continue
+        # Skip self-references
+        if tgt_table == resource_table:
+            continue
+
+        nested_id = res_row[src_col]
+        if nested_id is None:
+            continue
+        nested_key = (tgt_table, str(nested_id))
+        if nested_key in seen_resource_ids:
+            continue
+        seen_resource_ids.add(nested_key)
+
+        tgt_cols = TABLE_COLUMNS.get(tgt_table)
+        tgt_pks = TABLE_PKS.get(tgt_table, [])
+        if not tgt_cols:
+            continue
+        tgt_pk = tgt_pks[0] if tgt_pks else "id"
+        tgt_col_list = ", ".join(tgt_cols)
+        tgt_row = await conn.fetchrow(
+            f"SELECT {tgt_col_list} FROM public.{tgt_table} WHERE {tgt_pk} = $1",
+            nested_id,
+        )
+        if tgt_row:
+            # Recurse: write this row's dependencies first
+            await _export_nested_resource_fks(
+                conn, artifact_type, tgt_table, tgt_row, f, seen_resource_ids
+            )
+            f.write(make_insert(tgt_table, tgt_row, tgt_cols, tgt_pks) + "\n")
+
+
 async def export_resource_rows_for_artifact(
     conn: asyncpg.Connection,
     artifact_type: str,
@@ -425,7 +481,11 @@ async def export_resource_rows_for_artifact(
     f,
     seen_resource_ids: set[tuple[str, str]] | None = None,
 ) -> None:
-    """Export resource rows reachable from junction tables for one artifact."""
+    """Export resource rows reachable from junction tables for one artifact.
+
+    Also follows resource-to-resource FKs (e.g., provider_keys_resource.key_id
+    → keys_resource) and writes dependencies before the referencing row.
+    """
     if seen_resource_ids is None:
         seen_resource_ids = set()
 
@@ -460,6 +520,10 @@ async def export_resource_rows_for_artifact(
                     rid,
                 )
                 if res_row:
+                    # Write nested resource dependencies first (FK ordering)
+                    await _export_nested_resource_fks(
+                        conn, artifact_type, resource_table, res_row, f, seen_resource_ids
+                    )
                     f.write(
                         make_insert(resource_table, res_row, res_cols, res_pk) + "\n"
                     )
