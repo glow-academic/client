@@ -31,6 +31,10 @@ type CreateDraftProblemStatementsOut = OutputOf<
   "post"
 >;
 
+// Derive resource item type from the GET endpoint response
+type ProblemStatementGetResponse = OutputOf<"/api/v4/resources/problem_statements/get", "post">;
+export type ProblemStatementResourceItem = NonNullable<ProblemStatementGetResponse["item"]>;
+
 // Word-based diff types and utilities
 type DiffSegment = { type: "same" | "removed" | "added"; text: string };
 
@@ -145,22 +149,10 @@ function DiffView({
 
 export interface ProblemStatementsProps {
   problem_statement_id?: string | null; // Current problem_statement_id (standardized prop name)
-  problem_statement_resource?: {
-    id?: string | null;
-    problem_statement_id?: string | null;
-    name?: string | null;
-    problem_statement?: string | null;
-    generated?: boolean | null;
-  } | null; // Resource data from server (standardized prop name; includes generated field)
+  problem_statement_resource?: ProblemStatementResourceItem | null; // Resource data from server (standardized prop name; includes generated field)
   show_problem_statement?: boolean; // Whether to show this resource picker
   problem_statement_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  problem_statements?: Array<{
-    id?: string | null;
-    problem_statement_id?: string | null;
-    name?: string | null;
-    problem_statement?: string | null;
-    generated?: boolean | null;
-  }>; // Array of problem statement suggestion objects (for autocomplete)
+  problem_statements?: ProblemStatementResourceItem[]; // Array of problem statement suggestion objects (for autocomplete)
   disabled?: boolean; // Based on can_edit flag
   onProblemStatementIdChange: (problemStatementId: string | null) => void; // Update problem_statement_id in parent form state
   onGenerate?: () => Promise<void>;
@@ -184,12 +176,7 @@ export interface ProblemStatementsProps {
   searchTerm?: string;
   onSearchChange?: (term: string) => void;
   // AI diff view props
-  aiResource?: {
-    problem_statement_id?: string | null;
-    name?: string | null;
-    problem_statement?: string | null;
-    generated?: boolean | null;
-  } | null;
+  aiResource?: ProblemStatementResourceItem | null;
   onAccept?: () => void;
   onReject?: () => void;
   /** When false, skip automatic resource creation (manual save mode) */

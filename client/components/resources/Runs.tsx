@@ -89,7 +89,7 @@ export function Runs({
     () =>
       new Set(
         aiRunResources
-          ?.map((r) => r.run_id)
+          ?.map((r) => r.id)
           .filter(Boolean) as string[]
       ),
     [aiRunResources]
@@ -98,9 +98,9 @@ export function Runs({
   // Convert runs array to RunItem format for grid rendering
   const runItems = useMemo(() => {
     return allRuns
-      .filter((r) => r.run_id && r.name) // Filter out nulls
+      .filter((r) => r.id && r.name) // Filter out nulls
       .map((r) => ({
-        id: r.run_id!,
+        id: r.id!,
         name: r.name!,
         ...(r.description ? { description: r.description } : {}),
       }));
@@ -133,7 +133,7 @@ export function Runs({
   const handleAccept = useCallback(() => {
     if (!aiRunResources?.length) return;
     const newIds = aiRunResources
-      .map((r) => r.run_id)
+      .map((r) => r.id)
       .filter((id): id is string => !!id && !ids.includes(id));
     if (newIds.length > 0) {
       onChange([...ids, ...newIds]);

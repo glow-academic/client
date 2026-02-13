@@ -39,12 +39,7 @@ export interface PricingProps {
   pricing_resources?: PricingResourceItem[]; // Selected pricing resources (each includes generated field)
   show_pricing?: boolean; // Whether to show this resource picker
   pricing_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  pricings?: Array<{
-    pricing_id: string | null;
-    name: string | null;
-    description?: string | null;
-    generated?: boolean | null;
-  }>; // All available pricing from API (each includes generated field)
+  pricings?: PricingResourceItem[]; // All available pricing from API (each includes generated field)
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update pricing_ids in form state
   label?: string;
@@ -63,7 +58,7 @@ export interface PricingProps {
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   isGenerating?: boolean;
   // AI diff view props
-  aiPricingResources?: Array<{ id?: string | null; name?: string | null }> | null;
+  aiPricingResources?: Pick<PricingResourceItem, "id">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
   /** When false, skip automatic resource creation (manual save mode) */

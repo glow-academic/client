@@ -35,6 +35,10 @@ type CreateDraftScenarioPersonasOut = OutputOf<
   "post"
 >;
 
+// Derive resource item type from the GET endpoint response
+type ScenarioPersonasGetResponse = OutputOf<"/api/v4/resources/scenario_personas/get", "post">;
+export type ScenarioPersonasResourceItem = NonNullable<ScenarioPersonasGetResponse["items"]>[number];
+
 export interface ScenarioPersonaItem {
   simulation_id: string;
   scenario_id: string;
@@ -48,30 +52,10 @@ export interface ScenarioPersonaItem {
 
 export interface ScenarioPersonasProps {
   scenario_persona_ids?: string[];
-  scenario_persona_resources?: Array<{
-    id?: string | null;
-    simulation_id?: string | null;
-    scenario_id?: string | null;
-    persona_id?: string | null;
-    persona_name?: string | null;
-    persona_description?: string | null;
-    persona_icon?: string | null;
-    persona_color?: string | null;
-    generated?: boolean | null;
-  }>;
+  scenario_persona_resources?: ScenarioPersonasResourceItem[];
   show_scenario_personas?: boolean;
   scenario_persona_suggestions?: string[];
-  scenario_personas?: Array<{
-    id?: string | null;
-    simulation_id?: string | null;
-    scenario_id?: string | null;
-    persona_id?: string | null;
-    persona_name?: string | null;
-    persona_description?: string | null;
-    persona_icon?: string | null;
-    persona_color?: string | null;
-    generated?: boolean | null;
-  }>;
+  scenario_personas?: ScenarioPersonasResourceItem[];
   scenarios?: Array<{
     id?: string | null;
     scenario_id?: string | null;
@@ -111,12 +95,7 @@ export interface ScenarioPersonasProps {
     flush: () => Promise<{ scenario_persona_ids: string[] } | void>
   ) => void;
   // AI diff view props
-  aiScenarioPersonaResources?: Array<{
-    id?: string | null;
-    scenario_id?: string | null;
-    persona_id?: string | null;
-    persona_name?: string | null;
-  }> | null;
+  aiScenarioPersonaResources?: Pick<ScenarioPersonasResourceItem, "id" | "scenario_id" | "persona_id">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
 }

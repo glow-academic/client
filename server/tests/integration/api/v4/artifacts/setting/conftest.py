@@ -32,6 +32,23 @@ CREATE OR REPLACE VIEW view_sessions_entry AS SELECT * FROM sessions_entry;
 REFRESH MATERIALIZED VIEW mv_session_facts;
 """
 
+# Ensure the test superadmin profile is linked to the CS department so that
+# artifact GET endpoints (which require ≥1 accessible department) work.
+_SEED_PROFILE_DEPARTMENT_SQL = """
+INSERT INTO departments_resource (id, name, description, active, created_at, generated, mcp)
+VALUES (
+    '019b3be4-3247-7cb0-bd74-9b2467b5e32d',
+    'Computer Science', 'CS Department', true, NOW(), false, false
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO profile_departments_junction (profile_id, department_id, is_primary, active, created_at, generated, mcp)
+VALUES (
+    '019b3be4-36f0-788c-9df2-481eb5917940',
+    '019b3be4-3247-7cb0-bd74-9b2467b5e32d',
+    true, true, NOW(), false, false
+) ON CONFLICT (profile_id, department_id) DO NOTHING;
+"""
+
 # All SQL files needed, in dependency order.
 # GET files define composite types -> SEARCH files reference those types.
 _SETTING_SQL_FILES = [
@@ -116,7 +133,10 @@ async def bootstrap_setting_sql() -> None:
         # Step 1: Create inline legacy views (only the ones setting queries need)
         await conn.execute(_BOOTSTRAP_VIEWS_SQL)
 
-        # Step 2: Execute SQL files in dependency order
+        # Step 2: Ensure test profile has a department (required by GET endpoints)
+        await conn.execute(_SEED_PROFILE_DEPARTMENT_SQL)
+
+        # Step 3: Execute SQL files in dependency order
         for sql_path in _SETTING_SQL_FILES:
             full_path = server_dir / sql_path
             if full_path.exists():

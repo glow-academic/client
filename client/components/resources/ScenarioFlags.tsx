@@ -30,24 +30,15 @@ type CreateDraftSimulationScenarioFlagsOut = OutputOf<
   "post"
 >;
 
+// Derive resource item type from the GET endpoint response
+type ScenarioFlagsGetResponse = OutputOf<"/api/v4/resources/scenario_flags/get", "post">;
+export type ScenarioFlagsResourceItem = NonNullable<ScenarioFlagsGetResponse["items"]>[number];
+
 export interface ScenarioFlagsProps {
   scenario_flag_ids?: string[];
-  scenario_flag_resources?: Array<{
-    id: string | null;
-    scenario_id: string | null;
-    flag_id: string | null;
-    generated?: boolean | null;
-  }>;
+  scenario_flag_resources?: ScenarioFlagsResourceItem[];
   show_scenario_flags?: boolean;
-  scenario_flags?: Array<{
-    id: string | null;
-    scenario_id: string | null;
-    flag_id: string | null;
-    name: string | null;
-    description?: string | null;
-    icon?: string | null;
-    generated?: boolean | null;
-  }>;
+  scenario_flags?: ScenarioFlagsResourceItem[];
   scenario_ids?: string[];
   scenarios?: Array<{
     id?: string | null;
@@ -96,7 +87,7 @@ export interface ScenarioFlagsProps {
   /** Register a flush callback with parent for manual save - returns created IDs */
   registerFlush?: (flush: () => Promise<{ scenario_flag_ids: string[] } | void>) => void;
   // AI diff view props
-  aiFlagResources?: Array<{ id?: string | null; key?: string | null }> | null;
+  aiFlagResources?: Pick<ScenarioFlagsResourceItem, "id">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
 }

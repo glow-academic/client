@@ -107,6 +107,9 @@ export default async function DashboardPage({
   const historyInfiniteMode = q.historyInfiniteMode ?? undefined;
   const historySortBy = q.historySortBy ?? "date";
   const historySortOrder = q.historySortOrder ?? "desc";
+  const historyProfileSearch = q.historyProfileSearch ?? undefined;
+  const historySimulationSearch = q.historySimulationSearch ?? undefined;
+  const historyScenarioSearch = q.historyScenarioSearch ?? undefined;
 
   // Fetch dashboard data server-side (without history - history will be fetched separately)
   const dashboardData = await getDashboardOverview({
@@ -145,6 +148,9 @@ export default async function DashboardPage({
         : "std",
     historySortBy,
     historySortOrder,
+    historyProfileSearch || "",
+    historySimulationSearch || "",
+    historyScenarioSearch || "",
     q._refresh || "", // Include refresh param to force re-render after archive/unarchive
     filters.startDate, // Include analytics filters to trigger re-fetch when filters change
     filters.endDate,
@@ -177,6 +183,9 @@ export default async function DashboardPage({
               profileOptions={[]}
               simulationOptions={[]}
               scenarioOptions={[]}
+              profileSearch=""
+              simulationSearch=""
+              scenarioSearch=""
               isLoading={true}
             />
           }
@@ -191,6 +200,9 @@ export default async function DashboardPage({
             historyInfiniteMode={historyInfiniteMode}
             historySortBy={historySortBy}
             historySortOrder={historySortOrder}
+            historyProfileSearch={historyProfileSearch}
+            historySimulationSearch={historySimulationSearch}
+            historyScenarioSearch={historyScenarioSearch}
             bulkArchiveAttemptsAction={bulkArchiveAttempts}
           />
         </Suspense>
@@ -219,6 +231,9 @@ async function DashboardHistorySection({
   historyInfiniteMode,
   historySortBy,
   historySortOrder,
+  historyProfileSearch,
+  historySimulationSearch,
+  historyScenarioSearch,
   bulkArchiveAttemptsAction,
 }: {
   defaultFilters: {
@@ -236,6 +251,9 @@ async function DashboardHistorySection({
   historyInfiniteMode?: boolean | undefined;
   historySortBy: string;
   historySortOrder: string;
+  historyProfileSearch?: string | undefined;
+  historySimulationSearch?: string | undefined;
+  historyScenarioSearch?: string | undefined;
   bulkArchiveAttemptsAction?: (
     input: BulkArchiveAttemptsIn
   ) => Promise<BulkArchiveAttemptsOut>;
@@ -263,6 +281,9 @@ async function DashboardHistorySection({
       ...(historyInfiniteMode !== undefined && {
         infinite_mode: historyInfiniteMode,
       }),
+      ...(historyProfileSearch && { profile_search: historyProfileSearch }),
+      ...(historySimulationSearch && { simulation_search: historySimulationSearch }),
+      ...(historyScenarioSearch && { scenario_search: historyScenarioSearch }),
       sort_by: historySortBy,
       sort_order: historySortOrder,
     },
@@ -335,6 +356,9 @@ async function DashboardHistorySection({
       profileOptions={profileOptions}
       simulationOptions={simulationOptions}
       scenarioOptions={scenarioOptions}
+      profileSearch={historyProfileSearch || ""}
+      simulationSearch={historySimulationSearch || ""}
+      scenarioSearch={historyScenarioSearch || ""}
       {...(bulkArchiveAttemptsAction && { bulkArchiveAttemptsAction })}
     />
   );

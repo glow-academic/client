@@ -54,6 +54,9 @@ export const historySearchParams = {
   historyInfiniteMode: parseAsBoolean,
   historySortBy: parseAsString,
   historySortOrder: parseAsString,
+  historyProfileSearch: parseAsString,
+  historySimulationSearch: parseAsString,
+  historyScenarioSearch: parseAsString,
 };
 
 export const loadAnalyticsSearchParams = createLoader(analyticsSearchParams);

@@ -22,11 +22,11 @@ import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { getPersonaIconComponent } from "@/utils/persona-icons";
 import { Check, Loader2, Power, Sparkles, X } from "lucide-react";
+import { useCallback, useMemo } from "react";
 
 // Derive resource item type from the GET endpoint response
 type FlagGetResponse = OutputOf<"/api/v4/resources/flags/get", "post">;
 export type FlagResourceItem = NonNullable<FlagGetResponse["items"]>[number];
-import { useCallback, useMemo } from "react";
 
 export interface FlagConfig {
   key: string; // Unique key (e.g., "active", "video_enabled")
