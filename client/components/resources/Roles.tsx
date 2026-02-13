@@ -27,23 +27,20 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { PERSONA_ICON_MAP, PERSONA_ICONS } from "@/utils/persona-icons";
 import { Check, Pencil, Plus, User, X } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 
+// Derive resource item type from the GET endpoint response
+type RolesGetResponse = OutputOf<"/api/v4/resources/roles/get", "post">;
+export type RolesResourceItem = NonNullable<RolesGetResponse["items"]>[number];
+
 export interface RolesProps {
   role?: string | null;
   role_options?: string[];
-  roles?: Array<{
-    role: string | null;
-    role_id?: string | null;
-    name: string | null;
-    description: string | null;
-    icon_value?: string | null;
-    color_hex?: string | null;
-    generated?: boolean | null;
-  }>;
+  roles?: RolesResourceItem[];
   show_roles?: boolean;
   disabled?: boolean;
   editable?: boolean;
@@ -70,10 +67,7 @@ export interface RolesProps {
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
   // AI diff view props
-  aiRoleResources?: Array<{
-    role_id?: string | null;
-    name?: string | null;
-  }> | null;
+  aiRoleResources?: Pick<RolesResourceItem, "id" | "name">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
 }
@@ -259,7 +253,7 @@ export function Roles({
     () =>
       new Set(
         aiRoleResources
-          ?.map((r) => r.role_id)
+          ?.map((r) => r.id)
           .filter(Boolean) as string[]
       ),
     [aiRoleResources]
@@ -282,13 +276,13 @@ export function Roles({
   const baseRoles = useMemo(() => {
     const roleResources =
       roles
-        ?.filter((r) => r.role || r.role_id)
+        ?.filter((r) => r.role || r.id)
         .map((r) => {
           const iconKey = r.icon_value ?? "User";
           const IconComponent = PERSONA_ICON_MAP[iconKey] ?? User;
 
           return {
-            id: (multiSelect && r.role_id ? r.role_id : r.role) as string,
+            id: (multiSelect && r.id ? r.id : r.role) as string,
             name: r.name ?? r.role ?? "Role",
             description: r.description ?? "",
             iconValue: iconKey,
@@ -407,7 +401,7 @@ export function Roles({
     if (!aiRoleResources?.length || !multiSelect || !onRolesChange) return;
     const currentIds = role_ids ?? [];
     const newIds = aiRoleResources
-      .map((r) => r.role_id)
+      .map((r) => r.id)
       .filter((id): id is string => !!id && !currentIds.includes(id));
     if (newIds.length > 0) {
       onRolesChange([...currentIds, ...newIds]);

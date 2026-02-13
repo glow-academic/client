@@ -341,7 +341,7 @@ async def get_setting_internal(
                 50,
                 0,
                 flag_ids,
-                bypass_cache,
+                bypass_cache=bypass_cache,
                 setting=True,
             )
             suggestions = [f for f in all_flags if f.name in SETTING_FLAG_NAMES]
@@ -406,7 +406,7 @@ async def get_setting_internal(
                 20,
                 0,
                 selected_provider_key_ids,
-                bypass_cache,
+                bypass_cache=bypass_cache,
                 setting=True,
             )
             return (selected, suggestions)
@@ -422,7 +422,7 @@ async def get_setting_internal(
                 20,
                 0,
                 selected_auth_item_key_ids,
-                bypass_cache,
+                bypass_cache=bypass_cache,
                 setting=True,
             )
             return (selected, suggestions)
@@ -452,7 +452,7 @@ async def get_setting_internal(
                 50,
                 0,
                 selected_role_route_ids,
-                bypass_cache,
+                bypass_cache=bypass_cache,
                 setting=True,
             )
             return (selected, suggestions)

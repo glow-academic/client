@@ -16,9 +16,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
+
+// Derive resource item type from the GET endpoint response
+type RunPositionsGetResponse = OutputOf<"/api/v4/resources/run_positions/get", "post">;
+export type RunPositionsResourceItem = NonNullable<RunPositionsGetResponse["items"]>[number];
 
 export interface RunPositionItem {
   id: string;
@@ -29,30 +34,15 @@ export interface RunPositionItem {
 
 export interface RunPositionsProps {
   run_position_ids?: string[];
-  run_position_resources?: Array<{
-    id?: string | null;
-    runs_id?: string | null;
-    eval_id?: string | null;
-    value?: number | null;
-    generated?: boolean | null;
-  }>;
+  run_position_resources?: RunPositionsResourceItem[];
   show_run_positions?: boolean;
   run_position_suggestions?: string[];
-  run_positions?: Array<{
-    id?: string | null;
-    runs_id?: string | null;
-    eval_id?: string | null;
-    value?: number | null;
-    generated?: boolean | null;
-  }>;
+  run_positions?: RunPositionsResourceItem[];
   disabled?: boolean;
   onChange: (ids: string[]) => void;
   label?: string;
   // AI diff props
-  aiRunPositionResources?: Array<{
-    id?: string | null;
-    value?: number | null;
-  }> | null;
+  aiRunPositionResources?: Pick<RunPositionsResourceItem, "id" | "value">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
   showAiGenerate?: boolean;

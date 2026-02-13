@@ -20,6 +20,10 @@ import { cn } from "@/lib/utils";
 import { Check, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
+// Derive resource item type from the GET endpoint response
+type GroupRubricGetResponse = OutputOf<"/api/v4/resources/group_rubrics/get", "post">;
+export type GroupRubricResourceItem = NonNullable<GroupRubricGetResponse["items"]>[number];
+
 export interface GroupRubricOption {
   rubric_id: string | null;
   name: string | null;
@@ -39,11 +43,7 @@ export interface GroupRubricsProps {
   selected_rubric_ids?: string[];
   onChange: (groupId: string, rubricIds: string[]) => void;
   // AI diff view props
-  aiRubricResources?: Array<{
-    id?: string | null;
-    rubric_id?: string | null;
-    name?: string | null;
-  }> | null;
+  aiRubricResources?: Pick<GroupRubricResourceItem, "id" | "rubric_id">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
   showAiGenerate?: boolean;

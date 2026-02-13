@@ -25,20 +25,16 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 type CreateDraftPointsIn = InputOf<"/api/v4/resources/points", "post">;
 type CreateDraftPointsOut = OutputOf<"/api/v4/resources/points", "post">;
 
+// Derive resource item type from the GET endpoint response
+type PointsGetResponse = OutputOf<"/api/v4/resources/points/get", "post">;
+export type PointsResourceItem = NonNullable<PointsGetResponse["items"]>[number];
+
 export interface PointsProps {
   points_id?: string | null; // Current points_id (standardized prop name)
-  points_resource?: {
-    id: string | null;
-    value: number | null;
-    generated?: boolean | null;
-  } | null; // Resource data from server (standardized prop name; includes generated field)
+  points_resource?: PointsResourceItem | null; // Resource data from server (standardized prop name; includes generated field)
   show_points?: boolean; // Whether to show this resource picker
   points_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  points?: Array<{
-    id: string | null;
-    value: number | null;
-    generated?: boolean | null;
-  }>; // Array of points option objects (for picker)
+  points?: PointsResourceItem[]; // Array of points option objects (for picker)
   disabled?: boolean; // Based on can_edit flag
   onPointsIdChange: (pointsId: string | null) => void; // Update points_id in parent form state
   onGenerate?: () => Promise<void>;
@@ -57,15 +53,11 @@ export interface PointsProps {
     | ((input: CreateDraftPointsIn) => Promise<CreateDraftPointsOut>)
     | undefined;
   // Legacy props for backward compatibility
-  pointsResource?: {
-    id: string;
-    value: number;
-    generated?: boolean | null;
-  } | null;
+  pointsResource?: PointsResourceItem | null;
   pointsId?: string | null;
   suggestions?: string[];
   // AI diff view props
-  aiPointsResources?: Array<{ id?: string | null; value?: number | null }> | null;
+  aiPointsResources?: Pick<PointsResourceItem, "id" | "value">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
   /** When false, skip automatic resource creation (manual save mode) */

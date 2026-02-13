@@ -46,6 +46,10 @@ const generateGradientFromHex = (hexColor: string): string => {
 type CreateDraftPersonasIn = InputOf<"/api/v4/resources/personas", "post">;
 type CreateDraftPersonasOut = OutputOf<"/api/v4/resources/personas", "post">;
 
+// Derive resource item type from the GET endpoint response
+type PersonaGetResponse = OutputOf<"/api/v4/resources/personas/get", "post">;
+export type PersonaResourceItem = NonNullable<PersonaGetResponse["items"]>[number];
+
 export interface PersonaItem {
   id: string;
   name: string;
@@ -56,27 +60,10 @@ export interface PersonaItem {
 
 export interface PersonasProps {
   persona_ids?: string[]; // Current persona artifact IDs (standardized prop name)
-  persona_resources?: Array<{
-    persona_id?: string | null;
-    name?: string | null;
-    description?: string | null;
-    generated?: boolean | null;
-  }>; // Selected persona resources (each includes generated field)
+  persona_resources?: PersonaResourceItem[]; // Selected persona resources (each includes generated field)
   show_personas?: boolean; // Whether to show this resource picker
   persona_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  personas?: Array<{
-    persona_id?: string | null;
-    name?: string | null;
-    description?: string | null;
-    color?: string | null;
-    icon?: string | null;
-    image_model?: boolean | null;
-    parameter_ids?: string[] | null;
-    field_ids?: string[] | null;
-    example?: string | null;
-    video_persona?: boolean | null;
-    non_video_persona?: boolean | null;
-  }>; // All available personas from API
+  personas?: PersonaResourceItem[]; // All available personas from API
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update persona_ids in form state
   label?: string;
@@ -98,10 +85,7 @@ export interface PersonasProps {
   /** Register a flush callback with parent for manual save - returns created IDs */
   registerFlush?: (flush: () => Promise<{ persona_ids: string[] } | void>) => void;
   // AI diff view props
-  aiPersonaResources?: Array<{
-    persona_id?: string | null;
-    name?: string | null;
-  }> | null;
+  aiPersonaResources?: Pick<PersonaResourceItem, "persona_id" | "name">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
 }

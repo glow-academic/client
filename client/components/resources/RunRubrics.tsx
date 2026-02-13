@@ -15,9 +15,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
+
+// Derive resource item type from the GET endpoint response
+type RunRubricsGetResponse = OutputOf<"/api/v4/resources/run_rubrics/get", "post">;
+export type RunRubricsResourceItem = NonNullable<RunRubricsGetResponse["items"]>[number];
 
 export interface RunRubricOption {
   rubric_id: string | null;
@@ -41,11 +46,7 @@ export interface RunRubricsProps {
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
   // AI diff view props
-  aiRubricResources?: Array<{
-    id?: string | null;
-    rubric_id?: string | null;
-    name?: string | null;
-  }> | null;
+  aiRubricResources?: Pick<RunRubricsResourceItem, "id" | "rubric_id">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
 }

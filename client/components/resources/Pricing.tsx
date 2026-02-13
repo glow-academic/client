@@ -24,6 +24,10 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 type CreateDraftPricingIn = InputOf<"/api/v4/resources/pricing", "post">;
 type CreateDraftPricingOut = OutputOf<"/api/v4/resources/pricing", "post">;
 
+// Derive resource item type from the GET endpoint response
+type PricingGetResponse = OutputOf<"/api/v4/resources/pricing/get", "post">;
+export type PricingResourceItem = NonNullable<PricingGetResponse["items"]>[number];
+
 export interface PricingItem {
   id: string;
   name: string;
@@ -32,12 +36,7 @@ export interface PricingItem {
 
 export interface PricingProps {
   pricing_ids?: string[]; // Current pricing resource IDs (standardized prop name)
-  pricing_resources?: Array<{
-    pricing_id: string | null;
-    name: string | null;
-    description?: string | null;
-    generated?: boolean | null;
-  }>; // Selected pricing resources (each includes generated field)
+  pricing_resources?: PricingResourceItem[]; // Selected pricing resources (each includes generated field)
   show_pricing?: boolean; // Whether to show this resource picker
   pricing_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
   pricings?: Array<{

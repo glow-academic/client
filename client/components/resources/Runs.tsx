@@ -16,9 +16,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
+
+// Derive resource item type from the GET endpoint response
+type RunsGetResponse = OutputOf<"/api/v4/resources/runs/get", "post">;
+export type RunsResourceItem = NonNullable<RunsGetResponse["items"]>[number];
 
 export interface RunItem {
   id: string;
@@ -28,20 +33,10 @@ export interface RunItem {
 
 export interface RunsProps {
   run_ids?: string[]; // Current run resource IDs (standardized prop name)
-  run_resources?: Array<{
-    run_id: string | null;
-    name: string | null;
-    description?: string | null;
-    generated?: boolean | null;
-  }>; // Selected run resources (each includes generated field)
+  run_resources?: RunsResourceItem[]; // Selected run resources (each includes generated field)
   show_runs?: boolean; // Whether to show this resource picker
   run_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  runs?: Array<{
-    run_id: string | null;
-    name: string | null;
-    description?: string | null;
-    generated?: boolean | null;
-  }>; // All available runs from API (each includes generated field)
+  runs?: RunsResourceItem[]; // All available runs from API (each includes generated field)
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update run_ids in form state
   label?: string;
@@ -54,10 +49,7 @@ export interface RunsProps {
   isGenerating?: boolean;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   // AI diff view props
-  aiRunResources?: Array<{
-    run_id?: string | null;
-    name?: string | null;
-  }> | null;
+  aiRunResources?: Pick<RunsResourceItem, "id">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
 }

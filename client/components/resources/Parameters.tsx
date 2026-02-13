@@ -24,6 +24,10 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 type CreateDraftParametersIn = InputOf<"/api/v4/resources/parameters", "post">;
 type CreateDraftParametersOut = OutputOf<"/api/v4/resources/parameters", "post">;
 
+// Derive resource item type from the GET endpoint response
+type ParameterGetResponse = OutputOf<"/api/v4/resources/parameters/get", "post">;
+export type ParameterResourceItem = NonNullable<ParameterGetResponse["items"]>[number];
+
 export interface ParametersItem {
   id: string;
   name: string;
@@ -32,25 +36,10 @@ export interface ParametersItem {
 
 export interface ParametersProps {
   parameter_ids?: string[]; // Current parameters artifact IDs (standardized prop name)
-  parameter_resources?: Array<{
-    parameter_id?: string | null;
-    name?: string | null;
-    description?: string | null;
-    generated?: boolean | null;
-    conditional?: boolean | null;
-  }>; // Selected parameters resources (each includes generated field)
+  parameter_resources?: ParameterResourceItem[]; // Selected parameters resources (each includes generated field)
   show_parameters?: boolean; // Whether to show this resource picker
   parameter_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  parameters?: Array<{
-    parameter_id?: string | null;
-    name?: string | null;
-    description?: string | null;
-    generated?: boolean | null;
-    conditional?: boolean | null;
-    video_parameter?: boolean | null;
-    non_video_parameter?: boolean | null;
-    scenario_parameter?: boolean | null;
-  }>; // All available parameters from API (each includes generated and conditional fields)
+  parameters?: ParameterResourceItem[]; // All available parameters from API (each includes generated and conditional fields)
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update parameter_ids in form state
   label?: string;
@@ -71,7 +60,7 @@ export interface ParametersProps {
   onShowSelectedChange?: (value: boolean) => void; // Callback when show selected filter changes
   videoEnabled?: boolean; // Whether video mode is enabled (for filtering)
   // AI diff view props
-  aiParameterResources?: Array<{ parameter_id?: string | null; name?: string | null }> | null;
+  aiParameterResources?: Pick<ParameterResourceItem, "parameter_id" | "name">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
   /** When false, skip automatic resource creation (manual save mode) */

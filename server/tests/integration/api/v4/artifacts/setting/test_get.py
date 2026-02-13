@@ -25,7 +25,7 @@ class TestSettingGetNew:
         )
 
         # Assert
-        assert response.status_code == 200
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text[:500]}"
         data = response.json()
         assert data["setting_exists"] is None or data["setting_exists"] is False
         assert data["can_edit"] is not None

@@ -16,9 +16,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
+
+// Derive resource item type from the GET endpoint response
+type RubricsGetResponse = OutputOf<"/api/v4/resources/rubrics/get", "post">;
+export type RubricsResourceItem = NonNullable<RubricsGetResponse["items"]>[number];
 
 export interface RubricItem {
   id: string;
@@ -28,28 +33,15 @@ export interface RubricItem {
 
 export interface RubricsProps {
   rubric_ids?: string[];
-  rubric_resources?: Array<{
-    id?: string | null;
-    name?: string | null;
-    description?: string | null;
-    generated?: boolean | null;
-  }>;
+  rubric_resources?: RubricsResourceItem[];
   show_rubrics?: boolean;
   rubric_suggestions?: string[];
-  rubrics?: Array<{
-    id?: string | null;
-    name?: string | null;
-    description?: string | null;
-    generated?: boolean | null;
-  }>;
+  rubrics?: RubricsResourceItem[];
   disabled?: boolean;
   onChange: (ids: string[]) => void;
   label?: string;
   // AI diff props
-  aiRubricResources?: Array<{
-    id?: string | null;
-    name?: string | null;
-  }> | null;
+  aiRubricResources?: Pick<RubricsResourceItem, "id" | "name">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
   showAiGenerate?: boolean;
