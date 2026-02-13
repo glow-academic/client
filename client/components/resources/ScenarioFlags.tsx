@@ -554,7 +554,7 @@ export function ScenarioFlags({
                 {scenarioOptions.map((option) => {
                   const isSelected = selectedFlags.has(option.id);
                   const IconComponent = option.icon
-                    ? getPersonaIconComponent(option.icon)
+                    ? getIconComponent(option.icon)
                     : null;
                   const isAiSuggested =
                     showDiff && aiSuggestedFlagIds.has(option.id);

@@ -287,7 +287,7 @@ export function Icons({
         getId={(item) => item.id}
         renderItem={(item, isSelected) => {
           const IconComponent =
-            PERSONA_ICON_MAP[item.value as keyof typeof PERSONA_ICON_MAP];
+            ICON_MAP[item.value as keyof typeof ICON_MAP];
           if (!IconComponent) return null;
 
           const isAiSuggested = showDiff && item.id === aiSuggestedId;

@@ -79,6 +79,10 @@ export interface CohortPerformanceProps {
   profileId?: string | undefined;
   actionableInsights?: Record<string, string | null>; // Key: cohort_id, Value: insight text
   status: "success" | "warning" | "danger" | "neutral";
+  initialSelectedSimulations?: string[];
+  onSimulationSelect?: (ids: string[]) => void;
+  simulationSearchValue?: string;
+  onSimulationSearchChange?: (term: string) => void;
 }
 
 export default function CohortPerformance({
@@ -91,6 +95,10 @@ export default function CohortPerformance({
   profileId,
   actionableInsights,
   status,
+  initialSelectedSimulations,
+  onSimulationSelect,
+  simulationSearchValue,
+  onSimulationSearchChange,
 }: CohortPerformanceProps) {
   // Create lookup map from array for backward compatibility
   const simulationMapping = useMemo(() => {
@@ -105,7 +113,9 @@ export default function CohortPerformance({
     }, {} as Record<string, { name: string; description: string; department_ids?: string[] | null; time_limit?: number | null }>);
   }, [simulations]);
 
-  const [selected, setSelected] = useState<string[]>([]);
+  const [selectedInternal, setSelectedInternal] = useState<string[]>(initialSelectedSimulations ?? []);
+  const selected = initialSelectedSimulations ?? selectedInternal;
+  const setSelected = onSimulationSelect ?? setSelectedInternal;
   const isSingleProfileMode = !!profileId;
   const [isMobile, setIsMobile] = useState(false);
 

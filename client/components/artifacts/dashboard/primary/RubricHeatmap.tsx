@@ -79,6 +79,10 @@ export interface RubricHeatmapProps {
   hasDataAvailable: boolean;
   actionableInsight?: string | null | undefined;
   status: "success" | "warning" | "danger" | "neutral";
+  initialSelectedRubrics?: string[];
+  onRubricSelect?: (ids: string[]) => void;
+  rubricSearchValue?: string;
+  onRubricSearchChange?: (term: string) => void;
 }
 
 export default function RubricHeatmap({
@@ -88,6 +92,10 @@ export default function RubricHeatmap({
   hasDataAvailable,
   actionableInsight,
   status,
+  initialSelectedRubrics,
+  onRubricSelect,
+  rubricSearchValue,
+  onRubricSearchChange,
 }: RubricHeatmapProps) {
   // Create lookup map from array for backward compatibility
   const rubricMapping = useMemo(() => {
@@ -97,7 +105,9 @@ export default function RubricHeatmap({
     }, {} as Record<string, { name: string; description: string }>);
   }, [rubrics]);
 
-  const [selectedRubrics, setSelectedRubrics] = useState<string[]>([]);
+  const [selectedRubricsInternal, setSelectedRubricsInternal] = useState<string[]>(initialSelectedRubrics ?? []);
+  const selectedRubrics = initialSelectedRubrics ?? selectedRubricsInternal;
+  const setSelectedRubrics = onRubricSelect ?? setSelectedRubricsInternal;
 
   // State to track hovered cell for highlighting
   const [hoveredCell, setHoveredCell] = useState<{

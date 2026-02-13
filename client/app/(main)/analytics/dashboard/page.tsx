@@ -1,12 +1,20 @@
 /**
  * app/(main)/analytics/dashboard/page.tsx
  * Dashboard page for the analytics section.
+ * Decomposed into 4 independent Suspense-wrapped sections for parallel streaming.
  * @AshokSaravanan222 & @siladiea
  * 06/08/2025
  */
 
 import SimulationHistory from "@/components/artifacts/attempt/history/SimulationHistory";
-import Dashboard from "@/components/artifacts/dashboard/Dashboard";
+import DashboardFooter from "@/components/artifacts/dashboard/DashboardFooter";
+import DashboardHeader from "@/components/artifacts/dashboard/DashboardHeader";
+import DashboardPrimary from "@/components/artifacts/dashboard/DashboardPrimary";
+import DashboardSecondary from "@/components/artifacts/dashboard/DashboardSecondary";
+import FooterSkeleton from "@/components/artifacts/dashboard/skeletons/FooterSkeleton";
+import HeaderSkeleton from "@/components/artifacts/dashboard/skeletons/HeaderSkeleton";
+import PrimarySkeleton from "@/components/artifacts/dashboard/skeletons/PrimarySkeleton";
+import SecondarySkeleton from "@/components/artifacts/dashboard/skeletons/SecondarySkeleton";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
@@ -19,9 +27,15 @@ import { Suspense } from "react";
 import { loadDashboardSearchParams } from "@/lib/search-params/dashboard";
 
 /** ---- Strong types from OpenAPI ---- */
-type DashboardIn = InputOf<"/api/v4/artifacts/dashboard/get", "post">;
-type DashboardOut = OutputOf<"/api/v4/artifacts/dashboard/get", "post">;
-// Using /attempt/list for history section
+type HeaderIn = InputOf<"/api/v4/artifacts/dashboard/header", "post">;
+type HeaderOut = OutputOf<"/api/v4/artifacts/dashboard/header", "post">;
+type PrimaryIn = InputOf<"/api/v4/artifacts/dashboard/primary", "post">;
+type PrimaryOut = OutputOf<"/api/v4/artifacts/dashboard/primary", "post">;
+type SecondaryIn = InputOf<"/api/v4/artifacts/dashboard/secondary", "post">;
+type SecondaryOut = OutputOf<"/api/v4/artifacts/dashboard/secondary", "post">;
+type FooterIn = InputOf<"/api/v4/artifacts/dashboard/footer", "post">;
+type FooterOut = OutputOf<"/api/v4/artifacts/dashboard/footer", "post">;
+// History section
 type DashboardHistoryIn = InputOf<"/api/v4/artifacts/attempt/list", "post">;
 type DashboardHistoryOut = OutputOf<"/api/v4/artifacts/attempt/list", "post">;
 type BulkArchiveAttemptsIn = InputOf<
@@ -33,40 +47,46 @@ type BulkArchiveAttemptsOut = OutputOf<
   "post"
 >;
 
-/** ---- Direct fetch (no Next.js cache) ----
- * Dashboard overview responses exceed Next.js 2MB cache limit (~12.9MB).
- * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
- * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
- */
-const getDashboardOverview = async (
-  input: DashboardIn
-): Promise<DashboardOut> => {
+/** ---- Section fetch functions ---- */
+const getDashboardHeader = async (input: HeaderIn): Promise<HeaderOut> => {
   const bypassCache = await isHardRefresh();
-
-  // InputOf types have body property with snake_case fields
-  return api.post("/artifacts/dashboard/get", input, {
+  return api.post("/artifacts/dashboard/header", input, {
     cache: "no-store",
-    ...(bypassCache && {
-      headers: {
-        "X-Bypass-Cache": "1",
-      },
-    }),
+    ...(bypassCache && { headers: { "X-Bypass-Cache": "1" } }),
   });
 };
 
-/** ---- Direct fetch for history data ---- */
+const getDashboardPrimary = async (input: PrimaryIn): Promise<PrimaryOut> => {
+  const bypassCache = await isHardRefresh();
+  return api.post("/artifacts/dashboard/primary", input, {
+    cache: "no-store",
+    ...(bypassCache && { headers: { "X-Bypass-Cache": "1" } }),
+  });
+};
+
+const getDashboardSecondary = async (input: SecondaryIn): Promise<SecondaryOut> => {
+  const bypassCache = await isHardRefresh();
+  return api.post("/artifacts/dashboard/secondary", input, {
+    cache: "no-store",
+    ...(bypassCache && { headers: { "X-Bypass-Cache": "1" } }),
+  });
+};
+
+const getDashboardFooter = async (input: FooterIn): Promise<FooterOut> => {
+  const bypassCache = await isHardRefresh();
+  return api.post("/artifacts/dashboard/footer", input, {
+    cache: "no-store",
+    ...(bypassCache && { headers: { "X-Bypass-Cache": "1" } }),
+  });
+};
+
 const getDashboardHistory = async (
   input: DashboardHistoryIn
 ): Promise<DashboardHistoryOut> => {
   const bypassCache = await isHardRefresh();
-
   return api.post("/artifacts/attempt/list", input, {
     cache: "no-store",
-    ...(bypassCache && {
-      headers: {
-        "X-Bypass-Cache": "1",
-      },
-    }),
+    ...(bypassCache && { headers: { "X-Bypass-Cache": "1" } }),
   });
 };
 
@@ -97,6 +117,24 @@ export default async function DashboardPage({
   const { defaults, profileContext } = await computeAnalyticsDefaults();
   const filters = resolveAnalyticsFilters(q, defaults, profileContext);
 
+  // Section picker params
+  const personaSimulationIds = q.personaSimulationIds ?? undefined;
+  const personaSimulationsSearch = q.personaSimulationsSearch ?? undefined;
+  const heatmapRubricIds = q.heatmapRubricIds ?? undefined;
+  const heatmapRubricSearch = q.heatmapRubricSearch ?? undefined;
+  const cohortSimulationIds = q.cohortSimulationIds ?? undefined;
+  const cohortSimulationsSearch = q.cohortSimulationsSearch ?? undefined;
+  const improvementSimulationIds = q.improvementSimulationIds ?? undefined;
+  const improvementSimulationsSearch = q.improvementSimulationsSearch ?? undefined;
+  const skillRubricIds = q.skillRubricIds ?? undefined;
+  const skillRubricSearch = q.skillRubricSearch ?? undefined;
+  const scenarioPerfParameterIds = q.scenarioPerfParameterIds ?? undefined;
+  const scenarioPerfParamSearch = q.scenarioPerfParamSearch ?? undefined;
+  const scenarioStatsParameterIds = q.scenarioStatsParameterIds ?? undefined;
+  const scenarioStatsParamSearch = q.scenarioStatsParamSearch ?? undefined;
+  const simPerfSimulationIds = q.simPerfSimulationIds ?? undefined;
+  const simPerfSimulationSearch = q.simPerfSimulationSearch ?? undefined;
+
   // History params with defaults
   const historyPage = q.historyPage ?? 0;
   const historyPageSize = q.historyPageSize ?? 10;
@@ -111,30 +149,39 @@ export default async function DashboardPage({
   const historySimulationSearch = q.historySimulationSearch ?? undefined;
   const historyScenarioSearch = q.historyScenarioSearch ?? undefined;
 
-  // Fetch dashboard data server-side (without history - history will be fetched separately)
-  const dashboardData = await getDashboardOverview({
-    body: {
-      start_date: filters.startDate,
-      end_date: filters.endDate,
-      cohort_ids: filters.cohortIds,
-      department_ids: filters.departmentIds,
-      roles: filters.roles,
-      simulation_filters: filters.simulationFilters,
-      page_limit: 50,
-      page_offset: 0,
-    },
-  });
-
-  // Remove history from response for server-driven pagination
-  const dashboardDataWithoutHistory = {
-    ...dashboardData,
-    history: [],
+  // Common body params for all sections
+  const commonBody = {
+    start_date: filters.startDate,
+    end_date: filters.endDate,
+    cohort_ids: filters.cohortIds,
+    department_ids: filters.departmentIds,
+    roles: filters.roles,
+    simulation_filters: filters.simulationFilters,
+    page_limit: 50,
+    page_offset: 0,
   };
 
-  // Create historyKey for Suspense boundary to trigger re-fetch on URL param changes
-  // Include _refresh param if present to force re-render after mutations (archive/unarchive)
-  // Include analytics filter params so history re-fetches when filters change
+  // Suspense keys for each section — include analytics filters + section-specific picker params
+  const filterKey = [
+    filters.startDate,
+    filters.endDate,
+    filters.cohortIds.join(","),
+    filters.departmentIds.join(","),
+    filters.roles.join(","),
+    filters.simulationFilters.join(","),
+    q._refresh || "",
+  ].join("|");
+
+  const headerKey = `header|${filterKey}`;
+
+  const primaryKey = `primary|${filterKey}|${(personaSimulationIds || []).join(",")}|${personaSimulationsSearch || ""}|${(heatmapRubricIds || []).join(",")}|${heatmapRubricSearch || ""}`;
+
+  const secondaryKey = `secondary|${filterKey}|${(cohortSimulationIds || []).join(",")}|${cohortSimulationsSearch || ""}|${(improvementSimulationIds || []).join(",")}|${improvementSimulationsSearch || ""}|${(skillRubricIds || []).join(",")}|${skillRubricSearch || ""}`;
+
+  const footerKey = `footer|${filterKey}|${(scenarioPerfParameterIds || []).join(",")}|${scenarioPerfParamSearch || ""}|${(scenarioStatsParameterIds || []).join(",")}|${scenarioStatsParamSearch || ""}|${(simPerfSimulationIds || []).join(",")}|${simPerfSimulationSearch || ""}`;
+
   const historyKey = [
+    "history",
     historyPage,
     historyPageSize,
     historySearch || "",
@@ -151,20 +198,57 @@ export default async function DashboardPage({
     historyProfileSearch || "",
     historySimulationSearch || "",
     historyScenarioSearch || "",
-    q._refresh || "", // Include refresh param to force re-render after archive/unarchive
-    filters.startDate, // Include analytics filters to trigger re-fetch when filters change
-    filters.endDate,
-    filters.cohortIds.join(","),
-    filters.departmentIds.join(","),
-    filters.roles.join(","),
-    filters.simulationFilters.join(","),
+    filterKey,
   ].join("|");
 
   return (
     <div className="space-y-6" data-page="dashboard-index">
-      <Dashboard dashboardData={dashboardDataWithoutHistory} />
+      {/* Header - full width */}
+      <Suspense key={headerKey} fallback={<HeaderSkeleton />}>
+        <DashboardHeaderSection commonBody={commonBody} />
+      </Suspense>
 
-      {/* History section moved out of Dashboard, fully server-driven */}
+      {/* Primary + Secondary in side-by-side grid */}
+      <div
+        className="grid gap-6 grid-cols-1 lg:grid-cols-[3fr_2fr] pb-2 items-stretch"
+        style={{ gridAutoRows: "1fr" }}
+      >
+        <Suspense key={primaryKey} fallback={<PrimarySkeleton />}>
+          <DashboardPrimarySection
+            commonBody={commonBody}
+            personaSimulationIds={personaSimulationIds}
+            personaSimulationsSearch={personaSimulationsSearch}
+            heatmapRubricIds={heatmapRubricIds}
+            heatmapRubricSearch={heatmapRubricSearch}
+          />
+        </Suspense>
+        <Suspense key={secondaryKey} fallback={<SecondarySkeleton />}>
+          <DashboardSecondarySection
+            commonBody={commonBody}
+            cohortSimulationIds={cohortSimulationIds}
+            cohortSimulationsSearch={cohortSimulationsSearch}
+            improvementSimulationIds={improvementSimulationIds}
+            improvementSimulationsSearch={improvementSimulationsSearch}
+            skillRubricIds={skillRubricIds}
+            skillRubricSearch={skillRubricSearch}
+          />
+        </Suspense>
+      </div>
+
+      {/* Footer - single boundary, internal 2-col grid */}
+      <Suspense key={footerKey} fallback={<FooterSkeleton />}>
+        <DashboardFooterSection
+          commonBody={commonBody}
+          scenarioPerfParameterIds={scenarioPerfParameterIds}
+          scenarioPerfParamSearch={scenarioPerfParamSearch}
+          scenarioStatsParameterIds={scenarioStatsParameterIds}
+          scenarioStatsParamSearch={scenarioStatsParamSearch}
+          simPerfSimulationIds={simPerfSimulationIds}
+          simPerfSimulationSearch={simPerfSimulationSearch}
+        />
+      </Suspense>
+
+      {/* History - unchanged */}
       <div className="">
         <Suspense
           key={historyKey}
@@ -216,8 +300,168 @@ async function bulkArchiveAttempts(
   input: BulkArchiveAttemptsIn
 ): Promise<BulkArchiveAttemptsOut> {
   "use server";
-  // Server invalidates Redis cache with "dashboard" and "history" tags
   return api.post("/attempts/simulation/archive", input);
+}
+
+/** ---- Inline async server components per section ---- */
+
+type CommonBody = {
+  start_date: string;
+  end_date: string;
+  cohort_ids: string[];
+  department_ids: string[];
+  roles: string[];
+  simulation_filters: string[];
+  page_limit: number;
+  page_offset: number;
+};
+
+async function DashboardHeaderSection({
+  commonBody,
+}: {
+  commonBody: CommonBody;
+}) {
+  const data = await getDashboardHeader({ body: commonBody });
+  return <DashboardHeader data={data} />;
+}
+
+async function DashboardPrimarySection({
+  commonBody,
+  personaSimulationIds,
+  personaSimulationsSearch,
+  heatmapRubricIds,
+  heatmapRubricSearch,
+}: {
+  commonBody: CommonBody;
+  personaSimulationIds?: string[];
+  personaSimulationsSearch?: string;
+  heatmapRubricIds?: string[];
+  heatmapRubricSearch?: string;
+}) {
+  const data = await getDashboardPrimary({
+    body: {
+      ...commonBody,
+      ...(personaSimulationIds?.length && {
+        persona_simulation_ids: personaSimulationIds,
+      }),
+      ...(personaSimulationsSearch && {
+        persona_simulations_search: personaSimulationsSearch,
+      }),
+      ...(heatmapRubricIds?.length && {
+        heatmap_rubric_ids: heatmapRubricIds,
+      }),
+      ...(heatmapRubricSearch && {
+        heatmap_rubric_search: heatmapRubricSearch,
+      }),
+    },
+  });
+  return (
+    <DashboardPrimary
+      data={data}
+      initialPersonaSimulations={personaSimulationIds}
+      initialHeatmapRubrics={heatmapRubricIds}
+    />
+  );
+}
+
+async function DashboardSecondarySection({
+  commonBody,
+  cohortSimulationIds,
+  cohortSimulationsSearch,
+  improvementSimulationIds,
+  improvementSimulationsSearch,
+  skillRubricIds,
+  skillRubricSearch,
+}: {
+  commonBody: CommonBody;
+  cohortSimulationIds?: string[];
+  cohortSimulationsSearch?: string;
+  improvementSimulationIds?: string[];
+  improvementSimulationsSearch?: string;
+  skillRubricIds?: string[];
+  skillRubricSearch?: string;
+}) {
+  const data = await getDashboardSecondary({
+    body: {
+      ...commonBody,
+      ...(cohortSimulationIds?.length && {
+        cohort_simulation_ids: cohortSimulationIds,
+      }),
+      ...(cohortSimulationsSearch && {
+        cohort_simulations_search: cohortSimulationsSearch,
+      }),
+      ...(improvementSimulationIds?.length && {
+        improvement_simulation_ids: improvementSimulationIds,
+      }),
+      ...(improvementSimulationsSearch && {
+        improvement_simulations_search: improvementSimulationsSearch,
+      }),
+      ...(skillRubricIds?.length && {
+        skill_rubric_ids: skillRubricIds,
+      }),
+      ...(skillRubricSearch && {
+        skill_rubric_search: skillRubricSearch,
+      }),
+    },
+  });
+  return (
+    <DashboardSecondary
+      data={data}
+      initialCohortSimulations={cohortSimulationIds}
+      initialImprovementSimulations={improvementSimulationIds}
+      initialSkillRubrics={skillRubricIds}
+    />
+  );
+}
+
+async function DashboardFooterSection({
+  commonBody,
+  scenarioPerfParameterIds,
+  scenarioPerfParamSearch,
+  scenarioStatsParameterIds,
+  scenarioStatsParamSearch,
+  simPerfSimulationIds,
+  simPerfSimulationSearch,
+}: {
+  commonBody: CommonBody;
+  scenarioPerfParameterIds?: string[];
+  scenarioPerfParamSearch?: string;
+  scenarioStatsParameterIds?: string[];
+  scenarioStatsParamSearch?: string;
+  simPerfSimulationIds?: string[];
+  simPerfSimulationSearch?: string;
+}) {
+  const data = await getDashboardFooter({
+    body: {
+      ...commonBody,
+      ...(scenarioPerfParameterIds?.length && {
+        scenario_perf_parameter_ids: scenarioPerfParameterIds,
+      }),
+      ...(scenarioPerfParamSearch && {
+        scenario_perf_param_search: scenarioPerfParamSearch,
+      }),
+      ...(scenarioStatsParameterIds?.length && {
+        scenario_stats_parameter_ids: scenarioStatsParameterIds,
+      }),
+      ...(scenarioStatsParamSearch && {
+        scenario_stats_param_search: scenarioStatsParamSearch,
+      }),
+      ...(simPerfSimulationIds?.length && {
+        sim_perf_simulation_ids: simPerfSimulationIds,
+      }),
+      ...(simPerfSimulationSearch && {
+        sim_perf_simulation_search: simPerfSimulationSearch,
+      }),
+    },
+  });
+  return (
+    <DashboardFooter
+      data={data}
+      initialScenarioPerfParameters={scenarioPerfParameterIds}
+      initialScenarioStatsParameters={scenarioStatsParameterIds}
+      initialSimPerfSimulations={simPerfSimulationIds}
+    />
+  );
 }
 
 /** ---- Inline history section component (only used here) ---- */
@@ -258,8 +502,6 @@ async function DashboardHistorySection({
     input: BulkArchiveAttemptsIn
   ) => Promise<BulkArchiveAttemptsOut>;
 }) {
-  // Build history filters using /attempt/list endpoint
-  // practice: false for dashboard (home mode)
   const historyFilters: DashboardHistoryIn = {
     body: {
       practice: false,
@@ -291,19 +533,12 @@ async function DashboardHistorySection({
 
   const historyData = await getDashboardHistory(historyFilters);
 
-  // Calculate archived/unarchived counts from data
   const dataArray = historyData.data || [];
   const archivedCount = dataArray.filter((item: { is_archived?: boolean | null }) => item.is_archived).length;
   const unarchivedCount = dataArray.filter((item: { is_archived?: boolean | null }) => !item.is_archived).length;
 
-  // Use server-provided data directly (no transformation needed)
-  // Extract options from API response and cast to expected format
   const profileOptions = (historyData.profile_options || []).map(
-    (opt: {
-      value?: string | null;
-      label?: string | null;
-      count?: number | null;
-    }) => {
+    (opt: { value?: string | null; label?: string | null; count?: number | null }) => {
       const count = typeof opt.count === "number" ? opt.count : undefined;
       return {
         value: String(opt.value || ""),
@@ -313,11 +548,7 @@ async function DashboardHistorySection({
     }
   );
   const simulationOptions = (historyData.simulation_options || []).map(
-    (opt: {
-      value?: string | null;
-      label?: string | null;
-      count?: number | null;
-    }) => {
+    (opt: { value?: string | null; label?: string | null; count?: number | null }) => {
       const count = typeof opt.count === "number" ? opt.count : undefined;
       return {
         value: String(opt.value || ""),
@@ -327,11 +558,7 @@ async function DashboardHistorySection({
     }
   );
   const scenarioOptions = (historyData.scenario_options || []).map(
-    (opt: {
-      value?: string | null;
-      label?: string | null;
-      count?: number | null;
-    }) => {
+    (opt: { value?: string | null; label?: string | null; count?: number | null }) => {
       const count = typeof opt.count === "number" ? opt.count : undefined;
       return {
         value: String(opt.value || ""),
@@ -370,6 +597,12 @@ export type {
   BulkArchiveAttemptsOut,
   DashboardHistoryIn,
   DashboardHistoryOut,
-  DashboardIn,
-  DashboardOut,
+  HeaderIn,
+  HeaderOut,
+  PrimaryIn,
+  PrimaryOut,
+  SecondaryIn,
+  SecondaryOut,
+  FooterIn,
+  FooterOut,
 };

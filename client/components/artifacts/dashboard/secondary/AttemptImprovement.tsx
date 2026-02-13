@@ -85,6 +85,10 @@ export interface AttemptImprovementProps {
   validSimulationIds: string[];
   actionableInsight?: string | null;
   status: "success" | "warning" | "danger" | "neutral";
+  initialSelectedSimulations?: string[];
+  onSimulationSelect?: (ids: string[]) => void;
+  simulationSearchValue?: string;
+  onSimulationSearchChange?: (term: string) => void;
 }
 
 export default function AttemptImprovement({
@@ -94,6 +98,10 @@ export default function AttemptImprovement({
   validSimulationIds,
   actionableInsight,
   status,
+  initialSelectedSimulations,
+  onSimulationSelect,
+  simulationSearchValue,
+  onSimulationSearchChange,
 }: AttemptImprovementProps) {
   // Create lookup map from array for backward compatibility
   const simulationMapping = useMemo(() => {
@@ -107,7 +115,9 @@ export default function AttemptImprovement({
     }, {} as Record<string, { name: string; description: string; department_ids: string[] | null }>);
   }, [simulations]);
 
-  const [selected, setSelected] = useState<string[]>([]);
+  const [selectedInternal, setSelectedInternal] = useState<string[]>(initialSelectedSimulations ?? []);
+  const selected = initialSelectedSimulations ?? selectedInternal;
+  const setSelected = onSimulationSelect ?? setSelectedInternal;
   const [isMobile, setIsMobile] = useState(false);
 
   // Get chart colors 1-5 from CSS variables

@@ -97,6 +97,10 @@ export interface ScenarioStatsProps {
   validNumericParameterIds: string[];
   actionableInsight?: string | null;
   status: "success" | "warning" | "danger" | "neutral";
+  initialSelectedParameters?: string[];
+  onParameterSelect?: (ids: string[]) => void;
+  parameterSearchValue?: string;
+  onParameterSearchChange?: (term: string) => void;
 }
 
 export default function ScenarioStats({
@@ -106,6 +110,10 @@ export default function ScenarioStats({
   validNumericParameterIds,
   actionableInsight,
   status,
+  initialSelectedParameters,
+  onParameterSelect,
+  parameterSearchValue,
+  onParameterSearchChange,
 }: ScenarioStatsProps) {
   // Create lookup map from array for backward compatibility
   const parameterMapping = useMemo(() => {
@@ -114,7 +122,15 @@ export default function ScenarioStats({
       return acc;
     }, {} as Record<string, { name: string; description: string }>);
   }, [parameters]);
-  const [selectedParameterId, setSelectedParameterId] = useState<string>("");
+  const [selectedParameterIdInternal, setSelectedParameterIdInternal] = useState<string>(initialSelectedParameters?.[0] ?? "");
+  const selectedParameterId = initialSelectedParameters?.[0] ?? selectedParameterIdInternal;
+  const setSelectedParameterId = (id: string) => {
+    if (onParameterSelect) {
+      onParameterSelect(id ? [id] : []);
+    } else {
+      setSelectedParameterIdInternal(id);
+    }
+  };
   const [isMobile, setIsMobile] = useState(false);
 
   // Get chart colors 1-5 from CSS variables

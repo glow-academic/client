@@ -376,7 +376,7 @@ export function Personas({
         renderItem={(item, isSelected) => {
           const suggested = isSuggested(item.id);
           const isAiSuggested = showDiff && aiSuggestedIds.has(item.id);
-          const IconComponent = getPersonaIconComponent(item.icon || "") || Brain;
+          const IconComponent = getIconComponent(item.icon || "") || Brain;
           const hexColor = item.color || "#64748b";
 
           return (

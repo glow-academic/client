@@ -165,6 +165,10 @@ export interface PersonaPerformanceProps {
     warning: number;
     success: number;
   };
+  initialSelectedSimulations?: string[];
+  onSimulationSelect?: (ids: string[]) => void;
+  simulationSearchValue?: string;
+  onSimulationSearchChange?: (term: string) => void;
 }
 
 export default function PersonaPerformance({
@@ -176,6 +180,10 @@ export default function PersonaPerformance({
   performanceStatus,
   actionableInsights,
   thresholds,
+  initialSelectedSimulations,
+  onSimulationSelect,
+  simulationSearchValue,
+  onSimulationSearchChange,
 }: PersonaPerformanceProps) {
   // Create lookup map from array for backward compatibility
   const simulationMapping = useMemo(() => {
@@ -185,7 +193,9 @@ export default function PersonaPerformance({
     }, {} as Record<string, { name: string; description: string }>);
   }, [simulations]);
 
-  const [selectedSimulations, setSelectedSimulations] = useState<string[]>([]);
+  const [selectedSimulationsInternal, setSelectedSimulationsInternal] = useState<string[]>(initialSelectedSimulations ?? []);
+  const selectedSimulations = initialSelectedSimulations ?? selectedSimulationsInternal;
+  const setSelectedSimulations = onSimulationSelect ?? setSelectedSimulationsInternal;
   const [isMobile, setIsMobile] = useState(false);
 
   // Get chart colors 1-5 from CSS variables

@@ -264,7 +264,7 @@ export function Flags(props: FlagsProps) {
         {visibleFlags.map((flag) => {
           // Resolve icon for this flag
           const IconComponent = flag.icon_id
-            ? getPersonaIconComponent(flag.icon_id)
+            ? getIconComponent(flag.icon_id)
             : null;
           const resolvedIcon = IconComponent ? (
             <IconComponent className="h-3.5 w-3.5 text-muted-foreground" />

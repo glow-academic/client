@@ -452,7 +452,7 @@ export function MessagesView({
 
                         // Get icon component
                         const IconComponent = displayIcon
-                          ? getPersonaIconComponent(displayIcon) || (isQuery ? User : MessageSquare)
+                          ? getIconComponent(displayIcon) || (isQuery ? User : MessageSquare)
                           : isQuery ? User : MessageSquare;
 
                         // Generate gradient style if color is available

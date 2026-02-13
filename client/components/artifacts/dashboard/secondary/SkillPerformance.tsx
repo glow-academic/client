@@ -90,6 +90,10 @@ export interface SkillPerformanceProps {
   validRubricIds: string[];
   actionableInsight?: string | null;
   status: "success" | "warning" | "danger" | "neutral";
+  initialSelectedRubrics?: string[];
+  onRubricSelect?: (ids: string[]) => void;
+  rubricSearchValue?: string;
+  onRubricSearchChange?: (term: string) => void;
 }
 
 export default function SkillPerformance({
@@ -98,6 +102,10 @@ export default function SkillPerformance({
   validRubricIds,
   actionableInsight,
   status,
+  initialSelectedRubrics,
+  onRubricSelect,
+  rubricSearchValue,
+  onRubricSearchChange,
 }: SkillPerformanceProps) {
   // Create lookup map from array for backward compatibility
   const rubricMapping = useMemo(() => {
@@ -107,7 +115,9 @@ export default function SkillPerformance({
     }, {} as Record<string, { name: string; description: string }>);
   }, [rubrics]);
 
-  const [selectedRubrics, setSelectedRubrics] = useState<string[]>([]);
+  const [selectedRubricsInternal, setSelectedRubricsInternal] = useState<string[]>(initialSelectedRubrics ?? []);
+  const selectedRubrics = initialSelectedRubrics ?? selectedRubricsInternal;
+  const setSelectedRubrics = onRubricSelect ?? setSelectedRubricsInternal;
   const [isMobile, setIsMobile] = useState(false);
 
   // Get chart colors 1-5 from CSS variables

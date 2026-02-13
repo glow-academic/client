@@ -677,7 +677,7 @@ export default function Staff({
         ?.filter((role) => role?.role)
         .map((role) => {
           const iconKey = role.icon_value ?? "";
-          const IconComponent = PERSONA_ICON_MAP[iconKey] ?? UserIcon;
+          const IconComponent = ICON_MAP[iconKey] ?? UserIcon;
           return {
             id: role.role ?? "",
             name: role.name ?? role.role ?? "Role",

@@ -81,7 +81,7 @@ export function EmulateProfileModal({
     roleResources.forEach((resource) => {
       if (!resource?.role) return;
       const iconKey = resource.icon_value ?? "";
-      const IconComponent = PERSONA_ICON_MAP[iconKey] ?? User;
+      const IconComponent = ICON_MAP[iconKey] ?? User;
       map.set(resource.role, {
         name: resource.name ?? resource.role ?? "Role",
         description: resource.description ?? "",

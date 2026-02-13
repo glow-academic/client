@@ -164,7 +164,7 @@ export default function SimulationCard({
 
   // Get persona configuration and icon based on persona data
   const IconComponent =
-    type === "default" ? (icon ? getPersonaIconComponent(icon) : User) : Users;
+    type === "default" ? (icon ? getIconComponent(icon) : User) : Users;
 
   // Determine gradient class based on completion status and persona color
   const getGradientClass = () => {

@@ -662,7 +662,7 @@ export default function Personas({
 
   const renderPersonaCard = (persona: (typeof personas)[0]) => {
     // Get the icon component from the persona's stored icon name
-    const IconComponent = getPersonaIconComponent(persona.icon || "") || Brain;
+    const IconComponent = getIconComponent(persona.icon || "") || Brain;
 
     // Use the hex color directly with CSS custom properties
     const hexColor = persona.color || "#64748b"; // Default to slate if no color

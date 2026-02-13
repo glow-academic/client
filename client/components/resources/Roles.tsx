@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/tooltip";
 import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
-import { PERSONA_ICON_MAP, PERSONA_ICONS } from "@/utils/persona-icons";
+import { ICON_MAP, ICON_NAMES } from "@/utils/icons";
 import { Check, Pencil, Plus, User, X } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 
@@ -96,7 +96,7 @@ type IconOption = {
 const formatIconLabel = (iconName: string) =>
   iconName.replace(/([A-Z])/g, " $1").trim();
 
-const ICON_OPTIONS: IconOption[] = PERSONA_ICONS.map((iconName) => ({
+const ICON_OPTIONS: IconOption[] = ICON_NAMES.map((iconName) => ({
   id: iconName,
   label: formatIconLabel(iconName),
 }));
@@ -108,7 +108,7 @@ const normalizeHex = (value: string) => {
 };
 
 const getIconKeyFromComponent = (icon: RoleItem["icon"]) => {
-  const entry = Object.entries(PERSONA_ICON_MAP).find(
+  const entry = Object.entries(ICON_MAP).find(
     ([, IconComponent]) => IconComponent === icon
   );
   return entry?.[0] ?? "User";
@@ -164,7 +164,7 @@ function RoleEditor({
             getLabel={(item) => item.label}
             renderItem={(item) => {
               const IconComponent =
-                PERSONA_ICON_MAP[item.id] ?? PERSONA_ICON_MAP.User;
+                ICON_MAP[item.id] ?? ICON_MAP.User;
               return (
                 <div className="flex items-center gap-2">
                   <IconComponent className="h-4 w-4 text-muted-foreground" />
@@ -279,7 +279,7 @@ export function Roles({
         ?.filter((r) => r.role || r.id)
         .map((r) => {
           const iconKey = r.icon_value ?? "User";
-          const IconComponent = PERSONA_ICON_MAP[iconKey] ?? User;
+          const IconComponent = ICON_MAP[iconKey] ?? User;
 
           return {
             id: (multiSelect && r.id ? r.id : r.role) as string,
@@ -325,7 +325,7 @@ export function Roles({
       const override = roleOverrides[item.id];
       if (!override) return item;
       const iconKey = override.iconValue || item.iconValue;
-      const IconComponent = PERSONA_ICON_MAP[iconKey] ?? User;
+      const IconComponent = ICON_MAP[iconKey] ?? User;
       return {
         ...item,
         name: override.name || item.name,
@@ -668,7 +668,7 @@ export function Roles({
                         description: normalized.description,
                         iconValue: normalized.iconValue,
                         icon:
-                          PERSONA_ICON_MAP[normalized.iconValue] ?? User,
+                          ICON_MAP[normalized.iconValue] ?? User,
                         color: normalized.color,
                       },
                     ]);

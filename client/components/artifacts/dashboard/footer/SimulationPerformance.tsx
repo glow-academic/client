@@ -151,6 +151,10 @@ export interface SimulationPerformanceProps {
   simulations: Array<{ simulation_id: string; name: string; description: string }>;
   actionableInsight?: string | null;
   status: "success" | "warning" | "danger" | "neutral";
+  initialSelectedSimulations?: string[];
+  onSimulationSelect?: (ids: string[]) => void;
+  simulationSearchValue?: string;
+  onSimulationSearchChange?: (term: string) => void;
 }
 
 export default function SimulationPerformance({
@@ -159,6 +163,10 @@ export default function SimulationPerformance({
   simulations,
   actionableInsight,
   status,
+  initialSelectedSimulations,
+  onSimulationSelect,
+  simulationSearchValue,
+  onSimulationSearchChange,
 }: SimulationPerformanceProps) {
   // Create lookup map from array for backward compatibility
   const simulationMapping = useMemo(() => {
@@ -168,7 +176,15 @@ export default function SimulationPerformance({
     }, {} as Record<string, { name: string; description: string }>);
   }, [simulations]);
 
-  const [selectedSimulationId, setSelectedSimulationId] = useState<string>("");
+  const [selectedSimulationIdInternal, setSelectedSimulationIdInternal] = useState<string>(initialSelectedSimulations?.[0] ?? "");
+  const selectedSimulationId = initialSelectedSimulations?.[0] ?? selectedSimulationIdInternal;
+  const setSelectedSimulationId = (id: string) => {
+    if (onSimulationSelect) {
+      onSimulationSelect(id ? [id] : []);
+    } else {
+      setSelectedSimulationIdInternal(id);
+    }
+  };
   const [isMobile, setIsMobile] = useState(false);
 
   // Get chart colors 1-5 from CSS variables
