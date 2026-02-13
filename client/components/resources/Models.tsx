@@ -17,33 +17,20 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import type { OutputOf } from "@/lib/api/types";
 import { Check, X } from "lucide-react";
 import { useCallback, useEffect, useMemo } from "react";
 
+// Derive resource item type from the GET endpoint response
+type ModelsGetResponse = OutputOf<"/api/v4/resources/models/get", "post">;
+export type ModelResourceItem = NonNullable<ModelsGetResponse["items"]>[number];
+
 export interface ModelsProps {
   model_id?: string | null; // Current model_id (standardized prop name)
-  model_resource?: {
-    id: string | null;
-    name: string | null;
-    description: string | null;
-    active?: boolean | null;
-    generated?: boolean | null;
-  } | null; // Resource data from server (standardized prop name; includes generated field)
+  model_resource?: ModelResourceItem | null; // Resource data from server (standardized prop name; includes generated field)
   show_models?: boolean; // Whether to show this resource picker
   model_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  models?: Array<{
-    model_id: string | null;
-    name: string | null;
-    description: string | null;
-    active?: boolean | null;
-    temperature_lower?: number | null;
-    temperature_upper?: number | null;
-    input_modalities?: string[] | null;
-    output_modalities?: string[] | null;
-    temperature_levels?: unknown;
-    reasoning_options?: unknown;
-    available_voices?: unknown;
-  }>; // Array of all available model options
+  models?: ModelResourceItem[]; // Array of all available model options
   disabled?: boolean; // Based on can_edit flag
   onModelIdChange: (modelId: string | null) => void; // Update model_id in parent form state
   label?: string;
@@ -65,10 +52,7 @@ export interface ModelsProps {
   modelId?: string | null;
   suggestions?: string[];
   // AI diff view props
-  aiModelResources?: Array<{
-    model_id?: string | null;
-    name?: string | null;
-  }> | null;
+  aiModelResources?: Array<Pick<ModelResourceItem, "id" | "name">> | null;
   onAccept?: () => void;
   onReject?: () => void;
   showAiGenerate?: boolean;
@@ -118,7 +102,7 @@ export function Models({
     () =>
       new Set(
         aiModelResources
-          ?.map((m) => m.model_id)
+          ?.map((m) => m.id)
           .filter(Boolean) as string[]
       ),
     [aiModelResources]
@@ -144,13 +128,12 @@ export function Models({
       return [];
     }
     return models
-      .filter((m) => m.model_id && m.name) // Filter out nulls
+      .filter((m) => m.id && m.name) // Filter out nulls
       .map((m) => ({
-        id: m.model_id!,
+        id: m.id!,
         name: m.name!,
         description: m.description || null,
-        input_modalities: m.input_modalities || null,
-        output_modalities: m.output_modalities || null,
+        modality_ids: m.modality_ids || null,
       }));
   }, [models]);
 
@@ -197,7 +180,7 @@ export function Models({
   // Accept AI suggestion - set the AI-suggested model
   const handleAccept = useCallback(() => {
     if (!aiModelResources?.length) return;
-    const suggestedId = aiModelResources[0]?.model_id;
+    const suggestedId = aiModelResources[0]?.id;
     if (suggestedId && suggestedId !== resourceId) {
       onModelIdChange(suggestedId);
     }
@@ -309,16 +292,9 @@ export function Models({
                       {model.description}
                     </p>
                   )}
-                  {(model.input_modalities || model.output_modalities) && (
-                    <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
-                      {model.input_modalities &&
-                        model.input_modalities.length > 0 && (
-                          <div>Input: {model.input_modalities.join(", ")}</div>
-                        )}
-                      {model.output_modalities &&
-                        model.output_modalities.length > 0 && (
-                          <div>Output: {model.output_modalities.join(", ")}</div>
-                        )}
+                  {model.modality_ids && model.modality_ids.length > 0 && (
+                    <div className="text-xs text-muted-foreground mt-1">
+                      Modalities: {model.modality_ids.join(", ")}
                     </div>
                   )}
                 </div>

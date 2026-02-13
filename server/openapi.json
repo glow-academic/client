@@ -60218,6 +60218,17 @@
             ],
             "title": "Scenario Perf Parameter Ids"
           },
+          "scenario_perf_param_search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Perf Param Search"
+          },
           "scenario_stats_parameter_ids": {
             "anyOf": [
               {
@@ -60233,6 +60244,17 @@
             ],
             "title": "Scenario Stats Parameter Ids"
           },
+          "scenario_stats_param_search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Stats Param Search"
+          },
           "sim_perf_simulation_ids": {
             "anyOf": [
               {
@@ -60247,6 +60269,17 @@
               }
             ],
             "title": "Sim Perf Simulation Ids"
+          },
+          "sim_perf_simulation_search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sim Perf Simulation Search"
           }
         },
         "type": "object",
@@ -60966,6 +60999,17 @@
             ],
             "title": "Persona Simulation Ids"
           },
+          "persona_simulations_search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Simulations Search"
+          },
           "heatmap_rubric_ids": {
             "anyOf": [
               {
@@ -60980,6 +61024,17 @@
               }
             ],
             "title": "Heatmap Rubric Ids"
+          },
+          "heatmap_rubric_search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Heatmap Rubric Search"
           }
         },
         "type": "object",
@@ -61357,6 +61412,17 @@
             ],
             "title": "Cohort Simulation Ids"
           },
+          "cohort_simulations_search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Simulations Search"
+          },
           "improvement_simulation_ids": {
             "anyOf": [
               {
@@ -61372,6 +61438,17 @@
             ],
             "title": "Improvement Simulation Ids"
           },
+          "improvement_simulations_search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Improvement Simulations Search"
+          },
           "skill_rubric_ids": {
             "anyOf": [
               {
@@ -61386,6 +61463,17 @@
               }
             ],
             "title": "Skill Rubric Ids"
+          },
+          "skill_rubric_search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Skill Rubric Search"
           }
         },
         "type": "object",

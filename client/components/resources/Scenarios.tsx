@@ -24,6 +24,10 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 type CreateDraftScenariosIn = InputOf<"/api/v4/resources/scenarios", "post">;
 type CreateDraftScenariosOut = OutputOf<"/api/v4/resources/scenarios", "post">;
 
+// Derive resource item type from the GET endpoint response
+type ScenariosGetResponse = OutputOf<"/api/v4/resources/scenarios/get", "post">;
+export type ScenarioResourceItem = NonNullable<ScenariosGetResponse["items"]>[number];
+
 export interface ScenarioItem {
   id: string;
   name: string;
@@ -32,24 +36,10 @@ export interface ScenarioItem {
 
 export interface ScenariosProps {
   scenario_ids?: string[]; // Current scenario resource IDs (standardized prop name)
-  scenario_resources?: Array<{
-    id?: string | null;
-    scenario_id?: string | null;
-    name?: string | null;
-    title?: string | null; // API returns title, map to name
-    description?: string | null;
-    generated?: boolean | null;
-  }>; // Selected scenario resources (each includes generated field)
+  scenario_resources?: ScenarioResourceItem[]; // Selected scenario resources (each includes generated field)
   show_scenarios?: boolean; // Whether to show this resource picker
   scenario_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  scenarios?: Array<{
-    id?: string | null;
-    scenario_id?: string | null;
-    name?: string | null;
-    title?: string | null; // API returns title, map to name
-    description?: string | null;
-    generated?: boolean | null;
-  }>; // All available scenarios from API (each includes generated field)
+  scenarios?: ScenarioResourceItem[]; // All available scenarios from API (each includes generated field)
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update scenario_ids in form state
   label?: string;
@@ -64,11 +54,7 @@ export interface ScenariosProps {
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   showSelectedOnly?: boolean;
   // AI diff view props
-  aiScenarioResources?: Array<{
-    scenario_id?: string | null;
-    name?: string | null;
-    title?: string | null;
-  }> | null;
+  aiScenarioResources?: Array<Pick<ScenarioResourceItem, "scenario_id" | "name">> | null;
   onAccept?: () => void;
   onReject?: () => void;
 }
@@ -126,18 +112,13 @@ export function Scenarios({
   }, [ids]);
 
   // Convert scenarios array to ScenarioItem format for GenericPicker
-  // Handle both naming conventions: API returns scenario_id/title, but we also support id/name
   const scenarioItems = useMemo(() => {
     return allScenarios
-      .filter((s) => {
-        const id = s.scenario_id || s.id;
-        const name = s.title || s.name;
-        return id && name;
-      })
+      .filter((s) => s.scenario_id && s.name)
       .map((s) => ({
-        id: (s.scenario_id || s.id)!,
-        name: (s.title || s.name)!,
-        ...(s.description ? { description: s.description } : {}), // Only include if not null/undefined
+        id: s.scenario_id!,
+        name: s.name!,
+        ...(s.description ? { description: s.description } : {}),
       }));
   }, [allScenarios]);
 

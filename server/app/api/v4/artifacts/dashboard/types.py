@@ -517,23 +517,31 @@ class DashboardPrimaryRequest(DashboardSectionRequest):
     """Request for primary section."""
 
     persona_simulation_ids: list[UUID] | None = None
+    persona_simulations_search: str | None = None
     heatmap_rubric_ids: list[UUID] | None = None
+    heatmap_rubric_search: str | None = None
 
 
 class DashboardSecondaryRequest(DashboardSectionRequest):
     """Request for secondary section."""
 
     cohort_simulation_ids: list[UUID] | None = None
+    cohort_simulations_search: str | None = None
     improvement_simulation_ids: list[UUID] | None = None
+    improvement_simulations_search: str | None = None
     skill_rubric_ids: list[UUID] | None = None
+    skill_rubric_search: str | None = None
 
 
 class DashboardFooterRequest(DashboardSectionRequest):
     """Request for footer section."""
 
     scenario_perf_parameter_ids: list[UUID] | None = None
+    scenario_perf_param_search: str | None = None
     scenario_stats_parameter_ids: list[UUID] | None = None
+    scenario_stats_param_search: str | None = None
     sim_perf_simulation_ids: list[UUID] | None = None
+    sim_perf_simulation_search: str | None = None
 
 
 # ============================================================================

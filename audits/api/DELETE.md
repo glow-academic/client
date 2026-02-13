@@ -40,18 +40,25 @@ Delete endpoints must perform a two-phase permission check:
 2. **Python phase**: Call `compute_can_delete(user_role, artifact_department_ids, total_usage_links)` with the SQL results + user context
 
 ```python
+from app.api.v4.auth.profile import get_auth_profile_internal
+
+# User context via cached auth profile internal
+profile_ctx = await get_auth_profile_internal(conn, profile_id, bypass_cache=False)
+
 # Phase 1: SQL access check
 access = await execute_sql_typed(conn, SQL_PATH_ACCESS, params=access_params)
 
 # Phase 2: Python permission check
 can_delete = compute_can_delete(
-    user_role=profile_context.user_role,
+    user_role=profile_ctx.access.role,
     artifact_department_ids=access.department_ids,
     total_usage_links=access.total_scenario_links,
 )
 if not can_delete:
     raise HTTPException(status_code=403, detail="Cannot delete")
 ```
+
+User context must come from `get_auth_profile_internal()`, not the monolithic `get_profile_context_internal()`. See GET.md Rule 2 for the full profile/settings split pattern.
 
 Reference: `server/app/api/v4/artifacts/persona/delete.py`, `permissions.py`
 

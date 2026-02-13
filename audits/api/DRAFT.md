@@ -145,7 +145,18 @@ def compute_can_draft(user_role: str) -> bool:
     return user_role in ("admin", "instructional", "superadmin")
 ```
 
-Reference: `server/app/api/v4/artifacts/persona/permissions.py`
+User role must come from `get_auth_profile_internal()`, not the monolithic `get_profile_context_internal()`:
+
+```python
+from app.api.v4.auth.profile import get_auth_profile_internal
+
+profile_ctx = await get_auth_profile_internal(conn, profile_id, bypass_cache=False)
+user_role = profile_ctx.access.role
+```
+
+See GET.md Rule 2 for the full profile/settings split pattern.
+
+Reference: `server/app/api/v4/artifacts/persona/permissions.py`, `draft.py`
 
 ### Rule 10: Lighter access check SQL
 

@@ -35,6 +35,10 @@ const Monaco = dynamic(() => import("@monaco-editor/react"), {
 type CreateDraftPromptsIn = InputOf<"/api/v4/resources/prompts", "post">;
 type CreateDraftPromptsOut = OutputOf<"/api/v4/resources/prompts", "post">;
 
+// Derive resource item type from the GET endpoint response
+type PromptsGetResponse = OutputOf<"/api/v4/resources/prompts/get", "post">;
+export type PromptResourceItem = NonNullable<PromptsGetResponse["items"]>[number];
+
 // Word-based diff types and utilities
 type DiffSegment = { type: "same" | "removed" | "added"; text: string };
 
@@ -133,26 +137,10 @@ function DiffView({ current, proposed }: { current: string; proposed: string }) 
 
 export interface PromptsProps {
   prompt_id?: string | null; // Current prompt_id (standardized prop name)
-  prompt_resource?: {
-    id: string | null;
-    system_prompt: string | null;
-    name: string | null;
-    description: string | null;
-    generated?: boolean | null;
-  } | null; // Resource data from server (standardized prop name; includes generated field)
+  prompt_resource?: PromptResourceItem | null; // Resource data from server (standardized prop name; includes generated field)
   show_prompts?: boolean; // Whether to show this resource picker
   prompt_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  prompts?: Array<{
-    prompt_id: string | null;
-    system_prompt: string | null;
-    name: string | null;
-    description: string | null;
-    created_at?: string | null;
-    updated_at?: string | null;
-    department_ids?: string[] | null;
-    can_delete?: boolean | null;
-    generated?: boolean | null;
-  }>; // Array of all available prompt options
+  prompts?: PromptResourceItem[]; // Array of all available prompt options
   disabled?: boolean; // Based on can_edit flag
   onPromptIdChange: (promptId: string | null) => void; // Update prompt_id in parent form state
   label?: string;
@@ -346,7 +334,7 @@ export function Prompts({
       lastSavedContentRef.current = resource.system_prompt || "";
     } else if (resourceId && prompts) {
       // Find prompt by ID and load its content
-      const selectedPrompt = prompts.find((p) => p.prompt_id === resourceId);
+      const selectedPrompt = prompts.find((p) => p.id === resourceId);
       if (selectedPrompt?.system_prompt !== undefined) {
         setPromptContent(selectedPrompt.system_prompt || "");
         lastSavedContentRef.current = selectedPrompt.system_prompt || "";
@@ -402,7 +390,7 @@ export function Prompts({
   const handlePromptSelect = (selectedPromptId: string | null) => {
     if (selectedPromptId && prompts) {
       const selectedPrompt = prompts.find(
-        (p) => p.prompt_id === selectedPromptId
+        (p) => p.id === selectedPromptId
       );
       if (selectedPrompt?.system_prompt !== undefined) {
         setPromptContent(selectedPrompt.system_prompt || "");
@@ -594,7 +582,7 @@ export function Prompts({
             selectedIds={resourceId ? [resourceId] : []}
             onSelect={(ids) => handlePromptSelect(ids[0] || null)}
             multiSelect={false}
-            getId={(item) => item.prompt_id || ""}
+            getId={(item) => item.id || ""}
             getLabel={(item) =>
               item.name || item.system_prompt || "Unknown Prompt"
             }
@@ -614,11 +602,6 @@ export function Prompts({
                 {item.system_prompt && (
                   <div className="text-xs text-muted-foreground max-w-md line-clamp-3">
                     {item.system_prompt}
-                  </div>
-                )}
-                {item.department_ids && item.department_ids.length > 0 && (
-                  <div className="text-xs text-muted-foreground">
-                    Departments: {item.department_ids.length}
                   </div>
                 )}
               </div>

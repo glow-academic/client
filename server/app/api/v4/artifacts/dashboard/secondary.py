@@ -84,10 +84,57 @@ async def get_dashboard_secondary(
             thresholds=thresholds.as_dict(),
         )
 
+        # Apply picker filters (valid_*_ids stay intact for picker options)
+        if request.cohort_simulation_ids:
+            filter_set = {str(sid) for sid in request.cohort_simulation_ids}
+            secondary_metrics.cohort_performance.cohort_facts = [
+                f
+                for f in secondary_metrics.cohort_performance.cohort_facts
+                if f.simulation_id in filter_set
+            ]
+            secondary_metrics.cohort_performance.daily_facts = [
+                f
+                for f in secondary_metrics.cohort_performance.daily_facts
+                if f.simulation_id in filter_set
+            ]
+        if request.improvement_simulation_ids:
+            filter_set = {str(sid) for sid in request.improvement_simulation_ids}
+            secondary_metrics.attempt_improvement.facts = [
+                f
+                for f in secondary_metrics.attempt_improvement.facts
+                if f.simulation_id in filter_set
+            ]
+        if request.skill_rubric_ids:
+            filter_set = {str(rid) for rid in request.skill_rubric_ids}
+            secondary_metrics.skill_performance.packages = [
+                p
+                for p in secondary_metrics.skill_performance.packages
+                if p.rubric_id in filter_set
+            ]
+
+        simulations_meta = build_simulation_meta(resources.simulations)
+        rubrics_meta = build_rubric_meta(resources.rubrics)
+
+        # Apply search filters to metadata lists
+        if request.cohort_simulations_search or request.improvement_simulations_search:
+            q = (
+                request.cohort_simulations_search
+                or request.improvement_simulations_search
+                or ""
+            ).lower()
+            simulations_meta = [
+                s for s in simulations_meta if q in (s.get("name") or "").lower()
+            ]
+        if request.skill_rubric_search:
+            q = request.skill_rubric_search.lower()
+            rubrics_meta = [
+                r for r in rubrics_meta if q in (r.get("name") or "").lower()
+            ]
+
         result = DashboardSecondaryResponse(
             secondary_metrics=secondary_metrics,
-            simulations=build_simulation_meta(resources.simulations),
-            rubrics=build_rubric_meta(resources.rubrics),
+            simulations=simulations_meta,
+            rubrics=rubrics_meta,
             thresholds=thresholds.as_dict(),
         )
 

@@ -30,7 +30,19 @@ def compute_can_duplicate(user_role: str) -> bool:
     return user_role in ("admin", "instructional", "superadmin")
 ```
 
-Reference: `server/app/api/v4/artifacts/persona/permissions.py`
+User role must come from `get_auth_profile_internal()`, not the monolithic `get_profile_context_internal()`:
+
+```python
+from app.api.v4.auth.profile import get_auth_profile_internal
+
+profile_ctx = await get_auth_profile_internal(conn, profile_id, bypass_cache=False)
+user_role = profile_ctx.access.role
+actor_name = profile_ctx.access.actor_name
+```
+
+See GET.md Rule 2 for the full profile/settings split pattern.
+
+Reference: `server/app/api/v4/artifacts/persona/permissions.py`, `duplicate.py`
 
 ### Rule 2: Light access check SQL
 

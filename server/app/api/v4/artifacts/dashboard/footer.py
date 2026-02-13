@@ -88,15 +88,68 @@ async def get_dashboard_footer(
             thresholds=thresholds.as_dict(),
         )
 
+        # Apply picker filters (valid_*_ids stay intact for picker options)
+        if request.scenario_perf_parameter_ids:
+            filter_set = {str(pid) for pid in request.scenario_perf_parameter_ids}
+            footer_metrics.scenario_performance.attribute_attempt_facts = [
+                f
+                for f in footer_metrics.scenario_performance.attribute_attempt_facts
+                if f.parameter_id in filter_set
+            ]
+            footer_metrics.scenario_performance.attribute_scenario_facts = [
+                f
+                for f in footer_metrics.scenario_performance.attribute_scenario_facts
+                if f.parameter_id in filter_set
+            ]
+        if request.scenario_stats_parameter_ids:
+            filter_set = {str(pid) for pid in request.scenario_stats_parameter_ids}
+            footer_metrics.scenario_stats.numeric_attempt_facts = [
+                f
+                for f in footer_metrics.scenario_stats.numeric_attempt_facts
+                if f.parameter_id in filter_set
+            ]
+            footer_metrics.scenario_stats.numeric_scenario_facts = [
+                f
+                for f in footer_metrics.scenario_stats.numeric_scenario_facts
+                if f.parameter_id in filter_set
+            ]
+        if request.sim_perf_simulation_ids:
+            filter_set = {str(sid) for sid in request.sim_perf_simulation_ids}
+            footer_metrics.simulation_performance.scenario_facts = [
+                f
+                for f in footer_metrics.simulation_performance.scenario_facts
+                if f.simulation_id in filter_set
+            ]
+
+        simulations_meta = build_simulation_meta(resources.simulations)
+        parameters_meta = build_parameter_meta(resources.parameters)
+        fields_meta = build_field_meta(
+            resources.fields,
+            resources.field_parameter_map,
+            resources.parameters,
+        )
+
+        # Apply search filters to metadata lists
+        if request.sim_perf_simulation_search:
+            q = request.sim_perf_simulation_search.lower()
+            simulations_meta = [
+                s for s in simulations_meta if q in (s.get("name") or "").lower()
+            ]
+        if request.scenario_perf_param_search or request.scenario_stats_param_search:
+            q = (
+                request.scenario_perf_param_search
+                or request.scenario_stats_param_search
+                or ""
+            ).lower()
+            parameters_meta = [
+                p for p in parameters_meta if q in (p.get("name") or "").lower()
+            ]
+
         result = DashboardFooterResponse(
             footer_metrics=footer_metrics,
-            simulations=build_simulation_meta(resources.simulations),
-            parameters=build_parameter_meta(resources.parameters),
-            fields=build_field_meta(
-                resources.fields,
-                resources.field_parameter_map,
-                resources.parameters,
-            ),
+            simulations=simulations_meta,
+            parameters=parameters_meta,
+            fields=fields_meta,
             thresholds=thresholds.as_dict(),
         )
 

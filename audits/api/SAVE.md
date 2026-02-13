@@ -241,9 +241,20 @@ async def save_{artifact}(http_request: Request, body: Save{Artifact}ApiRequest)
 
 Reference: `server/app/api/v4/artifacts/persona/save.py`
 
-### Rule 14: User context from settings
+### Rule 14: User context from `get_auth_profile_internal()`
 
-Profile context provides `user_role`, `actor_name`, `user_department_ids` for permission computation via `get_profile_context_internal()`.
+User context (`user_role`, `actor_name`, `user_department_ids`) for permission computation must come from `get_auth_profile_internal()`, not from the monolithic `get_profile_context_internal()`. See GET.md Rule 2 for the full profile/settings split pattern.
+
+```python
+from app.api.v4.auth.profile import get_auth_profile_internal
+
+profile_ctx = await get_auth_profile_internal(conn, profile_id, bypass_cache=False)
+actor_name = profile_ctx.access.actor_name
+user_role = profile_ctx.access.role
+user_department_ids = [d.department_id for d in profile_ctx.departments if d.department_id]
+```
+
+Reference: `server/app/api/v4/artifacts/persona/save.py`
 
 ---
 

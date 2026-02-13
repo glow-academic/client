@@ -12,7 +12,7 @@ from app.api.v4.artifacts.persona.types import (
     PatchPersonaDraftSqlParams,
     PatchPersonaDraftSqlRow,
 )
-from app.api.v4.auth.context import get_profile_context_internal
+from app.api.v4.auth.profile import get_auth_profile_internal
 from app.infra.v4.activity.audit import audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -57,16 +57,16 @@ async def patch_persona_draft(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for permissions and audit logging
+        # Fetch user context for permissions
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
-                resolved_context = await get_profile_context_internal(
+                profile_ctx = await get_auth_profile_internal(
                     conn=context_conn,
                     profile_id=profile_id,
                     bypass_cache=False,
                 )
-                user_role = resolved_context.user_role
+                user_role = profile_ctx.access.role
         else:
             user_role = None
 

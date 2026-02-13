@@ -111,13 +111,15 @@ Each list item must have permissions computed in Python via `permissions.py` fun
 - `can_delete` — via `compute_can_delete()`
 - `can_duplicate` — via `compute_can_duplicate()`
 
-These functions receive user context from `get_profile_context_internal()`.
+These functions receive user context from `get_auth_profile_internal()`.
 
 ```python
-profile_context = await get_profile_context_internal(pool, profile_id)
+from app.api.v4.auth.profile import get_auth_profile_internal
+
+profile_ctx = await get_auth_profile_internal(conn, profile_id, bypass_cache)
 for item in items:
     item.can_edit = compute_can_edit(
-        user_role=profile_context.user_role,
+        user_role=profile_ctx.access.role,
         artifact_department_ids=item.department_ids,
         active_usage_count=item.active_scenario_count,
     )
@@ -125,9 +127,9 @@ for item in items:
 
 Reference: `server/app/api/v4/artifacts/persona/list.py`, `permissions.py`
 
-### Rule 9: User context from `get_profile_context_internal()`
+### Rule 9: User context from `get_auth_profile_internal()`
 
-User context (user role, actor name, department IDs) must come from `get_profile_context_internal()`, not from the list SQL query.
+User context (user role, actor name, department IDs) must come from `get_auth_profile_internal()`, not from the list SQL query or the monolithic `get_profile_context_internal()`. See GET.md Rule 2 for the full profile/settings split pattern.
 
 ### Rule 10: Caching with proper key and tags
 
@@ -271,18 +273,19 @@ done
 
 **Expected**: Empty.
 
-### Audit 7: Profile context usage
+### Audit 7: Auth profile internal usage
 
 ```bash
 for artifact_dir in server/app/api/v4/artifacts/*/; do
   artifact=$(basename "$artifact_dir")
   file="${artifact_dir}list.py"
   [ ! -f "$file" ] && continue
-  grep -q "get_profile_context_internal" "$file" || echo "NO PROFILE CONTEXT: $artifact"
+  grep -q "get_auth_profile_internal" "$file" || echo "NO AUTH PROFILE INTERNAL: $artifact"
+  grep -q "get_profile_context_internal" "$file" && echo "LEGACY MONOLITHIC CONTEXT: $artifact"
 done
 ```
 
-**Expected**: Empty.
+**Expected**: Empty. All list endpoints should use `get_auth_profile_internal()`, not the monolithic `get_profile_context_internal()`.
 
 ---
 

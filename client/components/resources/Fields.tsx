@@ -17,8 +17,13 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import type { OutputOf } from "@/lib/api/types";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
+
+// Derive resource item type from the GET endpoint response
+type FieldsGetResponse = OutputOf<"/api/v4/resources/fields/get", "post">;
+export type FieldResourceItem = NonNullable<FieldsGetResponse["items"]>[number];
 
 export interface FieldItem {
   id: string;
@@ -28,21 +33,10 @@ export interface FieldItem {
 
 export interface FieldsProps {
   field_ids?: string[]; // Current field resource IDs (standardized prop name)
-  field_resources?: Array<{
-    field_id: string | null;
-    name: string | null;
-    description?: string | null;
-    generated?: boolean | null;
-  }>; // Selected field resources (each includes generated field)
+  field_resources?: FieldResourceItem[]; // Selected field resources (each includes generated field)
   show_fields?: boolean; // Whether to show this resource picker
   field_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  fields?: Array<{
-    field_id: string | null;
-    name: string | null;
-    description?: string | null;
-    generated?: boolean | null;
-    parameter_id?: string | null;
-  }>; // All available fields from API (each includes generated field and parameter_id)
+  fields?: FieldResourceItem[]; // All available fields from API (each includes generated field)
   parameterIdFilter?: string | null; // Only show fields with this parameter_id
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update field_ids in form state
@@ -60,10 +54,7 @@ export interface FieldsProps {
   // Legacy props for backward compatibility
   fieldIds?: string[];
   // AI diff view props
-  aiFieldResources?: Array<{
-    field_id?: string | null;
-    name?: string | null;
-  }> | null;
+  aiFieldResources?: Array<Pick<FieldResourceItem, "field_id" | "name">> | null;
   onAccept?: () => void;
   onReject?: () => void;
 }
@@ -123,7 +114,7 @@ export function Fields({
       .filter((f) => {
         // Apply parameter_id filter if provided
         if (parameterIdFilter) {
-          return f.parameter_id === parameterIdFilter;
+          return f.conditional_parameter_ids?.includes(parameterIdFilter) ?? false;
         }
         return true;
       })

@@ -84,10 +84,41 @@ async def get_dashboard_primary(
             thresholds=thresholds.as_dict(),
         )
 
+        # Apply picker filters (valid_*_ids stay intact for picker options)
+        if request.persona_simulation_ids:
+            filter_set = {str(sid) for sid in request.persona_simulation_ids}
+            primary_metrics.persona_performance.chart_data = [
+                row
+                for row in primary_metrics.persona_performance.chart_data
+                if any(sid in filter_set for sid in (row.simulation_ids or []))
+            ]
+        if request.heatmap_rubric_ids:
+            filter_set = {str(rid) for rid in request.heatmap_rubric_ids}
+            primary_metrics.rubric_heatmap.matrices = [
+                m
+                for m in primary_metrics.rubric_heatmap.matrices
+                if m.rubric_id in filter_set
+            ]
+
+        simulations_meta = build_simulation_meta(resources.simulations)
+        rubrics_meta = build_rubric_meta(resources.rubrics)
+
+        # Apply search filters to metadata lists
+        if request.persona_simulations_search:
+            q = request.persona_simulations_search.lower()
+            simulations_meta = [
+                s for s in simulations_meta if q in (s.get("name") or "").lower()
+            ]
+        if request.heatmap_rubric_search:
+            q = request.heatmap_rubric_search.lower()
+            rubrics_meta = [
+                r for r in rubrics_meta if q in (r.get("name") or "").lower()
+            ]
+
         result = DashboardPrimaryResponse(
             primary_metrics=primary_metrics,
-            simulations=build_simulation_meta(resources.simulations),
-            rubrics=build_rubric_meta(resources.rubrics),
+            simulations=simulations_meta,
+            rubrics=rubrics_meta,
             thresholds=thresholds.as_dict(),
         )
 

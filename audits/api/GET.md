@@ -37,15 +37,29 @@ No additional SQL queries in the internal function beyond Q1 and Q2.
 
 Reference: `server/app/api/v4/artifacts/persona/get.py:140-253`
 
-### Rule 2: User context comes from `get_profile_context_internal()`
+### Rule 2: User context comes from `get_auth_profile_internal()`
 
-The internal function must fetch user context (actor name, user role, department IDs) via `get_profile_context_internal()` — NOT from Q1/Q2 SQL results. Q1 provides artifact-scoped access data; profile context provides user-scoped identity data.
+The internal function must fetch user context (actor name, user role, department IDs) via `get_auth_profile_internal()` — NOT from the monolithic `get_profile_context_internal()` or from Q1/Q2 SQL results. Q1 provides artifact-scoped access data; the auth profile internal provides user-scoped identity data.
+
+The auth layer is split into two cached internal functions:
+
+- **`get_auth_profile_internal()`** (`auth/profile.py`) — Returns `AuthProfileInternalData`: access row + hydrated departments + cohorts + role resources + session. Use this for identity, permissions, and department-scoped filtering.
+- **`get_auth_settings_internal()`** (`auth/settings.py`) — Returns `AuthSettingsInternalData`: hydrated settings resource + agents + tools + theme tokens + generation map. Use this only when the artifact needs settings-level agents/tools (most artifacts do NOT).
+
+Both rely on individually-cached resource internals (`get_access_internal()`, `get_departments_internal()`, etc.), so repeated calls within the same request window are cheap.
 
 ```python
-profile_context = await get_profile_context_internal(pool, profile_id)
+from app.api.v4.auth.profile import get_auth_profile_internal
+
+profile_ctx = await get_auth_profile_internal(conn, profile_id, bypass_cache)
+user_role = profile_ctx.access.role
+actor_name = profile_ctx.access.actor_name
+user_department_ids = [d.department_id for d in profile_ctx.departments if d.department_id]
 ```
 
-Reference: `server/app/api/v4/artifacts/persona/get.py:130-138`
+Mutation endpoints (save, delete, duplicate, draft) follow the same pattern — they call `get_auth_profile_internal()` for identity/permissions, never the full context.
+
+Reference: `server/app/api/v4/auth/profile.py`, `server/app/api/v4/artifacts/persona/get.py:146-159`
 
 ### Rule 3: Draft values override canonical junction values
 

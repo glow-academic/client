@@ -15137,10 +15137,16 @@ export interface components {
             page_offset: number;
             /** Scenario Perf Parameter Ids */
             scenario_perf_parameter_ids?: string[] | null;
+            /** Scenario Perf Param Search */
+            scenario_perf_param_search?: string | null;
             /** Scenario Stats Parameter Ids */
             scenario_stats_parameter_ids?: string[] | null;
+            /** Scenario Stats Param Search */
+            scenario_stats_param_search?: string | null;
             /** Sim Perf Simulation Ids */
             sim_perf_simulation_ids?: string[] | null;
+            /** Sim Perf Simulation Search */
+            sim_perf_simulation_search?: string | null;
         };
         /**
          * DashboardFooterResponse
@@ -15325,8 +15331,12 @@ export interface components {
             page_offset: number;
             /** Persona Simulation Ids */
             persona_simulation_ids?: string[] | null;
+            /** Persona Simulations Search */
+            persona_simulations_search?: string | null;
             /** Heatmap Rubric Ids */
             heatmap_rubric_ids?: string[] | null;
+            /** Heatmap Rubric Search */
+            heatmap_rubric_search?: string | null;
         };
         /**
          * DashboardPrimaryResponse
@@ -15423,10 +15433,16 @@ export interface components {
             page_offset: number;
             /** Cohort Simulation Ids */
             cohort_simulation_ids?: string[] | null;
+            /** Cohort Simulations Search */
+            cohort_simulations_search?: string | null;
             /** Improvement Simulation Ids */
             improvement_simulation_ids?: string[] | null;
+            /** Improvement Simulations Search */
+            improvement_simulations_search?: string | null;
             /** Skill Rubric Ids */
             skill_rubric_ids?: string[] | null;
+            /** Skill Rubric Search */
+            skill_rubric_search?: string | null;
         };
         /**
          * DashboardSecondaryResponse

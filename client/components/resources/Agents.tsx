@@ -24,6 +24,10 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 type CreateDraftAgentsIn = InputOf<"/api/v4/resources/agents", "post">;
 type CreateDraftAgentsOut = OutputOf<"/api/v4/resources/agents", "post">;
 
+// Derive resource item type from the GET endpoint response
+type AgentsGetResponse = OutputOf<"/api/v4/resources/agents/get", "post">;
+export type AgentResourceItem = NonNullable<AgentsGetResponse["items"]>[number];
+
 export interface AgentItem {
   id: string;
   name: string;
@@ -32,20 +36,10 @@ export interface AgentItem {
 
 export interface AgentsProps {
   agent_ids?: string[]; // Current agent resource IDs (standardized prop name)
-  agent_resources?: Array<{
-    agent_id: string | null;
-    name: string | null;
-    description?: string | null;
-    generated?: boolean | null;
-  }>; // Selected agent resources (each includes generated field)
+  agent_resources?: AgentResourceItem[]; // Selected agent resources (each includes generated field)
   show_agents?: boolean; // Whether to show this resource picker
   agent_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  agents?: Array<{
-    agent_id: string | null;
-    name: string | null;
-    description?: string | null;
-    generated?: boolean | null;
-  }>; // All available agents from API (each includes generated field)
+  agents?: AgentResourceItem[]; // All available agents from API (each includes generated field)
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update agent_ids in form state
   label?: string;
@@ -58,10 +52,7 @@ export interface AgentsProps {
   isGenerating?: boolean;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   // AI diff view props
-  aiAgentResources?: Array<{
-    agent_id?: string | null;
-    name?: string | null;
-  }> | null;
+  aiAgentResources?: Array<Pick<AgentResourceItem, "id" | "name">> | null;
   onAccept?: () => void;
   onReject?: () => void;
 }
@@ -102,7 +93,7 @@ export function Agents({
     () =>
       new Set(
         aiAgentResources
-          ?.map((a) => a.agent_id)
+          ?.map((a) => a.id)
           .filter(Boolean) as string[]
       ),
     [aiAgentResources]
@@ -119,9 +110,9 @@ export function Agents({
   // Convert agents array to AgentItem format for GenericPicker
   const agentItems = useMemo(() => {
     return allAgents
-      .filter((a) => a.agent_id && a.name) // Filter out nulls
+      .filter((a) => a.id && a.name) // Filter out nulls
       .map((a) => ({
-        id: a.agent_id!,
+        id: a.id!,
         name: a.name!,
         ...(a.description ? { description: a.description } : {}),
       }));
@@ -150,7 +141,7 @@ export function Agents({
   const handleAccept = useCallback(() => {
     if (!aiAgentResources?.length) return;
     const newIds = aiAgentResources
-      .map((a) => a.agent_id)
+      .map((a) => a.id)
       .filter((id): id is string => !!id && !ids.includes(id));
     if (newIds.length > 0) {
       onChange([...ids, ...newIds]);
@@ -247,7 +238,7 @@ export function Agents({
       <GenericPicker<AgentItem>
         items={agentItems}
         itemIds={allAgents
-          .map((a) => a.agent_id)
+          .map((a) => a.id)
           .filter((id): id is string => id !== null)} // All agent IDs from array, filter nulls
         selectedIds={ids}
         onSelect={handleSelect}
