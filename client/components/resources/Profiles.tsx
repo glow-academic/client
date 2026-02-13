@@ -16,9 +16,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
+
+// Derive resource item type from the GET endpoint response
+type ProfileGetResponse = OutputOf<"/api/v4/resources/profiles/get", "post">;
+export type ProfileResourceItem = NonNullable<ProfileGetResponse["items"]>[number];
 
 export interface ProfilesItem {
   id: string;

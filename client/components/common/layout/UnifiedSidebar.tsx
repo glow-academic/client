@@ -47,24 +47,16 @@ import {
 } from "@/components/ui/sidebar";
 import { useProfile } from "@/contexts/profile-context";
 import { useFederatedLogout } from "@/hooks/useFederatedLogout";
+import { getIconComponent } from "@/utils/icons";
 import Link from "next/link";
 import {
-  Activity,
   AlertCircle,
   ChevronRight,
   ChevronsUpDown,
-  ClipboardList,
-  Gauge,
-  GraduationCap,
   Home,
   LogOut,
-  PieChart,
   Search,
-  Server,
-  Settings,
   Sparkles,
-  Target,
-  Trophy,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import * as React from "react";
@@ -107,21 +99,6 @@ interface NavSection {
   items?: MenuItem[];
   section?: string;
 }
-
-// Icon map: resolves Lucide icon name string → React component
-const NAV_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
-  home: Home,
-  target: Target,
-  trophy: Trophy,
-  "pie-chart": PieChart,
-  "graduation-cap": GraduationCap,
-  "clipboard-list": ClipboardList,
-  sparkles: Sparkles,
-  server: Server,
-  activity: Activity,
-  gauge: Gauge,
-  settings: Settings,
-};
 
 // Helper function to get initials from name
 const getInitials = (name?: string): string => {
@@ -173,7 +150,7 @@ export function UnifiedSidebar({
     if (!profile || !sidebarRoutes) return [];
 
     const menu: NavSection[] = sidebarRoutes.map((section) => {
-      const IconComponent = NAV_ICON_MAP[section.icon] || Home;
+      const IconComponent = getIconComponent(section.icon) || Home;
       const items: MenuItem[] | undefined = section.items
         ? section.items.map((item) => ({
             title: item.title,

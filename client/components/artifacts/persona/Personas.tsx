@@ -10,7 +10,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
-import { getPersonaIconComponent } from "@/utils/persona-icons";
+import { getIconComponent } from "@/utils/icons";
 import {
   ColumnDef,
   ColumnFiltersState,

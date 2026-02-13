@@ -27,3 +27,4 @@ modules:
     simulations: all
     scenarios: all
     cohorts: all
+    profiles: all

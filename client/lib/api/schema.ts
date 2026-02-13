@@ -5623,6 +5623,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/profiles/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Profiles
+         * @description Get profiles resources by IDs.
+         *
+         *     HTTP wrapper that delegates to internal function for caching and data fetching.
+         */
+        post: operations["get_profiles_api_v4_resources_profiles_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/profiles/search": {
         parameters: {
             query?: never;
@@ -7246,6 +7268,28 @@ export interface paths {
          * @description Create texts resource (always INSERT).
          */
         post: operations["create_texts_api_v4_resources_texts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/texts/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Texts
+         * @description Get texts resources by IDs.
+         *
+         *     HTTP wrapper that delegates to internal function for caching and data fetching.
+         */
+        post: operations["get_texts_api_v4_resources_texts_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -20772,6 +20816,16 @@ export interface components {
              */
             total_count: number;
         };
+        /** GetProfilesApiRequest */
+        GetProfilesApiRequest: {
+            /** P Ids */
+            p_ids?: string[] | null;
+        };
+        /** GetProfilesApiResponse */
+        GetProfilesApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetProfilesV4Item"][] | null;
+        };
         /** GetPromptsApiRequest */
         GetPromptsApiRequest: {
             /** Ids */
@@ -21784,6 +21838,16 @@ export interface components {
             page_size: number;
             /** Eval Options */
             eval_options?: components["schemas"]["TestListFilterOption"][];
+        };
+        /** GetTextsApiRequest */
+        GetTextsApiRequest: {
+            /** P Ids */
+            p_ids?: string[] | null;
+        };
+        /** GetTextsApiResponse */
+        GetTextsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetTextsV4Item"][] | null;
         };
         /** GetThresholdsApiRequest */
         GetThresholdsApiRequest: {
@@ -48190,6 +48254,43 @@ export interface operations {
             };
         };
     };
+    get_profiles_api_v4_resources_profiles_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetProfilesApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetProfilesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     search_profiles_api_v4_resources_profiles_search_post: {
         parameters: {
             query?: never;
@@ -51174,6 +51275,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TextsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_texts_api_v4_resources_texts_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetTextsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetTextsApiResponse"];
                 };
             };
             /** @description Validation Error */

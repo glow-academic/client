@@ -349,9 +349,11 @@ from app.api.v4.resources.problem_statements.get import (
 router.include_router(problem_statements_router)
 router.include_router(problem_statements_get_router)
 # NOTE: profiles removed - non-creatable, sync via artifact save (migration 328)
-# GET is internal-only (no router) — used by profile context two-pass architecture
+# GET endpoint available for profile context two-pass architecture
+from app.api.v4.resources.profiles.get import router as profiles_get_router
 from app.api.v4.resources.profiles.search import router as profiles_search_router
 
+router.include_router(profiles_get_router)
 router.include_router(profiles_search_router)
 from app.api.v4.resources.prompts.create import router as prompts_router
 from app.api.v4.resources.prompts.get import router as prompts_get_router

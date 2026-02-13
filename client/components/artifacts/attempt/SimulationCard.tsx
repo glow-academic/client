@@ -29,7 +29,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { getPersonaIconComponent } from "@/utils/persona-icons";
+import { getIconComponent } from "@/utils/icons";
 import { Info, Table, Timer, User, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";

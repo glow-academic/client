@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/tooltip";
 import type { components } from "@/lib/api/schema";
 import { cn } from "@/lib/utils";
-import { getPersonaIconComponent } from "@/utils/persona-icons";
+import { getIconComponent } from "@/utils/icons";
 import {
   AlertCircle,
   ArrowDown,

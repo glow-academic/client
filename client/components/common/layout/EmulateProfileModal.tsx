@@ -33,7 +33,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useProfile } from "@/contexts/profile-context";
-import { PERSONA_ICON_MAP } from "@/utils/persona-icons";
+import { ICON_MAP } from "@/utils/icons";
 
 export interface EmulateProfileModalProps {
   open: boolean;

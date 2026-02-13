@@ -59,5 +59,32 @@ export const historySearchParams = {
   historyScenarioSearch: parseAsString,
 };
 
+/**
+ * Dashboard section picker search params for server-driven chart filtering.
+ * Each chart's picker state is synced to URL params so sections refetch with filtered data.
+ */
+export const dashboardSectionSearchParams = {
+  // Primary: persona chart + heatmap chart
+  personaSimulationIds: parseAsCommaSeparatedArray,
+  personaSimulationsSearch: parseAsString,
+  heatmapRubricIds: parseAsCommaSeparatedArray,
+  heatmapRubricSearch: parseAsString,
+  // Secondary: cohort chart + improvement chart + skill chart
+  cohortSimulationIds: parseAsCommaSeparatedArray,
+  cohortSimulationsSearch: parseAsString,
+  improvementSimulationIds: parseAsCommaSeparatedArray,
+  improvementSimulationsSearch: parseAsString,
+  skillRubricIds: parseAsCommaSeparatedArray,
+  skillRubricSearch: parseAsString,
+  // Footer: scenario perf + scenario stats + sim perf
+  scenarioPerfParameterIds: parseAsCommaSeparatedArray,
+  scenarioPerfParamSearch: parseAsString,
+  scenarioStatsParameterIds: parseAsCommaSeparatedArray,
+  scenarioStatsParamSearch: parseAsString,
+  simPerfSimulationIds: parseAsCommaSeparatedArray,
+  simPerfSimulationSearch: parseAsString,
+};
+
 export const loadAnalyticsSearchParams = createLoader(analyticsSearchParams);
 export const loadHistorySearchParams = createLoader(historySearchParams);
+export const loadDashboardSectionSearchParams = createLoader(dashboardSectionSearchParams);

@@ -87,7 +87,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { cn } from "@/lib/utils";
-import { PERSONA_ICON_MAP } from "@/utils/persona-icons";
+import { ICON_MAP } from "@/utils/icons";
 import {
   Check,
   CheckCircle2,

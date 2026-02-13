@@ -1162,6 +1162,46 @@ async def export_setup_departments(conn: asyncpg.Connection) -> None:
         print(f"    {output_path.relative_to(MODULES_DIR)} ({count} inserts)")
 
 
+async def export_setup_profiles(conn: asyncpg.Connection) -> None:
+    """Export default profiles (with departments) to 10-setups/university/09-profiles/.
+
+    Only the 5 default role profiles (Default *) are exported here, with their
+    profile_departments_junction rows, instead of at the root 08-profiles/ level.
+    """
+    print("  Exporting 09-profiles/ ...")
+    out_dir = MODULES_DIR / "10-setups" / "university" / "09-profiles"
+    if out_dir.exists():
+        for old in out_dir.glob("*.sql"):
+            old.unlink()
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    rows = await conn.fetch("""
+        SELECT p.id, nr.name
+        FROM profile_artifact p
+        JOIN profile_names_junction pnj ON pnj.profile_id = p.id
+        JOIN names_resource nr ON nr.id = pnj.name_id
+        WHERE nr.name ILIKE 'Default %'
+          AND nr.name NOT ILIKE '%benchmark%'
+        ORDER BY nr.name
+    """)
+    artifacts = [(str(r["id"]), r["name"]) for r in rows]
+    junctions = await get_junction_tables(conn, "profile")
+
+    for art_id, art_name in artifacts:
+        slug = to_slug(art_name)
+        output_path = out_dir / f"{slug}.sql"
+        header = (
+            f"-- Module: {art_name}\n"
+            f"-- Category: profile (university)\n"
+            f"-- Description: {art_name} profile\n"
+            f"-- ============================================================\n\n"
+        )
+        count = await write_artifact_module(
+            conn, "profile", art_id, junctions, output_path, header
+        )
+        print(f"    {slug}.sql ({count} inserts)")
+
+
 async def _get_scenario_artifact_ids_for_simulation(
     conn: asyncpg.Connection, sim_id: str
 ) -> list[str]:

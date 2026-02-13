@@ -1,5 +1,5 @@
-// utils/persona-icons.ts
-// Top 100 most relevant Lucide icons for persona creation
+// utils/icons.ts
+// Unified icon registry used across the application
 
 import {
   // Activity & Movement
@@ -42,6 +42,7 @@ import {
   ChevronUp,
   Circle,
   Clipboard,
+  ClipboardList,
   Clock,
   Cloud,
   Club,
@@ -79,6 +80,7 @@ import {
   Folder,
   Frown,
   Gamepad,
+  Gauge,
   Gift,
   Globe,
   GraduationCap,
@@ -205,8 +207,8 @@ import {
   Zap,
 } from "lucide-react";
 
-// Icon mapping organized by persona categories
-export const PERSONA_ICON_MAP = {
+// Unified icon map used across the application
+export const ICON_MAP = {
   // Emotional/Personality Icons
   SmilePlus,
   Frown,
@@ -264,6 +266,7 @@ export const PERSONA_ICON_MAP = {
 
   // Professional Icons
   Briefcase,
+  ClipboardList,
   Building,
   Computer,
   Monitor,
@@ -358,6 +361,7 @@ export const PERSONA_ICON_MAP = {
 
   // Business Icons
   DollarSign,
+  Gauge,
   CreditCard,
   Wallet,
   PiggyBank,
@@ -423,11 +427,11 @@ export const PERSONA_ICON_MAP = {
 };
 
 // Get all icon names as an array
-export const PERSONA_ICONS = Object.keys(PERSONA_ICON_MAP);
+export const ICON_NAMES = Object.keys(ICON_MAP);
 
 // Helper function to get icon component by name
-export function getPersonaIconComponent(iconName: string) {
-  return PERSONA_ICON_MAP[iconName as keyof typeof PERSONA_ICON_MAP] || null;
+export function getIconComponent(iconName: string) {
+  return ICON_MAP[iconName as keyof typeof ICON_MAP] || null;
 }
 
 // Suggested icons for common persona types

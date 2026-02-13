@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
-import { getPersonaIconComponent } from "@/utils/persona-icons";
+import { getIconComponent } from "@/utils/icons";
 import { Brain, Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 

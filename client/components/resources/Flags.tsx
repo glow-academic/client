@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/tooltip";
 import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
-import { getPersonaIconComponent } from "@/utils/persona-icons";
+import { getIconComponent } from "@/utils/icons";
 import { Check, Loader2, Power, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 

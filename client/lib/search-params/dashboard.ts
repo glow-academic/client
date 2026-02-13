@@ -6,6 +6,7 @@
 
 import {
   analyticsSearchParams,
+  dashboardSectionSearchParams,
   historySearchParams,
 } from "@/lib/search-params/analytics";
 import { createLoader, parseAsString } from "nuqs/server";
@@ -13,6 +14,7 @@ import { createLoader, parseAsString } from "nuqs/server";
 export const dashboardSearchParams = {
   ...analyticsSearchParams,
   ...historySearchParams,
+  ...dashboardSectionSearchParams,
   _refresh: parseAsString,
 };
 
