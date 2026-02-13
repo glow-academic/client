@@ -45,6 +45,10 @@ import {
 } from "@/components/ui/tooltip";
 import { useFilterOptions } from "@/contexts/filter-options-context";
 import { useProfile } from "@/contexts/profile-context";
+import type {
+  ClientToServerEvents,
+  ServerToClientEvents,
+} from "@/lib/ws/types";
 import type { OutputOf } from "@/lib/api/types";
 import {
   Column,
@@ -83,9 +87,20 @@ export type HistoryDataItem =
   | (PracticeHistoryData extends Array<infer T> ? T : never);
 
 // Inlined row actions component (from DataTableRowActions)
-function HistoryRowActions({ item }: { item: HistoryDataItem }) {
-  const { profile, isConnected, emitStartSimulation } =
-    useProfile();
+function HistoryRowActions({
+  item,
+  emitStartSimulation,
+}: {
+  item: HistoryDataItem;
+  emitStartSimulation: (data: {
+    simulation_id: string;
+    profile_id?: string | null;
+    scenario_id?: string | null;
+    infinite?: boolean;
+    infinite_time_limit?: number | null;
+  }) => void;
+}) {
+  const { profile, isConnected } = useProfile();
   const router = useRouter();
   const [isRetrying, setIsRetrying] = React.useState(false);
   const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
@@ -386,6 +401,90 @@ export default function SimulationHistory({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { socket, isConnected } = useProfile();
+
+  // Simulation start state (socket emit + listeners)
+  const [startingSimulationId, setStartingSimulationId] = React.useState<string | null>(null);
+
+  // Register socket listeners for simulation events
+  React.useEffect(() => {
+    if (!socket) return;
+
+    const handleStarted = (
+      data: Parameters<ServerToClientEvents["simulation_started"]>[0]
+    ) => {
+      setStartingSimulationId(null);
+      if (data.success) {
+        toast.success(data.message);
+        window.dispatchEvent(
+          new CustomEvent("simulationStarted", {
+            detail: { attemptId: data.attempt_id },
+          })
+        );
+      } else {
+        toast.error(data.message);
+      }
+    };
+
+    const handleStartError = (
+      data: Parameters<ServerToClientEvents["simulation_start_error"]>[0]
+    ) => {
+      setStartingSimulationId(null);
+      toast.error(data.message);
+      window.dispatchEvent(new CustomEvent("simulationError"));
+    };
+
+    const handleError = (
+      data: Parameters<ServerToClientEvents["simulation_error"]>[0]
+    ) => {
+      toast.error(data.message);
+      window.dispatchEvent(new CustomEvent("simulationError"));
+    };
+
+    socket.on("simulation_started", handleStarted);
+    socket.on("simulation_start_error", handleStartError);
+    socket.on("simulation_error", handleError);
+
+    return () => {
+      socket.off("simulation_started", handleStarted);
+      socket.off("simulation_start_error", handleStartError);
+      socket.off("simulation_error", handleError);
+    };
+  }, [socket]);
+
+  type SimulationStartPayload = Parameters<
+    ClientToServerEvents["simulation_start"]
+  >[0];
+
+  const emitStartSimulation = React.useCallback(
+    (data: {
+      simulation_id: string;
+      profile_id?: string | null;
+      scenario_id?: string | null;
+      infinite?: boolean;
+      infinite_time_limit?: number | null;
+    }) => {
+      if (!socket || !isConnected) {
+        toast.error("WebSocket not connected. Please refresh the page.");
+        return;
+      }
+      const payload: SimulationStartPayload = {
+        simulation_id: data.simulation_id,
+        ...(data.scenario_id !== undefined && {
+          scenario_id: data.scenario_id,
+        }),
+        ...(data.infinite !== undefined && { infinite: data.infinite }),
+        ...(data.infinite_time_limit !== undefined && {
+          infinite_time_limit: data.infinite_time_limit,
+        }),
+        ...(data.profile_id ? { profile_id: data.profile_id } : {}),
+      };
+
+      setStartingSimulationId(data.simulation_id);
+      socket.emit("simulation_start", payload);
+    },
+    [socket, isConnected]
+  );
 
   // Set section-specific filter options in context when provided
   const { setOptions } = useFilterOptions();
