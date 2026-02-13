@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "GLOW API",
-    "description": "Auto-generated OpenAPI schema",
+    "description": "Auto-generated OpenAPI schema from FastAPI v4 API",
     "version": "0.1.0"
   },
   "paths": {
@@ -97,7 +97,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "personas"
+        ]
       }
     },
     "/api/v4/artifacts/personas/list": {
@@ -191,7 +196,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "personas"
+        ]
       }
     },
     "/api/v4/artifacts/personas/save": {
@@ -285,7 +295,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "personas"
+        ]
       }
     },
     "/api/v4/artifacts/personas/duplicate": {
@@ -379,7 +394,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "personas"
+        ]
       }
     },
     "/api/v4/artifacts/personas/delete": {
@@ -473,7 +493,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "personas"
+        ]
       }
     },
     "/api/v4/artifacts/personas/draft": {
@@ -567,7 +592,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "personas"
+        ]
       }
     },
     "/api/v4/artifacts/personas/docs": {
@@ -660,7 +690,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "personas"
+        ]
       }
     },
     "/api/v4/artifacts/scenarios/get": {
@@ -754,7 +789,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "scenarios"
+        ]
       }
     },
     "/api/v4/artifacts/scenarios/list": {
@@ -848,7 +888,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "scenarios"
+        ]
       }
     },
     "/api/v4/artifacts/scenarios/save": {
@@ -942,7 +987,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "scenarios"
+        ]
       }
     },
     "/api/v4/artifacts/scenarios/duplicate": {
@@ -1036,7 +1086,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "scenarios"
+        ]
       }
     },
     "/api/v4/artifacts/scenarios/delete": {
@@ -1130,7 +1185,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "scenarios"
+        ]
       }
     },
     "/api/v4/artifacts/scenarios/draft": {
@@ -1224,7 +1284,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "scenarios"
+        ]
       }
     },
     "/api/v4/artifacts/scenarios/docs": {
@@ -1317,7 +1382,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "scenarios"
+        ]
       }
     },
     "/api/v4/artifacts/simulations/get": {
@@ -1411,7 +1481,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "simulations"
+        ]
       }
     },
     "/api/v4/artifacts/simulations/list": {
@@ -1505,7 +1580,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "simulations"
+        ]
       }
     },
     "/api/v4/artifacts/simulations/save": {
@@ -1599,7 +1679,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "simulations"
+        ]
       }
     },
     "/api/v4/artifacts/simulations/duplicate": {
@@ -1693,7 +1778,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "simulations"
+        ]
       }
     },
     "/api/v4/artifacts/simulations/delete": {
@@ -1787,7 +1877,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "simulations"
+        ]
       }
     },
     "/api/v4/artifacts/simulations/draft": {
@@ -1881,7 +1976,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "simulations"
+        ]
       }
     },
     "/api/v4/artifacts/simulations/docs": {
@@ -1974,7 +2074,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "simulations"
+        ]
       }
     },
     "/api/v4/artifacts/documents/list": {
@@ -2068,7 +2173,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "documents"
+        ]
       }
     },
     "/api/v4/artifacts/documents/get": {
@@ -2162,7 +2272,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "documents"
+        ]
       }
     },
     "/api/v4/artifacts/documents/save": {
@@ -2256,7 +2371,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "documents"
+        ]
       }
     },
     "/api/v4/artifacts/documents/duplicate": {
@@ -2350,7 +2470,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "documents"
+        ]
       }
     },
     "/api/v4/artifacts/documents/delete": {
@@ -2444,7 +2569,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "documents"
+        ]
       }
     },
     "/api/v4/artifacts/documents/draft": {
@@ -2538,7 +2668,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "documents"
+        ]
       }
     },
     "/api/v4/artifacts/documents/bulk/process": {
@@ -2634,7 +2769,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "documents",
+          "documents",
+          "bulk"
+        ]
       }
     },
     "/api/v4/artifacts/documents/bulk/search": {
@@ -2730,7 +2872,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "documents",
+          "documents",
+          "bulk"
+        ]
       }
     },
     "/api/v4/artifacts/documents/bulk/save": {
@@ -2826,7 +2975,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "documents",
+          "documents",
+          "bulk"
+        ]
       }
     },
     "/api/v4/artifacts/documents/bulk/delete": {
@@ -2922,7 +3078,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "documents",
+          "documents",
+          "bulk"
+        ]
       }
     },
     "/api/v4/artifacts/documents/docs": {
@@ -3015,7 +3178,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "documents"
+        ]
       }
     },
     "/api/v4/artifacts/departments/get": {
@@ -3109,7 +3277,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "departments"
+        ]
       }
     },
     "/api/v4/artifacts/departments/list": {
@@ -3203,7 +3376,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "departments"
+        ]
       }
     },
     "/api/v4/artifacts/departments/save": {
@@ -3297,7 +3475,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "departments"
+        ]
       }
     },
     "/api/v4/artifacts/departments/duplicate": {
@@ -3391,7 +3574,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "departments"
+        ]
       }
     },
     "/api/v4/artifacts/departments/delete": {
@@ -3485,7 +3673,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "departments"
+        ]
       }
     },
     "/api/v4/artifacts/departments/draft": {
@@ -3579,7 +3772,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "departments"
+        ]
       }
     },
     "/api/v4/artifacts/departments/docs": {
@@ -3672,7 +3870,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "departments"
+        ]
       }
     },
     "/api/v4/artifacts/cohorts/list": {
@@ -3766,7 +3969,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "cohorts"
+        ]
       }
     },
     "/api/v4/artifacts/cohorts/get": {
@@ -3860,7 +4068,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "cohorts"
+        ]
       }
     },
     "/api/v4/artifacts/cohorts/save": {
@@ -3954,7 +4167,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "cohorts"
+        ]
       }
     },
     "/api/v4/artifacts/cohorts/duplicate": {
@@ -4048,7 +4266,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "cohorts"
+        ]
       }
     },
     "/api/v4/artifacts/cohorts/delete": {
@@ -4142,7 +4365,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "cohorts"
+        ]
       }
     },
     "/api/v4/artifacts/cohorts/draft": {
@@ -4236,7 +4464,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "cohorts"
+        ]
       }
     },
     "/api/v4/artifacts/cohorts/docs": {
@@ -4329,7 +4562,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "cohorts"
+        ]
       }
     },
     "/api/v4/artifacts/evals/list": {
@@ -4423,7 +4661,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "evals"
+        ]
       }
     },
     "/api/v4/artifacts/evals/get": {
@@ -4517,7 +4760,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "evals"
+        ]
       }
     },
     "/api/v4/artifacts/evals/save": {
@@ -4611,7 +4859,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "evals"
+        ]
       }
     },
     "/api/v4/artifacts/evals/duplicate": {
@@ -4705,7 +4958,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "evals"
+        ]
       }
     },
     "/api/v4/artifacts/evals/delete": {
@@ -4799,7 +5057,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "evals"
+        ]
       }
     },
     "/api/v4/artifacts/evals/draft": {
@@ -4893,7 +5156,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "evals"
+        ]
       }
     },
     "/api/v4/artifacts/evals/docs": {
@@ -4986,7 +5254,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "evals"
+        ]
       }
     },
     "/api/v4/artifacts/rubrics/get": {
@@ -5080,7 +5353,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "rubrics"
+        ]
       }
     },
     "/api/v4/artifacts/rubrics/list": {
@@ -5174,7 +5452,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "rubrics"
+        ]
       }
     },
     "/api/v4/artifacts/rubrics/save": {
@@ -5268,7 +5551,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "rubrics"
+        ]
       }
     },
     "/api/v4/artifacts/rubrics/duplicate": {
@@ -5362,7 +5650,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "rubrics"
+        ]
       }
     },
     "/api/v4/artifacts/rubrics/delete": {
@@ -5456,7 +5749,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "rubrics"
+        ]
       }
     },
     "/api/v4/artifacts/rubrics/draft": {
@@ -5550,7 +5848,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "rubrics"
+        ]
       }
     },
     "/api/v4/artifacts/rubrics/docs": {
@@ -5643,7 +5946,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "rubrics"
+        ]
       }
     },
     "/api/v4/artifacts/settings/list": {
@@ -5737,7 +6045,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "settings"
+        ]
       }
     },
     "/api/v4/artifacts/settings/get": {
@@ -5831,7 +6144,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "settings"
+        ]
       }
     },
     "/api/v4/artifacts/settings/save": {
@@ -5925,7 +6243,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "settings"
+        ]
       }
     },
     "/api/v4/artifacts/settings/duplicate": {
@@ -6019,7 +6342,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "settings"
+        ]
       }
     },
     "/api/v4/artifacts/settings/delete": {
@@ -6113,7 +6441,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "settings"
+        ]
       }
     },
     "/api/v4/artifacts/settings/draft": {
@@ -6207,7 +6540,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "settings"
+        ]
       }
     },
     "/api/v4/artifacts/settings/docs": {
@@ -6300,7 +6638,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "settings"
+        ]
       }
     },
     "/api/v4/artifacts/agents/get": {
@@ -6394,7 +6737,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "agents"
+        ]
       }
     },
     "/api/v4/artifacts/agents/list": {
@@ -6488,7 +6836,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "agents"
+        ]
       }
     },
     "/api/v4/artifacts/agents/save": {
@@ -6582,7 +6935,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "agents"
+        ]
       }
     },
     "/api/v4/artifacts/agents/duplicate": {
@@ -6676,7 +7034,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "agents"
+        ]
       }
     },
     "/api/v4/artifacts/agents/delete": {
@@ -6770,7 +7133,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "agents"
+        ]
       }
     },
     "/api/v4/artifacts/agents/draft": {
@@ -6864,7 +7232,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "agents"
+        ]
       }
     },
     "/api/v4/artifacts/agents/docs": {
@@ -6957,7 +7330,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "agents"
+        ]
       }
     },
     "/api/v4/artifacts/models/get": {
@@ -7051,7 +7429,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "models"
+        ]
       }
     },
     "/api/v4/artifacts/models/list": {
@@ -7145,7 +7528,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "models"
+        ]
       }
     },
     "/api/v4/artifacts/models/save": {
@@ -7239,7 +7627,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "models"
+        ]
       }
     },
     "/api/v4/artifacts/models/duplicate": {
@@ -7333,7 +7726,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "models"
+        ]
       }
     },
     "/api/v4/artifacts/models/delete": {
@@ -7427,7 +7825,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "models"
+        ]
       }
     },
     "/api/v4/artifacts/models/draft": {
@@ -7521,7 +7924,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "models"
+        ]
       }
     },
     "/api/v4/artifacts/models/docs": {
@@ -7614,7 +8022,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "models"
+        ]
       }
     },
     "/api/v4/artifacts/providers/list": {
@@ -7708,7 +8121,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "providers"
+        ]
       }
     },
     "/api/v4/artifacts/providers/get": {
@@ -7802,7 +8220,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "providers"
+        ]
       }
     },
     "/api/v4/artifacts/providers/save": {
@@ -7896,7 +8319,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "providers"
+        ]
       }
     },
     "/api/v4/artifacts/providers/duplicate": {
@@ -7990,7 +8418,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "providers"
+        ]
       }
     },
     "/api/v4/artifacts/providers/delete": {
@@ -8084,7 +8517,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "providers"
+        ]
       }
     },
     "/api/v4/artifacts/providers/draft": {
@@ -8178,7 +8616,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "providers"
+        ]
       }
     },
     "/api/v4/artifacts/providers/docs": {
@@ -8271,7 +8714,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "providers"
+        ]
       }
     },
     "/api/v4/artifacts/parameters/get": {
@@ -8365,7 +8813,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "parameters"
+        ]
       }
     },
     "/api/v4/artifacts/parameters/list": {
@@ -8459,7 +8912,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "parameters"
+        ]
       }
     },
     "/api/v4/artifacts/parameters/save": {
@@ -8553,7 +9011,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "parameters"
+        ]
       }
     },
     "/api/v4/artifacts/parameters/duplicate": {
@@ -8647,7 +9110,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "parameters"
+        ]
       }
     },
     "/api/v4/artifacts/parameters/delete": {
@@ -8741,7 +9209,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "parameters"
+        ]
       }
     },
     "/api/v4/artifacts/parameters/draft": {
@@ -8835,7 +9308,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "parameters"
+        ]
       }
     },
     "/api/v4/artifacts/parameters/docs": {
@@ -8928,7 +9406,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "parameters"
+        ]
       }
     },
     "/api/v4/artifacts/fields/get": {
@@ -9021,7 +9504,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "fields"
+        ]
       }
     },
     "/api/v4/artifacts/fields/list": {
@@ -9115,7 +9603,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "fields"
+        ]
       }
     },
     "/api/v4/artifacts/fields/save": {
@@ -9209,7 +9702,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "fields"
+        ]
       }
     },
     "/api/v4/artifacts/fields/duplicate": {
@@ -9303,7 +9801,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "fields"
+        ]
       }
     },
     "/api/v4/artifacts/fields/delete": {
@@ -9397,7 +9900,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "fields"
+        ]
       }
     },
     "/api/v4/artifacts/fields/draft": {
@@ -9491,7 +9999,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "fields"
+        ]
       }
     },
     "/api/v4/artifacts/fields/docs": {
@@ -9584,7 +10097,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "fields"
+        ]
       }
     },
     "/api/v4/artifacts/profiles/get": {
@@ -9678,7 +10196,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "profiles"
+        ]
       }
     },
     "/api/v4/artifacts/profiles/list": {
@@ -9772,7 +10295,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "profiles"
+        ]
       }
     },
     "/api/v4/artifacts/profiles/save": {
@@ -9866,7 +10394,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "profiles"
+        ]
       }
     },
     "/api/v4/artifacts/profiles/duplicate": {
@@ -9960,7 +10493,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "profiles"
+        ]
       }
     },
     "/api/v4/artifacts/profiles/draft": {
@@ -10054,7 +10592,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "profiles"
+        ]
       }
     },
     "/api/v4/artifacts/profiles/delete": {
@@ -10148,7 +10691,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "profiles"
+        ]
       }
     },
     "/api/v4/artifacts/profiles/bulk/process": {
@@ -10244,7 +10792,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "profiles",
+          "profiles",
+          "bulk"
+        ]
       }
     },
     "/api/v4/artifacts/profiles/bulk/search": {
@@ -10340,7 +10895,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "profiles",
+          "profiles",
+          "bulk"
+        ]
       }
     },
     "/api/v4/artifacts/profiles/bulk/save": {
@@ -10436,7 +10998,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "profiles",
+          "profiles",
+          "bulk"
+        ]
       }
     },
     "/api/v4/artifacts/profiles/bulk/delete": {
@@ -10532,7 +11101,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "profiles",
+          "profiles",
+          "bulk"
+        ]
       }
     },
     "/api/v4/artifacts/profiles/docs": {
@@ -10625,7 +11201,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "profiles"
+        ]
       }
     },
     "/api/v4/artifacts/auths/get": {
@@ -10719,7 +11300,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "auths"
+        ]
       }
     },
     "/api/v4/artifacts/auths/list": {
@@ -10813,7 +11399,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "auths"
+        ]
       }
     },
     "/api/v4/artifacts/auths/save": {
@@ -10907,7 +11498,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "auths"
+        ]
       }
     },
     "/api/v4/artifacts/auths/duplicate": {
@@ -11001,7 +11597,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "auths"
+        ]
       }
     },
     "/api/v4/artifacts/auths/delete": {
@@ -11095,7 +11696,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "auths"
+        ]
       }
     },
     "/api/v4/artifacts/auths/draft": {
@@ -11189,7 +11795,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "auths"
+        ]
       }
     },
     "/api/v4/artifacts/auths/docs": {
@@ -11282,7 +11893,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "auths"
+        ]
       }
     },
     "/api/v4/artifacts/tools/list": {
@@ -11376,7 +11992,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "tools"
+        ]
       }
     },
     "/api/v4/artifacts/tools/get": {
@@ -11470,7 +12091,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "tools"
+        ]
       }
     },
     "/api/v4/artifacts/tools/save": {
@@ -11564,7 +12190,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "tools"
+        ]
       }
     },
     "/api/v4/artifacts/tools/duplicate": {
@@ -11658,7 +12289,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "tools"
+        ]
       }
     },
     "/api/v4/artifacts/tools/delete": {
@@ -11752,7 +12388,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "tools"
+        ]
       }
     },
     "/api/v4/artifacts/tools/draft": {
@@ -11846,7 +12487,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "tools"
+        ]
       }
     },
     "/api/v4/artifacts/tools/docs": {
@@ -11939,7 +12585,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "tools"
+        ]
       }
     },
     "/api/v4/artifacts/group/get": {
@@ -12034,7 +12685,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "artifacts",
+          "group"
+        ]
       }
     },
     "/api/v4/artifacts/group/list": {
@@ -12129,7 +12786,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "artifacts",
+          "group"
+        ]
       }
     },
     "/api/v4/artifacts/group/docs": {
@@ -12215,7 +12878,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "artifacts",
+          "group"
+        ]
       }
     },
     "/api/v4/artifacts/session/get": {
@@ -12310,7 +12979,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "artifacts",
+          "session"
+        ]
       }
     },
     "/api/v4/artifacts/session/list": {
@@ -12405,7 +13080,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "artifacts",
+          "session"
+        ]
       }
     },
     "/api/v4/artifacts/session/docs": {
@@ -12491,7 +13172,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "artifacts",
+          "session"
+        ]
       }
     },
     "/api/v4/artifacts/training/get": {
@@ -12586,7 +13273,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "artifacts",
+          "training"
+        ]
       }
     },
     "/api/v4/artifacts/training/bundle/get": {
@@ -12681,7 +13374,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "artifacts",
+          "training"
+        ]
       }
     },
     "/api/v4/artifacts/training/draft": {
@@ -12776,7 +13475,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "artifacts",
+          "training"
+        ]
       }
     },
     "/api/v4/artifacts/training/refresh": {
@@ -12871,7 +13576,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "artifacts",
+          "training"
+        ]
       }
     },
     "/api/v4/artifacts/training/docs": {
@@ -12965,7 +13676,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "artifacts",
+          "training"
+        ]
       }
     },
     "/api/v4/artifacts/attempt/get": {
@@ -13060,7 +13777,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "artifacts",
+          "attempt"
+        ]
       }
     },
     "/api/v4/artifacts/attempt/list": {
@@ -13155,7 +13878,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "artifacts",
+          "attempt"
+        ]
       }
     },
     "/api/v4/artifacts/attempt/create": {
@@ -13250,7 +13979,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "artifacts",
+          "attempt"
+        ]
       }
     },
     "/api/v4/artifacts/attempt/archive": {
@@ -13345,7 +14080,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "artifacts",
+          "attempt"
+        ]
       }
     },
     "/api/v4/artifacts/attempt/certificate": {
@@ -13438,7 +14179,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "artifacts",
+          "attempt"
+        ]
       }
     },
     "/api/v4/artifacts/attempt/docs": {
@@ -13532,7 +14279,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "artifacts",
+          "attempt"
+        ]
       }
     },
     "/api/v4/artifacts/dashboard/get": {
@@ -13626,7 +14379,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "dashboard"
+        ]
       }
     },
     "/api/v4/artifacts/dashboard/refresh": {
@@ -13720,7 +14478,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "dashboard"
+        ]
       }
     },
     "/api/v4/artifacts/dashboard/docs": {
@@ -13813,7 +14576,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "dashboard"
+        ]
       }
     },
     "/api/v4/artifacts/reports/export": {
@@ -13906,7 +14674,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "reports",
+          "reports"
+        ]
       }
     },
     "/api/v4/artifacts/reports/get": {
@@ -14000,7 +14774,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "reports"
+        ]
       }
     },
     "/api/v4/artifacts/reports/refresh": {
@@ -14094,7 +14873,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "reports"
+        ]
       }
     },
     "/api/v4/artifacts/reports/docs": {
@@ -14187,7 +14971,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "reports"
+        ]
       }
     },
     "/api/v4/artifacts/leaderboard/get": {
@@ -14281,7 +15070,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "leaderboard"
+        ]
       }
     },
     "/api/v4/artifacts/leaderboard/refresh": {
@@ -14375,7 +15169,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "leaderboard"
+        ]
       }
     },
     "/api/v4/artifacts/leaderboard/docs": {
@@ -14468,7 +15267,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "leaderboard"
+        ]
       }
     },
     "/api/v4/artifacts/pricing/get": {
@@ -14562,7 +15366,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "pricing"
+        ]
       }
     },
     "/api/v4/artifacts/pricing/refresh": {
@@ -14656,7 +15465,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "pricing"
+        ]
       }
     },
     "/api/v4/artifacts/pricing/docs": {
@@ -14749,7 +15563,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "pricing"
+        ]
       }
     },
     "/api/v4/artifacts/activity/get": {
@@ -14843,7 +15662,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "activity"
+        ]
       }
     },
     "/api/v4/artifacts/activity/problem": {
@@ -14938,7 +15762,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "activity",
+          "activity"
+        ]
       }
     },
     "/api/v4/artifacts/activity/refresh": {
@@ -15032,7 +15862,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "activity"
+        ]
       }
     },
     "/api/v4/artifacts/activity/resolve": {
@@ -15127,7 +15962,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "activity",
+          "activity"
+        ]
       }
     },
     "/api/v4/artifacts/activity/docs": {
@@ -15220,7 +16061,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "activity"
+        ]
       }
     },
     "/api/v4/artifacts/health/get": {
@@ -15314,7 +16160,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "health"
+        ]
       }
     },
     "/api/v4/artifacts/health/refresh": {
@@ -15408,7 +16259,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "health"
+        ]
       }
     },
     "/api/v4/artifacts/health/docs": {
@@ -15493,7 +16349,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "health"
+        ]
       }
     },
     "/api/v4/artifacts/benchmark/get": {
@@ -15587,7 +16448,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "benchmark"
+        ]
       }
     },
     "/api/v4/artifacts/benchmark/refresh": {
@@ -15681,7 +16547,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "benchmark"
+        ]
       }
     },
     "/api/v4/artifacts/benchmark/docs": {
@@ -15774,7 +16645,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "benchmark"
+        ]
       }
     },
     "/api/v4/artifacts/benchmark/bundle/get": {
@@ -15868,7 +16744,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "benchmark"
+        ]
       }
     },
     "/api/v4/artifacts/test/get": {
@@ -15963,7 +16844,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "artifacts",
+          "test"
+        ]
       }
     },
     "/api/v4/artifacts/test/list": {
@@ -16058,7 +16945,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "artifacts",
+          "test"
+        ]
       }
     },
     "/api/v4/artifacts/test/archive": {
@@ -16153,7 +17046,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "artifacts",
+          "test"
+        ]
       }
     },
     "/api/v4/artifacts/test/docs": {
@@ -16239,7 +17138,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "artifacts",
+          "test"
+        ]
       }
     },
     "/api/v4/artifacts/test/create": {
@@ -16334,7 +17239,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "artifacts",
+          "test"
+        ]
       }
     },
     "/api/v4/resources/agents/get": {
@@ -16427,7 +17338,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/agents/search": {
@@ -16520,7 +17435,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/args": {
@@ -16613,7 +17532,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/args/get": {
@@ -16706,7 +17629,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/args/search": {
@@ -16799,7 +17726,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/arg_positions": {
@@ -16892,7 +17823,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/arg_positions/get": {
@@ -16985,7 +17920,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/arg_positions/search": {
@@ -17078,7 +18017,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/args_outputs": {
@@ -17171,7 +18114,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/args_outputs/get": {
@@ -17264,7 +18211,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/args_outputs/search": {
@@ -17357,7 +18308,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/auth_item_keys": {
@@ -17450,7 +18405,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/auth_item_keys/get": {
@@ -17543,7 +18502,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/auth_item_keys/search": {
@@ -17635,7 +18598,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/auths/get": {
@@ -17728,7 +18695,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/auths/search": {
@@ -17821,7 +18792,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/bindings/get": {
@@ -17914,7 +18889,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/bindings/search": {
@@ -18007,7 +18986,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/cohorts/get": {
@@ -18100,7 +19083,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/cohorts/search": {
@@ -18193,7 +19180,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/colors": {
@@ -18286,7 +19277,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/colors/get": {
@@ -18379,7 +19374,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/colors/search": {
@@ -18471,7 +19470,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/conditional_parameters/get": {
@@ -18564,7 +19567,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/conditional_parameters/search": {
@@ -18657,7 +19664,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/departments/get": {
@@ -18750,7 +19761,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/departments/search": {
@@ -18842,7 +19857,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/descriptions": {
@@ -18935,7 +19954,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/descriptions/get": {
@@ -19028,7 +20051,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/descriptions/search": {
@@ -19120,7 +20147,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/domains/get": {
@@ -19213,7 +20244,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/domains/search": {
@@ -19305,7 +20340,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/documents/get": {
@@ -19398,7 +20437,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/documents/html": {
@@ -19491,7 +20534,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/documents/search": {
@@ -19583,7 +20630,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/emails": {
@@ -19676,7 +20727,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/emails/get": {
@@ -19769,7 +20824,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/emails/search": {
@@ -19862,7 +20921,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/endpoints": {
@@ -19955,7 +21018,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/endpoints/get": {
@@ -20048,7 +21115,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/endpoints/search": {
@@ -20141,7 +21212,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/evals/get": {
@@ -20234,7 +21309,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/evals/search": {
@@ -20326,7 +21405,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/examples": {
@@ -20419,7 +21502,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/examples/get": {
@@ -20512,7 +21599,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/examples/search": {
@@ -20604,7 +21695,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/fields/get": {
@@ -20697,7 +21792,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/fields/search": {
@@ -20789,7 +21888,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/parameter_fields": {
@@ -20882,7 +21985,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/parameter_fields/get": {
@@ -20975,7 +22082,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/parameter_fields/search": {
@@ -21068,7 +22179,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/flags/get": {
@@ -21161,7 +22276,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/flags/search": {
@@ -21253,7 +22372,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/group_positions": {
@@ -21346,7 +22469,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/group_positions/get": {
@@ -21439,7 +22566,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/group_positions/search": {
@@ -21532,7 +22663,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/group_rubrics": {
@@ -21625,7 +22760,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/group_rubrics/get": {
@@ -21718,7 +22857,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/group_rubrics/search": {
@@ -21811,7 +22954,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/groups/get": {
@@ -21904,7 +23051,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/groups/search": {
@@ -21996,7 +23147,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/icons/get": {
@@ -22089,7 +23244,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/icons/search": {
@@ -22181,7 +23340,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/images": {
@@ -22274,7 +23437,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/images/get": {
@@ -22367,7 +23534,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/images/search": {
@@ -22459,7 +23630,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/instructions": {
@@ -22552,7 +23727,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/instructions/get": {
@@ -22645,7 +23824,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/instructions/search": {
@@ -22737,7 +23920,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/items": {
@@ -22830,7 +24017,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/items/get": {
@@ -22923,7 +24114,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/items/search": {
@@ -23016,7 +24211,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/keys": {
@@ -23109,7 +24308,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/keys/decrypt": {
@@ -23202,7 +24405,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/keys/get": {
@@ -23295,7 +24502,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/keys/search": {
@@ -23388,7 +24599,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/provider_keys": {
@@ -23481,7 +24696,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/provider_keys/get": {
@@ -23574,7 +24793,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/provider_keys/search": {
@@ -23666,7 +24889,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/modalities/get": {
@@ -23759,7 +24986,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/modalities/search": {
@@ -23852,7 +25083,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/models/get": {
@@ -23945,7 +25180,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/models/search": {
@@ -24038,7 +25277,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/names": {
@@ -24131,7 +25374,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/names/get": {
@@ -24224,7 +25471,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/names/search": {
@@ -24317,7 +25568,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/objectives": {
@@ -24410,7 +25665,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/objectives/get": {
@@ -24503,7 +25762,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/objectives/search": {
@@ -24596,7 +25859,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/options": {
@@ -24689,7 +25956,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/options/get": {
@@ -24782,7 +26053,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/options/search": {
@@ -24875,7 +26150,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/parameters/get": {
@@ -24968,7 +26247,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/parameters/search": {
@@ -25060,7 +26343,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/personas/get": {
@@ -25153,7 +26440,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/personas/search": {
@@ -25245,7 +26536,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/points": {
@@ -25338,7 +26633,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/points/get": {
@@ -25431,7 +26730,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/points/search": {
@@ -25524,7 +26827,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/pricing": {
@@ -25617,7 +26924,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/pricing/get": {
@@ -25710,7 +27021,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/pricing/search": {
@@ -25803,7 +27118,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/problem_statements": {
@@ -25896,7 +27215,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/problem_statements/get": {
@@ -25989,7 +27312,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/profiles/search": {
@@ -26082,7 +27409,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/prompts": {
@@ -26175,7 +27506,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/prompts/get": {
@@ -26268,7 +27603,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/prompts/search": {
@@ -26361,7 +27700,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/protocols": {
@@ -26454,7 +27797,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/protocols/get": {
@@ -26547,7 +27894,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/protocols/search": {
@@ -26639,7 +27990,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/providers/get": {
@@ -26732,7 +28087,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/providers/search": {
@@ -26825,7 +28184,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/qualities/get": {
@@ -26918,7 +28281,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/qualities/search": {
@@ -27011,7 +28378,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/questions": {
@@ -27104,7 +28475,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/questions/get": {
@@ -27197,7 +28572,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/reasoning_levels/get": {
@@ -27290,7 +28669,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/reasoning_levels/search": {
@@ -27383,7 +28766,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/request_limits": {
@@ -27476,7 +28863,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/request_limits/get": {
@@ -27569,7 +28960,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/request_limits/search": {
@@ -27662,7 +29057,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/roles/get": {
@@ -27755,7 +29154,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/roles/search": {
@@ -27848,7 +29251,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/routes/get": {
@@ -27941,7 +29348,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/routes/search": {
@@ -28034,7 +29445,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/rubrics/get": {
@@ -28127,7 +29542,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/rubrics/search": {
@@ -28220,7 +29639,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/run_positions": {
@@ -28313,7 +29736,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/run_positions/get": {
@@ -28406,7 +29833,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/run_positions/search": {
@@ -28499,7 +29930,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/run_rubrics": {
@@ -28592,7 +30027,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/run_rubrics/get": {
@@ -28685,7 +30124,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/run_rubrics/search": {
@@ -28778,7 +30221,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/runs/get": {
@@ -28871,7 +30318,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/runs/search": {
@@ -28964,7 +30415,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/scenario_flags/get": {
@@ -29057,7 +30512,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/scenario_flags/search": {
@@ -29150,7 +30609,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/role_routes": {
@@ -29243,7 +30706,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/role_routes/get": {
@@ -29336,7 +30803,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/role_routes/search": {
@@ -29429,7 +30900,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/scenario_personas": {
@@ -29522,7 +30997,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/scenario_personas/get": {
@@ -29615,7 +31094,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/scenario_personas/search": {
@@ -29708,7 +31191,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/scenario_positions": {
@@ -29801,7 +31288,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/scenario_positions/get": {
@@ -29894,7 +31385,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/scenario_positions/search": {
@@ -29987,7 +31482,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/scenario_rubrics": {
@@ -30080,7 +31579,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/scenario_rubrics/get": {
@@ -30173,7 +31676,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/scenario_rubrics/search": {
@@ -30266,7 +31773,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/scenario_time_limits": {
@@ -30359,7 +31870,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/scenario_time_limits/get": {
@@ -30452,7 +31967,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/scenario_time_limits/search": {
@@ -30545,7 +32064,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/scenarios/get": {
@@ -30638,7 +32161,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/scenarios/search": {
@@ -30731,7 +32258,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/settings/get": {
@@ -30824,7 +32355,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/settings/search": {
@@ -30917,7 +32452,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/simulation_positions": {
@@ -31010,7 +32549,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/simulation_positions/get": {
@@ -31103,7 +32646,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/simulation_positions/search": {
@@ -31196,7 +32743,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/simulations/get": {
@@ -31289,7 +32840,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/simulations/batch": {
@@ -31382,7 +32937,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/simulations/search": {
@@ -31475,7 +33034,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/slugs": {
@@ -31568,7 +33131,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/slugs/get": {
@@ -31661,7 +33228,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/slugs/search": {
@@ -31753,7 +33324,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/standard_groups": {
@@ -31846,7 +33421,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/standard_groups/get": {
@@ -31939,7 +33518,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/standard_groups/search": {
@@ -32032,7 +33615,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/standards/get": {
@@ -32125,7 +33712,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/standards/search": {
@@ -32218,7 +33809,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/temperature_levels/get": {
@@ -32311,7 +33906,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/temperature_levels/search": {
@@ -32404,7 +34003,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/thresholds/get": {
@@ -32497,7 +34100,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/thresholds/search": {
@@ -32590,7 +34197,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/tools/get": {
@@ -32683,7 +34294,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/tools/search": {
@@ -32776,7 +34391,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/values": {
@@ -32869,7 +34488,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/values/get": {
@@ -32962,7 +34585,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/values/search": {
@@ -33054,7 +34681,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/videos": {
@@ -33147,7 +34778,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/videos/get": {
@@ -33240,7 +34875,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/voices": {
@@ -33333,7 +34972,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/voices/get": {
@@ -33426,7 +35069,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/voices/search": {
@@ -33519,7 +35166,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/texts": {
@@ -33612,7 +35263,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/texts/search": {
@@ -33704,7 +35359,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/uploads": {
@@ -33797,7 +35456,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/uploads/download/{upload_id}": {
@@ -33899,7 +35562,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/uploads/get": {
@@ -33992,7 +35659,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/uploads/search": {
@@ -34085,7 +35756,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/uploads/upload": {
@@ -34166,7 +35841,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       },
       "post": {
         "tags": [
@@ -34245,7 +35924,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/uploads/upload/{upload_id}": {
@@ -34335,7 +36018,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       },
       "head": {
         "tags": [
@@ -34423,7 +36110,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       },
       "patch": {
         "tags": [
@@ -34511,7 +36202,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/uploads/upload/{upload_id}/finalize": {
@@ -34603,7 +36298,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/views/attempt/list/get": {
@@ -34701,7 +36400,16 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "attempt",
+          "views",
+          "attempt",
+          "list"
+        ]
       }
     },
     "/api/v4/views/attempt/list/refresh": {
@@ -34789,7 +36497,16 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "attempt",
+          "views",
+          "attempt",
+          "list"
+        ]
       }
     },
     "/api/v4/views/attempt/list/recreate": {
@@ -34877,7 +36594,16 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "attempt",
+          "views",
+          "attempt",
+          "list"
+        ]
       }
     },
     "/api/v4/views/attempt/chats/get": {
@@ -34975,7 +36701,16 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "attempt",
+          "views",
+          "attempt",
+          "chats"
+        ]
       }
     },
     "/api/v4/views/attempt/chats/refresh": {
@@ -35063,7 +36798,16 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "attempt",
+          "views",
+          "attempt",
+          "chats"
+        ]
       }
     },
     "/api/v4/views/attempt/chats/recreate": {
@@ -35151,7 +36895,16 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "attempt",
+          "views",
+          "attempt",
+          "chats"
+        ]
       }
     },
     "/api/v4/views/attempt/messages/get": {
@@ -35249,7 +37002,16 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "attempt",
+          "views",
+          "attempt",
+          "messages"
+        ]
       }
     },
     "/api/v4/views/attempt/messages/refresh": {
@@ -35337,7 +37099,16 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "attempt",
+          "views",
+          "attempt",
+          "messages"
+        ]
       }
     },
     "/api/v4/views/attempt/messages/recreate": {
@@ -35425,7 +37196,16 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "attempt",
+          "views",
+          "attempt",
+          "messages"
+        ]
       }
     },
     "/api/v4/views/attempt/overview/get": {
@@ -35523,7 +37303,16 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "attempt",
+          "views",
+          "attempt",
+          "overview"
+        ]
       }
     },
     "/api/v4/views/attempt/overview/refresh": {
@@ -35611,7 +37400,16 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "attempt",
+          "views",
+          "attempt",
+          "overview"
+        ]
       }
     },
     "/api/v4/views/attempt/overview/recreate": {
@@ -35699,7 +37497,16 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "attempt",
+          "views",
+          "attempt",
+          "overview"
+        ]
       }
     },
     "/api/v4/views/analytics/attempts/get": {
@@ -35795,7 +37602,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "analytics",
+          "attempts"
+        ]
       }
     },
     "/api/v4/views/analytics/chat-facts/get": {
@@ -35891,7 +37705,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "analytics",
+          "chat_facts"
+        ]
       }
     },
     "/api/v4/views/analytics/daily-metrics/get": {
@@ -35987,7 +37808,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "analytics",
+          "daily_metrics"
+        ]
       }
     },
     "/api/v4/views/analytics/profile-metrics/get": {
@@ -36083,7 +37911,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "analytics",
+          "profile_metrics"
+        ]
       }
     },
     "/api/v4/views/analytics/health/get": {
@@ -36179,7 +38014,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "analytics",
+          "health"
+        ]
       }
     },
     "/api/v4/views/analytics/pricing/get": {
@@ -36275,7 +38117,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "analytics",
+          "pricing"
+        ]
       }
     },
     "/api/v4/views/analytics/pricing/list": {
@@ -36371,7 +38220,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "analytics",
+          "pricing"
+        ]
       }
     },
     "/api/v4/views/pricing/run-facts/get": {
@@ -36467,7 +38323,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "pricing",
+          "run_facts"
+        ]
       }
     },
     "/api/v4/views/pricing/group-summary/get": {
@@ -36563,7 +38426,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "pricing",
+          "group_summary"
+        ]
       }
     },
     "/api/v4/views/pricing/daily/get": {
@@ -36659,7 +38529,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "pricing",
+          "daily"
+        ]
       }
     },
     "/api/v4/views/pricing/group-detail/get": {
@@ -36755,7 +38632,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "pricing",
+          "group_detail"
+        ]
       }
     },
     "/api/v4/views/activity/session-facts/get": {
@@ -36851,7 +38735,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "activity",
+          "session_facts"
+        ]
       }
     },
     "/api/v4/views/activity/daily/get": {
@@ -36947,7 +38838,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "activity",
+          "daily"
+        ]
       }
     },
     "/api/v4/views/activity/logins/logins/get": {
@@ -37046,7 +38944,17 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "activity",
+          "logins",
+          "views",
+          "activity",
+          "logins"
+        ]
       }
     },
     "/api/v4/views/activity/audits/audits/get": {
@@ -37145,7 +39053,17 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "activity",
+          "audits",
+          "views",
+          "activity",
+          "audits"
+        ]
       }
     },
     "/api/v4/views/activity/feedbacks/feedbacks/get": {
@@ -37244,7 +39162,17 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "activity",
+          "feedbacks",
+          "views",
+          "activity",
+          "feedbacks"
+        ]
       }
     },
     "/api/v4/views/activity/problems/problems/get": {
@@ -37343,7 +39271,17 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "activity",
+          "problems",
+          "views",
+          "activity",
+          "problems"
+        ]
       }
     },
     "/api/v4/views/activity/summary/get": {
@@ -37429,7 +39367,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "activity",
+          "summary"
+        ]
       }
     },
     "/api/v4/views/health/service-hourly/get": {
@@ -37525,7 +39470,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "health",
+          "service_hourly"
+        ]
       }
     },
     "/api/v4/views/health/metrics-hourly/get": {
@@ -37621,7 +39573,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "health",
+          "metrics_hourly"
+        ]
       }
     },
     "/api/v4/views/benchmark/tests/get": {
@@ -37719,7 +39678,16 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "benchmark",
+          "views",
+          "benchmark",
+          "tests"
+        ]
       }
     },
     "/api/v4/views/benchmark/tests/refresh": {
@@ -37811,7 +39779,16 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "benchmark",
+          "views",
+          "benchmark",
+          "tests"
+        ]
       }
     },
     "/api/v4/views/benchmark/invocations/get": {
@@ -37909,7 +39886,16 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "benchmark",
+          "views",
+          "benchmark",
+          "invocations"
+        ]
       }
     },
     "/api/v4/views/benchmark/invocations/refresh": {
@@ -38001,7 +39987,16 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "benchmark",
+          "views",
+          "benchmark",
+          "invocations"
+        ]
       }
     },
     "/api/v4/views/benchmark/bundle/get": {
@@ -38099,7 +40094,16 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "benchmark",
+          "views",
+          "benchmark",
+          "bundle"
+        ]
       }
     },
     "/api/v4/views/benchmark/attempt-facts/get": {
@@ -38195,7 +40199,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "benchmark",
+          "attempt_facts"
+        ]
       }
     },
     "/api/v4/views/benchmark/eval-summary/get": {
@@ -38291,7 +40302,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "benchmark",
+          "eval_summary"
+        ]
       }
     },
     "/api/v4/views/artifacts/session-list/get": {
@@ -38387,7 +40405,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "artifacts",
+          "session_list"
+        ]
       }
     },
     "/api/v4/views/artifacts/session-detail/get": {
@@ -38483,7 +40508,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "artifacts",
+          "session_detail"
+        ]
       }
     },
     "/api/v4/views/config/get": {
@@ -38578,7 +40610,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "config"
+        ]
       }
     },
     "/api/v4/views/config/refresh": {
@@ -38663,7 +40701,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "config"
+        ]
       }
     },
     "/api/v4/views/config/recreate": {
@@ -38748,7 +40792,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "config"
+        ]
       }
     },
     "/api/v4/views/training/context/get": {
@@ -38846,7 +40896,16 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "training",
+          "views",
+          "training",
+          "context"
+        ]
       }
     },
     "/api/v4/views/training/bundle/get": {
@@ -38944,7 +41003,16 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "training",
+          "views",
+          "training",
+          "bundle"
+        ]
       }
     },
     "/api/v4/auth/login": {
@@ -39037,7 +41105,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "auth"
+        ]
       }
     },
     "/api/v4/auth/context": {
@@ -39130,7 +41202,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "auth"
+        ]
       }
     },
     "/api/v4/auth/email": {
@@ -39223,7 +41299,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "auth"
+        ]
       }
     },
     "/api/v4/auth/upsert": {
@@ -39316,7 +41396,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "auth"
+        ]
       }
     },
     "/api/v4/auth/simulatable": {
@@ -39409,7 +41493,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "auth"
+        ]
       }
     },
     "/api/v4/auth/emulate": {
@@ -39502,7 +41590,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "auth"
+        ]
       }
     },
     "/socket/v4/client/connect": {
@@ -39529,7 +41621,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client"
+        ]
       }
     },
     "/socket/v4/client/disconnect": {
@@ -39556,7 +41652,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client"
+        ]
       }
     },
     "/socket/v4/client/training/start": {
@@ -39603,7 +41703,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client"
+        ]
       }
     },
     "/socket/v4/client/attempt/message": {
@@ -39650,7 +41754,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client"
+        ]
       }
     },
     "/socket/v4/client/attempt/grade": {
@@ -39697,7 +41805,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client"
+        ]
       }
     },
     "/socket/v4/client/attempt/join": {
@@ -39744,7 +41856,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client"
+        ]
       }
     },
     "/socket/v4/client/attempt/leave": {
@@ -39791,7 +41907,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client"
+        ]
       }
     },
     "/socket/v4/client/attempt/stop": {
@@ -39838,7 +41958,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client"
+        ]
       }
     },
     "/socket/v4/client/attempt/end": {
@@ -39885,7 +42009,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client"
+        ]
       }
     },
     "/socket/v4/client/attempt/end_all": {
@@ -39932,7 +42060,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client"
+        ]
       }
     },
     "/socket/v4/client/attempt/audio_start": {
@@ -39979,7 +42111,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client"
+        ]
       }
     },
     "/socket/v4/client/attempt/audio_stop": {
@@ -40026,7 +42162,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client"
+        ]
       }
     },
     "/socket/v4/client/attempt/audio_frame": {
@@ -40073,7 +42213,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client"
+        ]
       }
     },
     "/socket/v4/client/attempt/mic_mute": {
@@ -40120,7 +42264,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client"
+        ]
       }
     },
     "/socket/v4/client/attempt/response_submit": {
@@ -40167,7 +42315,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client"
+        ]
       }
     },
     "/socket/v4/client/benchmark/start": {
@@ -40214,7 +42366,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client"
+        ]
       }
     },
     "/socket/v4/client/test/join": {
@@ -40261,7 +42417,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client"
+        ]
       }
     },
     "/socket/v4/client/test/leave": {
@@ -40308,7 +42468,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client"
+        ]
       }
     },
     "/socket/v4/client/test/stop": {
@@ -40355,7 +42519,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client"
+        ]
       }
     },
     "/socket/v4/client/test/run": {
@@ -40402,7 +42570,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client"
+        ]
       }
     },
     "/socket/v4/client/test/run_all": {
@@ -40449,7 +42621,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client"
+        ]
       }
     },
     "/socket/v4/server/connection_confirmed": {
@@ -40496,7 +42672,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/auth_generation_progress": {
@@ -40543,7 +42723,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/auth_generation_complete": {
@@ -40589,7 +42773,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/auth_generation_error": {
@@ -40636,7 +42824,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/training/started": {
@@ -40683,7 +42875,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/training/progress": {
@@ -40730,7 +42926,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/training/complete": {
@@ -40779,7 +42979,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/training/error": {
@@ -40826,7 +43030,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/attempt/user_complete": {
@@ -40873,7 +43081,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/attempt/assistant_start": {
@@ -40920,7 +43132,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/attempt/graded": {
@@ -40967,7 +43183,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/attempt/progress": {
@@ -41014,7 +43234,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/attempt/complete": {
@@ -41061,7 +43285,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/attempt/assistant_complete": {
@@ -41108,7 +43336,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/attempt/content_progress": {
@@ -41155,7 +43387,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/attempt/hint_progress": {
@@ -41202,7 +43438,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/attempt/grading_progress": {
@@ -41249,7 +43489,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/attempt/error": {
@@ -41296,7 +43540,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/attempt/joined": {
@@ -41343,7 +43591,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/attempt/stopped": {
@@ -41390,7 +43642,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/attempt/chat_ended": {
@@ -41437,7 +43693,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/attempt/ended": {
@@ -41484,7 +43744,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/attempt/audio_ready": {
@@ -41531,7 +43795,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/attempt/audio_ended": {
@@ -41578,7 +43846,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/attempt/user_start": {
@@ -41625,7 +43897,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/attempt/user_delta": {
@@ -41672,7 +43948,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/attempt/assistant_audio": {
@@ -41719,7 +43999,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/attempt/response_result": {
@@ -41766,7 +44050,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/benchmark/started": {
@@ -41813,7 +44101,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/benchmark/progress": {
@@ -41860,7 +44152,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/benchmark/complete": {
@@ -41907,7 +44203,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/benchmark/error": {
@@ -41954,7 +44254,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/test/joined": {
@@ -42001,7 +44305,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/test/stopped": {
@@ -42048,7 +44356,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/test/progress": {
@@ -42095,7 +44407,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/test/run_complete": {
@@ -42142,7 +44458,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/test/error": {
@@ -42189,7 +44509,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/test/run_start": {
@@ -42236,7 +44560,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/test/all_complete": {
@@ -42283,7 +44611,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/simulation_generation_progress": {
@@ -42332,7 +44664,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/simulation_generation_complete": {
@@ -42379,7 +44715,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/simulation_generation_error": {
@@ -42428,7 +44768,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/scenario_generation_progress": {
@@ -42477,7 +44821,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/scenario_generation_complete": {
@@ -42524,7 +44872,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/scenario_generation_error": {
@@ -42573,7 +44925,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/rubric_generation_progress": {
@@ -42622,7 +44978,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/rubric_generation_complete": {
@@ -42669,7 +45029,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/rubric_generation_error": {
@@ -42718,7 +45082,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/document_generation_progress": {
@@ -42767,7 +45135,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/document_generation_complete": {
@@ -42814,7 +45186,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/document_generation_error": {
@@ -42863,7 +45239,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/agent_generation_progress": {
@@ -42912,7 +45292,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/agent_generation_complete": {
@@ -42961,7 +45345,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/agent_generation_error": {
@@ -43010,7 +45398,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/persona_generation_progress": {
@@ -43057,7 +45449,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/persona_generation_complete": {
@@ -43104,7 +45500,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/persona_generation_error": {
@@ -43151,7 +45551,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/cohort_generation_progress": {
@@ -43198,7 +45602,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/cohort_generation_complete": {
@@ -43245,7 +45653,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/cohort_generation_error": {
@@ -43292,7 +45704,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/profile_generation_progress": {
@@ -43339,7 +45755,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/profile_generation_complete": {
@@ -43386,7 +45806,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/profile_generation_error": {
@@ -43433,7 +45857,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/parameter_generation_progress": {
@@ -43481,7 +45909,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/parameter_generation_complete": {
@@ -43528,7 +45960,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/parameter_generation_error": {
@@ -43576,7 +46012,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/field_generation_progress": {
@@ -43623,7 +46063,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/field_generation_complete": {
@@ -43670,7 +46114,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/field_generation_error": {
@@ -43717,7 +46165,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/model_generation_progress": {
@@ -43765,7 +46217,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/model_generation_complete": {
@@ -43812,7 +46268,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/model_generation_error": {
@@ -43860,7 +46320,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/tool_generation_progress": {
@@ -43907,7 +46371,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/tool_generation_complete": {
@@ -43954,7 +46422,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/tool_generation_error": {
@@ -44001,7 +46473,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/department_generation_progress": {
@@ -44049,7 +46525,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/department_generation_complete": {
@@ -44097,7 +46577,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/department_generation_error": {
@@ -44145,7 +46629,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/provider_generation_progress": {
@@ -44193,7 +46681,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/provider_generation_complete": {
@@ -44240,7 +46732,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/provider_generation_error": {
@@ -44288,7 +46784,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/eval_generation_progress": {
@@ -44336,7 +46836,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/eval_generation_complete": {
@@ -44383,7 +46887,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/eval_generation_error": {
@@ -44431,7 +46939,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/setting_generation_progress": {
@@ -44479,7 +46991,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/setting_generation_complete": {
@@ -44527,7 +47043,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/setting_generation_error": {
@@ -44575,7 +47095,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/default-idp/.well-known/openid-configuration": {
@@ -44599,7 +47123,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "default-idp"
+        ]
       }
     },
     "/default-idp/authorize": {
@@ -44743,7 +47270,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "default-idp"
+        ]
       }
     },
     "/default-idp/token": {
@@ -44787,7 +47317,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "default-idp"
+        ]
       }
     },
     "/default-idp/userinfo": {
@@ -44839,7 +47372,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "default-idp"
+        ]
       }
     },
     "/default-idp/jwks": {
@@ -44859,7 +47395,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "default-idp"
+        ]
       }
     },
     "/.well-known/oauth-authorization-server": {
