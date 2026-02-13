@@ -108,7 +108,7 @@ async def search_keys(
             request.limit_count,
             request.offset_count,
             request.exclude_ids,
-            bypass_cache,
+            bypass_cache=bypass_cache,
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return SearchKeysApiResponse(items=items)

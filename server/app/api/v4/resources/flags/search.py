@@ -153,7 +153,7 @@ async def search_flags(
             request.limit_count,
             request.offset_count,
             request.exclude_ids,
-            bypass_cache,
+            bypass_cache=bypass_cache,
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return SearchFlagsApiResponse(items=items)

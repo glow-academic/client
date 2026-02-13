@@ -119,7 +119,7 @@ async def search_parameter_fields(
 
     try:
         items = await search_parameter_fields_internal(
-            conn, request.parameter_ids or [], bypass_cache
+            conn, request.parameter_ids or [], bypass_cache=bypass_cache
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return SearchParameterFieldsApiResponse(items=items)

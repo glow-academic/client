@@ -112,7 +112,7 @@ async def search_pricing(
             request.limit_count,
             request.offset_count,
             request.exclude_ids,
-            bypass_cache,
+            bypass_cache=bypass_cache,
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return SearchPricingApiResponse(items=items)
