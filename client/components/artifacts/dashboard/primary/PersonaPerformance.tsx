@@ -165,10 +165,10 @@ export interface PersonaPerformanceProps {
     warning: number;
     success: number;
   };
-  initialSelectedSimulations?: string[];
-  onSimulationSelect?: (ids: string[]) => void;
-  simulationSearchValue?: string;
-  onSimulationSearchChange?: (term: string) => void;
+  initialSelectedSimulations?: string[] | undefined;
+  onSimulationSelect?: ((ids: string[]) => void) | undefined;
+  simulationSearchValue?: string | undefined;
+  onSimulationSearchChange?: ((term: string) => void) | undefined;
 }
 
 export default function PersonaPerformance({
@@ -179,11 +179,11 @@ export default function PersonaPerformance({
   hasDataAvailable,
   performanceStatus,
   actionableInsights,
-  thresholds,
+  thresholds: _thresholds,
   initialSelectedSimulations,
   onSimulationSelect,
-  simulationSearchValue,
-  onSimulationSearchChange,
+  simulationSearchValue: _simulationSearchValue,
+  onSimulationSearchChange: _onSimulationSearchChange,
 }: PersonaPerformanceProps) {
   // Create lookup map from array for backward compatibility
   const simulationMapping = useMemo(() => {

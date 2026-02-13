@@ -79,10 +79,10 @@ export interface CohortPerformanceProps {
   profileId?: string | undefined;
   actionableInsights?: Record<string, string | null>; // Key: cohort_id, Value: insight text
   status: "success" | "warning" | "danger" | "neutral";
-  initialSelectedSimulations?: string[];
-  onSimulationSelect?: (ids: string[]) => void;
-  simulationSearchValue?: string;
-  onSimulationSearchChange?: (term: string) => void;
+  initialSelectedSimulations?: string[] | undefined;
+  onSimulationSelect?: ((ids: string[]) => void) | undefined;
+  simulationSearchValue?: string | undefined;
+  onSimulationSearchChange?: ((term: string) => void) | undefined;
 }
 
 export default function CohortPerformance({
@@ -97,8 +97,8 @@ export default function CohortPerformance({
   status,
   initialSelectedSimulations,
   onSimulationSelect,
-  simulationSearchValue,
-  onSimulationSearchChange,
+  simulationSearchValue: _simulationSearchValue,
+  onSimulationSearchChange: _onSimulationSearchChange,
 }: CohortPerformanceProps) {
   // Create lookup map from array for backward compatibility
   const simulationMapping = useMemo(() => {

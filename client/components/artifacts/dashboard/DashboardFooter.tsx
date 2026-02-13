@@ -25,18 +25,18 @@ function validateStatus(
 
 export interface DashboardFooterProps {
   data: FooterOut;
-  initialScenarioPerfParameters?: string[];
-  onScenarioPerfParameterChange?: (ids: string[]) => void;
-  scenarioPerfParamSearch?: string;
-  onScenarioPerfParamSearchChange?: (term: string) => void;
-  initialScenarioStatsParameters?: string[];
-  onScenarioStatsParameterChange?: (ids: string[]) => void;
-  scenarioStatsParamSearch?: string;
-  onScenarioStatsParamSearchChange?: (term: string) => void;
-  initialSimPerfSimulations?: string[];
-  onSimPerfSimulationChange?: (ids: string[]) => void;
-  simPerfSimulationSearch?: string;
-  onSimPerfSimulationSearchChange?: (term: string) => void;
+  initialScenarioPerfParameters?: string[] | undefined;
+  onScenarioPerfParameterChange?: ((ids: string[]) => void) | undefined;
+  scenarioPerfParamSearch?: string | undefined;
+  onScenarioPerfParamSearchChange?: ((term: string) => void) | undefined;
+  initialScenarioStatsParameters?: string[] | undefined;
+  onScenarioStatsParameterChange?: ((ids: string[]) => void) | undefined;
+  scenarioStatsParamSearch?: string | undefined;
+  onScenarioStatsParamSearchChange?: ((term: string) => void) | undefined;
+  initialSimPerfSimulations?: string[] | undefined;
+  onSimPerfSimulationChange?: ((ids: string[]) => void) | undefined;
+  simPerfSimulationSearch?: string | undefined;
+  onSimPerfSimulationSearchChange?: ((term: string) => void) | undefined;
 }
 
 export default function DashboardFooter({

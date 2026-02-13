@@ -24,14 +24,14 @@ function validateStatus(
 
 export interface DashboardPrimaryProps {
   data: PrimaryOut;
-  initialPersonaSimulations?: string[];
-  onPersonaSimulationChange?: (ids: string[]) => void;
-  personaSimulationsSearch?: string;
-  onPersonaSimulationsSearchChange?: (term: string) => void;
-  initialHeatmapRubrics?: string[];
-  onHeatmapRubricChange?: (ids: string[]) => void;
-  heatmapRubricSearch?: string;
-  onHeatmapRubricSearchChange?: (term: string) => void;
+  initialPersonaSimulations?: string[] | undefined;
+  onPersonaSimulationChange?: ((ids: string[]) => void) | undefined;
+  personaSimulationsSearch?: string | undefined;
+  onPersonaSimulationsSearchChange?: ((term: string) => void) | undefined;
+  initialHeatmapRubrics?: string[] | undefined;
+  onHeatmapRubricChange?: ((ids: string[]) => void) | undefined;
+  heatmapRubricSearch?: string | undefined;
+  onHeatmapRubricSearchChange?: ((term: string) => void) | undefined;
 }
 
 export default function DashboardPrimary({

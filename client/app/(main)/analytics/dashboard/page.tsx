@@ -333,10 +333,10 @@ async function DashboardPrimarySection({
   heatmapRubricSearch,
 }: {
   commonBody: CommonBody;
-  personaSimulationIds?: string[];
-  personaSimulationsSearch?: string;
-  heatmapRubricIds?: string[];
-  heatmapRubricSearch?: string;
+  personaSimulationIds?: string[] | undefined;
+  personaSimulationsSearch?: string | undefined;
+  heatmapRubricIds?: string[] | undefined;
+  heatmapRubricSearch?: string | undefined;
 }) {
   const data = await getDashboardPrimary({
     body: {
@@ -374,12 +374,12 @@ async function DashboardSecondarySection({
   skillRubricSearch,
 }: {
   commonBody: CommonBody;
-  cohortSimulationIds?: string[];
-  cohortSimulationsSearch?: string;
-  improvementSimulationIds?: string[];
-  improvementSimulationsSearch?: string;
-  skillRubricIds?: string[];
-  skillRubricSearch?: string;
+  cohortSimulationIds?: string[] | undefined;
+  cohortSimulationsSearch?: string | undefined;
+  improvementSimulationIds?: string[] | undefined;
+  improvementSimulationsSearch?: string | undefined;
+  skillRubricIds?: string[] | undefined;
+  skillRubricSearch?: string | undefined;
 }) {
   const data = await getDashboardSecondary({
     body: {
@@ -424,12 +424,12 @@ async function DashboardFooterSection({
   simPerfSimulationSearch,
 }: {
   commonBody: CommonBody;
-  scenarioPerfParameterIds?: string[];
-  scenarioPerfParamSearch?: string;
-  scenarioStatsParameterIds?: string[];
-  scenarioStatsParamSearch?: string;
-  simPerfSimulationIds?: string[];
-  simPerfSimulationSearch?: string;
+  scenarioPerfParameterIds?: string[] | undefined;
+  scenarioPerfParamSearch?: string | undefined;
+  scenarioStatsParameterIds?: string[] | undefined;
+  scenarioStatsParamSearch?: string | undefined;
+  simPerfSimulationIds?: string[] | undefined;
+  simPerfSimulationSearch?: string | undefined;
 }) {
   const data = await getDashboardFooter({
     body: {

@@ -90,10 +90,10 @@ export interface SkillPerformanceProps {
   validRubricIds: string[];
   actionableInsight?: string | null;
   status: "success" | "warning" | "danger" | "neutral";
-  initialSelectedRubrics?: string[];
-  onRubricSelect?: (ids: string[]) => void;
-  rubricSearchValue?: string;
-  onRubricSearchChange?: (term: string) => void;
+  initialSelectedRubrics?: string[] | undefined;
+  onRubricSelect?: ((ids: string[]) => void) | undefined;
+  rubricSearchValue?: string | undefined;
+  onRubricSearchChange?: ((term: string) => void) | undefined;
 }
 
 export default function SkillPerformance({
@@ -104,8 +104,8 @@ export default function SkillPerformance({
   status,
   initialSelectedRubrics,
   onRubricSelect,
-  rubricSearchValue,
-  onRubricSearchChange,
+  rubricSearchValue: _rubricSearchValue,
+  onRubricSearchChange: _onRubricSearchChange,
 }: SkillPerformanceProps) {
   // Create lookup map from array for backward compatibility
   const rubricMapping = useMemo(() => {

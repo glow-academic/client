@@ -151,10 +151,10 @@ export interface SimulationPerformanceProps {
   simulations: Array<{ simulation_id: string; name: string; description: string }>;
   actionableInsight?: string | null;
   status: "success" | "warning" | "danger" | "neutral";
-  initialSelectedSimulations?: string[];
-  onSimulationSelect?: (ids: string[]) => void;
-  simulationSearchValue?: string;
-  onSimulationSearchChange?: (term: string) => void;
+  initialSelectedSimulations?: string[] | undefined;
+  onSimulationSelect?: ((ids: string[]) => void) | undefined;
+  simulationSearchValue?: string | undefined;
+  onSimulationSearchChange?: ((term: string) => void) | undefined;
 }
 
 export default function SimulationPerformance({
@@ -165,8 +165,8 @@ export default function SimulationPerformance({
   status,
   initialSelectedSimulations,
   onSimulationSelect,
-  simulationSearchValue,
-  onSimulationSearchChange,
+  simulationSearchValue: _simulationSearchValue,
+  onSimulationSearchChange: _onSimulationSearchChange,
 }: SimulationPerformanceProps) {
   // Create lookup map from array for backward compatibility
   const simulationMapping = useMemo(() => {

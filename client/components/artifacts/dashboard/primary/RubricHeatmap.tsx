@@ -79,10 +79,10 @@ export interface RubricHeatmapProps {
   hasDataAvailable: boolean;
   actionableInsight?: string | null | undefined;
   status: "success" | "warning" | "danger" | "neutral";
-  initialSelectedRubrics?: string[];
-  onRubricSelect?: (ids: string[]) => void;
-  rubricSearchValue?: string;
-  onRubricSearchChange?: (term: string) => void;
+  initialSelectedRubrics?: string[] | undefined;
+  onRubricSelect?: ((ids: string[]) => void) | undefined;
+  rubricSearchValue?: string | undefined;
+  onRubricSearchChange?: ((term: string) => void) | undefined;
 }
 
 export default function RubricHeatmap({
@@ -94,8 +94,8 @@ export default function RubricHeatmap({
   status,
   initialSelectedRubrics,
   onRubricSelect,
-  rubricSearchValue,
-  onRubricSearchChange,
+  rubricSearchValue: _rubricSearchValue,
+  onRubricSearchChange: _onRubricSearchChange,
 }: RubricHeatmapProps) {
   // Create lookup map from array for backward compatibility
   const rubricMapping = useMemo(() => {

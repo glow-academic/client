@@ -145,10 +145,10 @@ export interface ScenarioPerformanceProps {
   validParameterIds: string[];
   actionableInsight?: string | null;
   status: "success" | "warning" | "danger" | "neutral";
-  initialSelectedParameters?: string[];
-  onParameterSelect?: (ids: string[]) => void;
-  parameterSearchValue?: string;
-  onParameterSearchChange?: (term: string) => void;
+  initialSelectedParameters?: string[] | undefined;
+  onParameterSelect?: ((ids: string[]) => void) | undefined;
+  parameterSearchValue?: string | undefined;
+  onParameterSearchChange?: ((term: string) => void) | undefined;
 }
 
 export default function ScenarioPerformance({
@@ -161,8 +161,8 @@ export default function ScenarioPerformance({
   status,
   initialSelectedParameters,
   onParameterSelect,
-  parameterSearchValue,
-  onParameterSearchChange,
+  parameterSearchValue: _parameterSearchValue,
+  onParameterSearchChange: _onParameterSearchChange,
 }: ScenarioPerformanceProps) {
   // Create lookup maps from arrays for backward compatibility
   const parameterMapping = useMemo(() => {

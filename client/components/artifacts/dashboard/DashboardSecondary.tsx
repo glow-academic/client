@@ -24,19 +24,19 @@ function validateStatus(
 
 export interface DashboardSecondaryProps {
   data: SecondaryOut;
-  profileId?: string;
-  initialCohortSimulations?: string[];
-  onCohortSimulationChange?: (ids: string[]) => void;
-  cohortSimulationsSearch?: string;
-  onCohortSimulationsSearchChange?: (term: string) => void;
-  initialImprovementSimulations?: string[];
-  onImprovementSimulationChange?: (ids: string[]) => void;
-  improvementSimulationsSearch?: string;
-  onImprovementSimulationsSearchChange?: (term: string) => void;
-  initialSkillRubrics?: string[];
-  onSkillRubricChange?: (ids: string[]) => void;
-  skillRubricSearch?: string;
-  onSkillRubricSearchChange?: (term: string) => void;
+  profileId?: string | undefined;
+  initialCohortSimulations?: string[] | undefined;
+  onCohortSimulationChange?: ((ids: string[]) => void) | undefined;
+  cohortSimulationsSearch?: string | undefined;
+  onCohortSimulationsSearchChange?: ((term: string) => void) | undefined;
+  initialImprovementSimulations?: string[] | undefined;
+  onImprovementSimulationChange?: ((ids: string[]) => void) | undefined;
+  improvementSimulationsSearch?: string | undefined;
+  onImprovementSimulationsSearchChange?: ((term: string) => void) | undefined;
+  initialSkillRubrics?: string[] | undefined;
+  onSkillRubricChange?: ((ids: string[]) => void) | undefined;
+  skillRubricSearch?: string | undefined;
+  onSkillRubricSearchChange?: ((term: string) => void) | undefined;
 }
 
 export default function DashboardSecondary({

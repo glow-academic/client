@@ -85,10 +85,10 @@ export interface AttemptImprovementProps {
   validSimulationIds: string[];
   actionableInsight?: string | null;
   status: "success" | "warning" | "danger" | "neutral";
-  initialSelectedSimulations?: string[];
-  onSimulationSelect?: (ids: string[]) => void;
-  simulationSearchValue?: string;
-  onSimulationSearchChange?: (term: string) => void;
+  initialSelectedSimulations?: string[] | undefined;
+  onSimulationSelect?: ((ids: string[]) => void) | undefined;
+  simulationSearchValue?: string | undefined;
+  onSimulationSearchChange?: ((term: string) => void) | undefined;
 }
 
 export default function AttemptImprovement({
@@ -100,8 +100,8 @@ export default function AttemptImprovement({
   status,
   initialSelectedSimulations,
   onSimulationSelect,
-  simulationSearchValue,
-  onSimulationSearchChange,
+  simulationSearchValue: _simulationSearchValue,
+  onSimulationSearchChange: _onSimulationSearchChange,
 }: AttemptImprovementProps) {
   // Create lookup map from array for backward compatibility
   const simulationMapping = useMemo(() => {
