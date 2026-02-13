@@ -62,7 +62,6 @@ async def get_pricing(
                     agent_id=request.agent_id,
                     date_from=effective_date_from,
                     date_to=effective_date_to,
-                    cohort_ids=request.cohort_ids,
                     department_ids=request.department_ids,
                     roles=request.roles,
                     page_limit=request.page_limit,
@@ -80,7 +79,6 @@ async def get_pricing(
                     if effective_date_from
                     else None,
                     date_to=effective_date_to.date() if effective_date_to else None,
-                    cohort_ids=request.cohort_ids,
                     department_ids=request.department_ids,
                     roles=request.roles,
                     page_limit=365,  # Get up to a year of daily data for chart

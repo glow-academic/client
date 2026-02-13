@@ -60,6 +60,8 @@ class GetTestArtifactResponse(BaseModel):
 class GetTestListRequest(BaseModel):
     """Request for benchmark test list artifact."""
 
+    start_date: str | None = Field(default=None)
+    end_date: str | None = Field(default=None)
     eval_ids: list[str] = Field(default_factory=list)
     department_ids: list[str] = Field(default_factory=list)
     page: int = Field(default=0, ge=0)

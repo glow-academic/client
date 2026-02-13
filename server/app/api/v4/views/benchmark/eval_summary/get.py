@@ -1,5 +1,6 @@
 """Get endpoint for benchmark eval summary view (mv_benchmark_eval_summary)."""
 
+from datetime import datetime
 from typing import Annotated, Any
 from uuid import UUID
 
@@ -26,6 +27,8 @@ async def get_benchmark_eval_summary_internal(
     rubric_id: UUID | None = None,
     status: str | None = None,
     department_ids: list[UUID] | None = None,
+    date_from: datetime | None = None,
+    date_to: datetime | None = None,
     sort_by: str = "date",
     sort_order: str = "desc",
     page_limit: int = 50,
@@ -41,6 +44,8 @@ async def get_benchmark_eval_summary_internal(
             "department_ids": [str(d) for d in department_ids]
             if department_ids
             else None,
+            "date_from": date_from.isoformat() if date_from else None,
+            "date_to": date_to.isoformat() if date_to else None,
             "sort_by": sort_by,
             "sort_order": sort_order,
             "page_limit": page_limit,
@@ -72,6 +77,16 @@ async def get_benchmark_eval_summary_internal(
             f"(department_ids && ${param_idx}::uuid[] OR department_ids = '{{}}')"
         )
         params.append(department_ids)
+        param_idx += 1
+
+    if date_from:
+        conditions.append(f"created_at >= ${param_idx}")
+        params.append(date_from)
+        param_idx += 1
+
+    if date_to:
+        conditions.append(f"created_at < ${param_idx}")
+        params.append(date_to)
         param_idx += 1
 
     where_clause = " AND ".join(conditions) if conditions else "TRUE"

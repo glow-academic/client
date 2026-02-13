@@ -1,10 +1,7 @@
 /**
- * Profile Context for managing the active user profile and simulation across the application.
- * This provides a centralized way to manage profile switching and ensures
- * all components stay in sync with the effective user's data (ID, role, name, etc.).
- *
- * Now also provides departments, cohorts, and breadcrumbs from a single data source.
- * Uses SSR + Server Actions pattern (no React Query)
+ * Profile Context for managing the active user profile across the application.
+ * Provides identity, permissions, department filters, and analytics filter state.
+ * Uses SSR + Server Actions pattern (no React Query).
  */
 "use client";
 
@@ -14,25 +11,15 @@ import type {
   ProfileItem,
   SafeSessionSnapshot,
 } from "@/app/(main)/layout-server";
-import { usePathname, useRouter } from "next/navigation";
 import React, {
   createContext,
-  useCallback,
   useContext,
   useMemo,
   useState,
 } from "react";
 
-type ProfileRole =
-  | "superadmin"
-  | "admin"
-  | "instructional"
-  | "member"
-  | "guest"
-  | "custom";
-
 // ============================================================================
-// TYPES (derived from LayoutContextResponse)
+// TYPES
 // ============================================================================
 
 export type RoleResourceItem = NonNullable<
@@ -46,14 +33,9 @@ export type RoleResourceItem = NonNullable<
 interface ProfileContextType {
   // Profile data
   profile: ProfileItem | null;
-  isLoading: boolean;
   isAuthenticated: boolean; // true if user has real NextAuth session
 
-  // Helper functions
-  navigateToDefault: (role: ProfileRole) => void;
-  isSectionAvailable: (section: string, role?: ProfileRole) => boolean;
-
-  // Layout data (from useLayoutContext)
+  // Layout data
   departmentIds: string[];
   selectedDepartmentIds: string[];
   setSelectedDepartmentIds: (ids: string[]) => void;
@@ -94,9 +76,6 @@ export function ProfileProviderClient({
   sessionSnapshot,
   analyticsFilters,
 }: ProfileProviderClientProps) {
-  const router = useRouter();
-  const pathname = usePathname();
-
   // Department filter state
   const [selectedDepartmentIds, setSelectedDepartmentIds] = useState<string[]>(
     []
@@ -105,7 +84,7 @@ export function ProfileProviderClient({
   // Handle null initial (access denied case) - with server-side access control,
   // users without valid sessions won't reach pages (they see UnifiedAccessDenied).
   // However, we handle null gracefully for edge cases and loading states.
-  // Construct profile objects from flat fields in LayoutContextResponse
+  // Construct profile from AuthProfileResponse
   const profile = useMemo<ProfileItem | null>(() => {
     if (!initial) return null;
     return {
@@ -127,37 +106,10 @@ export function ProfileProviderClient({
       : allDepartmentIds;
   }, [selectedDepartmentIds, allDepartmentIds]);
 
-  const navigateToDefault = useCallback(
-    (role: ProfileRole) => {
-      const availableSections = initial?.available_sections ?? [];
-      const defaultSection =
-        availableSections.length > 0
-          ? availableSections[0]
-          : "home";
-      // Use redirect_path from server if available, otherwise construct from section
-      const route = initial?.redirect_path || `/${defaultSection}`;
-      router.push(route);
-    },
-    [router, pathname, initial?.available_sections]
-  );
-
-  const isSectionAvailable = useCallback(
-    (section: string, role?: ProfileRole) => {
-      const availableSections = initial?.available_sections ?? [];
-      return availableSections.includes(section);
-    },
-    [profile?.role, initial?.available_sections]
-  );
-
   const value: ProfileContextType = {
     // Profile data
     profile,
-    isLoading: false, // Data comes from server, always available
     isAuthenticated: sessionSnapshot.isAuthenticated,
-
-    // Helper functions
-    navigateToDefault,
-    isSectionAvailable,
 
     // Layout data (from server) - handle null initial gracefully
     departmentIds: allDepartmentIds,

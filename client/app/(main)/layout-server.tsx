@@ -10,8 +10,6 @@ import { cookies, headers } from "next/headers";
 import { cache } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
-type LayoutContextIn = InputOf<"/api/v4/auth/context", "post">;
-type LayoutContextOut = OutputOf<"/api/v4/auth/context", "post">;
 type AuthProfileIn = InputOf<"/api/v4/auth/profile", "post">;
 type AuthProfileOut = OutputOf<"/api/v4/auth/profile", "post">;
 type AuthSettingsIn = InputOf<"/api/v4/auth/settings", "post">;
@@ -76,15 +74,7 @@ async function buildAuthHeaders(): Promise<Record<string, string>> {
   return extraHeaders;
 }
 
-/** ---- Cached fetch (legacy — still used by internal consumers) ---- */
-export const getLayoutContext = cache(
-  async (input: LayoutContextIn): Promise<LayoutContextOut> => {
-    const extraHeaders = await buildAuthHeaders();
-    return api.post("/auth/context", input, { headers: extraHeaders });
-  }
-);
-
-/** ---- New split auth fetches ---- */
+/** ---- Split auth fetches ---- */
 export const getAuthProfile = cache(
   async (): Promise<AuthProfileOut> => {
     const extraHeaders = await buildAuthHeaders();
@@ -116,20 +106,8 @@ export const getDrafts = cache(
 /** ---- Cached analytics filters fetch (parallel with context) ---- */
 export const getAnalyticsFilters = cache(
   async (): Promise<AnalyticsFiltersOut | null> => {
-    const headersList = await headers();
-    const pathname = headersList.get("x-pathname") || "/";
-
-    const cookieStore = await cookies();
-    const extraHeaders: Record<string, string> = { "X-Pathname": pathname };
-    const cookieHeader = [
-      cookieStore.get("department-id")?.value &&
-        `department-id=${cookieStore.get("department-id")?.value}`,
-    ]
-      .filter(Boolean)
-      .join("; ");
-    if (cookieHeader) extraHeaders["Cookie"] = cookieHeader;
-
     try {
+      const extraHeaders = await buildAuthHeaders();
       return await api.post(
         "/auth/analytics",
         {} as InputOf<"/api/v4/auth/analytics", "post">,
@@ -157,7 +135,6 @@ const getAttemptFull = async (
 };
 
 /** ---- Export type for client (type-only imports) ---- */
-export type LayoutContextResponse = LayoutContextOut;
 export type DraftsResponse = DraftsOut;
 export type AnalyticsFiltersResponse = AnalyticsFiltersOut;
 
@@ -214,15 +191,12 @@ export async function getLayoutContextData(session?: Session | null) {
     isAuthenticated: !!resolvedSession?.id_token,
   };
 
-  // Extract profile ID from session
-  let profileId = resolvedSession?.user?.profileId || null;
   let profileData: AuthProfileOut | null = null;
   let settingsData: AuthSettingsOut | null = null;
   let pageData: AuthPageOut | null = null;
-
-  // Fetch profile + settings + page + drafts + analytics filters in parallel
   let draftsResult: DraftsOut | null = null;
   let analyticsFilters: AnalyticsFiltersOut | null = null;
+
   try {
     const [profileRes, settingsRes, pageRes, draftsRes, filtersRes] = await Promise.all([
       getAuthProfile(),
@@ -236,30 +210,21 @@ export async function getLayoutContextData(session?: Session | null) {
     pageData = pageRes;
     draftsResult = draftsRes;
     analyticsFilters = filtersRes;
-    if (profileData?.id) {
-      profileId = profileData.id;
-    }
   } catch {
     // If fetch fails (e.g., 403/404), return null
-    profileData = null;
-    settingsData = null;
-    pageData = null;
-    draftsResult = null;
-    analyticsFilters = null;
-  }
-
-  // Ensure we have profile ID
-  if (profileData && !profileId && profileData.id) {
-    profileId = profileData.id;
+    return {
+      profileData: null,
+      settingsData: null,
+      pageData: null,
+      snapshot,
+      attemptData: null,
+      drafts: [],
+      analyticsFilters: null,
+    };
   }
 
   // Early return if no valid profile context
-  if (!profileData || !profileData.id) {
-    // eslint-disable-next-line no-console
-    console.log("Returning null profileData:", {
-      hasProfileData: !!profileData,
-      profileId,
-    });
+  if (!profileData?.id) {
     return {
       profileData: null,
       settingsData: null,
@@ -283,7 +248,7 @@ export async function getLayoutContextData(session?: Session | null) {
 
   // Fetch attempt data if we have an attemptId (using resolved UUID)
   let attemptData: AttemptFullOut | null = null;
-  if (attemptId && profileId) {
+  if (attemptId) {
     try {
       attemptData = await getAttemptFull(attemptId, {
         body: { attempt_id: attemptId },
@@ -418,13 +383,6 @@ export async function searchStaff(
 ): Promise<SearchStaffOut> {
   "use server";
   return api.post("/artifacts/profiles/bulk/search", input);
-}
-
-export async function getCreateStaffData(
-  input: CreateStaffDataIn
-): Promise<CreateStaffDataOut> {
-  "use server";
-  return api.post("/staff/data/create", input);
 }
 
 export async function processCSV(input: ProcessCSVIn): Promise<ProcessCSVOut> {

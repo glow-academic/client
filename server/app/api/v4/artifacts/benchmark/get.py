@@ -1,6 +1,7 @@
 """Get endpoint for benchmark artifact."""
 
 import asyncio
+from datetime import datetime
 from typing import Annotated
 from uuid import UUID
 
@@ -64,6 +65,14 @@ async def get_benchmark(
             else None
         )
 
+        # Parse date strings to datetime
+        date_from: datetime | None = None
+        date_to: datetime | None = None
+        if request.start_date:
+            date_from = datetime.fromisoformat(request.start_date)
+        if request.end_date:
+            date_to = datetime.fromisoformat(request.end_date)
+
         # Step 1: Fetch eval summary from MV and date range in parallel
         # Each branch acquires its own connection since asyncpg doesn't
         # support concurrent operations on a single connection.
@@ -72,28 +81,40 @@ async def get_benchmark(
                 return await get_benchmark_eval_summary_internal(
                     conn=c,
                     department_ids=department_uuids,
+                    date_from=date_from,
+                    date_to=date_to,
                     page_limit=200,
                     bypass_cache=bypass_cache,
                 )
 
         async def fetch_benchmark_date_range() -> tuple[str | None, str | None]:
             async with pool.acquire() as c:
-                if not department_uuids:
-                    row = await c.fetchrow(
-                        """
-                        SELECT MIN(created_at) as earliest, MAX(created_at) as latest
-                        FROM mv_benchmark_eval_summary
-                        """
+                conditions: list[str] = []
+                params: list = []
+                idx = 1
+                if department_uuids:
+                    conditions.append(
+                        f"department_ids && ${idx}::uuid[]"
                     )
-                else:
-                    row = await c.fetchrow(
-                        """
-                        SELECT MIN(created_at) as earliest, MAX(created_at) as latest
-                        FROM mv_benchmark_eval_summary
-                        WHERE department_ids && $1::uuid[]
-                        """,
-                        department_uuids,
-                    )
+                    params.append(department_uuids)
+                    idx += 1
+                if date_from:
+                    conditions.append(f"created_at >= ${idx}")
+                    params.append(date_from)
+                    idx += 1
+                if date_to:
+                    conditions.append(f"created_at < ${idx}")
+                    params.append(date_to)
+                    idx += 1
+                where = " AND ".join(conditions) if conditions else "TRUE"
+                row = await c.fetchrow(
+                    f"""
+                    SELECT MIN(created_at) as earliest, MAX(created_at) as latest
+                    FROM mv_benchmark_eval_summary
+                    WHERE {where}
+                    """,
+                    *params,
+                )
                 if row and row["earliest"]:
                     return (
                         row["earliest"].isoformat(),

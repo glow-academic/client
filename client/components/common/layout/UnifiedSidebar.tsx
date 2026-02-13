@@ -165,7 +165,7 @@ export function UnifiedSidebar({
   const { isMobile, setOpenMobile } = useSidebar();
 
   // Use the profile context
-  const { profile, isLoading, isAuthenticated } =
+  const { profile, isAuthenticated } =
     useProfile();
 
   // Convert server-driven sidebar routes into NavSection format with search filtering
@@ -334,8 +334,7 @@ export function UnifiedSidebar({
     );
   };
 
-  // Show skeleton while profile is loading or while we don't have a complete profile yet
-  const shouldShowSkeleton = isLoading || !profile;
+  const shouldShowSkeleton = !profile;
 
   if (shouldShowSkeleton) {
     return <SidebarSkeleton />;

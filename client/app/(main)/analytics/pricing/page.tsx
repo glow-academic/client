@@ -83,10 +83,8 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
     body: {
       start_date: filters.startDate,
       end_date: filters.endDate,
-      cohort_ids: filters.cohortIds,
       department_ids: filters.departmentIds,
       roles: filters.roles,
-      simulation_filters: filters.simulationFilters,
       page_limit: 100,
       page_offset: 0,
     },

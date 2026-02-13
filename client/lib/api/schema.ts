@@ -13756,6 +13756,10 @@ export interface components {
          * @description Request for getting benchmark data.
          */
         BenchmarkRequest: {
+            /** Start Date */
+            start_date?: string | null;
+            /** End Date */
+            end_date?: string | null;
             /** Department Ids */
             department_ids?: string[];
         };
@@ -26745,14 +26749,10 @@ export interface components {
             model_id?: string | null;
             /** Agent Id */
             agent_id?: string | null;
-            /** Cohort Ids */
-            cohort_ids?: string[];
             /** Department Ids */
             department_ids?: string[];
             /** Roles */
             roles?: string[];
-            /** Simulation Filters */
-            simulation_filters?: string[];
             /**
              * Page Limit
              * @default 50

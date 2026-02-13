@@ -69,27 +69,3 @@ export function createTestSession({ profileId }: TestProfileIds): Session {
   } as Session;
 }
 
-/**
- * Checks route access for a given pathname and session.
- * Server is the sole authority for route access — client only checks authentication.
- */
-export async function checkRouteAccess(
-  _pathname: string,
-  session: Session | null,
-): Promise<{
-  allowed: boolean;
-  reason?: "not-logged-in" | "route-denied";
-}> {
-  const hasSessionProfileIds = session?.user?.profileId;
-
-  if (!hasSessionProfileIds) {
-    return {
-      allowed: false,
-      reason: "not-logged-in",
-    };
-  }
-
-  return {
-    allowed: true,
-  };
-}

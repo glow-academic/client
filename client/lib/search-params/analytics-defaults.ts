@@ -4,10 +4,10 @@
  * Server-side only.
  */
 
+import type { AuthProfileResponse } from "@/app/(main)/layout-server";
+import { getAnalyticsFilters, getAuthProfile } from "@/app/(main)/layout-server";
 import type { OutputOf } from "@/lib/api/types";
-import { getAnalyticsFilters, getLayoutContext } from "@/app/(main)/layout-server";
 
-type LayoutContextOut = OutputOf<"/api/v4/auth/context", "post">;
 type AnalyticsFiltersOut = OutputOf<"/api/v4/auth/analytics", "post">;
 
 export interface AnalyticsDefaults {
@@ -47,11 +47,11 @@ export interface ParsedAnalyticsParams {
  */
 export async function computeAnalyticsDefaults(): Promise<{
   defaults: AnalyticsDefaults;
-  profileContext: LayoutContextOut;
+  profileContext: AuthProfileResponse;
   analyticsFilters: AnalyticsFiltersOut | null;
 }> {
   const [profileContext, analyticsFilters] = await Promise.all([
-    getLayoutContext({ body: {} }),
+    getAuthProfile(),
     getAnalyticsFilters(),
   ]);
 
@@ -89,7 +89,7 @@ export async function computeAnalyticsDefaults(): Promise<{
 export function resolveAnalyticsFilters(
   parsed: ParsedAnalyticsParams,
   defaults: AnalyticsDefaults,
-  profileContext: LayoutContextOut,
+  profileContext: AuthProfileResponse,
 ): AnalyticsDefaults {
   const startDate = parsed.startDate || defaults.startDate;
   const endDate = parsed.endDate || defaults.endDate;

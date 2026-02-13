@@ -55300,6 +55300,28 @@
       },
       "BenchmarkRequest": {
         "properties": {
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
           "department_ids": {
             "items": {
               "type": "string"
@@ -99838,14 +99860,6 @@
             ],
             "title": "Agent Id"
           },
-          "cohort_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "title": "Cohort Ids"
-          },
           "department_ids": {
             "items": {
               "type": "string",
@@ -99860,13 +99874,6 @@
             },
             "type": "array",
             "title": "Roles"
-          },
-          "simulation_filters": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Simulation Filters"
           },
           "page_limit": {
             "type": "integer",

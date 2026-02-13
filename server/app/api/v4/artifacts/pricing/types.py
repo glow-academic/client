@@ -25,10 +25,8 @@ class PricingRequest(BaseModel):
     agent_id: UUID | None = Field(default=None)
 
     # Analytics filters
-    cohort_ids: list[UUID] = Field(default_factory=list)
     department_ids: list[UUID] = Field(default_factory=list)
     roles: list[str] = Field(default_factory=list)
-    simulation_filters: list[str] = Field(default_factory=list)
 
     # Pagination
     page_limit: int = Field(default=50, ge=1, le=100)

@@ -21,6 +21,8 @@ from app.sql.types import (
 class BenchmarkRequest(BaseModel):
     """Request for getting benchmark data."""
 
+    start_date: str | None = None
+    end_date: str | None = None
     department_ids: list[str] = Field(default_factory=list)
 
 

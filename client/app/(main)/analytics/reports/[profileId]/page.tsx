@@ -103,7 +103,6 @@ export default async function ReportsPage({
     end_date: filters.endDate,
     cohort_ids: filters.cohortIds,
     department_ids: filters.departmentIds,
-    roles: filters.roles,
     simulation_filters: filters.simulationFilters,
     actor_profile_id: profileContext.id || profileId,
     target_profile_id: profileId,
