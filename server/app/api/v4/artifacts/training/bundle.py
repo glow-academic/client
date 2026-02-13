@@ -62,7 +62,7 @@ from app.api.v4.views.drafts.get import get_draft_training_internal
 from app.api.v4.views.drafts.types import DraftTrainingViewItem
 from app.api.v4.views.training.bundle.get import get_training_bundle_view_internal
 from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db
+from app.main import get_db, get_pool
 
 router = APIRouter()
 
@@ -182,7 +182,7 @@ RESOURCE_CONFIG: list[tuple[str, str, str, Any, str]] = [
 
 
 async def get_training_bundle_internal(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     profile_id: UUID,
     training_bundle_entry_id: UUID,
     draft_id: UUID | None = None,
@@ -190,11 +190,12 @@ async def get_training_bundle_internal(
 ) -> TrainingBundleInternalData:
     """Shared IDs-first + hydration internal fetch for training bundle artifact."""
     # 1. Fetch MV view data (all 14 ID arrays + 6 flags)
-    view_data = await get_training_bundle_view_internal(
-        conn=conn,
-        profile_id=profile_id,
-        training_bundle_entry_id=training_bundle_entry_id,
-    )
+    async with pool.acquire() as conn:
+        view_data = await get_training_bundle_view_internal(
+            conn=conn,
+            profile_id=profile_id,
+            training_bundle_entry_id=training_bundle_entry_id,
+        )
 
     if not view_data.training_bundle_entry_id:
         raise HTTPException(status_code=404, detail="Training bundle not found")
@@ -208,11 +209,12 @@ async def get_training_bundle_internal(
     # 2. Fetch draft if provided
     draft_item: DraftTrainingViewItem | None = None
     if draft_id is not None:
-        draft_items = await get_draft_training_internal(
-            conn=conn,
-            draft_ids=[draft_id],
-            bypass_cache=bypass_cache,
-        )
+        async with pool.acquire() as conn:
+            draft_items = await get_draft_training_internal(
+                conn=conn,
+                draft_ids=[draft_id],
+                bypass_cache=bypass_cache,
+            )
         if draft_items:
             draft_item = draft_items[0]
 
@@ -235,7 +237,7 @@ async def get_training_bundle_internal(
         else:
             selected_ids[resource_key] = mv_ids
 
-    # 5. Hydrate ALL 14 resources in parallel
+    # 5. Hydrate ALL 14 resources in parallel (each acquires its own connection)
     FetchFn = Callable[..., Coroutine[Any, Any, list[Any]]]
 
     async def _fetch_resource(
@@ -246,7 +248,8 @@ async def get_training_bundle_internal(
         all_ids = list(getattr(view_data, view_attr, []) or [])
         if not all_ids:
             return (resource_key, [])
-        return (resource_key, await fetch_fn(conn, all_ids, bypass_cache))
+        async with pool.acquire() as c:
+            return (resource_key, await fetch_fn(c, all_ids, bypass_cache))
 
     fetch_tasks = [
         _fetch_resource(rk, va, fn) for rk, va, _da, fn, _ia in RESOURCE_CONFIG
@@ -290,13 +293,14 @@ async def get_training_bundle_internal(
     scenario_id: UUID | None = None
 
     if selected_department_id is not None:
-        start_ctx = await get_training_websocket(
-            conn=conn,
-            profile_id=profile_id,
-            training_bundle_entry_id=training_bundle_entry_id,
-            department_id=selected_department_id,
-            draft_id=draft_id,
-        )
+        async with pool.acquire() as conn:
+            start_ctx = await get_training_websocket(
+                conn=conn,
+                profile_id=profile_id,
+                training_bundle_entry_id=training_bundle_entry_id,
+                department_id=selected_department_id,
+                draft_id=draft_id,
+            )
 
         selected_agent_id = start_ctx.resources.agent_id
         model_id = start_ctx.resources.model_id
@@ -305,15 +309,18 @@ async def get_training_bundle_internal(
         scenario_id = start_ctx.resources.scenario_id
 
         if selected_agent_id:
-            config_agents = await get_agents_internal(
-                conn, [selected_agent_id], bypass_cache
-            )
+            async with pool.acquire() as conn:
+                config_agents = await get_agents_internal(
+                    conn, [selected_agent_id], bypass_cache
+                )
         if model_id:
-            config_models = await get_models_internal(conn, [model_id], bypass_cache)
+            async with pool.acquire() as conn:
+                config_models = await get_models_internal(conn, [model_id], bypass_cache)
         if provider_id:
-            config_providers = await get_providers_internal(
-                conn, [provider_id], bypass_cache
-            )
+            async with pool.acquire() as conn:
+                config_providers = await get_providers_internal(
+                    conn, [provider_id], bypass_cache
+                )
 
         tool_ids: list[UUID] = []
         for agent in config_agents:
@@ -321,7 +328,8 @@ async def get_training_bundle_internal(
                 tool_ids.extend(agent.tool_ids)
         if tool_ids:
             unique_tool_ids = list(dict.fromkeys(tool_ids))
-            config_tools = await get_tools_internal(conn, unique_tool_ids, bypass_cache)
+            async with pool.acquire() as conn:
+                config_tools = await get_tools_internal(conn, unique_tool_ids, bypass_cache)
 
     # 9. Resolve simulation name
     simulation_name: str | None = None
@@ -330,9 +338,10 @@ async def get_training_bundle_internal(
             get_simulations_internal,
         )
 
-        sim_list = await get_simulations_internal(
-            conn, [simulation_id], bypass_cache=bypass_cache
-        )
+        async with pool.acquire() as conn:
+            sim_list = await get_simulations_internal(
+                conn, [simulation_id], bypass_cache=bypass_cache
+            )
         if sim_list:
             simulation_name = sim_list[0].name
 
@@ -369,7 +378,7 @@ async def get_training_bundle_internal(
 
 
 async def get_training_bundle_websocket(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     profile_id: UUID,
     training_bundle_entry_id: UUID,
     draft_id: UUID | None = None,
@@ -377,7 +386,7 @@ async def get_training_bundle_websocket(
 ) -> GetTrainingBundleWebsocketResponse:
     """Thin wrapper for websocket consumers — selected resources only."""
     data = await get_training_bundle_internal(
-        conn=conn,
+        pool=pool,
         profile_id=profile_id,
         training_bundle_entry_id=training_bundle_entry_id,
         draft_id=draft_id,
@@ -433,7 +442,7 @@ _SECTION_CLASSES: dict[str, type] = {
 
 
 async def get_training_bundle_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     profile_id: UUID,
     training_bundle_entry_id: UUID,
     draft_id: UUID | None = None,
@@ -441,7 +450,7 @@ async def get_training_bundle_client(
 ) -> GetTrainingBundleResponse:
     """HTTP-facing bundle response formatter — section-first pattern."""
     data = await get_training_bundle_internal(
-        conn=conn,
+        pool=pool,
         profile_id=profile_id,
         training_bundle_entry_id=training_bundle_entry_id,
         draft_id=draft_id,
@@ -497,7 +506,6 @@ async def get_training_bundle_client(
 async def training_bundle_get(
     request: GetTrainingBundleRequest,
     http_request: Request,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetTrainingBundleResponse:
     """Get hydrated resources for training bundle customization."""
     try:
@@ -508,10 +516,14 @@ async def training_bundle_get(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        pool = get_pool()
+        if not pool:
+            raise RuntimeError("Database pool not initialized")
+
         bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
         return await get_training_bundle_client(
-            conn=conn,
+            pool=pool,
             profile_id=cast(UUID, profile_id),
             training_bundle_entry_id=request.training_bundle_entry_id,
             draft_id=request.draft_id,
