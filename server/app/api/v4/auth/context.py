@@ -64,9 +64,7 @@ async def get_profile_context_internal(
     """
     pass1_start = time.time()
 
-    access_result = await get_access_internal(
-        conn, profile_id, bypass_cache
-    )
+    access_result = await get_access_internal(conn, profile_id, bypass_cache)
 
     pass1_time = (time.time() - pass1_start) * 1000
 

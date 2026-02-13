@@ -26,6 +26,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 type CreateDraftColorsIn = InputOf<"/api/v4/resources/colors", "post">;
 type CreateDraftColorsOut = OutputOf<"/api/v4/resources/colors", "post">;
 
+// Derive resource item type from the GET endpoint response
+type ColorsGetResponse = OutputOf<"/api/v4/resources/colors/get", "post">;
+export type ColorResourceItem = NonNullable<ColorsGetResponse["items"]>[number];
+
 export interface ColorItem {
   hex: string;
   name: string;
@@ -35,32 +39,14 @@ export interface ColorItem {
 
 export interface ColorsProps {
   color_id?: string | null; // Current color_id (standardized prop name)
-  color_resource?: {
-    id: string | null;
-    name: string | null;
-    description: string | null;
-    hex_code: string | null;
-    generated?: boolean | null;
-  } | null; // Resource data from server (standardized prop name; includes generated field)
+  color_resource?: ColorResourceItem | null; // Resource data from server (standardized prop name; includes generated field)
   show_color?: boolean; // Whether to show this resource picker
   color_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  colors?: Array<{
-    id: string | null;
-    name: string | null;
-    description: string | null;
-    hex_code: string | null;
-    generated?: boolean | null;
-  }>; // All available colors from API (each includes generated field)
+  colors?: ColorResourceItem[]; // All available colors from API (each includes generated field)
   disabled?: boolean; // Based on can_edit flag
   onColorIdChange?: (colorId: string | null) => void; // Update color_id in parent form state (single-select)
   color_ids?: string[]; // Current color resource IDs (multi-select)
-  color_resources?: Array<{
-    id: string | null;
-    name: string | null;
-    description: string | null;
-    hex_code: string | null;
-    generated?: boolean | null;
-  }>; // Selected color resources (multi-select)
+  color_resources?: ColorResourceItem[]; // Selected color resources (multi-select)
   onChange?: (ids: string[]) => void; // Update color_ids in parent form state (multi-select)
   multiSelect?: boolean; // Whether to use multi-select mode
   onGenerate?: () => void | Promise<void>;

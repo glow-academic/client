@@ -27,6 +27,30 @@ from app.sql.types import (
 )
 
 
+@dataclass
+class AuthProfileInternalData:
+    """Hydrated profile identity — access + departments + cohorts."""
+
+    access: GetProfileContextAccessSqlRow
+    departments: list[QGetDepartmentsV4Item]
+    cohorts: list[QGetCohortsV4Item]
+    role_resources: list[QGetProfileContextV4RoleResource]
+    session_id: UUID | None
+
+
+@dataclass
+class AuthSettingsInternalData:
+    """Hydrated settings — settings resource + agents + tools + theme."""
+
+    settings_id: UUID | None
+    settings: QGetSettingsV4Item | None
+    settings_agents: list[QGetAgentsV4Item]
+    settings_tools: list[QGetToolsV4Item]
+    settings_theme: GetSettingsThemeSqlRow
+    settings_tokens: QGetProfileContextV4ThemeTokens
+    artifact_has_generation: dict[str, bool]
+
+
 class GetProfileContextApiResponse(BaseModel):
     """Slim profile context response — only fields the client needs."""
 

@@ -17,8 +17,13 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import type { OutputOf } from "@/lib/api/types";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
+
+// Derive resource item type from the GET endpoint response
+type DepartmentsGetResponse = OutputOf<"/api/v4/resources/departments/get", "post">;
+export type DepartmentResourceItem = NonNullable<DepartmentsGetResponse["items"]>[number];
 
 type CreateDraftDepartmentsIn = {
   body: {
@@ -39,20 +44,10 @@ export interface DepartmentItem {
 
 export interface DepartmentsProps {
   department_ids?: string[]; // Current department resource IDs (standardized prop name)
-  department_resources?: Array<{
-    department_id?: string | null;
-    name?: string | null;
-    description?: string | null;
-    generated?: boolean | null;
-  }>; // Selected department resources (each includes generated field)
+  department_resources?: DepartmentResourceItem[]; // Selected department resources (each includes generated field)
   show_departments?: boolean; // Whether to show this resource picker
   department_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  departments?: Array<{
-    department_id?: string | null;
-    name?: string | null;
-    description?: string | null;
-    generated?: boolean | null;
-  }>; // All available departments from API (each includes generated field)
+  departments?: DepartmentResourceItem[]; // All available departments from API (each includes generated field)
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update department_ids in form state
   label?: string;

@@ -485,3 +485,108 @@ class DashboardBundleResponse(BaseModel):
     profile_emails: list[str] | None = None
     profile_primary_email: str | None = None
     profile_role: str | None = None
+
+
+# ============================================================================
+# Section request types (for split endpoints)
+# ============================================================================
+
+
+class DashboardSectionRequest(BaseModel):
+    """Base request shared by all dashboard section endpoints."""
+
+    start_date: str | None = None
+    end_date: str | None = None
+    cohort_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    roles: list[str] | None = None
+    simulation_filters: list[str] | None = None
+    target_profile_id: UUID | None = None
+    actor_profile_id: UUID | None = None
+    page_limit: int = Field(default=50, ge=1, le=200)
+    page_offset: int = Field(default=0, ge=0)
+
+
+class DashboardHeaderRequest(DashboardSectionRequest):
+    """Request for header section (no section-specific pickers)."""
+
+    pass
+
+
+class DashboardPrimaryRequest(DashboardSectionRequest):
+    """Request for primary section."""
+
+    persona_simulation_ids: list[UUID] | None = None
+    heatmap_rubric_ids: list[UUID] | None = None
+
+
+class DashboardSecondaryRequest(DashboardSectionRequest):
+    """Request for secondary section."""
+
+    cohort_simulation_ids: list[UUID] | None = None
+    improvement_simulation_ids: list[UUID] | None = None
+    skill_rubric_ids: list[UUID] | None = None
+
+
+class DashboardFooterRequest(DashboardSectionRequest):
+    """Request for footer section."""
+
+    scenario_perf_parameter_ids: list[UUID] | None = None
+    scenario_stats_parameter_ids: list[UUID] | None = None
+    sim_perf_simulation_ids: list[UUID] | None = None
+
+
+# ============================================================================
+# Section response types (for split endpoints)
+# ============================================================================
+
+
+class DashboardHeaderResponse(BaseModel):
+    """Response for header section endpoint."""
+
+    header_metrics: DashboardHeaderMetrics = Field(
+        default_factory=DashboardHeaderMetrics
+    )
+    thresholds: DashboardThresholds | None = None
+    simulation_options: list[FilterOption] = Field(default_factory=list)
+    profile_name: str | None = None
+    profile_emails: list[str] | None = None
+    profile_primary_email: str | None = None
+    profile_role: str | None = None
+
+
+class DashboardPrimaryResponse(BaseModel):
+    """Response for primary section endpoint."""
+
+    primary_metrics: DashboardPrimaryMetrics = Field(
+        default_factory=DashboardPrimaryMetrics
+    )
+    simulations: list[DashboardSimulationMeta] = Field(default_factory=list)
+    rubrics: list[DashboardRubricMeta] = Field(default_factory=list)
+    thresholds: DashboardThresholds | None = None
+    insights: DashboardInsights | None = None
+
+
+class DashboardSecondaryResponse(BaseModel):
+    """Response for secondary section endpoint."""
+
+    secondary_metrics: DashboardSecondaryMetrics = Field(
+        default_factory=DashboardSecondaryMetrics
+    )
+    simulations: list[DashboardSimulationMeta] = Field(default_factory=list)
+    rubrics: list[DashboardRubricMeta] = Field(default_factory=list)
+    thresholds: DashboardThresholds | None = None
+    insights: DashboardInsights | None = None
+
+
+class DashboardFooterResponse(BaseModel):
+    """Response for footer section endpoint."""
+
+    footer_metrics: DashboardFooterMetrics = Field(
+        default_factory=DashboardFooterMetrics
+    )
+    simulations: list[DashboardSimulationMeta] = Field(default_factory=list)
+    parameters: list[DashboardParameterMeta] = Field(default_factory=list)
+    fields: list[DashboardFieldMeta] = Field(default_factory=list)
+    thresholds: DashboardThresholds | None = None
+    insights: DashboardInsights | None = None

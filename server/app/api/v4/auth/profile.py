@@ -5,13 +5,14 @@ from __future__ import annotations
 import asyncio
 import time
 from typing import Annotated, Any
+from uuid import UUID
 
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.auth.access import get_access_internal
 from app.api.v4.auth.permissions import convert_role
-from app.api.v4.auth.types import GetAuthProfileApiResponse
+from app.api.v4.auth.types import AuthProfileInternalData, GetAuthProfileApiResponse
 from app.api.v4.resources.cohorts.get import get_cohorts_internal
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.roles.get import get_roles_internal
@@ -22,6 +23,68 @@ from app.main import get_db, get_pool
 from app.sql.types import GetProfileContextApiRequest
 
 router = APIRouter()
+
+
+async def get_auth_profile_internal(
+    conn: asyncpg.Connection,
+    profile_id: UUID | None,
+    bypass_cache: bool = False,
+) -> AuthProfileInternalData:
+    """Resolve profile identity graph — access + hydrated departments/cohorts.
+
+    Underlying resource calls are individually cached, so repeated calls
+    across artifact endpoints within the same request window are cheap.
+    """
+    access = await get_access_internal(conn, profile_id, bypass_cache)
+
+    pool = get_pool()
+    if not pool:
+        raise HTTPException(status_code=500, detail="Database pool not available")
+
+    department_ids = access.department_ids or []
+    cohort_ids = access.cohort_ids or []
+
+    async def fetch_departments():
+        if not department_ids:
+            return []
+        async with pool.acquire() as c:
+            return await get_departments_internal(c, department_ids, bypass_cache)
+
+    async def fetch_cohorts():
+        if not cohort_ids:
+            return []
+        async with pool.acquire() as c:
+            return await get_cohorts_internal(c, cohort_ids, bypass_cache)
+
+    async def fetch_roles():
+        async with pool.acquire() as c:
+            return await get_roles_internal(c, bypass_cache=bypass_cache)
+
+    async def fetch_session():
+        if not profile_id:
+            return None
+        async with pool.acquire() as c:
+            return await get_session_internal(c, profile_id, bypass_cache)
+
+    (
+        departments,
+        cohorts,
+        roles_raw,
+        session_id,
+    ) = await asyncio.gather(
+        fetch_departments(),
+        fetch_cohorts(),
+        fetch_roles(),
+        fetch_session(),
+    )
+
+    return AuthProfileInternalData(
+        access=access,
+        departments=departments,
+        cohorts=cohorts,
+        role_resources=[convert_role(r) for r in roles_raw],
+        session_id=session_id,
+    )
 
 
 @router.post(
@@ -50,10 +113,10 @@ async def get_auth_profile(
         bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
         pass1_start = time.time()
-        access = await get_access_internal(
-            conn, profile_id, bypass_cache
-        )
+        data = await get_auth_profile_internal(conn, profile_id, bypass_cache)
         pass1_time = (time.time() - pass1_start) * 1000
+
+        access = data.access
 
         if access.actor_name and profile_id:
             audit_set(
@@ -61,55 +124,8 @@ async def get_auth_profile(
                 actor={"name": access.actor_name, "id": profile_id},
             )
 
-        # Pass 2: parallel resource fetch
-        pass2_start = time.time()
-
-        pool = get_pool()
-        if not pool:
-            raise HTTPException(status_code=500, detail="Database pool not available")
-
-        department_ids = access.department_ids or []
-        cohort_ids = access.cohort_ids or []
-
-        async def fetch_departments():
-            if not department_ids:
-                return []
-            async with pool.acquire() as c:
-                return await get_departments_internal(c, department_ids, bypass_cache)
-
-        async def fetch_cohorts():
-            if not cohort_ids:
-                return []
-            async with pool.acquire() as c:
-                return await get_cohorts_internal(c, cohort_ids, bypass_cache)
-
-        async def fetch_roles():
-            async with pool.acquire() as c:
-                return await get_roles_internal(c, bypass_cache=bypass_cache)
-
-        async def fetch_session():
-            if not profile_id:
-                return None
-            async with pool.acquire() as c:
-                return await get_session_internal(c, profile_id, bypass_cache)
-
-        (
-            _departments_raw,
-            _cohorts_raw,
-            roles_raw,
-            session_id,
-        ) = await asyncio.gather(
-            fetch_departments(),
-            fetch_cohorts(),
-            fetch_roles(),
-            fetch_session(),
-        )
-
-        pass2_time = (time.time() - pass2_start) * 1000
-
         response.headers["X-Two-Pass"] = "1"
         response.headers["X-Pass1-Time"] = f"{pass1_time:.1f}"
-        response.headers["X-Pass2-Time"] = f"{pass2_time:.1f}"
 
         return GetAuthProfileApiResponse(
             is_authorized=access.is_authorized,
@@ -121,8 +137,8 @@ async def get_auth_profile(
             available_sections=access.available_sections,
             available_routes=access.available_routes,
             redirect_path=access.redirect_path,
-            role_resources=[convert_role(r) for r in roles_raw],
-            session_id=session_id,
+            role_resources=data.role_resources,
+            session_id=data.session_id,
             actor_name=access.actor_name,
         )
 

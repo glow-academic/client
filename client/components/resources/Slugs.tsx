@@ -24,6 +24,10 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 type CreateDraftSlugsIn = InputOf<"/api/v4/resources/slugs", "post">;
 type CreateDraftSlugsOut = OutputOf<"/api/v4/resources/slugs", "post">;
 
+// Derive resource item type from the GET endpoint response
+type SlugsGetResponse = OutputOf<"/api/v4/resources/slugs/get", "post">;
+export type SlugResourceItem = NonNullable<SlugsGetResponse["items"]>[number];
+
 export interface SlugItem {
   id: string;
   value: string;
@@ -31,18 +35,10 @@ export interface SlugItem {
 
 export interface SlugsProps {
   slug_ids?: string[]; // Current slug resource IDs (standardized prop name)
-  slug_resources?: Array<{
-    id: string | null;
-    value: string | null;
-    generated?: boolean | null;
-  }>; // Selected slug resources (each includes generated field)
+  slug_resources?: SlugResourceItem[]; // Selected slug resources (each includes generated field)
   show_slugs?: boolean; // Whether to show this resource picker
   slug_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  slugs?: Array<{
-    id: string | null;
-    value: string | null;
-    generated?: boolean | null;
-  }>; // All available slugs from API (each includes generated field)
+  slugs?: SlugResourceItem[]; // All available slugs from API (each includes generated field)
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update slug_ids in form state
   label?: string;

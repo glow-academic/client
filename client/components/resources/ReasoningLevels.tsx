@@ -17,8 +17,13 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import type { OutputOf } from "@/lib/api/types";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
+
+// Derive resource item type from the GET endpoint response
+type ReasoningLevelsGetResponse = OutputOf<"/api/v4/resources/reasoning_levels/get", "post">;
+export type ReasoningLevelResourceItem = NonNullable<ReasoningLevelsGetResponse["items"]>[number];
 
 export interface ReasoningLevelItem {
   id: string;
@@ -27,18 +32,10 @@ export interface ReasoningLevelItem {
 
 export interface ReasoningLevelsProps {
   reasoning_level_id?: string | null; // Current reasoning_level_id (standardized prop name)
-  reasoning_level_resource?: {
-    id: string | null;
-    reasoning_level: string | null;
-    generated?: boolean | null;
-  } | null; // Resource data from server (standardized prop name; includes generated field)
+  reasoning_level_resource?: ReasoningLevelResourceItem | null; // Resource data from server (standardized prop name; includes generated field)
   show_reasoning_levels?: boolean; // Whether to show this resource picker
   reasoning_level_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  reasoning_levels?: Array<{
-    id: string | null;
-    reasoning_level: string | null;
-    generated?: boolean | null;
-  }>; // Array of all available reasoning level options
+  reasoning_levels?: ReasoningLevelResourceItem[]; // Array of all available reasoning level options
   disabled?: boolean; // Based on can_edit flag
   onReasoningLevelIdChange: (
     reasoningLevelId: string | null

@@ -25,6 +25,10 @@ type FlushResult = { voice_ids: string[] } | void;
 type CreateDraftVoicesIn = InputOf<"/api/v4/resources/voices", "post">;
 type CreateDraftVoicesOut = OutputOf<"/api/v4/resources/voices", "post">;
 
+// Derive resource item type from the GET endpoint response
+type VoicesGetResponse = OutputOf<"/api/v4/resources/voices/get", "post">;
+export type VoiceResourceItem = NonNullable<VoicesGetResponse["items"]>[number];
+
 export interface VoiceItem {
   id: string;
   voice: string;
@@ -32,18 +36,10 @@ export interface VoiceItem {
 
 export interface VoicesProps {
   voice_ids?: string[]; // Current voice resource IDs (standardized prop name)
-  voice_resources?: Array<{
-    id: string | null;
-    voice: string | null;
-    generated?: boolean | null;
-  }>; // Selected voice resources (each includes generated field)
+  voice_resources?: VoiceResourceItem[]; // Selected voice resources (each includes generated field)
   show_voices?: boolean; // Whether to show this resource picker
   voice_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  voices?: Array<{
-    id: string | null;
-    voice: string | null;
-    generated?: boolean | null;
-  }>; // All available voices from API (each includes generated field)
+  voices?: VoiceResourceItem[]; // All available voices from API (each includes generated field)
   disabled?: boolean; // Based on can_edit flag
   onVoiceIdsChange: (ids: string[]) => void; // Update voice_ids in parent form state
   label?: string;

@@ -24,6 +24,10 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 type CreateDraftProtocolsIn = InputOf<"/api/v4/resources/protocols", "post">;
 type CreateDraftProtocolsOut = OutputOf<"/api/v4/resources/protocols", "post">;
 
+// Derive resource item type from the GET endpoint response
+type ProtocolsGetResponse = OutputOf<"/api/v4/resources/protocols/get", "post">;
+export type ProtocolResourceItem = NonNullable<ProtocolsGetResponse["items"]>[number];
+
 export interface ProtocolItem {
   id: string;
   value: string;
@@ -31,18 +35,10 @@ export interface ProtocolItem {
 
 export interface ProtocolsProps {
   protocol_ids?: string[]; // Current protocol resource IDs (standardized prop name)
-  protocol_resources?: Array<{
-    id: string | null;
-    value: string | null;
-    generated?: boolean | null;
-  }>; // Selected protocol resources (each includes generated field)
+  protocol_resources?: ProtocolResourceItem[]; // Selected protocol resources (each includes generated field)
   show_protocols?: boolean; // Whether to show this resource picker
   protocol_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  protocols?: Array<{
-    id: string | null;
-    value: string | null;
-    generated?: boolean | null;
-  }>; // All available protocols from API (each includes generated field)
+  protocols?: ProtocolResourceItem[]; // All available protocols from API (each includes generated field)
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update protocol_ids in form state
   label?: string;

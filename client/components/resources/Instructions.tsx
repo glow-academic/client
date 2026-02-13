@@ -31,6 +31,10 @@ type CreateDraftInstructionsOut = OutputOf<
   "post"
 >;
 
+// Derive resource item type from the GET endpoint response
+type InstructionsGetResponse = OutputOf<"/api/v4/resources/instructions/get", "post">;
+export type InstructionResourceItem = NonNullable<InstructionsGetResponse["items"]>[number];
+
 // Word-based diff types and utilities
 type DiffSegment = { type: "same" | "removed" | "added"; text: string };
 
@@ -145,14 +149,10 @@ function DiffView({
 
 export interface InstructionsProps {
   instructions_id?: string | null; // Current instructions_id (standardized prop name)
-  instructions_resource?: { id: string | null; template: string | null; generated?: boolean | null } | null; // Resource data from server (standardized prop name; includes generated field)
+  instructions_resource?: InstructionResourceItem | null; // Resource data from server (standardized prop name; includes generated field)
   show_instructions?: boolean; // Whether to show this resource picker
   instructions_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  instructions?: Array<{
-    id: string | null;
-    template: string | null;
-    generated?: boolean | null;
-  }>; // Array of suggested instruction resources (only suggested options, not all)
+  instructions?: InstructionResourceItem[]; // Array of suggested instruction resources (only suggested options, not all)
   disabled?: boolean; // Based on can_edit flag
   onInstructionsIdChange: (instructionsId: string | null) => void; // Update instructions_id in parent form state
   onGenerate?: () => Promise<void>;
@@ -415,23 +415,25 @@ export function Instructions({
   // Use instructions array if available, otherwise create placeholder mapping
   const suggestionsMapping = useMemo(() => {
     if (instructions && instructions.length > 0) {
-      const mapping: Record<string, { id: string; template: string }> = {};
+      const mapping: Record<string, { id: string; template: string; generated: boolean | null }> = {};
       instructions.forEach((inst) => {
         if (inst.id) {
           mapping[inst.id] = {
             id: inst.id,
             template: inst.template || `Instructions ${inst.id.slice(0, 8)}...`,
+            generated: inst.generated,
           };
         }
       });
       return mapping;
     }
     // Fallback: create placeholder mapping from suggestion IDs
-    const mapping: Record<string, { id: string; template: string }> = {};
+    const mapping: Record<string, { id: string; template: string; generated: boolean | null }> = {};
     suggestionsList.forEach((suggestionId) => {
       mapping[suggestionId] = {
         id: suggestionId,
         template: `Instructions ${suggestionId.slice(0, 8)}...`,
+        generated: null,
       };
     });
     return mapping;

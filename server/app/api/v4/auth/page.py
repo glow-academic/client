@@ -53,9 +53,7 @@ async def get_auth_page(
         pathname = http_request.headers.get("X-Pathname", "")
 
         pass1_start = time.time()
-        access = await get_access_internal(
-            conn, profile_id, bypass_cache
-        )
+        access = await get_access_internal(conn, profile_id, bypass_cache)
         pass1_time = (time.time() - pass1_start) * 1000
 
         # Pure computation — no SQL in Pass 2

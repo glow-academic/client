@@ -2911,6 +2911,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/artifacts/dashboard/header": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Dashboard Header
+         * @description Get dashboard header section data.
+         */
+        post: operations["get_dashboard_header_api_v4_artifacts_dashboard_header_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/artifacts/dashboard/primary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Dashboard Primary
+         * @description Get dashboard primary section data.
+         */
+        post: operations["get_dashboard_primary_api_v4_artifacts_dashboard_primary_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/artifacts/dashboard/secondary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Dashboard Secondary
+         * @description Get dashboard secondary section data.
+         */
+        post: operations["get_dashboard_secondary_api_v4_artifacts_dashboard_secondary_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/artifacts/dashboard/footer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Dashboard Footer
+         * @description Get dashboard footer section data.
+         */
+        post: operations["get_dashboard_footer_api_v4_artifacts_dashboard_footer_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/artifacts/dashboard/refresh": {
         parameters: {
             query?: never;
@@ -15024,6 +15104,59 @@ export interface components {
             simulation_performance?: components["schemas"]["FooterSimulationPerformance"];
             simulation_composition?: components["schemas"]["FooterSimulationComposition"];
         };
+        /**
+         * DashboardFooterRequest
+         * @description Request for footer section.
+         */
+        DashboardFooterRequest: {
+            /** Start Date */
+            start_date?: string | null;
+            /** End Date */
+            end_date?: string | null;
+            /** Cohort Ids */
+            cohort_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Roles */
+            roles?: string[] | null;
+            /** Simulation Filters */
+            simulation_filters?: string[] | null;
+            /** Target Profile Id */
+            target_profile_id?: string | null;
+            /** Actor Profile Id */
+            actor_profile_id?: string | null;
+            /**
+             * Page Limit
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @default 0
+             */
+            page_offset: number;
+            /** Scenario Perf Parameter Ids */
+            scenario_perf_parameter_ids?: string[] | null;
+            /** Scenario Stats Parameter Ids */
+            scenario_stats_parameter_ids?: string[] | null;
+            /** Sim Perf Simulation Ids */
+            sim_perf_simulation_ids?: string[] | null;
+        };
+        /**
+         * DashboardFooterResponse
+         * @description Response for footer section endpoint.
+         */
+        DashboardFooterResponse: {
+            footer_metrics?: components["schemas"]["DashboardFooterMetrics"];
+            /** Simulations */
+            simulations?: components["schemas"]["DashboardSimulationMeta"][];
+            /** Parameters */
+            parameters?: components["schemas"]["DashboardParameterMeta"][];
+            /** Fields */
+            fields?: components["schemas"]["DashboardFieldMeta"][];
+            thresholds?: components["schemas"]["DashboardThresholds"] | null;
+            insights?: components["schemas"]["DashboardInsights"] | null;
+        };
         /** DashboardHeaderMetric */
         DashboardHeaderMetric: {
             /** Current Value */
@@ -15055,6 +15188,56 @@ export interface components {
             stagnation_rate?: components["schemas"]["DashboardHeaderMetric"];
             time_spent?: components["schemas"]["DashboardHeaderMetric"];
             total_attempts?: components["schemas"]["DashboardHeaderMetric"];
+        };
+        /**
+         * DashboardHeaderRequest
+         * @description Request for header section (no section-specific pickers).
+         */
+        DashboardHeaderRequest: {
+            /** Start Date */
+            start_date?: string | null;
+            /** End Date */
+            end_date?: string | null;
+            /** Cohort Ids */
+            cohort_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Roles */
+            roles?: string[] | null;
+            /** Simulation Filters */
+            simulation_filters?: string[] | null;
+            /** Target Profile Id */
+            target_profile_id?: string | null;
+            /** Actor Profile Id */
+            actor_profile_id?: string | null;
+            /**
+             * Page Limit
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @default 0
+             */
+            page_offset: number;
+        };
+        /**
+         * DashboardHeaderResponse
+         * @description Response for header section endpoint.
+         */
+        DashboardHeaderResponse: {
+            header_metrics?: components["schemas"]["DashboardHeaderMetrics"];
+            thresholds?: components["schemas"]["DashboardThresholds"] | null;
+            /** Simulation Options */
+            simulation_options?: components["schemas"]["app__api__v4__artifacts__types__FilterOption"][];
+            /** Profile Name */
+            profile_name?: string | null;
+            /** Profile Emails */
+            profile_emails?: string[] | null;
+            /** Profile Primary Email */
+            profile_primary_email?: string | null;
+            /** Profile Role */
+            profile_role?: string | null;
         };
         /** DashboardInsightObject */
         DashboardInsightObject: {
@@ -15110,6 +15293,55 @@ export interface components {
             rubric_heatmap?: components["schemas"]["PrimaryRubricHeatmap"];
         };
         /**
+         * DashboardPrimaryRequest
+         * @description Request for primary section.
+         */
+        DashboardPrimaryRequest: {
+            /** Start Date */
+            start_date?: string | null;
+            /** End Date */
+            end_date?: string | null;
+            /** Cohort Ids */
+            cohort_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Roles */
+            roles?: string[] | null;
+            /** Simulation Filters */
+            simulation_filters?: string[] | null;
+            /** Target Profile Id */
+            target_profile_id?: string | null;
+            /** Actor Profile Id */
+            actor_profile_id?: string | null;
+            /**
+             * Page Limit
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @default 0
+             */
+            page_offset: number;
+            /** Persona Simulation Ids */
+            persona_simulation_ids?: string[] | null;
+            /** Heatmap Rubric Ids */
+            heatmap_rubric_ids?: string[] | null;
+        };
+        /**
+         * DashboardPrimaryResponse
+         * @description Response for primary section endpoint.
+         */
+        DashboardPrimaryResponse: {
+            primary_metrics?: components["schemas"]["DashboardPrimaryMetrics"];
+            /** Simulations */
+            simulations?: components["schemas"]["DashboardSimulationMeta"][];
+            /** Rubrics */
+            rubrics?: components["schemas"]["DashboardRubricMeta"][];
+            thresholds?: components["schemas"]["DashboardThresholds"] | null;
+            insights?: components["schemas"]["DashboardInsights"] | null;
+        };
+        /**
          * DashboardRequest
          * @description Request for getting dashboard data (get.py scope only).
          */
@@ -15157,6 +15389,57 @@ export interface components {
             cohort_performance?: components["schemas"]["SecondaryCohortPerformance"];
             attempt_improvement?: components["schemas"]["SecondaryAttemptImprovement"];
             skill_performance?: components["schemas"]["SecondarySkillPerformance"];
+        };
+        /**
+         * DashboardSecondaryRequest
+         * @description Request for secondary section.
+         */
+        DashboardSecondaryRequest: {
+            /** Start Date */
+            start_date?: string | null;
+            /** End Date */
+            end_date?: string | null;
+            /** Cohort Ids */
+            cohort_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Roles */
+            roles?: string[] | null;
+            /** Simulation Filters */
+            simulation_filters?: string[] | null;
+            /** Target Profile Id */
+            target_profile_id?: string | null;
+            /** Actor Profile Id */
+            actor_profile_id?: string | null;
+            /**
+             * Page Limit
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @default 0
+             */
+            page_offset: number;
+            /** Cohort Simulation Ids */
+            cohort_simulation_ids?: string[] | null;
+            /** Improvement Simulation Ids */
+            improvement_simulation_ids?: string[] | null;
+            /** Skill Rubric Ids */
+            skill_rubric_ids?: string[] | null;
+        };
+        /**
+         * DashboardSecondaryResponse
+         * @description Response for secondary section endpoint.
+         */
+        DashboardSecondaryResponse: {
+            secondary_metrics?: components["schemas"]["DashboardSecondaryMetrics"];
+            /** Simulations */
+            simulations?: components["schemas"]["DashboardSimulationMeta"][];
+            /** Rubrics */
+            rubrics?: components["schemas"]["DashboardRubricMeta"][];
+            thresholds?: components["schemas"]["DashboardThresholds"] | null;
+            insights?: components["schemas"]["DashboardInsights"] | null;
         };
         /** DashboardSimulationMeta */
         DashboardSimulationMeta: {
@@ -42807,6 +43090,154 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DashboardBundleResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_dashboard_header_api_v4_artifacts_dashboard_header_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DashboardHeaderRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardHeaderResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_dashboard_primary_api_v4_artifacts_dashboard_primary_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DashboardPrimaryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardPrimaryResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_dashboard_secondary_api_v4_artifacts_dashboard_secondary_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DashboardSecondaryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardSecondaryResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_dashboard_footer_api_v4_artifacts_dashboard_footer_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DashboardFooterRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardFooterResponse"];
                 };
             };
             /** @description Validation Error */

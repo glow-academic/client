@@ -14387,6 +14387,402 @@
         ]
       }
     },
+    "/api/v4/artifacts/dashboard/header": {
+      "post": {
+        "tags": [
+          "v4",
+          "artifacts",
+          "dashboard"
+        ],
+        "summary": "Get Dashboard Header",
+        "description": "Get dashboard header section data.",
+        "operationId": "get_dashboard_header_api_v4_artifacts_dashboard_header_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DashboardHeaderRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardHeaderResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "dashboard"
+        ]
+      }
+    },
+    "/api/v4/artifacts/dashboard/primary": {
+      "post": {
+        "tags": [
+          "v4",
+          "artifacts",
+          "dashboard"
+        ],
+        "summary": "Get Dashboard Primary",
+        "description": "Get dashboard primary section data.",
+        "operationId": "get_dashboard_primary_api_v4_artifacts_dashboard_primary_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DashboardPrimaryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardPrimaryResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "dashboard"
+        ]
+      }
+    },
+    "/api/v4/artifacts/dashboard/secondary": {
+      "post": {
+        "tags": [
+          "v4",
+          "artifacts",
+          "dashboard"
+        ],
+        "summary": "Get Dashboard Secondary",
+        "description": "Get dashboard secondary section data.",
+        "operationId": "get_dashboard_secondary_api_v4_artifacts_dashboard_secondary_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DashboardSecondaryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardSecondaryResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "dashboard"
+        ]
+      }
+    },
+    "/api/v4/artifacts/dashboard/footer": {
+      "post": {
+        "tags": [
+          "v4",
+          "artifacts",
+          "dashboard"
+        ],
+        "summary": "Get Dashboard Footer",
+        "description": "Get dashboard footer section data.",
+        "operationId": "get_dashboard_footer_api_v4_artifacts_dashboard_footer_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DashboardFooterRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardFooterResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "dashboard"
+        ]
+      }
+    },
     "/api/v4/artifacts/dashboard/refresh": {
       "post": {
         "tags": [
@@ -59688,6 +60084,226 @@
         "type": "object",
         "title": "DashboardFooterMetrics"
       },
+      "DashboardFooterRequest": {
+        "properties": {
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "cohort_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Ids"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "roles": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Roles"
+          },
+          "simulation_filters": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Filters"
+          },
+          "target_profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Profile Id"
+          },
+          "actor_profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Profile Id"
+          },
+          "page_limit": {
+            "type": "integer",
+            "maximum": 200.0,
+            "minimum": 1.0,
+            "title": "Page Limit",
+            "default": 50
+          },
+          "page_offset": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Page Offset",
+            "default": 0
+          },
+          "scenario_perf_parameter_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Perf Parameter Ids"
+          },
+          "scenario_stats_parameter_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Stats Parameter Ids"
+          },
+          "sim_perf_simulation_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sim Perf Simulation Ids"
+          }
+        },
+        "type": "object",
+        "title": "DashboardFooterRequest",
+        "description": "Request for footer section."
+      },
+      "DashboardFooterResponse": {
+        "properties": {
+          "footer_metrics": {
+            "$ref": "#/components/schemas/DashboardFooterMetrics"
+          },
+          "simulations": {
+            "items": {
+              "$ref": "#/components/schemas/DashboardSimulationMeta"
+            },
+            "type": "array",
+            "title": "Simulations"
+          },
+          "parameters": {
+            "items": {
+              "$ref": "#/components/schemas/DashboardParameterMeta"
+            },
+            "type": "array",
+            "title": "Parameters"
+          },
+          "fields": {
+            "items": {
+              "$ref": "#/components/schemas/DashboardFieldMeta"
+            },
+            "type": "array",
+            "title": "Fields"
+          },
+          "thresholds": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DashboardThresholds"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "insights": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DashboardInsights"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DashboardFooterResponse",
+        "description": "Response for footer section endpoint."
+      },
       "DashboardHeaderMetric": {
         "properties": {
           "current_value": {
@@ -59771,6 +60387,204 @@
         },
         "type": "object",
         "title": "DashboardHeaderMetrics"
+      },
+      "DashboardHeaderRequest": {
+        "properties": {
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "cohort_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Ids"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "roles": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Roles"
+          },
+          "simulation_filters": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Filters"
+          },
+          "target_profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Profile Id"
+          },
+          "actor_profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Profile Id"
+          },
+          "page_limit": {
+            "type": "integer",
+            "maximum": 200.0,
+            "minimum": 1.0,
+            "title": "Page Limit",
+            "default": 50
+          },
+          "page_offset": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Page Offset",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "DashboardHeaderRequest",
+        "description": "Request for header section (no section-specific pickers)."
+      },
+      "DashboardHeaderResponse": {
+        "properties": {
+          "header_metrics": {
+            "$ref": "#/components/schemas/DashboardHeaderMetrics"
+          },
+          "thresholds": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DashboardThresholds"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "simulation_options": {
+            "items": {
+              "$ref": "#/components/schemas/app__api__v4__artifacts__types__FilterOption"
+            },
+            "type": "array",
+            "title": "Simulation Options"
+          },
+          "profile_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Name"
+          },
+          "profile_emails": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Emails"
+          },
+          "profile_primary_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Primary Email"
+          },
+          "profile_role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Role"
+          }
+        },
+        "type": "object",
+        "title": "DashboardHeaderResponse",
+        "description": "Response for header section endpoint."
       },
       "DashboardInsightObject": {
         "properties": {
@@ -60018,6 +60832,204 @@
         "type": "object",
         "title": "DashboardPrimaryMetrics"
       },
+      "DashboardPrimaryRequest": {
+        "properties": {
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "cohort_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Ids"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "roles": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Roles"
+          },
+          "simulation_filters": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Filters"
+          },
+          "target_profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Profile Id"
+          },
+          "actor_profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Profile Id"
+          },
+          "page_limit": {
+            "type": "integer",
+            "maximum": 200.0,
+            "minimum": 1.0,
+            "title": "Page Limit",
+            "default": 50
+          },
+          "page_offset": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Page Offset",
+            "default": 0
+          },
+          "persona_simulation_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Simulation Ids"
+          },
+          "heatmap_rubric_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Heatmap Rubric Ids"
+          }
+        },
+        "type": "object",
+        "title": "DashboardPrimaryRequest",
+        "description": "Request for primary section."
+      },
+      "DashboardPrimaryResponse": {
+        "properties": {
+          "primary_metrics": {
+            "$ref": "#/components/schemas/DashboardPrimaryMetrics"
+          },
+          "simulations": {
+            "items": {
+              "$ref": "#/components/schemas/DashboardSimulationMeta"
+            },
+            "type": "array",
+            "title": "Simulations"
+          },
+          "rubrics": {
+            "items": {
+              "$ref": "#/components/schemas/DashboardRubricMeta"
+            },
+            "type": "array",
+            "title": "Rubrics"
+          },
+          "thresholds": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DashboardThresholds"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "insights": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DashboardInsights"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DashboardPrimaryResponse",
+        "description": "Response for primary section endpoint."
+      },
       "DashboardRequest": {
         "properties": {
           "start_date": {
@@ -60210,6 +61222,219 @@
         },
         "type": "object",
         "title": "DashboardSecondaryMetrics"
+      },
+      "DashboardSecondaryRequest": {
+        "properties": {
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "cohort_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Ids"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "roles": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Roles"
+          },
+          "simulation_filters": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Filters"
+          },
+          "target_profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Profile Id"
+          },
+          "actor_profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Profile Id"
+          },
+          "page_limit": {
+            "type": "integer",
+            "maximum": 200.0,
+            "minimum": 1.0,
+            "title": "Page Limit",
+            "default": 50
+          },
+          "page_offset": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Page Offset",
+            "default": 0
+          },
+          "cohort_simulation_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Simulation Ids"
+          },
+          "improvement_simulation_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Improvement Simulation Ids"
+          },
+          "skill_rubric_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Skill Rubric Ids"
+          }
+        },
+        "type": "object",
+        "title": "DashboardSecondaryRequest",
+        "description": "Request for secondary section."
+      },
+      "DashboardSecondaryResponse": {
+        "properties": {
+          "secondary_metrics": {
+            "$ref": "#/components/schemas/DashboardSecondaryMetrics"
+          },
+          "simulations": {
+            "items": {
+              "$ref": "#/components/schemas/DashboardSimulationMeta"
+            },
+            "type": "array",
+            "title": "Simulations"
+          },
+          "rubrics": {
+            "items": {
+              "$ref": "#/components/schemas/DashboardRubricMeta"
+            },
+            "type": "array",
+            "title": "Rubrics"
+          },
+          "thresholds": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DashboardThresholds"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "insights": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DashboardInsights"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DashboardSecondaryResponse",
+        "description": "Response for secondary section endpoint."
       },
       "DashboardSimulationMeta": {
         "properties": {

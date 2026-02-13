@@ -39,7 +39,9 @@ async def get_login_providers(
 
     try:
         # Use department_id from request body if provided
-        department_id: UUID | None = request.department_id if request.department_id else None
+        department_id: UUID | None = (
+            request.department_id if request.department_id else None
+        )
 
         params = GetLoginDataSqlParams(department_id=department_id)
         sql_params = params.to_tuple()

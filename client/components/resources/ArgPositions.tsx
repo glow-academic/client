@@ -2,8 +2,13 @@
 
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import type { OutputOf } from "@/lib/api/types";
 import { ArrowDown, ArrowUp } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+
+// Derive resource item type from the GET endpoint response
+type ArgPositionsGetResponse = OutputOf<"/api/v4/resources/arg_positions/get", "post">;
+export type ArgPositionResourceItem = NonNullable<ArgPositionsGetResponse["items"]>[number];
 
 type CreateDraftArgPositionsIn = {
   body: {
@@ -32,12 +37,7 @@ interface ArgPositionsProps {
     name?: string | null;
   }>;
   arg_position_ids?: string[];
-  arg_position_resources?: Array<{
-    id?: string | null;
-    args_id?: string | null;
-    value?: number | null;
-    generated?: boolean | null;
-  }>;
+  arg_position_resources?: ArgPositionResourceItem[];
   group_id?: string | null;
   tool_id?: string | null;
   create_tool_id?: string | null;

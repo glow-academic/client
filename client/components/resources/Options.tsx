@@ -17,8 +17,13 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import type { OutputOf } from "@/lib/api/types";
 import { Check, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
+
+// Derive resource item type from the GET endpoint response
+type OptionsGetResponse = OutputOf<"/api/v4/resources/options/get", "post">;
+export type OptionResourceItem = NonNullable<OptionsGetResponse["items"]>[number];
 
 export interface OptionItem {
   id: string;
@@ -28,20 +33,10 @@ export interface OptionItem {
 
 export interface OptionsProps {
   option_ids?: string[];
-  option_resources?: Array<{
-    option_id?: string | null;
-    option_text?: string | null;
-    is_correct?: boolean | null;
-    generated?: boolean | null;
-  }>;
+  option_resources?: OptionResourceItem[];
   show_options?: boolean;
   option_suggestions?: string[];
-  options?: Array<{
-    option_id?: string | null;
-    option_text?: string | null;
-    is_correct?: boolean | null;
-    generated?: boolean | null;
-  }>;
+  options?: OptionResourceItem[];
   disabled?: boolean;
   onChange: (ids: string[]) => void;
   label?: string;
