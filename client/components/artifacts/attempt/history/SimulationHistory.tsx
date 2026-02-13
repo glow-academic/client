@@ -43,7 +43,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useFilterOptions } from "@/contexts/filter-options-context";
 import { useProfile } from "@/contexts/profile-context";
 import type { OutputOf } from "@/lib/api/types";
 import {
@@ -363,11 +362,6 @@ export interface SimulationHistoryProps {
   // Optional: whether to show the customize button (for practice mode)
   showCustomize?: boolean;
 
-  // Optional: Section-specific filter options for FilterOptionsContext
-  cohortFilterOptions?: Array<{ value: string; label: string | null; count: number | null }>;
-  departmentFilterOptions?: Array<{ value: string; label: string | null; count: number | null }>;
-  dateRangeEarliest?: string | null;
-  dateRangeLatest?: string | null;
 }
 
 export default function SimulationHistory({
@@ -389,10 +383,6 @@ export default function SimulationHistory({
   scenarioOptions,
   showModeFilter = true,
   showCustomize = false,
-  cohortFilterOptions,
-  departmentFilterOptions,
-  dateRangeEarliest,
-  dateRangeLatest,
 }: SimulationHistoryProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -472,19 +462,6 @@ export default function SimulationHistory({
     },
     [socket, isConnected]
   );
-
-  // Set section-specific filter options in context when provided
-  const { setOptions } = useFilterOptions();
-  React.useEffect(() => {
-    if (cohortFilterOptions || departmentFilterOptions || dateRangeEarliest || dateRangeLatest) {
-      setOptions({
-        cohortOptions: cohortFilterOptions || [],
-        departmentOptions: departmentFilterOptions || [],
-        dateRangeEarliest: dateRangeEarliest ?? null,
-        dateRangeLatest: dateRangeLatest ?? null,
-      });
-    }
-  }, [cohortFilterOptions, departmentFilterOptions, dateRangeEarliest, dateRangeLatest, setOptions]);
 
   // Ref for the root search bar
   const searchInputRef = React.useRef<HTMLInputElement | null>(null);

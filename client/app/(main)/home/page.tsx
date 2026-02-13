@@ -88,7 +88,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const q = loadHomeSearchParams(await searchParams);
 
   // Compute defaults and resolve filters
-  const { defaults, profileContext } = await computeAnalyticsDefaults();
+  const { defaults, profileContext, analyticsFilters } = await computeAnalyticsDefaults();
   const defaultFilters = resolveAnalyticsFilters(q, defaults, profileContext);
 
   // Cards endpoint (now includes all stats needed for simulation cards)
@@ -170,8 +170,8 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             historyInfiniteMode={historyInfiniteMode}
             historySortBy={historySortBy}
             historySortOrder={historySortOrder}
-            accessibleCohortIds={profileContext.cohort_ids || []}
-            accessibleDepartmentIds={profileContext.department_ids || []}
+            accessibleCohortIds={analyticsFilters?.cohort_options?.map(o => o.value) ?? []}
+            accessibleDepartmentIds={analyticsFilters?.department_options?.map(o => o.value) ?? []}
           />
         </Suspense>
       </div>

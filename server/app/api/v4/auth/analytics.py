@@ -244,7 +244,11 @@ async def fetch_pricing_filters(
     str | None,
     str | None,
 ]:
-    """Fetch filter options from pricing MVs."""
+    """Fetch filter options from pricing MVs.
+
+    Note: pricing MVs don't have department_id — departments are resolved
+    from the user's accessible departments via departments_resource.
+    """
     dept_opts: list[AnalyticsFilterOption] = []
     earliest: str | None = None
     latest: str | None = None
@@ -253,11 +257,10 @@ async def fetch_pricing_filters(
         async with pool.acquire() as c:
             rows = await c.fetch(
                 """
-                SELECT DISTINCT pgs.department_id, dr.name
-                FROM mv_pricing_group_summary pgs
-                JOIN departments_resource dr ON dr.id = pgs.department_id
-                WHERE pgs.department_id = ANY($1::uuid[])
-                ORDER BY dr.name
+                SELECT id as department_id, name
+                FROM departments_resource
+                WHERE id = ANY($1::uuid[])
+                ORDER BY name
                 """,
                 [UUID(did) for did in dept_ids],
             )

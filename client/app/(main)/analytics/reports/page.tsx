@@ -64,7 +64,7 @@ export default async function ReportsFullPage({
   const q = loadReportsSearchParams(await searchParams);
 
   // Compute defaults and resolve filters
-  const { defaults, profileContext } = await computeAnalyticsDefaults();
+  const { defaults, profileContext, analyticsFilters } = await computeAnalyticsDefaults();
   const resolved = resolveAnalyticsFilters(q, defaults, profileContext);
 
   // Build AnalyticsFilters for Reports component (optional arrays)
@@ -154,8 +154,8 @@ export default async function ReportsFullPage({
           reportsScenarioIds={reportsScenarioIds}
           reportsSortBy={reportsSortBy}
           reportsSortOrder={reportsSortOrder}
-          accessibleCohortIds={profileContext.cohort_ids || []}
-          accessibleDepartmentIds={profileContext.department_ids || []}
+          accessibleCohortIds={analyticsFilters?.cohort_options?.map(o => o.value) ?? []}
+          accessibleDepartmentIds={analyticsFilters?.department_options?.map(o => o.value) ?? []}
         />
       </Suspense>
     </div>

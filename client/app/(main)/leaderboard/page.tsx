@@ -64,7 +64,7 @@ export default async function LeaderboardPage({
   const q = loadLeaderboardSearchParams(await searchParams);
 
   // Compute defaults and resolve filters
-  const { defaults, profileContext } = await computeAnalyticsDefaults();
+  const { defaults, profileContext, analyticsFilters } = await computeAnalyticsDefaults();
   const filters = resolveAnalyticsFilters(q, defaults, profileContext);
 
   // Fetch leaderboard data server-side
@@ -80,8 +80,8 @@ export default async function LeaderboardPage({
       sort_order: "desc",
       page_limit: 50,
       page_offset: 0,
-      accessible_cohort_ids: profileContext.cohort_ids || [],
-      accessible_department_ids: profileContext.department_ids || [],
+      accessible_cohort_ids: analyticsFilters?.cohort_options?.map(o => o.value) ?? [],
+      accessible_department_ids: analyticsFilters?.department_options?.map(o => o.value) ?? [],
     },
   });
 

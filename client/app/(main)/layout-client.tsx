@@ -20,10 +20,6 @@ import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
 import { NavigationBreadcrumbs } from "@/components/common/layout/NavigationBreadcrumbs";
 import { UnifiedSidebar } from "@/components/common/layout/UnifiedSidebar";
 import { ThemeHydrator } from "@/components/theme/ThemeHydrator";
-import {
-  FilterOptionsProvider,
-  useFilterOptions,
-} from "@/contexts/filter-options-context";
 import { GenerationProvider } from "@/contexts/generation-context";
 import {
   DraftProviderClient,
@@ -70,17 +66,6 @@ function MainLayoutContent({
 
   const router = useRouter();
   const { breadcrumbs: serverBreadcrumbs, pageMetadata } = useProfile();
-  const { clearOptions } = useFilterOptions();
-
-  // Clear section-specific filter options when navigating away from analytics-related pages
-  useEffect(() => {
-    const analyticsPages = ["/analytics", "/home", "/practice", "/leaderboard", "/benchmark"];
-    const isAnalyticsPage = analyticsPages.some((p) => pathname.startsWith(p));
-    if (!isAnalyticsPage) {
-      clearOptions();
-    }
-  }, [pathname, clearOptions]);
-
   // Use server-driven breadcrumbs, falling back to empty array
   const breadcrumbs = useMemo(() => {
     return serverBreadcrumbs ?? [];
@@ -285,21 +270,19 @@ export function MainLayoutClient({
             sessionSnapshot={sessionSnapshot}
             analyticsFilters={analyticsFilters}
           >
-            <FilterOptionsProvider>
-              <GenerationProvider>
-                  <MainLayoutContent
-                    attemptData={attemptData}
-                    switchEffectiveProfileAction={switchEffectiveProfileAction}
-                    createFeedbackAction={createFeedbackAction}
-                    refreshPageAction={refreshPageAction}
-                    searchSimulatableProfilesAction={
-                      searchSimulatableProfilesAction
-                    }
-                  >
-                    {children}
-                  </MainLayoutContent>
-              </GenerationProvider>
-            </FilterOptionsProvider>
+            <GenerationProvider>
+                <MainLayoutContent
+                  attemptData={attemptData}
+                  switchEffectiveProfileAction={switchEffectiveProfileAction}
+                  createFeedbackAction={createFeedbackAction}
+                  refreshPageAction={refreshPageAction}
+                  searchSimulatableProfilesAction={
+                    searchSimulatableProfilesAction
+                  }
+                >
+                  {children}
+                </MainLayoutContent>
+            </GenerationProvider>
           </ProfileProviderClient>
         </DraftProviderClient>
       </SocketProviderClient>
