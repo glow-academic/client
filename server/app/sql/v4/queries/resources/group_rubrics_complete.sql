@@ -1,7 +1,8 @@
 -- Create group_rubrics resource
+-- SIMPLIFIED: Optional tool_id for tracking
 -- Get or create operation (returns existing ID if group_id + rubric_id already exists)
--- Parameters: target_group_id (uuid, required), rubric_id (uuid, required), mcp (boolean, optional)
--- Returns: id (uuid) - unique resource id
+-- Parameters: target_group_id (uuid), rubric_id (uuid), mcp (boolean), group_id (uuid, optional), tool_id (uuid, optional)
+-- Returns: id (uuid)
 
 -- Drop function if exists (handles signature variations)
 DO $$
@@ -21,7 +22,9 @@ END $$;
 CREATE OR REPLACE FUNCTION api_create_group_rubrics_v4(
     target_group_id uuid,
     rubric_id uuid,
-    mcp boolean DEFAULT false
+    mcp boolean DEFAULT false,
+    group_id uuid DEFAULT NULL,
+    tool_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     id uuid
@@ -32,6 +35,8 @@ AS $$
 #variable_conflict use_column
 DECLARE
     v_resource_id uuid;
+    v_run_id uuid;
+    v_call_id uuid;
 BEGIN
     -- Check if group_rubrics already exists (match on group_id + rubric_id)
     SELECT r.id INTO v_resource_id
@@ -45,7 +50,7 @@ BEGIN
         RETURN;
     END IF;
 
-    -- INSERT INTO group_rubrics_resource table (always insert, never update)
+    -- INSERT INTO group_rubrics_resource table
     INSERT INTO group_rubrics_resource (
         group_id,
         rubric_id,
@@ -68,6 +73,25 @@ BEGIN
         generated = EXCLUDED.generated,
         mcp = EXCLUDED.mcp
     RETURNING group_rubrics_resource.id INTO v_resource_id;
+    -- If tool_id and group_id provided, create run and call for tracking
+    IF tool_id IS NOT NULL AND group_id IS NOT NULL THEN
+        -- Create run record
+        v_run_id := uuidv7();
+        INSERT INTO runs_entry (id, input_tokens, output_tokens, cached_input_tokens, group_id, created_at, updated_at)
+        VALUES (v_run_id, 0, 0, 0, api_create_group_rubrics_v4.group_id, NOW(), NOW());
+
+        -- Create call record
+        v_call_id := uuidv7();
+        INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+        VALUES (v_call_id, 'group_rubrics_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+
+        -- Link tool to call
+        INSERT INTO tools_calls_connection (tools_id, call_id) VALUES (api_create_group_rubrics_v4.tool_id, v_call_id);
+
+        -- Link resource to call
+        INSERT INTO group_rubrics_calls_connection (group_rubrics_id, call_id)
+        VALUES (v_resource_id, v_call_id);
+    END IF;
 
     RETURN QUERY SELECT v_resource_id;
 END;

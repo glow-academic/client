@@ -11660,6 +11660,10 @@ export interface components {
              * @default false
              */
             mcp: boolean | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
         };
         /** ArgPositionsApiResponse */
         ArgPositionsApiResponse: {
@@ -11668,16 +11672,6 @@ export interface components {
         };
         /** ArgsApiRequest */
         ArgsApiRequest: {
-            /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
             /** Name */
             name: string;
             /** Description */
@@ -11696,6 +11690,10 @@ export interface components {
              * @default false
              */
             mcp: boolean | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
         };
         /** ArgsApiResponse */
         ArgsApiResponse: {
@@ -11704,16 +11702,6 @@ export interface components {
         };
         /** ArgsOutputsApiRequest */
         ArgsOutputsApiRequest: {
-            /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
             /**
              * Args Id
              * Format: uuid
@@ -11728,6 +11716,10 @@ export interface components {
              * @default false
              */
             mcp: boolean | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
         };
         /** ArgsOutputsApiResponse */
         ArgsOutputsApiResponse: {
@@ -12914,6 +12906,10 @@ export interface components {
              * @default false
              */
             mcp: boolean | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
         };
         /** AuthItemKeysApiResponse */
         AuthItemKeysApiResponse: {
@@ -16210,16 +16206,6 @@ export interface components {
         };
         /** EmailsApiRequest */
         EmailsApiRequest: {
-            /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
             /** Email */
             email: string;
             /**
@@ -16227,6 +16213,10 @@ export interface components {
              * @default false
              */
             mcp: boolean | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
         };
         /** EmailsApiResponse */
         EmailsApiResponse: {
@@ -16236,20 +16226,14 @@ export interface components {
         /** EndpointsApiRequest */
         EndpointsApiRequest: {
             /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
-            /**
              * Mcp
              * @default false
              */
             mcp: boolean | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
         };
         /** EndpointsApiResponse */
         EndpointsApiResponse: {
@@ -21952,20 +21936,14 @@ export interface components {
         /** GroupPositionsApiRequest */
         GroupPositionsApiRequest: {
             /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
-            /**
              * Mcp
              * @default false
              */
             mcp: boolean | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
         };
         /** GroupPositionsApiResponse */
         GroupPositionsApiResponse: {
@@ -21989,6 +21967,10 @@ export interface components {
              * @default false
              */
             mcp: boolean | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
         };
         /** GroupRubricsApiResponse */
         GroupRubricsApiResponse: {
@@ -22401,6 +22383,10 @@ export interface components {
              * @default false
              */
             mcp: boolean | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
         };
         /** ImagesApiResponse */
         ImagesApiResponse: {
@@ -22441,20 +22427,14 @@ export interface components {
         /** ItemsApiRequest */
         ItemsApiRequest: {
             /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
-            /**
              * Mcp
              * @default false
              */
             mcp: boolean | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
         };
         /** ItemsApiResponse */
         ItemsApiResponse: {
@@ -22463,16 +22443,6 @@ export interface components {
         };
         /** KeysApiRequest */
         KeysApiRequest: {
-            /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
             /**
              * Key Id
              * Format: uuid
@@ -22483,6 +22453,10 @@ export interface components {
              * @default false
              */
             mcp: boolean | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
         };
         /** KeysApiResponse */
         KeysApiResponse: {
@@ -24669,16 +24643,6 @@ export interface components {
         };
         /** ObjectivesApiRequest */
         ObjectivesApiRequest: {
-            /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
             /** Objective */
             objective: string;
             /**
@@ -24686,6 +24650,10 @@ export interface components {
              * @default false
              */
             mcp: boolean | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
         };
         /** ObjectivesApiResponse */
         ObjectivesApiResponse: {
@@ -24708,16 +24676,6 @@ export interface components {
         };
         /** OptionsApiRequest */
         OptionsApiRequest: {
-            /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
             /** Option Text */
             option_text: string;
             /** Is Correct */
@@ -24727,6 +24685,10 @@ export interface components {
              * @default false
              */
             mcp: boolean | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
         };
         /** OptionsApiResponse */
         OptionsApiResponse: {
@@ -24935,16 +24897,6 @@ export interface components {
         /** ParameterFieldsApiRequest */
         ParameterFieldsApiRequest: {
             /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
-            /**
              * Parameter Id
              * Format: uuid
              */
@@ -24959,6 +24911,10 @@ export interface components {
              * @default false
              */
             mcp: boolean | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
         };
         /** ParameterFieldsApiResponse */
         ParameterFieldsApiResponse: {
@@ -26250,16 +26206,6 @@ export interface components {
         };
         /** PointsApiRequest */
         PointsApiRequest: {
-            /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
             /** Value */
             value: number;
             /**
@@ -26267,6 +26213,10 @@ export interface components {
              * @default false
              */
             mcp: boolean | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
         };
         /** PointsApiResponse */
         PointsApiResponse: {
@@ -26289,20 +26239,14 @@ export interface components {
         /** PricingApiRequest */
         PricingApiRequest: {
             /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
-            /**
              * Mcp
              * @default false
              */
             mcp: boolean | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
         };
         /** PricingApiResponse */
         PricingApiResponse: {
@@ -26884,16 +26828,6 @@ export interface components {
         };
         /** ProblemStatementsApiRequest */
         ProblemStatementsApiRequest: {
-            /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
             /** Name */
             name: string;
             /** Problem Statement */
@@ -26903,6 +26837,10 @@ export interface components {
              * @default false
              */
             mcp: boolean | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
         };
         /** ProblemStatementsApiResponse */
         ProblemStatementsApiResponse: {
@@ -27321,16 +27259,6 @@ export interface components {
         };
         /** PromptsApiRequest */
         PromptsApiRequest: {
-            /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
             /** System Prompt */
             system_prompt: string;
             /** Name */
@@ -27342,6 +27270,10 @@ export interface components {
              * @default false
              */
             mcp: boolean | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
         };
         /** PromptsApiResponse */
         PromptsApiResponse: {
@@ -27351,20 +27283,14 @@ export interface components {
         /** ProtocolsApiRequest */
         ProtocolsApiRequest: {
             /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
-            /**
              * Mcp
              * @default false
              */
             mcp: boolean | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
         };
         /** ProtocolsApiResponse */
         ProtocolsApiResponse: {
@@ -27587,6 +27513,10 @@ export interface components {
              * @default false
              */
             mcp: boolean | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
         };
         /** ProviderKeysApiResponse */
         ProviderKeysApiResponse: {
@@ -29107,16 +29037,6 @@ export interface components {
         };
         /** QuestionsApiRequest */
         QuestionsApiRequest: {
-            /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
             /** Question Text */
             question_text: string;
             /** Allow Multiple */
@@ -29128,6 +29048,10 @@ export interface components {
              * @default false
              */
             mcp: boolean | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
         };
         /** QuestionsApiResponse */
         QuestionsApiResponse: {
@@ -29843,16 +29767,6 @@ export interface components {
         };
         /** RequestLimitsApiRequest */
         RequestLimitsApiRequest: {
-            /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
             /** Requests Per Day */
             requests_per_day: number;
             /**
@@ -29860,6 +29774,10 @@ export interface components {
              * @default false
              */
             mcp: boolean | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
         };
         /** RequestLimitsApiResponse */
         RequestLimitsApiResponse: {
@@ -29911,16 +29829,6 @@ export interface components {
         /** RoleRoutesApiRequest */
         RoleRoutesApiRequest: {
             /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
-            /**
              * Role Id
              * Format: uuid
              */
@@ -29935,6 +29843,10 @@ export interface components {
              * @default false
              */
             mcp: boolean | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
         };
         /** RoleRoutesApiResponse */
         RoleRoutesApiResponse: {
@@ -30331,20 +30243,14 @@ export interface components {
         /** RunPositionsApiRequest */
         RunPositionsApiRequest: {
             /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
-            /**
              * Mcp
              * @default false
              */
             mcp: boolean | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
         };
         /** RunPositionsApiResponse */
         RunPositionsApiResponse: {
@@ -30353,16 +30259,6 @@ export interface components {
         };
         /** RunRubricsApiRequest */
         RunRubricsApiRequest: {
-            /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
             /**
              * Run Id
              * Format: uuid
@@ -30378,6 +30274,10 @@ export interface components {
              * @default false
              */
             mcp: boolean | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
         };
         /** RunRubricsApiResponse */
         RunRubricsApiResponse: {
@@ -31473,16 +31373,6 @@ export interface components {
         /** ScenarioPersonasApiRequest */
         ScenarioPersonasApiRequest: {
             /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
-            /**
              * Simulation Id
              * Format: uuid
              */
@@ -31502,6 +31392,10 @@ export interface components {
              * @default false
              */
             mcp: boolean | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
         };
         /** ScenarioPersonasApiResponse */
         ScenarioPersonasApiResponse: {
@@ -31510,16 +31404,6 @@ export interface components {
         };
         /** ScenarioPositionsApiRequest */
         ScenarioPositionsApiRequest: {
-            /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
             /**
              * Simulation Id
              * Format: uuid
@@ -31537,6 +31421,10 @@ export interface components {
              * @default false
              */
             mcp: boolean | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
         };
         /** ScenarioPositionsApiResponse */
         ScenarioPositionsApiResponse: {
@@ -31638,16 +31526,6 @@ export interface components {
         /** ScenarioRubricsApiRequest */
         ScenarioRubricsApiRequest: {
             /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
-            /**
              * Scenario Id
              * Format: uuid
              */
@@ -31662,6 +31540,10 @@ export interface components {
              * @default false
              */
             mcp: boolean | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
         };
         /** ScenarioRubricsApiResponse */
         ScenarioRubricsApiResponse: {
@@ -31670,16 +31552,6 @@ export interface components {
         };
         /** ScenarioTimeLimitsApiRequest */
         ScenarioTimeLimitsApiRequest: {
-            /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
             /**
              * Scenario Id
              * Format: uuid
@@ -31692,6 +31564,10 @@ export interface components {
              * @default false
              */
             mcp: boolean | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
         };
         /** ScenarioTimeLimitsApiResponse */
         ScenarioTimeLimitsApiResponse: {
@@ -34548,16 +34424,6 @@ export interface components {
         /** SimulationPositionsApiRequest */
         SimulationPositionsApiRequest: {
             /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
-            /**
              * Simulation Id
              * Format: uuid
              */
@@ -34569,6 +34435,10 @@ export interface components {
              * @default false
              */
             mcp: boolean | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
         };
         /** SimulationPositionsApiResponse */
         SimulationPositionsApiResponse: {
@@ -34810,20 +34680,14 @@ export interface components {
         /** SlugsApiRequest */
         SlugsApiRequest: {
             /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
-            /**
              * Mcp
              * @default false
              */
             mcp: boolean | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
         };
         /** SlugsApiResponse */
         SlugsApiResponse: {
@@ -34916,16 +34780,6 @@ export interface components {
         };
         /** StandardGroupsApiRequest */
         StandardGroupsApiRequest: {
-            /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
             /** Name */
             name: string;
             /** Short Name */
@@ -34941,6 +34795,10 @@ export interface components {
              * @default false
              */
             mcp: boolean | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
         };
         /** StandardGroupsApiResponse */
         StandardGroupsApiResponse: {
@@ -35317,16 +35175,6 @@ export interface components {
         };
         /** TextsApiRequest */
         TextsApiRequest: {
-            /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
             /** Content */
             content: string;
             /**
@@ -35334,6 +35182,10 @@ export interface components {
              * @default false
              */
             mcp: boolean | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
         };
         /** TextsApiResponse */
         TextsApiResponse: {
@@ -36298,16 +36150,6 @@ export interface components {
         /** UploadsApiRequest */
         UploadsApiRequest: {
             /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
-            /**
              * Upload Id
              * Format: uuid
              */
@@ -36317,6 +36159,10 @@ export interface components {
              * @default false
              */
             mcp: boolean | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
         };
         /** UploadsApiResponse */
         UploadsApiResponse: {
@@ -36354,20 +36200,14 @@ export interface components {
         /** ValuesApiRequest */
         ValuesApiRequest: {
             /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
-            /**
              * Mcp
              * @default false
              */
             mcp: boolean | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
         };
         /** ValuesApiResponse */
         ValuesApiResponse: {
@@ -36392,16 +36232,6 @@ export interface components {
         };
         /** VideosApiRequest */
         VideosApiRequest: {
-            /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
             /** Name */
             name: string;
             /** Length Seconds */
@@ -36413,6 +36243,10 @@ export interface components {
              * @default false
              */
             mcp: boolean | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
         };
         /** VideosApiResponse */
         VideosApiResponse: {
@@ -36422,20 +36256,14 @@ export interface components {
         /** VoicesApiRequest */
         VoicesApiRequest: {
             /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
-            /**
              * Mcp
              * @default false
              */
             mcp: boolean | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
         };
         /** VoicesApiResponse */
         VoicesApiResponse: {
