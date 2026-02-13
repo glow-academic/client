@@ -10,7 +10,7 @@ class SearchPersonasParams(BaseModel):
     search: str | None = None
     limit_count: int | None = 20
     offset_count: int | None = 0
-    user_department_ids: list[UUID] = []
+    department_ids: list[UUID] = []
     draft_id: UUID | None = None
     suggest_source: str | None = "all"
     exclude_ids: list[UUID] = []
@@ -23,7 +23,7 @@ class SearchPersonasParams(BaseModel):
             self.search,
             self.limit_count,
             self.offset_count,
-            self.user_department_ids,
+            self.department_ids,
             self.draft_id,
             self.suggest_source,
             self.exclude_ids,

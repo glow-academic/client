@@ -11,6 +11,7 @@ class SearchProfilesParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] = []
+    department_ids: list[UUID] = []
     # Artifact boolean filters
     profile: bool = False
     setting: bool = False
@@ -21,6 +22,7 @@ class SearchProfilesParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.department_ids,
             self.profile,
             self.setting,
         )

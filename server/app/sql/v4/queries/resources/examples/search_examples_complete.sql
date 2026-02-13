@@ -1,7 +1,7 @@
 -- Search examples resources with optional context
 -- CLEAN PATTERN: Query examples_resource directly
 -- Uses draft_id for suggest_source='draft' (efficient drafts_connection lookup)
--- Parameters: search (text), limit_count (int), offset_count (int), persona_id (uuid), user_department_ids (uuid[]), draft_id (uuid), suggest_source (text), exclude_ids (uuid[])
+-- Parameters: search (text), limit_count (int), offset_count (int), persona_id (uuid), department_ids (uuid[]), draft_id (uuid), suggest_source (text), exclude_ids (uuid[])
 -- Returns: items (array of example resources)
 
 -- Drop function if exists (handles signature variations)
@@ -25,7 +25,7 @@ CREATE OR REPLACE FUNCTION api_search_examples_v4(
     limit_count int DEFAULT 20,
     offset_count int DEFAULT 0,
     persona_id uuid DEFAULT NULL,
-    user_department_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    department_ids uuid[] DEFAULT ARRAY[]::uuid[],
     draft_id uuid DEFAULT NULL,
     suggest_source text DEFAULT 'all',
     exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
@@ -63,8 +63,8 @@ FROM (
               WHERE pe.example_id = e.id
                 AND pe.active = true
                 AND (
-                    COALESCE(array_length(user_department_ids, 1), 0) = 0
-                    OR pr.department_ids && user_department_ids
+                    COALESCE(array_length(department_ids, 1), 0) = 0
+                    OR pr.department_ids && department_ids
                     OR COALESCE(array_length(pr.department_ids, 1), 0) = 0
                 )
           )

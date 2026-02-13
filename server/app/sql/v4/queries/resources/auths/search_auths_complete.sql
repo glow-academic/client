@@ -23,6 +23,7 @@ CREATE OR REPLACE FUNCTION api_search_auths_v4(
     limit_count int DEFAULT 20,
     offset_count int DEFAULT 0,
     exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    department_ids uuid[] DEFAULT ARRAY[]::uuid[],
     -- Artifact boolean filters: when true, only return resources linked to that artifact type
     auth boolean DEFAULT false,
     setting boolean DEFAULT false
@@ -52,6 +53,7 @@ FROM (
            LOWER(a.protocol) LIKE '%' || LOWER(search) || '%')
       -- Exclude filter
       AND (exclude_ids IS NULL OR NOT (a.id = ANY(exclude_ids)))
+      AND (COALESCE(array_length(department_ids, 1), 0) = 0 OR a.department_ids && department_ids)
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
       AND (NOT auth OR EXISTS (SELECT 1 FROM auth_auths_junction j WHERE j.auth_id = a.id AND j.active = true))
       AND (NOT setting OR EXISTS (SELECT 1 FROM setting_auths_junction j WHERE j.auth_id = a.id AND j.active = true))

@@ -21,7 +21,7 @@ CREATE OR REPLACE FUNCTION api_search_scenarios_v4(
     search text DEFAULT NULL,
     limit_count int DEFAULT 20,
     offset_count int DEFAULT 0,
-    user_department_ids uuid[] DEFAULT NULL,
+    department_ids uuid[] DEFAULT NULL,
     suggest_source text DEFAULT 'all',
     exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
     -- Artifact boolean filters: when true, only return resources linked to that artifact type
@@ -64,10 +64,10 @@ FROM (
       )
       -- Department filter
       AND (
-          user_department_ids IS NULL
+          department_ids IS NULL
           OR s.department_ids IS NULL
           OR array_length(s.department_ids, 1) IS NULL
-          OR s.department_ids && user_department_ids
+          OR s.department_ids && department_ids
       )
       -- Exclude specified IDs
       AND (COALESCE(array_length(exclude_ids, 1), 0) = 0 OR NOT s.id = ANY(exclude_ids))

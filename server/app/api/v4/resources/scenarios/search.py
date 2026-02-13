@@ -36,7 +36,7 @@ async def search_scenarios_internal(
     search: str | None = None,
     limit_count: int | None = 20,
     offset_count: int | None = 0,
-    user_department_ids: list[UUID] | None = None,
+    department_ids: list[UUID] | None = None,
     suggest_source: str | None = None,
     exclude_ids: list[UUID] | None = None,
     bypass_cache: bool = False,
@@ -51,7 +51,7 @@ async def search_scenarios_internal(
         search: Search term
         limit_count: Maximum number of results
         offset_count: Offset for pagination
-        user_department_ids: User's department IDs for filtering
+        department_ids: User's department IDs for filtering
         suggest_source: Source for suggestions ('all', 'linked', 'recent')
         exclude_ids: IDs to exclude from results
         bypass_cache: Whether to bypass cache
@@ -66,8 +66,8 @@ async def search_scenarios_internal(
             "search": search,
             "limit_count": limit_count,
             "offset_count": offset_count,
-            "user_department_ids": [str(i) for i in user_department_ids]
-            if user_department_ids
+            "department_ids": [str(i) for i in department_ids]
+            if department_ids
             else None,
             "suggest_source": suggest_source,
             "exclude_ids": [str(i) for i in exclude_ids] if exclude_ids else None,
@@ -87,7 +87,7 @@ async def search_scenarios_internal(
         search=search,
         limit_count=limit_count,
         offset_count=offset_count,
-        user_department_ids=user_department_ids or [],
+        department_ids=department_ids or [],
         suggest_source=suggest_source,
         exclude_ids=exclude_ids or [],
         scenario=scenario,
@@ -162,7 +162,7 @@ async def search_scenarios(
             search=request.search,
             limit_count=request.limit_count,
             offset_count=request.offset_count,
-            user_department_ids=request.user_department_ids,
+            department_ids=request.department_ids,
             suggest_source=request.suggest_source,
             exclude_ids=request.exclude_ids,
             bypass_cache=bypass_cache,

@@ -1,7 +1,7 @@
 -- Search departments resources with optional context
 -- CLEAN PATTERN: Query departments_resource directly with denormalized name/description
 -- Uses draft_id for suggest_source='draft' (efficient drafts_connection lookup)
--- Parameters: search (text), limit_count (int), offset_count (int), user_department_ids (uuid[]), draft_id (uuid), suggest_source (text), exclude_ids (uuid[])
+-- Parameters: search (text), limit_count (int), offset_count (int), department_ids (uuid[]), draft_id (uuid), suggest_source (text), exclude_ids (uuid[])
 -- Returns: items (array of department resources)
 
 -- Drop function if exists (handles signature variations)
@@ -24,7 +24,7 @@ CREATE OR REPLACE FUNCTION api_search_departments_v4(
     search text DEFAULT NULL,
     limit_count int DEFAULT 20,
     offset_count int DEFAULT 0,
-    user_department_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    department_ids uuid[] DEFAULT ARRAY[]::uuid[],
     draft_id uuid DEFAULT NULL,
     suggest_source text DEFAULT 'all',
     exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
@@ -72,8 +72,8 @@ FROM (
       AND d.name != ''
       -- User department filter
       AND (
-          COALESCE(array_length(user_department_ids, 1), 0) = 0
-          OR d.id = ANY(user_department_ids)
+          COALESCE(array_length(department_ids, 1), 0) = 0
+          OR d.id = ANY(department_ids)
       )
       -- Suggest source filter
       AND (

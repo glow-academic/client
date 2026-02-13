@@ -506,7 +506,7 @@ async def get_persona_internal(
                 search=None,
                 limit_count=200,
                 offset_count=0,
-                user_department_ids=user_department_ids,
+                department_ids=user_department_ids,
                 bypass_cache=bypass_cache,
             )
 

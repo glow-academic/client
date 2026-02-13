@@ -1,7 +1,7 @@
 -- Search personas resources with optional context
 -- CLEAN PATTERN: Query personas_resource directly with denormalized columns
 -- Uses draft_id for suggest_source='draft' (efficient drafts_connection lookup)
--- Parameters: search (text), limit_count (int), offset_count (int), user_department_ids (uuid[]), draft_id (uuid), suggest_source (text), exclude_ids (uuid[])
+-- Parameters: search (text), limit_count (int), offset_count (int), department_ids (uuid[]), draft_id (uuid), suggest_source (text), exclude_ids (uuid[])
 -- Returns: items (array of persona resources)
 
 -- Drop function if exists (handles signature variations)
@@ -24,7 +24,7 @@ CREATE OR REPLACE FUNCTION api_search_personas_v4(
     search text DEFAULT NULL,
     limit_count int DEFAULT 20,
     offset_count int DEFAULT 0,
-    user_department_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    department_ids uuid[] DEFAULT ARRAY[]::uuid[],
     draft_id uuid DEFAULT NULL,
     suggest_source text DEFAULT 'all',
     exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
@@ -62,8 +62,8 @@ FROM (
       AND p.name != ''
       -- Department access: user can see if persona has matching department OR has no departments
       AND (
-          COALESCE(array_length(user_department_ids, 1), 0) = 0
-          OR p.department_ids && user_department_ids
+          COALESCE(array_length(department_ids, 1), 0) = 0
+          OR p.department_ids && department_ids
           OR COALESCE(array_length(p.department_ids, 1), 0) = 0
       )
       -- Suggest source filter

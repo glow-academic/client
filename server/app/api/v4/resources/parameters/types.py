@@ -16,6 +16,7 @@ class SearchParametersParams(BaseModel):
     p_video_parameter: bool | None = None
     suggest_source: str | None = "all"
     exclude_ids: list[UUID] = []
+    department_ids: list[UUID] = []
     # Artifact boolean filters
     document: bool = False
     parameter: bool = False
@@ -33,6 +34,7 @@ class SearchParametersParams(BaseModel):
             self.p_video_parameter,
             self.suggest_source,
             self.exclude_ids,
+            self.department_ids,
             self.document,
             self.parameter,
             self.persona,

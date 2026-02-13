@@ -11,7 +11,7 @@ class SearchExamplesParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     persona_id: UUID | None = None
-    user_department_ids: list[UUID] = []
+    department_ids: list[UUID] = []
     draft_id: UUID | None = None
     suggest_source: str | None = "all"
     exclude_ids: list[UUID] = []
@@ -24,7 +24,7 @@ class SearchExamplesParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.persona_id,
-            self.user_department_ids,
+            self.department_ids,
             self.draft_id,
             self.suggest_source,
             self.exclude_ids,

@@ -31429,6 +31429,8 @@ export interface components {
             offset_count: number | null;
             /** Exclude Ids */
             exclude_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
             /**
              * Agent
              * @default false
@@ -31577,6 +31579,8 @@ export interface components {
             offset_count: number | null;
             /** Exclude Ids */
             exclude_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
             /**
              * Auth
              * @default false
@@ -31708,8 +31712,8 @@ export interface components {
              * @default 0
              */
             offset_count: number | null;
-            /** User Department Ids */
-            user_department_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
             /** Draft Id */
             draft_id?: string | null;
             /** Suggest Source */
@@ -31927,8 +31931,8 @@ export interface components {
              * @default 0
              */
             offset_count: number | null;
-            /** User Department Ids */
-            user_department_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
             /** Draft Id */
             draft_id?: string | null;
             /** Suggest Source */
@@ -32049,6 +32053,8 @@ export interface components {
             offset_count: number | null;
             /** Exclude Ids */
             exclude_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
             /**
              * Eval
              * @default false
@@ -32076,8 +32082,8 @@ export interface components {
             offset_count: number | null;
             /** Persona Id */
             persona_id?: string | null;
-            /** User Department Ids */
-            user_department_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
             /** Draft Id */
             draft_id?: string | null;
             /** Suggest Source */
@@ -32109,8 +32115,8 @@ export interface components {
              * @default 0
              */
             offset_count: number | null;
-            /** User Department Ids */
-            user_department_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
             /** Draft Id */
             draft_id?: string | null;
             /** Suggest Source */
@@ -32512,6 +32518,8 @@ export interface components {
             offset_count: number | null;
             /** Exclude Ids */
             exclude_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
             /**
              * Agent
              * @default false
@@ -32744,6 +32752,8 @@ export interface components {
             suggest_source?: string | null;
             /** Exclude Ids */
             exclude_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
             /**
              * Document
              * @default false
@@ -32784,8 +32794,8 @@ export interface components {
              * @default 0
              */
             offset_count: number | null;
-            /** User Department Ids */
-            user_department_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
             /** Draft Id */
             draft_id?: string | null;
             /** Suggest Source */
@@ -32878,6 +32888,8 @@ export interface components {
             offset_count: number | null;
             /** Exclude Ids */
             exclude_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
             /**
              * Profile
              * @default false
@@ -32995,6 +33007,8 @@ export interface components {
             offset_count: number | null;
             /** Exclude Ids */
             exclude_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
             /**
              * Model
              * @default false
@@ -33200,6 +33214,8 @@ export interface components {
             offset_count: number | null;
             /** Exclude Ids */
             exclude_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
             /**
              * Rubric
              * @default false
@@ -33429,6 +33445,8 @@ export interface components {
             offset_count: number | null;
             /** Exclude Ids */
             exclude_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
             /**
              * Department
              * @default false
@@ -33704,6 +33722,8 @@ export interface components {
             offset_count: number | null;
             /** Exclude Ids */
             exclude_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
             /**
              * Agent
              * @default false

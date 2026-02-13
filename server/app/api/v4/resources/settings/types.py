@@ -89,6 +89,7 @@ class SearchSettingsParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] = []
+    department_ids: list[UUID] = []
     # Artifact boolean filters
     department: bool = False
     setting: bool = False
@@ -99,6 +100,7 @@ class SearchSettingsParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.department_ids,
             self.department,
             self.setting,
         )

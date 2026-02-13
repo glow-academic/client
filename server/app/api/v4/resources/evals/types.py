@@ -11,6 +11,7 @@ class SearchEvalsParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] = []
+    department_ids: list[UUID] = []
     # Artifact boolean filters
     eval: bool = False
 
@@ -20,5 +21,6 @@ class SearchEvalsParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.department_ids,
             self.eval,
         )

@@ -23,6 +23,7 @@ CREATE OR REPLACE FUNCTION api_search_cohorts_v4(
     limit_count int DEFAULT 20,
     offset_count int DEFAULT 0,
     exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    department_ids uuid[] DEFAULT ARRAY[]::uuid[],
     -- Artifact boolean filters: when true, only return resources linked to that artifact type
     cohort boolean DEFAULT false,
     profile boolean DEFAULT false
@@ -60,6 +61,7 @@ FROM (
     WHERE cr.active = true
       AND (search IS NULL OR search = '' OR LOWER(cr.name) LIKE '%' || LOWER(search) || '%')
       AND (exclude_ids IS NULL OR NOT (cr.id = ANY(exclude_ids)))
+      AND (COALESCE(array_length(department_ids, 1), 0) = 0 OR cr.department_ids && department_ids)
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
       AND (NOT cohort OR EXISTS (SELECT 1 FROM cohort_cohorts_junction j WHERE j.cohort_id = cr.id AND j.active = true))
       AND (NOT profile OR EXISTS (SELECT 1 FROM profile_cohorts_junction j WHERE j.cohort_id = cr.id AND j.active = true))

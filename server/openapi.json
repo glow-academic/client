@@ -117330,6 +117330,21 @@
             ],
             "title": "Exclude Ids"
           },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
           "agent": {
             "anyOf": [
               {
@@ -117832,6 +117847,21 @@
             ],
             "title": "Exclude Ids"
           },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
           "auth": {
             "anyOf": [
               {
@@ -118247,7 +118277,7 @@
             "title": "Offset Count",
             "default": 0
           },
-          "user_department_ids": {
+          "department_ids": {
             "anyOf": [
               {
                 "items": {
@@ -118260,7 +118290,7 @@
                 "type": "null"
               }
             ],
-            "title": "User Department Ids"
+            "title": "Department Ids"
           },
           "draft_id": {
             "anyOf": [
@@ -118856,7 +118886,7 @@
             "title": "Offset Count",
             "default": 0
           },
-          "user_department_ids": {
+          "department_ids": {
             "anyOf": [
               {
                 "items": {
@@ -118869,7 +118899,7 @@
                 "type": "null"
               }
             ],
-            "title": "User Department Ids"
+            "title": "Department Ids"
           },
           "draft_id": {
             "anyOf": [
@@ -119263,6 +119293,21 @@
             ],
             "title": "Exclude Ids"
           },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
           "eval": {
             "anyOf": [
               {
@@ -119348,7 +119393,7 @@
             ],
             "title": "Persona Id"
           },
-          "user_department_ids": {
+          "department_ids": {
             "anyOf": [
               {
                 "items": {
@@ -119361,7 +119406,7 @@
                 "type": "null"
               }
             ],
-            "title": "User Department Ids"
+            "title": "Department Ids"
           },
           "draft_id": {
             "anyOf": [
@@ -119474,7 +119519,7 @@
             "title": "Offset Count",
             "default": 0
           },
-          "user_department_ids": {
+          "department_ids": {
             "anyOf": [
               {
                 "items": {
@@ -119487,7 +119532,7 @@
                 "type": "null"
               }
             ],
-            "title": "User Department Ids"
+            "title": "Department Ids"
           },
           "draft_id": {
             "anyOf": [
@@ -120757,6 +120802,21 @@
             ],
             "title": "Exclude Ids"
           },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
           "agent": {
             "anyOf": [
               {
@@ -121468,6 +121528,21 @@
             ],
             "title": "Exclude Ids"
           },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
           "document": {
             "anyOf": [
               {
@@ -121577,7 +121652,7 @@
             "title": "Offset Count",
             "default": 0
           },
-          "user_department_ids": {
+          "department_ids": {
             "anyOf": [
               {
                 "items": {
@@ -121590,7 +121665,7 @@
                 "type": "null"
               }
             ],
-            "title": "User Department Ids"
+            "title": "Department Ids"
           },
           "draft_id": {
             "anyOf": [
@@ -121905,6 +121980,21 @@
               }
             ],
             "title": "Exclude Ids"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
           },
           "profile": {
             "anyOf": [
@@ -122292,6 +122382,21 @@
               }
             ],
             "title": "Exclude Ids"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
           },
           "model": {
             "anyOf": [
@@ -122934,6 +123039,21 @@
               }
             ],
             "title": "Exclude Ids"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
           },
           "rubric": {
             "anyOf": [
@@ -123705,6 +123825,21 @@
               }
             ],
             "title": "Exclude Ids"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
           },
           "department": {
             "anyOf": [
@@ -124591,6 +124726,21 @@
               }
             ],
             "title": "Exclude Ids"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
           },
           "agent": {
             "anyOf": [

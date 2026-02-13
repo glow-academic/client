@@ -25,6 +25,7 @@ CREATE OR REPLACE FUNCTION api_search_simulations_v4(
     draft_id uuid DEFAULT NULL,
     suggest_source text DEFAULT 'all',
     exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    department_ids uuid[] DEFAULT ARRAY[]::uuid[],
     -- Artifact boolean filters: when true, only return resources linked to that artifact type
     cohort boolean DEFAULT false,
     simulation boolean DEFAULT false
@@ -63,6 +64,7 @@ FROM (
       )
       -- Exclude specified IDs
       AND (exclude_ids IS NULL OR NOT (s.id = ANY(exclude_ids)))
+      AND (COALESCE(array_length(department_ids, 1), 0) = 0 OR s.department_ids && department_ids)
       -- Suggest source filter
       AND (
           suggest_source = 'all'

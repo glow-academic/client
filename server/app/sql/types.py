@@ -13573,6 +13573,7 @@ class SearchAgentsSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     agent: bool | None = False
     setting: bool | None = False
 
@@ -13582,6 +13583,7 @@ class SearchAgentsSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.department_ids,
             self.agent,
             self.setting,
         )
@@ -13596,6 +13598,7 @@ class SearchAgentsApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     agent: bool | None = False
     setting: bool | None = False
 
@@ -14108,6 +14111,7 @@ class SearchAuthsSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     auth: bool | None = False
     setting: bool | None = False
 
@@ -14117,6 +14121,7 @@ class SearchAuthsSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.department_ids,
             self.auth,
             self.setting,
         )
@@ -14131,6 +14136,7 @@ class SearchAuthsApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     auth: bool | None = False
     setting: bool | None = False
 
@@ -14249,6 +14255,7 @@ class SearchCohortsSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     cohort: bool | None = False
     profile: bool | None = False
 
@@ -14258,6 +14265,7 @@ class SearchCohortsSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.department_ids,
             self.cohort,
             self.profile,
         )
@@ -14272,6 +14280,7 @@ class SearchCohortsApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     cohort: bool | None = False
     profile: bool | None = False
 
@@ -14509,7 +14518,7 @@ class SearchDepartmentsSqlParams(BaseModel):
     search: str | None = None
     limit_count: int | None = 20
     offset_count: int | None = 0
-    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     draft_id: UUID | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
@@ -14536,7 +14545,7 @@ class SearchDepartmentsSqlParams(BaseModel):
             self.search,
             self.limit_count,
             self.offset_count,
-            self.user_department_ids,
+            self.department_ids,
             self.draft_id,
             self.suggest_source,
             self.exclude_ids,
@@ -14568,7 +14577,7 @@ class SearchDepartmentsApiRequest(BaseModel):
     search: str | None = None
     limit_count: int | None = 20
     offset_count: int | None = 0
-    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     draft_id: UUID | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
@@ -14840,7 +14849,7 @@ class SearchDocumentsSqlParams(BaseModel):
     search: str | None = None
     limit_count: int | None = 20
     offset_count: int | None = 0
-    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     draft_id: UUID | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
@@ -14852,7 +14861,7 @@ class SearchDocumentsSqlParams(BaseModel):
             self.search,
             self.limit_count,
             self.offset_count,
-            self.user_department_ids,
+            self.department_ids,
             self.draft_id,
             self.suggest_source,
             self.exclude_ids,
@@ -14869,7 +14878,7 @@ class SearchDocumentsApiRequest(BaseModel):
     search: str | None = None
     limit_count: int | None = 20
     offset_count: int | None = 0
-    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     draft_id: UUID | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
@@ -15193,6 +15202,7 @@ class SearchEvalsSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     eval: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -15201,6 +15211,7 @@ class SearchEvalsSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.department_ids,
             self.eval,
         )
 
@@ -15214,6 +15225,7 @@ class SearchEvalsApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     eval: bool | None = False
 
 class SearchEvalsApiResponse(BaseModel):
@@ -15262,7 +15274,7 @@ class SearchExamplesSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     persona_id: UUID | None = None
-    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     draft_id: UUID | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
@@ -15274,7 +15286,7 @@ class SearchExamplesSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.persona_id,
-            self.user_department_ids,
+            self.department_ids,
             self.draft_id,
             self.suggest_source,
             self.exclude_ids,
@@ -15291,7 +15303,7 @@ class SearchExamplesApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     persona_id: UUID | None = None
-    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     draft_id: UUID | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
@@ -15378,7 +15390,7 @@ class SearchFieldsSqlParams(BaseModel):
     search: str | None = None
     limit_count: int | None = 20
     offset_count: int | None = 0
-    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     draft_id: UUID | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
@@ -15390,7 +15402,7 @@ class SearchFieldsSqlParams(BaseModel):
             self.search,
             self.limit_count,
             self.offset_count,
-            self.user_department_ids,
+            self.department_ids,
             self.draft_id,
             self.suggest_source,
             self.exclude_ids,
@@ -15407,7 +15419,7 @@ class SearchFieldsApiRequest(BaseModel):
     search: str | None = None
     limit_count: int | None = 20
     offset_count: int | None = 0
-    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     draft_id: UUID | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
@@ -16463,6 +16475,7 @@ class SearchModelsSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     agent: bool | None = False
     model: bool | None = False
 
@@ -16472,6 +16485,7 @@ class SearchModelsSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.department_ids,
             self.agent,
             self.model,
         )
@@ -16486,6 +16500,7 @@ class SearchModelsApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     agent: bool | None = False
     model: bool | None = False
 
@@ -17050,6 +17065,7 @@ class SearchParametersSqlParams(BaseModel):
     p_video_parameter: bool | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     document: bool | None = False
     parameter: bool | None = False
     persona: bool | None = False
@@ -17066,6 +17082,7 @@ class SearchParametersSqlParams(BaseModel):
             self.p_video_parameter,
             self.suggest_source,
             self.exclude_ids,
+            self.department_ids,
             self.document,
             self.parameter,
             self.persona,
@@ -17087,6 +17104,7 @@ class SearchParametersApiRequest(BaseModel):
     p_video_parameter: bool | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     document: bool | None = False
     parameter: bool | None = False
     persona: bool | None = False
@@ -17167,7 +17185,7 @@ class SearchPersonasSqlParams(BaseModel):
     search: str | None = None
     limit_count: int | None = 20
     offset_count: int | None = 0
-    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     draft_id: UUID | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
@@ -17179,7 +17197,7 @@ class SearchPersonasSqlParams(BaseModel):
             self.search,
             self.limit_count,
             self.offset_count,
-            self.user_department_ids,
+            self.department_ids,
             self.draft_id,
             self.suggest_source,
             self.exclude_ids,
@@ -17196,7 +17214,7 @@ class SearchPersonasApiRequest(BaseModel):
     search: str | None = None
     limit_count: int | None = 20
     offset_count: int | None = 0
-    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     draft_id: UUID | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
@@ -17591,6 +17609,7 @@ class SearchProfilesSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     profile: bool | None = False
     setting: bool | None = False
 
@@ -17600,6 +17619,7 @@ class SearchProfilesSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.department_ids,
             self.profile,
             self.setting,
         )
@@ -17614,6 +17634,7 @@ class SearchProfilesApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     profile: bool | None = False
     setting: bool | None = False
 
@@ -17992,6 +18013,7 @@ class SearchProvidersSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     model: bool | None = False
     provider: bool | None = False
 
@@ -18001,6 +18023,7 @@ class SearchProvidersSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.department_ids,
             self.model,
             self.provider,
         )
@@ -18015,6 +18038,7 @@ class SearchProvidersApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     model: bool | None = False
     provider: bool | None = False
 
@@ -18728,6 +18752,7 @@ class SearchRubricsSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     rubric: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -18736,6 +18761,7 @@ class SearchRubricsSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.department_ids,
             self.rubric,
         )
 
@@ -18749,6 +18775,7 @@ class SearchRubricsApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     rubric: bool | None = False
 
 class SearchRubricsApiResponse(BaseModel):
@@ -19545,7 +19572,7 @@ class SearchScenariosSqlParams(BaseModel):
     search: str | None = None
     limit_count: int | None = 20
     offset_count: int | None = 0
-    user_department_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     scenario: bool | None = False
@@ -19556,7 +19583,7 @@ class SearchScenariosSqlParams(BaseModel):
             self.search,
             self.limit_count,
             self.offset_count,
-            self.user_department_ids,
+            self.department_ids,
             self.suggest_source,
             self.exclude_ids,
             self.scenario,
@@ -19572,7 +19599,7 @@ class SearchScenariosApiRequest(BaseModel):
     search: str | None = None
     limit_count: int | None = 20
     offset_count: int | None = 0
-    user_department_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     scenario: bool | None = False
@@ -19710,6 +19737,7 @@ class SearchSettingsSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     department: bool | None = False
     setting: bool | None = False
 
@@ -19719,6 +19747,7 @@ class SearchSettingsSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.department_ids,
             self.department,
             self.setting,
         )
@@ -19733,6 +19762,7 @@ class SearchSettingsApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     department: bool | None = False
     setting: bool | None = False
 
@@ -19901,6 +19931,7 @@ class SearchSimulationsSqlParams(BaseModel):
     draft_id: UUID | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     cohort: bool | None = False
     simulation: bool | None = False
 
@@ -19912,6 +19943,7 @@ class SearchSimulationsSqlParams(BaseModel):
             self.draft_id,
             self.suggest_source,
             self.exclude_ids,
+            self.department_ids,
             self.cohort,
             self.simulation,
         )
@@ -19928,6 +19960,7 @@ class SearchSimulationsApiRequest(BaseModel):
     draft_id: UUID | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     cohort: bool | None = False
     simulation: bool | None = False
 
@@ -20506,6 +20539,7 @@ class SearchToolsSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     agent: bool | None = False
     tool: bool | None = False
 
@@ -20515,6 +20549,7 @@ class SearchToolsSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.department_ids,
             self.agent,
             self.tool,
         )
@@ -20529,6 +20564,7 @@ class SearchToolsApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     agent: bool | None = False
     tool: bool | None = False
 
