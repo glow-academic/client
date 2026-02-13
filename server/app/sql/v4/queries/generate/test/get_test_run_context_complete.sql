@@ -118,7 +118,8 @@ agent_data AS (
         ) as agent_is_active
     FROM group_binding gb
     JOIN runs_entry r ON r.group_id = gb.group_id
-    JOIN config_agents_connection cac ON cac.config_id = r.config_id AND cac.active = true
+    JOIN config_entry ce ON ce.run_id = r.id
+    JOIN config_agents_connection cac ON cac.config_id = ce.id AND cac.active = true
     JOIN agent_agents_junction aaj ON aaj.agents_id = cac.agents_id AND aaj.active = true
     JOIN agent_artifact a ON a.id = aaj.agent_id
     ORDER BY r.created_at DESC
@@ -132,7 +133,8 @@ model_data AS (
         m.provider_id as provider_id
     FROM group_binding gb
     JOIN runs_entry r ON r.group_id = gb.group_id
-    JOIN config_models_connection cmc ON cmc.config_id = r.config_id AND cmc.active = true
+    JOIN config_entry ce2 ON ce2.run_id = r.id
+    JOIN config_models_connection cmc ON cmc.config_id = ce2.id AND cmc.active = true
     JOIN models_resource m ON m.id = cmc.models_id
     ORDER BY r.created_at DESC
     LIMIT 1

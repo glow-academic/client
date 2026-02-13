@@ -111,7 +111,8 @@ async def get_test_artifact(
                            anj.name_id AS agent_name_id
                     FROM runs_runs_connection rrc
                     JOIN runs_entry re ON re.id = rrc.run_id
-                    LEFT JOIN config_agents_connection cac ON cac.config_id = re.config_id AND cac.active = true
+                    LEFT JOIN config_entry ce ON ce.run_id = re.id
+                    LEFT JOIN config_agents_connection cac ON cac.config_id = ce.id AND cac.active = true
                     LEFT JOIN agent_names_junction anj ON anj.agent_id = cac.agents_id AND anj.active = true
                     LEFT JOIN model_runs_junction mrj ON mrj.run_id = re.id AND mrj.active = true
                     LEFT JOIN model_names_junction mnj ON mnj.model_id = mrj.model_id AND mnj.active = true

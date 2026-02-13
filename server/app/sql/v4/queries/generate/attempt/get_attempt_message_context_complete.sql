@@ -82,7 +82,8 @@ resolved_agent AS (
     SELECT aaj.agent_id
     FROM simulation_chats_entry sc
     JOIN runs_entry r ON r.group_id = sc.group_id
-    JOIN config_agents_connection cac ON cac.config_id = r.config_id AND cac.active = true
+    JOIN config_entry ce ON ce.run_id = r.id
+    JOIN config_agents_connection cac ON cac.config_id = ce.id AND cac.active = true
     JOIN agent_agents_junction aaj ON aaj.agents_id = cac.agents_id AND aaj.active = true
     WHERE sc.id = p_chat_id
     ORDER BY r.created_at DESC

@@ -902,7 +902,8 @@ model_key_associations AS (
 runs_for_department_via_agents AS (
     SELECT DISTINCT mr.id as run_id
     FROM view_runs_entry mr
-    JOIN config_agents_connection cac ON cac.config_id = mr.config_id AND cac.active = true
+    JOIN config_entry ce ON ce.run_id = mr.id
+    JOIN config_agents_connection cac ON cac.config_id = ce.id AND cac.active = true
     JOIN agent_departments_junction ad ON ad.agent_id = cac.agents_id AND ad.active = true
     WHERE ad.department_id = (SELECT department_id FROM params) AND cac.agents_id IS NOT NULL
     AND (SELECT department_id FROM params) IS NOT NULL
@@ -929,7 +930,8 @@ model_run_costs AS (
     FROM view_run_pricing_entry rpu
     JOIN runs_for_department rfd ON rfd.run_id = rpu.run_id
     JOIN view_runs_entry r ON r.id = rpu.run_id
-    JOIN config_agents_connection cac2 ON cac2.config_id = r.config_id AND cac2.active = true
+    JOIN config_entry ce2 ON ce2.run_id = r.id
+    JOIN config_agents_connection cac2 ON cac2.config_id = ce2.id AND cac2.active = true
     JOIN agent_models_junction am ON am.agent_id = cac2.agents_id AND am.active = true
     JOIN model_pricing_junction mp ON mp.model_id = am.model_id AND mp.active = true
     JOIN pricing_resource pr ON pr.id = mp.pricing_id

@@ -9,11 +9,11 @@ Section-first three-layer implementation (mirrors scenario/get.py):
 import asyncio
 from collections.abc import Callable, Coroutine
 from dataclasses import dataclass, field
-from typing import Annotated, Any, TypeVar, cast
+from typing import Any, TypeVar, cast
 from uuid import UUID
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request
 
 from app.api.v4.artifacts.training.get import get_training_websocket
 from app.api.v4.artifacts.training.permissions import compute_bundle_section_show
@@ -62,7 +62,7 @@ from app.api.v4.views.drafts.get import get_draft_training_internal
 from app.api.v4.views.drafts.types import DraftTrainingViewItem
 from app.api.v4.views.training.bundle.get import get_training_bundle_view_internal
 from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db, get_pool
+from app.main import get_pool
 
 router = APIRouter()
 
@@ -315,7 +315,9 @@ async def get_training_bundle_internal(
                 )
         if model_id:
             async with pool.acquire() as conn:
-                config_models = await get_models_internal(conn, [model_id], bypass_cache)
+                config_models = await get_models_internal(
+                    conn, [model_id], bypass_cache
+                )
         if provider_id:
             async with pool.acquire() as conn:
                 config_providers = await get_providers_internal(
@@ -329,7 +331,9 @@ async def get_training_bundle_internal(
         if tool_ids:
             unique_tool_ids = list(dict.fromkeys(tool_ids))
             async with pool.acquire() as conn:
-                config_tools = await get_tools_internal(conn, unique_tool_ids, bypass_cache)
+                config_tools = await get_tools_internal(
+                    conn, unique_tool_ids, bypass_cache
+                )
 
     # 9. Resolve simulation name
     simulation_name: str | None = None

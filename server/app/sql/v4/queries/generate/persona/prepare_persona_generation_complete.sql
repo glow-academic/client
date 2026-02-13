@@ -58,9 +58,14 @@ BEGIN
         v_trace_id := gen_random_uuid()::text;
     END IF;
 
-    -- Create config snapshot
-    INSERT INTO config_entry (created_at, updated_at, generated, mcp, active)
-    VALUES (NOW(), NOW(), false, false, true)
+    -- Create run first (no config_id column anymore)
+    INSERT INTO runs_entry (input_tokens, output_tokens, group_id)
+    VALUES (0, 0, v_group_id)
+    RETURNING id INTO v_run_id;
+
+    -- Create config snapshot with run_id
+    INSERT INTO config_entry (created_at, updated_at, generated, mcp, active, run_id)
+    VALUES (NOW(), NOW(), false, false, true, v_run_id)
     RETURNING id INTO v_config_id;
 
     -- 3 config connections (agents, models, providers)
@@ -81,11 +86,6 @@ BEGIN
         VALUES (v_config_id, p_providers_resource_id, NOW(), true, false, false)
         ON CONFLICT (config_id, providers_id) DO NOTHING;
     END IF;
-
-    -- Create run
-    INSERT INTO runs_entry (input_tokens, output_tokens, group_id, config_id)
-    VALUES (0, 0, v_group_id, v_config_id)
-    RETURNING id INTO v_run_id;
 
     -- Link run to profile
     INSERT INTO profiles_runs_connection (profiles_id, run_id)

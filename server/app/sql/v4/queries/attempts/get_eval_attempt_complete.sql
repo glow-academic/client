@@ -321,7 +321,8 @@ runs_with_details AS (
         ) as grade_created_at
     FROM runs_with_status rws
     JOIN view_runs_entry r ON r.id = rws.run_id
-    LEFT JOIN config_agents_connection cac ON cac.config_id = r.config_id AND cac.active = TRUE
+    LEFT JOIN config_entry ce ON ce.run_id = r.id
+    LEFT JOIN config_agents_connection cac ON cac.config_id = ce.id AND cac.active = TRUE
     LEFT JOIN agents_resource a ON a.id = cac.agents_id
     LEFT JOIN profiles_runs_connection prj ON prj.run_id = r.id
     LEFT JOIN profile_artifact p ON p.id = prj.profiles_id

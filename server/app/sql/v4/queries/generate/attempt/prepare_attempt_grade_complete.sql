@@ -100,15 +100,21 @@ BEGIN
     -- Resolve agent_id from latest run's config
     SELECT aaj.agent_id INTO v_agent_id
     FROM runs_entry r
-    JOIN config_agents_connection cac ON cac.config_id = r.config_id AND cac.active = true
+    JOIN config_entry ce ON ce.run_id = r.id
+    JOIN config_agents_connection cac ON cac.config_id = ce.id AND cac.active = true
     JOIN agent_agents_junction aaj ON aaj.agents_id = cac.agents_id AND aaj.active = true
     WHERE r.group_id = v_group_id
     ORDER BY r.created_at DESC
     LIMIT 1;
 
-    -- Create fresh config_entry for this grading run
-    INSERT INTO config_entry (created_at, updated_at, generated, mcp, active)
-    VALUES (NOW(), NOW(), false, false, true)
+    -- Create run first (no config_id column)
+    INSERT INTO runs_entry (input_tokens, output_tokens, group_id)
+    VALUES (0, 0, v_group_id)
+    RETURNING id INTO v_run_id;
+
+    -- Create fresh config_entry with run_id
+    INSERT INTO config_entry (created_at, updated_at, generated, mcp, active, run_id)
+    VALUES (NOW(), NOW(), false, false, true, v_run_id)
     RETURNING id INTO v_config_id;
 
     -- Snapshot agent config into config
@@ -118,11 +124,6 @@ BEGIN
         FROM agent_agents_junction aaj WHERE aaj.agent_id = v_agent_id AND aaj.active = true
         ON CONFLICT (config_id, agents_id) DO NOTHING;
     END IF;
-
-    -- Create run with config_id
-    INSERT INTO runs_entry (input_tokens, output_tokens, group_id, config_id)
-    VALUES (0, 0, v_group_id, v_config_id)
-    RETURNING id INTO v_run_id;
 
     -- Link run to profile
     INSERT INTO profiles_runs_connection (profiles_id, run_id)

@@ -85,7 +85,8 @@ existing_run AS (
         gd.trace_id
     FROM view_runs_entry r
     CROSS JOIN params p
-    LEFT JOIN config_agents_connection cac ON cac.config_id = r.config_id AND cac.active = TRUE
+    LEFT JOIN config_entry ce ON ce.run_id = r.id
+    LEFT JOIN config_agents_connection cac ON cac.config_id = ce.id AND cac.active = TRUE
     LEFT JOIN view_groups_entry g ON g.id = r.group_id
     LEFT JOIN LATERAL (
         SELECT

@@ -51,7 +51,8 @@ get_tool_info AS (
     JOIN tools_resource tr_res ON tr_res.id = ttj.tools_id
     JOIN agent_tools_junction at ON at.tool_id = tr_res.id
     JOIN view_runs_entry r_run ON r_run.id = p.run_id
-    JOIN config_agents_connection cac ON cac.config_id = r_run.config_id AND cac.active = TRUE
+    JOIN config_entry ce ON ce.run_id = r_run.id
+    JOIN config_agents_connection cac ON cac.config_id = ce.id AND cac.active = TRUE
     LEFT JOIN resource_tools_relation rt ON rt.tool_id = t.id
     WHERE at.agent_id = cac.agents_id
       AND at.active = true

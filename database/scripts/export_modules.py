@@ -76,6 +76,7 @@ RESOURCE_TABLES = {
     "args_outputs_resource",
     "request_limits_resource",
     "voices_resource",
+    "pricing_resource",
     "reasoning_levels_resource",
     "temperature_levels_resource",
     # Secrets/key tables (exported with dummy values via SENSITIVE_COLUMNS)
@@ -270,6 +271,20 @@ def to_slug(name: str) -> str:
     return s.strip("-")
 
 
+def _is_cross_artifact_resource(tgt_table: str, artifact_type: str) -> bool:
+    """Check if a resource table belongs to a different artifact type's module.
+
+    E.g., providers_resource belongs to provider artifacts — skip it when
+    exporting model artifacts, since providers are already in 02-providers/.
+    """
+    if tgt_table.endswith("s_resource"):
+        singular = tgt_table[: -len("s_resource")]
+        artifact_table = f"{singular}_artifact"
+        if artifact_table in TABLE_COLUMNS and singular != artifact_type:
+            return True
+    return False
+
+
 def get_junction_resource_fk(
     junction_table: str, artifact_type: str
 ) -> tuple[str, str] | None:
@@ -290,8 +305,11 @@ def get_junction_resource_fk(
         # Skip excluded tables
         if tgt_table in EXCLUDED_TABLES:
             continue
-        # Skip base resource tables (they're exported in 00-base/)
+        # Skip base resource tables (they're exported in 01-resources/)
         if tgt_table in RESOURCE_TABLES:
+            continue
+        # Skip resource tables owned by other artifact modules
+        if _is_cross_artifact_resource(tgt_table, artifact_type):
             continue
         return (src_col, tgt_table)
     return None
@@ -316,6 +334,9 @@ def get_all_junction_fks(
         if tgt_table in EXCLUDED_TABLES:
             continue
         if tgt_table in RESOURCE_TABLES:
+            continue
+        # Skip resource tables owned by other artifact modules
+        if _is_cross_artifact_resource(tgt_table, artifact_type):
             continue
         results.append((src_col, tgt_table))
     return results
@@ -562,7 +583,11 @@ async def export_relations(conn: asyncpg.Connection) -> None:
     relation_files: list[tuple[str, str, list[str]]] = [
         ("00-artifact-flags", "artifact-flags", ["artifact_flags_relation"]),
         ("01-artifact-outputs", "artifact-outputs", ["artifact_outputs_relation"]),
-        ("02-artifact-resources", "artifact-resources", ["artifact_resources_relation"]),
+        (
+            "02-artifact-resources",
+            "artifact-resources",
+            ["artifact_resources_relation"],
+        ),
         ("03-artifact-roles", "artifact-roles", ["artifact_roles_relation"]),
         ("04-artifact-routes", "artifact-routes", ["artifact_routes_relation"]),
         ("05-artifact-units", "artifact-units", ["artifact_units_relation"]),
@@ -571,7 +596,11 @@ async def export_relations(conn: asyncpg.Connection) -> None:
         ("08-entry-tools", "entry-tools", ["entry_tools_relation"]),
         ("09-resource-entries", "resource-entries", ["resource_entry_relation"]),
         ("10-resource-flags", "resource-flags", ["resource_flags_relation"]),
-        ("11-resource-modalities", "resource-modalities", ["resource_modalities_relation"]),
+        (
+            "11-resource-modalities",
+            "resource-modalities",
+            ["resource_modalities_relation"],
+        ),
         ("12-resource-outputs", "resource-outputs", ["resource_outputs_relation"]),
         ("13-resource-resources", "resource-resources", ["resource_resource_relation"]),
         ("14-resource-tools", "resource-tools", ["resource_tools_relation"]),
@@ -1824,7 +1853,9 @@ async def export_uploads(conn: asyncpg.Connection) -> None:
                     )
                     if entry_row:
                         entry_inserts.append(
-                            make_insert("uploads_entry", entry_row, entry_cols, entry_pks)
+                            make_insert(
+                                "uploads_entry", entry_row, entry_cols, entry_pks
+                            )
                         )
                         # Copy the actual file
                         file_path = entry_row["file_path"]
@@ -1841,7 +1872,9 @@ async def export_uploads(conn: asyncpg.Connection) -> None:
                 if conn_key not in seen_conn_keys:
                     seen_conn_keys.add(conn_key)
                     conn_inserts.append(
-                        make_insert("uploads_uploads_connection", crow, conn_cols, conn_pks)
+                        make_insert(
+                            "uploads_uploads_connection", crow, conn_cols, conn_pks
+                        )
                     )
 
         # Write entry rows first (referenced by connections)
