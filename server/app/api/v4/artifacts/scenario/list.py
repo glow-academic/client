@@ -25,7 +25,7 @@ from app.api.v4.artifacts.scenario.types import (
     ListScenarioApiSimulation,
     ListScenarioSqlRow,
 )
-from app.api.v4.auth.context import get_profile_context_internal
+from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.resources.cohorts.get import get_cohorts_internal
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.fields.get import get_fields_internal
@@ -95,12 +95,12 @@ async def get_scenario_list(
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
-                resolved_context = await get_profile_context_internal(
+                profile_ctx = await get_auth_profile_internal(
                     conn=context_conn,
                     profile_id=profile_id,
                     bypass_cache=bypass_cache,
                 )
-                actor_name = resolved_context.actor_name
+                actor_name = profile_ctx.access.actor_name
         else:
             actor_name = None
 

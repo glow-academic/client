@@ -26,7 +26,7 @@ from app.api.v4.artifacts.agent.types import (
     ListAgentApiModel,
     ListAgentApiResponse,
 )
-from app.api.v4.auth.context import get_profile_context_internal
+from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.models.get import get_models_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
@@ -97,13 +97,13 @@ async def get_agent_list(
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
-                resolved_context = await get_profile_context_internal(
+                profile_ctx = await get_auth_profile_internal(
                     conn=context_conn,
                     profile_id=profile_id,
                     bypass_cache=bypass_cache,
                 )
-                actor_name = resolved_context.actor_name
-                user_role = resolved_context.user_role
+                actor_name = profile_ctx.access.actor_name
+                user_role = profile_ctx.access.role
         else:
             actor_name = None
             user_role = None

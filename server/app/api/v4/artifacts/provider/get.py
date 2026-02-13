@@ -43,7 +43,7 @@ from app.api.v4.artifacts.provider.types import (
     ProviderWebsocketResources,
     ProviderWebsocketViews,
 )
-from app.api.v4.auth.context import get_profile_context_internal
+from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.permissions import select_agents_for_artifact
 from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.departments.get import get_departments_internal
@@ -94,17 +94,17 @@ async def get_provider_internal(
 
     # Resolve shared profile context first (default path).
     async with pool.acquire() as context_conn:
-        resolved_context = await get_profile_context_internal(
+        profile_ctx = await get_auth_profile_internal(
             conn=context_conn,
             profile_id=profile_id,
             bypass_cache=bypass_cache,
         )
 
     # Extract user context from internal fetch (single source of truth)
-    user_role = resolved_context.user_role
-    actor_name = resolved_context.actor_name
+    user_role = profile_ctx.access.role
+    actor_name = profile_ctx.access.actor_name
     user_department_ids = [
-        d.department_id for d in resolved_context.departments if d.department_id
+        d.department_id for d in profile_ctx.departments if d.department_id
     ]
 
     draft_item = None

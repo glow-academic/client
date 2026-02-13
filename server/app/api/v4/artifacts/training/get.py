@@ -30,7 +30,7 @@ from app.api.v4.artifacts.training.types import (
     TrainingWebsocketResources,
     TrainingWebsocketViews,
 )
-from app.api.v4.auth.context import get_profile_context_internal
+from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.resources.cohorts.get import get_cohorts_internal
 from app.api.v4.resources.personas.get import get_personas_internal
 from app.api.v4.resources.simulations.get import get_simulations_internal
@@ -226,7 +226,7 @@ async def get_training_internal(
 
     async def fetch_profile_context():
         async with pool.acquire() as c:
-            return await get_profile_context_internal(
+            return await get_auth_profile_internal(
                 conn=c,
                 profile_id=profile_id,
                 bypass_cache=bypass_cache,
@@ -236,8 +236,8 @@ async def get_training_internal(
         fetch_context(), fetch_personal_stats(), fetch_profile_context()
     )
 
-    actor_name = profile_ctx.actor_name if profile_ctx else None
-    user_role = profile_ctx.user_role if profile_ctx else None
+    actor_name = profile_ctx.access.actor_name if profile_ctx else None
+    user_role = profile_ctx.access.role if profile_ctx else None
     view_mode = compute_mode(practice, user_role)
     is_instructional = view_mode == "instructional"
 

@@ -6,7 +6,7 @@ from typing import Annotated, Any, cast
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.api.v4.auth.context import get_profile_context_internal
+from app.api.v4.auth.profile import get_auth_profile_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -70,12 +70,12 @@ async def search_staff(
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
-                resolved_context = await get_profile_context_internal(
+                profile_ctx = await get_auth_profile_internal(
                     conn=context_conn,
                     profile_id=profile_id,
                     bypass_cache=False,
                 )
-                actor_name = resolved_context.actor_name
+                actor_name = profile_ctx.access.actor_name
         else:
             actor_name = None
 

@@ -13,7 +13,7 @@ from app.api.v4.artifacts.session.types import (
     GetSessionDetailRequest,
     GetSessionDetailResponse,
 )
-from app.api.v4.auth.context import get_profile_context_internal
+from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.views.artifacts.session_detail.get import (
     get_artifact_session_detail_internal,
 )
@@ -58,12 +58,12 @@ async def get_session(
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
-                resolved_context = await get_profile_context_internal(
+                profile_ctx = await get_auth_profile_internal(
                     conn=context_conn,
                     profile_id=profile_id,
                     bypass_cache=False,
                 )
-                actor_name = resolved_context.actor_name
+                actor_name = profile_ctx.access.actor_name
         else:
             actor_name = None
 
