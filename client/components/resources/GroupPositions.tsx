@@ -21,6 +21,10 @@ import { cn } from "@/lib/utils";
 import { Check, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
+// Derive resource item type from the GET endpoint response
+type GroupPositionsGetResponse = OutputOf<"/api/v4/resources/group_positions/get", "post">;
+export type GroupPositionResourceItem = NonNullable<GroupPositionsGetResponse["items"]>[number];
+
 export interface GroupPositionItem {
   id: string;
   groups_id: string;
@@ -30,30 +34,15 @@ export interface GroupPositionItem {
 
 export interface GroupPositionsProps {
   group_position_ids?: string[];
-  group_position_resources?: Array<{
-    id?: string | null;
-    groups_id?: string | null;
-    eval_id?: string | null;
-    value?: number | null;
-    generated?: boolean | null;
-  }>;
+  group_position_resources?: GroupPositionResourceItem[];
   show_group_positions?: boolean;
   group_position_suggestions?: string[];
-  group_positions?: Array<{
-    id?: string | null;
-    groups_id?: string | null;
-    eval_id?: string | null;
-    value?: number | null;
-    generated?: boolean | null;
-  }>;
+  group_positions?: GroupPositionResourceItem[];
   disabled?: boolean;
   onChange: (ids: string[]) => void;
   label?: string;
   // AI diff props
-  aiGroupPositionResources?: Array<{
-    id?: string | null;
-    value?: number | null;
-  }> | null;
+  aiGroupPositionResources?: Pick<GroupPositionResourceItem, "id" | "value">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
   showAiGenerate?: boolean;

@@ -26,6 +26,8 @@ INSERT INTO public.profile_cohorts_junction (profile_id, cohort_id, active, crea
 INSERT INTO public.profile_cohorts_junction (profile_id, cohort_id, active, created_at, generated, mcp) VALUES ('019b3be4-36f0-788c-9df2-481eb5917940', '019bb25e-e605-7497-9ea7-9ab10588dcce', true, '2025-10-17T21:29:29.988860+00:00', false, false) ON CONFLICT (profile_id, cohort_id) DO NOTHING;
 INSERT INTO public.profile_cohorts_junction (profile_id, cohort_id, active, created_at, generated, mcp) VALUES ('019b3be4-36f0-788c-9df2-481eb5917940', '019bb25e-e605-749f-a376-47857f500e1c', true, '2025-10-17T21:29:29.988860+00:00', false, false) ON CONFLICT (profile_id, cohort_id) DO NOTHING;
 INSERT INTO public.profile_cohorts_junction (profile_id, cohort_id, active, created_at, generated, mcp) VALUES ('019b3be4-36f0-788c-9df2-481eb5917940', '019bb25e-e605-7500-8000-000000000001', true, '2026-02-03T02:23:35.540414+00:00', false, false) ON CONFLICT (profile_id, cohort_id) DO NOTHING;
+-- profile_departments_junction
+INSERT INTO public.profile_departments_junction (profile_id, department_id, is_primary, active, created_at, generated, mcp) VALUES ('019b3be4-36f0-788c-9df2-481eb5917940', '019bb25e-e624-73da-8cef-166028a1065a', true, true, '2025-08-12T12:52:09.564220+00:00', false, false) ON CONFLICT (profile_id, department_id) DO NOTHING;
 -- profile_flags_junction
 INSERT INTO public.profile_flags_junction (profile_id, flag_id, value, created_at, generated, mcp, active) VALUES ('019b3be4-36f0-788c-9df2-481eb5917940', '019be334-bfc5-7197-8f3e-c203790334de', false, '2025-08-12T12:52:09.564220+00:00', false, false, true) ON CONFLICT (profile_id, flag_id) DO NOTHING;
 -- profile_names_junction

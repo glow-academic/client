@@ -364,6 +364,10 @@ export interface SimulationHistoryProps {
   // Optional: whether to show the customize button (for practice mode)
   showCustomize?: boolean;
 
+  // Optional: Server-driven filter search terms (for faceted filter dropdowns)
+  profileSearch?: string;
+  simulationSearch?: string;
+  scenarioSearch?: string;
 }
 
 export default function SimulationHistory({
@@ -385,6 +389,9 @@ export default function SimulationHistory({
   scenarioOptions,
   showModeFilter = true,
   showCustomize = false,
+  profileSearch = "",
+  simulationSearch = "",
+  scenarioSearch = "",
 }: SimulationHistoryProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -476,11 +483,24 @@ export default function SimulationHistory({
   // Ref to track debounce timeout for search
   const searchTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
+  // Local state for faceted filter searches (following Personas pattern)
+  const [localProfileSearch, setLocalProfileSearch] = React.useState(profileSearch);
+  const [localSimulationSearch, setLocalSimulationSearch] = React.useState(simulationSearch);
+  const [localScenarioSearch, setLocalScenarioSearch] = React.useState(scenarioSearch);
+  const profileSearchTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const simulationSearchTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scenarioSearchTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Keep local state in sync if URL changes (back/forward, link, etc.)
   React.useEffect(() => {
     const urlSearch = searchParams?.get("historySearch") || "";
     setSearchTerm(urlSearch);
   }, [searchParams]);
+
+  // Keep faceted filter search state in sync with URL changes
+  React.useEffect(() => { setLocalProfileSearch(profileSearch); }, [profileSearch]);
+  React.useEffect(() => { setLocalSimulationSearch(simulationSearch); }, [simulationSearch]);
+  React.useEffect(() => { setLocalScenarioSearch(scenarioSearch); }, [scenarioSearch]);
 
   // Whenever we have a searchTerm, keep the input focused
   React.useEffect(() => {
@@ -498,11 +518,20 @@ export default function SimulationHistory({
     }
   }, [searchTerm]);
 
-  // Cleanup timeout on unmount
+  // Cleanup timeouts on unmount
   React.useEffect(() => {
     return () => {
       if (searchTimeoutRef.current) {
         clearTimeout(searchTimeoutRef.current);
+      }
+      if (profileSearchTimeoutRef.current) {
+        clearTimeout(profileSearchTimeoutRef.current);
+      }
+      if (simulationSearchTimeoutRef.current) {
+        clearTimeout(simulationSearchTimeoutRef.current);
+      }
+      if (scenarioSearchTimeoutRef.current) {
+        clearTimeout(scenarioSearchTimeoutRef.current);
       }
     };
   }, []);
@@ -589,6 +618,9 @@ export default function SimulationHistory({
       infiniteMode?: boolean | undefined;
       sortBy?: string;
       sortOrder?: string;
+      profileSearchTerm?: string;
+      simulationSearchTerm?: string;
+      scenarioSearchTerm?: string;
     }) => {
       const params = new URLSearchParams(searchParams?.toString() || "");
 
@@ -659,6 +691,29 @@ export default function SimulationHistory({
         }
       }
 
+      // Update filter search terms
+      if (updates.profileSearchTerm !== undefined) {
+        if (!updates.profileSearchTerm) {
+          params.delete("historyProfileSearch");
+        } else {
+          params.set("historyProfileSearch", updates.profileSearchTerm);
+        }
+      }
+      if (updates.simulationSearchTerm !== undefined) {
+        if (!updates.simulationSearchTerm) {
+          params.delete("historySimulationSearch");
+        } else {
+          params.set("historySimulationSearch", updates.simulationSearchTerm);
+        }
+      }
+      if (updates.scenarioSearchTerm !== undefined) {
+        if (!updates.scenarioSearchTerm) {
+          params.delete("historyScenarioSearch");
+        } else {
+          params.set("historyScenarioSearch", updates.scenarioSearchTerm);
+        }
+      }
+
       const newUrl = `${pathname}${params.toString() ? `?${params.toString()}` : ""}`;
       router.replace(newUrl, { scroll: false });
     },
@@ -699,6 +754,46 @@ export default function SimulationHistory({
       }, 500);
     },
     [commitSearch],
+  );
+
+  // Debounced handlers for faceted filter searches (300ms, following Personas pattern)
+  const handleProfileSearchChange = React.useCallback(
+    (value: string) => {
+      setLocalProfileSearch(value);
+      if (profileSearchTimeoutRef.current) {
+        clearTimeout(profileSearchTimeoutRef.current);
+      }
+      profileSearchTimeoutRef.current = setTimeout(() => {
+        updateHistoryParams({ profileSearchTerm: value });
+      }, 300);
+    },
+    [updateHistoryParams],
+  );
+
+  const handleSimulationSearchChange = React.useCallback(
+    (value: string) => {
+      setLocalSimulationSearch(value);
+      if (simulationSearchTimeoutRef.current) {
+        clearTimeout(simulationSearchTimeoutRef.current);
+      }
+      simulationSearchTimeoutRef.current = setTimeout(() => {
+        updateHistoryParams({ simulationSearchTerm: value });
+      }, 300);
+    },
+    [updateHistoryParams],
+  );
+
+  const handleScenarioSearchChange = React.useCallback(
+    (value: string) => {
+      setLocalScenarioSearch(value);
+      if (scenarioSearchTimeoutRef.current) {
+        clearTimeout(scenarioSearchTimeoutRef.current);
+      }
+      scenarioSearchTimeoutRef.current = setTimeout(() => {
+        updateHistoryParams({ scenarioSearchTerm: value });
+      }, 300);
+    },
+    [updateHistoryParams],
   );
 
   // Filter profile options - always return available options for filter visibility
@@ -1278,6 +1373,9 @@ export default function SimulationHistory({
     setColumnFilters([]);
     setSearchTerm("");
     setSorting([{ id: "date", desc: true }]);
+    setLocalProfileSearch("");
+    setLocalSimulationSearch("");
+    setLocalScenarioSearch("");
 
     // Update URL with all reset values (preserve pageSize)
     updateHistoryParams({
@@ -1289,6 +1387,9 @@ export default function SimulationHistory({
       infiniteMode: undefined,
       sortBy: "date",
       sortOrder: "desc",
+      profileSearchTerm: "",
+      simulationSearchTerm: "",
+      scenarioSearchTerm: "",
     });
   }, [table, updateHistoryParams]);
 
@@ -1491,6 +1592,9 @@ export default function SimulationHistory({
   const isFiltered =
     table.getState().columnFilters.length > 0 ||
     searchTerm !== "" ||
+    localProfileSearch !== "" ||
+    localSimulationSearch !== "" ||
+    localScenarioSearch !== "" ||
     currentSortBy !== "date" ||
     currentSortOrder !== "desc";
   const profileIdColumn = true ? table.getColumn("profileId") : null; // showAll is always true
@@ -1660,6 +1764,8 @@ export default function SimulationHistory({
                   title="Name"
                   options={filteredProfileOptions}
                   isServerDriven={true}
+                  onSearchChange={handleProfileSearchChange}
+                  searchValue={localProfileSearch}
                 />
               )}
 
@@ -1670,6 +1776,8 @@ export default function SimulationHistory({
                   title="Simulation"
                   options={simulationOptions}
                   isServerDriven={true}
+                  onSearchChange={handleSimulationSearchChange}
+                  searchValue={localSimulationSearch}
                 />
               )}
 
@@ -1680,6 +1788,8 @@ export default function SimulationHistory({
                   title="Scenarios"
                   options={scenarioOptions}
                   isServerDriven={true}
+                  onSearchChange={handleScenarioSearchChange}
+                  searchValue={localScenarioSearch}
                 />
               )}
 
