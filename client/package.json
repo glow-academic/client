@@ -96,7 +96,6 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "chokidar-cli": "^3.0.0",
-    "cypress": "^14.3.3",
     "eslint": "^9",
     "eslint-config-next": "15.3.8",
     "openapi-typescript": "^7.10.1",

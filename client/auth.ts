@@ -1,9 +1,7 @@
 // auth.ts
 import { api } from "@/lib/api/client";
-import { createTestSession, validateTestHeaders } from "@/lib/auth-helpers";
 import NextAuth from "next-auth";
 import Keycloak from "next-auth/providers/keycloak";
-import { headers } from "next/headers";
 import { cache } from "react";
 
 const appPrefix = process.env["APP_PREFIX"] || "";
@@ -358,32 +356,10 @@ export const {
 });
 
 /**
- * Unified session getter
- *
- * Auth flow:
- * 1. Check for test headers (for E2E testing)
- * 2. Get NextAuth session (handles authenticated users via JWT callback)
- *
- * Returns:
- * - Session: NextAuth session (with id_token for authenticated users)
- * - null: No session available
- *
- * Note: Profile resolution happens in the JWT callback.
- *
+ * Unified session getter — returns the NextAuth session.
+ * Profile resolution happens in the JWT callback.
  * Wrapped with React cache() to deduplicate calls within the same request.
  */
 export const getSession = cache(async () => {
-  // Step 1: Check for test headers (E2E testing override)
-  try {
-    const headerList = await headers();
-    const override = validateTestHeaders(headerList);
-    if (override) {
-      return createTestSession(override);
-    }
-  } catch {
-    // Ignore header access errors and fall back to real auth.
-  }
-
-  // Step 2: Get NextAuth session (JWT callback handles profile resolution)
   return await auth();
 });
