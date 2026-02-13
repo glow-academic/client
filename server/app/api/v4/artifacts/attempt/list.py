@@ -300,6 +300,11 @@ async def get_attempt_list_internal(
                     value=opt.value, label=label, count=opt.count or 0
                 )
             )
+        if request.simulation_search:
+            q = request.simulation_search.lower()
+            simulation_options = [
+                o for o in simulation_options if q in (o.label or "").lower()
+            ]
 
     scenario_options: list[AttemptListFilterOption] | None = None
     if facts_result.scenario_options:
@@ -319,6 +324,11 @@ async def get_attempt_list_internal(
                     value=opt.value, label=label, count=opt.count or 0
                 )
             )
+        if request.scenario_search:
+            q = request.scenario_search.lower()
+            scenario_options = [
+                o for o in scenario_options if q in (o.label or "").lower()
+            ]
 
     profile_options: list[AttemptListFilterOption] | None = None
     if practice and facts_result.profile_options:
@@ -338,6 +348,11 @@ async def get_attempt_list_internal(
                     value=opt.value, label=label, count=opt.count or 0
                 )
             )
+        if request.profile_search:
+            q = request.profile_search.lower()
+            profile_options = [
+                o for o in profile_options if q in (o.label or "").lower()
+            ]
 
     total_count = facts_result.total_count
     total_pages = (total_count + page_size - 1) // page_size if page_size > 0 else 0

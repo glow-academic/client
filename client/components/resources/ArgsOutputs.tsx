@@ -27,6 +27,10 @@ type CreateDraftArgsOutputsOut = OutputOf<
   "post"
 >;
 
+// Derive resource item type from the GET endpoint response
+type ArgsOutputsGetResponse = OutputOf<"/api/v4/resources/args_outputs/get", "post">;
+export type ArgsOutputsResourceItem = NonNullable<ArgsOutputsGetResponse["items"]>[number];
+
 export interface ArgsOutputsDetail {
   args_outputs_id: string;
   args_id: string;
@@ -64,7 +68,7 @@ export interface ArgsOutputsProps {
   /** Register a flush callback with parent for manual save - returns created ID */
   registerFlush?: (flush: () => Promise<{ args_outputs_id: string | null } | void>) => void;
   // AI diff view props
-  aiArgsOutputsResources?: Array<{ id?: string | null; name?: string | null }> | null;
+  aiArgsOutputsResources?: Pick<ArgsOutputsResourceItem, "id" | "name">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
   showAiGenerate?: boolean;

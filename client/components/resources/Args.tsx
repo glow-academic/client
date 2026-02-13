@@ -32,6 +32,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 type CreateDraftArgsIn = InputOf<"/api/v4/resources/args", "post">;
 type CreateDraftArgsOut = OutputOf<"/api/v4/resources/args", "post">;
 
+// Derive resource item type from the GET endpoint response
+type ArgsGetResponse = OutputOf<"/api/v4/resources/args/get", "post">;
+export type ArgsResourceItem = NonNullable<ArgsGetResponse["items"]>[number];
+
 export interface ArgsFieldDetail {
   args_id: string;
   name: string;
@@ -60,7 +64,7 @@ export interface ArgsProps {
   /** Register a flush callback with parent for manual save - returns created ID */
   registerFlush?: (flush: () => Promise<{ args_id: string | null } | void>) => void;
   // AI diff view props
-  aiArgsResources?: Array<{ id?: string | null; name?: string | null }> | null;
+  aiArgsResources?: Pick<ArgsResourceItem, "id" | "name">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
   showAiGenerate?: boolean;

@@ -16,9 +16,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
+
+// Derive resource item type from the GET endpoint response
+type QualitiesGetResponse = OutputOf<"/api/v4/resources/qualities/get", "post">;
+export type QualitiesResourceItem = NonNullable<QualitiesGetResponse["items"]>[number];
 
 export interface QualitiesItem {
   id: string;
@@ -28,20 +33,10 @@ export interface QualitiesItem {
 
 export interface QualitiesProps {
   quality_ids?: string[]; // Current qualities resource IDs (standardized prop name)
-  quality_resources?: Array<{
-    quality_id: string | null;
-    name: string | null;
-    description?: string | null;
-    generated?: boolean | null;
-  }>; // Selected qualities resources (each includes generated field)
+  quality_resources?: QualitiesResourceItem[]; // Selected qualities resources (each includes generated field)
   show_qualities?: boolean; // Whether to show this resource picker
   quality_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  qualities?: Array<{
-    quality_id: string | null;
-    name: string | null;
-    description?: string | null;
-    generated?: boolean | null;
-  }>; // All available qualities from API (each includes generated field)
+  qualities?: QualitiesResourceItem[]; // All available qualities from API (each includes generated field)
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update quality_ids in form state
   label?: string;
@@ -56,10 +51,7 @@ export interface QualitiesProps {
   isGenerating?: boolean;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   // AI diff view props
-  aiQualityResources?: Array<{
-    quality_id?: string | null;
-    name?: string | null;
-  }> | null;
+  aiQualityResources?: Pick<QualitiesResourceItem, "id" | "quality">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
 }
@@ -102,7 +94,7 @@ export function Qualities({
     () =>
       new Set(
         aiQualityResources
-          ?.map((q) => q.quality_id)
+          ?.map((q) => q.id)
           .filter(Boolean) as string[]
       ),
     [aiQualityResources]
@@ -114,20 +106,18 @@ export function Qualities({
     }
     const term = searchTerm.toLowerCase();
     return allQualities.filter((quality) => {
-      const name = quality.name?.toLowerCase() ?? "";
-      const desc = quality.description?.toLowerCase() ?? "";
-      return name.includes(term) || desc.includes(term);
+      const qualityName = quality.quality?.toLowerCase() ?? "";
+      return qualityName.includes(term);
     });
   }, [allQualities, searchTerm]);
 
   // Convert qualities array to QualitiesItem format for GenericPicker
   const qualitiesItems = useMemo(() => {
     return filteredQualities
-      .filter((m) => m.quality_id && m.name) // Filter out nulls
+      .filter((m) => m.id && m.quality) // Filter out nulls
       .map((m) => ({
-        id: m.quality_id!,
-        name: m.name!,
-        ...(m.description ? { description: m.description } : {}),
+        id: m.id!,
+        name: m.quality!,
       }));
   }, [filteredQualities]);
 
@@ -252,7 +242,7 @@ export function Qualities({
       <GenericPicker<QualitiesItem>
         items={qualitiesItems}
         itemIds={filteredQualities
-          .map((m) => m.quality_id)
+          .map((m) => m.id)
           .filter((id): id is string => id !== null)} // All qualities IDs from array, filter nulls
         selectedIds={ids}
         onSelect={handleSelect}

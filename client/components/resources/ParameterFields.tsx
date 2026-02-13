@@ -30,27 +30,15 @@ type CreateDraftParameterFieldsOut = OutputOf<
   "post"
 >;
 
+// Derive resource item type from the GET endpoint response
+type ParameterFieldGetResponse = OutputOf<"/api/v4/resources/parameter_fields/get", "post">;
+export type ParameterFieldResourceItem = NonNullable<ParameterFieldGetResponse["items"]>[number];
+
 export interface ParameterFieldsProps {
   parameter_field_ids?: string[];
-  parameter_field_resources?: Array<{
-    id?: string | null;
-    field_id?: string | null;
-    parameter_id?: string | null;
-    name?: string | null;
-    description?: string | null;
-    generated?: boolean | null;
-    conditional_parameter_id?: string | null;
-  }>;
+  parameter_field_resources?: ParameterFieldResourceItem[];
   show_parameter_fields?: boolean;
-  parameter_fields?: Array<{
-    id?: string | null;
-    field_id?: string | null;
-    parameter_id?: string | null;
-    name?: string | null;
-    description?: string | null;
-    generated?: boolean | null;
-    conditional_parameter_id?: string | null;
-  }>;
+  parameter_fields?: ParameterFieldResourceItem[];
   parameter_ids?: string[];
   parameters?: Array<{
     parameter_id?: string | null;
@@ -87,7 +75,7 @@ export interface ParameterFieldsProps {
   /** Register a flush callback with parent for manual save - returns created IDs */
   registerFlush?: (flush: () => Promise<{ parameter_field_ids: string[] } | void>) => void;
   // AI diff view props
-  aiParameterFieldResources?: Array<{ id?: string | null; field_id?: string | null; parameter_id?: string | null }> | null;
+  aiParameterFieldResources?: Pick<ParameterFieldResourceItem, "id" | "field_id" | "parameter_id">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
 }

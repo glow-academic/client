@@ -24,6 +24,10 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 type CreateDraftEndpointsIn = InputOf<"/api/v4/resources/endpoints", "post">;
 type CreateDraftEndpointsOut = OutputOf<"/api/v4/resources/endpoints", "post">;
 
+// Derive resource item type from the GET endpoint response
+type EndpointGetResponse = OutputOf<"/api/v4/resources/endpoints/get", "post">;
+export type EndpointResourceItem = NonNullable<EndpointGetResponse["items"]>[number];
+
 export interface EndpointItem {
   id: string;
   name: string;
@@ -32,20 +36,10 @@ export interface EndpointItem {
 
 export interface EndpointsProps {
   endpoint_ids?: string[]; // Current endpoint resource IDs (standardized prop name)
-  endpoint_resources?: Array<{
-    endpoint_id: string | null;
-    name: string | null;
-    description?: string | null;
-    generated?: boolean | null;
-  }>; // Selected endpoint resources (each includes generated field)
+  endpoint_resources?: EndpointResourceItem[]; // Selected endpoint resources (each includes generated field)
   show_endpoints?: boolean; // Whether to show this resource picker
   endpoint_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  endpoints?: Array<{
-    endpoint_id: string | null;
-    name: string | null;
-    description?: string | null;
-    generated?: boolean | null;
-  }>; // All available endpoints from API (each includes generated field)
+  endpoints?: EndpointResourceItem[]; // All available endpoints from API (each includes generated field)
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update endpoint_ids in form state
   label?: string;
@@ -68,7 +62,7 @@ export interface EndpointsProps {
   /** Register a flush callback with parent for manual save - returns created ID */
   registerFlush?: (flush: () => Promise<{ endpoints_id: string | null } | void>) => void;
   // AI diff view props
-  aiEndpointResources?: Array<{ id?: string | null; name?: string | null }> | null;
+  aiEndpointResources?: Pick<EndpointResourceItem, "id" | "base_url">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
 }
@@ -114,9 +108,8 @@ export function Endpoints({
     }
     const term = searchTerm.toLowerCase();
     return allEndpoints.filter((endpoint) => {
-      const name = endpoint.name?.toLowerCase() ?? "";
-      const desc = endpoint.description?.toLowerCase() ?? "";
-      return name.includes(term) || desc.includes(term);
+      const baseUrl = endpoint.base_url?.toLowerCase() ?? "";
+      return baseUrl.includes(term);
     });
   }, [allEndpoints, searchTerm]);
 
@@ -134,11 +127,10 @@ export function Endpoints({
   // Convert endpoints array to EndpointItem format for GenericPicker
   const endpointItems = useMemo(() => {
     return filteredEndpoints
-      .filter((e) => e.endpoint_id && e.name) // Filter out nulls
+      .filter((e) => e.id && e.base_url) // Filter out nulls
       .map((e) => ({
-        id: e.endpoint_id!,
-        name: e.name!,
-        ...(e.description ? { description: e.description } : {}),
+        id: e.id!,
+        name: e.base_url!,
       }));
   }, [filteredEndpoints]);
 
@@ -307,7 +299,7 @@ export function Endpoints({
                   "text-sm"
                 )}
               >
-                {item.name || ""}
+                {item.base_url || ""}
               </div>
             ))}
           </div>
@@ -316,7 +308,7 @@ export function Endpoints({
       <GenericPicker<EndpointItem>
         items={endpointItems}
         itemIds={filteredEndpoints
-          .map((e) => e.endpoint_id)
+          .map((e) => e.id)
           .filter((id): id is string => id !== null)} // All endpoint IDs from array, filter nulls
         selectedIds={ids}
         onSelect={handleSelect}

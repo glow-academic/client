@@ -23,6 +23,10 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 type CreateDraftKeysIn = InputOf<"/api/v4/resources/keys", "post">;
 type CreateDraftKeysOut = OutputOf<"/api/v4/resources/keys", "post">;
 
+// Derive resource item type from the GET endpoint response
+type KeyGetResponse = OutputOf<"/api/v4/resources/keys/get", "post">;
+export type KeyResourceItem = NonNullable<KeyGetResponse["items"]>[number];
+
 export interface KeyItem {
   id: string;
   name: string;
@@ -33,38 +37,14 @@ export interface KeyItem {
 
 export interface KeysProps {
   key_id?: string | null; // Current key_id (standardized prop name)
-  key_resource?: {
-    id: string | null;
-    name: string | null;
-    description: string | null;
-    key_masked: string | null;
-    active: boolean | null;
-    department_ids?: string[] | null;
-    generated?: boolean | null;
-  } | null; // Resource data from server (standardized prop name; includes generated field)
+  key_resource?: KeyResourceItem | null; // Resource data from server (standardized prop name; includes generated field)
   show_key?: boolean; // Whether to show this resource picker
   key_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  keys?: Array<{
-    id: string | null;
-    name: string | null;
-    description: string | null;
-    key_masked: string | null;
-    active: boolean | null;
-    department_ids?: string[] | null;
-    generated?: boolean | null;
-  }>; // All available keys from API (each includes generated field)
+  keys?: KeyResourceItem[]; // All available keys from API (each includes generated field)
   disabled?: boolean; // Based on can_edit flag
   onKeyIdChange?: (keyId: string | null) => void; // Update key_id in parent form state (single-select)
   key_ids?: string[]; // Current key resource IDs (multi-select)
-  key_resources?: Array<{
-    key_id: string | null;
-    name: string | null;
-    masked_key: string | null;
-    description: string | null;
-    active: boolean | null;
-    department_ids?: string[] | null;
-    generated?: boolean | null;
-  }>; // Selected key resources (multi-select)
+  key_resources?: KeyResourceItem[]; // Selected key resources (multi-select)
   onChange?: (ids: string[]) => void; // Update key_ids in parent form state (multi-select)
   multiSelect?: boolean; // Whether to use multi-select mode
   onGenerate?: () => void | Promise<void>;
@@ -80,7 +60,7 @@ export interface KeysProps {
     | ((input: CreateDraftKeysIn) => Promise<CreateDraftKeysOut>)
     | undefined;
   // AI diff view props
-  aiKeyResources?: Array<{ id?: string | null; name?: string | null }> | null;
+  aiKeyResources?: Pick<KeyResourceItem, "id" | "name">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
   /** When false, skip automatic resource creation (manual save mode) */

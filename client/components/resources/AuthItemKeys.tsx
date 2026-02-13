@@ -3,8 +3,13 @@
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
+// Derive resource item type from the GET endpoint response
+type AuthItemKeysGetResponse = OutputOf<"/api/v4/resources/auth_item_keys/get", "post">;
+export type AuthItemKeysResourceItem = NonNullable<AuthItemKeysGetResponse["items"]>[number];
 
 type AuthOption = {
   auth_id?: string | null;
@@ -19,20 +24,9 @@ type KeyOption = {
   masked_key?: string | null;
 };
 
-type AuthItemKeyResource = {
-  id?: string | null;
-  auth_id?: string | null;
-  item_id?: string | null;
-  key_id?: string | null;
-  auth_name?: string | null;
-  key_name?: string | null;
-  key_description?: string | null;
-  generated?: boolean | null;
-};
-
 export interface AuthItemKeysProps {
   auth_item_key_ids?: string[];
-  auth_item_key_resources?: AuthItemKeyResource[];
+  auth_item_key_resources?: AuthItemKeysResourceItem[];
   auths?: AuthOption[];
   keys?: KeyOption[];
   selected_auth_ids?: string[];
@@ -42,7 +36,7 @@ export interface AuthItemKeysProps {
   description?: string;
   show_auth_item_keys?: boolean;
   getAuthItemKeysAction?:
-    | ((ids: string[]) => Promise<AuthItemKeyResource[]>)
+    | ((ids: string[]) => Promise<AuthItemKeysResourceItem[]>)
     | undefined;
   createAuthItemKeysAction?:
     | ((input: {
@@ -77,7 +71,7 @@ export function AuthItemKeys({
   onReject: _onReject,
 }: AuthItemKeysProps) {
   const selectedIds = useMemo(() => auth_item_key_ids ?? [], [auth_item_key_ids]);
-  const [resourcesById, setResourcesById] = useState<Map<string, AuthItemKeyResource>>(
+  const [resourcesById, setResourcesById] = useState<Map<string, AuthItemKeysResourceItem>>(
     new Map()
   );
   const creatingRef = useRef<Set<string>>(new Set());

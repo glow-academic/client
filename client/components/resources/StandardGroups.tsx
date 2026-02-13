@@ -32,6 +32,10 @@ type CreateDraftStandardGroupsOut = OutputOf<
   "post"
 >;
 
+// Derive resource item type from the GET endpoint response
+type StandardGroupGetResponse = OutputOf<"/api/v4/resources/standard_groups/get", "post">;
+export type StandardGroupResourceItem = NonNullable<StandardGroupGetResponse["items"]>[number];
+
 export interface StandardGroupItem {
   id: string;
   name: string;
@@ -46,30 +50,10 @@ export interface StandardGroupItem {
 
 export interface StandardGroupsProps {
   standard_group_ids?: string[]; // Current standard group resource IDs (standardized prop name)
-  standard_group_resources?: Array<{
-    standard_group_id: string | null;
-    name: string | null;
-    description?: string | null;
-    points?: number | null;
-    pass_points?: number | null;
-    position?: number | null;
-    active?: boolean | null;
-    standard_ids?: string[] | null;
-    generated?: boolean | null;
-  }>; // Selected standard group resources (each includes generated field)
+  standard_group_resources?: StandardGroupResourceItem[]; // Selected standard group resources (each includes generated field)
   show_standard_groups?: boolean; // Whether to show this resource picker
   standard_group_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  standard_groups?: Array<{
-    standard_group_id: string | null;
-    name: string | null;
-    description?: string | null;
-    points?: number | null;
-    pass_points?: number | null;
-    position?: number | null;
-    active?: boolean | null;
-    standard_ids?: string[] | null;
-    generated?: boolean | null;
-  }>; // All available standard groups from API (each includes generated field)
+  standard_groups?: StandardGroupResourceItem[]; // All available standard groups from API (each includes generated field)
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update standard_group_ids in form state
   label?: string;
@@ -95,7 +79,7 @@ export interface StandardGroupsProps {
   // Legacy props for backward compatibility
   standardGroupIds?: string[];
   // AI diff view props
-  aiStandardGroupResources?: Array<{ id?: string | null; name?: string | null }> | null;
+  aiStandardGroupResources?: Pick<StandardGroupResourceItem, "standard_group_id" | "name">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
 }

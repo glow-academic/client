@@ -16,9 +16,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
+
+// Derive resource item type from the GET endpoint response
+type EvalGetResponse = OutputOf<"/api/v4/resources/evals/get", "post">;
+export type EvalResourceItem = NonNullable<EvalGetResponse["items"]>[number];
 
 export interface EvalItem {
   id: string;
@@ -28,28 +33,15 @@ export interface EvalItem {
 
 export interface EvalsProps {
   eval_ids?: string[];
-  eval_resources?: Array<{
-    id?: string | null;
-    name?: string | null;
-    description?: string | null;
-    generated?: boolean | null;
-  }>;
+  eval_resources?: EvalResourceItem[];
   show_evals?: boolean;
   eval_suggestions?: string[];
-  evals?: Array<{
-    id?: string | null;
-    name?: string | null;
-    description?: string | null;
-    generated?: boolean | null;
-  }>;
+  evals?: EvalResourceItem[];
   disabled?: boolean;
   onChange: (ids: string[]) => void;
   label?: string;
   // AI diff props
-  aiEvalResources?: Array<{
-    id?: string | null;
-    name?: string | null;
-  }> | null;
+  aiEvalResources?: Pick<EvalResourceItem, "id" | "name">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
   showAiGenerate?: boolean;

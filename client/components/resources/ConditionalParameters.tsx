@@ -16,9 +16,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
+
+// Derive resource item type from the GET endpoint response
+type ConditionalParametersGetResponse = OutputOf<"/api/v4/resources/conditional_parameters/get", "post">;
+export type ConditionalParametersResourceItem = NonNullable<ConditionalParametersGetResponse["items"]>[number];
 
 export interface ConditionalParameterItem {
   id: string;
@@ -27,26 +32,15 @@ export interface ConditionalParameterItem {
 
 export interface ConditionalParametersProps {
   conditional_parameter_ids?: string[];
-  conditional_parameter_resources?: Array<{
-    id?: string | null;
-    parameter_id?: string | null;
-    generated?: boolean | null;
-  }>;
+  conditional_parameter_resources?: ConditionalParametersResourceItem[];
   show_conditional_parameters?: boolean;
   conditional_parameter_suggestions?: string[];
-  conditional_parameters?: Array<{
-    id?: string | null;
-    parameter_id?: string | null;
-    generated?: boolean | null;
-  }>;
+  conditional_parameters?: ConditionalParametersResourceItem[];
   disabled?: boolean;
   onChange: (ids: string[]) => void;
   label?: string;
   // AI diff props
-  aiConditionalParameterResources?: Array<{
-    id?: string | null;
-    parameter_id?: string | null;
-  }> | null;
+  aiConditionalParameterResources?: Pick<ConditionalParametersResourceItem, "id" | "parameter_id">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
   showAiGenerate?: boolean;

@@ -16,9 +16,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
+
+// Derive resource item type from the GET endpoint response
+type SimulationGetResponse = OutputOf<"/api/v4/resources/simulations/get", "post">;
+export type SimulationResourceItem = NonNullable<SimulationGetResponse["items"]>[number];
 
 export interface SimulationItem {
   id: string;
@@ -29,22 +34,10 @@ export interface SimulationItem {
 
 export interface SimulationsProps {
   simulation_ids?: string[]; // Current simulation resource IDs (standardized prop name)
-  simulation_resources?: Array<{
-    simulation_id: string | null;
-    name: string | null;
-    description?: string | null;
-    time_limit?: number | null;
-    generated?: boolean | null;
-  }>; // Selected simulation resources (each includes generated field)
+  simulation_resources?: SimulationResourceItem[]; // Selected simulation resources (each includes generated field)
   show_simulations?: boolean; // Whether to show this resource picker
   simulation_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  simulations?: Array<{
-    simulation_id: string | null;
-    name: string | null;
-    description?: string | null;
-    time_limit?: number | null;
-    generated?: boolean | null;
-  }>; // All available simulations from API (each includes generated field)
+  simulations?: SimulationResourceItem[]; // All available simulations from API (each includes generated field)
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update simulation_ids in form state
   label?: string;
@@ -61,10 +54,7 @@ export interface SimulationsProps {
   // Legacy props for backward compatibility
   simulationIds?: string[];
   // AI diff view props
-  aiSimulationResources?: Array<{
-    simulation_id?: string | null;
-    name?: string | null;
-  }> | null;
+  aiSimulationResources?: Pick<SimulationResourceItem, "simulation_id" | "name">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
 }

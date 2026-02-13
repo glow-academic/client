@@ -16,9 +16,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
+
+// Derive resource item type from the GET endpoint response
+type AuthsGetResponse = OutputOf<"/api/v4/resources/auths/get", "post">;
+export type AuthsResourceItem = NonNullable<AuthsGetResponse["items"]>[number];
 
 export interface AuthItem {
   id: string;
@@ -30,36 +35,10 @@ export interface AuthItem {
 
 export interface AuthsProps {
   auth_ids?: string[]; // Current auth resource IDs (standardized prop name)
-  auth_resources?: Array<{
-    auth_id: string | null;
-    name: string | null;
-    description: string | null;
-    slug: string | null;
-    active: boolean | null;
-    auth_items?: Array<{
-      id: string | null;
-      name: string | null;
-      description: string | null;
-      encrypted: boolean | null;
-    }> | null;
-    generated?: boolean | null;
-  }>; // Selected auth resources (each includes generated field)
+  auth_resources?: AuthsResourceItem[]; // Selected auth resources
   show_auths?: boolean; // Whether to show this resource picker
   auth_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  auths?: Array<{
-    auth_id: string | null;
-    name: string | null;
-    description: string | null;
-    slug: string | null;
-    active: boolean | null;
-    auth_items?: Array<{
-      id: string | null;
-      name: string | null;
-      description: string | null;
-      encrypted: boolean | null;
-    }> | null;
-    generated?: boolean | null;
-  }>; // All available auths from API (each includes generated field)
+  auths?: AuthsResourceItem[]; // All available auths from API
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update auth_ids in form state
   label?: string;
@@ -72,10 +51,7 @@ export interface AuthsProps {
   isGenerating?: boolean;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   // AI diff view props
-  aiAuthResources?: Array<{
-    auth_id?: string | null;
-    name?: string | null;
-  }> | null;
+  aiAuthResources?: Pick<AuthsResourceItem, "id" | "name">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
 }
@@ -112,7 +88,7 @@ export function Auths({
     () =>
       new Set(
         aiAuthResources
-          ?.map((a) => a.auth_id)
+          ?.map((a) => a.id)
           .filter(Boolean) as string[]
       ),
     [aiAuthResources]
@@ -122,7 +98,7 @@ export function Auths({
   const handleAccept = useCallback(() => {
     if (!aiAuthResources?.length) return;
     const newIds = aiAuthResources
-      .map((a) => a.auth_id)
+      .map((a) => a.id)
       .filter((id): id is string => !!id && !ids.includes(id));
     if (newIds.length > 0) {
       onChange([...ids, ...newIds]);
@@ -143,13 +119,12 @@ export function Auths({
   // Convert auths array to AuthItem format for GenericPicker
   const authItems = useMemo(() => {
     return allAuths
-      .filter((a) => a.auth_id && a.name) // Filter out nulls
+      .filter((a) => a.id && a.name) // Filter out nulls
       .map((a) => ({
-        id: a.auth_id!,
+        id: a.id!,
         name: a.name!,
         ...(a.description ? { description: a.description } : {}),
         ...(a.slug ? { slug: a.slug } : {}),
-        ...(a.active !== null ? { active: a.active } : {}),
       }));
   }, [allAuths]);
 
@@ -256,7 +231,7 @@ export function Auths({
       <GenericPicker<AuthItem>
         items={authItems}
         itemIds={allAuths
-          .map((a) => a.auth_id)
+          .map((a) => a.id)
           .filter((id): id is string => id !== null)} // All auth IDs from array, filter nulls
         selectedIds={ids}
         onSelect={handleSelect}

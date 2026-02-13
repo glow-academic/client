@@ -29,22 +29,16 @@ type CreateDraftScenarioRubricsOut = OutputOf<
   "post"
 >;
 
+// Derive resource item type from the GET endpoint response
+type ScenarioRubricGetResponse = OutputOf<"/api/v4/resources/scenario_rubrics/get", "post">;
+export type ScenarioRubricResourceItem = NonNullable<ScenarioRubricGetResponse["items"]>[number];
+
 export interface ScenarioRubricsProps {
   scenario_rubric_ids?: string[];
-  scenario_rubric_resources?: Array<{
-    id: string | null;
-    scenario_id: string | null;
-    rubric_id: string | null;
-    generated?: boolean | null;
-  }>;
+  scenario_rubric_resources?: ScenarioRubricResourceItem[];
   show_scenario_rubrics?: boolean;
   scenario_rubric_suggestions?: string[];
-  scenario_rubrics?: Array<{
-    id: string | null;
-    scenario_id: string | null;
-    rubric_id: string | null;
-    generated?: boolean | null;
-  }>;
+  scenario_rubrics?: ScenarioRubricResourceItem[];
   rubrics?: Array<{
     id: string | null;
     name: string | null;
@@ -87,11 +81,7 @@ export interface ScenarioRubricsProps {
   /** Register a flush callback with parent for manual save - returns created IDs */
   registerFlush?: (flush: () => Promise<{ scenario_rubric_ids: string[] } | void>) => void;
   // AI diff view props
-  aiScenarioRubricResources?: Array<{
-    id?: string | null;
-    scenario_id?: string | null;
-    rubric_id?: string | null;
-  }> | null;
+  aiScenarioRubricResources?: Pick<ScenarioRubricResourceItem, "id" | "scenario_id" | "rubric_id">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
 }

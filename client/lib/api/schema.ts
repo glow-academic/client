@@ -18359,6 +18359,12 @@ export interface components {
             infinite_mode?: boolean | null;
             /** Search */
             search?: string | null;
+            /** Profile Search */
+            profile_search?: string | null;
+            /** Simulation Search */
+            simulation_search?: string | null;
+            /** Scenario Search */
+            scenario_search?: string | null;
             /**
              * Sort By
              * @default date

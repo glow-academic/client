@@ -33,6 +33,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 type CreateDraftEmailsIn = InputOf<"/api/v4/resources/emails", "post">;
 type CreateDraftEmailsOut = OutputOf<"/api/v4/resources/emails", "post">;
 
+// Derive resource item type from the GET endpoint response
+type EmailGetResponse = OutputOf<"/api/v4/resources/emails/get", "post">;
+export type EmailResourceItem = NonNullable<EmailGetResponse["items"]>[number];
+
 export interface EmailItem {
   id: string;
   email: string;
@@ -40,18 +44,10 @@ export interface EmailItem {
 
 export interface EmailsProps {
   email_ids?: string[]; // Current email resource IDs (standardized prop name)
-  email_resources?: Array<{
-    id: string | null;
-    email: string | null;
-    generated?: boolean | null;
-  }>; // Selected email resources (each includes generated field)
+  email_resources?: EmailResourceItem[]; // Selected email resources (each includes generated field)
   show_emails?: boolean; // Whether to show this resource picker
   email_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  emails?: Array<{
-    id: string | null;
-    email: string | null;
-    generated?: boolean | null;
-  }>; // All available emails from API (each includes generated field)
+  emails?: EmailResourceItem[]; // All available emails from API (each includes generated field)
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[], primaryIndex: number) => void; // Update email_ids and primary_email_index in form state
   primary_email_index?: number; // Index of primary email in email_ids array
@@ -73,10 +69,7 @@ export interface EmailsProps {
   /** Register a flush callback with parent for manual save - returns created ID */
   registerFlush?: (flush: () => Promise<{ emails_id: string | null } | void>) => void;
   // AI diff view props
-  aiEmailResources?: Array<{
-    id?: string | null;
-    email?: string | null;
-  }> | null;
+  aiEmailResources?: Pick<EmailResourceItem, "id" | "email">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
 }

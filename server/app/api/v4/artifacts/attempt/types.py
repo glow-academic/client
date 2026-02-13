@@ -630,6 +630,9 @@ class GetAttemptListRequest(BaseModel):
     scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     infinite_mode: bool | None = None
     search: str | None = None
+    profile_search: str | None = None
+    simulation_search: str | None = None
+    scenario_search: str | None = None
     sort_by: str | None = "date"
     sort_order: str | None = "desc"
     page: int = 0

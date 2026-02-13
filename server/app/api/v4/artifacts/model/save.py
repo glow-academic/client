@@ -93,9 +93,7 @@ async def save_model(
                 actor_name = profile_ctx.access.actor_name
                 user_role = profile_ctx.access.role
                 user_department_ids = [
-                    d.department_id
-                    for d in profile_ctx.departments
-                    if d.department_id
+                    d.department_id for d in profile_ctx.departments if d.department_id
                 ]
         else:
             actor_name = None

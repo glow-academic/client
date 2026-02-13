@@ -16,9 +16,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
+
+// Derive resource item type from the GET endpoint response
+type SettingGetResponse = OutputOf<"/api/v4/resources/settings/get", "post">;
+export type SettingResourceItem = NonNullable<SettingGetResponse["items"]>[number];
 
 export interface SettingItem {
   id: string;
@@ -28,22 +33,10 @@ export interface SettingItem {
 
 export interface SettingsProps {
   settings_ids?: string[]; // Current settings resource IDs (standardized prop name)
-  settings_resources?: Array<{
-    settings_id: string | null;
-    created_at?: string | null;
-    active?: boolean | null;
-    department_ids?: string[] | null;
-    generated?: boolean | null;
-  }>; // Selected settings resources (each includes generated field)
+  settings_resources?: SettingResourceItem[]; // Selected settings resources (each includes generated field)
   show_settings?: boolean; // Whether to show this resource picker
   settings_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  settings?: Array<{
-    settings_id: string | null;
-    created_at?: string | null;
-    active?: boolean | null;
-    department_ids?: string[] | null;
-    generated?: boolean | null;
-  }>; // All available settings from API (each includes generated field)
+  settings?: SettingResourceItem[]; // All available settings from API (each includes generated field)
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update settings_ids in form state
   label?: string;
@@ -58,10 +51,7 @@ export interface SettingsProps {
   // Legacy props for backward compatibility
   settingsIds?: string[];
   // AI diff view props
-  aiSettingsResources?: Array<{
-    settings_id?: string | null;
-    name?: string | null;
-  }> | null;
+  aiSettingsResources?: Pick<SettingResourceItem, "settings_id" | "name">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
 }

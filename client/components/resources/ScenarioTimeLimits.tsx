@@ -30,14 +30,13 @@ type CreateDraftScenarioTimeLimitsOut = OutputOf<
   "post"
 >;
 
+// Derive resource item type from the GET endpoint response
+type ScenarioTimeLimitGetResponse = OutputOf<"/api/v4/resources/scenario_time_limits/get", "post">;
+export type ScenarioTimeLimitResourceItem = NonNullable<ScenarioTimeLimitGetResponse["items"]>[number];
+
 export interface ScenarioTimeLimitsProps {
   scenario_time_limit_ids?: string[];
-  scenario_time_limit_resources?: Array<{
-    id: string | null;
-    scenario_id: string | null;
-    time_limit_seconds: number | null;
-    generated?: boolean | null;
-  }>;
+  scenario_time_limit_resources?: ScenarioTimeLimitResourceItem[];
   show_scenario_time_limits?: boolean;
   scenario_ids?: string[];
   scenarios?: Array<{
@@ -76,11 +75,7 @@ export interface ScenarioTimeLimitsProps {
   /** Register a flush callback with parent for manual save - returns created IDs */
   registerFlush?: (flush: () => Promise<{ scenario_time_limit_ids: string[] } | void>) => void;
   // AI diff view props
-  aiScenarioTimeLimitResources?: Array<{
-    id?: string | null;
-    scenario_id?: string | null;
-    time_limit_seconds?: number | null;
-  }> | null;
+  aiScenarioTimeLimitResources?: Pick<ScenarioTimeLimitResourceItem, "id" | "scenario_id" | "time_limit_seconds">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
 }

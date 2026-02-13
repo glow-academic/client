@@ -16,9 +16,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
+
+// Derive resource item type from the GET endpoint response
+type BindingsGetResponse = OutputOf<"/api/v4/resources/bindings/get", "post">;
+export type BindingsResourceItem = NonNullable<BindingsGetResponse["items"]>[number];
 
 export interface BindingItem {
   id: string;
@@ -27,26 +32,15 @@ export interface BindingItem {
 
 export interface BindingsProps {
   binding_ids?: string[];
-  binding_resources?: Array<{
-    id?: string | null;
-    entry?: string | null;
-    generated?: boolean | null;
-  }>;
+  binding_resources?: BindingsResourceItem[];
   show_bindings?: boolean;
   binding_suggestions?: string[];
-  bindings?: Array<{
-    id?: string | null;
-    entry?: string | null;
-    generated?: boolean | null;
-  }>;
+  bindings?: BindingsResourceItem[];
   disabled?: boolean;
   onChange: (ids: string[]) => void;
   label?: string;
   // AI diff props
-  aiBindingResources?: Array<{
-    id?: string | null;
-    entry?: string | null;
-  }> | null;
+  aiBindingResources?: Pick<BindingsResourceItem, "id" | "entry">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
   showAiGenerate?: boolean;

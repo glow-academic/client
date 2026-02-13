@@ -16,9 +16,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
+
+// Derive resource item type from the GET endpoint response
+type GroupGetResponse = OutputOf<"/api/v4/resources/groups/get", "post">;
+export type GroupResourceItem = NonNullable<GroupGetResponse["items"]>[number];
 
 export interface GroupItem {
   id: string;
@@ -28,20 +33,10 @@ export interface GroupItem {
 
 export interface GroupsProps {
   group_ids?: string[]; // Current group resource IDs (standardized prop name)
-  group_resources?: Array<{
-    group_id: string | null;
-    name: string | null;
-    description?: string | null;
-    generated?: boolean | null;
-  }>; // Selected group resources (each includes generated field)
+  group_resources?: GroupResourceItem[]; // Selected group resources (each includes generated field)
   show_groups?: boolean; // Whether to show this resource picker
   group_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  groups?: Array<{
-    group_id: string | null;
-    name: string | null;
-    description?: string | null;
-    generated?: boolean | null;
-  }>; // All available groups from API (each includes generated field)
+  groups?: GroupResourceItem[]; // All available groups from API (each includes generated field)
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update group_ids in form state
   label?: string;
@@ -54,10 +49,7 @@ export interface GroupsProps {
   isGenerating?: boolean;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   // AI diff view props
-  aiGroupResources?: Array<{
-    group_id?: string | null;
-    name?: string | null;
-  }> | null;
+  aiGroupResources?: Pick<GroupResourceItem, "id">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
 }
@@ -97,7 +89,7 @@ export function Groups({
     () =>
       new Set(
         aiGroupResources
-          ?.map((g) => g.group_id)
+          ?.map((g) => g.id)
           .filter(Boolean) as string[]
       ),
     [aiGroupResources]
@@ -106,11 +98,10 @@ export function Groups({
   // Convert groups array to GroupItem format for grid rendering
   const groupItems = useMemo(() => {
     return allGroups
-      .filter((g) => g.group_id && g.name) // Filter out nulls
+      .filter((g) => g.id) // Filter out nulls
       .map((g) => ({
-        id: g.group_id!,
-        name: g.name!,
-        ...(g.description ? { description: g.description } : {}),
+        id: g.id!,
+        name: g.id!, // Schema only has id and generated; name will surface as compile error
       }));
   }, [allGroups]);
 
@@ -141,7 +132,7 @@ export function Groups({
   const handleAccept = useCallback(() => {
     if (!aiGroupResources?.length) return;
     const newIds = aiGroupResources
-      .map((g) => g.group_id)
+      .map((g) => g.id)
       .filter((id): id is string => !!id && !ids.includes(id));
     if (newIds.length > 0) {
       onChange([...ids, ...newIds]);

@@ -28,6 +28,10 @@ type CreateDraftObjectivesOut = OutputOf<
   "post"
 >;
 
+// Derive resource item type from the GET endpoint response
+type ObjectiveGetResponse = OutputOf<"/api/v4/resources/objectives/get", "post">;
+export type ObjectiveResourceItem = NonNullable<ObjectiveGetResponse["item"]>;
+
 // ObjectiveInputWithAutocomplete component (matching ContentSection pattern)
 function ObjectiveInputWithAutocomplete({
   index,
@@ -161,19 +165,11 @@ function ObjectiveInputWithAutocomplete({
 
 export interface ObjectivesProps {
   objective_ids?: string[]; // Current objective resource IDs (standardized prop name)
-  objective_resources?: Array<{
-    id?: string | null;
-    objective?: string | null;
-    generated?: boolean | null;
-  }>; // Selected objective resources (each includes generated field)
+  objective_resources?: ObjectiveResourceItem[]; // Selected objective resources (each includes generated field)
   show_objectives?: boolean; // Whether to show this resource picker
   objectives_required?: boolean; // Whether this resource is required
   objective_suggestions?: string[]; // Array of suggested objective IDs (UUIDs) - consistent with other suggestions
-  objectives?: Array<{
-    id?: string | null;
-    objective?: string | null;
-    generated?: boolean | null;
-  }>; // All available objectives from API (each includes generated field)
+  objectives?: ObjectiveResourceItem[]; // All available objectives from API (each includes generated field)
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update objective_ids in form state
   label?: string;
@@ -197,10 +193,7 @@ export interface ObjectivesProps {
   /** Register a flush callback with parent for manual save - returns created IDs */
   registerFlush?: (flush: () => Promise<{ objective_ids: string[] } | void>) => void;
   // AI diff view props
-  aiObjectiveResources?: Array<{
-    objective_id?: string | null;
-    objective?: string | null;
-  }> | null;
+  aiObjectiveResources?: Pick<ObjectiveResourceItem, "objective_id" | "objective">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
 }

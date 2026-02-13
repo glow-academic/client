@@ -16,9 +16,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
+
+// Derive resource item type from the GET endpoint response
+type ModalityGetResponse = OutputOf<"/api/v4/resources/modalities/get", "post">;
+export type ModalityResourceItem = NonNullable<ModalityGetResponse["items"]>[number];
 
 export interface ModalityItem {
   id: string;
@@ -28,20 +33,10 @@ export interface ModalityItem {
 
 export interface ModalitiesProps {
   modality_ids?: string[]; // Current modality resource IDs (standardized prop name)
-  modality_resources?: Array<{
-    modality_id: string | null;
-    name: string | null;
-    description?: string | null;
-    generated?: boolean | null;
-  }>; // Selected modality resources (each includes generated field)
+  modality_resources?: ModalityResourceItem[]; // Selected modality resources (each includes generated field)
   show_modalities?: boolean; // Whether to show this resource picker
   modality_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  modalities?: Array<{
-    modality_id: string | null;
-    name: string | null;
-    description?: string | null;
-    generated?: boolean | null;
-  }>; // All available modalities from API (each includes generated field)
+  modalities?: ModalityResourceItem[]; // All available modalities from API (each includes generated field)
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update modality_ids in form state
   label?: string;
@@ -56,10 +51,7 @@ export interface ModalitiesProps {
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   isGenerating?: boolean;
   // AI diff view props
-  aiModalityResources?: Array<{
-    modality_id?: string | null;
-    name?: string | null;
-  }> | null;
+  aiModalityResources?: Pick<ModalityResourceItem, "id" | "modality">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
 }

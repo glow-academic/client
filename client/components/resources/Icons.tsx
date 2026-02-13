@@ -16,10 +16,15 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { PERSONA_ICON_MAP } from "@/utils/persona-icons";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
+
+// Derive resource item type from the GET endpoint response
+type IconGetResponse = OutputOf<"/api/v4/resources/icons/get", "post">;
+export type IconResourceItem = NonNullable<IconGetResponse["items"]>[number];
 
 export interface IconItem {
   id: string;
@@ -30,22 +35,10 @@ export interface IconItem {
 
 export interface IconsProps {
   icon_id?: string | null; // Current icon_id (standardized prop name)
-  icon_resource?: {
-    id: string | null;
-    name: string | null;
-    description: string | null;
-    value: string | null;
-    generated?: boolean | null;
-  } | null; // Resource data from server (standardized prop name; includes generated field)
+  icon_resource?: IconResourceItem | null; // Resource data from server (standardized prop name; includes generated field)
   show_icon?: boolean; // Whether to show this resource picker
   icon_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  icons?: Array<{
-    id: string | null;
-    name: string | null;
-    description: string | null;
-    value: string | null;
-    generated?: boolean | null;
-  }>; // All available icons from API (each includes generated field)
+  icons?: IconResourceItem[]; // All available icons from API (each includes generated field)
   disabled?: boolean; // Based on can_edit flag
   onIconIdChange: (iconId: string | null) => void; // Update icon_id in parent form state
   label?: string;
@@ -60,19 +53,13 @@ export interface IconsProps {
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
   // Legacy props for backward compatibility
-  iconResource?: {
-    id: string;
-    name: string;
-    description: string;
-    value: string;
-    generated?: boolean | null;
-  } | null;
+  iconResource?: IconResourceItem | null;
   iconId?: string | null;
   allIcons?: string[];
   suggestedIcons?: string[];
   iconSuggestions?: string[];
   // AI diff view props
-  aiResource?: { id?: string | null; name?: string | null; value?: string | null } | null | undefined;
+  aiResource?: Pick<IconResourceItem, "id" | "name" | "value"> | null | undefined;
   onAccept?: () => void;
   onReject?: () => void;
 }

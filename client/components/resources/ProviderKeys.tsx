@@ -3,8 +3,13 @@
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
+// Derive resource item type from the GET endpoint response
+type ProviderKeysGetResponse = OutputOf<"/api/v4/resources/provider_keys/get", "post">;
+export type ProviderKeysResourceItem = NonNullable<ProviderKeysGetResponse["items"]>[number];
 
 type ProviderOption = {
   provider_id?: string | null;
@@ -19,19 +24,9 @@ type KeyOption = {
   masked_key?: string | null;
 };
 
-type ProviderKeyResource = {
-  id?: string | null;
-  provider_id?: string | null;
-  key_id?: string | null;
-  provider_name?: string | null;
-  key_name?: string | null;
-  key_description?: string | null;
-  generated?: boolean | null;
-};
-
 export interface ProviderKeysProps {
   provider_key_ids?: string[];
-  provider_key_resources?: ProviderKeyResource[];
+  provider_key_resources?: ProviderKeysResourceItem[];
   providers?: ProviderOption[];
   keys?: KeyOption[];
   selected_provider_ids?: string[];
@@ -41,7 +36,7 @@ export interface ProviderKeysProps {
   description?: string;
   show_provider_keys?: boolean;
   getProviderKeysAction?:
-    | ((ids: string[]) => Promise<ProviderKeyResource[]>)
+    | ((ids: string[]) => Promise<ProviderKeysResourceItem[]>)
     | undefined;
   createProviderKeysAction?:
     | ((input: {
@@ -76,7 +71,7 @@ export function ProviderKeys({
   onReject: _onReject,
 }: ProviderKeysProps) {
   const selectedIds = useMemo(() => provider_key_ids ?? [], [provider_key_ids]);
-  const [resourcesById, setResourcesById] = useState<Map<string, ProviderKeyResource>>(
+  const [resourcesById, setResourcesById] = useState<Map<string, ProviderKeysResourceItem>>(
     new Map()
   );
   const creatingRef = useRef<Set<string>>(new Set());

@@ -15,24 +15,21 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+// Derive resource item type from the GET endpoint response
+type ExampleGetResponse = OutputOf<"/api/v4/resources/examples/get", "post">;
+export type ExampleResourceItem = NonNullable<ExampleGetResponse["items"]>[number];
+
 export interface ExamplesProps {
   example_ids?: string[]; // Current example resource IDs (standardized prop name)
-  example_resources?: Array<{
-    example: string | null;
-    idx: number | null;
-    generated?: boolean | null;
-  }>; // Selected example resources (each includes generated field)
+  example_resources?: ExampleResourceItem[]; // Selected example resources (each includes generated field)
   show_examples?: boolean; // Whether to show this resource picker
   example_suggestions?: string[]; // Array of suggested example IDs (UUIDs) - consistent with other suggestions
-  examples?: Array<{
-    example: string | null;
-    idx: number | null;
-    generated?: boolean | null;
-  }>; // All available examples from API (each includes generated field)
+  examples?: ExampleResourceItem[]; // All available examples from API (each includes generated field)
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update example_ids in form state
   label?: string;
@@ -65,7 +62,7 @@ export interface ExamplesProps {
   exampleIds?: string[];
   suggestions?: string[]; // History suggestions for autocomplete (legacy)
   // AI diff view props
-  aiExampleResources?: Array<{ id?: string | null; example?: string | null }> | null;
+  aiExampleResources?: Pick<ExampleResourceItem, "id" | "example">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
 }

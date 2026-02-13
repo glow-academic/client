@@ -16,9 +16,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
+
+// Derive resource item type from the GET endpoint response
+type CohortsGetResponse = OutputOf<"/api/v4/resources/cohorts/get", "post">;
+export type CohortsResourceItem = NonNullable<CohortsGetResponse["items"]>[number];
 
 export interface CohortItem {
   id: string;
@@ -28,20 +33,10 @@ export interface CohortItem {
 
 export interface CohortsProps {
   cohort_ids?: string[];
-  cohort_resources?: Array<{
-    cohort_id: string | null;
-    name: string | null;
-    description?: string | null;
-    generated?: boolean | null;
-  }>;
+  cohort_resources?: CohortsResourceItem[];
   show_cohorts?: boolean;
   cohort_suggestions?: string[];
-  cohorts?: Array<{
-    cohort_id: string | null;
-    name: string | null;
-    description?: string | null;
-    generated?: boolean | null;
-  }>;
+  cohorts?: CohortsResourceItem[];
   disabled?: boolean;
   onChange: (ids: string[]) => void;
   label?: string;
@@ -58,10 +53,7 @@ export interface CohortsProps {
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   cohortIds?: string[];
   // AI diff view props
-  aiCohortResources?: Array<{
-    cohort_id?: string | null;
-    name?: string | null;
-  }> | null;
+  aiCohortResources?: Pick<CohortsResourceItem, "cohort_id" | "title">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
 }
@@ -117,10 +109,10 @@ export function Cohorts({
 
   const cohortItems = useMemo(() => {
     return allCohorts
-      .filter((c) => c.cohort_id && c.name)
+      .filter((c) => c.cohort_id && c.title)
       .map((c) => ({
         id: c.cohort_id!,
-        name: c.name!,
+        name: c.title!,
         ...(c.description ? { description: c.description } : {}),
       }));
   }, [allCohorts]);

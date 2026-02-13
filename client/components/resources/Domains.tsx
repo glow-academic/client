@@ -16,9 +16,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
+
+// Derive resource item type from the GET endpoint response
+type DomainGetResponse = OutputOf<"/api/v4/resources/domains/get", "post">;
+export type DomainResourceItem = NonNullable<DomainGetResponse["items"]>[number];
 
 export interface DomainItem {
   id: string;
@@ -28,28 +33,15 @@ export interface DomainItem {
 
 export interface DomainsProps {
   domain_ids?: string[];
-  domain_resources?: Array<{
-    id?: string | null;
-    resource?: string | null;
-    creatable?: boolean | null;
-    generated?: boolean | null;
-  }>;
+  domain_resources?: DomainResourceItem[];
   show_domains?: boolean;
   domain_suggestions?: string[];
-  domains?: Array<{
-    id?: string | null;
-    resource?: string | null;
-    creatable?: boolean | null;
-    generated?: boolean | null;
-  }>;
+  domains?: DomainResourceItem[];
   disabled?: boolean;
   onChange: (ids: string[]) => void;
   label?: string;
   // AI diff props
-  aiDomainResources?: Array<{
-    id?: string | null;
-    resource?: string | null;
-  }> | null;
+  aiDomainResources?: Pick<DomainResourceItem, "id" | "resource">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
   showAiGenerate?: boolean;

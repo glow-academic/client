@@ -28,6 +28,10 @@ type CreateDraftScenarioPositionsOut = OutputOf<
   "post"
 >;
 
+// Derive resource item type from the GET endpoint response
+type ScenarioPositionGetResponse = OutputOf<"/api/v4/resources/scenario_positions/get", "post">;
+export type ScenarioPositionResourceItem = NonNullable<ScenarioPositionGetResponse["items"]>[number];
+
 export interface ScenarioPositionItem {
   simulation_id: string;
   scenario_id: string;
@@ -37,21 +41,10 @@ export interface ScenarioPositionItem {
 
 export interface ScenarioPositionsProps {
   scenario_position_ids?: string[]; // Current scenario position resource IDs (composite keys represented as UUIDs)
-  scenario_position_resources?: Array<{
-    id?: string | null;
-    simulation_id: string | null;
-    scenario_id: string | null;
-    value: number | null;
-    generated?: boolean | null;
-  }>; // Selected scenario position resources
+  scenario_position_resources?: ScenarioPositionResourceItem[]; // Selected scenario position resources
   show_scenario_positions?: boolean; // Whether to show this resource picker
   scenario_position_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  scenario_positions?: Array<{
-    simulation_id: string | null;
-    scenario_id: string | null;
-    value: number | null;
-    generated?: boolean | null;
-  }>; // All available scenario positions from API
+  scenario_positions?: ScenarioPositionResourceItem[]; // All available scenario positions from API
   scenarios?: Array<{
     id?: string | null;
     scenario_id?: string | null;
@@ -91,11 +84,7 @@ export interface ScenarioPositionsProps {
   /** Register a flush callback with parent for manual save - returns created IDs */
   registerFlush?: (flush: () => Promise<{ scenario_position_ids: string[] } | void>) => void;
   // AI diff view props
-  aiScenarioPositionResources?: Array<{
-    id?: string | null;
-    scenario_id?: string | null;
-    value?: number | null;
-  }> | null;
+  aiScenarioPositionResources?: Pick<ScenarioPositionResourceItem, "id" | "scenario_id" | "value">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
 }

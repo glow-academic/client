@@ -14,9 +14,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { ArrowDown, ArrowUp, Check, GripVertical, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
+// Derive resource item type from the GET endpoint response
+type SimulationPositionGetResponse = OutputOf<"/api/v4/resources/simulation_positions/get", "post">;
+export type SimulationPositionResourceItem = NonNullable<SimulationPositionGetResponse["items"]>[number];
 
 export interface SimulationPositionItem {
   simulation_id: string;
@@ -39,12 +44,7 @@ export interface SimulationPositionsProps {
     description?: string | null;
   }>;
   show_simulation_positions?: boolean;
-  simulation_positions?: Array<{
-    simulation_id: string | null;
-    value: number | null;
-    generated?: boolean | null;
-    mcp?: boolean | null;
-  }>;
+  simulation_positions?: SimulationPositionResourceItem[];
   disabled?: boolean;
   onChange: (positions: SimulationPositionItem[]) => void;
   label?: string;
@@ -62,11 +62,7 @@ export interface SimulationPositionsProps {
       }) => Promise<unknown>)
     | undefined;
   // AI diff view props
-  aiSimulationPositionResources?: Array<{
-    id?: string | null;
-    simulation_id?: string | null;
-    value?: number | null;
-  }> | null;
+  aiSimulationPositionResources?: Pick<SimulationPositionResourceItem, "id" | "simulation_id" | "value">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
   /** When false, skip automatic resource creation (manual save mode) */

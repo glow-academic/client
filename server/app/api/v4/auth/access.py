@@ -62,11 +62,7 @@ async def get_access_internal(
             detail="Profile context not found: Could not resolve profile. Please try logging in again.",
         )
 
-    if (
-        not is_settings_only_request
-        and profile_id
-        and (not access_result or not access_result.is_authorized)
-    ):
+    if profile_id and (not access_result or not access_result.is_authorized):
         raise HTTPException(
             status_code=404,
             detail=f"Profile context not found: {profile_id}",

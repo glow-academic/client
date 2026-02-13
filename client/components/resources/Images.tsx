@@ -29,6 +29,10 @@ import { v4 as uuidv4 } from "uuid";
 type CreateDraftImagesIn = InputOf<"/api/v4/resources/images", "post">;
 type CreateDraftImagesOut = OutputOf<"/api/v4/resources/images", "post">;
 
+// Derive resource item type from the GET endpoint response
+type ImageGetResponse = OutputOf<"/api/v4/resources/images/get", "post">;
+export type ImageResourceItem = NonNullable<ImageGetResponse["item"]>;
+
 export interface ImageItem {
   id: string;
   name: string;
@@ -39,28 +43,12 @@ export interface ImageItem {
 
 export interface ImagesProps {
   image_ids?: string[]; // Current image artifact IDs (standardized prop name)
-  image_resources?: Array<{
-    id?: string | null;
-    image_id?: string | null;
-    name?: string | null;
-    file_path?: string | null;
-    mime_type?: string | null;
-    upload_id?: string | null;
-    generated?: boolean | null;
-  }>; // Selected image resources (each includes generated field)
+  image_resources?: ImageResourceItem[]; // Selected image resources (each includes generated field)
   show_images?: boolean; // Whether to show this resource picker
   create_tool_id?: string | null; // Tool ID for AI generation/creation
   images_required?: boolean; // Whether this resource is required
   image_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  images?: Array<{
-    id?: string | null;
-    image_id?: string | null;
-    name?: string | null;
-    file_path?: string | null;
-    mime_type?: string | null;
-    upload_id?: string | null;
-    generated?: boolean | null;
-  }>; // All available images from API (each includes generated field)
+  images?: ImageResourceItem[]; // All available images from API (each includes generated field)
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update image_ids in form state
   label?: string;
@@ -91,10 +79,7 @@ export interface ImagesProps {
     message?: string;
   }>;
   // AI diff view props
-  aiImageResources?: Array<{
-    image_id?: string | null;
-    name?: string | null;
-  }> | null;
+  aiImageResources?: Pick<ImageResourceItem, "image_id" | "name">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
 }
