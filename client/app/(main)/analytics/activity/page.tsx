@@ -9,6 +9,10 @@ import Activity from "@/components/artifacts/activity/Activity";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
+import {
+  computeAnalyticsDefaults,
+  resolveAnalyticsFilters,
+} from "@/lib/search-params/analytics-defaults";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { loadActivitySearchParams } from "@/lib/search-params/activity";
@@ -78,6 +82,10 @@ export default async function ActivityPage({
   // Parse search params via nuqs loader
   const q = loadActivitySearchParams(await searchParams);
 
+  // Compute defaults and resolve filters
+  const { defaults, profileContext } = await computeAnalyticsDefaults();
+  const filters = resolveAnalyticsFilters(q, defaults, profileContext);
+
   // Activity-specific params with defaults
   const activityPage = q.activityPage ?? 0;
   const activityPageSize = q.activityPageSize ?? 50;
@@ -88,10 +96,23 @@ export default async function ActivityPage({
     activityPage,
     activityPageSize,
     activitySearch || "",
+    filters.startDate,
+    filters.endDate,
+    filters.departmentIds.join(","),
+    filters.roles.join(","),
   ].join("|");
 
   // Fetch bundle data server-side (no pagination)
-  const bundleData = await getActivityBundle({ body: {} });
+  const bundleData = await getActivityBundle({
+    body: {
+      date_from: filters.startDate,
+      date_to: filters.endDate,
+      department_ids: filters.departmentIds,
+      roles: filters.roles,
+      page_limit: 50,
+      page_offset: 0,
+    },
+  });
 
   // Create empty sessions data for loading state
   const emptyActivityData: ActivityListOut = {
@@ -118,9 +139,9 @@ export default async function ActivityPage({
       >
         <ActivityListSection
           bundleData={bundleData}
+          filters={filters}
           activityPage={activityPage}
           activityPageSize={activityPageSize}
-          activitySearch={activitySearch}
         />
       </Suspense>
     </div>
@@ -130,20 +151,30 @@ export default async function ActivityPage({
 /** ---- Inline activity list section component (only used here) ---- */
 async function ActivityListSection({
   bundleData,
+  filters,
   activityPage,
   activityPageSize,
-  activitySearch,
 }: {
   bundleData: ActivityBundleOut;
+  filters: {
+    startDate: string;
+    endDate: string;
+    departmentIds: string[];
+    roles: string[];
+  };
   activityPage: number;
   activityPageSize: number;
-  activitySearch?: string | undefined;
 }) {
   const activityListData = await getActivityList({
     body: {
+      date_from: filters.startDate,
+      date_to: filters.endDate,
+      department_ids: filters.departmentIds,
+      roles: filters.roles,
+      sort_by: "date",
+      sort_order: "desc",
       page_limit: activityPageSize,
       page_offset: activityPage * activityPageSize,
-      ...(activitySearch && { search: activitySearch }),
     },
   });
 

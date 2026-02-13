@@ -93,9 +93,7 @@ async def get_benchmark(
                 params: list = []
                 idx = 1
                 if department_uuids:
-                    conditions.append(
-                        f"department_ids && ${idx}::uuid[]"
-                    )
+                    conditions.append(f"department_ids && ${idx}::uuid[]")
                     params.append(department_uuids)
                     idx += 1
                 if date_from:

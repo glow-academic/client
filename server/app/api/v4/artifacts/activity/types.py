@@ -20,6 +20,8 @@ class ActivityRequest(BaseModel):
     profile_id: UUID | None = Field(default=None)
     date_from: datetime | None = Field(default=None)
     date_to: datetime | None = Field(default=None)
+    department_ids: list[str] = Field(default_factory=list)
+    roles: list[str] = Field(default_factory=list)
     page_limit: int = Field(default=50, ge=1, le=100)
     page_offset: int = Field(default=0, ge=0)
 

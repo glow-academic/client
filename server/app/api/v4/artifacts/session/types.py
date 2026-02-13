@@ -43,6 +43,8 @@ class GetSessionListRequest(BaseModel):
     active: bool | None = Field(default=None)
     date_from: datetime | None = Field(default=None)
     date_to: datetime | None = Field(default=None)
+    department_ids: list[str] = Field(default_factory=list)
+    roles: list[str] = Field(default_factory=list)
 
     sort_by: str = Field(
         default="date", description="'date' | 'cost' | 'tokens' | 'groups' | 'runs'"

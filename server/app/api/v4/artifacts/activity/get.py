@@ -3,6 +3,7 @@
 import asyncio
 from collections import defaultdict
 from typing import Annotated
+from uuid import UUID
 
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -40,6 +41,37 @@ from app.main import get_db, get_pool
 router = APIRouter()
 
 
+async def resolve_profile_ids_for_filters(
+    conn: asyncpg.Connection,
+    department_ids: list[str] | None = None,
+    roles: list[str] | None = None,
+) -> list[UUID] | None:
+    """Resolve department_ids + roles to matching profile_ids."""
+    if not department_ids and not roles:
+        return None
+    conditions: list[str] = []
+    params: list = []
+    idx = 1
+    if department_ids:
+        conditions.append(f"p.department_ids && ${idx}::uuid[]")
+        params.append([UUID(d) for d in department_ids])
+        idx += 1
+    if roles:
+        conditions.append(f"""EXISTS (
+            SELECT 1 FROM profile_roles_junction prj
+            JOIN roles_resource r ON prj.role_id = r.id
+            WHERE prj.profile_id = p.id AND prj.active = true
+              AND r.role = ANY(${idx}::profile_type[])
+        )""")
+        params.append(roles)
+        idx += 1
+    where = " AND ".join(conditions)
+    rows = await conn.fetch(
+        f"SELECT p.id FROM profiles_resource p WHERE {where}", *params
+    )
+    return [row["id"] for row in rows]
+
+
 @router.post(
     "/get",
     response_model=ActivityResponse,
@@ -62,12 +94,22 @@ async def get_activity(
     pool = get_pool()
 
     try:
+        # Pre-resolve department/role filters to profile_ids
+        filter_profile_ids: list[UUID] | None = None
+        if request.department_ids or request.roles:
+            async with pool.acquire() as c:
+                filter_profile_ids = await resolve_profile_ids_for_filters(
+                    conn=c,
+                    department_ids=request.department_ids or None,
+                    roles=request.roles or None,
+                )
 
         async def fetch_session_facts() -> GetActivitySessionFactsResponse:
             async with pool.acquire() as c:
                 return await get_activity_session_facts_internal(
                     conn=c,
                     profile_id=request.profile_id,
+                    profile_ids=filter_profile_ids,
                     date_from=request.date_from,
                     date_to=request.date_to,
                     page_limit=request.page_limit,
@@ -97,6 +139,7 @@ async def get_activity(
                 return await get_activity_logins_internal(
                     conn=c,
                     profile_id=request.profile_id,
+                    profile_ids=filter_profile_ids,
                     date_from=request.date_from,
                     date_to=request.date_to,
                     bypass_cache=bypass_cache,
@@ -107,6 +150,7 @@ async def get_activity(
                 return await get_activity_audits_internal(
                     conn=c,
                     profile_id=request.profile_id,
+                    profile_ids=filter_profile_ids,
                     date_from=request.date_from,
                     date_to=request.date_to,
                     bypass_cache=bypass_cache,
@@ -117,6 +161,7 @@ async def get_activity(
                 return await get_activity_feedbacks_internal(
                     conn=c,
                     profile_id=request.profile_id,
+                    profile_ids=filter_profile_ids,
                     date_from=request.date_from,
                     date_to=request.date_to,
                     bypass_cache=bypass_cache,
@@ -127,6 +172,7 @@ async def get_activity(
                 return await get_activity_problems_internal(
                     conn=c,
                     profile_id=request.profile_id,
+                    profile_ids=filter_profile_ids,
                     date_from=request.date_from,
                     date_to=request.date_to,
                     bypass_cache=bypass_cache,

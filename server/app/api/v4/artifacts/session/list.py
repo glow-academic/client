@@ -10,6 +10,7 @@ from uuid import UUID
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.artifacts.activity.get import resolve_profile_ids_for_filters
 from app.api.v4.artifacts.session.types import (
     GetSessionListRequest,
     GetSessionListResponse,
@@ -33,12 +34,15 @@ async def get_session_list_internal(
     profile_id: UUID,
     request: GetSessionListRequest,
     actor_name: str | None = None,
+    profile_ids: list[UUID] | None = None,
     bypass_cache: bool = False,
     cache_key_path: str = "/api/v4/artifacts/session/list",
 ) -> GetSessionListResponse:
     """Internal function for session list with resource hydration."""
     body = request.model_dump(mode="json")
     body["profile_id"] = str(profile_id)
+    if profile_ids:
+        body["profile_ids"] = [str(p) for p in profile_ids]
     cache_key_val = cache_key(cache_key_path, body)
 
     if not bypass_cache:
@@ -50,6 +54,7 @@ async def get_session_list_internal(
     view_result = await get_artifact_session_list_internal(
         conn=conn,
         profile_id=profile_id,
+        profile_ids=profile_ids,
         active=request.active,
         date_from=request.date_from,
         date_to=request.date_to,
@@ -149,11 +154,21 @@ async def list_sessions(
         if actor_name:
             audit_set(http_request, actor={"name": actor_name, "id": profile_id})
 
+        # Pre-resolve department/role filters to profile_ids
+        filter_profile_ids: list[UUID] | None = None
+        if request.department_ids or request.roles:
+            filter_profile_ids = await resolve_profile_ids_for_filters(
+                conn=conn,
+                department_ids=request.department_ids or None,
+                roles=request.roles or None,
+            )
+
         result = await get_session_list_internal(
             conn=conn,
             profile_id=profile_id,
             request=request,
             actor_name=actor_name,
+            profile_ids=filter_profile_ids,
             bypass_cache=bypass_cache,
             cache_key_path=http_request.url.path,
         )

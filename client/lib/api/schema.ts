@@ -11123,6 +11123,10 @@ export interface components {
             date_from?: string | null;
             /** Date To */
             date_to?: string | null;
+            /** Department Ids */
+            department_ids?: string[];
+            /** Roles */
+            roles?: string[];
             /**
              * Page Limit
              * @default 50
@@ -20955,6 +20959,10 @@ export interface components {
             date_from?: string | null;
             /** Date To */
             date_to?: string | null;
+            /** Department Ids */
+            department_ids?: string[];
+            /** Roles */
+            roles?: string[];
             /**
              * Sort By
              * @description 'date' | 'cost' | 'tokens' | 'groups' | 'runs'
@@ -21370,6 +21378,10 @@ export interface components {
          * @description Request for benchmark test list artifact.
          */
         GetTestListRequest: {
+            /** Start Date */
+            start_date?: string | null;
+            /** End Date */
+            end_date?: string | null;
             /** Eval Ids */
             eval_ids?: string[];
             /** Department Ids */

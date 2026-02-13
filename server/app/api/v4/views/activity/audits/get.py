@@ -25,6 +25,7 @@ router = APIRouter()
 async def get_activity_audits_internal(
     conn: asyncpg.Connection,
     profile_id: UUID | None = None,
+    profile_ids: list[UUID] | None = None,
     session_id: UUID | None = None,
     error: bool | None = None,
     endpoint: str | None = None,
@@ -40,6 +41,7 @@ async def get_activity_audits_internal(
         "views/activity/audits/get",
         {
             "profile_id": str(profile_id) if profile_id else None,
+            "profile_ids": [str(p) for p in profile_ids] if profile_ids else None,
             "session_id": str(session_id) if session_id else None,
             "error": error,
             "endpoint": endpoint,
@@ -63,6 +65,11 @@ async def get_activity_audits_internal(
     if profile_id:
         conditions.append(f"profile_id = ${param_idx}")
         params.append(profile_id)
+        param_idx += 1
+
+    if profile_ids:
+        conditions.append(f"profile_id = ANY(${param_idx}::uuid[])")
+        params.append(profile_ids)
         param_idx += 1
 
     if session_id:

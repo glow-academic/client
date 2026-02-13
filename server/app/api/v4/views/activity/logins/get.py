@@ -25,6 +25,7 @@ router = APIRouter()
 async def get_activity_logins_internal(
     conn: asyncpg.Connection,
     profile_id: UUID | None = None,
+    profile_ids: list[UUID] | None = None,
     date_from: datetime | None = None,
     date_to: datetime | None = None,
     active: bool | None = None,
@@ -39,6 +40,7 @@ async def get_activity_logins_internal(
         "views/activity/logins/get",
         {
             "profile_id": str(profile_id) if profile_id else None,
+            "profile_ids": [str(p) for p in profile_ids] if profile_ids else None,
             "date_from": date_from.isoformat() if date_from else None,
             "date_to": date_to.isoformat() if date_to else None,
             "active": active,
@@ -61,6 +63,11 @@ async def get_activity_logins_internal(
     if profile_id:
         conditions.append(f"profile_id = ${param_idx}")
         params.append(profile_id)
+        param_idx += 1
+
+    if profile_ids:
+        conditions.append(f"profile_id = ANY(${param_idx}::uuid[])")
+        params.append(profile_ids)
         param_idx += 1
 
     if active is not None:

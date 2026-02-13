@@ -114,9 +114,11 @@ export default async function BenchmarkPage({
   const { defaults, profileContext } = await computeAnalyticsDefaults();
   const defaultFilters = resolveAnalyticsFilters(q, defaults, profileContext);
 
-  // Build benchmark overview filters (department_ids only)
+  // Build benchmark overview filters
   const overviewFilters: BenchmarkOverviewIn = {
     body: {
+      start_date: defaultFilters.startDate,
+      end_date: defaultFilters.endDate,
       department_ids: defaultFilters.departmentIds,
     },
   };
@@ -383,6 +385,8 @@ async function BenchmarkHistorySection({
 }) {
   const historyFilters: BenchmarkHistoryIn = {
     body: {
+      start_date: defaultFilters.startDate,
+      end_date: defaultFilters.endDate,
       department_ids: defaultFilters.departmentIds,
       page: historyPage,
       page_size: historyPageSize,

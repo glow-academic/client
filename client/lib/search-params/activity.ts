@@ -5,7 +5,10 @@
 
 import { createLoader, parseAsInteger, parseAsString } from "nuqs/server";
 
+import { analyticsSearchParams } from "./analytics";
+
 export const activitySearchParams = {
+  ...analyticsSearchParams,
   activityPage: parseAsInteger,
   activityPageSize: parseAsInteger,
   activitySearch: parseAsString,

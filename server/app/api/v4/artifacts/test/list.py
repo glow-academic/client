@@ -1,6 +1,7 @@
 """Benchmark test artifact list endpoint."""
 
 from collections import Counter
+from datetime import datetime
 from typing import Annotated
 from uuid import UUID
 
@@ -59,11 +60,21 @@ async def list_test_artifacts(
             else None
         )
 
+        # Parse date strings to datetime
+        date_from: datetime | None = None
+        date_to: datetime | None = None
+        if request.start_date:
+            date_from = datetime.fromisoformat(request.start_date)
+        if request.end_date:
+            date_to = datetime.fromisoformat(request.end_date)
+
         # Fetch tests from MV
         result = await get_benchmark_tests_internal(
             conn=conn,
             eval_ids=eval_uuids,
             department_ids=department_uuids,
+            date_from=date_from,
+            date_to=date_to,
             archived=request.archived,
             search=request.search,
             sort_by=request.sort_by,

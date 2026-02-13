@@ -48405,6 +48405,20 @@
             ],
             "title": "Date To"
           },
+          "department_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Department Ids"
+          },
+          "roles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Roles"
+          },
           "page_limit": {
             "type": "integer",
             "maximum": 100.0,
@@ -79118,6 +79132,20 @@
             ],
             "title": "Date To"
           },
+          "department_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Department Ids"
+          },
+          "roles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Roles"
+          },
           "sort_by": {
             "type": "string",
             "title": "Sort By",
@@ -80530,6 +80558,28 @@
       },
       "GetTestListRequest": {
         "properties": {
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
           "eval_ids": {
             "items": {
               "type": "string"
