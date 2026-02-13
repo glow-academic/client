@@ -391,10 +391,9 @@ async def get_analytics_filters(
     except AttributeError:
         profile_id = None
 
-    department_id_cookie = http_request.cookies.get("department-id")
     params = GetProfileContextAccessSqlParams(
         profile_id=profile_id,
-        department_id=department_id_cookie if department_id_cookie else None,
+        department_id=None,
     )
     access = cast(
         GetProfileContextAccessSqlRow | None,

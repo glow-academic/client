@@ -143,7 +143,6 @@ async def get_setting_internal(
         resolved_context = await get_profile_context_internal(
             conn=context_conn,
             profile_id=profile_id,
-            department_id_cookie=None,
             bypass_cache=bypass_cache,
         )
 

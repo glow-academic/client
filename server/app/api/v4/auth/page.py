@@ -49,13 +49,12 @@ async def get_auth_page(
         except AttributeError:
             profile_id = None
 
-        department_id_cookie = http_request.cookies.get("department-id")
         bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
         pathname = http_request.headers.get("X-Pathname", "")
 
         pass1_start = time.time()
         access = await get_access_internal(
-            conn, profile_id, department_id_cookie, bypass_cache
+            conn, profile_id, bypass_cache
         )
         pass1_time = (time.time() - pass1_start) * 1000
 

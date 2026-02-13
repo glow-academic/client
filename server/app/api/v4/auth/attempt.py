@@ -61,11 +61,10 @@ async def get_auth_attempt(
             return GetAuthAttemptApiResponse()
 
         # 3. Auth (shared cache with /auth/profile)
-        department_id_cookie = http_request.cookies.get("department-id")
         bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
         pass1_start = time.time()
-        await get_access_internal(conn, profile_id, department_id_cookie, bypass_cache)
+        await get_access_internal(conn, profile_id, bypass_cache)
         pass1_time = (time.time() - pass1_start) * 1000
 
         # 4. Resolve profiles_id for ownership check
@@ -178,9 +177,7 @@ async def get_auth_attempt(
                     attempt_id=attempt_uuid,
                     bypass_cache=bypass_cache,
                 )
-            has_messages = any(
-                str(msg.chat_id) == current_chat_id for msg in messages
-            )
+            has_messages = any(str(msg.chat_id) == current_chat_id for msg in messages)
 
         pass2_time = (time.time() - pass1_start) * 1000 - pass1_time
 

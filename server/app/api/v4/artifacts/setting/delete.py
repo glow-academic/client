@@ -71,7 +71,6 @@ async def delete_setting(
                 resolved_context = await get_profile_context_internal(
                     conn=context_conn,
                     profile_id=profile_id,
-                    department_id_cookie=None,
                     bypass_cache=False,
                 )
                 actor_name = resolved_context.actor_name

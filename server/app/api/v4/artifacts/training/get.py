@@ -229,7 +229,6 @@ async def get_training_internal(
             return await get_profile_context_internal(
                 conn=c,
                 profile_id=profile_id,
-                department_id_cookie=None,
                 bypass_cache=bypass_cache,
             )
 

@@ -26,7 +26,6 @@ CACHE_TTL = 60
 async def get_access_internal(
     conn: asyncpg.Connection,
     profile_id: UUID | None,
-    department_id_cookie: str | None,
     bypass_cache: bool = False,
 ) -> GetProfileContextAccessSqlRow:
     """Resolve and cache the Pass 1 access row.
@@ -36,7 +35,7 @@ async def get_access_internal(
     """
     params = GetProfileContextAccessSqlParams(
         profile_id=profile_id,
-        department_id=department_id_cookie if department_id_cookie else None,
+        department_id=None,
     )
 
     # Cache lookup
@@ -44,7 +43,6 @@ async def get_access_internal(
         "/api/v4/auth/access",
         {
             "profile_id": str(profile_id) if profile_id else None,
-            "department_id": department_id_cookie,
         },
     )
     if not bypass_cache:
@@ -58,15 +56,7 @@ async def get_access_internal(
     )
 
     # Authorization checks
-    is_settings_only_request = not profile_id and department_id_cookie is not None
-
-    if is_settings_only_request:
-        if access_result is None or access_result.settings_id is None:
-            raise HTTPException(
-                status_code=404,
-                detail="Settings not available for this department. Please select a different department.",
-            )
-    elif not profile_id and not department_id_cookie:
+    if not profile_id:
         raise HTTPException(
             status_code=404,
             detail="Profile context not found: Could not resolve profile. Please try logging in again.",

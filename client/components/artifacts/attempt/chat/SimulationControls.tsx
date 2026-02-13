@@ -6,7 +6,6 @@
  */
 "use client";
 
-import type { AttemptDetailOut } from "@/app/(main)/home/[attemptId]/page";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,52 +18,27 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { useSocket } from "@/contexts/socket-context";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 export interface SimulationControlsProps {
   attemptId: string;
-  attemptData: AttemptDetailOut;
+  currentChatId: string;
+  simulationId: string;
+  hasMessages: boolean;
 }
 
 export function SimulationControls({
   attemptId,
-  attemptData,
+  currentChatId,
+  simulationId,
+  hasMessages,
 }: SimulationControlsProps) {
   const { socket } = useSocket();
 
-  // Extract data from attemptData
-  const attempt = attemptData?.attempt || null;
-  const currentChatIndex = attemptData?.current_chat_index ?? 0;
-  const shouldShowControls = attemptData?.should_show_controls ?? true;
-  const isPracticeSimulation =
-    attemptData?.simulation?.practice_simulation ?? false;
-  const isInfiniteMode = attemptData?.attempt?.infinite_mode ?? false;
-  const showResults = attemptData?.show_results ?? false;
-  const isActive = attemptData?.is_active ?? true;
-
-  // Find current chat from server data (new flat structure)
-  const currentChat = useMemo(() => {
-    const chats = attemptData?.views?.simulation_chats ?? [];
-    if (chats.length === 0) return null;
-    return chats[currentChatIndex] || chats[0] || null;
-  }, [attemptData, currentChatIndex]);
-
-  const currentChatId = currentChat?.id || null;
-
-  // Get current messages from server data (new flat structure)
-  const currentMessages = useMemo(() => {
-    const messages = attemptData?.views?.simulation_messages ?? [];
-    if (!currentChat?.id) return [];
-    const chatId = String(currentChat.id);
-    return messages.filter(
-      (message) => message.chat_id && String(message.chat_id) === chatId
-    );
-  }, [attemptData, currentChat]);
-
-  // Grading state - listen to WebSocket events
-  const [isGrading, setIsGrading] = useState(false);
-  const [gradingProgress, setGradingProgress] = useState<{
+  // Grading state - listen to WebSocket events (values tracked for timeout flow)
+  const [, setIsGrading] = useState(false);
+  const [, setGradingProgress] = useState<{
     completed: number;
     total: number;
     displayedProgress: number;
@@ -75,7 +49,6 @@ export function SimulationControls({
   const [confirmEndChatOpen, setConfirmEndChatOpen] = useState(false);
   const [isEndingSessionFromZeroMessages, setIsEndingSessionFromZeroMessages] =
     useState(false);
-  // Use Previous state removed — now handled in AttemptLobby
 
   // Track which action is ending, so only that button shows "Ending..."
   const [endingAction, setEndingAction] = useState<"endAll" | "endChat" | null>(
@@ -116,7 +89,7 @@ export function SimulationControls({
   // End all chats function
   const endAllChats = useCallback(
     async (previousChatMap?: Record<string, string | null>) => {
-      if (!attempt || !currentChatId || !socket) {
+      if (!currentChatId || !socket) {
         toast.error("WebSocket not connected. Please refresh the page.");
         return;
       }
@@ -132,7 +105,7 @@ export function SimulationControls({
         setEndingAction(null);
       }
     },
-    [attempt, attemptId, socket],
+    [attemptId, currentChatId, socket],
   );
 
   // Listen for WebSocket events to reset loading state and handle grading
@@ -145,12 +118,12 @@ export function SimulationControls({
       is_attempt_finished: boolean;
       grade_id: string | null;
     }) => {
-      if (!currentChatId || data.chat_id !== currentChatId) return;
+      if (data.chat_id !== currentChatId) return;
       setEndChatLoading(false);
       setEndingAction(null);
     };
 
-    const handleAttemptEnded = (data: {
+    const handleAttemptEnded = (_data: {
       attempt_id: string;
       success: boolean;
       message: string;
@@ -181,7 +154,7 @@ export function SimulationControls({
       }
     };
 
-    const handleGraded = (data: {
+    const handleGraded = (_data: {
       attempt_id: string;
       chat_id: string | null;
       simulation_id: string;
@@ -204,7 +177,7 @@ export function SimulationControls({
       completed_count?: number;
       total_count?: number;
     }) => {
-      if (!currentChatId || data.chat_id !== currentChatId) return;
+      if (data.chat_id !== currentChatId) return;
 
       if (data.type === "complete") {
         setIsGrading(false);
@@ -255,54 +228,10 @@ export function SimulationControls({
     };
   }, [socket, currentChatId, endAllChats]);
 
-  // Get previous chats for current chat to show red dot indicator
-  // Must be computed before early returns to maintain hook order
-  // With new flat structure, currentChat IS the chatData
-  const currentChatData = currentChat;
-
-  // Check if current content is a video
-  const isVideo = useMemo(() => {
-    return currentChatData?.content_type === "video";
-  }, [currentChatData]);
-
-  // Continuation options (Use Previous) are now handled in AttemptLobby
-
-  // Get previous chats for current chat (for red dot indicator)
-  // For practice simulations, never show previous chats (must always go through manual grading)
-
-  // Don't show buttons if attemptData is not available
-  if (!attemptData) {
-    return null;
-  }
-
-  // Don't show buttons if server says not to (unless in infinite mode)
-  // In infinite mode, buttons should always be available for cycling/ending
-  if (shouldShowControls === false && !isInfiniteMode) {
-    return null;
-  }
-
-  // Don't show if no current chat
-  if (!currentChat) {
-    return null;
-  }
-
-  // Hide buttons when attempt is done (showResults is true or isActive is false)
-  // This applies to both infinite mode and normal mode
-  if (showResults || !isActive) {
-    return null;
-  }
-
-  // Use Previous handling removed — now in AttemptLobby
-
-  // Extract simulationId for grading
-  const simulationId = attemptData?.simulation?.id;
-
-  // Handle End Session button click (always does default end session logic)
+  // Handle End Session button click
   const handleEndSession = () => {
-    const totalMessages = currentMessages.length;
-
     // N1: Show confirmation if current chat has 0 messages (skip grade)
-    if (totalMessages === 0) {
+    if (!hasMessages) {
       setIsEndingSessionFromZeroMessages(true);
       setConfirmEndChatOpen(true);
       return;
@@ -329,58 +258,22 @@ export function SimulationControls({
     });
   };
 
-  // Handle Next Video button click
-  const handleNextVideo = async () => {
-    if (!currentChatId || !socket) {
-      toast.error("WebSocket not connected. Please refresh the page.");
-      return;
-    }
-
-    setEndChatLoading(true);
-    setEndingAction("endChat");
-
-    try {
-      socket.emit("attempt_end", {
-        chat_id: currentChatId,
-      });
-    } catch (error) {
-      toast.error(`Failed to advance to next video: ${error}`);
-      setEndChatLoading(false);
-      setEndingAction(null);
-    }
-  };
-
   return (
     <>
       <div className="flex gap-2">
-        {/* Video mode: Show Next Video button */}
-        {isVideo ? (
-          <Button
-            type="button"
-            variant="default"
-            onClick={handleNextVideo}
-            disabled={endChatLoading}
-            className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm relative overflow-visible"
-          >
-            {endChatLoading && endingAction === "endChat"
-              ? "Advancing..."
-              : "Next Video"}
-          </Button>
-        ) : (
-          /* End Session button */
-          <Button
-            type="button"
-            variant={shouldShowControls ? "default" : "outline"}
-            onClick={handleEndSession}
-            disabled={endChatLoading}
-            className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm relative overflow-visible"
-            data-tour-end-all
-          >
-            {endChatLoading && endingAction === "endAll"
-              ? "Ending..."
-              : "End Session"}
-          </Button>
-        )}
+        {/* End Session button */}
+        <Button
+          type="button"
+          variant="default"
+          onClick={handleEndSession}
+          disabled={endChatLoading}
+          className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm relative overflow-visible"
+          data-tour-end-all
+        >
+          {endChatLoading && endingAction === "endAll"
+            ? "Ending..."
+            : "End Session"}
+        </Button>
       </div>
 
       {/* Confirm End Chat (no messages) Dialog */}

@@ -38,23 +38,9 @@ async def get_login_providers(
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        # Read department-id cookie for provider filtering (like profile/context endpoint)
-        department_id_cookie = http_request.cookies.get("department-id")
+        # Use department_id from request body if provided
+        department_id: UUID | None = request.department_id if request.department_id else None
 
-        # Use department_id from request body if provided, otherwise use cookie as fallback
-        # Convert cookie string to UUID if present
-        department_id: UUID | None = None
-        if request.department_id:
-            department_id = request.department_id
-        elif department_id_cookie:
-            try:
-                department_id = UUID(department_id_cookie)
-            except ValueError:
-                # Invalid UUID in cookie, ignore it
-                department_id = None
-
-        # Convert API request to SQL params with cookie fallback
-        # Note: SQL function expects uuid | NULL
         params = GetLoginDataSqlParams(department_id=department_id)
         sql_params = params.to_tuple()
 
