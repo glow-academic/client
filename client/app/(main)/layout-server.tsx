@@ -108,7 +108,7 @@ export const getAuthAttempt = cache(
   async (): Promise<AuthAttemptOut | null> => {
     try {
       const extraHeaders = await buildAuthHeaders();
-      return await api.post("/auth/attempt", {} as AuthAttemptIn, {
+      return await api.post("/auth/attempt", { body: {} } as AuthAttemptIn, {
         headers: extraHeaders,
       });
     } catch {
